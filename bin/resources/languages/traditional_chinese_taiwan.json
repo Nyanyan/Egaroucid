@@ -83,7 +83,7 @@
             "double_click_to_load": "雙擊即可讀取",
             "current": "目前",
             "modified_from_profile": "已從此設定檔修改",
-            "auto_save": "自動儲存AI設定檔"
+            "auto_save": "AI設定檔自動儲存設定"
         }
     },
     "ai_settings": {
@@ -225,7 +225,7 @@
         "display": "顯示",
         "profile": {
             "profile": "顯示設定檔",
-            "auto_save": "自動儲存顯示設定檔"
+            "auto_save": "顯示設定檔自動儲存設定"
         },
         "cell": {
             "display_on_cell": "顯示於格子中",

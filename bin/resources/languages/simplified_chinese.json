@@ -83,7 +83,7 @@
             "double_click_to_load": "双击即可读取",
             "current": "当前",
             "modified_from_profile": "已从此配置修改",
-            "auto_save": "自动保存AI配置"
+            "auto_save": "AI配置自动保存设置"
         }
     },
     "ai_settings": {
@@ -227,7 +227,7 @@
         "display": "显示",
         "profile": {
             "profile": "显示配置方案",
-            "auto_save": "自动保存显示配置"
+            "auto_save": "显示配置自动保存设置"
         },
         "cell": {
             "display_on_cell": "棋子显示",

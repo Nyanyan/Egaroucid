@@ -83,7 +83,7 @@
             "double_click_to_load": "ダブルクリックで読み込み",
             "current": "現在",
             "modified_from_profile": "このプロファイルから変更済み",
-            "auto_save": "AIプロファイルを自動保存"
+            "auto_save": "AIプロファイルの自動保存設定"
         }
     },
     "ai_settings": {
@@ -227,7 +227,7 @@
         "display": "表示",
         "profile": {
             "profile": "表示プロファイル",
-            "auto_save": "表示プロファイルの自動保存"
+            "auto_save": "表示プロファイルの自動保存設定"
         },
         "cell": {
             "display_on_cell": "合法手への表示",

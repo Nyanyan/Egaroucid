@@ -22,13 +22,27 @@ void save_modified_ai_profile_if_needed(Menu_elements menu_elements, Settings* s
         return;
     }
 
+    const AI_profile_values values = to_ai_profile_values(menu_elements);
     String base_profile_name = Unicode::Widen(settings->ai_profile_name);
     if (base_profile_name.isEmpty()) {
         base_profile_name = U"default";
     }
+    if (menu_elements.auto_save_ai_profile_overwrite) {
+        ensure_ai_settings_dir(directories);
+        String profile_file = Unicode::Widen(settings->ai_profile_file);
+        if (profile_file.isEmpty()) {
+            profile_file = U"default.json";
+        }
+        const String profile_path = get_ai_settings_file_path(directories, profile_file);
+        if (save_ai_profile_values(profile_path, values, base_profile_name)) {
+            settings->ai_profile_file = profile_file.narrow();
+            settings->ai_profile_name = base_profile_name.narrow();
+        }
+        return;
+    }
+
     const String memo_name = base_profile_name + U" " + DateTime::Now().format(U"yyyy-MM-dd");
     const String profile_path = generate_unique_ai_profile_filepath(directories);
-    const AI_profile_values values = to_ai_profile_values(menu_elements);
     if (save_ai_profile_values(profile_path, values, memo_name)) {
         settings->ai_profile_file = FileSystem::FileName(profile_path).narrow();
         settings->ai_profile_name = memo_name.narrow();
@@ -43,13 +57,27 @@ void save_modified_display_profile_if_needed(Menu_elements menu_elements, Settin
         return;
     }
 
+    const Display_profile_values values = to_display_profile_values(menu_elements);
     String base_profile_name = Unicode::Widen(settings->display_profile_name);
     if (base_profile_name.isEmpty()) {
         base_profile_name = U"default";
     }
+    if (menu_elements.auto_save_display_profile_overwrite) {
+        ensure_display_settings_dir(directories);
+        String profile_file = Unicode::Widen(settings->display_profile_file);
+        if (profile_file.isEmpty()) {
+            profile_file = U"default.json";
+        }
+        const String profile_path = get_display_settings_file_path(directories, profile_file);
+        if (save_display_profile_values(profile_path, values, base_profile_name)) {
+            settings->display_profile_file = profile_file.narrow();
+            settings->display_profile_name = base_profile_name.narrow();
+        }
+        return;
+    }
+
     const String memo_name = base_profile_name + U" " + DateTime::Now().format(U"yyyy-MM-dd");
     const String profile_path = generate_unique_display_profile_filepath(directories);
-    const Display_profile_values values = to_display_profile_values(menu_elements);
     if (save_display_profile_values(profile_path, values, memo_name)) {
         settings->display_profile_file = FileSystem::FileName(profile_path).narrow();
         settings->display_profile_name = memo_name.narrow();
@@ -120,9 +148,11 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"play_ordering_board_format"] = menu_elements.play_ordering_board_format;
     setting_json[U"play_ordering_transcript_format"] = menu_elements.play_ordering_transcript_format;
     setting_json[U"auto_save_ai_profile"] = menu_elements.auto_save_ai_profile;
+    setting_json[U"auto_save_ai_profile_mode"] = menu_elements.auto_save_ai_profile_overwrite ? PROFILE_AUTO_SAVE_MODE_OVERWRITE : PROFILE_AUTO_SAVE_MODE_NEW;
     setting_json[U"ai_profile_file"] = Unicode::Widen(settings.ai_profile_file);
     setting_json[U"ai_profile_name"] = Unicode::Widen(settings.ai_profile_name);
     setting_json[U"auto_save_display_profile"] = menu_elements.auto_save_display_profile;
+    setting_json[U"auto_save_display_profile_mode"] = menu_elements.auto_save_display_profile_overwrite ? PROFILE_AUTO_SAVE_MODE_OVERWRITE : PROFILE_AUTO_SAVE_MODE_NEW;
     setting_json[U"display_profile_file"] = Unicode::Widen(settings.display_profile_file);
     setting_json[U"display_profile_name"] = Unicode::Widen(settings.display_profile_name);
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));

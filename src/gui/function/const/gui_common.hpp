@@ -73,6 +73,8 @@ constexpr int UPDATE_CHECK_ALREADY_UPDATED = 0;
 constexpr int UPDATE_CHECK_UPDATE_FOUND = 1;
 constexpr int UPDATE_CHECK_FAILED = 2;
 constexpr int SHOW_ALL_HINT = 35;
+constexpr int PROFILE_AUTO_SAVE_MODE_OVERWRITE = 0;
+constexpr int PROFILE_AUTO_SAVE_MODE_NEW = 1;
 constexpr int AI_MAX_LOSS_INF = 129;
 constexpr int AI_LOSS_PERCENTAGE_INF = 100;
 constexpr int AI_LOSS_GRAPH_INTERVAL = 4;
@@ -572,9 +574,11 @@ struct Settings {
     bool play_ordering_board_format;
     bool play_ordering_transcript_format;
     bool auto_save_ai_profile;
+    int auto_save_ai_profile_mode;
     std::string ai_profile_file;
     std::string ai_profile_name;
     bool auto_save_display_profile;
+    int auto_save_display_profile_mode;
     std::string display_profile_file;
     std::string display_profile_name;
 };
@@ -666,6 +670,8 @@ struct Menu_elements {
     bool ai_profile_load;
     bool ai_profile_save;
     bool auto_save_ai_profile;
+    bool auto_save_ai_profile_overwrite;
+    bool auto_save_ai_profile_new;
     bool shortcut_key_setting;
     bool shortcut_button_setting;
     bool mouse_additional_button_setting;
@@ -708,6 +714,8 @@ struct Menu_elements {
     bool display_profile_load;
     bool display_profile_save;
     bool auto_save_display_profile;
+    bool auto_save_display_profile_overwrite;
+    bool auto_save_display_profile_new;
 
     // book
     bool book_start_deviate;
@@ -823,6 +831,8 @@ struct Menu_elements {
         ai_profile_load = false;
         ai_profile_save = false;
         auto_save_ai_profile = settings->auto_save_ai_profile;
+        auto_save_ai_profile_overwrite = settings->auto_save_ai_profile_mode == PROFILE_AUTO_SAVE_MODE_OVERWRITE;
+        auto_save_ai_profile_new = !auto_save_ai_profile_overwrite;
         shortcut_key_setting = false;
         shortcut_button_setting = false;
         mouse_additional_button_setting = false;
@@ -864,6 +874,8 @@ struct Menu_elements {
         display_profile_load = false;
         display_profile_save = false;
         auto_save_display_profile = settings->auto_save_display_profile;
+        auto_save_display_profile_overwrite = settings->auto_save_display_profile_mode == PROFILE_AUTO_SAVE_MODE_OVERWRITE;
+        auto_save_display_profile_new = !auto_save_display_profile_overwrite;
 
         book_start_deviate = false;
         book_start_deviate_with_transcript = false;

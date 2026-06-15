@@ -116,9 +116,11 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->play_ordering_board_format = true;
     settings->play_ordering_transcript_format = false;
     settings->auto_save_ai_profile = false;
+    settings->auto_save_ai_profile_mode = PROFILE_AUTO_SAVE_MODE_NEW;
     settings->ai_profile_file = "default.json";
     settings->ai_profile_name = "default";
     settings->auto_save_display_profile = false;
+    settings->auto_save_display_profile_mode = PROFILE_AUTO_SAVE_MODE_NEW;
     settings->display_profile_file = "default.json";
     settings->display_profile_name = "default";
 }
@@ -548,11 +550,13 @@ void init_settings(const Directories* directories, const Resources* resources, S
             settings->ai_profile_file = "default.json";
         }
         init_settings_import_bool(setting_json, U"auto_save_ai_profile", &settings->auto_save_ai_profile);
+        init_settings_import_int(setting_json, U"auto_save_ai_profile_mode", &settings->auto_save_ai_profile_mode);
         init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
         if (init_settings_import_str(setting_json, U"display_profile_file", &settings->display_profile_file) != ERR_OK) {
             settings->display_profile_file = "default.json";
         }
         init_settings_import_bool(setting_json, U"auto_save_display_profile", &settings->auto_save_display_profile);
+        init_settings_import_int(setting_json, U"auto_save_display_profile_mode", &settings->auto_save_display_profile_mode);
         init_settings_import_str(setting_json, U"display_profile_name", &settings->display_profile_name);
         init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
         init_settings_import_str(setting_json, U"opening_setting_last_subfolder", &settings->opening_setting_last_subfolder);
@@ -566,6 +570,8 @@ void init_settings(const Directories* directories, const Resources* resources, S
     }
     settings->window_scale = std::clamp(settings->window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
     settings->othello_quest_mode = std::clamp(settings->othello_quest_mode, 0, 2);
+    settings->auto_save_ai_profile_mode = std::clamp(settings->auto_save_ai_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);
+    settings->auto_save_display_profile_mode = std::clamp(settings->auto_save_display_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);
 
     // Keep compatibility with legacy scalar settings when profiles or curves are absent.
     sync_ai_loss_curves_from_scalar(settings);
