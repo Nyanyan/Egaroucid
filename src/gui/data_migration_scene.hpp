@@ -13,6 +13,10 @@
 #include <iostream>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
+#if SIV3D_PLATFORM(WINDOWS)
+#include <Windows.h>
+#include <shellapi.h>
+#endif
 
 inline String data_migration_input_path(const TextAreaEditState& text_area) {
     return data_migration_slash_path(text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").trimmed());
@@ -51,6 +55,14 @@ inline bool data_migration_backup_folder_valid(const String& path) {
         FileSystem::IsDirectory(data_migration_join_path(path, U"document"));
 }
 
+inline void data_migration_open_folder(const String& path) {
+#if SIV3D_PLATFORM(WINDOWS)
+    ShellExecuteW(nullptr, L"open", path.toWstr().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+#else
+    System::LaunchBrowser(path);
+#endif
+}
+
 inline void reload_egaroucid_settings_after_data_import(Common_resources* data) {
     init_settings(&data->directories, &data->resources, &data->settings);
     init_user_settings(&data->settings, &data->user_settings);
@@ -81,6 +93,7 @@ private:
     Button back_button;
     Button default_button;
     Button export_button;
+    Button open_folder_button;
     TextAreaEditState text_area;
     std::future<Data_migration_result> export_future;
     Data_migration_result result;
@@ -91,6 +104,7 @@ private:
         back_button.init(BUTTON3_1_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         default_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "use_default"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("data_migration", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        open_folder_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("data_migration", "open_folder"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
     }
 
 public:
@@ -127,6 +141,12 @@ public:
                 getData().fonts.font(result.path).draw(14, Arg::topCenter(X_CENTER, sy + 45), getData().colors.white);
             }
             back_button.draw();
+            if (result.succeeded && FileSystem::IsDirectory(result.path)) {
+                open_folder_button.draw();
+                if (open_folder_button.clicked()) {
+                    data_migration_open_folder(result.path);
+                }
+            }
             if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }

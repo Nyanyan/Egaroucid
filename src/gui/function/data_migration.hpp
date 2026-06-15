@@ -70,26 +70,6 @@ inline bool data_migration_is_same_or_inside_dir(const String& path, const Strin
     return normalized_path == normalized_dir || normalized_path.starts_with(normalized_dir);
 }
 
-inline String data_migration_unique_path(String path) {
-    if (!FileSystem::Exists(path)) {
-        return path;
-    }
-
-    const String parent = FileSystem::ParentPath(path);
-    const String base = FileSystem::BaseName(path);
-    const String extension = FileSystem::Extension(path);
-    for (int i = 1; i < 10000; ++i) {
-        String candidate = data_migration_join_path(parent, base + U"_imported_" + Format(i));
-        if (!extension.isEmpty()) {
-            candidate += U"." + extension;
-        }
-        if (!FileSystem::Exists(candidate)) {
-            return candidate;
-        }
-    }
-    return path;
-}
-
 inline bool data_migration_ensure_parent_dir(const String& path) {
     const String parent = FileSystem::ParentPath(path);
     if (parent.isEmpty() || FileSystem::Exists(parent)) {
@@ -106,17 +86,6 @@ inline bool data_migration_copy_file_overwrite(const String& source, const Strin
         return false;
     }
     return FileSystem::Copy(source, target);
-}
-
-inline bool data_migration_copy_file_preserve_conflict(const String& source, const String& target) {
-    String actual_target = target;
-    if (FileSystem::Exists(actual_target)) {
-        actual_target = data_migration_unique_path(actual_target);
-    }
-    if (!data_migration_ensure_parent_dir(actual_target)) {
-        return false;
-    }
-    return FileSystem::Copy(source, actual_target);
 }
 
 inline bool data_migration_copy_tree_overwrite(
@@ -158,37 +127,6 @@ inline bool data_migration_copy_tree_overwrite(
     }
 
     return data_migration_copy_file_overwrite(source, target);
-}
-
-inline bool data_migration_copy_tree_preserve_conflicts(const String& source, const String& target) {
-    if (!FileSystem::Exists(source)) {
-        return true;
-    }
-
-    if (FileSystem::IsDirectory(source)) {
-        String actual_target = target;
-        if (FileSystem::Exists(actual_target) && !FileSystem::IsDirectory(actual_target)) {
-            actual_target = data_migration_unique_path(actual_target);
-        }
-        if (!FileSystem::CreateDirectories(actual_target) && !FileSystem::Exists(actual_target)) {
-            return false;
-        }
-        for (const auto& child : FileSystem::DirectoryContents(source)) {
-            const String child_name = data_migration_path_leaf(child);
-            if (child_name.isEmpty()) {
-                continue;
-            }
-            if (!data_migration_copy_tree_preserve_conflicts(
-                    child,
-                    data_migration_join_path(actual_target, child_name)
-                )) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    return data_migration_copy_file_preserve_conflict(source, target);
 }
 
 inline bool data_migration_save_manifest(const String& root, const Directories& directories) {
@@ -298,33 +236,6 @@ inline void data_migration_rewrite_imported_setting_paths(
     }
 }
 
-inline bool data_migration_copy_document_for_import(const String& source_document, const String& target_document) {
-    if (!FileSystem::Exists(source_document)) {
-        return true;
-    }
-    if (!FileSystem::CreateDirectories(target_document) && !FileSystem::Exists(target_document)) {
-        return false;
-    }
-
-    for (const auto& child : FileSystem::DirectoryContents(source_document)) {
-        const String child_name = data_migration_path_leaf(child);
-        if (child_name.isEmpty()) {
-            continue;
-        }
-        const String target = data_migration_join_path(target_document, child_name);
-        if (child_name.lowercased() == U"games" && FileSystem::IsDirectory(child)) {
-            if (!data_migration_copy_tree_preserve_conflicts(child, target)) {
-                return false;
-            }
-        } else {
-            if (!data_migration_copy_tree_overwrite(child, target)) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 inline Data_migration_result import_egaroucid_settings_data(
     const Directories& directories,
     const String& backup_root
@@ -363,7 +274,7 @@ inline Data_migration_result import_egaroucid_settings_data(
     }
     data_migration_rewrite_imported_setting_paths(backup_root, directories);
 
-    if (!data_migration_copy_document_for_import(source_document, target_document)) {
+    if (!data_migration_copy_tree_overwrite(source_document, target_document)) {
         result.error = Data_migration_error::copy_failed;
         return result;
     }

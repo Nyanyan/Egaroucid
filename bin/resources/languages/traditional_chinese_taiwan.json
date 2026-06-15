@@ -369,7 +369,7 @@
         "export_description": "輸入儲存目標資料夾 / 拖放",
         "import_title": "匯入移轉資料",
         "import_description": "輸入 Egaroucid_Settings_... 資料夾 / 拖放",
-        "import_warning": "設定將會覆蓋，已儲存的對局資料將會合併",
+        "import_warning": "設定將會覆蓋，Document 內的資料將原樣複製",
         "exporting": "正在匯出...",
         "importing": "正在匯入...",
         "complete": "已完成",
@@ -378,7 +378,8 @@
         "invalid_backup": "不是有效的資料移轉資料夾",
         "zip_not_supported": "暫不支援 zip 檔案。請選擇已匯出的資料夾",
         "unsafe_source": "無法匯入 AppData 內的備份",
-        "restart_recommended": "Book 等部分資料會在重新啟動後完整套用"
+        "restart_recommended": "Book 等部分資料會在重新啟動後完整套用",
+        "open_folder": "開啟資料夾"
     },
     "board_image": {
         "save_image": "儲存圖片",

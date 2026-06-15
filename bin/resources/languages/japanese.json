@@ -371,7 +371,7 @@
         "export_description": "保存先フォルダを入力 / ドラッグ&ドロップ",
         "import_title": "移行データの読み込み",
         "import_description": "Egaroucid_Settings_... フォルダを入力 / ドラッグ&ドロップ",
-        "import_warning": "設定は上書きし、対局データはマージします",
+        "import_warning": "設定は上書きし、Document内のデータはそのままコピーします",
         "exporting": "書き出し中...",
         "importing": "読み込み中...",
         "complete": "完了しました",
@@ -380,7 +380,8 @@
         "invalid_backup": "有効なデータ移行フォルダではありません",
         "zip_not_supported": "zipファイルは未対応です。書き出されたフォルダを指定してください",
         "unsafe_source": "AppData内のバックアップは読み込めません",
-        "restart_recommended": "Bookなど一部のデータは再起動後に反映されます"
+        "restart_recommended": "Bookなど一部のデータは再起動後に反映されます",
+        "open_folder": "フォルダを開く"
     },
     "board_image": {
         "save_image": "画像を保存",
