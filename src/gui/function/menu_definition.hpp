@@ -94,12 +94,6 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
 
 
     title.init(language.get("display", "display"));
-        menu_e.init_button(language.get("display", "profile", "profile") + get_shortcut_key_info(U"display_profile_load"), &menu_elements->display_profile_load);
-        title.push(menu_e);
-        menu_e.init_check(language.get("display", "profile", "auto_save"), &menu_elements->auto_save_display_profile, menu_elements->auto_save_display_profile);
-        title.push(menu_e);
-        menu_e.init_separator();
-        title.push(menu_e);
         menu_e.init_button(language.get("display", "cell", "display_on_cell"), &menu_elements->dummy);
             side_menu.init_check(language.get("display", "cell", "legal") + get_shortcut_key_info(U"show_legal"), &menu_elements->show_legal, menu_elements->show_legal);
             menu_e.push(side_menu);
@@ -173,6 +167,10 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         menu_e.init_check(language.get("display", "log") + get_shortcut_key_info(U"show_log"), &menu_elements->show_log, menu_elements->show_log);
         title.push(menu_e);
         menu_e.init_check(language.get("display", "change_color_type") + get_shortcut_key_info(U"change_color_type"), &menu_elements->change_color_type, menu_elements->change_color_type);
+        title.push(menu_e);
+        menu_e.init_button(language.get("display", "profile", "profile") + get_shortcut_key_info(U"display_profile_load"), &menu_elements->display_profile_load);
+        title.push(menu_e);
+        menu_e.init_check(language.get("display", "profile", "auto_save"), &menu_elements->auto_save_display_profile, menu_elements->auto_save_display_profile);
         title.push(menu_e);
     menu.push(title);
 
