@@ -2463,7 +2463,9 @@ private:
     void draw_batch_action_buttons() {
         prune_selection();
         const bool all_selected = all_items_selected();
-        select_all_button.str = shortcut_label(language.get("in_out", all_selected ? "game_library_deselect_all" : "game_library_select_all"), U"Ctrl+A");
+        select_all_button.str = all_selected ?
+            language.get("in_out", "game_library_deselect_all") :
+            shortcut_label(language.get("in_out", "game_library_select_all"), U"Ctrl+A");
         select_all_button.font_size = update_font_size_overfull(select_all_button.font, select_all_button.str, 12, select_all_button.rect.h, select_all_button.rect.w);
         select_all_button.draw();
         if (select_all_button.clicked()) {
