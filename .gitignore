@@ -33,7 +33,10 @@ src/tools/evaluation/eval_optimizer_cuda_build
 bin/appdata/forced_openings.txt
 bin/appdata/setting.json
 bin/appdata/ai_settings/*.json
+bin/appdata/display_settings/*.json
 bin/appdata/shortcut_key.json
+bin/appdata/shortcut_button.json
+bin/appdata/mouse_additional_button.json
 bin/appdata/version.txt
 bin/document/forced_openings/**/folder_state.json
 bin/document/forced_openings/**/summary.csv
