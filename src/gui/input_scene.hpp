@@ -2700,23 +2700,172 @@ private:
 
     // Handle drag and drop operations
     void handle_drop(const ExplorerDrawResult& res) {
-        if (res.drop_on_parent) {
-            // Handle drop on parent folder - move to parent directory
-            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)games.size()) {
-                move_game_to_parent(res.dragged_game_index);
-            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
-                move_folder_to_parent(res.dragged_folder_name.narrow());
-            }
+        const String target_base = drop_target_base_dir(res);
+        if (target_base.empty()) {
+            return;
+        }
+
+        if (dragged_item_is_selected(res)) {
+            move_selected_items_to_base(target_base);
+        } else if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)games.size()) {
+            move_single_game_to_base(res.dragged_game_index, target_base);
+        } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
+            move_single_folder_to_base(res.dragged_folder_name, target_base);
+        }
+    }
+
+    std::string parent_subfolder() const {
+        std::string parent = explorer_state.subfolder;
+        explorer::trim_trailing_slash(parent);
+        size_t pos = parent.find_last_of('/');
+        if (pos == std::string::npos) {
+            parent.clear();
         } else {
-            // Handle normal folder drop
-            if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)games.size()) {
-                // Move game to target folder
-                move_game_to_folder(res.dragged_game_index, res.drop_target_folder.narrow());
-            } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
-                // Move folder to target folder
-                move_folder_to_folder(res.dragged_folder_name.narrow(), res.drop_target_folder.narrow());
+            parent = parent.substr(0, pos);
+        }
+        return parent;
+    }
+
+    String base_dir_for_subfolder(const std::string& subfolder) const {
+        explorer::PathState target_state;
+        target_state.subfolder = subfolder;
+        return explorer::build_current_dir(get_root_dir(), target_state);
+    }
+
+    String drop_target_base_dir(const ExplorerDrawResult& res) const {
+        if (res.drop_on_parent) {
+            if (!explorer_state.has_parent()) {
+                return U"";
+            }
+            return base_dir_for_subfolder(parent_subfolder());
+        }
+        if (res.drop_target_folder.empty()) {
+            return U"";
+        }
+        return get_base_dir() + res.drop_target_folder + U"/";
+    }
+
+    bool dragged_item_is_selected(const ExplorerDrawResult& res) const {
+        if (res.is_dragging_game) {
+            return selected_game_indices.count(res.dragged_game_index) != 0;
+        }
+        if (res.is_dragging_folder) {
+            const int idx = find_folder_index(res.dragged_folder_name);
+            return idx >= 0 && selected_folder_indices.count(idx) != 0;
+        }
+        return false;
+    }
+
+    void refresh_after_library_moves() {
+        enumerate_current_dir();
+        load_games();
+        clear_selection();
+    }
+
+    void move_selected_items_to_base(const String& target_base) {
+        bool changed = false;
+
+        std::vector<int> game_indices(selected_game_indices.begin(), selected_game_indices.end());
+        std::sort(game_indices.begin(), game_indices.end());
+        for (int idx : game_indices) {
+            changed = move_game_to_base(idx, target_base) || changed;
+        }
+
+        std::vector<int> folder_indices(selected_folder_indices.begin(), selected_folder_indices.end());
+        std::sort(folder_indices.begin(), folder_indices.end());
+        for (int idx : folder_indices) {
+            if (idx >= 0 && idx < (int)folders_display.size()) {
+                changed = move_folder_to_base(folders_display[idx], target_base) || changed;
             }
         }
+
+        if (changed) {
+            refresh_after_library_moves();
+        }
+    }
+
+    void move_single_game_to_base(int game_index, const String& target_base) {
+        if (move_game_to_base(game_index, target_base)) {
+            refresh_after_library_moves();
+        }
+    }
+
+    void move_single_folder_to_base(const String& folder_name, const String& target_base) {
+        if (move_folder_to_base(folder_name, target_base)) {
+            refresh_after_library_moves();
+        }
+    }
+
+    bool move_game_to_base(int game_index, const String& target_base) {
+        if (game_index < 0 || game_index >= (int)games.size() || target_base.empty()) {
+            return false;
+        }
+
+        ensure_summary_folder(target_base);
+        const Game_abstract game = games[game_index];
+        const String source_json = get_base_dir() + game.filename_date + U".json";
+        String target_name = game.filename_date;
+        String target_json = target_base + target_name + U".json";
+        if (FileSystem::Exists(target_json)) {
+            target_json = make_unique_child_path(target_base, target_name, false);
+            if (target_json.empty()) {
+                return false;
+            }
+            target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
+        }
+        if (FileSystem::FullPath(source_json) == FileSystem::FullPath(target_json)) {
+            return false;
+        }
+        if (!FileSystem::Exists(source_json)) {
+            return false;
+        }
+        if (move_path_fast(source_json, target_json) || FileSystem::Copy(source_json, target_json)) {
+            add_game_to_target_csv(game_with_filename(game, target_name), target_base);
+            remove_game_record_by_filename(game.filename_date, source_json);
+            if (FileSystem::Exists(source_json)) {
+                FileSystem::Remove(source_json);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    bool move_folder_to_base(const String& folder_name, const String& target_base) {
+        if (folder_name.empty() || target_base.empty() || is_protected_system_folder(folder_name)) {
+            return false;
+        }
+
+        const String source = get_base_dir() + folder_name;
+        const String normalized_target_base = gui_list::normalize_directory_base(target_base);
+        const String target = normalized_target_base + folder_name;
+        if (!FileSystem::IsDirectory(source) || FileSystem::Exists(target)) {
+            return false;
+        }
+        if (FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
+            return false;
+        }
+
+        auto with_trailing_separator = [](String path) {
+            if (!path.ends_with(U"/") && !path.ends_with(U"\\")) {
+                path += U"/";
+            }
+            return path;
+        };
+        const String source_abs = with_trailing_separator(FileSystem::FullPath(source));
+        const String target_base_abs = with_trailing_separator(FileSystem::FullPath(normalized_target_base));
+        if (target_base_abs.starts_with(source_abs)) {
+            return false;
+        }
+
+        FileSystem::CreateDirectories(normalized_target_base);
+        if (move_path_fast(source, target)) {
+            return true;
+        }
+        if (FileSystem::Copy(source, target)) {
+            FileSystem::Remove(source, AllowUndo::No);
+            return true;
+        }
+        return false;
     }
 
     void handle_reorder(const ExplorerDrawResult& res) {
