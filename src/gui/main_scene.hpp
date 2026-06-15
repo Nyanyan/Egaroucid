@@ -1113,6 +1113,9 @@ private:
                 resume_calculating();
                 need_start_game_button_calculation();
             }
+            if (getData().menu_elements.generate_xot_board || shortcut_key == U"generate_xot_board") {
+                generate_xot_board();
+            }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
                 const int light_level = 1;
                 const int mid_level = 15;
@@ -2994,6 +2997,27 @@ private:
         getData().graph_resources.n_discs = random_generated_n_discs;
         getData().graph_resources.delta = 0;
         resume_calculating();
+    }
+
+    void generate_xot_board() {
+        const std::vector<int> moves = get_random_xot_moves();
+        if (moves.empty()) {
+            std::cerr << "[WARNING] no XOT opening available" << std::endl;
+            return;
+        }
+
+        stop_calculating();
+        getData().history_elem.reset();
+        getData().graph_resources.init();
+        getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
+        getData().game_information.init();
+        pausing_in_pass = false;
+        resume_calculating();
+        for (int policy : moves) {
+            move_processing(HW2_M1 - policy);
+        }
+        mark_current_position_as_random_generated();
+        need_start_game_button_calculation();
     }
 
     void check_random_board_generater() {

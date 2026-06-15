@@ -278,6 +278,7 @@
         "go_to_last_position": "Go Forward to Last Position",
         "go_to_random_generated_position": "Go to Random Generated Position",
         "save_this_branch": "Save this Branch",
+        "generate_xot_board": "XOT Game",
         "generate_random_board": {
             "generate_random_board": "Generate Random Board",
             "generate": "Generate",

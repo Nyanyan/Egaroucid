@@ -142,6 +142,7 @@ std::vector<Shortcut_key_elem> shortcut_keys_default = {
     {U"go_to_last_position",    {U"End"},               {{"operation", "operation"}, {"operation", "go_to_last_position"}}},
     {U"go_to_random_generated_position", {U"Shift", U"Home"}, {{"operation", "operation"}, {"operation", "go_to_random_generated_position"}}},
     {U"save_this_branch",       {U"Ctrl", U"L"},        {{"operation", "operation"}, {"operation", "save_this_branch"}}},
+    {U"generate_xot_board",     {},                     {{"operation", "operation"}, {"operation", "generate_xot_board"}}},
     {U"generate_random_board",  {U"Ctrl", U"R"},        {{"operation", "operation"}, {"operation", "generate_random_board", "generate"}}},
     {U"convert_180",            {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "rotate_180"}}},
     {U"convert_90_clock",       {},                     {{"operation", "operation"}, {"operation", "convert", "convert"}, {"operation", "convert", "rotate_90_clock"}}},

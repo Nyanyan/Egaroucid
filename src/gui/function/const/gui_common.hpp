@@ -753,6 +753,7 @@ struct Menu_elements {
     bool go_to_last_position;
     bool go_to_random_generated_position;
     bool save_this_branch;
+    bool generate_xot_board;
     bool generate_random_board;
     int generate_random_board_moves;
     int generate_random_board_score_range_min;
@@ -897,6 +898,7 @@ struct Menu_elements {
         go_to_last_position = false;
         go_to_random_generated_position = false;
         save_this_branch = false;
+        generate_xot_board = false;
         generate_random_board = false;
         generate_random_board_moves = settings->generate_random_board_moves;
         generate_random_board_score_range_min = settings->generate_random_board_score_range_min;
