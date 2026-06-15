@@ -252,6 +252,7 @@ public:
             if (result.succeeded) {
                 getData().fonts.font(language.get("data_migration", "restart_recommended")).draw(15, Arg::topCenter(X_CENTER, sy + 45), getData().colors.white);
             }
+            back_button.move((WINDOW_SIZE_X - GO_BACK_BUTTON_WIDTH) / 2, GO_BACK_BUTTON_SY);
             back_button.draw();
             if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
