@@ -18,6 +18,7 @@
 #include "language.hpp"
 #include "ai_profile.hpp"
 #include "display_profile.hpp"
+#include "data_migration.hpp"
 #include "menu.hpp"
 #include "menu_definition.hpp"
 #include "opening_manager.hpp"
