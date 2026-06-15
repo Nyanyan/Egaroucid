@@ -2293,6 +2293,7 @@ public:
         if (renaming_folder && escape_pressed) {
             cancel_folder_rename();
         }
+        clear_selection_on_empty_space_press();
     }
 
     void draw() const override {
@@ -2309,6 +2310,73 @@ private:
             back_button.move(GO_BACK_BUTTON_BACK_SX, GO_BACK_BUTTON_SY);
             add_folder_button.move(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY);
         }
+    }
+
+    static bool button_contains(const Button& button, const Vec2& pos) {
+        return RectF(button.rect.x, button.rect.y, button.rect.w, button.rect.h).contains(pos);
+    }
+
+    RectF recycle_bin_checkbox_hit_rect() const {
+        const String label = language.get("in_out", "enable_recycle_bin");
+        constexpr int checkbox_size = 18;
+        int font_size = 13;
+        double label_width = getData().fonts.font(label).region(font_size, Vec2{ 0, 0 }).w;
+        while (font_size > 10 && label_width > 220.0) {
+            --font_size;
+            label_width = getData().fonts.font(label).region(font_size, Vec2{ 0, 0 }).w;
+        }
+        constexpr double gap = 8.0;
+        const double total_width = checkbox_size + gap + label_width;
+        const double x = WINDOW_SIZE_X - 24.0 - total_width;
+        const double y = 9.0;
+        return RectF(x, y - 4.0, total_width, checkbox_size + 8.0);
+    }
+
+    bool explorer_element_row_contains(const Vec2& pos) const {
+        const RectF list_bounds(
+            IMPORT_GAME_SX,
+            IMPORT_GAME_SY + 8,
+            IMPORT_GAME_WIDTH,
+            IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW
+        );
+        if (!list_bounds.contains(pos)) {
+            return false;
+        }
+        const int local_row = static_cast<int>((pos.y - list_bounds.y) / IMPORT_GAME_HEIGHT);
+        const int row = scroll_manager.get_strt_idx_int() + local_row;
+        const int parent_offset = explorer_state.has_parent() ? 1 : 0;
+        const int total_rows = parent_offset + static_cast<int>(folders_display.size()) + static_cast<int>(games.size());
+        return 0 <= row && row < total_rows;
+    }
+
+    bool explorer_control_contains(const Vec2& pos) const {
+        if (button_contains(back_button, pos) ||
+            button_contains(add_folder_button, pos) ||
+            button_contains(up_button, pos) ||
+            button_contains(select_all_button, pos) ||
+            button_contains(delete_selected_button, pos) ||
+            button_contains(copy_button, pos) ||
+            button_contains(cut_button, pos) ||
+            button_contains(paste_button, pos) ||
+            recycle_bin_checkbox_hit_rect().contains(pos)) {
+            return true;
+        }
+        if (is_save_request_active() && button_contains(save_here_button, pos)) {
+            return true;
+        }
+        const RectF scrollbar_rect(770, IMPORT_GAME_SY + 8, 10, IMPORT_GAME_HEIGHT * IMPORT_GAME_N_GAMES_ON_WINDOW);
+        return scrollbar_rect.contains(pos);
+    }
+
+    void clear_selection_on_empty_space_press() {
+        if (renaming_folder || creating_folder || !MouseL.down()) {
+            return;
+        }
+        const Vec2 pos = Cursor::Pos();
+        if (explorer_element_row_contains(pos) || explorer_control_contains(pos)) {
+            return;
+        }
+        clear_selection();
     }
 
     void cancel_save_request_and_return() {

@@ -185,12 +185,60 @@ public:
             getData().graph_resources.need_init = false;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
+        clear_selection_on_empty_space_press();
     }
 
     void draw() const override {
     }
 
 private:
+    static bool button_contains(const Button& button, const Vec2& pos) {
+        return RectF(button.rect.x, button.rect.y, button.rect.w, button.rect.h).contains(pos);
+    }
+
+    bool explorer_element_row_contains(const Vec2& pos) const {
+        const RectF list_bounds(
+            IMPORT_GAME_SX,
+            IMPORT_GAME_SY + 8,
+            IMPORT_GAME_WIDTH,
+            EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW
+        );
+        if (!list_bounds.contains(pos)) {
+            return false;
+        }
+        const int local_row = static_cast<int>((pos.y - list_bounds.y) / EXPORT_GAME_FOLDER_AREA_HEIGHT);
+        const int row = folder_scroll_manager.get_strt_idx_int() + local_row;
+        const int parent_offset = picker_has_parent ? 1 : 0;
+        const int total_rows = parent_offset + static_cast<int>(save_folders_display.size()) + static_cast<int>(picker_games.size());
+        return 0 <= row && row < total_rows;
+    }
+
+    bool explorer_control_contains(const Vec2& pos) const {
+        if (button_contains(back_button, pos) ||
+            button_contains(save_here_button, pos) ||
+            button_contains(up_button, pos) ||
+            button_contains(create_folder_button, pos)) {
+            return true;
+        }
+        const RectF text_area_rect(210, EXPORT_GAME_CREATE_FOLDER_Y_CENTER - 30 / 2 - 2, 400, 30);
+        if (text_area_rect.contains(pos)) {
+            return true;
+        }
+        const RectF scrollbar_rect(770, IMPORT_GAME_SY + 8, 10, EXPORT_GAME_FOLDER_AREA_HEIGHT * EXPORT_GAME_N_GAMES_ON_WINDOW);
+        return scrollbar_rect.contains(pos);
+    }
+
+    void clear_selection_on_empty_space_press() {
+        if (!MouseL.down()) {
+            return;
+        }
+        const Vec2 pos = Cursor::Pos();
+        if (explorer_element_row_contains(pos) || explorer_control_contains(pos)) {
+            return;
+        }
+        clear_selection();
+    }
+
     void enumerate_save_dir() {
         save_folders_display.clear();
         picker_has_parent = !picker_subfolder.empty();
