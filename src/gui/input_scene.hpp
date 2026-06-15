@@ -2740,16 +2740,31 @@ private:
     // Handle drag and drop operations
     void handle_drop(const ExplorerDrawResult& res) {
         const String target_base = drop_target_base_dir(res);
+        const bool selected_drag = dragged_item_is_selected(res);
+        std::cerr << "[GameLibraryDnd] handle_drop current_base='" << get_base_dir().narrow()
+                  << "' target_base='" << target_base.narrow()
+                  << "' drop_on_parent=" << res.drop_on_parent
+                  << " is_game=" << res.is_dragging_game
+                  << " game_index=" << res.dragged_game_index
+                  << " is_folder=" << res.is_dragging_folder
+                  << " folder_name='" << res.dragged_folder_name.narrow() << "'"
+                  << " selected_drag=" << selected_drag
+                  << " selected_games=" << selected_game_indices.size()
+                  << " selected_folders=" << selected_folder_indices.size()
+                  << std::endl;
         if (target_base.empty()) {
+            std::cerr << "[GameLibraryDnd] abort: empty target_base" << std::endl;
             return;
         }
 
-        if (dragged_item_is_selected(res)) {
+        if (selected_drag) {
             move_selected_items_to_base(target_base);
         } else if (res.is_dragging_game && res.dragged_game_index >= 0 && res.dragged_game_index < (int)games.size()) {
             move_single_game_to_base(res.dragged_game_index, target_base);
         } else if (res.is_dragging_folder && !res.dragged_folder_name.empty()) {
             move_single_folder_to_base(res.dragged_folder_name, target_base);
+        } else {
+            std::cerr << "[GameLibraryDnd] abort: no valid dragged item" << std::endl;
         }
     }
 
@@ -2803,6 +2818,10 @@ private:
 
     void move_selected_items_to_base(const String& target_base) {
         bool changed = false;
+        std::cerr << "[GameLibraryDnd] move_selected begin target_base='" << target_base.narrow()
+                  << "' games=" << selected_game_indices.size()
+                  << " folders=" << selected_folder_indices.size()
+                  << std::endl;
 
         std::vector<int> game_indices(selected_game_indices.begin(), selected_game_indices.end());
         std::sort(game_indices.begin(), game_indices.end());
@@ -2819,24 +2838,38 @@ private:
         }
 
         if (changed) {
+            std::cerr << "[GameLibraryDnd] move_selected changed=true; refreshing" << std::endl;
             refresh_after_library_moves();
+        } else {
+            std::cerr << "[GameLibraryDnd] move_selected changed=false" << std::endl;
         }
     }
 
     void move_single_game_to_base(int game_index, const String& target_base) {
+        std::cerr << "[GameLibraryDnd] move_single_game index=" << game_index
+                  << " target_base='" << target_base.narrow() << "'" << std::endl;
         if (move_game_to_base(game_index, target_base)) {
             refresh_after_library_moves();
+        } else {
+            std::cerr << "[GameLibraryDnd] move_single_game failed index=" << game_index << std::endl;
         }
     }
 
     void move_single_folder_to_base(const String& folder_name, const String& target_base) {
+        std::cerr << "[GameLibraryDnd] move_single_folder name='" << folder_name.narrow()
+                  << "' target_base='" << target_base.narrow() << "'" << std::endl;
         if (move_folder_to_base(folder_name, target_base)) {
             refresh_after_library_moves();
+        } else {
+            std::cerr << "[GameLibraryDnd] move_single_folder failed name='" << folder_name.narrow() << "'" << std::endl;
         }
     }
 
     bool move_game_to_base(int game_index, const String& target_base) {
         if (game_index < 0 || game_index >= (int)games.size() || target_base.empty()) {
+            std::cerr << "[GameLibraryDnd] move_game abort: invalid index/target index=" << game_index
+                      << " games=" << games.size()
+                      << " target_base='" << target_base.narrow() << "'" << std::endl;
             return false;
         }
 
@@ -2848,14 +2881,20 @@ private:
         if (FileSystem::Exists(target_json)) {
             target_json = make_unique_child_path(target_base, target_name, false);
             if (target_json.empty()) {
+                std::cerr << "[GameLibraryDnd] move_game abort: unique target failed source='"
+                          << source_json.narrow() << "'" << std::endl;
                 return false;
             }
             target_name = FileSystem::BaseName(target_json).replaced(U".json", U"");
         }
         if (FileSystem::FullPath(source_json) == FileSystem::FullPath(target_json)) {
+            std::cerr << "[GameLibraryDnd] move_game abort: same source/target '"
+                      << source_json.narrow() << "'" << std::endl;
             return false;
         }
         if (!FileSystem::Exists(source_json)) {
+            std::cerr << "[GameLibraryDnd] move_game abort: source missing '"
+                      << source_json.narrow() << "'" << std::endl;
             return false;
         }
         if (move_path_fast(source_json, target_json) || FileSystem::Copy(source_json, target_json)) {
@@ -2864,13 +2903,19 @@ private:
             if (FileSystem::Exists(source_json)) {
                 FileSystem::Remove(source_json);
             }
+            std::cerr << "[GameLibraryDnd] move_game success source='" << source_json.narrow()
+                      << "' target='" << target_json.narrow() << "'" << std::endl;
             return true;
         }
+        std::cerr << "[GameLibraryDnd] move_game failed source='" << source_json.narrow()
+                  << "' target='" << target_json.narrow() << "'" << std::endl;
         return false;
     }
 
     bool move_folder_to_base(const String& folder_name, const String& target_base) {
         if (folder_name.empty() || target_base.empty() || is_protected_system_folder(folder_name)) {
+            std::cerr << "[GameLibraryDnd] move_folder abort: invalid/protected name='"
+                      << folder_name.narrow() << "' target_base='" << target_base.narrow() << "'" << std::endl;
             return false;
         }
 
@@ -2878,9 +2923,13 @@ private:
         const String normalized_target_base = gui_list::normalize_directory_base(target_base);
         const String target = normalized_target_base + folder_name;
         if (!FileSystem::IsDirectory(source) || FileSystem::Exists(target)) {
+            std::cerr << "[GameLibraryDnd] move_folder abort: source missing or target exists source='"
+                      << source.narrow() << "' target='" << target.narrow() << "'" << std::endl;
             return false;
         }
         if (FileSystem::FullPath(source) == FileSystem::FullPath(target)) {
+            std::cerr << "[GameLibraryDnd] move_folder abort: same source/target '"
+                      << source.narrow() << "'" << std::endl;
             return false;
         }
 
@@ -2893,17 +2942,25 @@ private:
         const String source_abs = with_trailing_separator(FileSystem::FullPath(source));
         const String target_base_abs = with_trailing_separator(FileSystem::FullPath(normalized_target_base));
         if (target_base_abs.starts_with(source_abs)) {
+            std::cerr << "[GameLibraryDnd] move_folder abort: circular source='"
+                      << source.narrow() << "' target_base='" << normalized_target_base.narrow() << "'" << std::endl;
             return false;
         }
 
         FileSystem::CreateDirectories(normalized_target_base);
         if (move_path_fast(source, target)) {
+            std::cerr << "[GameLibraryDnd] move_folder success source='" << source.narrow()
+                      << "' target='" << target.narrow() << "'" << std::endl;
             return true;
         }
         if (FileSystem::Copy(source, target)) {
             FileSystem::Remove(source, AllowUndo::No);
+            std::cerr << "[GameLibraryDnd] move_folder copied source='" << source.narrow()
+                      << "' target='" << target.narrow() << "'" << std::endl;
             return true;
         }
+        std::cerr << "[GameLibraryDnd] move_folder failed source='" << source.narrow()
+                  << "' target='" << target.narrow() << "'" << std::endl;
         return false;
     }
 
