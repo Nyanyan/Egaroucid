@@ -26,7 +26,9 @@ namespace game_save_helper {
         const String& white_player_name,
         const String& memo,
         const std::vector<History_elem>& history,
-        const String& game_date = U""
+        const String& game_date = U"",
+        int black_score_override = GAME_DISCS_UNDEFINED,
+        int white_score_override = GAME_DISCS_UNDEFINED
     ) {
         JSON json;
         json[GAME_DATE] = filename_date;
@@ -46,6 +48,10 @@ namespace game_save_helper {
                 black_discs = last_board.count_opponent();
                 white_discs = last_board.count_player();
             }
+        }
+        if (black_score_override != GAME_DISCS_UNDEFINED && white_score_override != GAME_DISCS_UNDEFINED) {
+            black_discs = black_score_override;
+            white_discs = white_score_override;
         }
         json[GAME_BLACK_DISCS] = black_discs;
         json[GAME_WHITE_DISCS] = white_discs;
@@ -317,6 +323,8 @@ public:
                     }
                     getData().save_location_picker_info.pending_history.swap(history);
                 }
+                getData().save_location_picker_info.black_score = GAME_DISCS_UNDEFINED;
+                getData().save_location_picker_info.white_score = GAME_DISCS_UNDEFINED;
                 // Transition to Save_location_picker scene
                 getData().game_editor_info.return_scene = U"Game_editor";
                 changeScene(U"Save_location_picker", SCENE_FADE_TIME);

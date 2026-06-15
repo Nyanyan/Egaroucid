@@ -400,7 +400,8 @@ public:
         }
 
         // graph drawing
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60);
+        const int graph_xot_start_n_discs = getData().menu_elements.xot_identification ? getData().graph_resources.xot_start_n_discs : -1;
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60, graph_xot_start_n_discs);
 
         // info drawing
         int playing_mode = PLAYING_MODE_NONE;
@@ -1058,6 +1059,7 @@ private:
                     stop_calculating();
                     resume_calculating();
                 }
+                update_xot_identification(&getData().graph_resources);
                 need_start_game_button_calculation();
             }
             if (getData().menu_elements.go_to_first_position || shortcut_key == U"go_to_first_position") {
@@ -1107,6 +1109,7 @@ private:
                         getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
                     }
                 }
+                update_xot_identification(&getData().graph_resources);
                 resume_calculating();
                 need_start_game_button_calculation();
             }
@@ -1335,6 +1338,9 @@ private:
     }
 
     void menu_in_out() {
+        if (shortcut_key == U"enable_recycle_bin") {
+            getData().menu_elements.enable_recycle_bin = !getData().menu_elements.enable_recycle_bin;
+        }
         if (getData().menu_elements.input_from_clipboard || shortcut_key == U"input_from_clipboard") {
             changing_scene = true;
             stop_calculating();
@@ -1349,6 +1355,13 @@ private:
             changeScene(U"Import_text", SCENE_FADE_TIME);
             return;
         }
+        if (getData().menu_elements.input_othello_quest || shortcut_key == U"input_othello_quest") {
+            changing_scene = true;
+            stop_calculating();
+            resume_calculating();
+            changeScene(U"Import_othello_quest", SCENE_FADE_TIME);
+            return;
+        }
         if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {
             changing_scene = true;
             stop_calculating();
@@ -1356,11 +1369,11 @@ private:
             changeScene(U"Edit_board", SCENE_FADE_TIME);
             return;
         }
-        if (getData().menu_elements.input_game || shortcut_key == U"input_game") {
+        if (getData().menu_elements.game_library || shortcut_key == U"game_library") {
             changing_scene = true;
             stop_calculating();
             resume_calculating();
-            changeScene(U"Import_game", SCENE_FADE_TIME);
+            changeScene(U"Game_library", SCENE_FADE_TIME);
             return;
         }
         if (getData().menu_elements.input_bitboard || shortcut_key == U"input_bitboard") {
@@ -1573,7 +1586,8 @@ private:
     }
 
     void interact_graph() {
-        getData().graph_resources.n_discs = graph.update_n_discs(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs);
+        const int graph_xot_start_n_discs = getData().menu_elements.xot_identification ? getData().graph_resources.xot_start_n_discs : -1;
+        getData().graph_resources.n_discs = graph.update_n_discs(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, graph_xot_start_n_discs);
         if (shortcut_key_pressed != U"backward") {
             move_board_button_status.left_pushed = BUTTON_NOT_PUSHED;
         }
@@ -1683,6 +1697,7 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * getData().history_elem.board.score_player();
             getData().graph_resources.nodes[getData().graph_resources.branch].back().level = 100; // 100% search
         }
+        update_xot_identification(&getData().graph_resources);
         reset_turn_timer_anchor();
         resume_calculating();
     }
@@ -2397,10 +2412,14 @@ private:
 
     void init_analyze() {
         ai_status.analyze_task_stack.clear();
-        int idx = 0;
-        for (History_elem& node : getData().graph_resources.nodes[getData().graph_resources.branch]) {
+        const int xot_start_n_discs = getData().menu_elements.xot_identification ? getData().graph_resources.xot_start_n_discs : -1;
+        for (int idx = 0; idx < (int)getData().graph_resources.nodes[getData().graph_resources.branch].size(); ++idx) {
+            History_elem& node = getData().graph_resources.nodes[getData().graph_resources.branch][idx];
+            if (xot_start_n_discs != -1 && node.board.n_discs() < xot_start_n_discs) {
+                continue;
+            }
             Analyze_info analyze_info;
-            analyze_info.idx = idx++;
+            analyze_info.idx = idx;
             analyze_info.sgn = node.player ? -1 : 1;
             analyze_info.board = node.board;
             ai_status.analyze_task_stack.emplace_back(std::make_pair(analyze_info, std::bind(ai, node.board, getData().menu_elements.level, getData().menu_elements.use_book, 0, true, true)));
@@ -2928,6 +2947,7 @@ private:
                     }
                     getData().graph_resources.nodes[getData().graph_resources.branch][i].opening_name = opening_name;
                 }
+                update_xot_identification(&getData().graph_resources);
                 getData().graph_resources.n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                 getData().graph_resources.need_init = false;
                 getData().history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();

@@ -12,6 +12,11 @@
 #include <array>
 #include <iostream>
 #include <Siv3D.hpp>
+#if SIV3D_PLATFORM(WINDOWS)
+struct HWND__;
+struct HIMC__;
+extern "C" __declspec(dllimport) HIMC__* __stdcall ImmAssociateContext(HWND__* unnamedParam1, HIMC__* unnamedParam2);
+#endif
 #include "./../../../engine/engine_all.hpp"
 #include "./../menu.hpp"
 #include "info.hpp"
@@ -312,13 +317,29 @@ namespace gui_scene_ime {
 inline bool desired_enabled = true;
 inline bool focus_state_initialized = false;
 inline bool last_window_focused = true;
+#if SIV3D_PLATFORM(WINDOWS)
+inline HIMC__* disabled_previous_context = nullptr;
+inline bool disabled_context_saved = false;
+#endif
 
 inline void apply_enabled_state(const bool enabled) {
 #if SIV3D_PLATFORM(WINDOWS)
+    const auto hwnd = static_cast<HWND__*>(Platform::Windows::Window::GetHWND());
+    if (not hwnd) {
+        return;
+    }
+
     if (enabled) {
-        Platform::Windows::TextInput::EnableIME();
+        if (disabled_context_saved) {
+            ImmAssociateContext(hwnd, disabled_previous_context);
+            disabled_previous_context = nullptr;
+            disabled_context_saved = false;
+        }
     } else {
-        Platform::Windows::TextInput::DisableIME();
+        if (not disabled_context_saved) {
+            disabled_previous_context = ImmAssociateContext(hwnd, nullptr);
+            disabled_context_saved = true;
+        }
     }
 #else
     (void)enabled;
@@ -480,6 +501,7 @@ struct Settings {
     std::string lang_name;
     std::string book_file;
     bool use_book;
+    bool xot_identification;
     int level;
     bool ai_put_black;
     bool ai_put_white;
@@ -532,6 +554,9 @@ struct Settings {
     std::string screenshot_saving_dir;
     std::string input_game_last_subfolder;
     std::string opening_setting_last_subfolder;
+    std::string othello_quest_username;
+    int othello_quest_mode;
+    bool enable_recycle_bin;
     double window_scale;
     bool show_value_when_ai_calculating;
     int generate_random_board_score_range_min;
@@ -613,6 +638,7 @@ struct Menu_elements {
     // settings
     // AI settings
     bool use_book;
+    bool xot_identification;
     //int book_acc_level;
     bool accept_ai_loss;
     int max_loss;
@@ -701,8 +727,10 @@ struct Menu_elements {
     // input
     bool input_from_clipboard;
     bool input_text;
+    bool input_othello_quest;
     bool edit_board;
-    bool input_game;
+    bool game_library;
+    bool enable_recycle_bin;
     // output
     bool copy_transcript;
     bool copy_board;
@@ -761,6 +789,7 @@ struct Menu_elements {
         game_information = false;
 
         use_book = settings->use_book;
+        xot_identification = settings->xot_identification;
         //book_acc_level = settings->book_acc_level;
         accept_ai_loss = settings->accept_ai_loss;
         max_loss = settings->max_loss;
@@ -844,8 +873,10 @@ struct Menu_elements {
 
         input_from_clipboard = false;
         input_text = false;
+        input_othello_quest = false;
         edit_board = false;
-        input_game = false;
+        game_library = false;
+        enable_recycle_bin = settings->enable_recycle_bin;
         copy_transcript = false;
         copy_board = false;
         input_bitboard = false;
@@ -907,6 +938,7 @@ struct Graph_resources {
     int n_discs;
     int delta;
     int branch;
+    int xot_start_n_discs;
     bool need_init;
 
     Graph_resources() {
@@ -919,6 +951,7 @@ struct Graph_resources {
         n_discs = 4;
         delta = 0;
         branch = 0;
+        xot_start_n_discs = -1;
         need_init = true;
     }
 
@@ -937,7 +970,7 @@ struct Game_information {
     String white_player_name;
     String memo;
     String date;  // YYYY-MM-DD format
-    bool is_game_loaded;  // true if a specific game is loaded from Import_game
+    bool is_game_loaded;  // true if a specific game is loaded from Game_library
 
     void init() {
         black_player_name.clear();
@@ -969,10 +1002,41 @@ struct Game_editor_info {
 struct Save_location_picker_info {
     std::vector<History_elem> pending_history;
     std::string selected_subfolder;
+    int black_score;
+    int white_score;
 
     void init() {
         pending_history.clear();
         selected_subfolder.clear();
+        black_score = GAME_DISCS_UNDEFINED;
+        white_score = GAME_DISCS_UNDEFINED;
+    }
+};
+
+struct Game_library_pending_save {
+    String filename_stem;
+    String black_player_name;
+    String white_player_name;
+    String memo;
+    std::vector<History_elem> history;
+    String game_date;
+    int black_score = GAME_DISCS_UNDEFINED;
+    int white_score = GAME_DISCS_UNDEFINED;
+};
+
+struct Game_library_save_request_info {
+    bool active = false;
+    String return_scene;
+    std::string initial_subfolder;
+    std::vector<Game_library_pending_save> pending_games;
+    String result_message;
+
+    void init() {
+        active = false;
+        return_scene.clear();
+        initial_subfolder.clear();
+        pending_games.clear();
+        result_message.clear();
     }
 };
 
@@ -998,6 +1062,9 @@ struct User_settings {
     std::string screenshot_saving_dir;
     std::string input_game_last_subfolder;
     std::string opening_setting_last_subfolder;
+    std::string othello_quest_username;
+    int othello_quest_mode;
+    bool enable_recycle_bin;
 };
 
 struct Window_state {
@@ -1140,6 +1207,7 @@ struct Common_resources {
     Game_information game_information;
     Game_editor_info game_editor_info;
     Save_location_picker_info save_location_picker_info;
+    Game_library_save_request_info game_library_save_request_info;
     AI_profile_editor_info ai_profile_editor_info;
     Book_information book_information;
     User_settings user_settings;

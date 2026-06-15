@@ -52,6 +52,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
     title.init(language.get("settings", "settings"));
         menu_e.init_check(language.get("ai_settings", "use_book") + get_shortcut_key_info(U"use_book"), &menu_elements->use_book, menu_elements->use_book);
         title.push(menu_e);
+        menu_e.init_check(language.get("ai_settings", "xot_identification"), &menu_elements->xot_identification, menu_elements->xot_identification);
+        title.push(menu_e);
         //menu_e.init_bar(language.get("ai_settings", "book_accuracy_level"), &menu_elements->book_acc_level, menu_elements->book_acc_level, 0, BOOK_ACCURACY_LEVEL_INF);
         //title.push(menu_e);
         menu_e.init_check(language.get("ai_settings", "accept_ai_loss") + get_shortcut_key_info(U"accept_ai_loss"), &menu_elements->accept_ai_loss, menu_elements->accept_ai_loss);
@@ -223,14 +225,18 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
 
 
     title.init(language.get("in_out", "in_out"));
+        menu_e.init_button(language.get("in_out", "game_library") + get_shortcut_key_info(U"game_library"), &menu_elements->game_library);
+        title.push(menu_e);
+        menu_e.init_check(language.get("in_out", "enable_recycle_bin"), &menu_elements->enable_recycle_bin, menu_elements->enable_recycle_bin);
+        title.push(menu_e);
         menu_e.init_button(language.get("in_out", "in"), &menu_elements->dummy);
             side_menu.init_button(language.get("in_out", "input_from_clipboard") + get_shortcut_key_info(U"input_from_clipboard"), &menu_elements->input_from_clipboard);
             menu_e.push(side_menu);
             side_menu.init_button(language.get("in_out", "input_text") + get_shortcut_key_info(U"input_text"), &menu_elements->input_text);
             menu_e.push(side_menu);
-            side_menu.init_button(language.get("in_out", "edit_board") + get_shortcut_key_info(U"edit_board"), &menu_elements->edit_board);
+            side_menu.init_button(language.get("in_out", "input_othello_quest") + get_shortcut_key_info(U"input_othello_quest"), &menu_elements->input_othello_quest);
             menu_e.push(side_menu);
-            side_menu.init_button(language.get("in_out", "input_game") + get_shortcut_key_info(U"input_game"), &menu_elements->input_game);
+            side_menu.init_button(language.get("in_out", "edit_board") + get_shortcut_key_info(U"edit_board"), &menu_elements->edit_board);
             menu_e.push(side_menu);
             side_menu.init_button(language.get("in_out", "input_bitboard") + get_shortcut_key_info(U"input_bitboard"), &menu_elements->input_bitboard);
             menu_e.push(side_menu);

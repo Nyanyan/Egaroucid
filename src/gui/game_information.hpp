@@ -87,7 +87,7 @@ public:
             getData().game_editor_info.return_scene = U"Game_information_scene";
             getData().game_editor_info.is_editing_mode = getData().game_information.is_game_loaded;
             // Keep game_date and subfolder if a game is loaded (for editing saved game)
-            // They are already set in Import_game::import_game()
+            // They are already set in Game_library::import_game()
             if (!getData().game_information.is_game_loaded) {
                 getData().game_editor_info.game_date.clear();
                 getData().game_editor_info.subfolder.clear();

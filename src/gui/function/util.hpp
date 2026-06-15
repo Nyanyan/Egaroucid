@@ -30,6 +30,18 @@ std::string get_extension(std::string file) {
     return "";
 }
 
+inline void update_xot_identification(Graph_resources* graph_resources) {
+    graph_resources->xot_start_n_discs = -1;
+    for (const History_elem& history_elem : graph_resources->nodes[GRAPH_MODE_NORMAL]) {
+        if (history_elem.board.n_discs() == XOT_START_N_DISCS) {
+            if (is_xot_board_key(history_elem.board)) {
+                graph_resources->xot_start_n_discs = XOT_START_N_DISCS;
+            }
+            return;
+        }
+    }
+}
+
 std::vector<int> get_put_order(Graph_resources graph_resources, History_elem current_history_elem) {
     std::vector<int> put_order;
     int inspect_switch_n_discs = INF;
