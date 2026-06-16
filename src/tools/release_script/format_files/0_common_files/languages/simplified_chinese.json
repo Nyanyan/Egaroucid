@@ -363,6 +363,27 @@
         "skip": "跳过",
         "license": "许可协议"
     },
+    "data_migration": {
+        "data_migration": "数据迁移",
+        "export": "导出数据",
+        "import": "导入数据",
+        "export_title": "导出迁移数据",
+        "export_description": "输入保存目标文件夹 / 拖放",
+        "import_title": "导入迁移数据",
+        "import_description": "输入 Egaroucid_Settings_... 文件夹 / 拖放",
+        "import_warning": "设置将被覆盖，Document 内的数据将原样复制",
+        "exporting": "正在导出...",
+        "importing": "正在导入...",
+        "complete": "已完成",
+        "failed": "失败",
+        "directory_not_found": "未找到目录",
+        "export_destination_forbidden": "不能导出到 Egaroucid 的 Document 或 AppData 文件夹内",
+        "invalid_backup": "不是有效的数据迁移文件夹",
+        "zip_not_supported": "暂不支持 zip 文件。请选择导出的文件夹",
+        "unsafe_source": "无法导入 Egaroucid 的 Document 或 AppData 文件夹内的备份",
+        "restart_recommended": "Book 等部分数据将在重启后完全生效",
+        "open_folder": "打开文件夹"
+    },
     "board_image": {
         "save_image": "保存图片",
         "rect": "■",

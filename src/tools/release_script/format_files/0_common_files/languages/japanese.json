@@ -64,8 +64,8 @@
             "function_duplicate_message": "この機能はすでに次のボタンに割り当て済みです:"
         },
         "mouse_additional_buttons": {
-            "settings": "\u30de\u30a6\u30b9\u8ffd\u52a0\u30dc\u30bf\u30f3\u8a2d\u5b9a",
-            "press_to_highlight_message": "\u30de\u30a6\u30b9\u8ffd\u52a0\u30dc\u30bf\u30f3\u3092\u62bc\u3059\u3068\u5bfe\u5fdc\u3059\u308b\u884c\u304c\u30cf\u30a4\u30e9\u30a4\u30c8\u3055\u308c\u307e\u3059"
+            "settings": "マウス追加ボタン設定",
+            "press_to_highlight_message": "マウス追加ボタンを押すと対応する行がハイライトされます"
         },
         "profile": {
             "profile": "AIプロファイル",
@@ -282,9 +282,9 @@
         "backward": "戻る",
         "undo": "待った",
         "save_this_branch": "この分岐を保存",
-        "go_to_first_position": "\u6700\u521d\u306e\u5c40\u9762\u306b\u623b\u308b",
-        "go_to_last_position": "\u6700\u5f8c\u306e\u5c40\u9762\u306b\u9032\u3080",
-        "go_to_random_generated_position": "\u30e9\u30f3\u30c0\u30e0\u751f\u6210\u5c40\u9762\u306b\u623b\u308b",
+        "go_to_first_position": "最初の局面に戻る",
+        "go_to_last_position": "最後の局面に進む",
+        "go_to_random_generated_position": "ランダム生成局面に戻る",
         "generate_xot_board": "XOT局面を生成",
         "generate_random_board": {
             "generate_random_board": "ランダム局面を生成",
@@ -345,7 +345,7 @@
         "black": "黒(B)",
         "white": "白(W)",
         "empty": "空(E)",
-        "update_following_positions": "\u4ee5\u5f8c\u306e\u5c40\u9762\u3082\u4fee\u6b63"
+        "update_following_positions": "以後の局面も修正"
     },
     "help": {
         "help": "ヘルプ",
@@ -362,6 +362,27 @@
         "download": "ダウンロード",
         "skip": "スキップ",
         "license": "ライセンス"
+    },
+    "data_migration": {
+        "data_migration": "データ移行",
+        "export": "データの書き出し",
+        "import": "データの読み込み",
+        "export_title": "データ移行用の書き出し",
+        "export_description": "保存先フォルダを入力 / ドラッグ&ドロップ",
+        "import_title": "移行データの読み込み",
+        "import_description": "Egaroucid_Settings_... フォルダを入力 / ドラッグ&ドロップ",
+        "import_warning": "設定は上書きし、Document内のデータはそのままコピーします",
+        "exporting": "書き出し中...",
+        "importing": "読み込み中...",
+        "complete": "完了しました",
+        "failed": "失敗しました",
+        "directory_not_found": "ディレクトリが見つかりません",
+        "export_destination_forbidden": "EgaroucidのDocument/AppData内には書き出せません",
+        "invalid_backup": "有効なデータ移行フォルダではありません",
+        "zip_not_supported": "zipファイルは未対応です。書き出されたフォルダを指定してください",
+        "unsafe_source": "EgaroucidのDocument/AppData内のバックアップは読み込めません",
+        "restart_recommended": "Bookなど一部のデータは再起動後に反映されます",
+        "open_folder": "フォルダを開く"
     },
     "board_image": {
         "save_image": "画像を保存",
