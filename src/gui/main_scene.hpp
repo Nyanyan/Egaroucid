@@ -400,9 +400,9 @@ public:
         }
 
         // graph drawing
-        const int graph_xot_start_n_discs = getData().graph_resources.xot_start_n_discs;
+        const int graph_highlight_n_discs = get_marked_random_generated_position_n_discs();
         const int graph_value_start_n_discs = get_graph_value_start_n_discs();
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60, graph_xot_start_n_discs, graph_value_start_n_discs);
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60, graph_highlight_n_discs, graph_value_start_n_discs);
 
         // info drawing
         int playing_mode = PLAYING_MODE_NONE;

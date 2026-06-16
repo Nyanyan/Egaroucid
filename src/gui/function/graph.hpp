@@ -75,7 +75,7 @@ private:
     double dx;
 
 public:
-    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60, int xot_start_n_discs, int graph_value_start_n_discs) {
+    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60, int graph_highlight_n_discs, int graph_value_start_n_discs) {
         std::vector<History_elem> graph_nodes1 = nodes1;
         std::vector<History_elem> graph_nodes2 = nodes2;
         if (graph_value_start_n_discs != -1) {
@@ -236,8 +236,8 @@ public:
             draw_graph_not_calculated(nodes1, graph_history_not_calculated_color);
             draw_graph_not_calculated(nodes2, graph_fork_not_calculated_color);
         }
-        if (xot_start_n_discs != -1 && (graph_value_start_n_discs == -1 || xot_start_n_discs >= graph_value_start_n_discs)) {
-            draw_xot_start_marker(graph_nodes1, graph_nodes2, show_graph_sum_of_loss, xot_start_n_discs);
+        if (graph_highlight_n_discs != -1 && (graph_value_start_n_discs == -1 || graph_highlight_n_discs >= graph_value_start_n_discs)) {
+            draw_graph_highlight_marker(graph_nodes1, graph_nodes2, show_graph_sum_of_loss, graph_highlight_n_discs);
         }
         if (show_graph && !show_graph_sum_of_loss) {
             Circle(sx, sy, 6).draw(Palette::Black);
@@ -292,17 +292,17 @@ private:
         );
     }
 
-    void draw_xot_start_marker(const std::vector<History_elem>& nodes1, const std::vector<History_elem>& nodes2, bool show_graph_sum_of_loss, int xot_start_n_discs) {
+    void draw_graph_highlight_marker(const std::vector<History_elem>& nodes1, const std::vector<History_elem>& nodes2, bool show_graph_sum_of_loss, int graph_highlight_n_discs) {
         const History_elem* marker_node = nullptr;
         for (const History_elem& node : nodes1) {
-            if (node.board.n_discs() == xot_start_n_discs) {
+            if (node.board.n_discs() == graph_highlight_n_discs) {
                 marker_node = &node;
                 break;
             }
         }
         if (marker_node == nullptr) {
             for (const History_elem& node : nodes2) {
-                if (node.board.n_discs() == xot_start_n_discs) {
+                if (node.board.n_discs() == graph_highlight_n_discs) {
                     marker_node = &node;
                     break;
                 }
@@ -311,7 +311,7 @@ private:
         if (marker_node == nullptr) {
             return;
         }
-        const int xx = sx + dx * (xot_start_n_discs - 4);
+        const int xx = sx + dx * (graph_highlight_n_discs - 4);
         int yy;
         if (show_graph_sum_of_loss) {
             yy = sy + dy * y_max;
