@@ -663,24 +663,63 @@ int silent_load(Directories* directories, Resources* resources, Settings* settin
     return init_resources_silent_load(resources, settings, fonts, stop_loading);
 }
 
-void apply_saved_window_scale(double window_scale, Window_state* window_state) {
+Size get_scaled_window_size(double window_scale) {
     window_scale = std::clamp(window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
-    const Size saved_window_size{
+    return Size{
         static_cast<int>(std::round(WINDOW_SIZE_X * window_scale)),
         static_cast<int>(std::round(WINDOW_SIZE_Y * window_scale))
     };
-    Window::Resize(saved_window_size, Centering::No);
-    window_state->window_scale = window_scale;
 }
 
-void apply_saved_window_position(const Settings& settings, Window_state* window_state) {
-    if (!settings.has_window_pos) {
+bool is_window_bounds_in_work_area(const Rect& window_bounds) {
+    for (const MonitorInfo& monitor : System::EnumerateMonitors()) {
+        const Rect& work_area = monitor.workArea;
+        if (work_area.x <= window_bounds.x &&
+            work_area.y <= window_bounds.y &&
+            window_bounds.x + window_bounds.w <= work_area.x + work_area.w &&
+            window_bounds.y + window_bounds.h <= work_area.y + work_area.h) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void apply_default_window_settings(Window_state* window_state) {
+    Window::Resize(Size{ WINDOW_SIZE_X, WINDOW_SIZE_Y }, Centering::Yes);
+    window_state->window_scale = 1.0;
+    window_state->window_pos_x = 0;
+    window_state->window_pos_y = 0;
+    window_state->has_window_pos = false;
+}
+
+void apply_saved_window_settings(const Settings& settings, Window_state* window_state) {
+    const double window_scale = std::clamp(settings.window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
+    const Size saved_window_size = get_scaled_window_size(window_scale);
+    if (!Window::Resize(saved_window_size, settings.has_window_pos ? Centering::No : Centering::Yes)) {
+        apply_default_window_settings(window_state);
         return;
     }
-    Window::SetPos(Point{ settings.window_pos_x, settings.window_pos_y });
-    window_state->window_pos_x = settings.window_pos_x;
-    window_state->window_pos_y = settings.window_pos_y;
-    window_state->has_window_pos = true;
+
+    const Rect resized_window_bounds = Window::GetState().bounds;
+    const Rect saved_window_bounds = settings.has_window_pos
+        ? Rect{ settings.window_pos_x, settings.window_pos_y, resized_window_bounds.w, resized_window_bounds.h }
+        : resized_window_bounds;
+    if (!is_window_bounds_in_work_area(saved_window_bounds)) {
+        apply_default_window_settings(window_state);
+        return;
+    }
+
+    window_state->window_scale = window_scale;
+    if (settings.has_window_pos) {
+        Window::SetPos(Point{ settings.window_pos_x, settings.window_pos_y });
+        window_state->window_pos_x = settings.window_pos_x;
+        window_state->window_pos_y = settings.window_pos_y;
+        window_state->has_window_pos = true;
+    } else {
+        window_state->window_pos_x = resized_window_bounds.x;
+        window_state->window_pos_y = resized_window_bounds.y;
+        window_state->has_window_pos = false;
+    }
 }
 
 class Silent_load : public App::Scene {
@@ -713,8 +752,7 @@ public:
                 load_code = silent_load_future.get();
                 loaded = load_code == ERR_OK;
                 if (loaded) {
-                    apply_saved_window_scale(getData().settings.window_scale, &getData().window_state);
-                    apply_saved_window_position(getData().settings, &getData().window_state);
+                    apply_saved_window_settings(getData().settings, &getData().window_state);
                 }
                 loading = false;
             }
