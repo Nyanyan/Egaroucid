@@ -3011,11 +3011,7 @@ private:
     }
 
     int get_random_generated_position_n_discs() {
-        int random_generated_n_discs = get_marked_random_generated_position_n_discs();
-        if (random_generated_n_discs == -1) {
-            random_generated_n_discs = getData().graph_resources.xot_start_n_discs;
-        }
-        return random_generated_n_discs;
+        return get_marked_random_generated_position_n_discs();
     }
 
     int get_marked_random_generated_position_n_discs() {
@@ -3036,7 +3032,7 @@ private:
         if (random_generated_n_discs != -1) {
             return random_generated_n_discs;
         }
-        return getData().graph_resources.xot_start_n_discs;
+        return -1;
     }
 
     int get_graph_value_start_n_discs() {
