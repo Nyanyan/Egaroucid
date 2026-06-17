@@ -324,7 +324,7 @@ public:
             search_button.rect.w = 112;
             search_button.rect.h = 42;
             search_button.draw();
-            if (search_button.clicked() || (KeyEnter.pressed() && username_area.active)) {
+            if (search_button.clicked() || username_area.enterKey) {
                 start_search();
             }
         }

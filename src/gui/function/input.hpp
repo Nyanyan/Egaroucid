@@ -134,11 +134,11 @@ inline Vec2 calculate_editing_text_pos(
     const Vec2& pos,
     double width
 ) {
-    const RectF region = SimpleGUI::TextBoxRegion(pos, width);
-    const size_t cursor_pos = std::min(text.cursorPos, text.text.size());
+    const size_t cursor_pos = Min<size_t>(text.cursorPos, text.text.size());
     const String text_before_cursor = text.text.substr(0, cursor_pos);
-    const double caret_x = region.x + 8.0 + SimpleGUI::GetFont()(text_before_cursor).region().w;
-    return Vec2{ caret_x, region.y };
+    const double text_x = pos.x + 8.0 + SimpleGUI::GetFont()(text_before_cursor).region().w;
+    const double caret_x = Clamp(text_x, pos.x + 8.0, pos.x + Max(8.0, width - 8.0));
+    return Vec2{ caret_x, pos.y };
 }
 
 inline void request_textarea_ime_candidate_window(
@@ -157,10 +157,10 @@ inline void request_textbox_ime_candidate_window(
     const Vec2& pos,
     double width
 ) {
-    const RectF region = SimpleGUI::TextBoxRegion(pos, width);
     const Vec2 editing_text_pos = calculate_editing_text_pos(text, pos, width);
+    const double candidate_y = editing_text_pos.y + SimpleGUI::GetFont().height() + 14.0;
     deferred_state.requested = true;
-    deferred_state.pos = Vec2{ editing_text_pos.x, region.y + region.h + 2.0 };
+    deferred_state.pos = Vec2{ editing_text_pos.x, candidate_y };
 }
 
 inline void flush_deferred_ime_candidate_window() {
