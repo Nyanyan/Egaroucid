@@ -150,11 +150,11 @@ private:
     Button back_button;
     Button ok_button;
     Button export_main_button;     // For new game save: save main line
-    TextAreaEditState text_area[4]; // black player, white player, memo, date
+    TextEditState player_area[2]; // black player, white player
+    TextEditState date_area;
+    TextAreaEditState memo_area;
     static constexpr int BLACK_PLAYER_IDX = 0;
     static constexpr int WHITE_PLAYER_IDX = 1;
-    static constexpr int MEMO_IDX = 2;
-    static constexpr int DATE_IDX = 3;
     
     // Return scene info
     String return_scene;
@@ -171,22 +171,23 @@ public:
         ok_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_main_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         
-        text_area[BLACK_PLAYER_IDX].active = true;
-        text_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
-        text_area[WHITE_PLAYER_IDX].text = getData().game_information.white_player_name;
-        text_area[MEMO_IDX].text = getData().game_information.memo;
+        player_area[BLACK_PLAYER_IDX].active = true;
+        player_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
+        player_area[WHITE_PLAYER_IDX].text = getData().game_information.white_player_name;
+        memo_area.text = getData().game_information.memo;
         
         // Initialize date field: use existing date or current date in YYYY-MM-DD format
         if (getData().game_information.date.isEmpty()) {
             const DateTime now = DateTime::Now();
-            text_area[DATE_IDX].text = Format(now.year, U"-", Pad(now.month, { 2, U'0' }), U"-", Pad(now.day, { 2, U'0' }));
+            date_area.text = Format(now.year, U"-", Pad(now.month, { 2, U'0' }), U"-", Pad(now.day, { 2, U'0' }));
         } else {
-            text_area[DATE_IDX].text = getData().game_information.date;
+            date_area.text = getData().game_information.date;
         }
         
-        for (int i = 0; i < 4; ++i) {
-            text_area[i].rebuildGlyphs();
-        }
+        player_area[BLACK_PLAYER_IDX].cursorPos = player_area[BLACK_PLAYER_IDX].text.size();
+        player_area[WHITE_PLAYER_IDX].cursorPos = player_area[WHITE_PLAYER_IDX].text.size();
+        date_area.cursorPos = date_area.text.size();
+        memo_area.rebuildGlyphs();
         
         // Get return scene info from game_editor_info
         return_scene = getData().game_editor_info.return_scene;
@@ -200,20 +201,25 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         Scene::SetBackground(getData().colors.green);
+        const bool any_text_field_active_before =
+            player_area[BLACK_PLAYER_IDX].active ||
+            player_area[WHITE_PLAYER_IDX].active ||
+            date_area.active ||
+            memo_area.active;
 
         getData().fonts.font(language.get("in_out", is_editing_mode ? "edit_game" : "output_game")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         
         // Date label / textbox (below player names)
         const int date_box_y = 47;
         getData().fonts.font(language.get("in_out", "date") + U": ").draw(15, Arg::rightCenter(X_CENTER, date_box_y + EXPORT_GAME_DATE_HEIGHT / 2), getData().colors.white);
-        text_area_with_ime_candidate_window(text_area[DATE_IDX], Vec2{X_CENTER, date_box_y}, SizeF{EXPORT_GAME_DATE_WIDTH, EXPORT_GAME_DATE_HEIGHT}, 30);
+        text_box_with_ime_candidate_window(date_area, Vec2{X_CENTER, date_box_y - 3}, EXPORT_GAME_DATE_WIDTH, 30);
 
         // Player name label / textboxes
         const int player_label_y = 85;
         const int player_box_y = 108;
         getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, player_label_y), getData().colors.white);
-        text_area_with_ime_candidate_window(text_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
-        text_area_with_ime_candidate_window(text_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, player_box_y}, SizeF{EXPORT_GAME_PLAYER_WIDTH, EXPORT_GAME_PLAYER_HEIGHT}, SimpleGUI::PreferredTextAreaMaxChars);
+        text_box_with_ime_candidate_window(player_area[BLACK_PLAYER_IDX], Vec2{X_CENTER - EXPORT_GAME_PLAYER_WIDTH, player_box_y - 3}, EXPORT_GAME_PLAYER_WIDTH, SimpleGUI::PreferredTextAreaMaxChars);
+        text_box_with_ime_candidate_window(player_area[WHITE_PLAYER_IDX], Vec2{X_CENTER, player_box_y - 3}, EXPORT_GAME_PLAYER_WIDTH, SimpleGUI::PreferredTextAreaMaxChars);
         Circle(X_CENTER - EXPORT_GAME_PLAYER_WIDTH - EXPORT_GAME_RADIUS - 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.black);
         Circle(X_CENTER + EXPORT_GAME_PLAYER_WIDTH + EXPORT_GAME_RADIUS + 20, player_box_y + EXPORT_GAME_RADIUS, EXPORT_GAME_RADIUS).draw(getData().colors.white);
         
@@ -221,34 +227,73 @@ public:
         const int memo_label_y = 143;
         const int memo_box_y = 163;
         getData().fonts.font(language.get("in_out", "memo")).draw(15, Arg::topCenter(X_CENTER, memo_label_y), getData().colors.white);
-        getData().fonts.font(Format(text_area[MEMO_IDX].text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
-        text_area_with_ime_candidate_window(text_area[MEMO_IDX], Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
+        getData().fonts.font(Format(memo_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
+        text_area_with_ime_candidate_window(memo_area, Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
         
         // Tab移動: black -> white -> date -> memo -> black
-        auto focus_next_from = [&](int idx) {
-            text_area[idx].active = false;
-            text_area[(idx + 1) % 4].active = true;
+        auto activate_field = [&](int idx) {
+            player_area[BLACK_PLAYER_IDX].active = false;
+            player_area[WHITE_PLAYER_IDX].active = false;
+            date_area.active = false;
+            memo_area.active = false;
+            if (idx == 0) {
+                player_area[BLACK_PLAYER_IDX].active = true;
+            } else if (idx == 1) {
+                player_area[WHITE_PLAYER_IDX].active = true;
+            } else if (idx == 2) {
+                date_area.active = true;
+            } else {
+                memo_area.active = true;
+            }
         };
-        for (int i = 0; i < 4; ++i) {
-            std::string str = text_area[i].text.narrow();
+        auto focus_next_from = [&](int idx) {
+            activate_field((idx + 1) % 4);
+        };
+        auto append_to_field = [&](int idx, const String& text) {
+            if (idx == 0 || idx == 1) {
+                player_area[idx].text += text;
+                player_area[idx].cursorPos = player_area[idx].text.size();
+            } else if (idx == 2) {
+                date_area.text += text;
+                date_area.cursorPos = date_area.text.size();
+            } else {
+                memo_area.text += text;
+                memo_area.cursorPos = memo_area.text.size();
+                memo_area.rebuildGlyphs();
+            }
+        };
+        auto handle_single_line_tab = [&](TextEditState& area, int idx) {
+            if (area.tabKey) {
+                focus_next_from(idx);
+            }
+            std::string str = area.text.narrow();
             if (str.find('\t') != std::string::npos) {
-                text_area[i].text.replace(U"\t", U"");
-                text_area[i].cursorPos = text_area[i].text.size();
-                text_area[i].rebuildGlyphs();
-                focus_next_from(i);
+                const size_t tab_place = str.find('\t');
+                area.text = Unicode::Widen(str.substr(0, tab_place));
+                area.cursorPos = area.text.size();
+                append_to_field((idx + 1) % 4, Unicode::Widen(str.substr(tab_place + 1)));
+                focus_next_from(idx);
             }
-            // Remove newlines from all fields except memo
-            if ((str.find('\n') != std::string::npos || str.find('\r') != std::string::npos) && i != MEMO_IDX) {
-                text_area[i].text.replace(U"\r", U"").replace(U"\n", U" ");
-                text_area[i].cursorPos = text_area[i].text.size();
-                text_area[i].rebuildGlyphs();
+            String single_line = area.text.replaced(U"\r", U"").replaced(U"\n", U" ");
+            if (single_line != area.text) {
+                area.text = single_line;
+                area.cursorPos = area.text.size();
             }
+        };
+        handle_single_line_tab(player_area[BLACK_PLAYER_IDX], 0);
+        handle_single_line_tab(player_area[WHITE_PLAYER_IDX], 1);
+        handle_single_line_tab(date_area, 2);
+        if (memo_area.text.includes(U'\t')) {
+            memo_area.text.replace(U"\t", U"");
+            memo_area.cursorPos = memo_area.text.size();
+            memo_area.rebuildGlyphs();
+            focus_next_from(3);
         }
         
-        getData().game_information.black_player_name = text_area[BLACK_PLAYER_IDX].text;
-        getData().game_information.white_player_name = text_area[WHITE_PLAYER_IDX].text;
-        getData().game_information.memo = text_area[MEMO_IDX].text;
-        getData().game_information.date = text_area[DATE_IDX].text;
+        getData().game_information.black_player_name = player_area[BLACK_PLAYER_IDX].text;
+        getData().game_information.white_player_name = player_area[WHITE_PLAYER_IDX].text;
+        getData().game_information.memo = memo_area.text;
+        getData().game_information.date = date_area.text;
         
         
         if (is_editing_mode) {
@@ -280,11 +325,7 @@ public:
         
         if (is_editing_mode) {
             // Only allow Enter to submit if no text field is active
-            bool can_submit_with_enter = KeyEnter.pressed() && 
-                !text_area[BLACK_PLAYER_IDX].active && 
-                !text_area[WHITE_PLAYER_IDX].active && 
-                !text_area[DATE_IDX].active && 
-                !text_area[MEMO_IDX].active;
+            bool can_submit_with_enter = KeyEnter.pressed() && !any_text_field_active_before;
             
             if (ok_button.clicked() || can_submit_with_enter) {
                 // Update existing game
