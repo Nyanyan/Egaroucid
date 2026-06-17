@@ -97,7 +97,7 @@ private:
     Button go_button;
     std::string dir;
     bool is_valid_dir;
-    TextAreaEditState text_area;
+    TextEditState text_area;
 
 public:
     Change_screenshot_saving_dir(const InitData& init) : IScene{ init } {
@@ -107,7 +107,6 @@ public:
         go_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         text_area.text = Unicode::Widen(getData().user_settings.screenshot_saving_dir);
         text_area.cursorPos = text_area.text.size();
-        text_area.rebuildGlyphs();
         is_valid_dir = FileSystem::Exists(Unicode::Widen(getData().user_settings.screenshot_saving_dir));
         if (is_valid_dir) {
             go_button.enable();
@@ -128,13 +127,8 @@ public:
         getData().fonts.font(language.get("in_out", "change_screenshot_saving_dir")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
         getData().fonts.font(language.get("in_out", "input_screenshot_saving_dir")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
         text_area.active = true;
-        bool text_changed = text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
-        bool return_pressed = false;
-        if (text_area.text.size()) {
-            if (text_area.text[text_area.text.size() - 1] == '\n') {
-                return_pressed = true;
-            }
-        }
+        bool text_changed = text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS);
+        bool return_pressed = text_area.enterKey;
         dir = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/").narrow();
         if (dir.size()) {
             if (dir[dir.size() - 1] != '/') {
@@ -158,11 +152,9 @@ public:
         if (default_button.clicked()) {
             text_area.text = Unicode::Widen(getData().directories.document_dir + "screenshots/");
             text_area.cursorPos = text_area.text.size();
-            text_area.scrollY = 0.0;
-            text_area.rebuildGlyphs();
         }
         go_button.draw();
-        if (go_button.clicked()) {
+        if (go_button.clicked() || (is_valid_dir && return_pressed)) {
             getData().user_settings.screenshot_saving_dir = dir;
             changeScene(U"Main_scene", SCENE_FADE_TIME);
         }
