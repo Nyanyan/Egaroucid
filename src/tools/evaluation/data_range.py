@@ -345,3 +345,20 @@ board_n_moves['307'] = [56, 59] # random 56
 board_n_moves['308'] = [57, 59] # random 57
 board_n_moves['309'] = [58, 59] # random 58
 board_n_moves['310'] = [59, 59] # random 59
+
+
+
+board_n_moves['311'] = [0, 59] # first_11_book_all
+
+board_n_moves['313'] = [6, 59] # GGS-formatted data
+board_n_moves['314'] = [6, 59] # GGS-formatted data
+board_n_moves['315'] = [7, 59] # GGS-formatted data
+board_n_moves['316'] = [7, 59] # GGS-formatted data
+board_n_moves['317'] = [8, 59] # GGS-formatted data
+board_n_moves['318'] = [8, 59] # GGS-formatted data
+board_n_moves['319'] = [9, 59] # GGS-formatted data
+board_n_moves['320'] = [9, 59] # GGS-formatted data
+board_n_moves['321'] = [10, 59] # GGS-formatted data
+board_n_moves['322'] = [10, 59] # GGS-formatted data
+board_n_moves['323'] = [11, 59] # GGS-formatted data
+board_n_moves['324'] = [11, 59] # GGS-formatted data
