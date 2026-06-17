@@ -12,11 +12,6 @@
 #include <array>
 #include <iostream>
 #include <Siv3D.hpp>
-#if SIV3D_PLATFORM(WINDOWS)
-struct HWND__;
-struct HIMC__;
-extern "C" __declspec(dllimport) HIMC__* __stdcall ImmAssociateContext(HWND__* unnamedParam1, HIMC__* unnamedParam2);
-#endif
 #include "./../../../engine/engine_all.hpp"
 #include "./../menu.hpp"
 #include "info.hpp"
@@ -319,29 +314,13 @@ namespace gui_scene_ime {
 inline bool desired_enabled = true;
 inline bool focus_state_initialized = false;
 inline bool last_window_focused = true;
-#if SIV3D_PLATFORM(WINDOWS)
-inline HIMC__* disabled_previous_context = nullptr;
-inline bool disabled_context_saved = false;
-#endif
 
 inline void apply_enabled_state(const bool enabled) {
 #if SIV3D_PLATFORM(WINDOWS)
-    const auto hwnd = static_cast<HWND__*>(Platform::Windows::Window::GetHWND());
-    if (not hwnd) {
-        return;
-    }
-
     if (enabled) {
-        if (disabled_context_saved) {
-            ImmAssociateContext(hwnd, disabled_previous_context);
-            disabled_previous_context = nullptr;
-            disabled_context_saved = false;
-        }
+        Platform::Windows::TextInput::EnableIME();
     } else {
-        if (not disabled_context_saved) {
-            disabled_previous_context = ImmAssociateContext(hwnd, nullptr);
-            disabled_context_saved = true;
-        }
+        Platform::Windows::TextInput::DisableIME();
     }
 #else
     (void)enabled;

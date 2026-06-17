@@ -67,6 +67,7 @@ public:
         getData().fonts.font(language.get("settings", "shortcut_keys", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
 
         const bool search_enabled = (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING);
+        set_scene_ime_enabled(search_enabled);
         if (!search_enabled) {
             search_area.active = false;
         }
@@ -179,9 +180,7 @@ public:
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING) {
             scroll_manager.draw();
-            if (!search_area.active) {
-                scroll_manager.update();
-            }
+            scroll_manager.update();
         }
         if (reset_changing_idx) {
             changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;

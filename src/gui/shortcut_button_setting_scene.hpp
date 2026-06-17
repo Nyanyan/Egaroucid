@@ -59,6 +59,7 @@ public:
         getData().fonts.font(language.get("settings", "shortcut_buttons", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
 
         if (changing_button_idx == SHORTCUT_BUTTON_SETTINGS_IDX_NOT_CHANGING) {
+            set_scene_ime_enabled(false);
             search_area.active = false;
             draw_button_assignment_rows();
             ok_button.draw();
@@ -67,6 +68,7 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
         } else {
+            set_scene_ime_enabled(true);
             draw_function_selection_rows();
         }
     }
@@ -177,8 +179,6 @@ private:
         }
         getData().fonts.font(message).draw(15, Arg::topCenter(X_CENTER, 440), getData().colors.white);
         function_scroll_manager.draw();
-        if (!search_area.active) {
-            function_scroll_manager.update();
-        }
+        function_scroll_manager.update();
     }
 };

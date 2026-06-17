@@ -83,6 +83,7 @@ inline bool draw_shortcut_settings_search_box(
     TextAreaEditState& search_area,
     bool enabled = true
 ) {
+    search_area.active = enabled;
     fonts.font(get_shortcut_settings_fallback_label("search", U"Search")).draw(
         15,
         Arg::rightCenter(SHORTCUT_SETTINGS_SEARCH_LABEL_RIGHT_X, SHORTCUT_SETTINGS_SEARCH_BOX_SY + SHORTCUT_SETTINGS_SEARCH_BOX_HEIGHT / 2),
