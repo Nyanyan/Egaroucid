@@ -106,7 +106,7 @@ private:
     bool done;
     int level;
     bool need_level;
-    TextAreaEditState text_area;
+    TextEditState text_area;
 
 public:
     Import_book(const InitData& init) : IScene{ init } {
@@ -136,19 +136,12 @@ public:
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
             text_area.active = true;
-            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 60}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
-            bool return_pressed = false;
-            if (text_area.text.size()) {
-                if (text_area.text[text_area.text.size() - 1] == '\n') {
-                    return_pressed = true;
-                }
-            }
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 60}, 600, TEXTBOX_MAX_CHARS);
+            bool return_pressed = text_area.enterKey;
             bool file_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
                 text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
-                text_area.cursorPos = 0;
-                text_area.scrollY = 0.0;
-                text_area.textChanged = true;
+                text_area.cursorPos = text_area.text.size();
                 file_dragged = true;
             }
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
@@ -241,7 +234,7 @@ private:
     std::future<void> save_book_edax_future;
     bool book_exporting;
     bool done;
-    TextAreaEditState text_area;
+    TextEditState text_area;
 
 public:
     Export_book(const InitData& init) : IScene{ init } {
@@ -251,7 +244,6 @@ public:
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         text_area.text = Unicode::Widen(getData().directories.document_dir + "book_copy.egbk3");
         text_area.cursorPos = text_area.text.size();
-        text_area.rebuildGlyphs();
         book_exporting = false;
         done = false;
         level = getData().menu_elements.level;
@@ -270,13 +262,8 @@ public:
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
-            bool return_pressed = false;
-            if (text_area.text.size()) {
-                if (text_area.text[text_area.text.size() - 1] == '\n') {
-                    return_pressed = true;
-                }
-            }
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 40}, 600, TEXTBOX_MAX_CHARS);
+            bool return_pressed = text_area.enterKey;
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
             bool button_enabled = false;
@@ -358,7 +345,7 @@ private:
     bool importing;
     bool imported;
     bool failed;
-    TextAreaEditState text_area;
+    TextEditState text_area;
 
 public:
     Merge_book(const InitData& init) : IScene{ init } {
@@ -383,19 +370,12 @@ public:
             getData().fonts.font(language.get("book", "book_merge")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
-            bool return_pressed = false;
-            if (text_area.text.size()) {
-                if (text_area.text[text_area.text.size() - 1] == '\n') {
-                    return_pressed = true;
-                }
-            }
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS);
+            bool return_pressed = text_area.enterKey;
             bool file_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
                 text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
-                text_area.cursorPos = 0;
-                text_area.scrollY = 0.0;
-                text_area.textChanged = true;
+                text_area.cursorPos = text_area.text.size();
                 file_dragged = true;
             }
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
@@ -415,7 +395,7 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             go_button.draw();
-            if (formatted_file && (go_button.clicked() || KeyEnter.pressed() || file_dragged)) {
+            if (formatted_file && (go_button.clicked() || return_pressed || file_dragged)) {
                 import_book_future = std::async(std::launch::async, import_book, book_file);
                 importing = true;
             }
@@ -461,7 +441,7 @@ private:
     bool book_importing;
     bool failed;
     bool done;
-    TextAreaEditState text_area;
+    TextEditState text_area;
 
 public:
     Refer_book(const InitData& init) : IScene{ init } {
@@ -472,7 +452,6 @@ public:
         go_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         text_area.text = Unicode::Widen(getData().settings.book_file);
         text_area.cursorPos = text_area.text.size();
-        text_area.rebuildGlyphs();
         book_deleting = false;
         book_importing = false;
         failed = false;
@@ -492,19 +471,12 @@ public:
             getData().fonts.font(language.get("book", "book_reference")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 100}, TEXTBOX_MAX_CHARS);
-            bool return_pressed = false;
-            if (text_area.text.size()) {
-                if (text_area.text[text_area.text.size() - 1] == '\n') {
-                    return_pressed = true;
-                }
-            }
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS);
+            bool return_pressed = text_area.enterKey;
             bool file_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
                 text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
-                text_area.cursorPos = 0;
-                text_area.scrollY = 0.0;
-                text_area.textChanged = true;
+                text_area.cursorPos = text_area.text.size();
                 file_dragged = true;
             }
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
@@ -527,8 +499,6 @@ public:
             if (default_button.clicked()) {
                 text_area.text = Unicode::Widen(getData().directories.document_dir + "book" + BOOK_EXTENSION);
                 text_area.cursorPos = text_area.text.size();
-                text_area.scrollY = 0.0;
-                text_area.rebuildGlyphs();
             }
             go_button.draw();
             if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
