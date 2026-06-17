@@ -84,7 +84,7 @@ public:
             Rect rect = draw_shortcut_settings_row_background(getData().colors, filtered_idx, sy);
             String function_name = shortcut_keys.shortcut_keys[i].name;
             String function_description = get_shortcut_function_description(function_name);
-            getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
+            draw_shortcut_settings_function_description(getData().fonts, getData().colors, function_description, rect.x + 10, sy + rect.h / 2, SHORTCUT_SETTINGS_KEY_FUNCTION_TEXT_WIDTH, 12);
             String shortcut_key_str;
             if (changing_idx != i) {
                 shortcut_key_str = shortcut_keys.get_shortcut_key_str(function_name);

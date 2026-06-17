@@ -89,7 +89,7 @@ private:
             if (function_name != U"") {
                 function_description = get_shortcut_function_description(function_name);
             }
-            getData().fonts.font(function_description).draw(13, Arg::leftCenter(rect.x + 200, sy + rect.h / 2), getData().colors.white);
+            draw_shortcut_settings_function_description(getData().fonts, getData().colors, function_description, rect.x + 200, sy + rect.h / 2, SHORTCUT_SETTINGS_BUTTON_FUNCTION_TEXT_WIDTH, 13);
 
             change_buttons[i].move(680, sy + 4);
             change_buttons[i].draw();
@@ -140,7 +140,7 @@ private:
                 selected_rect_found = true;
             }
             String function_description = get_shortcut_function_description(shortcut_keys.shortcut_keys[function_idx].name);
-            getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
+            draw_shortcut_settings_function_description(getData().fonts, getData().colors, function_description, rect.x + 10, sy + rect.h / 2, SHORTCUT_SETTINGS_SELECTION_FUNCTION_TEXT_WIDTH, 12);
             if (rect.leftClicked()) {
                 selected_function_idx = function_idx;
             }

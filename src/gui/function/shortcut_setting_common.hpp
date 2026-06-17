@@ -24,6 +24,10 @@ constexpr int SHORTCUT_SETTINGS_SEARCH_BOX_SX = 125;
 constexpr int SHORTCUT_SETTINGS_SEARCH_BOX_SY = 43;
 constexpr int SHORTCUT_SETTINGS_SEARCH_BOX_WIDTH = 520;
 constexpr int SHORTCUT_SETTINGS_SEARCH_BOX_HEIGHT = 30;
+constexpr int SHORTCUT_SETTINGS_KEY_FUNCTION_TEXT_WIDTH = 380;
+constexpr int SHORTCUT_SETTINGS_BUTTON_FUNCTION_TEXT_WIDTH = 350;
+constexpr int SHORTCUT_SETTINGS_SELECTION_FUNCTION_TEXT_WIDTH = SHORTCUT_SETTINGS_LIST_WIDTH - 30;
+constexpr double SHORTCUT_SETTINGS_TWO_LINE_TEXT_OFFSET = 6.0;
 constexpr size_t SHORTCUT_SETTINGS_SEARCH_MAX_CHARS = 80;
 
 inline Rect draw_shortcut_settings_row_background(const Colors& colors, int row_idx, int sy) {
@@ -54,6 +58,78 @@ inline void draw_shortcut_settings_scroll_tail(const Fonts& fonts, const Colors&
 
 inline String get_shortcut_function_description(const String& function_name) {
     return shortcut_keys.get_shortcut_key_description(function_name);
+}
+
+inline bool shortcut_settings_text_fits_width(const Fonts& fonts, const String& text, int font_size, double max_width) {
+    return fonts.font(text).region(font_size, Vec2{ 0, 0 }).w <= max_width;
+}
+
+inline String ellipsize_shortcut_settings_text(const Fonts& fonts, const String& text, int font_size, double max_width) {
+    if (shortcut_settings_text_fits_width(fonts, text, font_size, max_width)) {
+        return text;
+    }
+
+    const String ellipsis = U"...";
+    if (!shortcut_settings_text_fits_width(fonts, ellipsis, font_size, max_width)) {
+        return U"";
+    }
+
+    String shortened = text;
+    while (!shortened.empty() && !shortcut_settings_text_fits_width(fonts, shortened + ellipsis, font_size, max_width)) {
+        shortened.pop_back();
+    }
+    return shortened + ellipsis;
+}
+
+inline std::pair<String, String> make_shortcut_settings_two_line_text(const Fonts& fonts, const String& text, int font_size, double max_width) {
+    if (text.size() <= 1) {
+        return { ellipsize_shortcut_settings_text(fonts, text, font_size, max_width), U"" };
+    }
+
+    size_t split_pos = 0;
+    for (size_t i = 1; i < text.size(); ++i) {
+        const String first_line = text.substr(0, i);
+        if (!shortcut_settings_text_fits_width(fonts, first_line, font_size, max_width)) {
+            break;
+        }
+        split_pos = i;
+    }
+
+    if (split_pos == 0) {
+        return { ellipsize_shortcut_settings_text(fonts, text, font_size, max_width), U"" };
+    }
+
+    String first_line = text.substr(0, split_pos);
+    String second_line = text.substr(split_pos);
+    if (second_line.empty()) {
+        return { first_line, U"" };
+    }
+    second_line = ellipsize_shortcut_settings_text(fonts, second_line, font_size, max_width);
+    return { first_line, second_line };
+}
+
+inline void draw_shortcut_settings_function_description(
+    const Fonts& fonts,
+    const Colors& colors,
+    const String& text,
+    double left_x,
+    double center_y,
+    double max_width,
+    int base_font_size
+) {
+    if (shortcut_settings_text_fits_width(fonts, text, base_font_size, max_width)) {
+        fonts.font(text).draw(base_font_size, Arg::leftCenter(left_x, center_y), colors.white);
+        return;
+    }
+
+    const int wrapped_font_size = std::max(10, base_font_size - 1);
+    const auto [first_line, second_line] = make_shortcut_settings_two_line_text(fonts, text, wrapped_font_size, max_width);
+    if (second_line.empty()) {
+        fonts.font(first_line).draw(wrapped_font_size, Arg::leftCenter(left_x, center_y), colors.white);
+        return;
+    }
+    fonts.font(first_line).draw(wrapped_font_size, Arg::leftCenter(left_x, center_y - SHORTCUT_SETTINGS_TWO_LINE_TEXT_OFFSET), colors.white);
+    fonts.font(second_line).draw(wrapped_font_size, Arg::leftCenter(left_x, center_y + SHORTCUT_SETTINGS_TWO_LINE_TEXT_OFFSET), colors.white);
 }
 
 inline String get_shortcut_settings_fallback_label(const std::string& key, const String& fallback) {
