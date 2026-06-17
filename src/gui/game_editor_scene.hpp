@@ -12,6 +12,7 @@
 #include <iostream>
 #include <future>
 #include <algorithm>
+#include <iterator>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
 #include "draw.hpp"
@@ -155,6 +156,10 @@ private:
     TextAreaEditState memo_area;
     static constexpr int BLACK_PLAYER_IDX = 0;
     static constexpr int WHITE_PLAYER_IDX = 1;
+    static constexpr int FIELD_DATE_IDX = 0;
+    static constexpr int FIELD_BLACK_PLAYER_IDX = 1;
+    static constexpr int FIELD_WHITE_PLAYER_IDX = 2;
+    static constexpr int FIELD_MEMO_IDX = 3;
     
     // Return scene info
     String return_scene;
@@ -171,7 +176,7 @@ public:
         ok_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("common", "ok"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         export_main_button.init(BUTTON2_2_SX, BUTTON2_SY, BUTTON2_WIDTH, BUTTON2_HEIGHT, BUTTON2_RADIUS, language.get("in_out", "export_main"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         
-        player_area[BLACK_PLAYER_IDX].active = true;
+        date_area.active = true;
         player_area[BLACK_PLAYER_IDX].text = getData().game_information.black_player_name;
         player_area[WHITE_PLAYER_IDX].text = getData().game_information.white_player_name;
         memo_area.text = getData().game_information.memo;
@@ -230,18 +235,18 @@ public:
         getData().fonts.font(Format(memo_area.text.size()) + U"/" + Format(TEXTBOX_MAX_CHARS) + U" " + language.get("common", "characters")).draw(15, Arg::topRight(X_CENTER + EXPORT_GAME_MEMO_WIDTH / 2, memo_label_y), getData().colors.white);
         text_area_with_ime_candidate_window(memo_area, Vec2{X_CENTER - EXPORT_GAME_MEMO_WIDTH / 2, memo_box_y}, SizeF{EXPORT_GAME_MEMO_WIDTH, EXPORT_GAME_MEMO_HEIGHT}, TEXTBOX_MAX_CHARS);
         
-        // Tab移動: black -> white -> date -> memo -> black
+        // Tab order: date -> black player -> white player -> memo -> date
         auto activate_field = [&](int idx) {
             player_area[BLACK_PLAYER_IDX].active = false;
             player_area[WHITE_PLAYER_IDX].active = false;
             date_area.active = false;
             memo_area.active = false;
-            if (idx == 0) {
-                player_area[BLACK_PLAYER_IDX].active = true;
-            } else if (idx == 1) {
-                player_area[WHITE_PLAYER_IDX].active = true;
-            } else if (idx == 2) {
+            if (idx == FIELD_DATE_IDX) {
                 date_area.active = true;
+            } else if (idx == FIELD_BLACK_PLAYER_IDX) {
+                player_area[BLACK_PLAYER_IDX].active = true;
+            } else if (idx == FIELD_WHITE_PLAYER_IDX) {
+                player_area[WHITE_PLAYER_IDX].active = true;
             } else {
                 memo_area.active = true;
             }
@@ -250,12 +255,15 @@ public:
             activate_field((idx + 1) % 4);
         };
         auto append_to_field = [&](int idx, const String& text) {
-            if (idx == 0 || idx == 1) {
-                player_area[idx].text += text;
-                player_area[idx].cursorPos = player_area[idx].text.size();
-            } else if (idx == 2) {
+            if (idx == FIELD_DATE_IDX) {
                 date_area.text += text;
                 date_area.cursorPos = date_area.text.size();
+            } else if (idx == FIELD_BLACK_PLAYER_IDX) {
+                player_area[BLACK_PLAYER_IDX].text += text;
+                player_area[BLACK_PLAYER_IDX].cursorPos = player_area[BLACK_PLAYER_IDX].text.size();
+            } else if (idx == FIELD_WHITE_PLAYER_IDX) {
+                player_area[WHITE_PLAYER_IDX].text += text;
+                player_area[WHITE_PLAYER_IDX].cursorPos = player_area[WHITE_PLAYER_IDX].text.size();
             } else {
                 memo_area.text += text;
                 memo_area.cursorPos = memo_area.text.size();
@@ -266,12 +274,13 @@ public:
             if (area.tabKey) {
                 focus_next_from(idx);
             }
-            std::string str = area.text.narrow();
-            if (str.find('\t') != std::string::npos) {
-                const size_t tab_place = str.find('\t');
-                area.text = Unicode::Widen(str.substr(0, tab_place));
+            const auto tab_iter = std::find(area.text.begin(), area.text.end(), U'\t');
+            if (tab_iter != area.text.end()) {
+                const size_t tab_place = static_cast<size_t>(std::distance(area.text.begin(), tab_iter));
+                const String text_after_tab = area.text.substr(tab_place + 1);
+                area.text = area.text.substr(0, tab_place);
                 area.cursorPos = area.text.size();
-                append_to_field((idx + 1) % 4, Unicode::Widen(str.substr(tab_place + 1)));
+                append_to_field((idx + 1) % 4, text_after_tab);
                 focus_next_from(idx);
             }
             String single_line = area.text.replaced(U"\r", U"").replaced(U"\n", U" ");
@@ -280,14 +289,14 @@ public:
                 area.cursorPos = area.text.size();
             }
         };
-        handle_single_line_tab(player_area[BLACK_PLAYER_IDX], 0);
-        handle_single_line_tab(player_area[WHITE_PLAYER_IDX], 1);
-        handle_single_line_tab(date_area, 2);
+        handle_single_line_tab(date_area, FIELD_DATE_IDX);
+        handle_single_line_tab(player_area[BLACK_PLAYER_IDX], FIELD_BLACK_PLAYER_IDX);
+        handle_single_line_tab(player_area[WHITE_PLAYER_IDX], FIELD_WHITE_PLAYER_IDX);
         if (memo_area.text.includes(U'\t')) {
             memo_area.text.replace(U"\t", U"");
             memo_area.cursorPos = memo_area.text.size();
             memo_area.rebuildGlyphs();
-            focus_next_from(3);
+            focus_next_from(FIELD_MEMO_IDX);
         }
         
         getData().game_information.black_player_name = player_area[BLACK_PLAYER_IDX].text;

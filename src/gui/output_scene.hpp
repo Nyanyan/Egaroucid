@@ -127,7 +127,7 @@ public:
         getData().fonts.font(language.get("in_out", "change_screenshot_saving_dir")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
         getData().fonts.font(language.get("in_out", "input_screenshot_saving_dir")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
         text_area.active = true;
-        bool text_changed = text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS);
+        bool text_changed = text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS, true, false);
         bool return_pressed = text_area.enterKey;
         dir = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/").narrow();
         if (dir.size()) {

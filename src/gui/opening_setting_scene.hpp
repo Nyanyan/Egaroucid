@@ -166,7 +166,13 @@ public:
             }
             getData().fonts.font(path_label).draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_WIDTH, 30), getData().colors.white);
             
-            bool enter_pressed = KeyEnter.down();
+            const bool text_box_active_before =
+                csv_name_area.active ||
+                folder_rename_area.active ||
+                folder_weight_area.active ||
+                text_area[0].active ||
+                text_area[1].active;
+            bool enter_pressed = KeyEnter.down() && !text_box_active_before;
             bool rename_textbox_active = renaming_folder && folder_rename_area.active;
 
             // Handle CSV creation mode

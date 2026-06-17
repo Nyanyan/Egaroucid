@@ -160,7 +160,7 @@ public:
             getData().fonts.font(language.get("data_migration", "export_description")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
 
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 65 }, 600, TEXTBOX_MAX_CHARS);
+            text_box_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 65 }, 600, TEXTBOX_MAX_CHARS, true, false);
             if (DragDrop::HasNewFilePaths()) {
                 text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
                 text_area.cursorPos = text_area.text.size();
@@ -258,7 +258,7 @@ public:
             getData().fonts.font(language.get("data_migration", "import_warning")).draw(13, Arg::topCenter(X_CENTER, sy + 60), getData().colors.white);
 
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 85 }, 600, TEXTBOX_MAX_CHARS);
+            text_box_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 85 }, 600, TEXTBOX_MAX_CHARS, true, false);
             bool path_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
                 text_area.text = DragDrop::GetDroppedFilePaths()[0].path;

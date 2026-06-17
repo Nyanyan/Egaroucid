@@ -163,6 +163,50 @@ inline void request_textbox_ime_candidate_window(
     deferred_state.pos = Vec2{ editing_text_pos.x, candidate_y };
 }
 
+[[nodiscard]]
+inline String replace_textbox_line_breaks_with_spaces(const String& source) {
+    String replaced;
+    replaced.reserve(source.size());
+    for (size_t i = 0; i < source.size(); ++i) {
+        const char32 ch = source[i];
+        if (ch == U'\r') {
+            replaced.push_back(U' ');
+            if (((i + 1) < source.size()) && (source[i + 1] == U'\n')) {
+                ++i;
+            }
+        } else if (ch == U'\n') {
+            replaced.push_back(U' ');
+        } else {
+            replaced.push_back(ch);
+        }
+    }
+    return replaced;
+}
+
+inline bool sanitize_textbox_line_breaks(TextEditState& text) {
+    const size_t cursor_pos = Min<size_t>(text.cursorPos, text.text.size());
+    const String before_cursor = replace_textbox_line_breaks_with_spaces(text.text.substr(0, cursor_pos));
+    const String after_cursor = replace_textbox_line_breaks_with_spaces(text.text.substr(cursor_pos));
+    const String sanitized = before_cursor + after_cursor;
+    if (sanitized == text.text) {
+        return false;
+    }
+    text.text = sanitized;
+    text.cursorPos = before_cursor.size();
+    return true;
+}
+
+inline bool insert_textbox_space_at_cursor(TextEditState& text, const Optional<size_t>& maxChars) {
+    if (maxChars && (*maxChars <= text.text.size())) {
+        return false;
+    }
+
+    const size_t cursor_pos = Min<size_t>(text.cursorPos, text.text.size());
+    text.text = text.text.substr(0, cursor_pos) + U" " + text.text.substr(cursor_pos);
+    text.cursorPos = cursor_pos + 1;
+    return true;
+}
+
 inline void flush_deferred_ime_candidate_window() {
     (void)consume_escape_for_ime_candidate_window();
     if (deferred_state.requested) {
@@ -284,9 +328,21 @@ inline bool text_box_with_ime_candidate_window(
     const Vec2& pos,
     double width = 200.0,
     const Optional<size_t>& maxChars = unspecified,
-    bool enabled = true
+    bool enabled = true,
+    bool replaceEnterWithSpace = true
 ) {
-    const bool changed = SimpleGUI::TextBox(text, pos, width, maxChars, enabled);
+    const bool was_active = text.active;
+    bool changed = SimpleGUI::TextBox(text, pos, width, maxChars, enabled);
+    const bool line_break_replaced = gui_textarea_ime::sanitize_textbox_line_breaks(text);
+    changed = changed || line_break_replaced;
+
+    if (enabled && was_active && text.enterKey) {
+        text.active = true;
+        if (replaceEnterWithSpace && (not line_break_replaced)) {
+            changed = gui_textarea_ime::insert_textbox_space_at_cursor(text, maxChars) || changed;
+        }
+    }
+
     if (enabled && text.active) {
         gui_textarea_ime::request_textbox_ime_candidate_window(text, pos, width);
     }

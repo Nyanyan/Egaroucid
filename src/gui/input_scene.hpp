@@ -318,7 +318,7 @@ public:
         if (!result_page) {
             getData().fonts.font(language.get("in_out", "input_othello_quest")).draw(27, Arg::topCenter(X_CENTER, 82), getData().colors.white);
             getData().fonts.font(language.get("in_out", "othello_quest_username")).draw(20, Arg::rightCenter(label_x, username_y + 22), getData().colors.white);
-            text_box_with_ime_candidate_window(username_area, Vec2{input_x, username_y + 5}, input_w, 40);
+            text_box_with_ime_candidate_window(username_area, Vec2{input_x, username_y + 5}, input_w, 40, true, false);
             search_button.rect.x = input_x + input_w + 18;
             search_button.rect.y = username_y + 2;
             search_button.rect.w = 112;
@@ -3922,6 +3922,7 @@ public:
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 50;
         if (!done) {
+            const bool text_box_active_before = text_area[0].active || text_area[1].active;
             getData().fonts.font(language.get("in_out", "input_bitboard")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             const int text_area_y[2] = {sy + 40, sy + 90};
             constexpr int text_area_h = 40;
@@ -3963,14 +3964,6 @@ public:
                     text_area[(i + 1) % 2].cursorPos = text_area[(i + 1) % 2].text.size();
                 }
             }
-            bool return_pressed = false;
-            for (int i = 0; i < 2; ++i) {
-                if (text_area[i].text.size()) {
-                    if (text_area[i].text[text_area[i].text.size() - 1] == '\n') {
-                        return_pressed = true;
-                    }
-                }
-            }
             player_string = text_area[0].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             opponent_string = text_area[1].text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U" ", U"").replace(U"\t", U"").narrow();
             back_button.draw();
@@ -3978,7 +3971,7 @@ public:
             if (back_button.clicked() || gui_textarea_ime::escape_pressed_for_scene_change()) {
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
-            if (import_button.clicked() || KeyEnter.pressed()) {
+            if (import_button.clicked() || (KeyEnter.pressed() && !text_box_active_before)) {
                 failed = import_bitboard_processing();
                 done = true;
             }

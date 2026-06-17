@@ -136,7 +136,7 @@ public:
             getData().fonts.font(language.get("book", "import_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 60}, 600, TEXTBOX_MAX_CHARS);
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 60}, 600, TEXTBOX_MAX_CHARS, true, false);
             bool return_pressed = text_area.enterKey;
             bool file_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
@@ -262,7 +262,7 @@ public:
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 40}, 600, TEXTBOX_MAX_CHARS);
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 40}, 600, TEXTBOX_MAX_CHARS, true, false);
             bool return_pressed = text_area.enterKey;
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
@@ -370,7 +370,7 @@ public:
             getData().fonts.font(language.get("book", "book_merge")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS);
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS, true, false);
             bool return_pressed = text_area.enterKey;
             bool file_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
@@ -471,7 +471,7 @@ public:
             getData().fonts.font(language.get("book", "book_reference")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS);
+            text_box_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, 600, TEXTBOX_MAX_CHARS, true, false);
             bool return_pressed = text_area.enterKey;
             bool file_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
