@@ -164,6 +164,11 @@ public:
             rect_height = std::max(rect_min_height, (int)round((double)n_elem_per_window / (double)n_elem * (double)height));
         }
         max_strt_idx = std::max(n_elem - n_elem_per_window, 0);
+        rect.h = rect_height;
+        strt_idx_double = std::max(0.0, std::min(strt_idx_double, (double)max_strt_idx));
+        if (max_strt_idx == 0) {
+            dragged = false;
+        }
     }
 };
 
