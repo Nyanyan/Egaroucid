@@ -13,7 +13,8 @@
 #include <future>
 #include "function/function_all.hpp"
 
-constexpr int SHORTCUT_KEY_SETTINGS_N_ON_WINDOW = 10;
+constexpr int SHORTCUT_KEY_SETTINGS_N_ON_WINDOW = 9;
+constexpr int SHORTCUT_KEY_SETTINGS_LIST_HEIGHT = SHORTCUT_SETTINGS_LIST_ROW_HEIGHT * SHORTCUT_KEY_SETTINGS_N_ON_WINDOW;
 constexpr int SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING = -1;
 
 const std::vector<String> allow_multi_input_keys = {
@@ -56,7 +57,7 @@ public:
             delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(0, 0, 80, 22, 7, language.get("settings", "shortcut_keys", "assign"), 12, getData().fonts.font, getData().colors.white, getData().colors.black);
-        scroll_manager.init(770, SHORTCUT_SETTINGS_LIST_SY, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, SHORTCUT_SETTINGS_LIST_SX, SHORTCUT_SETTINGS_LIST_SY, SHORTCUT_SETTINGS_LIST_WIDTH + 10, 300);
+        scroll_manager.init(770, SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY, 10, SHORTCUT_KEY_SETTINGS_LIST_HEIGHT, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, SHORTCUT_SETTINGS_LIST_SX, SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY, SHORTCUT_SETTINGS_LIST_WIDTH + 10, SHORTCUT_KEY_SETTINGS_LIST_HEIGHT);
     }
 
     void update() override {
@@ -73,7 +74,7 @@ public:
         const std::vector<int> filtered_function_indices = get_filtered_shortcut_function_indices(search_area);
         sync_shortcut_settings_scroll_manager(scroll_manager, static_cast<int>(filtered_function_indices.size()), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, search_changed);
 
-        int sy = SHORTCUT_SETTINGS_LIST_SY;
+        int sy = SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY;
         const int strt_idx_int = scroll_manager.get_strt_idx_int();
         draw_shortcut_settings_scroll_head(getData().fonts, getData().colors, strt_idx_int, sy);
         bool reset_changing_idx = false;
@@ -159,7 +160,7 @@ public:
             sy += rect.h;
         }
         if (filtered_function_indices.empty()) {
-            draw_shortcut_settings_no_match_message(getData().fonts, getData().colors, SHORTCUT_SETTINGS_LIST_SY);
+            draw_shortcut_settings_no_match_message(getData().fonts, getData().colors, SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY);
         }
         draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, static_cast<int>(filtered_function_indices.size()), sy);
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING) {

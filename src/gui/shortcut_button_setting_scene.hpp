@@ -14,7 +14,8 @@
 #include <future>
 #include "function/function_all.hpp"
 
-constexpr int SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW = 10;
+constexpr int SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW = 9;
+constexpr int SHORTCUT_BUTTON_SETTINGS_FUNCTION_LIST_HEIGHT = SHORTCUT_SETTINGS_LIST_ROW_HEIGHT * SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW;
 constexpr int SHORTCUT_BUTTON_SETTINGS_IDX_NOT_CHANGING = -1;
 
 class Shortcut_button_setting : public App::Scene {
@@ -47,7 +48,7 @@ public:
             delete_buttons.emplace_back(delete_button);
         }
         assign_button.init(630, 430, 130, 34, 9, language.get("settings", "shortcut_keys", "assign"), 16, getData().fonts.font, getData().colors.white, getData().colors.black);
-        function_scroll_manager.init(770, SHORTCUT_SETTINGS_LIST_SY, 10, 300, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, SHORTCUT_SETTINGS_LIST_SX, SHORTCUT_SETTINGS_LIST_SY, SHORTCUT_SETTINGS_LIST_WIDTH + 10, 300);
+        function_scroll_manager.init(770, SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY, 10, SHORTCUT_BUTTON_SETTINGS_FUNCTION_LIST_HEIGHT, 20, (int)shortcut_keys.shortcut_keys.size(), SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, SHORTCUT_SETTINGS_LIST_SX, SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY, SHORTCUT_SETTINGS_LIST_WIDTH + 10, SHORTCUT_BUTTON_SETTINGS_FUNCTION_LIST_HEIGHT);
     }
 
     void update() override {
@@ -124,7 +125,7 @@ private:
         }
         sync_shortcut_settings_scroll_manager(function_scroll_manager, static_cast<int>(filtered_function_indices.size()), SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, search_changed);
 
-        int sy = SHORTCUT_SETTINGS_LIST_SY;
+        int sy = SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY;
         int strt_idx_int = function_scroll_manager.get_strt_idx_int();
         draw_shortcut_settings_scroll_head(getData().fonts, getData().colors, strt_idx_int, sy);
         Rect selected_rect;
@@ -147,7 +148,7 @@ private:
             selected_rect.drawFrame(4.0, getData().colors.cyan);
         }
         if (filtered_function_indices.empty()) {
-            draw_shortcut_settings_no_match_message(getData().fonts, getData().colors, SHORTCUT_SETTINGS_LIST_SY);
+            draw_shortcut_settings_no_match_message(getData().fonts, getData().colors, SHORTCUT_SETTINGS_SEARCH_RESULT_LIST_SY);
         }
         draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, static_cast<int>(filtered_function_indices.size()), sy);
 
