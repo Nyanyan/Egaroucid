@@ -24,13 +24,14 @@ private:
     std::vector<Button> delete_buttons;
     Button assign_button;
     Scroll_manager function_scroll_manager;
+    TextAreaEditState search_area;
     int changing_button_idx;
     int selected_function_idx;
     String message;
 
 public:
     Shortcut_button_setting(const InitData& init) : IScene{ init } {
-        set_scene_ime_enabled(false);
+        set_scene_ime_enabled(true);
         shortcut_keys.sync_dynamic_shortcut_keys(&getData().directories);
         shortcut_buttons.clear_invalid_functions();
         mouse_additional_buttons.clear_invalid_functions();
@@ -57,6 +58,7 @@ public:
         getData().fonts.font(language.get("settings", "shortcut_buttons", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
 
         if (changing_button_idx == SHORTCUT_BUTTON_SETTINGS_IDX_NOT_CHANGING) {
+            search_area.active = false;
             draw_button_assignment_rows();
             ok_button.draw();
             if (ok_button.clicked() || KeyEnter.down()) {
@@ -107,38 +109,50 @@ private:
     }
 
     void draw_function_selection_rows() {
-        if (KeyEscape.down()) {
+        if (gui_textarea_ime::escape_down_for_scene_change()) {
             changing_button_idx = SHORTCUT_BUTTON_SETTINGS_IDX_NOT_CHANGING;
             selected_function_idx = -1;
+            search_area.active = false;
             message.clear();
             return;
         }
+
+        const bool search_changed = draw_shortcut_settings_search_box(getData().fonts, getData().colors, search_area);
+        const std::vector<int> filtered_function_indices = get_filtered_shortcut_function_indices(search_area);
+        if (selected_function_idx != -1 && find_shortcut_function_filter_position(filtered_function_indices, selected_function_idx) == -1) {
+            selected_function_idx = -1;
+        }
+        sync_shortcut_settings_scroll_manager(function_scroll_manager, static_cast<int>(filtered_function_indices.size()), SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, search_changed);
 
         int sy = SHORTCUT_SETTINGS_LIST_SY;
         int strt_idx_int = function_scroll_manager.get_strt_idx_int();
         draw_shortcut_settings_scroll_head(getData().fonts, getData().colors, strt_idx_int, sy);
         Rect selected_rect;
         bool selected_rect_found = false;
-        for (int i = strt_idx_int; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW); ++i) {
-            Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
-            if (selected_function_idx == i) {
+        for (int filtered_idx = strt_idx_int; filtered_idx < std::min(static_cast<int>(filtered_function_indices.size()), strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW); ++filtered_idx) {
+            int function_idx = filtered_function_indices[filtered_idx];
+            Rect rect = draw_shortcut_settings_row_background(getData().colors, filtered_idx, sy);
+            if (selected_function_idx == function_idx) {
                 selected_rect = rect;
                 selected_rect_found = true;
             }
-            String function_description = get_shortcut_function_description(shortcut_keys.shortcut_keys[i].name);
+            String function_description = get_shortcut_function_description(shortcut_keys.shortcut_keys[function_idx].name);
             getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
             if (rect.leftClicked()) {
-                selected_function_idx = i;
+                selected_function_idx = function_idx;
             }
             sy += rect.h;
         }
         if (selected_rect_found) {
             selected_rect.drawFrame(4.0, getData().colors.cyan);
         }
-        draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, (int)shortcut_keys.shortcut_keys.size(), sy);
+        if (filtered_function_indices.empty()) {
+            draw_shortcut_settings_no_match_message(getData().fonts, getData().colors, SHORTCUT_SETTINGS_LIST_SY);
+        }
+        draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_BUTTON_SETTINGS_N_FUNCTIONS_ON_WINDOW, static_cast<int>(filtered_function_indices.size()), sy);
 
         assign_button.disable();
-        message = language.get("settings", "shortcut_buttons", "choose_function_message");
+        message = filtered_function_indices.empty() ? get_shortcut_settings_fallback_label("no_match", U"No matches") : language.get("settings", "shortcut_buttons", "choose_function_message");
         String selected_function_name;
         bool has_valid_selection = false;
         if (selected_function_idx != -1) {
@@ -153,14 +167,17 @@ private:
             }
         }
         assign_button.draw();
-        if (has_valid_selection && assign_button.is_enabled() && (assign_button.clicked() || KeyEnter.down())) {
+        if (has_valid_selection && assign_button.is_enabled() && (assign_button.clicked() || (KeyEnter.down() && !search_area.active))) {
             shortcut_buttons.set_function(changing_button_idx, selected_function_name);
             changing_button_idx = SHORTCUT_BUTTON_SETTINGS_IDX_NOT_CHANGING;
             selected_function_idx = -1;
+            search_area.active = false;
             message.clear();
         }
         getData().fonts.font(message).draw(15, Arg::topCenter(X_CENTER, 440), getData().colors.white);
         function_scroll_manager.draw();
-        function_scroll_manager.update();
+        if (!search_area.active) {
+            function_scroll_manager.update();
+        }
     }
 };

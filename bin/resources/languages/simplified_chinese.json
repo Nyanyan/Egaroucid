@@ -10,7 +10,9 @@
         "level": "级别",
         "othello_ai": "AI",
         "characters": "个字符",
-        "edit": "编辑"
+        "edit": "编辑",
+        "search": "搜索",
+        "no_match": "没有匹配项"
     },
     "loading": {
         "loading": "加载中...",

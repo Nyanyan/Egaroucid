@@ -10,7 +10,9 @@
         "level": "等級",
         "othello_ai": "AI",
         "characters": "個字元",
-        "edit": "編輯"
+        "edit": "編輯",
+        "search": "搜尋",
+        "no_match": "沒有符合項目"
     },
     "loading": {
         "loading": "載入中...",

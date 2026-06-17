@@ -10,7 +10,9 @@
         "level": "レベル",
         "othello_ai": "オセロAI",
         "characters": "文字",
-        "edit": "編集"
+        "edit": "編集",
+        "search": "検索",
+        "no_match": "一致なし"
     },
     "loading": {
         "loading": "起動中...",

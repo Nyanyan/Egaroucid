@@ -35,11 +35,12 @@ private:
     std::vector<Button> change_buttons;
     std::vector<Button> delete_buttons;
     Button assign_button;
+    TextAreaEditState search_area;
     String message;
 
 public:
     Shortcut_key_setting(const InitData& init) : IScene{ init } {
-        set_scene_ime_enabled(false);
+        set_scene_ime_enabled(true);
         shortcut_keys.sync_dynamic_shortcut_keys(&getData().directories);
         shortcut_buttons.clear_invalid_functions();
         mouse_additional_buttons.clear_invalid_functions();
@@ -63,12 +64,22 @@ public:
             changeScene(U"Close", SCENE_FADE_TIME);
         }
         getData().fonts.font(language.get("settings", "shortcut_keys", "settings")).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
+
+        const bool search_enabled = (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING);
+        if (!search_enabled) {
+            search_area.active = false;
+        }
+        const bool search_changed = draw_shortcut_settings_search_box(getData().fonts, getData().colors, search_area, search_enabled);
+        const std::vector<int> filtered_function_indices = get_filtered_shortcut_function_indices(search_area);
+        sync_shortcut_settings_scroll_manager(scroll_manager, static_cast<int>(filtered_function_indices.size()), SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, search_changed);
+
         int sy = SHORTCUT_SETTINGS_LIST_SY;
-        int strt_idx_int = scroll_manager.get_strt_idx_int();
+        const int strt_idx_int = scroll_manager.get_strt_idx_int();
         draw_shortcut_settings_scroll_head(getData().fonts, getData().colors, strt_idx_int, sy);
         bool reset_changing_idx = false;
-        for (int i = strt_idx_int; i < std::min((int)shortcut_keys.shortcut_keys.size(), strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW); ++i) {
-            Rect rect = draw_shortcut_settings_row_background(getData().colors, i, sy);
+        for (int filtered_idx = strt_idx_int; filtered_idx < std::min(static_cast<int>(filtered_function_indices.size()), strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW); ++filtered_idx) {
+            int i = filtered_function_indices[filtered_idx];
+            Rect rect = draw_shortcut_settings_row_background(getData().colors, filtered_idx, sy);
             String function_name = shortcut_keys.shortcut_keys[i].name;
             String function_description = get_shortcut_function_description(function_name);
             getData().fonts.font(function_description).draw(12, Arg::leftCenter(rect.x + 10, sy + rect.h / 2), getData().colors.white);
@@ -147,10 +158,13 @@ public:
             }
             sy += rect.h;
         }
-        draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, (int)shortcut_keys.shortcut_keys.size(), sy);
+        if (filtered_function_indices.empty()) {
+            draw_shortcut_settings_no_match_message(getData().fonts, getData().colors, SHORTCUT_SETTINGS_LIST_SY);
+        }
+        draw_shortcut_settings_scroll_tail(getData().fonts, getData().colors, strt_idx_int + SHORTCUT_KEY_SETTINGS_N_ON_WINDOW, static_cast<int>(filtered_function_indices.size()), sy);
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING) {
             ok_button.draw();
-            if (ok_button.clicked() || KeyEnter.down()) {
+            if (ok_button.clicked() || (KeyEnter.down() && !search_area.active)) {
                 getData().graph_resources.need_init = false;
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
@@ -164,7 +178,9 @@ public:
         }
         if (changing_idx == SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING) {
             scroll_manager.draw();
-            scroll_manager.update();
+            if (!search_area.active) {
+                scroll_manager.update();
+            }
         }
         if (reset_changing_idx) {
             changing_idx = SHORTCUT_KEY_SETTINGS_IDX_NOT_CHANGING;

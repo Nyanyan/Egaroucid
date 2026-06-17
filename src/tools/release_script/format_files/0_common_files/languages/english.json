@@ -10,7 +10,9 @@
         "level": "Level",
         "othello_ai": "Othello AI",
         "characters": "Characters",
-        "edit": "Edit"
+        "edit": "Edit",
+        "search": "Search",
+        "no_match": "No matches"
     },
     "loading": {
         "loading": "Loading...",
