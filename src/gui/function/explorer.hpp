@@ -515,6 +515,15 @@ inline void sanitize_text_area(TextAreaEditState& area) {
     }
 }
 
+inline void sanitize_text_area(TextEditState& area) {
+    String sanitized = sanitize_folder_text(area.text);
+    if (sanitized != area.text) {
+        size_t old_cursor = area.cursorPos;
+        area.text = sanitized;
+        area.cursorPos = std::min<size_t>(old_cursor, sanitized.size());
+    }
+}
+
 inline void discard_pending_text_input() {
     // Drain IME/text input events so they do not leak into later TextArea activation.
     String discarded;

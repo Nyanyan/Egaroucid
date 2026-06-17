@@ -240,7 +240,7 @@ private:
     Button search_button;
     Button select_all_button;
     Button refresh_button;
-    TextAreaEditState username_area;
+    TextEditState username_area;
     Radio_button mode_radio;
     AsyncHTTPTask list_task;
     std::vector<Detail_task> detail_tasks;
@@ -294,7 +294,6 @@ public:
         if (!getData().user_settings.othello_quest_username.empty()) {
             username_area.text = Unicode::Widen(getData().user_settings.othello_quest_username);
             username_area.cursorPos = username_area.text.size();
-            username_area.rebuildGlyphs();
             if (!restore_cached_result(getData().user_settings.othello_quest_username, mode_radio.checked)) {
                 start_search();
             }
@@ -319,7 +318,7 @@ public:
         if (!result_page) {
             getData().fonts.font(language.get("in_out", "input_othello_quest")).draw(27, Arg::topCenter(X_CENTER, 82), getData().colors.white);
             getData().fonts.font(language.get("in_out", "othello_quest_username")).draw(20, Arg::rightCenter(label_x, username_y + 22), getData().colors.white);
-            text_area_with_ime_candidate_window(username_area, Vec2{input_x, username_y}, SizeF{input_w, 46}, 40);
+            text_box_with_ime_candidate_window(username_area, Vec2{input_x, username_y + 5}, input_w, 40);
             search_button.rect.x = input_x + input_w + 18;
             search_button.rect.y = username_y + 2;
             search_button.rect.w = 112;
@@ -408,7 +407,6 @@ private:
         if (username_area.text != account_text) {
             username_area.text = account_text;
             username_area.cursorPos = username_area.text.size();
-            username_area.rebuildGlyphs();
         }
 
         searched_username = account_text.narrow();
@@ -1233,7 +1231,6 @@ private:
         mode_radio.checked = searched_mode;
         username_area.text = Unicode::Widen(searched_username);
         username_area.cursorPos = username_area.text.size();
-        username_area.rebuildGlyphs();
         games = cache.games;
         current_page = cache.current_page;
         selected_idx = cache.selected_idx;
@@ -1976,11 +1973,11 @@ private:
     // Explorer-like folder view
     std::vector<String> folders_display; // includes optional ".." at head
     explorer::PathState explorer_state; // manages current subfolder
-    TextAreaEditState new_folder_area;
+    TextEditState new_folder_area;
     Button create_folder_button;
     Button inline_edit_back_button;
     Button inline_edit_ok_button;
-    TextAreaEditState folder_rename_area;
+    TextEditState folder_rename_area;
     bool renaming_folder = false;
     int renaming_folder_index = -1;
     int selected_folder_index = -1;
@@ -2857,7 +2854,6 @@ private:
             cancel_folder_rename();
             new_folder_area.text.clear();
             new_folder_area.cursorPos = 0;
-            new_folder_area.rebuildGlyphs();
             new_folder_area.active = true;
         }
     }
@@ -2871,7 +2867,6 @@ private:
             creating_folder = false;
             new_folder_area.text.clear();
             new_folder_area.cursorPos = 0;
-            new_folder_area.rebuildGlyphs();
             new_folder_area.active = false;
             return;
         }
@@ -2886,7 +2881,7 @@ private:
             center_y + NEW_FOLDER_TEXTBOX_OFFSET_Y
         };
         SizeF text_size{ NEW_FOLDER_TEXTBOX_WIDTH, NEW_FOLDER_TEXTBOX_HEIGHT };
-        text_area_with_ime_candidate_window(new_folder_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
+        text_box_with_ime_candidate_window(new_folder_area, text_pos, text_size.x, SimpleGUI::PreferredTextAreaMaxChars);
         gui_list::sanitize_text_area(new_folder_area);
 
         String folder_name = new_folder_area.text.trimmed();
@@ -2928,7 +2923,6 @@ private:
         if (created) {
             new_folder_area.text.clear();
             new_folder_area.cursorPos = 0;
-            new_folder_area.rebuildGlyphs();
             enumerate_current_dir();
             load_games();
             handle_selection_click(selection_row_for_folder(find_folder_index(input)), false, false);
@@ -2948,7 +2942,6 @@ private:
         renaming_folder_original_name = folders_display[folder_idx];
         folder_rename_area.text = folders_display[folder_idx];
         folder_rename_area.cursorPos = folder_rename_area.text.size();
-        folder_rename_area.rebuildGlyphs();
         folder_rename_area.active = true;
         selected_folder_index = folder_idx;
         selected_folder_name = folders_display[folder_idx];
@@ -2960,7 +2953,6 @@ private:
         renaming_folder_original_name.clear();
         folder_rename_area.text.clear();
         folder_rename_area.cursorPos = 0;
-        folder_rename_area.rebuildGlyphs();
         folder_rename_area.active = false;
     }
 
@@ -3895,7 +3887,7 @@ private:
     Button single_back_button;
     Button back_button;
     Button import_button;
-    TextAreaEditState text_area[2];
+    TextEditState text_area[2];
     std::string player_string;
     std::string opponent_string;
     Radio_button player_radio;
@@ -3935,7 +3927,7 @@ public:
             constexpr int text_area_h = 40;
             constexpr int circle_radius = 15;
             for (int i = 0; i < 2; ++i) {
-                text_area_with_ime_candidate_window(text_area[i], Vec2{X_CENTER - 300, text_area_y[i]}, SizeF{600, text_area_h}, SimpleGUI::PreferredTextAreaMaxChars);
+                text_box_with_ime_candidate_window(text_area[i], Vec2{X_CENTER - 300, text_area_y[i] + 2}, 600, SimpleGUI::PreferredTextAreaMaxChars);
                 if (player_radio.checked == i) {
                     Circle(X_CENTER + 330, text_area_y[i] + text_area_h / 2, circle_radius).draw(getData().colors.black);
                 } else {
@@ -3948,6 +3940,10 @@ public:
             getData().fonts.font(language.get("in_out", "player")).draw(25, Arg::rightCenter(X_CENTER - 5, 70 + SCENE_ICON_WIDTH + 188), getData().colors.white);
             player_radio.draw();
             for (int i = 0; i < 2; ++i) {
+                if (text_area[i].tabKey) {
+                    text_area[i].active = false;
+                    text_area[(i + 1) % 2].active = true;
+                }
                 std::string str = text_area[i].text.narrow();
                 if (str.find("\t") != std::string::npos) {
                     text_area[i].active = false;
@@ -3963,10 +3959,8 @@ public:
                     }
                     text_area[i].text = Unicode::Widen(txt0);
                     text_area[i].cursorPos = text_area[i].text.size();
-                    text_area[i].rebuildGlyphs();
                     text_area[(i + 1) % 2].text += Unicode::Widen(txt1);
                     text_area[(i + 1) % 2].cursorPos = text_area[(i + 1) % 2].text.size();
-                    text_area[(i + 1) % 2].rebuildGlyphs();
                 }
             }
             bool return_pressed = false;

@@ -238,7 +238,7 @@ class AI_profile_save : public App::Scene {
 private:
     Button back_button;
     Button save_button;
-    TextAreaEditState name_area;
+    TextEditState name_area;
     String validation_message;
     String status_message;
     bool rename_mode;
@@ -258,7 +258,6 @@ private:
             const size_t cursor = name_area.cursorPos;
             name_area.text = replaced;
             name_area.cursorPos = std::min(cursor, name_area.text.size());
-            name_area.rebuildGlyphs();
         }
     }
 
@@ -275,7 +274,6 @@ public:
             name_area.text.clear();
         }
         name_area.cursorPos = name_area.text.size();
-        name_area.rebuildGlyphs();
         name_area.active = true;
     }
 
@@ -289,7 +287,7 @@ public:
             : language.get("settings", "profile", "profile") + U" " + language.get("settings", "profile", "new_save");
         getData().fonts.font(title).draw(25, Arg::topCenter(X_CENTER, 10), getData().colors.white);
         getData().fonts.font(language.get("settings", "profile", "name")).draw(18, Arg::leftCenter(100, 130), getData().colors.white);
-        text_area_with_ime_candidate_window(name_area, Vec2{ 100, 150 }, SizeF{ 600, 36 }, SimpleGUI::PreferredTextAreaMaxChars);
+        text_box_with_ime_candidate_window(name_area, Vec2{ 100, 150 }, 600, SimpleGUI::PreferredTextAreaMaxChars);
         sanitize_profile_name_text();
 
         const String profile_name = name_area.text.trimmed();

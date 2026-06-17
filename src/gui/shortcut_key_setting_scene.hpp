@@ -36,7 +36,7 @@ private:
     std::vector<Button> change_buttons;
     std::vector<Button> delete_buttons;
     Button assign_button;
-    TextAreaEditState search_area;
+    TextEditState search_area;
     String message;
 
 public:

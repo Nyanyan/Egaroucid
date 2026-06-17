@@ -129,6 +129,18 @@ inline Vec2 calculate_editing_text_pos(
     return default_pos;
 }
 
+inline Vec2 calculate_editing_text_pos(
+    const TextEditState& text,
+    const Vec2& pos,
+    double width
+) {
+    const RectF region = SimpleGUI::TextBoxRegion(pos, width);
+    const size_t cursor_pos = std::min(text.cursorPos, text.text.size());
+    const String text_before_cursor = text.text.substr(0, cursor_pos);
+    const double caret_x = region.x + 8.0 + SimpleGUI::GetFont()(text_before_cursor).region().w;
+    return Vec2{ caret_x, region.y };
+}
+
 inline void request_textarea_ime_candidate_window(
     const TextAreaEditState& text,
     const Vec2& pos,
@@ -138,6 +150,17 @@ inline void request_textarea_ime_candidate_window(
     const double candidate_y = (editing_text_pos.y + SimpleGUI::GetFont().height() + 2.0);
     deferred_state.requested = true;
     deferred_state.pos = Vec2{ editing_text_pos.x, candidate_y };
+}
+
+inline void request_textbox_ime_candidate_window(
+    const TextEditState& text,
+    const Vec2& pos,
+    double width
+) {
+    const RectF region = SimpleGUI::TextBoxRegion(pos, width);
+    const Vec2 editing_text_pos = calculate_editing_text_pos(text, pos, width);
+    deferred_state.requested = true;
+    deferred_state.pos = Vec2{ editing_text_pos.x, region.y + region.h + 2.0 };
 }
 
 inline void flush_deferred_ime_candidate_window() {
@@ -252,6 +275,20 @@ inline bool text_area_with_ime_candidate_window(
     const bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
     if (enabled && text.active) {
         gui_textarea_ime::request_textarea_ime_candidate_window(text, pos, size);
+    }
+    return changed;
+}
+
+inline bool text_box_with_ime_candidate_window(
+    TextEditState& text,
+    const Vec2& pos,
+    double width = 200.0,
+    const Optional<size_t>& maxChars = unspecified,
+    bool enabled = true
+) {
+    const bool changed = SimpleGUI::TextBox(text, pos, width, maxChars, enabled);
+    if (enabled && text.active) {
+        gui_textarea_ime::request_textbox_ime_candidate_window(text, pos, width);
     }
     return changed;
 }

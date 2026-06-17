@@ -67,12 +67,12 @@ private:
     bool editing_elem;
     bool creating_csv;
     int editing_index;
-    TextAreaEditState text_area[2];
-    TextAreaEditState csv_name_area;
+    TextEditState text_area[2];
+    TextEditState csv_name_area;
     bool renaming_folder;
     int renaming_folder_index;
-    TextAreaEditState folder_rename_area;
-    TextAreaEditState folder_weight_area;
+    TextEditState folder_rename_area;
+    TextEditState folder_weight_area;
     bool current_folder_effective_enabled;
     std::unordered_set<int> selected_folder_indices;
     std::unordered_set<int> selected_opening_indices;
@@ -183,7 +183,7 @@ public:
                 getData().fonts.font(language.get("in_out", "new_folder") + U":").draw(20, Arg::leftCenter(label_base_x, label_center_y), getData().colors.white);
                 Vec2 text_pos{ OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + NEW_FOLDER_TEXTBOX_OFFSET_X, label_center_y + NEW_FOLDER_TEXTBOX_OFFSET_Y };
                 SizeF text_size{ NEW_FOLDER_TEXTBOX_WIDTH, NEW_FOLDER_TEXTBOX_HEIGHT };
-                text_area_with_ime_candidate_window(csv_name_area, text_pos, text_size, SimpleGUI::PreferredTextAreaMaxChars);
+                text_box_with_ime_candidate_window(csv_name_area, text_pos, text_size.x, SimpleGUI::PreferredTextAreaMaxChars);
                 gui_list::sanitize_text_area(csv_name_area);
                 String folder_name = csv_name_area.text.trimmed();
                 bool can_create = gui_list::is_valid_folder_name(folder_name);
@@ -210,7 +210,6 @@ public:
                     creating_csv = false;
                     csv_name_area.text = U"";
                     csv_name_area.cursorPos = 0;
-                    csv_name_area.rebuildGlyphs();
                 }
                 
             } else if (adding_elem) {
@@ -248,7 +247,6 @@ public:
                                 text_area[i].text = U"1";
                             }
                             text_area[i].cursorPos = text_area[i].text.size();
-                            text_area[i].rebuildGlyphs();
                         }
                         text_area[0].active = true;
                         text_area[1].active = false;
@@ -260,7 +258,6 @@ public:
                         creating_csv = true;
                         csv_name_area.text = U"";
                         csv_name_area.cursorPos = 0;
-                        csv_name_area.rebuildGlyphs();
                         csv_name_area.active = true;
                         cancel_folder_rename();
                     }
@@ -565,11 +562,9 @@ public:
             renaming_folder_index = idx;
             folder_rename_area.text = folders_display[idx].name;
             folder_rename_area.cursorPos = folder_rename_area.text.size();
-            folder_rename_area.rebuildGlyphs();
             folder_rename_area.active = true;
             folder_weight_area.text = Format(folders_display[idx].weight);
             folder_weight_area.cursorPos = folder_weight_area.text.size();
-            folder_weight_area.rebuildGlyphs();
             folder_weight_area.active = false;
         }
         
@@ -578,11 +573,9 @@ public:
             renaming_folder_index = -1;
             folder_rename_area.text = U"";
             folder_rename_area.cursorPos = 0;
-            folder_rename_area.rebuildGlyphs();
             folder_rename_area.active = false;
             folder_weight_area.text = U"";
             folder_weight_area.cursorPos = 0;
-            folder_weight_area.rebuildGlyphs();
             folder_weight_area.active = false;
         }
         
@@ -614,7 +607,6 @@ public:
                 size_t old_cursor = folder_rename_area.cursorPos;
                 folder_rename_area.text = sanitized;
                 folder_rename_area.cursorPos = std::min(old_cursor, sanitized.size());
-                folder_rename_area.rebuildGlyphs();
             }
             String trimmed = folder_rename_area.text.trimmed();
             if (!gui_list::is_valid_folder_name(trimmed)) {
@@ -642,6 +634,10 @@ public:
         
         void handle_textarea_tab_navigation() {
             for (int i = 0; i < 2; ++i) {
+                if (text_area[i].tabKey) {
+                    text_area[i].active = false;
+                    text_area[(i + 1) % 2].active = true;
+                }
                 std::string str = text_area[i].text.narrow();
                 size_t tab_place = str.find('\t');
                 if (tab_place != std::string::npos) {
@@ -651,10 +647,8 @@ public:
                     std::string txt1 = str.substr(tab_place + 1);
                     text_area[i].text = Unicode::Widen(txt0);
                     text_area[i].cursorPos = text_area[i].text.size();
-                    text_area[i].rebuildGlyphs();
                     text_area[(i + 1) % 2].text += Unicode::Widen(txt1);
                     text_area[(i + 1) % 2].cursorPos = text_area[(i + 1) % 2].text.size();
-                    text_area[(i + 1) % 2].rebuildGlyphs();
                 }
             }
         }
@@ -852,7 +846,6 @@ public:
             renaming_folder_index = -1;
             folder_rename_area.text = U"";
             folder_rename_area.cursorPos = 0;
-            folder_rename_area.rebuildGlyphs();
             
             std::string base_dir = getData().directories.document_dir + "/forced_openings";
             std::vector<String> folders = enumerate_subdirectories_generic(base_dir, subfolder);
@@ -1126,12 +1119,12 @@ public:
                     .back_button_height = static_cast<double>(inline_edit_back_button.rect.h),
                     .ok_button_width = static_cast<double>(inline_edit_ok_button.rect.w),
                 });
-                text_area_with_ime_candidate_window(folder_rename_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                text_box_with_ime_candidate_window(folder_rename_area, Vec2{ layout.primary_x, layout.text_y }, layout.primary_width, SimpleGUI::PreferredTextAreaMaxChars);
                 gui_list::sanitize_text_area(folder_rename_area);
                 
                 // Draw weight label and text area
                 // getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(layout.secondary_x - 5, layout.text_y + layout.field_height / 2), getData().colors.white);
-                text_area_with_ime_candidate_window(folder_weight_area, Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                text_box_with_ime_candidate_window(folder_weight_area, Vec2{ layout.secondary_x, layout.text_y }, layout.secondary_width, SimpleGUI::PreferredTextAreaMaxChars);
 
                 inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
                 inline_edit_back_button.enable();
@@ -1292,8 +1285,6 @@ public:
                     text_area[1].text = Format(opening.weight);
                     text_area[0].cursorPos = text_area[0].text.size();
                     text_area[1].cursorPos = text_area[1].text.size();
-                    text_area[0].rebuildGlyphs();
-                    text_area[1].rebuildGlyphs();
                     text_area[0].active = true;
                     text_area[1].active = false;
                     return;
@@ -1314,8 +1305,8 @@ public:
                     .back_button_height = static_cast<double>(inline_edit_back_button.rect.h),
                     .ok_button_width = static_cast<double>(inline_edit_ok_button.rect.w),
                 });
-                text_area_with_ime_candidate_window(text_area[0], Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
-                text_area_with_ime_candidate_window(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, SizeF{ layout.secondary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+                text_box_with_ime_candidate_window(text_area[0], Vec2{ layout.primary_x, layout.text_y }, layout.primary_width, SimpleGUI::PreferredTextAreaMaxChars);
+                text_box_with_ime_candidate_window(text_area[1], Vec2{ layout.secondary_x, layout.text_y }, layout.secondary_width, SimpleGUI::PreferredTextAreaMaxChars);
                 handle_textarea_tab_navigation();
 
                 inline_edit_back_button.move((int)layout.back_x, (int)layout.buttons_y);
@@ -1378,9 +1369,9 @@ public:
                 rect.draw(getData().colors.green).drawFrame(1.0, getData().colors.white);
             }
             
-            text_area_with_ime_candidate_window(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{600, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+            text_box_with_ime_candidate_window(text_area[0], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + 8, sy + OPENING_SETTING_HEIGHT / 2 - 17}, 600, SimpleGUI::PreferredTextAreaMaxChars);
             getData().fonts.font(language.get("opening_setting", "weight") + U": ").draw(15, Arg::rightCenter(OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2), getData().colors.white);
-            text_area_with_ime_candidate_window(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, SizeF{60, 30}, SimpleGUI::PreferredTextAreaMaxChars);
+            text_box_with_ime_candidate_window(text_area[1], Vec2{OPENING_SETTING_SX + OPENING_SETTING_LEFT_MARGIN + OPENING_SETTING_WIDTH - 70, sy + OPENING_SETTING_HEIGHT / 2 - 17}, 60, SimpleGUI::PreferredTextAreaMaxChars);
             handle_textarea_tab_navigation();
         }
         

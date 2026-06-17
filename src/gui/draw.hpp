@@ -438,7 +438,7 @@ struct ExplorerClickState {
 struct ExplorerFolderInlineConfig {
     bool renaming = false;
     int folder_index = -1;
-    TextAreaEditState* text_area = nullptr;
+    TextEditState* text_area = nullptr;
     Button* back_button = nullptr;
     Button* ok_button = nullptr;
     std::function<void()> on_cancel;
@@ -979,7 +979,7 @@ inline ExplorerDrawResult draw_folder_item(
             .ok_button_width = static_cast<double>(inline_config->ok_button->rect.w),
         });
 
-        text_area_with_ime_candidate_window(*inline_config->text_area, Vec2{ layout.primary_x, layout.text_y }, SizeF{ layout.primary_width, layout.field_height }, SimpleGUI::PreferredTextAreaMaxChars);
+        text_box_with_ime_candidate_window(*inline_config->text_area, Vec2{ layout.primary_x, layout.text_y }, layout.primary_width, SimpleGUI::PreferredTextAreaMaxChars);
         gui_list::sanitize_text_area(*inline_config->text_area);
 
         inline_config->back_button->move((int)layout.back_x, (int)layout.buttons_y);

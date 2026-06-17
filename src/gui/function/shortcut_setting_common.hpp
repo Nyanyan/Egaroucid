@@ -140,7 +140,7 @@ inline String get_shortcut_settings_fallback_label(const std::string& key, const
     return label;
 }
 
-inline bool sanitize_shortcut_settings_search_area(TextAreaEditState& search_area) {
+inline bool sanitize_shortcut_settings_search_area(TextEditState& search_area) {
     String sanitized = search_area.text.replaced(U"\r", U"").replaced(U"\n", U"");
     if (sanitized == search_area.text) {
         return false;
@@ -148,15 +148,13 @@ inline bool sanitize_shortcut_settings_search_area(TextAreaEditState& search_are
     size_t old_cursor = search_area.cursorPos;
     search_area.text = sanitized;
     search_area.cursorPos = std::min<size_t>(old_cursor, sanitized.size());
-    search_area.scrollY = 0.0;
-    search_area.rebuildGlyphs();
     return true;
 }
 
 inline bool draw_shortcut_settings_search_box(
     const Fonts& fonts,
     const Colors& colors,
-    TextAreaEditState& search_area,
+    TextEditState& search_area,
     bool enabled = true
 ) {
     search_area.active = enabled;
@@ -165,10 +163,10 @@ inline bool draw_shortcut_settings_search_box(
         Arg::rightCenter(SHORTCUT_SETTINGS_SEARCH_LABEL_RIGHT_X, SHORTCUT_SETTINGS_SEARCH_BOX_SY + SHORTCUT_SETTINGS_SEARCH_BOX_HEIGHT / 2),
         colors.white
     );
-    bool changed = text_area_with_ime_candidate_window(
+    bool changed = text_box_with_ime_candidate_window(
         search_area,
         Vec2{ SHORTCUT_SETTINGS_SEARCH_BOX_SX, SHORTCUT_SETTINGS_SEARCH_BOX_SY },
-        SizeF{ SHORTCUT_SETTINGS_SEARCH_BOX_WIDTH, SHORTCUT_SETTINGS_SEARCH_BOX_HEIGHT },
+        SHORTCUT_SETTINGS_SEARCH_BOX_WIDTH,
         SHORTCUT_SETTINGS_SEARCH_MAX_CHARS,
         enabled
     );
@@ -176,7 +174,7 @@ inline bool draw_shortcut_settings_search_box(
     return changed;
 }
 
-inline String get_shortcut_settings_normalized_search_text(const TextAreaEditState& search_area) {
+inline String get_shortcut_settings_normalized_search_text(const TextEditState& search_area) {
     return search_area.text.trimmed().lowercased();
 }
 
@@ -189,7 +187,7 @@ inline bool shortcut_function_matches_search(int function_idx, const String& nor
     return function_name.includes(normalized_search_text) || function_description.includes(normalized_search_text);
 }
 
-inline std::vector<int> get_filtered_shortcut_function_indices(const TextAreaEditState& search_area) {
+inline std::vector<int> get_filtered_shortcut_function_indices(const TextEditState& search_area) {
     std::vector<int> indices;
     const String normalized_search_text = get_shortcut_settings_normalized_search_text(search_area);
     for (int i = 0; i < static_cast<int>(shortcut_keys.shortcut_keys.size()); ++i) {

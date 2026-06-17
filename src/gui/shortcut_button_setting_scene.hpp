@@ -25,7 +25,7 @@ private:
     std::vector<Button> delete_buttons;
     Button assign_button;
     Scroll_manager function_scroll_manager;
-    TextAreaEditState search_area;
+    TextEditState search_area;
     int changing_button_idx;
     int selected_function_idx;
     String message;
