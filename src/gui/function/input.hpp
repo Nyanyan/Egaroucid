@@ -38,7 +38,6 @@ struct Deferred_ime_candidate_window_state {
 
 inline Deferred_ime_candidate_window_state deferred_state;
 inline bool escape_suppressed_until_release{ false };
-inline int32 candidate_scroll_offset{ 0 };
 
 [[nodiscard]]
 inline bool has_visible_ime_candidates() {
@@ -60,7 +59,6 @@ inline void close_ime_candidate_window() {
         ImmReleaseContext(hwnd, himc);
     }
 #endif
-    candidate_scroll_offset = 0;
 }
 
 [[nodiscard]]
@@ -211,97 +209,7 @@ inline void flush_deferred_ime_candidate_window() {
     (void)consume_escape_for_ime_candidate_window();
     if (deferred_state.requested) {
 #if SIV3D_PLATFORM(WINDOWS)
-        const auto& candidate_state = Platform::Windows::TextInput::GetCandidateState();
-        if (candidate_state.candidates) {
-            const Font& font = SimpleGUI::GetFont();
-            constexpr ColorF CANDIDATE_WINDOW_COLOR{ 0.98 };
-            constexpr ColorF CANDIDATE_WINDOW_FRAME_COLOR{ 0.75 };
-            constexpr ColorF CANDIDATE_SELECTED_BACKGROUND_COLOR{ 0.55, 0.85, 1.0 };
-            constexpr ColorF CANDIDATE_TEXT_COLOR{ 0.11 };
-            constexpr ColorF CANDIDATE_MINIMAP_COLOR{ 0.67 };
-            constexpr double CANDIDATE_MARGIN = 4.0;
-            constexpr double CANDIDATE_PADDING = 12.0;
-            constexpr double CANDIDATE_MINIMAP_WIDTH = 20.0;
-
-            const double candidate_item_height = (font.height() + CANDIDATE_MARGIN);
-            const double available_height = (Scene::Size().y - deferred_state.pos.y - 2.0);
-            int32 visible_count = 0;
-            if (0.0 < candidate_item_height) {
-                visible_count = static_cast<int32>(available_height / candidate_item_height);
-            }
-            const int32 candidate_count = static_cast<int32>(candidate_state.candidates.size());
-            visible_count = Clamp(visible_count, 0, candidate_count);
-
-            if (0 < visible_count) {
-                const int32 max_scroll_offset = Max(0, candidate_count - visible_count);
-                candidate_scroll_offset = Clamp(candidate_scroll_offset, 0, max_scroll_offset);
-                if (candidate_state.selectedIndex) {
-                    const int32 selected_in_page = (*candidate_state.selectedIndex - candidate_state.pageStartIndex);
-                    if ((0 <= selected_in_page) && (selected_in_page < candidate_count)) {
-                        if (selected_in_page < candidate_scroll_offset) {
-                            candidate_scroll_offset = selected_in_page;
-                        } else if ((candidate_scroll_offset + visible_count) <= selected_in_page) {
-                            candidate_scroll_offset = (selected_in_page - visible_count + 1);
-                        }
-                        candidate_scroll_offset = Clamp(candidate_scroll_offset, 0, max_scroll_offset);
-                    }
-                }
-
-                double box_width = 0.0;
-                for (const auto& candidate : candidate_state.candidates) {
-                    box_width = Max<double>(box_width, font(candidate).region().w);
-                }
-                box_width += (CANDIDATE_PADDING * 2 + CANDIDATE_MINIMAP_WIDTH);
-
-                const RectF box_rect{ deferred_state.pos, box_width, (candidate_item_height * visible_count) };
-                box_rect
-                    .drawShadow(Vec2{ 0, 2 }, 8)
-                    .draw(CANDIDATE_WINDOW_COLOR)
-                    .drawFrame(1, 0, CANDIDATE_WINDOW_FRAME_COLOR);
-
-                int32 current_index = (candidate_state.pageStartIndex + candidate_scroll_offset);
-                for (int32 i = 0; i < visible_count; ++i) {
-                    const int32 candidate_index = (candidate_scroll_offset + i);
-                    const bool selected = (candidate_state.selectedIndex && (current_index == *candidate_state.selectedIndex));
-                    const Vec2 item_pos{ deferred_state.pos.x, (deferred_state.pos.y + i * candidate_item_height) };
-                    if (selected) {
-                        RectF{ item_pos, (box_width - CANDIDATE_MINIMAP_WIDTH), candidate_item_height }
-                            .stretched(-1, 0)
-                            .draw(CANDIDATE_SELECTED_BACKGROUND_COLOR);
-                    }
-                    if (candidate_state.candidates[candidate_index]) {
-                        font(candidate_state.candidates[candidate_index]).draw(
-                            item_pos.movedBy(CANDIDATE_PADDING, (CANDIDATE_MARGIN * 0.5 - 1.0)),
-                            CANDIDATE_TEXT_COLOR
-                        );
-                    }
-                    ++current_index;
-                }
-
-                const bool has_prev = ((candidate_state.pageStartIndex + candidate_scroll_offset) != 0);
-                const bool has_next = ((candidate_state.pageStartIndex + candidate_scroll_offset + visible_count) < candidate_state.count);
-                if (has_prev) {
-                    const Vec2 scroll_pos{
-                        (deferred_state.pos.x + box_width - CANDIDATE_MINIMAP_WIDTH * 0.5 - 1),
-                        (deferred_state.pos.y + 11)
-                    };
-                    scroll_pos.asCircle(3.5).draw(CANDIDATE_MINIMAP_COLOR);
-                    scroll_pos.movedBy(0, 8).asCircle(2.8).draw(CANDIDATE_MINIMAP_COLOR);
-                    scroll_pos.movedBy(0, 15).asCircle(2.25).draw(CANDIDATE_MINIMAP_COLOR);
-                }
-                if (has_next) {
-                    const Vec2 scroll_pos{
-                        (deferred_state.pos.x + box_width - CANDIDATE_MINIMAP_WIDTH * 0.5 - 1),
-                        (deferred_state.pos.y + visible_count * candidate_item_height - 9)
-                    };
-                    scroll_pos.asCircle(3.5).draw(CANDIDATE_MINIMAP_COLOR);
-                    scroll_pos.movedBy(0, -8).asCircle(2.8).draw(CANDIDATE_MINIMAP_COLOR);
-                    scroll_pos.movedBy(0, -15).asCircle(2.25).draw(CANDIDATE_MINIMAP_COLOR);
-                }
-            }
-        } else {
-            candidate_scroll_offset = 0;
-        }
+        SimpleGUI::IMECandidateWindow(deferred_state.pos);
 #endif
         deferred_state.requested = false;
     }
