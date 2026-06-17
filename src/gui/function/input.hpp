@@ -34,6 +34,7 @@ namespace gui_textarea_ime {
 struct Deferred_ime_candidate_window_state {
     bool requested{ false };
     Vec2 pos{ 0.0, 0.0 };
+    double editing_line_y{ 0.0 };
 };
 
 inline Deferred_ime_candidate_window_state deferred_state;
@@ -148,6 +149,7 @@ inline void request_textarea_ime_candidate_window(
     const double candidate_y = (editing_text_pos.y + SimpleGUI::GetFont().height() + 2.0);
     deferred_state.requested = true;
     deferred_state.pos = Vec2{ editing_text_pos.x, candidate_y };
+    deferred_state.editing_line_y = editing_text_pos.y;
 }
 
 inline void request_textbox_ime_candidate_window(
@@ -159,6 +161,7 @@ inline void request_textbox_ime_candidate_window(
     const double candidate_y = editing_text_pos.y + SimpleGUI::GetFont().height() + 14.0;
     deferred_state.requested = true;
     deferred_state.pos = Vec2{ editing_text_pos.x, candidate_y };
+    deferred_state.editing_line_y = editing_text_pos.y;
 }
 
 [[nodiscard]]
@@ -205,11 +208,46 @@ inline bool insert_textbox_space_at_cursor(TextEditState& text, const Optional<s
     return true;
 }
 
+inline Vec2 fit_ime_candidate_window_pos(const Vec2& pos, const double editing_line_y) {
+#if SIV3D_PLATFORM(WINDOWS)
+    constexpr double MARGIN = 2.0;
+    const RectF bounds{ 0.0, 0.0, static_cast<double>(WINDOW_SIZE_X), static_cast<double>(WINDOW_SIZE_Y) };
+    Vec2 adjusted = pos;
+    RectF region = SimpleGUI::IMECandidateWindowRegion(adjusted);
+
+    if ((region.w <= 0.0) && (region.h <= 0.0)) {
+        return adjusted;
+    }
+
+    if ((bounds.w - MARGIN) < (region.x + region.w)) {
+        adjusted.x -= ((region.x + region.w) - (bounds.w - MARGIN));
+        adjusted.x = Max(MARGIN, adjusted.x);
+        region = SimpleGUI::IMECandidateWindowRegion(adjusted);
+    }
+
+    if ((bounds.h - MARGIN) < (region.y + region.h)) {
+        adjusted.y = Max(MARGIN, editing_line_y - region.h - MARGIN);
+        region = SimpleGUI::IMECandidateWindowRegion(adjusted);
+    }
+
+    if ((bounds.h - MARGIN) < (region.y + region.h)) {
+        adjusted.y = Max(MARGIN, bounds.h - region.h - MARGIN);
+    }
+
+    return adjusted;
+#else
+    (void)editing_line_y;
+    return pos;
+#endif
+}
+
 inline void flush_deferred_ime_candidate_window() {
     (void)consume_escape_for_ime_candidate_window();
     if (deferred_state.requested) {
 #if SIV3D_PLATFORM(WINDOWS)
-        SimpleGUI::IMECandidateWindow(deferred_state.pos);
+        SimpleGUI::IMECandidateWindow(
+            fit_ime_candidate_window_pos(deferred_state.pos, deferred_state.editing_line_y)
+        );
 #endif
         deferred_state.requested = false;
     }
