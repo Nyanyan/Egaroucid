@@ -6,8 +6,8 @@ transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
 board_sub_dir_nums = [
     # 89, 
-    313, 314, 315, 316, 317, 318, 319, 320, 321, 323, # GGS-formatted data
-    # 322, 324, # GGS-formatted data
+    # 313, 314, 315, 316, 317, 318, 319, 320, 321, 323, # GGS-formatted data
+    322, 324, # GGS-formatted data
 ]
 log_file = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/log.txt'
 
