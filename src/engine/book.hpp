@@ -2002,20 +2002,34 @@ class Book {
         /*
             @brief fix book
         */
-        inline void fix(bool *stop) {
-            negamax_book(stop);
+        inline void fix(bool edax_compliant, bool *stop) {
+            negamax_book(edax_compliant, stop);
             check_add_leaf_all_undefined();
         }
 
         /*
             @brief fix book
         */
-        inline void fix() {
-            bool stop = false;
-            fix(&stop);
+        inline void fix(bool *stop) {
+            fix(false, stop);
         }
 
-        Book_elem negamax_book_p(Board board, int64_t *n_seen, int64_t *n_fix, int *percent, bool *stop) {
+        /*
+            @brief fix book
+        */
+        inline void fix(bool edax_compliant) {
+            bool stop = false;
+            fix(edax_compliant, &stop);
+        }
+
+        /*
+            @brief fix book
+        */
+        inline void fix() {
+            fix(false);
+        }
+
+        Book_elem negamax_book_p(Board board, int64_t *n_seen, int64_t *n_fix, int *percent, bool edax_compliant, bool *stop) {
             if (*stop) {
                 Book_elem stop_res;
                 stop_res.value = SCORE_UNDEFINED;
@@ -2039,7 +2053,7 @@ class Book {
                         }
                     }
                 } else { // just pass
-                    Book_elem res = negamax_book_p(board, n_seen, n_fix, percent, stop);
+                    Book_elem res = negamax_book_p(board, n_seen, n_fix, percent, edax_compliant, stop);
                     if (res.value != SCORE_UNDEFINED) {
                         res.value *= -1;
                     }
@@ -2072,6 +2086,9 @@ class Book {
             Flip flip;
             //int v = -INF, child_level = -INF;
             int v = -INF;
+            if (edax_compliant && is_valid_score(res.leaf.value)) {
+                v = res.leaf.value;
+            }
             //if (res.leaf.value != SCORE_UNDEFINED) {
             //    v = -res.leaf.value;
             //    child_level = res.leaf.level;
@@ -2080,7 +2097,7 @@ class Book {
             for (Book_value &link: links) {
                 calc_flip(&flip, &board, link.policy);
                 board.move_board(&flip);
-                    child_res = negamax_book_p(board, n_seen, n_fix, percent, stop);
+                    child_res = negamax_book_p(board, n_seen, n_fix, percent, edax_compliant, stop);
                     if (child_res.value != SCORE_UNDEFINED) {
                         if (v < -child_res.value /*&& res.level <= child_res.level*/) { // update parent value
                             v = -child_res.value;
@@ -2102,13 +2119,13 @@ class Book {
             return res;
         }
 
-        void negamax_book(bool *stop) {
+        void negamax_book(bool edax_compliant, bool *stop) {
             Board root_board;
             root_board.reset();
             int64_t n_seen = 0, n_fix = 0;
             int percent = -1;
             reset_seen();
-            negamax_book_p(root_board, &n_seen, &n_fix, &percent, stop);
+            negamax_book_p(root_board, &n_seen, &n_fix, &percent, edax_compliant, stop);
             reset_seen();
             std::cerr << "negamaxed book fixed " << n_fix << " boards seen " << n_seen << " boards size " << book.size() << std::endl;
         }
@@ -2861,7 +2878,11 @@ void book_save_as_edax(std::string file, int level) {
 }
 
 void book_fix(bool *stop) {
-    book.fix(stop);
+    book.fix(false, stop);
+}
+
+void book_fix_edax(bool *stop) {
+    book.fix(true, stop);
 }
 
 void book_reduce(Board board, int depth, int max_error_per_move, int max_error_sum, bool *doing) {
