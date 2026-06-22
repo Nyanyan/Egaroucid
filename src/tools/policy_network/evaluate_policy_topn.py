@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Evaluate masked top-N policy accuracy on board-data records.
+Evaluate masked top-N policy accuracy on WTHOR board-data records.
 
 Related issue: #613
 
-The default target is records1, which is WTHOR human game data converted to
-Egaroucid board-data records.
+The default target is WTHOR human game data converted to Egaroucid board-data
+records. In the training-data tree, this dataset is currently stored in the
+records1 directory.
 """
 
 from __future__ import annotations
@@ -331,10 +332,10 @@ def evaluate(args: argparse.Namespace) -> dict:
     }
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    with (args.output_dir / "records1_topn_accuracy.json").open("w") as f:
+    with (args.output_dir / "wthor_topn_accuracy.json").open("w") as f:
         json.dump(result, f, indent=2)
-    write_csv(args.output_dir / "records1_topn_accuracy.csv", topn_rows, ["top_n", "hits", "positions", "accuracy"])
-    write_csv(args.output_dir / "records1_topn_accuracy_by_phase.csv", phase_rows, ["phase", "top_n", "hits", "positions", "accuracy"])
+    write_csv(args.output_dir / "wthor_topn_accuracy.csv", topn_rows, ["top_n", "hits", "positions", "accuracy"])
+    write_csv(args.output_dir / "wthor_topn_accuracy_by_phase.csv", phase_rows, ["phase", "top_n", "hits", "positions", "accuracy"])
     return result
 
 
@@ -343,7 +344,7 @@ def parse_top_n(text: str) -> List[int]:
 
 
 def make_argparser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Evaluate legal-masked top-N policy accuracy on records1 board data.")
+    parser = argparse.ArgumentParser(description="Evaluate legal-masked top-N policy accuracy on WTHOR board data.")
     parser.add_argument("--board-data-dir", type=Path, default=default_board_data_dir())
     parser.add_argument("--model", type=Path, default=default_model_file(), help="Keras .h5 model. If missing, --weights is used.")
     parser.add_argument("--weights", type=Path, default=default_weights_file(), help="Binary weights fallback.")
@@ -351,7 +352,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=65536, help="Board-data read batch size.")
     parser.add_argument("--predict-batch-size", type=int, default=8192, help="Keras predict batch size.")
     parser.add_argument("--max-positions", type=int, default=None)
-    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "trained" / "playerop_records1_eval")
+    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "trained" / "playerop_wthor_eval")
     parser.add_argument("--progress-interval", type=int, default=1000000)
     parser.add_argument("--verbose", action="store_true")
     return parser

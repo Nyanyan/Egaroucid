@@ -103,6 +103,81 @@ The `trained/` directory is ignored by git.
 
 `trained/` ディレクトリは git 管理外です。
 
+## WTHOR Human-Game Evaluation / WTHOR 人間棋譜評価
+
+The evaluation used WTHOR human-game board data, stored in the current
+training-data tree under the `records1` directory. Generated evaluation file
+names use `wthor`. The policy head was masked to legal moves before ranking.
+The value head was compared with board-data `score / 64`.
+
+評価には WTHOR 人間棋譜 board data を使いました。現在の training-data tree では
+`records1` ディレクトリに格納されています。生成される評価ファイル名には `wthor`
+を使います。policy head は合法手だけに mask してから順位付けし、value head は
+board data の `score / 64` と比較しました。
+
+Command:
+
+コマンド:
+
+```powershell
+python -u src\tools\policy_value_network\evaluate_wthor_policy_value.py --model src\tools\policy_value_network\trained\missing_model_for_binary_eval.h5 --weights src\tools\policy_value_network\trained\final_issue613_pv128w01\best_policy_value_network_weights.bin --batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_value_network\trained\wthor_policy_value_eval --verbose
+```
+
+Evaluation summary:
+
+評価サマリ:
+
+- Positions / 評価局面数: 7,537,415
+- Invalid policy records / 不正 policy レコード: 0
+- Illegal-label records / 非合法ラベルレコード: 0
+- Model / モデル: `src/tools/policy_value_network/trained/final_issue613_pv128w01/best_policy_value_network_weights.bin`
+
+Policy top-N accuracy:
+
+policy top-N 一致率:
+
+| top N | hits | positions | accuracy |
+| ---: | ---: | ---: | ---: |
+| 1 | 5,117,530 | 7,537,415 | 67.895% |
+| 2 | 6,283,926 | 7,537,415 | 83.370% |
+| 3 | 6,874,876 | 7,537,415 | 91.210% |
+| 4 | 7,258,119 | 7,537,415 | 96.295% |
+| 5 | 7,407,968 | 7,537,415 | 98.283% |
+| 8 | 7,525,375 | 7,537,415 | 99.840% |
+| 10 | 7,535,037 | 7,537,415 | 99.968% |
+| 16 | 7,537,410 | 7,537,415 | 99.9999% |
+
+Policy top-N by phase:
+
+phase 別 policy top-N:
+
+| phase | positions | top-1 | top-3 | top-5 | top-10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| opening 4-20 discs / 序盤 4-20 石 | 2,139,606 | 63.266% | 87.325% | 98.417% | 99.993% |
+| midgame 21-44 discs / 中盤 21-44 石 | 3,020,105 | 60.884% | 89.568% | 97.215% | 99.928% |
+| endgame 45-64 discs / 終盤 45-64 石 | 2,377,704 | 80.966% | 96.791% | 99.518% | 99.999% |
+
+Value metrics:
+
+value 指標:
+
+| scope | positions | MAE | RMSE | mean error | disc MAE | disc RMSE | sign accuracy |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| overall / 全体 | 7,537,415 | 0.2811 | 0.3552 | -0.0239 | 17.994 | 22.730 | 59.241% |
+| opening 4-20 discs / 序盤 4-20 石 | 2,139,606 | 0.2964 | 0.3786 | -0.0326 | 18.971 | 24.233 | 51.649% |
+| midgame 21-44 discs / 中盤 21-44 石 | 3,020,105 | 0.2828 | 0.3576 | -0.0265 | 18.098 | 22.889 | 58.820% |
+| endgame 45-64 discs / 終盤 45-64 石 | 2,377,704 | 0.2653 | 0.3292 | -0.0127 | 16.981 | 21.070 | 66.610% |
+
+Generated evaluation artifacts:
+
+生成された評価成果物:
+
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval/wthor_policy_value_evaluation.json`
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval/wthor_policy_value_topn_accuracy.csv`
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval/wthor_policy_value_topn_accuracy_by_phase.csv`
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval/wthor_policy_value_metrics.csv`
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval/wthor_policy_value_metrics_by_phase.csv`
+
 ## C++ Sample Checks / C++ サンプル確認
 
 Build:

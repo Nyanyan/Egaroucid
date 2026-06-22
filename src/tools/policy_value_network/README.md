@@ -108,6 +108,26 @@ src/tools/policy_value_network/trained/final_issue613_pv128w01/best_policy_value
 
 `trained/` は生成物が大きいため git 管理外です。
 
+## WTHOR Evaluation / WTHOR 評価
+
+Evaluate the policy head with legal-masked top-N accuracy and the value head
+against `score / 64` on WTHOR human-game board data:
+
+WTHOR 人間棋譜 board data に対して、policy head は合法手 mask 後の top-N 一致率、
+value head は `score / 64` との誤差で評価します:
+
+```powershell
+python src\tools\policy_value_network\evaluate_wthor_policy_value.py --batch-size 65536 --predict-batch-size 8192 --verbose
+```
+
+The source data directory is currently
+`$EGAROUCID_DATA/train_data/board_data/records1`, but generated output file
+names use `wthor`.
+
+元データのディレクトリ名は現在
+`$EGAROUCID_DATA/train_data/board_data/records1` ですが、生成されるファイル名には
+`wthor` を使います。
+
 ## C++ Sample / C++ サンプル
 
 Build:

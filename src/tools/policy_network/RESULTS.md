@@ -89,22 +89,24 @@ The `trained/` directory is ignored by git.
 
 `trained/` ディレクトリは git 管理外です。
 
-## Records1 Human-Game Evaluation / records1 人間棋譜評価
+## WTHOR Human-Game Evaluation / WTHOR 人間棋譜評価
 
-The evaluation used `records1` board data generated from human games. The
-network output was masked to legal moves before ranking. A hit means the actual
-human move is within the top N legal moves.
+The evaluation used WTHOR human-game board data, stored in the current
+training-data tree under the `records1` directory. The network output was
+masked to legal moves before ranking. A hit means the actual human move is
+within the top N legal moves. Generated evaluation file names use `wthor`.
 
-評価には人間棋譜から生成された `records1` board data を使いました。NN 出力を合法手
-だけに mask してから順位付けし、実際の人間の手が top N 合法手以内に入れば hit と
-しています。
+評価には WTHOR 人間棋譜 board data を使いました。現在の training-data tree では
+`records1` ディレクトリに格納されています。NN 出力を合法手だけに mask してから
+順位付けし、実際の人間の手が top N 合法手以内に入れば hit としています。生成される
+評価ファイル名には `wthor` を使います。
 
 Command:
 
 コマンド:
 
 ```powershell
-python -u src\tools\policy_network\evaluate_policy_topn.py --model src\tools\policy_network\trained\playerop_final_issue613_128x3\best_model.h5 --weights src\tools\policy_network\trained\playerop_final_issue613_128x3\best_policy_network_weights.bin --batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network\trained\playerop_records1_eval --verbose
+python -u src\tools\policy_network\evaluate_policy_topn.py --model src\tools\policy_network\trained\playerop_final_issue613_128x3\best_model.h5 --weights src\tools\policy_network\trained\playerop_final_issue613_128x3\best_policy_network_weights.bin --batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network\trained\playerop_wthor_eval --verbose
 ```
 
 Evaluation summary:
@@ -145,9 +147,9 @@ Generated evaluation artifacts:
 
 生成された評価成果物:
 
-- `src/tools/policy_network/trained/playerop_records1_eval/records1_topn_accuracy.csv`
-- `src/tools/policy_network/trained/playerop_records1_eval/records1_topn_accuracy_by_phase.csv`
-- `src/tools/policy_network/trained/playerop_records1_eval/records1_topn_accuracy.json`
+- `src/tools/policy_network/trained/playerop_wthor_eval/wthor_topn_accuracy.csv`
+- `src/tools/policy_network/trained/playerop_wthor_eval/wthor_topn_accuracy_by_phase.csv`
+- `src/tools/policy_network/trained/playerop_wthor_eval/wthor_topn_accuracy.json`
 
 ## C++ Sample Checks / C++ サンプル確認
 

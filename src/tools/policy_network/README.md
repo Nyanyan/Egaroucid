@@ -100,23 +100,25 @@ src/tools/policy_network/trained/playerop_final_issue613_128x3/best_policy_netwo
 
 `trained/` は生成物が大きいため git 管理外です。
 
-## Human-Game Evaluation / 人間棋譜評価
+## WTHOR Human-Game Evaluation / WTHOR 人間棋譜評価
 
-Evaluate legal-masked top-N accuracy on records1:
+Evaluate legal-masked top-N accuracy on WTHOR human-game board data:
 
-records1 に対して、合法手で mask した top-N 一致率を評価します:
+WTHOR 人間棋譜 board data に対して、合法手で mask した top-N 一致率を評価します:
 
 ```powershell
 python src\tools\policy_network\evaluate_policy_topn.py --batch-size 65536 --predict-batch-size 8192 --verbose
 ```
 
-The evaluator reads `$EGAROUCID_DATA/train_data/board_data/records1`, masks the
-policy distribution to legal moves, and checks whether the actual human move is
-inside the top N legal moves.
+The evaluator reads the WTHOR board-data directory
+`$EGAROUCID_DATA/train_data/board_data/records1`, masks the policy distribution
+to legal moves, and checks whether the actual human move is inside the top N
+legal moves. Generated output file names use `wthor`.
 
-評価スクリプトは `$EGAROUCID_DATA/train_data/board_data/records1` を読み、policy
-分布を合法手だけに mask してから、実際の人間の手が top N 合法手以内に入るかを
-調べます。
+評価スクリプトは WTHOR board data ディレクトリ
+`$EGAROUCID_DATA/train_data/board_data/records1` を読み、policy 分布を合法手だけに
+mask してから、実際の人間の手が top N 合法手以内に入るかを調べます。生成される
+ファイル名には `wthor` を使います。
 
 ## C++ Sample / C++ サンプル
 
