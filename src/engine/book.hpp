@@ -1530,11 +1530,11 @@ class Book {
         }
 
         /*
-            @brief get all moves within local child loss from the best book value
+            @brief get all moves within local move loss from the best child score
 
             @param b                    a board pointer to find
-            @param max_child_loss       acceptable loss from the best move at this node
-            @return vector of moves with mover-perspective values
+            @param max_child_loss       maximum acceptable loss from the best child score at this node
+            @return vector of moves with mover-perspective scores
         */
         inline std::vector<Book_value> get_all_moves_within_child_loss(Board *b, int max_child_loss) {
             std::vector<std::pair<int, int>> value_policies;

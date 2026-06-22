@@ -22,6 +22,13 @@
 */
 constexpr int UMIGAME_UNDEFINED = -1;
 
+/*
+    Display-side filters for Umigame search.
+
+    max_move_loss filters child moves by mover-perspective score loss from the
+    best child score at each node. black_max_loss and white_max_loss define the
+    accepted black-score window [-black_max_loss, +white_max_loss].
+*/
 struct Umigame_condition {
     int max_move_loss;
     int black_max_loss;
@@ -104,6 +111,10 @@ class Umigame {
 
         void calculate(Board *board, int player, int depth, Umigame_condition condition) {
             int search_generation = ensure_cache_context(depth, condition);
+            calculate(board, player, depth, condition, search_generation);
+        }
+
+        void calculate(Board *board, int player, int depth, Umigame_condition condition, int search_generation) {
             Umigame_black_score_interval interval = make_umigame_black_score_interval(condition);
             if (!interval.valid) {
                 return;
@@ -141,6 +152,15 @@ class Umigame {
             return get_oneumigame(unique_board);
         }
 
+        Umigame_result get_umigame(Board *b, int search_generation) {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (generation != search_generation) {
+                return Umigame_result();
+            }
+            Board unique_board = representative_board(b->copy());
+            return get_oneumigame(unique_board);
+        }
+
     private:
         /*
             @brief Result of umigame value search 
@@ -158,7 +178,7 @@ class Umigame {
                 umigame_res.w = 1;
                 return umigame_res;
             }
-            umigame_res = get_umigame(b);
+            umigame_res = get_umigame(b, search_generation);
             if (umigame_res.b != UMIGAME_UNDEFINED)
                 return umigame_res;
             if (b->get_legal() == 0ULL) {
@@ -169,6 +189,7 @@ class Umigame {
             std::vector<Book_value> moves = book.get_all_moves_within_child_loss(b, condition.max_move_loss);
             std::vector<int> policies;
             for (const Book_value& move: moves) {
+                // move.value is from the mover's perspective; convert it to Black's perspective.
                 int score_black = player == BLACK ? move.value : -move.value;
                 if (is_within_umigame_black_score_interval(score_black, interval)) {
                     policies.emplace_back(move.policy);
@@ -250,11 +271,11 @@ Umigame umigame;
     @return Umigame's value in Umigame_result structure
 */
 Umigame_result calculate_umigame(Board *b, int player, int depth, Umigame_condition condition = Umigame_condition()) {
-    umigame.ensure_cache_context(depth, condition);
-    Umigame_result res = umigame.get_umigame(b);
+    int search_generation = umigame.ensure_cache_context(depth, condition);
+    Umigame_result res = umigame.get_umigame(b, search_generation);
     if (res.b == UMIGAME_UNDEFINED) {
-        umigame.calculate(b, player, depth, condition);
-        res = umigame.get_umigame(b);
+        umigame.calculate(b, player, depth, condition, search_generation);
+        res = umigame.get_umigame(b, search_generation);
     }
     return res;
 }

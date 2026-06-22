@@ -1,8 +1,28 @@
 # Umigame Condition Settings
 
+## Terminology and Documentation Constraints
+
+Per the maintainer's request, this proposal should use common game AI and
+computer game research terminology where possible. Any custom terms must be
+defined before they are used and related to standard terminology.
+
+Terms used in this PR:
+
+- `score` / `evaluation`: a book value in disc units. Positive values are good
+  for the side indicated by the stated perspective.
+- `mover-perspective score`: a child move score from the player-to-move's
+  perspective before that move is played.
+- `black-score`: the same score converted to Black's perspective. Positive
+  values are favorable for Black; negative values are favorable for White.
+- `move loss`: the score loss, or regret, of a child move relative to the best
+  child move at the same node.
+- `score window`: the accepted black-score interval for child moves.
+- `Umigame number` / `minimum memorization number`: the existing Egaroucid
+  display value computed for Black and White.
+
 ## Summary
 
-This PR adds configurable display conditions for Umigame numbers.
+This PR adds configurable display-side score filters for Umigame numbers.
 
 The feature request came from mainland Chinese user MangWu, who wanted the next
 Egaroucid version to allow wider and more practical conditions when calculating
@@ -12,13 +32,14 @@ MangWu's original request:
 
 > 希望下一个版本的EG能对“海龟数”的限制进行调整：例如估值为0的某个棋步，海龟数随机值放宽至±2，在计算海龟数时，将所有己方为0或-2的后续分支全部计算在内；将对方0或+2的分支计算在内。
 
-In this PR, that request is implemented as two display-side condition controls:
+In this PR, that request is implemented as two display-side controls:
 
-- `Errors per Move`: local per-node child loss.
-- `Integration Errors`: black/white maximum child loss, shown as `B{black} W{white}`.
+- `Errors per Move`: maximum per-node move loss.
+- `Integration Errors`: side-specific black-score window, shown as
+  `B{black} W{white}`.
 
-The internal score interval for `Integration Errors` is `[-B, +W]`. For example,
-`B3 W8` accepts black-score child values from `-3` through `+8`.
+The internal black-score window for `Integration Errors` is `[-B, +W]`. For
+example, `B3 W8` accepts child moves with black-scores from `-3` through `+8`.
 
 ## Scope
 
@@ -42,15 +63,24 @@ existing Umigame result model remains non-negative `B{black} W{white}` counts.
 
 ## Implementation Notes
 
-- `Book::get_all_moves_within_child_loss()` gathers book moves within the local
-  child-loss condition.
+- `Book::get_all_moves_within_child_loss()` gathers child moves whose
+  mover-perspective score is within `max_move_loss` of the node's best child
+  score.
 - `Umigame_condition` carries `max_move_loss`, `black_max_loss`, and
-  `white_max_loss`.
+  `white_max_loss`. These are display-side search filters, not book-learning
+  parameters.
+- The Umigame search converts each mover-perspective child score to a
+  black-score before applying the `[-black_max_loss, +white_max_loss]` score
+  window.
 - Umigame cache entries are protected by condition context. A change to
   `depth`, `max_move_loss`, `black_max_loss`, or `white_max_loss` clears the
   cache and increments the generation.
+- Cache reads and writes are tied to the same generation so an older async
+  request cannot reuse cache entries from a newer condition context.
 - Async Umigame UI jobs use request IDs. Old results and undefined interrupted
   results are ignored, so stale jobs cannot mark the current UI as complete.
+- If the current request returns an undefined result, the UI advances the
+  request ID and clears displayed values before retrying.
 - No `lower_limit`, `No range intersection`, `book_revision`, or
   `umigame_condition.hpp` design is introduced in this PR.
 
@@ -71,10 +101,13 @@ conditions should be interpreted. This PR is intentionally narrower: it only
 changes display conditions for Umigame numbers and does not modify book
 learning.
 
-## OpenSiv3D IME Build Fix
+## Build Compatibility Note
 
-This branch also includes an OpenSiv3D IME build fix. It is independent from the
-Umigame condition feature and can be split out by maintainers if preferred.
+This branch keeps the existing OpenSiv3D IME compatibility fix needed by the
+local Windows GUI build: `TextInput::EnableIME()` is not available in the
+tested OpenSiv3D environment, so the Windows helper only calls `DisableIME()`
+when disabling IME input. This is independent from the Umigame feature and can
+be split out by maintainers if preferred.
 
 ## Validation
 
