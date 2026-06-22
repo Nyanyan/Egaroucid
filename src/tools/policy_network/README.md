@@ -1,64 +1,70 @@
-# Policy Network / 方策ネットワーク
+# Policy Network / ポリシーネットワーク
 
 Related issue: #613
 
 関連 issue: #613
 
-This tool trains and evaluates a compact Othello policy network with
-`tensorflow.keras`.
+This directory contains a lightweight TensorFlow/Keras policy network for
+Othello/Reversi. The model predicts a 64-square move distribution from board
+data records.
 
-このツールは `tensorflow.keras` を使って、軽量なオセロ方策ネットワークを学習・評価します。
+このディレクトリには、Othello/Reversi 用の軽量な TensorFlow/Keras policy
+network が入っています。board data の局面から 64 マスの着手分布を予測します。
+
+## Input / 入力
+
+The input is side-relative, not fixed black/white:
+
+入力は固定の黒/白ではなく、手番相対です:
+
+- 64 player-to-move disc bits
+- 64 opponent disc bits
+- total 128 float inputs
+
+- 手番側の石の 64 bit
+- 相手側の石の 64 bit
+- 合計 128 個の float 入力
+
+The board-data format stores these fields as `player` and `opponent`; the
+training and evaluation scripts use them directly.
+
+board data には `player` と `opponent` として保存されているので、学習・評価
+スクリプトはそれをそのまま使います。
 
 ## Model / モデル
 
-Input:
+The selected model is small enough for fast C++ inference while keeping good
+accuracy:
 
-- 64 black-disc bits
-- 64 white-disc bits
+最終モデルは C++ で高速に推論できるサイズを保ちつつ、精度が良かった構成です:
 
-入力:
+- hidden width: 128
+- hidden depth: 3
+- activation: LeakyReLU, `alpha=0.03`
+- output: 64-way softmax policy
+- parameters: 57,792
 
-- 黒石有無 64 bit
-- 白石有無 64 bit
-
-Output:
-
-- 64-way softmax policy distribution
-- Coordinate mapping is the Egaroucid policy index: `a1 -> 63`, `h8 -> 0`
-
-出力:
-
-- 64 手の softmax 方策分布
-- 座標は Egaroucid の policy index に合わせます: `a1 -> 63`, `h8 -> 0`
-
-The current selected architecture is `128x3` with LeakyReLU `alpha=0.03`
-and 57,792 parameters. It was selected from the search in `RESULTS.md`.
-
-現在の採用構成は LeakyReLU `alpha=0.03` の `128x3`、57,792 parameters です。
-選定理由と探索結果は `RESULTS.md` にあります。
-
-## Training Data / 学習データ
-
-Training reads board data from `$EGAROUCID_DATA/train_data/board_data/records259`
-through `records310`. Each board record is 19 bytes:
-
-学習では `$EGAROUCID_DATA/train_data/board_data/records259` から `records310`
-までの board data を読みます。各レコードは 19 byte です:
-
-1. `uint64` player-to-move bitboard / 手番側 bitboard
-2. `uint64` opponent bitboard / 相手側 bitboard
-3. `int8` player color (`0` black, `1` white) / 手番色 (`0` 黒, `1` 白)
-4. `int8` policy / 実際の着手
-5. `int8` score / スコア
-
-The learner converts player/opponent bitboards back to fixed black/white inputs
-before training.
-
-学習時には、手番側/相手側 bitboard を黒/白固定の 128 入力へ戻してから使います。
+- 中間層幅: 128
+- 中間層数: 3
+- activation: LeakyReLU, `alpha=0.03`
+- 出力: 64 手 softmax policy
+- パラメータ数: 57,792
 
 ## Training / 学習
 
-Small smoke test:
+Training data is read from:
+
+学習データは以下から読みます:
+
+```powershell
+$env:EGAROUCID_DATA + "\train_data\board_data"
+```
+
+Records `records259` through `records310` are used by default.
+
+デフォルトでは `records259` から `records310` を使います。
+
+Quick smoke test:
 
 簡単な動作確認:
 
@@ -66,44 +72,51 @@ Small smoke test:
 python src\tools\policy_network\train_policy_network.py --configs 16x1 --epochs 1 --max-train-samples 2000 --max-val-samples 512
 ```
 
-Hyper-parameter search example:
+Search several lightweight shapes:
 
-ハイパーパラメータ探索例:
+軽量な構成をいくつか探索:
 
 ```powershell
-python src\tools\policy_network\train_policy_network.py --configs 48x3,64x3,80x3,64x4 --epochs 10 --patience 3 --max-train-samples 300000 --max-val-samples 50000 --batch-size 4096
+python src\tools\policy_network\train_policy_network.py --configs 64x3,96x3,128x3,96x4 --epochs 12 --patience 4 --max-train-samples 500000 --max-val-samples 100000 --batch-size 8192
 ```
 
-Final training example:
+Final training used:
 
-最終学習例:
+最終学習では以下を使いました:
 
 ```powershell
-python src\tools\policy_network\train_policy_network.py --configs 128x3 --epochs 24 --patience 6 --max-train-samples 2000000 --max-val-samples 200000 --batch-size 8192
+python -u src\tools\policy_network\train_policy_network.py --configs 128x3 --epochs 24 --patience 6 --max-train-samples 2000000 --max-val-samples 200000 --batch-size 8192 --output-dir src\tools\policy_network\trained\playerop_final_issue613_128x3
 ```
 
-Artifacts are written under `src/tools/policy_network/trained/<timestamp>/`.
-That directory is ignored by git.
+The binary C++ weights are written as:
 
-成果物は `src/tools/policy_network/trained/<timestamp>/` に出力されます。
-このディレクトリは git 管理外です。
+C++ 用の binary weight は以下に出力されます:
 
-## Human-Game Evaluation / 人間棋譜での評価
+```text
+src/tools/policy_network/trained/playerop_final_issue613_128x3/best_policy_network_weights.bin
+```
 
-Evaluate legal-masked top-N accuracy on records1 human games:
+`trained/` is ignored by git because model artifacts are large/generated.
 
-records1 の人間棋譜に対して、合法手で mask した top-N 一致率を評価します:
+`trained/` は生成物が大きいため git 管理外です。
+
+## Human-Game Evaluation / 人間棋譜評価
+
+Evaluate legal-masked top-N accuracy on records1:
+
+records1 に対して、合法手で mask した top-N 一致率を評価します:
 
 ```powershell
-python src\tools\policy_network\evaluate_policy_topn.py --output-dir src\tools\policy_network\trained\records1_eval
+python src\tools\policy_network\evaluate_policy_topn.py --batch-size 65536 --predict-batch-size 8192 --verbose
 ```
 
 The evaluator reads `$EGAROUCID_DATA/train_data/board_data/records1`, masks the
-network output to legal moves, and checks whether the actual human move is
-within the top N moves.
+policy distribution to legal moves, and checks whether the actual human move is
+inside the top N legal moves.
 
-評価スクリプトは `$EGAROUCID_DATA/train_data/board_data/records1` を読み、
-NN 出力を合法手だけに mask し、実際の人間手が top N 以内に入るかを調べます。
+評価スクリプトは `$EGAROUCID_DATA/train_data/board_data/records1` を読み、policy
+分布を合法手だけに mask してから、実際の人間の手が top N 合法手以内に入るかを
+調べます。
 
 ## C++ Sample / C++ サンプル
 
@@ -115,24 +128,25 @@ Build:
 g++ -std=c++17 -O3 src\tools\policy_network\policy_network_sample.cpp -o src\tools\policy_network\policy_network_sample.exe
 ```
 
-Show policy distribution from a transcript:
+Run from a board string:
 
-棋譜から方策分布を表示:
-
-```powershell
-src\tools\policy_network\policy_network_sample.exe src\tools\policy_network\trained\<run>\best_policy_network_weights.bin --transcript f5d6c3 --top 10
-```
-
-Show policy distribution from a board string:
-
-盤面文字列から方策分布を表示:
+盤面文字列から実行:
 
 ```powershell
-src\tools\policy_network\policy_network_sample.exe src\tools\policy_network\trained\<run>\best_policy_network_weights.bin --board ---------------------------OX------XO---------------------------X --top 10
+src\tools\policy_network\policy_network_sample.exe src\tools\policy_network\trained\playerop_final_issue613_128x3\best_policy_network_weights.bin --board ---------------------------OX------XO---------------------------X --top 10
 ```
 
-`BOARD65` is 64 board characters plus a side-to-move character. `X`, `0`, and
-`*` mean black; `O` and `1` mean white; `-` and `.` mean empty.
+Run from a transcript:
 
-`BOARD65` は 64 文字の盤面と 1 文字の手番です。`X`, `0`, `*` は黒、`O`, `1`
-は白、`-`, `.` は空きマスです。
+棋譜から実行:
+
+```powershell
+src\tools\policy_network\policy_network_sample.exe src\tools\policy_network\trained\playerop_final_issue613_128x3\best_policy_network_weights.bin --transcript d3c5e6f5 --top 10
+```
+
+For board strings, `X`, `x`, `B`, `b`, and `*` mean black; `O`, `o`, `W`,
+`w`, and `1` mean white; `-` and `.` mean empty. Add `--side white` when the
+side to move is white.
+
+盤面文字列では `X`, `x`, `B`, `b`, `*` が黒、`O`, `o`, `W`, `w`, `1` が白、
+`-`, `.` が空きマスです。白番を入力する場合は `--side white` を付けます。

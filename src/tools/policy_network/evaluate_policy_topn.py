@@ -136,11 +136,11 @@ def default_board_data_dir() -> Path:
 
 
 def default_model_file() -> Path:
-    return Path(__file__).resolve().parent / "trained" / "final_issue613_128x3" / "best_model.h5"
+    return Path(__file__).resolve().parent / "trained" / "playerop_final_issue613_128x3" / "best_model.h5"
 
 
 def default_weights_file() -> Path:
-    return Path(__file__).resolve().parent / "trained" / "final_issue613_128x3" / "best_policy_network_weights.bin"
+    return Path(__file__).resolve().parent / "trained" / "playerop_final_issue613_128x3" / "best_policy_network_weights.bin"
 
 
 def discover_dat_files(board_data_dir: Path) -> List[Path]:
@@ -167,12 +167,9 @@ def records_to_features(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np
     colors = records["color"]
     policies = records["policy"].astype(np.int64, copy=False)
 
-    black_to_move = colors == BLACK
-    black_bits = np.where(black_to_move, player, opponent).astype(np.uint64, copy=False)
-    white_bits = np.where(black_to_move, opponent, player).astype(np.uint64, copy=False)
     x = np.empty((len(records), INPUT_SIZE), dtype=np.float32)
-    x[:, :HW2] = ((black_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
-    x[:, HW2:] = ((white_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
+    x[:, :HW2] = ((player.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
+    x[:, HW2:] = ((opponent.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     legal = calc_legal_batch(player, opponent)
     return x, policies, legal, colors
 
@@ -354,7 +351,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=65536, help="Board-data read batch size.")
     parser.add_argument("--predict-batch-size", type=int, default=8192, help="Keras predict batch size.")
     parser.add_argument("--max-positions", type=int, default=None)
-    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "trained" / "records1_eval")
+    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "trained" / "playerop_records1_eval")
     parser.add_argument("--progress-interval", type=int, default=1000000)
     parser.add_argument("--verbose", action="store_true")
     return parser

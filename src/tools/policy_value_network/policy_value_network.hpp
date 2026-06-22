@@ -1,8 +1,8 @@
 /*
     Egaroucid Project
 
-    @file policy_network.hpp
-        Lightweight C++ inference helper for the policy network.
+    @file policy_value_network.hpp
+        Lightweight C++ inference helper for the policy-value network.
         Inputs are player-to-move / opponent bitboards.
 
     Related issue: #613
@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-namespace egaroucid_policy {
+namespace egaroucid_policy_value {
 
 constexpr int HW = 8;
 constexpr int HW2 = 64;
@@ -199,7 +199,6 @@ inline bool play_transcript(const std::string &transcript, BoardState *board, st
     board->black = (1ULL << policy_from_coord('e', '4')) | (1ULL << policy_from_coord('d', '5'));
     board->white = (1ULL << policy_from_coord('d', '4')) | (1ULL << policy_from_coord('e', '5'));
     board->side_to_move = BLACK;
-
     std::string s;
     s.reserve(transcript.size());
     for (char c : transcript) {
@@ -238,7 +237,12 @@ inline bool play_transcript(const std::string &transcript, BoardState *board, st
     return true;
 }
 
-class PolicyNetwork {
+struct Prediction {
+    std::array<float, 64> policy{};
+    float value = 0.0F;
+};
+
+class PolicyValueNetwork {
   public:
     struct Layer {
         uint32_t input_dim = 0;
@@ -259,7 +263,7 @@ class PolicyNetwork {
         }
         char magic[16];
         f.read(magic, sizeof(magic));
-        const char expected[16] = {'E', 'G', 'R', '_', 'P', 'O', 'L', 'I', 'C', 'Y', '_', 'V', '1', '\0', '\0', '\0'};
+        const char expected[16] = {'E', 'G', 'R', '_', 'P', 'O', 'L', 'V', 'A', 'L', '_', 'V', '1', '\0', '\0', '\0'};
         if (!f || std::memcmp(magic, expected, sizeof(magic)) != 0) {
             if (error) {
                 *error = "invalid weights magic";
@@ -267,97 +271,116 @@ class PolicyNetwork {
             return false;
         }
         uint32_t version = 0;
-        uint32_t n_layers = 0;
+        uint32_t n_trunk_layers = 0;
         uint32_t input_size = 0;
-        uint32_t output_size = 0;
+        uint32_t policy_size = 0;
+        uint32_t value_size = 0;
         f.read(reinterpret_cast<char *>(&version), sizeof(version));
-        f.read(reinterpret_cast<char *>(&n_layers), sizeof(n_layers));
+        f.read(reinterpret_cast<char *>(&n_trunk_layers), sizeof(n_trunk_layers));
         f.read(reinterpret_cast<char *>(&input_size), sizeof(input_size));
-        f.read(reinterpret_cast<char *>(&output_size), sizeof(output_size));
-        if (!f || version != 1 || input_size != 128 || output_size != 64 || n_layers == 0) {
+        f.read(reinterpret_cast<char *>(&policy_size), sizeof(policy_size));
+        f.read(reinterpret_cast<char *>(&value_size), sizeof(value_size));
+        if (!f || version != 1 || input_size != 128 || policy_size != 64 || value_size != 1 || n_trunk_layers == 0) {
             if (error) {
                 *error = "unsupported weights header";
             }
             return false;
         }
-        layers_.clear();
-        layers_.resize(n_layers);
+        trunk_layers_.clear();
+        trunk_layers_.resize(n_trunk_layers);
         uint32_t expected_input = input_size;
-        for (Layer &layer : layers_) {
-            f.read(reinterpret_cast<char *>(&layer.input_dim), sizeof(layer.input_dim));
-            f.read(reinterpret_cast<char *>(&layer.output_dim), sizeof(layer.output_dim));
-            f.read(reinterpret_cast<char *>(&layer.activation), sizeof(layer.activation));
-            f.read(reinterpret_cast<char *>(&layer.alpha), sizeof(layer.alpha));
-            if (!f || layer.input_dim != expected_input || layer.output_dim == 0) {
-                if (error) {
-                    *error = "invalid layer shape";
-                }
-                return false;
-            }
-            const size_t n_weights = static_cast<size_t>(layer.input_dim) * layer.output_dim;
-            layer.weights.resize(n_weights);
-            layer.bias.resize(layer.output_dim);
-            f.read(reinterpret_cast<char *>(layer.weights.data()), static_cast<std::streamsize>(n_weights * sizeof(float)));
-            f.read(reinterpret_cast<char *>(layer.bias.data()), static_cast<std::streamsize>(layer.bias.size() * sizeof(float)));
-            if (!f) {
-                if (error) {
-                    *error = "truncated weights file";
-                }
+        for (Layer &layer : trunk_layers_) {
+            if (!read_layer(f, expected_input, &layer, error)) {
                 return false;
             }
             expected_input = layer.output_dim;
         }
-        if (layers_.back().output_dim != 64) {
+        if (!read_layer(f, expected_input, &policy_head_, error)) {
+            return false;
+        }
+        if (!read_layer(f, expected_input, &value_head_, error)) {
+            return false;
+        }
+        return policy_head_.output_dim == 64 && value_head_.output_dim == 1;
+    }
+
+    Prediction predict(uint64_t player, uint64_t opponent) const {
+        if (trunk_layers_.empty()) {
+            throw std::runtime_error("PolicyValueNetwork::predict called before load");
+        }
+        std::vector<float> trunk(128);
+        for (int i = 0; i < 64; ++i) {
+            trunk[i] = static_cast<float>((player >> (63 - i)) & 1ULL);
+            trunk[64 + i] = static_cast<float>((opponent >> (63 - i)) & 1ULL);
+        }
+        for (const Layer &layer : trunk_layers_) {
+            trunk = forward_layer(trunk, layer);
+        }
+        std::vector<float> logits = forward_layer(trunk, policy_head_);
+        std::vector<float> value = forward_layer(trunk, value_head_);
+
+        Prediction prediction;
+        const float max_logit = *std::max_element(logits.begin(), logits.end());
+        float sum_exp = 0.0F;
+        for (int i = 0; i < 64; ++i) {
+            prediction.policy[i] = std::exp(logits[i] - max_logit);
+            sum_exp += prediction.policy[i];
+        }
+        if (sum_exp > 0.0F) {
+            for (float &v : prediction.policy) {
+                v /= sum_exp;
+            }
+        }
+        prediction.value = value[0];
+        return prediction;
+    }
+
+  private:
+    static bool read_layer(std::ifstream &f, uint32_t expected_input, Layer *layer, std::string *error) {
+        f.read(reinterpret_cast<char *>(&layer->input_dim), sizeof(layer->input_dim));
+        f.read(reinterpret_cast<char *>(&layer->output_dim), sizeof(layer->output_dim));
+        f.read(reinterpret_cast<char *>(&layer->activation), sizeof(layer->activation));
+        f.read(reinterpret_cast<char *>(&layer->alpha), sizeof(layer->alpha));
+        if (!f || layer->input_dim != expected_input || layer->output_dim == 0) {
             if (error) {
-                *error = "output layer is not 64-wide";
+                *error = "invalid layer shape";
+            }
+            return false;
+        }
+        const size_t n_weights = static_cast<size_t>(layer->input_dim) * layer->output_dim;
+        layer->weights.resize(n_weights);
+        layer->bias.resize(layer->output_dim);
+        f.read(reinterpret_cast<char *>(layer->weights.data()), static_cast<std::streamsize>(n_weights * sizeof(float)));
+        f.read(reinterpret_cast<char *>(layer->bias.data()), static_cast<std::streamsize>(layer->bias.size() * sizeof(float)));
+        if (!f) {
+            if (error) {
+                *error = "truncated weights file";
             }
             return false;
         }
         return true;
     }
 
-    std::array<float, 64> predict(uint64_t player, uint64_t opponent) const {
-        if (layers_.empty()) {
-            throw std::runtime_error("PolicyNetwork::predict called before load");
-        }
-        std::vector<float> current(128);
-        for (int i = 0; i < 64; ++i) {
-            current[i] = static_cast<float>((player >> (63 - i)) & 1ULL);
-            current[64 + i] = static_cast<float>((opponent >> (63 - i)) & 1ULL);
-        }
-        std::vector<float> next;
-        for (const Layer &layer : layers_) {
-            next.assign(layer.output_dim, 0.0F);
-            for (uint32_t j = 0; j < layer.output_dim; ++j) {
-                float sum = layer.bias[j];
-                for (uint32_t i = 0; i < layer.input_dim; ++i) {
-                    sum += current[i] * layer.weights[static_cast<size_t>(i) * layer.output_dim + j];
-                }
-                if (layer.activation == 1 && sum < 0.0F) {
-                    sum *= layer.alpha;
-                }
-                next[j] = sum;
+    static std::vector<float> forward_layer(const std::vector<float> &input, const Layer &layer) {
+        std::vector<float> output(layer.output_dim, 0.0F);
+        for (uint32_t j = 0; j < layer.output_dim; ++j) {
+            float sum = layer.bias[j];
+            for (uint32_t i = 0; i < layer.input_dim; ++i) {
+                sum += input[i] * layer.weights[static_cast<size_t>(i) * layer.output_dim + j];
             }
-            current.swap(next);
-        }
-
-        std::array<float, 64> prob{};
-        const float max_logit = *std::max_element(current.begin(), current.end());
-        float sum_exp = 0.0F;
-        for (int i = 0; i < 64; ++i) {
-            prob[i] = std::exp(current[i] - max_logit);
-            sum_exp += prob[i];
-        }
-        if (sum_exp > 0.0F) {
-            for (float &v : prob) {
-                v /= sum_exp;
+            if (layer.activation == 1 && sum < 0.0F) {
+                sum *= layer.alpha;
+            } else if (layer.activation == 2) {
+                sum = std::tanh(sum);
             }
+            output[j] = sum;
         }
-        return prob;
+        return output;
     }
 
-  private:
-    std::vector<Layer> layers_;
+    std::vector<Layer> trunk_layers_;
+    Layer policy_head_;
+    Layer value_head_;
 };
 
 inline std::vector<std::pair<int, float>> top_k(const std::array<float, 64> &prob, int k) {
@@ -378,4 +401,4 @@ inline std::vector<std::pair<int, float>> top_k(const std::array<float, 64> &pro
     return entries;
 }
 
-}  // namespace egaroucid_policy
+}  // namespace egaroucid_policy_value

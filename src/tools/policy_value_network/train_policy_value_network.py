@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 """
-Train a compact policy network for Othello move prediction.
+Train a compact policy-value network for Othello.
 
 Related issue: #613
 
 Input features are side-to-move bitboards:
   [player-to-move exists on 64 squares, opponent exists on 64 squares]
 
-Training data is read from:
-  $EGAROUCID_DATA/train_data/board_data/records259 ... records310
-
-Board data record layout, 19 bytes:
-  uint64 player_to_move_bits
-  uint64 opponent_bits
-  int8   player_color
-  int8   policy
-  int8   score
+Outputs:
+  policy: 64-way softmax over moves
+  value:  tanh scalar, final disc difference from player-to-move perspective / 64
 """
 
 from __future__ import annotations
@@ -30,7 +24,7 @@ from pathlib import Path
 import random
 import shutil
 import struct
-from typing import Iterable, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -43,7 +37,8 @@ from tensorflow.keras.regularizers import l2 as keras_l2
 
 BOARD_RECORD_SIZE = 19
 INPUT_SIZE = 128
-OUTPUT_SIZE = 64
+POLICY_SIZE = 64
+VALUE_SCALE = 64.0
 
 BOARD_DTYPE = np.dtype(
     [
@@ -75,6 +70,7 @@ class ModelSpec:
     dropout: float
     l2: float
     learning_rate: float
+    value_loss_weight: float
 
 
 def set_reproducible_seed(seed: int) -> None:
@@ -84,8 +80,7 @@ def set_reproducible_seed(seed: int) -> None:
 
 
 def enable_memory_growth() -> None:
-    gpus = tf.config.list_physical_devices("GPU")
-    for gpu in gpus:
+    for gpu in tf.config.list_physical_devices("GPU"):
         try:
             tf.config.experimental.set_memory_growth(gpu, True)
         except RuntimeError:
@@ -116,8 +111,7 @@ def discover_board_files(data_root: Path, record_start: int, record_end: int) ->
 def allocate_counts(total: int, weights: Sequence[int]) -> List[int]:
     if total <= 0:
         return [0 for _ in weights]
-    weight_sum = float(sum(weights))
-    raw = np.array(weights, dtype=np.float64) * (float(total) / weight_sum)
+    raw = np.array(weights, dtype=np.float64) * (float(total) / float(sum(weights)))
     counts = np.floor(raw).astype(np.int64)
     missing = total - int(counts.sum())
     if missing > 0:
@@ -126,21 +120,22 @@ def allocate_counts(total: int, weights: Sequence[int]) -> List[int]:
     return [int(v) for v in counts]
 
 
-def records_to_features(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    player_bits = records["player"]
-    opponent_bits = records["opponent"]
-
+def records_to_targets(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    player_bits = records["player"].astype(np.uint64, copy=False)
+    opponent_bits = records["opponent"].astype(np.uint64, copy=False)
     n = len(records)
     x = np.empty((n, INPUT_SIZE), dtype=np.float32)
     x[:, :64] = ((player_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     x[:, 64:] = ((opponent_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
-    y = records["policy"].astype(np.int64, copy=False)
-    return x, y
+    y_policy = records["policy"].astype(np.int64, copy=False)
+    y_value = (records["score"].astype(np.float32, copy=False) / VALUE_SCALE).reshape(-1, 1)
+    return x, y_policy, y_value
 
 
 def append_sampled_records(
     dest_x: np.ndarray,
-    dest_y: np.ndarray,
+    dest_policy: np.ndarray,
+    dest_value: np.ndarray,
     offset: int,
     board_file: BoardFile,
     indices: np.ndarray,
@@ -149,20 +144,27 @@ def append_sampled_records(
         return offset
     mmap = np.memmap(board_file.path, dtype=BOARD_DTYPE, mode="r", shape=(board_file.n_records,))
     records = np.asarray(mmap[indices])
-    x, y = records_to_features(records)
-    valid = (0 <= y) & (y < OUTPUT_SIZE)
+    x, y_policy, y_value = records_to_targets(records)
+    valid = (0 <= y_policy) & (y_policy < POLICY_SIZE)
     if not np.all(valid):
         x = x[valid]
-        y = y[valid]
-    n = len(y)
+        y_policy = y_policy[valid]
+        y_value = y_value[valid]
+    n = len(y_policy)
     dest_x[offset : offset + n] = x
-    dest_y[offset : offset + n] = y
+    dest_policy[offset : offset + n] = y_policy
+    dest_value[offset : offset + n] = y_value
     return offset + n
 
 
-def shuffle_in_unison(x: np.ndarray, y: np.ndarray, rng: np.random.Generator) -> Tuple[np.ndarray, np.ndarray]:
-    order = rng.permutation(len(y))
-    return x[order], y[order]
+def shuffle_split(
+    x: np.ndarray,
+    policy: np.ndarray,
+    value: np.ndarray,
+    rng: np.random.Generator,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    order = rng.permutation(len(policy))
+    return x[order], policy[order], value[order]
 
 
 def load_sampled_split(
@@ -170,16 +172,18 @@ def load_sampled_split(
     max_train_samples: int,
     max_val_samples: int,
     seed: int,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
     weights = [f.n_records for f in files]
     train_alloc = allocate_counts(max_train_samples, weights)
     val_alloc = allocate_counts(max_val_samples, weights)
 
     x_train = np.empty((sum(train_alloc), INPUT_SIZE), dtype=np.float32)
-    y_train = np.empty(sum(train_alloc), dtype=np.int64)
+    p_train = np.empty(sum(train_alloc), dtype=np.int64)
+    v_train = np.empty((sum(train_alloc), 1), dtype=np.float32)
     x_val = np.empty((sum(val_alloc), INPUT_SIZE), dtype=np.float32)
-    y_val = np.empty(sum(val_alloc), dtype=np.int64)
+    p_val = np.empty(sum(val_alloc), dtype=np.int64)
+    v_val = np.empty((sum(val_alloc), 1), dtype=np.float32)
 
     train_offset = 0
     val_offset = 0
@@ -189,18 +193,14 @@ def load_sampled_split(
         if n_train + n_val == 0:
             continue
         indices = rng.integers(0, board_file.n_records, size=n_train + n_val, dtype=np.int64)
-        train_indices = np.sort(indices[:n_train])
-        val_indices = np.sort(indices[n_train:])
-        train_offset = append_sampled_records(x_train, y_train, train_offset, board_file, train_indices)
-        val_offset = append_sampled_records(x_val, y_val, val_offset, board_file, val_indices)
+        train_offset = append_sampled_records(x_train, p_train, v_train, train_offset, board_file, np.sort(indices[:n_train]))
+        val_offset = append_sampled_records(x_val, p_val, v_val, val_offset, board_file, np.sort(indices[n_train:]))
 
-    x_train = x_train[:train_offset]
-    y_train = y_train[:train_offset]
-    x_val = x_val[:val_offset]
-    y_val = y_val[:val_offset]
-    x_train, y_train = shuffle_in_unison(x_train, y_train, rng)
-    x_val, y_val = shuffle_in_unison(x_val, y_val, rng)
-    return x_train, y_train, x_val, y_val
+    x_train, p_train, v_train = x_train[:train_offset], p_train[:train_offset], v_train[:train_offset]
+    x_val, p_val, v_val = x_val[:val_offset], p_val[:val_offset], v_val[:val_offset]
+    x_train, p_train, v_train = shuffle_split(x_train, p_train, v_train, rng)
+    x_val, p_val, v_val = shuffle_split(x_val, p_val, v_val, rng)
+    return x_train, p_train, v_train, x_val, p_val, v_val
 
 
 def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
@@ -212,28 +212,30 @@ def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
         if ":" in token:
             parts = token.split(":")
             if len(parts) < 3:
-                raise ValueError(f"invalid config '{token}', expected name:width:depth[:alpha[:dropout[:l2[:lr]]]]")
+                raise ValueError(f"invalid config '{token}', expected name:width:depth[:value_weight[:alpha[:dropout[:l2[:lr]]]]]")
             name = parts[0]
             width = int(parts[1])
             depth = int(parts[2])
-            alpha = float(parts[3]) if len(parts) > 3 else args.alpha
-            dropout = float(parts[4]) if len(parts) > 4 else args.dropout
-            l2_value = float(parts[5]) if len(parts) > 5 else args.l2
-            lr = float(parts[6]) if len(parts) > 6 else args.learning_rate
+            value_weight = float(parts[3]) if len(parts) > 3 else args.value_loss_weight
+            alpha = float(parts[4]) if len(parts) > 4 else args.alpha
+            dropout = float(parts[5]) if len(parts) > 5 else args.dropout
+            l2_value = float(parts[6]) if len(parts) > 6 else args.l2
+            lr = float(parts[7]) if len(parts) > 7 else args.learning_rate
         else:
             if "x" not in token:
                 raise ValueError(f"invalid config '{token}', expected WIDTHxDEPTH")
             width_s, depth_s = token.lower().split("x", 1)
             width = int(width_s)
             depth = int(depth_s)
+            value_weight = args.value_loss_weight
             alpha = args.alpha
             dropout = args.dropout
             l2_value = args.l2
             lr = args.learning_rate
-            name = f"w{width}_d{depth}_a{alpha:g}"
+            name = f"w{width}_d{depth}_vw{value_weight:g}_a{alpha:g}"
         if width <= 0 or depth <= 0:
             raise ValueError(f"invalid config '{token}', width and depth must be positive")
-        specs.append(ModelSpec(name=name, width=width, depth=depth, alpha=alpha, dropout=dropout, l2=l2_value, learning_rate=lr))
+        specs.append(ModelSpec(name, width, depth, alpha, dropout, l2_value, lr, value_weight))
     if not specs:
         raise ValueError("no model configs were provided")
     return specs
@@ -248,44 +250,56 @@ def build_model(spec: ModelSpec) -> Model:
             spec.width,
             kernel_initializer="he_normal",
             kernel_regularizer=kernel_regularizer,
-            name=f"dense_{layer_idx}",
+            name=f"trunk_dense_{layer_idx}",
         )(x)
-        x = LeakyReLU(alpha=spec.alpha, name=f"leaky_relu_{layer_idx}")(x)
+        x = LeakyReLU(alpha=spec.alpha, name=f"trunk_leaky_relu_{layer_idx}")(x)
         if spec.dropout > 0.0:
-            x = Dropout(spec.dropout, name=f"dropout_{layer_idx}")(x)
-    logits = Dense(OUTPUT_SIZE, name="policy_logits")(x)
-    outputs = Softmax(name="policy")(logits)
-    model = Model(inputs=inputs, outputs=outputs, name=spec.name)
-    optimizer = tf.keras.optimizers.Adam(learning_rate=spec.learning_rate)
+            x = Dropout(spec.dropout, name=f"trunk_dropout_{layer_idx}")(x)
+    policy_logits = Dense(POLICY_SIZE, name="policy_logits")(x)
+    policy = Softmax(name="policy")(policy_logits)
+    value = Dense(1, activation="tanh", name="value")(x)
+    model = Model(inputs=inputs, outputs={"policy": policy, "value": value}, name=spec.name)
     model.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=[
-            tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-            tf.keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3"),
-            tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5, name="top5"),
-        ],
+        optimizer=tf.keras.optimizers.Adam(learning_rate=spec.learning_rate),
+        loss={
+            "policy": tf.keras.losses.SparseCategoricalCrossentropy(),
+            "value": tf.keras.losses.MeanSquaredError(),
+        },
+        loss_weights={"policy": 1.0, "value": spec.value_loss_weight},
+        metrics={
+            "policy": [
+                tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+                tf.keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3"),
+                tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5, name="top5"),
+            ],
+            "value": [tf.keras.metrics.MeanAbsoluteError(name="mae")],
+        },
     )
     return model
 
 
+def _write_dense_layer(f, layer: Dense, activation: int, alpha: float) -> None:
+    weights, bias = layer.get_weights()
+    weights = np.asarray(weights, dtype=np.float32)
+    bias = np.asarray(bias, dtype=np.float32)
+    in_dim, out_dim = weights.shape
+    f.write(struct.pack("<IIIf", in_dim, out_dim, activation, alpha))
+    f.write(weights.astype("<f4", copy=False).tobytes(order="C"))
+    f.write(bias.astype("<f4", copy=False).tobytes(order="C"))
+
+
 def export_binary_weights(model: Model, spec: ModelSpec, out_file: Path) -> None:
-    dense_layers = [layer for layer in model.layers if isinstance(layer, Dense)]
+    trunk_layers = [model.get_layer(f"trunk_dense_{i}") for i in range(spec.depth)]
+    policy_layer = model.get_layer("policy_logits")
+    value_layer = model.get_layer("value")
     out_file.parent.mkdir(parents=True, exist_ok=True)
     with out_file.open("wb") as f:
-        magic = b"EGR_POLICY_V1" + b"\0" * 3
-        f.write(magic)
-        f.write(struct.pack("<IIII", 1, len(dense_layers), INPUT_SIZE, OUTPUT_SIZE))
-        for layer_idx, layer in enumerate(dense_layers):
-            weights, bias = layer.get_weights()
-            weights = np.asarray(weights, dtype=np.float32)
-            bias = np.asarray(bias, dtype=np.float32)
-            in_dim, out_dim = weights.shape
-            activation = 1 if layer_idx < len(dense_layers) - 1 else 0
-            alpha = spec.alpha if activation == 1 else 0.0
-            f.write(struct.pack("<IIIf", in_dim, out_dim, activation, alpha))
-            f.write(weights.astype("<f4", copy=False).tobytes(order="C"))
-            f.write(bias.astype("<f4", copy=False).tobytes(order="C"))
+        f.write(b"EGR_POLVAL_V1\0\0\0")
+        f.write(struct.pack("<IIIII", 1, len(trunk_layers), INPUT_SIZE, POLICY_SIZE, 1))
+        for layer in trunk_layers:
+            _write_dense_layer(f, layer, 1, spec.alpha)
+        _write_dense_layer(f, policy_layer, 0, 0.0)
+        _write_dense_layer(f, value_layer, 2, 0.0)
 
 
 def save_history_csv(history: tf.keras.callbacks.History, out_file: Path) -> None:
@@ -300,9 +314,11 @@ def save_history_csv(history: tf.keras.callbacks.History, out_file: Path) -> Non
 def train_one_model(
     spec: ModelSpec,
     x_train: np.ndarray,
-    y_train: np.ndarray,
+    p_train: np.ndarray,
+    v_train: np.ndarray,
     x_val: np.ndarray,
-    y_val: np.ndarray,
+    p_val: np.ndarray,
+    v_val: np.ndarray,
     args: argparse.Namespace,
     output_dir: Path,
 ) -> dict:
@@ -316,15 +332,15 @@ def train_one_model(
     model.summary()
 
     callbacks = [
-        EarlyStopping(monitor="val_accuracy", mode="max", patience=args.patience, restore_best_weights=True),
+        EarlyStopping(monitor="val_loss", mode="min", patience=args.patience, restore_best_weights=True),
         ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=max(1, args.patience // 2), min_lr=args.min_learning_rate),
         CSVLogger(str(run_dir / "keras_log.csv")),
-        ModelCheckpoint(str(run_dir / "best_model.h5"), monitor="val_accuracy", mode="max", save_best_only=True),
+        ModelCheckpoint(str(run_dir / "best_model.h5"), monitor="val_loss", mode="min", save_best_only=True),
     ]
     history = model.fit(
         x_train,
-        y_train,
-        validation_data=(x_val, y_val),
+        {"policy": p_train, "value": v_train},
+        validation_data=(x_val, {"policy": p_val, "value": v_val}),
         epochs=args.epochs,
         batch_size=args.batch_size,
         callbacks=callbacks,
@@ -333,10 +349,10 @@ def train_one_model(
 
     save_history_csv(history, run_dir / "history.csv")
     model.save(run_dir / "model.h5")
-    export_binary_weights(model, spec, run_dir / "policy_network_weights.bin")
+    export_binary_weights(model, spec, run_dir / "policy_value_network_weights.bin")
 
-    val_accuracy = history.history.get("val_accuracy", [])
-    best_epoch = int(np.argmax(val_accuracy)) + 1 if val_accuracy else len(history.epoch)
+    val_loss = history.history["val_loss"]
+    best_epoch = int(np.argmin(val_loss)) + 1
     best_idx = best_epoch - 1
     result = {
         "name": spec.name,
@@ -345,13 +361,15 @@ def train_one_model(
         "epochs_ran": len(history.epoch),
         "best_epoch": best_epoch,
         "best_val_loss": float(history.history["val_loss"][best_idx]),
-        "best_val_accuracy": float(history.history["val_accuracy"][best_idx]),
-        "best_val_top3": float(history.history["val_top3"][best_idx]),
-        "best_val_top5": float(history.history["val_top5"][best_idx]),
+        "best_val_policy_accuracy": float(history.history["val_policy_accuracy"][best_idx]),
+        "best_val_policy_top3": float(history.history["val_policy_top3"][best_idx]),
+        "best_val_policy_top5": float(history.history["val_policy_top5"][best_idx]),
+        "best_val_value_mae": float(history.history["val_value_mae"][best_idx]),
         "final_loss": float(history.history["loss"][-1]),
-        "final_accuracy": float(history.history["accuracy"][-1]),
-        "final_top3": float(history.history["top3"][-1]),
-        "final_top5": float(history.history["top5"][-1]),
+        "final_policy_accuracy": float(history.history["policy_accuracy"][-1]),
+        "final_policy_top3": float(history.history["policy_top3"][-1]),
+        "final_policy_top5": float(history.history["policy_top5"][-1]),
+        "final_value_mae": float(history.history["value_mae"][-1]),
         "output_dir": str(run_dir),
     }
     with (run_dir / "summary.json").open("w") as f:
@@ -363,22 +381,24 @@ def train_one_model(
 def write_results(results: Sequence[dict], output_dir: Path) -> None:
     with (output_dir / "results.json").open("w") as f:
         json.dump(list(results), f, indent=2)
+    fields = [
+        "name",
+        "params",
+        "epochs_ran",
+        "best_epoch",
+        "best_val_loss",
+        "best_val_policy_accuracy",
+        "best_val_policy_top3",
+        "best_val_policy_top5",
+        "best_val_value_mae",
+        "final_loss",
+        "final_policy_accuracy",
+        "final_policy_top3",
+        "final_policy_top5",
+        "final_value_mae",
+        "output_dir",
+    ]
     with (output_dir / "results.csv").open("w", newline="") as f:
-        fields = [
-            "name",
-            "params",
-            "epochs_ran",
-            "best_epoch",
-            "best_val_loss",
-            "best_val_accuracy",
-            "best_val_top3",
-            "best_val_top5",
-            "final_loss",
-            "final_accuracy",
-            "final_top3",
-            "final_top5",
-            "output_dir",
-        ]
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         for result in results:
@@ -391,14 +411,15 @@ def default_output_dir() -> Path:
 
 
 def make_argparser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Train compact Othello policy networks with tensorflow.keras.")
+    parser = argparse.ArgumentParser(description="Train compact Othello policy-value networks with tensorflow.keras.")
     parser.add_argument("--data-root", default=None, help="default: $EGAROUCID_DATA/train_data/board_data")
     parser.add_argument("--record-start", type=int, default=259)
     parser.add_argument("--record-end", type=int, default=310)
-    parser.add_argument("--configs", default="48x3,64x3,80x3,64x4")
+    parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
     parser.add_argument("--alpha", type=float, default=0.03)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--l2", type=float, default=0.0)
+    parser.add_argument("--value-loss-weight", type=float, default=0.25)
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--min-learning-rate", type=float, default=0.00005)
     parser.add_argument("--epochs", type=int, default=20)
@@ -427,31 +448,30 @@ def main() -> None:
     print("data_root", data_root)
     print("output_dir", output_dir)
     print("issue", "#613")
+    print("value target", "score / 64 from player-to-move perspective")
 
     files = discover_board_files(data_root, args.record_start, args.record_end)
-    total_records = sum(f.n_records for f in files)
     print(f"board files {len(files)}")
-    print(f"total records {total_records}")
+    print(f"total records {sum(f.n_records for f in files)}")
     print(f"sampling train={args.max_train_samples} val={args.max_val_samples}")
 
-    x_train, y_train, x_val, y_val = load_sampled_split(files, args.max_train_samples, args.max_val_samples, args.seed)
-    print("loaded", x_train.shape, y_train.shape, x_val.shape, y_val.shape)
+    x_train, p_train, v_train, x_val, p_val, v_val = load_sampled_split(files, args.max_train_samples, args.max_val_samples, args.seed)
+    print("loaded", x_train.shape, p_train.shape, v_train.shape, x_val.shape, p_val.shape, v_val.shape)
 
-    specs = parse_model_specs(args.configs, args)
     results = []
-    for spec in specs:
-        results.append(train_one_model(spec, x_train, y_train, x_val, y_val, args, output_dir))
+    for spec in parse_model_specs(args.configs, args):
+        results.append(train_one_model(spec, x_train, p_train, v_train, x_val, p_val, v_val, args, output_dir))
         write_results(results, output_dir)
 
-    best = max(results, key=lambda r: r["best_val_accuracy"])
+    best = min(results, key=lambda r: r["best_val_loss"])
     best_dir = Path(best["output_dir"])
-    shutil.copyfile(best_dir / "policy_network_weights.bin", output_dir / "best_policy_network_weights.bin")
+    shutil.copyfile(best_dir / "policy_value_network_weights.bin", output_dir / "best_policy_value_network_weights.bin")
     shutil.copyfile(best_dir / "model.h5", output_dir / "best_model.h5")
     with (output_dir / "best_summary.json").open("w") as f:
         json.dump(best, f, indent=2)
     print("\n=== best ===")
     print(json.dumps(best, indent=2))
-    print("best weights", output_dir / "best_policy_network_weights.bin")
+    print("best weights", output_dir / "best_policy_value_network_weights.bin")
 
 
 if __name__ == "__main__":
