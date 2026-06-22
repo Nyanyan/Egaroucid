@@ -23,6 +23,7 @@ constexpr Color menu_font_color = Palette::Black;
 constexpr Color radio_color = Palette::Deepskyblue;
 constexpr Color bar_color = Palette::Lightskyblue;
 constexpr Color bar_circle_color = Palette::Deepskyblue;
+constexpr Color bar_player_loss_overlap_color = Palette::Orange;
 constexpr int menu_offset_x = 10;
 constexpr int menu_offset_y = 1;
 constexpr int menu_image_offset_y = 3;
@@ -128,6 +129,12 @@ private:
     Texture arrow_left;
     int bar_active_circle = 0;
     int min_bar_gap = 2;
+    bool bars_independent = false;
+    bool bars_player_loss = false;
+
+    int current_bar_size() const {
+        return bars_player_loss ? 110 : MENU_BAR_SIZE;
+    }
 
     // button mode
     bool *is_clicked_p;
@@ -150,14 +157,14 @@ private:
         // - Left element (bar_elem1, is_right_elem=false): use right edge (cursor_x + MENU_BAR_RADIUS)
         // - Right element (bar_elem2, is_right_elem=true): use left edge (cursor_x - MENU_BAR_RADIUS)
         double effective_x = cursor_x;
-        if (mode == MENU_MODE_2BARS) {
+        if (mode == MENU_MODE_2BARS && !bars_independent) {
             effective_x = is_right_elem ? (cursor_x - MENU_BAR_RADIUS) : (cursor_x + MENU_BAR_RADIUS);
         }
         double margin = MENU_BAR_MARGIN_H;
         if (mode == MENU_MODE_2BARS) {
             margin = MENU_2BARS_MARGIN_H;
         }
-        double ratio = (double)(effective_x - (bar_sx + margin)) / (double)(MENU_BAR_SIZE - margin * 2);
+        double ratio = (double)(effective_x - (bar_sx + margin)) / (double)(current_bar_size() - margin * 2);
         ratio = std::clamp(ratio, 0.0, 1.0);
         int value = (int)round(ratio * (max_elem - min_elem)) + min_elem;
         return std::clamp(value, min_elem, max_elem);
@@ -165,7 +172,7 @@ private:
 
     int value_to_bar_x(int value, bool is_right_elem = false) const {
         if (max_elem == min_elem) {
-            return bar_sx + (MENU_BAR_SIZE / 2);
+            return bar_sx + (current_bar_size() / 2);
         }
         double ratio = (double)(value - min_elem) / (double)(max_elem - min_elem);
         ratio = std::clamp(ratio, 0.0, 1.0);
@@ -173,11 +180,11 @@ private:
         if (mode == MENU_MODE_2BARS) {
             margin = MENU_2BARS_MARGIN_H;
         }
-        int x = (int)round(bar_sx + margin + (double)(MENU_BAR_SIZE - margin * 2) * ratio);
+        int x = (int)round(bar_sx + margin + (double)(current_bar_size() - margin * 2) * ratio);
         // For MENU_MODE_2BARS:
         // - Left element (bar_elem1, is_right_elem=false): value represents right edge, so subtract radius
         // - Right element (bar_elem2, is_right_elem=true): value represents left edge, so add radius
-        if (mode == MENU_MODE_2BARS) {
+        if (mode == MENU_MODE_2BARS && !bars_independent) {
             x = is_right_elem ? (x + MENU_BAR_RADIUS) : (x - MENU_BAR_RADIUS);
         }
         return x;
@@ -239,10 +246,18 @@ public:
         bar_active_circle = 0;
         min_elem = mn;
         max_elem = mx;
+        bars_independent = false;
+        bars_player_loss = false;
         min_bar_gap = mgap;
         is_clicked = false;
         use_image = false;
         arrow_left = al;
+    }
+
+    void init_2bars_player_loss(String s, int *c1, int *c2, int d1, int d2, int mn, int mx, Texture al) {
+        init_2bars(s, c1, c2, d1, d2, mn, mx, 0, al);
+        bars_independent = true;
+        bars_player_loss = true;
     }
 
     void init_bar(String s, int *c, int d, int mn, int mx) {
@@ -363,11 +378,11 @@ public:
             }
         }
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_2BARS || mode == MENU_MODE_BAR_CHECK) {
-            bar_sx = rect.x + rect.w - MENU_BAR_SIZE - bar_additional_offset;
+            bar_sx = rect.x + rect.w - current_bar_size() - bar_additional_offset;
             bar_center_y = rect.y + rect.h / 2;
             bar_rect.x = bar_sx;
             bar_rect.y = bar_center_y - MENU_BAR_HEIGHT / 2;
-            bar_rect.w = MENU_BAR_SIZE;
+            bar_rect.w = current_bar_size();
             bar_rect.h = MENU_BAR_HEIGHT;
             refresh_bar_circles();
         }
@@ -422,12 +437,12 @@ public:
                 if (bar_active_circle == 1) {
                     // Move only the first handle, never modify bar_elem2 here
                     const int cursor_value = cursor_to_bar_value(cursor_x, false);
-                    int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - min_bar_gap);
+                    int newv = bars_independent ? std::clamp(cursor_value, min_elem, max_elem) : std::clamp(cursor_value, min_elem, *bar_elem2 - min_bar_gap);
                     *bar_elem1 = newv;
                 } else if (bar_active_circle == 2) {
                     // Move only the second handle, never modify bar_elem1 here
                     const int cursor_value = cursor_to_bar_value(cursor_x, true);
-                    int newv = std::clamp(cursor_value, *bar_elem1 + min_bar_gap, max_elem);
+                    int newv = bars_independent ? std::clamp(cursor_value, min_elem, max_elem) : std::clamp(cursor_value, *bar_elem1 + min_bar_gap, max_elem);
                     *bar_elem2 = newv;
                 } else {
                     // No specific handle active: pick the nearer handle and move only it
@@ -435,12 +450,12 @@ public:
                     int dist2 = cursor_x - circle2_x; if (dist2 < 0) dist2 = -dist2;
                     if (dist1 <= dist2) {
                         const int cursor_value = cursor_to_bar_value(cursor_x, false);
-                        int newv = std::clamp(cursor_value, min_elem, *bar_elem2 - min_bar_gap);
+                        int newv = bars_independent ? std::clamp(cursor_value, min_elem, max_elem) : std::clamp(cursor_value, min_elem, *bar_elem2 - min_bar_gap);
                         *bar_elem1 = newv;
                         bar_active_circle = 1;
                     } else {
                         const int cursor_value = cursor_to_bar_value(cursor_x, true);
-                        int newv = std::clamp(cursor_value, *bar_elem1 + min_bar_gap, max_elem);
+                        int newv = bars_independent ? std::clamp(cursor_value, min_elem, max_elem) : std::clamp(cursor_value, *bar_elem1 + min_bar_gap, max_elem);
                         *bar_elem2 = newv;
                         bar_active_circle = 2;
                     }
@@ -557,17 +572,30 @@ public:
                 bar_circle.draw(bar_circle_color);
             }
         } else if (mode == MENU_MODE_2BARS) {
-            String range_str = Format(*bar_elem1, U"~", *bar_elem2);
+            String range_str = bars_player_loss ? Format(U"B", *bar_elem1, U" W", *bar_elem2) : Format(*bar_elem1, U"~", *bar_elem2);
             font(range_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
-            Rect left_label(bar_rect.x, bar_rect.y, bar_rect.w / 2, bar_rect.h);
-            Rect right_label(bar_rect.x + bar_rect.w / 2, bar_rect.y, bar_rect.w - bar_rect.w / 2, bar_rect.h);
-            left_label.draw(Palette::White);
-            right_label.draw(Palette::Black);
+            if (bars_player_loss) {
+                bar_rect.draw(bar_color);
+            } else {
+                Rect left_label(bar_rect.x, bar_rect.y, bar_rect.w / 2, bar_rect.h);
+                Rect right_label(bar_rect.x + bar_rect.w / 2, bar_rect.y, bar_rect.w - bar_rect.w / 2, bar_rect.h);
+                left_label.draw(Palette::White);
+                right_label.draw(Palette::Black);
+            }
             const Circle handle_circle1(value_to_bar_x(*bar_elem1, false), bar_center_y, MENU_BAR_RADIUS);
             const Circle handle_circle2(value_to_bar_x(*bar_elem2, true), bar_center_y, MENU_BAR_RADIUS);
-            double scale = static_cast<double>(MENU_BAR_HEIGHT) / static_cast<double>(arrow_left.height());
-            arrow_left.scaled(scale).rotated(180_deg).drawAt(handle_circle1.x, handle_circle1.y);
-            arrow_left.scaled(scale).drawAt(handle_circle2.x, handle_circle2.y);
+            if (bars_player_loss) {
+                if (handle_circle1.x == handle_circle2.x) {
+                    handle_circle1.draw(bar_player_loss_overlap_color);
+                } else {
+                    handle_circle1.draw(Palette::Black);
+                    handle_circle2.draw(Palette::White);
+                }
+            } else {
+                double scale = static_cast<double>(MENU_BAR_HEIGHT) / static_cast<double>(arrow_left.height());
+                arrow_left.scaled(scale).rotated(180_deg).drawAt(handle_circle1.x, handle_circle1.y);
+                arrow_left.scaled(scale).drawAt(handle_circle2.x, handle_circle2.y);
+            }
         }
         if (has_child) {
             font(U">").draw(font_size, rect.x + rect.w - menu_offset_x - menu_child_offset, rect.y + menu_offset_y, menu_font_color);
@@ -657,7 +685,7 @@ public:
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
             w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
         } else if (mode == MENU_MODE_2BARS) {
-            w += MENU_BAR_SIZE + bar_value_offset * 3 + bar_additional_offset;
+            w += current_bar_size() + bar_value_offset * 3 + bar_additional_offset;
         }
         return std::make_pair(h, w);
     }
@@ -676,6 +704,8 @@ public:
         children.clear();
         str = U"";
         bar_active_circle = 0;
+        bars_independent = false;
+        bars_player_loss = false;
     }
 
     int menu_mode() const {

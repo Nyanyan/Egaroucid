@@ -83,6 +83,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->use_book_learn_error_per_move = true;
     settings->use_book_learn_error_sum = true;
     settings->umigame_value_depth = 60;
+    settings->umigame_value_max_move_loss = 0;
+    settings->umigame_value_black_max_loss = 10;
+    settings->umigame_value_white_max_loss = 10;
     settings->show_graph_value = true;
     settings->show_graph_sum_of_loss = false;
     settings->show_random_board_graph = false;
@@ -451,6 +454,17 @@ void init_settings(const Directories* directories, const Resources* resources, S
         if (init_settings_import_int(setting_json, U"umigame_value_depth", &settings->umigame_value_depth) != ERR_OK) {
             std::cerr << "err34" << std::endl;
         }
+        if (init_settings_import_int(setting_json, U"umigame_value_max_move_loss", &settings->umigame_value_max_move_loss) != ERR_OK) {
+            int old_umigame_value_range;
+            if (init_settings_import_int(setting_json, U"umigame_value_range", &old_umigame_value_range) == ERR_OK) {
+                settings->umigame_value_max_move_loss = old_umigame_value_range < 0 ? -old_umigame_value_range : old_umigame_value_range;
+            }
+        }
+        init_settings_import_int(setting_json, U"umigame_value_black_max_loss", &settings->umigame_value_black_max_loss);
+        init_settings_import_int(setting_json, U"umigame_value_white_max_loss", &settings->umigame_value_white_max_loss);
+        settings->umigame_value_max_move_loss = std::clamp(settings->umigame_value_max_move_loss, UMIGAME_VALUE_MAX_MOVE_LOSS_MIN, UMIGAME_VALUE_MAX_MOVE_LOSS_MAX);
+        settings->umigame_value_black_max_loss = std::clamp(settings->umigame_value_black_max_loss, UMIGAME_VALUE_MAX_PLAYER_LOSS_MIN, UMIGAME_VALUE_MAX_PLAYER_LOSS_MAX);
+        settings->umigame_value_white_max_loss = std::clamp(settings->umigame_value_white_max_loss, UMIGAME_VALUE_MAX_PLAYER_LOSS_MIN, UMIGAME_VALUE_MAX_PLAYER_LOSS_MAX);
         if (init_settings_import_bool(setting_json, U"show_graph_value", &settings->show_graph_value) != ERR_OK) {
             std::cerr << "err35" << std::endl;
         }

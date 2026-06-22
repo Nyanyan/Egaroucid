@@ -116,6 +116,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"show_umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
             side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);
             side_menu.push(side_side_menu);
+            side_side_menu.init_bar(language.get("display", "cell", "single_move_loss"), &menu_elements->umigame_value_max_move_loss, menu_elements->umigame_value_max_move_loss, UMIGAME_VALUE_MAX_MOVE_LOSS_MIN, UMIGAME_VALUE_MAX_MOVE_LOSS_MAX);
+            side_menu.push(side_side_menu);
+            side_side_menu.init_2bars_player_loss(language.get("display", "cell", "max_child_loss"), &menu_elements->umigame_value_black_max_loss, &menu_elements->umigame_value_white_max_loss, menu_elements->umigame_value_black_max_loss, menu_elements->umigame_value_white_max_loss, UMIGAME_VALUE_MAX_PLAYER_LOSS_MIN, UMIGAME_VALUE_MAX_PLAYER_LOSS_MAX, resources->arrow_left);
+            side_menu.push(side_side_menu);
+            side_side_menu.init_button(language.get("display", "cell", "apply_setting"), &menu_elements->umigame_value_apply_setting);
+            side_menu.push(side_side_menu);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "cell", "opening") + get_shortcut_key_info(U"show_opening_on_cell"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
             menu_e.push(side_menu);

@@ -20,6 +20,9 @@ struct Display_profile_values {
     bool show_hint_level{ true };
     bool use_umigame_value{ false };
     int umigame_value_depth{ 60 };
+    int umigame_value_max_move_loss{ 0 };
+    int umigame_value_black_max_loss{ 10 };
+    int umigame_value_white_max_loss{ 10 };
     bool show_legal{ true };
     bool show_graph{ true };
     bool show_opening_on_cell{ true };
@@ -69,6 +72,9 @@ inline void ensure_display_settings_dir(const Directories& directories) {
 inline void normalize_display_profile_values(Display_profile_values* values) {
     values->n_disc_hint = std::clamp(values->n_disc_hint, 1, SHOW_ALL_HINT);
     values->umigame_value_depth = std::clamp(values->umigame_value_depth, 1, 60);
+    values->umigame_value_max_move_loss = std::clamp(values->umigame_value_max_move_loss, UMIGAME_VALUE_MAX_MOVE_LOSS_MIN, UMIGAME_VALUE_MAX_MOVE_LOSS_MAX);
+    values->umigame_value_black_max_loss = std::clamp(values->umigame_value_black_max_loss, UMIGAME_VALUE_MAX_PLAYER_LOSS_MIN, UMIGAME_VALUE_MAX_PLAYER_LOSS_MAX);
+    values->umigame_value_white_max_loss = std::clamp(values->umigame_value_white_max_loss, UMIGAME_VALUE_MAX_PLAYER_LOSS_MIN, UMIGAME_VALUE_MAX_PLAYER_LOSS_MAX);
     values->pv_length = std::clamp(values->pv_length, PV_LENGTH_SETTING_MIN, PV_LENGTH_SETTING_MAX);
 
     if (values->play_ordering_board_format == values->play_ordering_transcript_format) {
@@ -92,6 +98,9 @@ inline Display_profile_values to_display_profile_values(const Settings& settings
     values.show_hint_level = settings.show_hint_level;
     values.use_umigame_value = settings.use_umigame_value;
     values.umigame_value_depth = settings.umigame_value_depth;
+    values.umigame_value_max_move_loss = settings.umigame_value_max_move_loss;
+    values.umigame_value_black_max_loss = settings.umigame_value_black_max_loss;
+    values.umigame_value_white_max_loss = settings.umigame_value_white_max_loss;
     values.show_legal = settings.show_legal;
     values.show_graph = settings.show_graph;
     values.show_opening_on_cell = settings.show_opening_on_cell;
@@ -132,6 +141,9 @@ inline Display_profile_values to_display_profile_values(const Menu_elements& men
     values.show_hint_level = menu_elements.show_hint_level;
     values.use_umigame_value = menu_elements.use_umigame_value;
     values.umigame_value_depth = menu_elements.umigame_value_depth;
+    values.umigame_value_max_move_loss = menu_elements.umigame_value_max_move_loss;
+    values.umigame_value_black_max_loss = menu_elements.umigame_value_black_max_loss;
+    values.umigame_value_white_max_loss = menu_elements.umigame_value_white_max_loss;
     values.show_legal = menu_elements.show_legal;
     values.show_graph = menu_elements.show_graph;
     values.show_opening_on_cell = menu_elements.show_opening_on_cell;
@@ -173,6 +185,9 @@ inline void apply_display_profile_values(const Display_profile_values& values, S
     settings->show_hint_level = normalized_values.show_hint_level;
     settings->use_umigame_value = normalized_values.use_umigame_value;
     settings->umigame_value_depth = normalized_values.umigame_value_depth;
+    settings->umigame_value_max_move_loss = normalized_values.umigame_value_max_move_loss;
+    settings->umigame_value_black_max_loss = normalized_values.umigame_value_black_max_loss;
+    settings->umigame_value_white_max_loss = normalized_values.umigame_value_white_max_loss;
     settings->show_legal = normalized_values.show_legal;
     settings->show_graph = normalized_values.show_graph;
     settings->show_opening_on_cell = normalized_values.show_opening_on_cell;
@@ -212,6 +227,9 @@ inline void apply_display_profile_values(const Display_profile_values& values, M
     menu_elements->show_hint_level = normalized_values.show_hint_level;
     menu_elements->use_umigame_value = normalized_values.use_umigame_value;
     menu_elements->umigame_value_depth = normalized_values.umigame_value_depth;
+    menu_elements->umigame_value_max_move_loss = normalized_values.umigame_value_max_move_loss;
+    menu_elements->umigame_value_black_max_loss = normalized_values.umigame_value_black_max_loss;
+    menu_elements->umigame_value_white_max_loss = normalized_values.umigame_value_white_max_loss;
     menu_elements->show_legal = normalized_values.show_legal;
     menu_elements->show_graph = normalized_values.show_graph;
     menu_elements->show_opening_on_cell = normalized_values.show_opening_on_cell;
@@ -276,6 +294,9 @@ inline void export_display_profile_json(JSON& json, const Display_profile_values
     json[U"show_hint_level"] = normalized_values.show_hint_level;
     json[U"use_umigame_value"] = normalized_values.use_umigame_value;
     json[U"umigame_value_depth"] = normalized_values.umigame_value_depth;
+    json[U"umigame_value_max_move_loss"] = normalized_values.umigame_value_max_move_loss;
+    json[U"umigame_value_black_max_loss"] = normalized_values.umigame_value_black_max_loss;
+    json[U"umigame_value_white_max_loss"] = normalized_values.umigame_value_white_max_loss;
     json[U"show_legal"] = normalized_values.show_legal;
     json[U"show_graph"] = normalized_values.show_graph;
     json[U"show_opening_on_cell"] = normalized_values.show_opening_on_cell;
@@ -318,6 +339,14 @@ inline bool load_display_profile_values(const FilePath& path, Display_profile_va
     import_display_profile_bool(json, U"show_hint_level", &values->show_hint_level);
     import_display_profile_bool(json, U"use_umigame_value", &values->use_umigame_value);
     import_display_profile_int(json, U"umigame_value_depth", &values->umigame_value_depth);
+    if (!import_display_profile_int(json, U"umigame_value_max_move_loss", &values->umigame_value_max_move_loss)) {
+        int old_umigame_value_range;
+        if (import_display_profile_int(json, U"umigame_value_range", &old_umigame_value_range)) {
+            values->umigame_value_max_move_loss = old_umigame_value_range < 0 ? -old_umigame_value_range : old_umigame_value_range;
+        }
+    }
+    import_display_profile_int(json, U"umigame_value_black_max_loss", &values->umigame_value_black_max_loss);
+    import_display_profile_int(json, U"umigame_value_white_max_loss", &values->umigame_value_white_max_loss);
     import_display_profile_bool(json, U"show_legal", &values->show_legal);
     import_display_profile_bool(json, U"show_graph", &values->show_graph);
     import_display_profile_bool(json, U"show_opening_on_cell", &values->show_opening_on_cell);
@@ -369,6 +398,9 @@ inline bool equals_display_profile_values(const Display_profile_values& lhs, con
     if (lhs.show_hint_level != rhs.show_hint_level) return false;
     if (lhs.use_umigame_value != rhs.use_umigame_value) return false;
     if (lhs.umigame_value_depth != rhs.umigame_value_depth) return false;
+    if (lhs.umigame_value_max_move_loss != rhs.umigame_value_max_move_loss) return false;
+    if (lhs.umigame_value_black_max_loss != rhs.umigame_value_black_max_loss) return false;
+    if (lhs.umigame_value_white_max_loss != rhs.umigame_value_white_max_loss) return false;
     if (lhs.show_legal != rhs.show_legal) return false;
     if (lhs.show_graph != rhs.show_graph) return false;
     if (lhs.show_opening_on_cell != rhs.show_opening_on_cell) return false;
