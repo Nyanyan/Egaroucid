@@ -30,7 +30,7 @@ from pathlib import Path
 import random
 import shutil
 import struct
-from typing import Iterable, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -43,7 +43,7 @@ from tensorflow.keras.regularizers import l2 as keras_l2
 
 BOARD_RECORD_SIZE = 19
 INPUT_SIZE = 128
-OUTPUT_SIZE = 64
+POLICY_SIZE = 64
 
 BOARD_DTYPE = np.dtype(
     [
@@ -84,8 +84,7 @@ def set_reproducible_seed(seed: int) -> None:
 
 
 def enable_memory_growth() -> None:
-    gpus = tf.config.list_physical_devices("GPU")
-    for gpu in gpus:
+    for gpu in tf.config.list_physical_devices("GPU"):
         try:
             tf.config.experimental.set_memory_growth(gpu, True)
         except RuntimeError:
@@ -116,8 +115,7 @@ def discover_board_files(data_root: Path, record_start: int, record_end: int) ->
 def allocate_counts(total: int, weights: Sequence[int]) -> List[int]:
     if total <= 0:
         return [0 for _ in weights]
-    weight_sum = float(sum(weights))
-    raw = np.array(weights, dtype=np.float64) * (float(total) / weight_sum)
+    raw = np.array(weights, dtype=np.float64) * (float(total) / float(sum(weights)))
     counts = np.floor(raw).astype(np.int64)
     missing = total - int(counts.sum())
     if missing > 0:
@@ -126,21 +124,20 @@ def allocate_counts(total: int, weights: Sequence[int]) -> List[int]:
     return [int(v) for v in counts]
 
 
-def records_to_features(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    player_bits = records["player"]
-    opponent_bits = records["opponent"]
-
+def records_to_targets(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    player_bits = records["player"].astype(np.uint64, copy=False)
+    opponent_bits = records["opponent"].astype(np.uint64, copy=False)
     n = len(records)
     x = np.empty((n, INPUT_SIZE), dtype=np.float32)
     x[:, :64] = ((player_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     x[:, 64:] = ((opponent_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
-    y = records["policy"].astype(np.int64, copy=False)
-    return x, y
+    y_policy = records["policy"].astype(np.int64, copy=False)
+    return x, y_policy
 
 
 def append_sampled_records(
     dest_x: np.ndarray,
-    dest_y: np.ndarray,
+    dest_policy: np.ndarray,
     offset: int,
     board_file: BoardFile,
     indices: np.ndarray,
@@ -149,20 +146,24 @@ def append_sampled_records(
         return offset
     mmap = np.memmap(board_file.path, dtype=BOARD_DTYPE, mode="r", shape=(board_file.n_records,))
     records = np.asarray(mmap[indices])
-    x, y = records_to_features(records)
-    valid = (0 <= y) & (y < OUTPUT_SIZE)
+    x, y_policy = records_to_targets(records)
+    valid = (0 <= y_policy) & (y_policy < POLICY_SIZE)
     if not np.all(valid):
         x = x[valid]
-        y = y[valid]
-    n = len(y)
+        y_policy = y_policy[valid]
+    n = len(y_policy)
     dest_x[offset : offset + n] = x
-    dest_y[offset : offset + n] = y
+    dest_policy[offset : offset + n] = y_policy
     return offset + n
 
 
-def shuffle_in_unison(x: np.ndarray, y: np.ndarray, rng: np.random.Generator) -> Tuple[np.ndarray, np.ndarray]:
-    order = rng.permutation(len(y))
-    return x[order], y[order]
+def shuffle_split(
+    x: np.ndarray,
+    policy: np.ndarray,
+    rng: np.random.Generator,
+) -> Tuple[np.ndarray, np.ndarray]:
+    order = rng.permutation(len(policy))
+    return x[order], policy[order]
 
 
 def load_sampled_split(
@@ -177,9 +178,9 @@ def load_sampled_split(
     val_alloc = allocate_counts(max_val_samples, weights)
 
     x_train = np.empty((sum(train_alloc), INPUT_SIZE), dtype=np.float32)
-    y_train = np.empty(sum(train_alloc), dtype=np.int64)
+    p_train = np.empty(sum(train_alloc), dtype=np.int64)
     x_val = np.empty((sum(val_alloc), INPUT_SIZE), dtype=np.float32)
-    y_val = np.empty(sum(val_alloc), dtype=np.int64)
+    p_val = np.empty(sum(val_alloc), dtype=np.int64)
 
     train_offset = 0
     val_offset = 0
@@ -189,18 +190,14 @@ def load_sampled_split(
         if n_train + n_val == 0:
             continue
         indices = rng.integers(0, board_file.n_records, size=n_train + n_val, dtype=np.int64)
-        train_indices = np.sort(indices[:n_train])
-        val_indices = np.sort(indices[n_train:])
-        train_offset = append_sampled_records(x_train, y_train, train_offset, board_file, train_indices)
-        val_offset = append_sampled_records(x_val, y_val, val_offset, board_file, val_indices)
+        train_offset = append_sampled_records(x_train, p_train, train_offset, board_file, np.sort(indices[:n_train]))
+        val_offset = append_sampled_records(x_val, p_val, val_offset, board_file, np.sort(indices[n_train:]))
 
-    x_train = x_train[:train_offset]
-    y_train = y_train[:train_offset]
-    x_val = x_val[:val_offset]
-    y_val = y_val[:val_offset]
-    x_train, y_train = shuffle_in_unison(x_train, y_train, rng)
-    x_val, y_val = shuffle_in_unison(x_val, y_val, rng)
-    return x_train, y_train, x_val, y_val
+    x_train, p_train = x_train[:train_offset], p_train[:train_offset]
+    x_val, p_val = x_val[:val_offset], p_val[:val_offset]
+    x_train, p_train = shuffle_split(x_train, p_train, rng)
+    x_val, p_val = shuffle_split(x_val, p_val, rng)
+    return x_train, p_train, x_val, p_val
 
 
 def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
@@ -233,7 +230,7 @@ def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
             name = f"w{width}_d{depth}_a{alpha:g}"
         if width <= 0 or depth <= 0:
             raise ValueError(f"invalid config '{token}', width and depth must be positive")
-        specs.append(ModelSpec(name=name, width=width, depth=depth, alpha=alpha, dropout=dropout, l2=l2_value, learning_rate=lr))
+        specs.append(ModelSpec(name, width, depth, alpha, dropout, l2_value, lr))
     if not specs:
         raise ValueError("no model configs were provided")
     return specs
@@ -248,17 +245,16 @@ def build_model(spec: ModelSpec) -> Model:
             spec.width,
             kernel_initializer="he_normal",
             kernel_regularizer=kernel_regularizer,
-            name=f"dense_{layer_idx}",
+            name=f"trunk_dense_{layer_idx}",
         )(x)
-        x = LeakyReLU(alpha=spec.alpha, name=f"leaky_relu_{layer_idx}")(x)
+        x = LeakyReLU(alpha=spec.alpha, name=f"trunk_leaky_relu_{layer_idx}")(x)
         if spec.dropout > 0.0:
-            x = Dropout(spec.dropout, name=f"dropout_{layer_idx}")(x)
-    logits = Dense(OUTPUT_SIZE, name="policy_logits")(x)
+            x = Dropout(spec.dropout, name=f"trunk_dropout_{layer_idx}")(x)
+    logits = Dense(POLICY_SIZE, name="policy_logits")(x)
     outputs = Softmax(name="policy")(logits)
     model = Model(inputs=inputs, outputs=outputs, name=spec.name)
-    optimizer = tf.keras.optimizers.Adam(learning_rate=spec.learning_rate)
     model.compile(
-        optimizer=optimizer,
+        optimizer=tf.keras.optimizers.Adam(learning_rate=spec.learning_rate),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
         metrics=[
             tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
@@ -269,23 +265,26 @@ def build_model(spec: ModelSpec) -> Model:
     return model
 
 
+def _write_dense_layer(f, layer: Dense, activation: int, alpha: float) -> None:
+    weights, bias = layer.get_weights()
+    weights = np.asarray(weights, dtype=np.float32)
+    bias = np.asarray(bias, dtype=np.float32)
+    in_dim, out_dim = weights.shape
+    f.write(struct.pack("<IIIf", in_dim, out_dim, activation, alpha))
+    f.write(weights.astype("<f4", copy=False).tobytes(order="C"))
+    f.write(bias.astype("<f4", copy=False).tobytes(order="C"))
+
+
 def export_binary_weights(model: Model, spec: ModelSpec, out_file: Path) -> None:
-    dense_layers = [layer for layer in model.layers if isinstance(layer, Dense)]
+    trunk_layers = [model.get_layer(f"trunk_dense_{i}") for i in range(spec.depth)]
+    policy_layer = model.get_layer("policy_logits")
     out_file.parent.mkdir(parents=True, exist_ok=True)
     with out_file.open("wb") as f:
-        magic = b"EGR_POLICY_V1" + b"\0" * 3
-        f.write(magic)
-        f.write(struct.pack("<IIII", 1, len(dense_layers), INPUT_SIZE, OUTPUT_SIZE))
-        for layer_idx, layer in enumerate(dense_layers):
-            weights, bias = layer.get_weights()
-            weights = np.asarray(weights, dtype=np.float32)
-            bias = np.asarray(bias, dtype=np.float32)
-            in_dim, out_dim = weights.shape
-            activation = 1 if layer_idx < len(dense_layers) - 1 else 0
-            alpha = spec.alpha if activation == 1 else 0.0
-            f.write(struct.pack("<IIIf", in_dim, out_dim, activation, alpha))
-            f.write(weights.astype("<f4", copy=False).tobytes(order="C"))
-            f.write(bias.astype("<f4", copy=False).tobytes(order="C"))
+        f.write(b"EGR_POLICY_V1\0\0\0")
+        f.write(struct.pack("<IIII", 1, len(trunk_layers) + 1, INPUT_SIZE, POLICY_SIZE))
+        for layer in trunk_layers:
+            _write_dense_layer(f, layer, 1, spec.alpha)
+        _write_dense_layer(f, policy_layer, 0, 0.0)
 
 
 def save_history_csv(history: tf.keras.callbacks.History, out_file: Path) -> None:
@@ -300,9 +299,9 @@ def save_history_csv(history: tf.keras.callbacks.History, out_file: Path) -> Non
 def train_one_model(
     spec: ModelSpec,
     x_train: np.ndarray,
-    y_train: np.ndarray,
+    p_train: np.ndarray,
     x_val: np.ndarray,
-    y_val: np.ndarray,
+    p_val: np.ndarray,
     args: argparse.Namespace,
     output_dir: Path,
 ) -> dict:
@@ -323,8 +322,8 @@ def train_one_model(
     ]
     history = model.fit(
         x_train,
-        y_train,
-        validation_data=(x_val, y_val),
+        p_train,
+        validation_data=(x_val, p_val),
         epochs=args.epochs,
         batch_size=args.batch_size,
         callbacks=callbacks,
@@ -363,22 +362,22 @@ def train_one_model(
 def write_results(results: Sequence[dict], output_dir: Path) -> None:
     with (output_dir / "results.json").open("w") as f:
         json.dump(list(results), f, indent=2)
+    fields = [
+        "name",
+        "params",
+        "epochs_ran",
+        "best_epoch",
+        "best_val_loss",
+        "best_val_accuracy",
+        "best_val_top3",
+        "best_val_top5",
+        "final_loss",
+        "final_accuracy",
+        "final_top3",
+        "final_top5",
+        "output_dir",
+    ]
     with (output_dir / "results.csv").open("w", newline="") as f:
-        fields = [
-            "name",
-            "params",
-            "epochs_ran",
-            "best_epoch",
-            "best_val_loss",
-            "best_val_accuracy",
-            "best_val_top3",
-            "best_val_top5",
-            "final_loss",
-            "final_accuracy",
-            "final_top3",
-            "final_top5",
-            "output_dir",
-        ]
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         for result in results:
@@ -395,7 +394,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", default=None, help="default: $EGAROUCID_DATA/train_data/board_data")
     parser.add_argument("--record-start", type=int, default=259)
     parser.add_argument("--record-end", type=int, default=310)
-    parser.add_argument("--configs", default="48x3,64x3,80x3,64x4")
+    parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
     parser.add_argument("--alpha", type=float, default=0.03)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--l2", type=float, default=0.0)
@@ -429,18 +428,16 @@ def main() -> None:
     print("issue", "#613")
 
     files = discover_board_files(data_root, args.record_start, args.record_end)
-    total_records = sum(f.n_records for f in files)
     print(f"board files {len(files)}")
-    print(f"total records {total_records}")
+    print(f"total records {sum(f.n_records for f in files)}")
     print(f"sampling train={args.max_train_samples} val={args.max_val_samples}")
 
-    x_train, y_train, x_val, y_val = load_sampled_split(files, args.max_train_samples, args.max_val_samples, args.seed)
-    print("loaded", x_train.shape, y_train.shape, x_val.shape, y_val.shape)
+    x_train, p_train, x_val, p_val = load_sampled_split(files, args.max_train_samples, args.max_val_samples, args.seed)
+    print("loaded", x_train.shape, p_train.shape, x_val.shape, p_val.shape)
 
-    specs = parse_model_specs(args.configs, args)
     results = []
-    for spec in specs:
-        results.append(train_one_model(spec, x_train, y_train, x_val, y_val, args, output_dir))
+    for spec in parse_model_specs(args.configs, args):
+        results.append(train_one_model(spec, x_train, p_train, x_val, p_val, args, output_dir))
         write_results(results, output_dir)
 
     best = max(results, key=lambda r: r["best_val_accuracy"])

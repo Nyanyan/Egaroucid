@@ -23,11 +23,9 @@ import numpy as np
 
 
 BOARD_RECORD_SIZE = 19
-BLACK = 0
-WHITE = 1
 HW2 = 64
 INPUT_SIZE = 128
-OUTPUT_SIZE = 64
+POLICY_SIZE = 64
 
 BOARD_DTYPE = np.dtype(
     [
@@ -43,8 +41,6 @@ assert BOARD_DTYPE.itemsize == BOARD_RECORD_SIZE
 
 BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, HW2)
 FULL = np.uint64(0xFFFFFFFFFFFFFFFF)
-FILE_A = np.uint64(0x8080808080808080)
-FILE_H = np.uint64(0x0101010101010101)
 NOT_FILE_A = np.uint64(0x7F7F7F7F7F7F7F7F)
 NOT_FILE_H = np.uint64(0xFEFEFEFEFEFEFEFE)
 
@@ -84,6 +80,12 @@ def shift_sw(x: np.ndarray) -> np.ndarray:
 SHIFT_FUNCS = (shift_east, shift_west, shift_north, shift_south, shift_ne, shift_nw, shift_se, shift_sw)
 
 
+def softmax(logits: np.ndarray) -> np.ndarray:
+    logits = logits - np.max(logits, axis=1, keepdims=True)
+    exp_logits = np.exp(logits, dtype=np.float32)
+    return exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
+
+
 class BinaryPolicyNetwork:
     def __init__(self, path: Path):
         self.layers = []
@@ -91,33 +93,37 @@ class BinaryPolicyNetwork:
             magic = f.read(16)
             if magic != b"EGR_POLICY_V1\0\0\0":
                 raise ValueError(f"invalid policy weights magic in {path}")
-            version, n_layers, input_size, output_size = struct.unpack("<IIII", f.read(16))
-            if version != 1 or input_size != INPUT_SIZE or output_size != OUTPUT_SIZE or n_layers <= 0:
+            version, n_layers, input_size, policy_size = struct.unpack("<IIII", f.read(16))
+            if version != 1 or input_size != INPUT_SIZE or policy_size != POLICY_SIZE or n_layers <= 0:
                 raise ValueError(f"unsupported policy weights header in {path}")
             expected_input = input_size
             for _ in range(n_layers):
-                in_dim, out_dim, activation, alpha = struct.unpack("<IIIf", f.read(16))
-                if in_dim != expected_input or out_dim <= 0:
-                    raise ValueError(f"invalid layer shape {in_dim}x{out_dim}")
-                n_weights = in_dim * out_dim
-                weights = np.frombuffer(f.read(n_weights * 4), dtype="<f4").copy().reshape(in_dim, out_dim)
-                bias = np.frombuffer(f.read(out_dim * 4), dtype="<f4").copy()
-                self.layers.append((weights, bias, activation, alpha))
-                expected_input = out_dim
+                layer, expected_input = self._read_layer(f, expected_input)
+                self.layers.append(layer)
+
+    @staticmethod
+    def _read_layer(f, expected_input: int):
+        in_dim, out_dim, activation, alpha = struct.unpack("<IIIf", f.read(16))
+        if in_dim != expected_input or out_dim <= 0:
+            raise ValueError(f"invalid layer shape {in_dim}x{out_dim}")
+        n_weights = in_dim * out_dim
+        weights = np.frombuffer(f.read(n_weights * 4), dtype="<f4").copy().reshape(in_dim, out_dim)
+        bias = np.frombuffer(f.read(out_dim * 4), dtype="<f4").copy()
+        return (weights, bias, activation, alpha), out_dim
+
+    @staticmethod
+    def _forward_layer(x: np.ndarray, layer) -> np.ndarray:
+        weights, bias, activation, alpha = layer
+        y = x @ weights + bias
+        if activation == 1:
+            y = np.where(y >= 0.0, y, y * alpha)
+        return y
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         y = x
-        for weights, bias, activation, alpha in self.layers:
-            y = y @ weights + bias
-            if activation == 1:
-                y = np.where(y >= 0.0, y, y * alpha)
+        for layer in self.layers:
+            y = self._forward_layer(y, layer)
         return softmax(y)
-
-
-def softmax(logits: np.ndarray) -> np.ndarray:
-    logits = logits - np.max(logits, axis=1, keepdims=True)
-    exp_logits = np.exp(logits, dtype=np.float32)
-    return exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
 
 
 def load_keras_model(path: Path):
@@ -165,14 +171,14 @@ def calc_legal_batch(player: np.ndarray, opponent: np.ndarray) -> np.ndarray:
 def records_to_features(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     player = records["player"].astype(np.uint64, copy=False)
     opponent = records["opponent"].astype(np.uint64, copy=False)
-    colors = records["color"]
     policies = records["policy"].astype(np.int64, copy=False)
 
     x = np.empty((len(records), INPUT_SIZE), dtype=np.float32)
     x[:, :HW2] = ((player.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     x[:, HW2:] = ((opponent.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     legal = calc_legal_batch(player, opponent)
-    return x, policies, legal, colors
+    n_discs = np.count_nonzero(x, axis=1)
+    return x, policies, legal, n_discs
 
 
 def legal_bitboard_to_mask(legal: np.ndarray) -> np.ndarray:
@@ -187,7 +193,15 @@ def predict_batch(model, binary_network: Optional[BinaryPolicyNetwork], x: np.nd
     return binary_network.predict(x)
 
 
-def update_hits(
+def valid_policy_mask(policies: np.ndarray, legal: np.ndarray) -> Tuple[np.ndarray, int, int]:
+    valid_policy = (0 <= policies) & (policies < POLICY_SIZE)
+    label_bits = np.zeros_like(legal, dtype=np.uint64)
+    label_bits[valid_policy] = np.left_shift(np.uint64(1), policies[valid_policy].astype(np.uint64))
+    legal_label = valid_policy & ((legal & label_bits) != 0)
+    return legal_label, int(np.count_nonzero(~valid_policy)), int(np.count_nonzero(valid_policy & ~legal_label))
+
+
+def update_policy_hits(
     probabilities: np.ndarray,
     policies: np.ndarray,
     legal: np.ndarray,
@@ -196,20 +210,7 @@ def update_hits(
     total_by_phase: Dict[str, int],
     hits_by_phase: Dict[str, Dict[int, int]],
     n_discs: np.ndarray,
-) -> Tuple[int, int, int]:
-    valid_policy = (0 <= policies) & (policies < OUTPUT_SIZE)
-    label_bits = np.zeros_like(legal, dtype=np.uint64)
-    label_bits[valid_policy] = np.left_shift(np.uint64(1), policies[valid_policy].astype(np.uint64))
-    legal_label = valid_policy & ((legal & label_bits) != 0)
-    valid = legal_label
-    if not np.any(valid):
-        return 0, int(np.count_nonzero(~valid_policy)), int(np.count_nonzero(valid_policy & ~legal_label))
-
-    probabilities = probabilities[valid]
-    policies = policies[valid]
-    legal = legal[valid]
-    n_discs = n_discs[valid]
-
+) -> None:
     legal_mask = legal_bitboard_to_mask(legal)
     label_prob = probabilities[np.arange(len(policies)), policies]
     rank = 1 + np.count_nonzero((probabilities > label_prob.reshape(-1, 1)) & legal_mask, axis=1)
@@ -217,10 +218,7 @@ def update_hits(
     for n in n_values:
         total_hits[n] += int(np.count_nonzero(rank <= n))
 
-    phase_names = np.empty(len(n_discs), dtype=object)
-    phase_names[n_discs <= 20] = "opening_4_20"
-    phase_names[(20 < n_discs) & (n_discs <= 44)] = "midgame_21_44"
-    phase_names[44 < n_discs] = "endgame_45_64"
+    phase_names = phase_names_from_discs(n_discs)
     for phase in ("opening_4_20", "midgame_21_44", "endgame_45_64"):
         phase_mask = phase_names == phase
         phase_total = int(np.count_nonzero(phase_mask))
@@ -228,7 +226,14 @@ def update_hits(
         if phase_total:
             for n in n_values:
                 hits_by_phase[phase][n] += int(np.count_nonzero(rank[phase_mask] <= n))
-    return len(policies), int(np.count_nonzero(~valid_policy)), int(np.count_nonzero(valid_policy & ~legal_label))
+
+
+def phase_names_from_discs(n_discs: np.ndarray) -> np.ndarray:
+    phase_names = np.empty(len(n_discs), dtype=object)
+    phase_names[n_discs <= 20] = "opening_4_20"
+    phase_names[(20 < n_discs) & (n_discs <= 44)] = "midgame_21_44"
+    phase_names[44 < n_discs] = "endgame_45_64"
+    return phase_names
 
 
 def iter_record_batches(path: Path, batch_size: int, max_positions: Optional[int]) -> Iterable[np.ndarray]:
@@ -258,7 +263,7 @@ def evaluate(args: argparse.Namespace) -> dict:
     dat_files = discover_dat_files(board_data_dir)
     n_values = sorted(set(args.top_n))
     max_n = max(n_values)
-    if max_n > OUTPUT_SIZE:
+    if max_n > POLICY_SIZE:
         raise ValueError("top-n cannot exceed 64")
 
     model = None
@@ -290,22 +295,21 @@ def evaluate(args: argparse.Namespace) -> dict:
                 continue
             if remaining is not None:
                 remaining -= len(records)
-            x, policies, legal, _ = records_to_features(records)
+            x, policies, legal, n_discs = records_to_features(records)
             probabilities = predict_batch(model, binary_network, x, args.predict_batch_size)
-            n_discs = np.count_nonzero(x, axis=1)
-            n_valid, n_invalid_policy, n_illegal_label = update_hits(
-                probabilities=probabilities,
-                policies=policies,
-                legal=legal,
-                n_values=n_values,
-                total_hits=total_hits,
-                total_by_phase=total_by_phase,
-                hits_by_phase=hits_by_phase,
-                n_discs=n_discs,
-            )
-            total_positions += n_valid
+            valid, n_invalid_policy, n_illegal_label = valid_policy_mask(policies, legal)
             invalid_policy += n_invalid_policy
             illegal_label += n_illegal_label
+            if not np.any(valid):
+                continue
+
+            probabilities = probabilities[valid]
+            policies = policies[valid]
+            legal = legal[valid]
+            n_discs = n_discs[valid]
+            update_policy_hits(probabilities, policies, legal, n_values, total_hits, total_by_phase, hits_by_phase, n_discs)
+
+            total_positions += int(np.count_nonzero(valid))
             if args.verbose and total_positions and total_positions % args.progress_interval < len(records):
                 print(f"evaluated {total_positions} valid positions")
 
