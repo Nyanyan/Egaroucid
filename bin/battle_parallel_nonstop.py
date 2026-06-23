@@ -155,13 +155,16 @@ def save_kifu_results(battle_no, opening_idx, game_results):
             ))
 
 
+PROTOCOL_CONSOLE = 'console'
+PROTOCOL_GTP = 'gtp'
+
 random.seed(57)
 
 with open(PROBLEM_FILE, 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
 random.shuffle(openings)
 
-# name, cmd
+# name, cmd, protocol (protocol defaults to console)
 player_info = [
     ['0325', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260325_1/eval.egev2'],
     ['0324', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -quiet -nobook -eval ./../model/20260324_1/eval.egev2'],
@@ -175,6 +178,7 @@ player_info = [
     ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
     ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
     ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
+    ['Ntest', 'versions/ntest/ntest.exe --gtp', PROTOCOL_GTP],
 ]
 
 N_BATTLES_PER_ROUND = len(player_info) * (len(player_info) - 1) // 2
@@ -187,6 +191,7 @@ N_PLAYED_IDX = 4
 RATING_IDX = 5
 PROC_POOL_IDX = 6
 CMD_IDX = 7
+PROTOCOL_IDX = 8
 
 
 def start_engine(cmd):
@@ -423,6 +428,42 @@ def send_move_command(player_idx, proc_idx, board_command):
     raise RuntimeError('failed to communicate with engine: ' + players[player_idx][NAME_IDX])
 
 
+def send_gtp_command(player_idx, proc_idx, cmd):
+    if shutdown_event.is_set():
+        raise RuntimeError('shutdown in progress')
+
+    proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
+    for _ in range(2):
+        if shutdown_event.is_set():
+            raise RuntimeError('shutdown in progress')
+        if proc.poll() is not None:
+            proc = restart_process(player_idx, proc_idx)
+        try:
+            proc.stdin.write(cmd.encode('utf-8'))
+            proc.stdin.flush()
+        except (BrokenPipeError, OSError):
+            proc = restart_process(player_idx, proc_idx)
+            continue
+
+        while True:
+            raw = proc.stdout.readline()
+            if raw == b'':
+                proc = restart_process(player_idx, proc_idx)
+                break
+
+            line = raw.decode(errors='replace').replace('\r', '').replace('\n', '').strip()
+            if line == '':
+                continue
+            if line.startswith('='):
+                return line[1:].strip()
+            if line.startswith('?'):
+                raise RuntimeError('gtp command failed: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip() + ' response=' + line)
+
+            # Ntest prints startup and status lines before the first GTP response.
+
+    raise RuntimeError('failed to communicate with engine: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
+
+
 def acquire_process_idx(player_idx, player):
     proc_pool = players[player_idx][PROC_POOL_IDX][player]
     while True:
@@ -438,10 +479,48 @@ def supports_depthprobrange(cmd):
     return 'Egaroucid_for_Console' in cmd
 
 
+def normalize_player_info(info):
+    if len(info) == 2:
+        return info[0], info[1], PROTOCOL_CONSOLE
+    if len(info) == 3:
+        return info[0], info[1], info[2]
+    raise ValueError('invalid player_info entry: ' + str(info))
+
+
+def is_gtp_player(player_idx):
+    return players[player_idx][PROTOCOL_IDX] == PROTOCOL_GTP
+
+
+def gtp_color(player):
+    return 'b' if player == black else 'w'
+
+
+def clear_engine_board(player_idx, proc_idx):
+    if is_gtp_player(player_idx):
+        send_gtp_command(player_idx, proc_idx, 'clear_board\n')
+
+
+def play_engine_move(player_idx, proc_idx, player, coord):
+    if is_gtp_player(player_idx):
+        send_gtp_command(player_idx, proc_idx, 'play ' + gtp_color(player) + ' ' + coord + '\n')
+
+
+def pass_engine_move(player_idx, proc_idx, player):
+    if is_gtp_player(player_idx):
+        send_gtp_command(player_idx, proc_idx, 'play ' + gtp_color(player) + ' pass\n')
+
+
+def gen_engine_move(player_idx, proc_idx, o):
+    if is_gtp_player(player_idx):
+        return send_gtp_command(player_idx, proc_idx, 'genmove ' + gtp_color(o.player) + '\n')
+    return send_move_command(player_idx, proc_idx, build_setboard_command(o))
+
+
 players = []
 results_lock = threading.Lock()
 
-for name, cmd in player_info:
+for info in player_info:
+    name, cmd, protocol = normalize_player_info(info)
     # level option
     if name == '6.0.X':
         cmd_with_options = cmd + ' ' + str(LEVEL)
@@ -477,7 +556,8 @@ for name, cmd in player_info:
         [0 for _ in range(len(player_info))],
         Elo_player(1500),
         proc_pool,
-        cmd_with_options
+        cmd_with_options,
+        protocol
     ])
 
 
@@ -493,46 +573,63 @@ def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
         p0_proc_idx = acquire_process_idx(p0_idx, player)
         p1_proc_idx = acquire_process_idx(p1_idx, player)
 
+        clear_engine_board(p0_idx, p0_proc_idx)
+        clear_engine_board(p1_idx, p1_proc_idx)
+
         for i in range(0, len(opening), 2):
             if not o.check_legal():
+                for player_idx in [p0_idx, p1_idx]:
+                    proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
+                    pass_engine_move(player_idx, proc_idx, o.player)
                 o.player = 1 - o.player
                 o.check_legal()
             x = ord(opening[i].lower()) - ord('a')
             y = int(opening[i + 1]) - 1
-            record += opening[i] + opening[i + 1]
+            coord = opening[i] + opening[i + 1]
+            for player_idx in [p0_idx, p1_idx]:
+                proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
+                play_engine_move(player_idx, proc_idx, o.player, coord)
+            record += coord
             o.move(y, x)
 
         while True:
             if not o.check_legal():
+                for player_idx in [p0_idx, p1_idx]:
+                    proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
+                    pass_engine_move(player_idx, proc_idx, o.player)
                 o.player = 1 - o.player
                 if not o.check_legal():
                     break
 
-            board_command = build_setboard_command(o)
             player_idx = player_idxes[o.player ^ player]
             proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-            line = send_move_command(player_idx, proc_idx, board_command)
+            line = gen_engine_move(player_idx, proc_idx, o)
             coord = line[-2:].lower()
             try:
                 y = int(coord[1]) - 1
                 x = ord(coord[0]) - ord('a')
             except Exception:
                 print('error')
-                print(board_command[:-1])
+                print(build_setboard_command(o)[:-1])
                 print(o.player, player)
                 print(line)
                 print(coord)
                 raise RuntimeError('invalid move coordinate from engine')
 
             record += chr(ord('a') + x) + str(y + 1)
+            o_player = o.player
             if not o.move(y, x):
                 o.print_info()
-                print(board_command[:-1])
+                print(build_setboard_command(o)[:-1])
                 print(o.player, player)
                 print(line)
                 print(coord)
                 print(y, x)
                 raise RuntimeError('illegal move from engine')
+
+            n_player_idx = player_idxes[o_player ^ 1 ^ player]
+            n_proc_idx = p0_proc_idx if n_player_idx == p0_idx else p1_proc_idx
+            play_engine_move(n_player_idx, n_proc_idx, o_player, coord)
 
         p0_disc_diff = o.n_stones[player] - o.n_stones[1 - player]
         empty = 64 - (o.n_stones[player] + o.n_stones[1 - player])
