@@ -229,6 +229,16 @@ inline bool ggs_is_legal_hint(const Board &board, int policy) {
     return is_valid_policy(policy) && (board.get_legal() & (1ULL << policy));
 }
 
+inline std::string ggs_policy_to_text(int policy) {
+    if (policy == MOVE_PASS) {
+        return "pa";
+    }
+    if (is_valid_policy(policy)) {
+        return idx_to_coord(policy);
+    }
+    return "undefined";
+}
+
 inline bool ggs_is_usable_ponder_result(const Board &board, const Search_result &result) {
     if (
         !result.is_end_search ||
@@ -308,6 +318,57 @@ int ggs_get_move_hint(const GGS_Move_Hint_Table &move_hints, const Board &board)
     return ggs_is_legal_hint(board, it->second.policy) ? it->second.policy : MOVE_UNDEFINED;
 }
 
+int ggs_get_move_hint_count(const GGS_Move_Hint_Table &move_hints, const Board &board) {
+    auto it = move_hints.find(ggs_move_hint_key(board));
+    if (it == move_hints.end() || !ggs_is_legal_hint(board, it->second.policy)) {
+        return 0;
+    }
+    return it->second.count;
+}
+
+std::string ggs_search_result_summary(
+    const std::string &prefix,
+    const GGS_Board &ggs_board,
+    const Search_result &search_result,
+    int hint_policy,
+    int hint_count
+) {
+    std::string msg =
+        prefix +
+        " game " + ggs_board.game_id +
+        " discs " + std::to_string(ggs_board.board.n_discs()) +
+        " move " + ggs_policy_to_text(search_result.policy) +
+        " value " + std::to_string(search_result.value) +
+        " depth " + std::to_string(search_result.depth) +
+        "@" + std::to_string(search_result.probability) + "%" +
+        " time " + std::to_string(search_result.time) +
+        " nodes " + std::to_string(search_result.nodes) +
+        " nps " + std::to_string(search_result.nps) +
+        " end " + std::to_string(search_result.is_end_search ? 1 : 0);
+    if (ggs_is_legal_hint(ggs_board.board, hint_policy)) {
+        msg += " hint " + ggs_policy_to_text(hint_policy) + "x" + std::to_string(hint_count);
+    }
+    msg += " board " + ggs_board.board.to_str();
+    return msg;
+}
+
+inline void ggs_log_search_result_summary(
+    const std::string &prefix,
+    const GGS_Board &ggs_board,
+    const Search_result &search_result,
+    int hint_policy,
+    int hint_count,
+    Options *options
+) {
+#if IS_GGS_TOURNAMENT
+    ggs_print_info(ggs_search_result_summary(prefix, ggs_board, search_result, hint_policy, hint_count), options);
+#else
+    if (options->show_log) {
+        ggs_print_info(ggs_search_result_summary(prefix, ggs_board, search_result, hint_policy, hint_count), options);
+    }
+#endif
+}
+
 void ggs_apply_move_hint_to_search_result(
     const GGS_Board &ggs_board,
     const GGS_Move_Hint_Table &move_hints,
@@ -315,17 +376,32 @@ void ggs_apply_move_hint_to_search_result(
     Options *options
 ) {
     const int hint_policy = ggs_get_move_hint(move_hints, ggs_board.board);
+    const int hint_count = ggs_get_move_hint_count(move_hints, ggs_board.board);
     if (
         hint_policy == search_result->policy ||
         (!ggs_should_play_hint_without_search(ggs_board.board, hint_policy) && !ggs_should_override_with_hint(ggs_board.board, hint_policy, *search_result))
     ) {
         return;
     }
+#if IS_GGS_TOURNAMENT
+    ggs_print_info(
+        "search hint override game " + ggs_board.game_id +
+        " discs " + std::to_string(ggs_board.board.n_discs()) +
+        " from " + ggs_policy_to_text(search_result->policy) +
+        " to " + ggs_policy_to_text(hint_policy) +
+        " value " + std::to_string(search_result->value) +
+        " depth " + std::to_string(search_result->depth) +
+        "@" + std::to_string(search_result->probability) + "%" +
+        " hintx" + std::to_string(hint_count),
+        options
+    );
+#else
     if (options->show_log) {
         std::cerr << "ggs late synchro hint overrides search " << idx_to_coord(search_result->policy) << " -> " << idx_to_coord(hint_policy)
                   << " value " << search_result->value << " depth " << search_result->depth << "@" << search_result->probability << "%"
                   << " " << ggs_board.board.to_str() << std::endl;
     }
+#endif
     *search_result = ggs_hint_search_result(ggs_board.board, hint_policy);
 }
 
@@ -1082,7 +1158,7 @@ GGS_Board ggs_get_board(std::string str) {
     return res;
 }
 
-Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thread_id, bool *searching, int hint_policy, Search_result ponder_result) {
+Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thread_id, bool *searching, int hint_policy, int hint_count, Search_result ponder_result) {
     Search_result search_result;
     if (ggs_board.board.get_legal()) {
         if (ggs_is_usable_ponder_result(ggs_board.board, ponder_result)) {
@@ -1091,13 +1167,16 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
                           << " value " << ponder_result.value << " depth " << ponder_result.depth << "@100% "
                           << ggs_board.board.to_str() << std::endl;
             }
+            ggs_log_search_result_summary("search exact ponder", ggs_board, ponder_result, hint_policy, hint_count, options);
             return ponder_result;
         }
         if (ggs_should_play_hint_without_search(ggs_board.board, hint_policy)) {
             if (options->show_log) {
                 std::cerr << "ggs synchro hint selected without search " << idx_to_coord(hint_policy) << " " << ggs_board.board.to_str() << std::endl;
             }
-            return ggs_hint_search_result(ggs_board.board, hint_policy);
+            search_result = ggs_hint_search_result(ggs_board.board, hint_policy);
+            ggs_log_search_result_summary("search hint only", ggs_board, search_result, hint_policy, hint_count, options);
+            return search_result;
         }
 
         uint64_t remaining_time_msec = 0;
@@ -1141,6 +1220,31 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         //     std::cerr << std::endl;
         // }
         remaining_time_msec = ggs_subtract_elapsed_or_floor(remaining_time_msec, tim() - strt);
+#if IS_GGS_TOURNAMENT
+        ggs_print_info(
+            "search allocation game " + ggs_board.game_id +
+            " discs " + std::to_string(ggs_board.board.n_discs()) +
+            " raw " + std::to_string(raw_remaining_time_msec) +
+            " safety " + std::to_string(safety_margin) +
+            " limit " + std::to_string(remaining_time_msec) +
+            " inc " + std::to_string(ggs_board.clock.increment_msec) +
+            " ext " + std::to_string(ggs_board.clock.extension_msec),
+            options
+        );
+#else
+        if (options->show_log) {
+            ggs_print_info(
+                "search allocation game " + ggs_board.game_id +
+                " discs " + std::to_string(ggs_board.board.n_discs()) +
+                " raw " + std::to_string(raw_remaining_time_msec) +
+                " safety " + std::to_string(safety_margin) +
+                " limit " + std::to_string(remaining_time_msec) +
+                " inc " + std::to_string(ggs_board.clock.increment_msec) +
+                " ext " + std::to_string(ggs_board.clock.extension_msec),
+                options
+            );
+        }
+#endif
 
         if (remaining_time_msec <= 50ULL) {
             search_result = ggs_fallback_search_result(ggs_board.board);
@@ -1162,6 +1266,7 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
                 search_result = ggs_fallback_search_result(ggs_board.board);
             }
         }
+        ggs_log_search_result_summary("search result", ggs_board, search_result, hint_policy, hint_count, options);
     } else { // pass
         search_result.policy = MOVE_PASS;
     }
@@ -1346,6 +1451,14 @@ bool ggs_try_send_pending_move(GGS_Pending_Move *pending_move, const GGS_Move_Hi
     if (legal && (!is_valid_policy(pending_move->result.policy) || !(legal & (1ULL << pending_move->result.policy)))) {
         pending_move->result = ggs_fallback_search_result(pending_move->board.board);
     }
+    ggs_log_search_result_summary(
+        "search send pending",
+        pending_move->board,
+        pending_move->result,
+        ggs_get_move_hint(move_hints, pending_move->board.board),
+        ggs_get_move_hint_count(move_hints, pending_move->board.board),
+        options
+    );
     ggs_send_move(pending_move->board, sock, pending_move->result, options);
     pending_move->active = false;
     return true;
@@ -1363,6 +1476,7 @@ void ggs_launch_ai_search(
     Options *options
 ) {
     int hint_policy = ggs_get_move_hint(move_hints, ggs_board.board);
+    int hint_count = ggs_get_move_hint_count(move_hints, ggs_board.board);
     Search_result ponder_result = ggs_get_ponder_result(ponder_results, ggs_board.board);
     if (options->show_log && is_valid_policy(hint_policy)) {
         std::cerr << "synchro hint candidate before search " << ggs_board.game_id << " " << idx_to_coord(hint_policy) << std::endl;
@@ -1374,7 +1488,7 @@ void ggs_launch_ai_search(
 #endif
     ai_searchings[search_slot] = true;
     ggs_boards_searching[search_slot] = ggs_board;
-    ai_futures[search_slot] = std::async(std::launch::async, ggs_search, ggs_board, options, thread_id, &ai_searchings[search_slot], hint_policy, ponder_result);
+    ai_futures[search_slot] = std::async(std::launch::async, ggs_search, ggs_board, options, thread_id, &ai_searchings[search_slot], hint_policy, hint_count, ponder_result);
 }
 
 bool ggs_try_launch_pending_search(
@@ -1916,6 +2030,14 @@ void ggs_client(Options *options) {
                             Search_result search_result = ai_futures[i].get();
                             ai_searchings[i] = false;
                             ggs_apply_move_hint_to_search_result(ggs_boards_searching[i], move_hints, &search_result, options);
+                            ggs_log_search_result_summary(
+                                "search ready",
+                                ggs_boards_searching[i],
+                                search_result,
+                                ggs_get_move_hint(move_hints, ggs_boards_searching[i].board),
+                                ggs_get_move_hint_count(move_hints, ggs_boards_searching[i].board),
+                                options
+                            );
                             if (ggs_should_wait_for_synchro_hint(ggs_boards_searching[i], search_result, move_hints, ggs_boards, options)) {
                                 ggs_store_pending_move(&pending_moves[i], ggs_boards_searching[i], search_result);
                                 if (options->show_log) {
