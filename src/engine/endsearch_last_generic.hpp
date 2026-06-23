@@ -48,15 +48,7 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
     } else {
 #endif
 #if LAST_FLIP_PASS_OPT
-        const int x = p0 & 7;
-        const int y = p0 >> 3;
-        uint_fast8_t d7 = join_d7_line(player, x + y);
-        uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
-        int n_flip_both = 
-            N_LAST_FLIP_BOTH[join_h_line(player, y)][x] + // both h
-            N_LAST_FLIP_BOTH[join_v_line(player, x)][y] + // both v
-            N_LAST_FLIP[d7][x] + // player d7
-            N_LAST_FLIP[d9][x];  // player d9
+        int n_flip_both = count_last_flip_both(player, p0);
         n_flip = n_flip_both & 0xff;
 #else
         n_flip = count_last_flip(player, p0);
@@ -72,10 +64,7 @@ inline int last1(Search *search, uint64_t player, int alpha, uint_fast8_t p0) {
                 score = score2;
             if (score > alpha) {
 #if LAST_FLIP_PASS_OPT
-                n_flip = 
-                    (n_flip_both >> 8) + // hv (calculated)
-                    N_LAST_FLIP[DIAGONAL_LINE_MASK_T[x + y] ^ d7][x] + // d7
-                    N_LAST_FLIP[DIAGONAL_LINE_MASK_T[x + 7 - y] ^ d9][x]; // d9
+                n_flip = n_flip_both >> 8;
 #else
                 n_flip = count_last_flip(~player, p0);
 #endif

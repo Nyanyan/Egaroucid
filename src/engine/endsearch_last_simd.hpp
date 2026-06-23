@@ -29,32 +29,29 @@
     @return the final opponent's score
 */
 static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int place) {
-    __m128i M0 = mask_dvhd[place].v2[0];
-    __m128i M1 = mask_dvhd[place].v2[1];
-    __m128i PP = _mm_shuffle_epi32(PO, DUPHI);
-    __m128i II = _mm_sad_epu8(_mm_and_si128(PP, M0), _mm_setzero_si128());
-    const int x = place & 7;
-    const int y = place >> 3;
+    const uint64_t P = _mm_extract_epi64(PO, 1);
 
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[63];
 #endif
 #if LAST_FLIP_PASS_OPT
-    uint_fast16_t n_flip_both = N_LAST_FLIP_BOTH[_mm_extract_epi16(II, 4)][x];
-    n_flip_both += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
-    int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
-    n_flip_both += N_LAST_FLIP[t >> 8][y];
-    n_flip_both += N_LAST_FLIP_BOTH[t & 0xFF][y];
-    uint_fast8_t n_flip = n_flip_both & 0xff;
+    uint_fast16_t n_flip_both = count_last_flip_both(P, place);
+    uint_fast8_t n_flip = n_flip_both & 0xFF;
 #else
+    __m128i M0 = mask_dvhd[place].v2[0];
+    __m128i M1 = mask_dvhd[place].v2[1];
+    __m128i PP = _mm_shuffle_epi32(PO, DUPHI);
+    __m128i II = _mm_sad_epu8(_mm_and_si128(PP, M0), _mm_setzero_si128());
+    const int x = place & 7;
+    const int y = place >> 3;
     uint_fast8_t n_flip = N_LAST_FLIP[_mm_extract_epi16(II, 4)][x];
     n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
     int t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(PP, M1)));
     n_flip += N_LAST_FLIP[t >> 8][y];
     n_flip += N_LAST_FLIP[t & 0xFF][y];
 #endif
-    int score = 2 * (pop_count_ull(_mm_cvtsi128_si64(PP)) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
+    int score = 2 * (pop_count_ull(P) + n_flip + 1) - HW2;	// (n_P + n_flip + 1) - (HW2 - 1 - n_P - n_flip)
 
     if (n_flip == 0) {
         ++search->n_nodes;
@@ -66,13 +63,10 @@ static inline int vectorcall last1(Search *search, __m128i PO, int alpha, int pl
             score = score2;
         }
         if (score > alpha) {	// lazy cut-off
-            II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
 #if LAST_FLIP_PASS_OPT
             n_flip = n_flip_both >> 8;
-            n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
-            t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
-            n_flip += N_LAST_FLIP[t >> 8][y];
 #else
+            II = _mm_sad_epu8(_mm_andnot_si128(PP, M0), _mm_setzero_si128());
             n_flip = N_LAST_FLIP[_mm_extract_epi16(II, 4)][x];
             n_flip += N_LAST_FLIP[_mm_cvtsi128_si32(II)][x];
             t = _mm_movemask_epi8(_mm_sub_epi8(_mm_setzero_si128(), _mm_andnot_si128(PP, M1)));
