@@ -7,6 +7,7 @@ import queue
 import time
 import atexit
 import signal
+import ctypes
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
 from elo_rating_backcal import fit_elo_from_winrates_with_interval
@@ -29,6 +30,20 @@ process_registry_lock = threading.Lock()
 shutdown_lock = threading.Lock()
 shutdown_event = threading.Event()
 shutdown_started = False
+
+
+def suppress_windows_error_dialogs():
+    if os.name != 'nt':
+        return
+    try:
+        sem_failcriticalerrors = 0x0001
+        sem_nogpfault_errorbox = 0x0002
+        ctypes.windll.kernel32.SetErrorMode(sem_failcriticalerrors | sem_nogpfault_errorbox)
+    except Exception:
+        pass
+
+
+suppress_windows_error_dialogs()
 
 
 def parse_args():
@@ -437,35 +452,30 @@ def send_gtp_command(player_idx, proc_idx, cmd):
         raise RuntimeError('shutdown in progress')
 
     proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
-    for _ in range(2):
-        if shutdown_event.is_set():
-            raise RuntimeError('shutdown in progress')
-        if proc.poll() is not None:
-            proc = restart_process(player_idx, proc_idx)
-        try:
-            proc.stdin.write(cmd.encode('utf-8'))
-            proc.stdin.flush()
-        except (BrokenPipeError, OSError):
-            proc = restart_process(player_idx, proc_idx)
+    if shutdown_event.is_set():
+        raise RuntimeError('shutdown in progress')
+    if proc.poll() is not None:
+        raise RuntimeError('gtp engine exited: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
+    try:
+        proc.stdin.write(cmd.encode('utf-8'))
+        proc.stdin.flush()
+    except (BrokenPipeError, OSError):
+        raise RuntimeError('failed to write to gtp engine: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
+
+    while True:
+        raw = proc.stdout.readline()
+        if raw == b'':
+            raise RuntimeError('gtp engine closed stdout: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
+
+        line = raw.decode(errors='replace').replace('\r', '').replace('\n', '').strip()
+        if line == '':
             continue
+        if line.startswith('='):
+            return line[1:].strip()
+        if line.startswith('?'):
+            raise RuntimeError('gtp command failed: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip() + ' response=' + line)
 
-        while True:
-            raw = proc.stdout.readline()
-            if raw == b'':
-                proc = restart_process(player_idx, proc_idx)
-                break
-
-            line = raw.decode(errors='replace').replace('\r', '').replace('\n', '').strip()
-            if line == '':
-                continue
-            if line.startswith('='):
-                return line[1:].strip()
-            if line.startswith('?'):
-                raise RuntimeError('gtp command failed: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip() + ' response=' + line)
-
-            # Ntest prints startup and status lines before the first GTP response.
-
-    raise RuntimeError('failed to communicate with engine: ' + players[player_idx][NAME_IDX] + ' cmd=' + cmd.strip())
+        # Ntest prints startup and status lines before the first GTP response.
 
 
 def acquire_process_idx(player_idx, player):
