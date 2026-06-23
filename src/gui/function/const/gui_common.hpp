@@ -68,6 +68,10 @@ constexpr int UPDATE_CHECK_ALREADY_UPDATED = 0;
 constexpr int UPDATE_CHECK_UPDATE_FOUND = 1;
 constexpr int UPDATE_CHECK_FAILED = 2;
 constexpr int SHOW_ALL_HINT = 35;
+constexpr int UMIGAME_VALUE_MAX_MOVE_LOSS_MIN = 0;
+constexpr int UMIGAME_VALUE_MAX_MOVE_LOSS_MAX = 8;
+constexpr int UMIGAME_VALUE_MAX_PLAYER_LOSS_MIN = 0;
+constexpr int UMIGAME_VALUE_MAX_PLAYER_LOSS_MAX = 10;
 constexpr int PROFILE_AUTO_SAVE_MODE_OVERWRITE = 0;
 constexpr int PROFILE_AUTO_SAVE_MODE_NEW = 1;
 constexpr int AI_MAX_LOSS_INF = 129;
@@ -317,9 +321,7 @@ inline bool last_window_focused = true;
 
 inline void apply_enabled_state(const bool enabled) {
 #if SIV3D_PLATFORM(WINDOWS)
-    if (enabled) {
-        Platform::Windows::TextInput::EnableIME();
-    } else {
+    if (!enabled) {
         Platform::Windows::TextInput::DisableIME();
     }
 #else
@@ -488,6 +490,9 @@ struct Settings {
     bool use_disc_hint;
     bool use_umigame_value;
     int umigame_value_depth;
+    int umigame_value_max_move_loss;
+    int umigame_value_black_max_loss;
+    int umigame_value_white_max_loss;
     int n_disc_hint;
     bool show_legal;
     bool show_graph;
@@ -658,6 +663,10 @@ struct Menu_elements {
     bool show_hint_level;
     bool use_umigame_value;
     int umigame_value_depth;
+    int umigame_value_max_move_loss;
+    int umigame_value_black_max_loss;
+    int umigame_value_white_max_loss;
+    bool umigame_value_apply_setting;
     bool show_legal;
     bool show_graph;
     bool show_opening_on_cell;
@@ -816,6 +825,10 @@ struct Menu_elements {
         show_hint_level = settings->show_hint_level;
         use_umigame_value = settings->use_umigame_value;
         umigame_value_depth = settings->umigame_value_depth;
+        umigame_value_max_move_loss = settings->umigame_value_max_move_loss;
+        umigame_value_black_max_loss = settings->umigame_value_black_max_loss;
+        umigame_value_white_max_loss = settings->umigame_value_white_max_loss;
+        umigame_value_apply_setting = false;
         show_legal = settings->show_legal;
         show_graph = settings->show_graph;
         show_opening_on_cell = settings->show_opening_on_cell;
@@ -1306,10 +1319,17 @@ struct Game_abstract {
     String game_date;      // YYYY-MM-DD format (user-specified game date)
 };
 
+struct Umigame_future_job {
+    int cell;
+    int request_id;
+    std::future<Umigame_result> future;
+};
+
 struct Umigame_status {
     bool umigame_calculating{ false };
     bool umigame_calculated{ false };
-    std::future<Umigame_result> umigame_future[HW2];
+    int request_id{ 0 };
+    std::vector<Umigame_future_job> umigame_future_jobs;
     Umigame_result umigame[HW2];
 };
 

@@ -30,8 +30,8 @@ bool compare_hint_info(Hint_info& a, Hint_info& b) {
     return a.value > b.value;
 }
 
-Umigame_result get_umigame(Board board, int player, int depth) {
-    return calculate_umigame(&board, player, depth);
+Umigame_result get_umigame(Board board, int player, int depth, Umigame_condition condition) {
+    return calculate_umigame(&board, player, depth, condition);
 }
 
 int get_book_accuracy(Board board) {
@@ -53,7 +53,10 @@ private:
     int taking_screen_shot_state;
     bool pausing_in_pass;
     bool putting_1_move_by_ai;
-    int umigame_value_depth_before;
+    int umigame_value_applied_depth;
+    int umigame_value_applied_max_move_loss;
+    int umigame_value_applied_black_max_loss;
+    int umigame_value_applied_white_max_loss;
     String shortcut_key;
     String shortcut_key_pressed;
     uint64_t turn_timer_start_msec;
@@ -113,7 +116,10 @@ public:
         taking_screen_shot_state = 0;
         pausing_in_pass = false;
         putting_1_move_by_ai = false;
-        umigame_value_depth_before = 0;
+        umigame_value_applied_depth = 0;
+        umigame_value_applied_max_move_loss = -1;
+        umigame_value_applied_black_max_loss = -1;
+        umigame_value_applied_white_max_loss = -1;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
         forced_opening_finished_latched = false;
@@ -385,11 +391,17 @@ public:
 
             // umigame calculating / drawing
             if (getData().menu_elements.use_umigame_value && (!hint_ignore || show_value_ai_turn)) {
-                if (umigame_value_depth_before != getData().menu_elements.umigame_value_depth) {
+                if (umigame_value_applied_depth == 0 || getData().menu_elements.umigame_value_apply_setting) {
                     umigame_status.umigame_calculated = false;
                     umigame_status.umigame_calculating = false;
+                    ++umigame_status.request_id;
+                    clear_umigame_values();
                     umigame.delete_all();
-                    umigame_value_depth_before = getData().menu_elements.umigame_value_depth;
+                    umigame_value_applied_depth = getData().menu_elements.umigame_value_depth;
+                    umigame_value_applied_max_move_loss = getData().menu_elements.umigame_value_max_move_loss;
+                    umigame_value_applied_black_max_loss = getData().menu_elements.umigame_value_black_max_loss;
+                    umigame_value_applied_white_max_loss = getData().menu_elements.umigame_value_white_max_loss;
+                    getData().menu_elements.umigame_value_apply_setting = false;
                 }
                 if (umigame_status.umigame_calculated) {
                     draw_umigame(legal_ignore);
@@ -608,8 +620,16 @@ private:
     void reset_book_additional_features() {
         umigame_status.umigame_calculated = false;
         umigame_status.umigame_calculating = false;
+        ++umigame_status.request_id;
+        clear_umigame_values();
         book_accuracy_status.book_accuracy_calculated = false;
         book_accuracy_status.book_accuracy_calculating = false;
+    }
+
+    void clear_umigame_values() {
+        for (int i = 0; i < HW2; ++i) {
+            umigame_status.umigame[i] = Umigame_result();
+        }
     }
 
     void reset_random_board_generator() {
@@ -642,11 +662,12 @@ private:
             }
         }
         std::cerr << "terminating umigame value" << std::endl;
-        for (int i = 0; i < HW2; ++i) {
-            if (umigame_status.umigame_future[i].valid()) {
-                umigame_status.umigame_future[i].get();
+        for (Umigame_future_job& job: umigame_status.umigame_future_jobs) {
+            if (job.future.valid()) {
+                job.future.get();
             }
         }
+        umigame_status.umigame_future_jobs.clear();
         std::cerr << "terminating book accuracy" << std::endl;
         for (int i = 0; i < HW2; ++i) {
             if (book_accuracy_status.book_accuracy_future[i].valid()) {
@@ -2631,16 +2652,23 @@ private:
                 }
                 Board board = getData().history_elem.board;
                 int n_player = getData().history_elem.player ^ 1;
+                const int request_id = umigame_status.request_id;
+                Umigame_condition condition(
+                    umigame_value_applied_max_move_loss,
+                    umigame_value_applied_black_max_loss,
+                    umigame_value_applied_white_max_loss);
                 Flip flip;
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                     calc_flip(&flip, &board, cell);
                     board.move_board(&flip);
                         if (board.get_legal() == 0ULL) {
                             board.pass();
-                                umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player ^ 1, getData().menu_elements.umigame_value_depth);
+                            if (book.contain(board)) {
+                                add_umigame_future_job(cell, request_id, std::async(std::launch::async, get_umigame, board, n_player ^ 1, umigame_value_applied_depth, condition));
+                            }
                             board.pass();
-                        } else {
-                            umigame_status.umigame_future[cell] = std::async(std::launch::async, get_umigame, board, n_player, getData().menu_elements.umigame_value_depth);
+                        } else if (book.contain(board)) {
+                            add_umigame_future_job(cell, request_id, std::async(std::launch::async, get_umigame, board, n_player, umigame_value_applied_depth, condition));
                         }
                     board.undo_board(&flip);
                 }
@@ -2648,17 +2676,8 @@ private:
                 std::cerr << "start umigame calculation" << std::endl;
             }
             else {
-                bool all_done = true;
-                for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-                    if (umigame_status.umigame_future[cell].valid()) {
-                        if (umigame_status.umigame_future[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            umigame_status.umigame[cell] = umigame_status.umigame_future[cell].get();
-                        } else {
-                            all_done = false;
-                        }
-                    }
-                }
-                if (all_done) {
+                const int future_update_status = update_umigame_future_jobs();
+                if (future_update_status == UMIGAME_FUTURE_UPDATE_DONE) {
                     umigame_status.umigame_calculating = false;
                     umigame_status.umigame_calculated = !(umigame_calculation_interrupted && global_searching);
                     if (global_searching) {
@@ -2668,6 +2687,39 @@ private:
                 }
             }
         }
+    }
+
+    static constexpr int UMIGAME_FUTURE_UPDATE_WAITING = 0;
+    static constexpr int UMIGAME_FUTURE_UPDATE_DONE = 1;
+
+    void add_umigame_future_job(int cell, int request_id, std::future<Umigame_result> future) {
+        Umigame_future_job job;
+        job.cell = cell;
+        job.request_id = request_id;
+        job.future = std::move(future);
+        umigame_status.umigame_future_jobs.emplace_back(std::move(job));
+    }
+
+    int update_umigame_future_jobs() {
+        bool all_current_jobs_done = true;
+        const int current_request_id = umigame_status.request_id;
+        for (auto it = umigame_status.umigame_future_jobs.begin(); it != umigame_status.umigame_future_jobs.end();) {
+            if (!it->future.valid()) {
+                it = umigame_status.umigame_future_jobs.erase(it);
+            } else if (it->future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                Umigame_result result = it->future.get();
+                if (it->request_id == current_request_id) {
+                    umigame_status.umigame[it->cell] = result;
+                }
+                it = umigame_status.umigame_future_jobs.erase(it);
+            } else {
+                if (it->request_id == current_request_id) {
+                    all_current_jobs_done = false;
+                }
+                ++it;
+            }
+        }
+        return all_current_jobs_done ? UMIGAME_FUTURE_UPDATE_DONE : UMIGAME_FUTURE_UPDATE_WAITING;
     }
 
     void draw_umigame(uint64_t legal_ignore) {

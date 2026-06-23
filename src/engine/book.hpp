@@ -1530,13 +1530,14 @@ class Book {
         }
 
         /*
-            @brief get all best moves
+            @brief get all moves within local move loss from the best child score
 
             @param b                    a board pointer to find
-            @return vector of best moves
+            @param max_child_loss       maximum acceptable loss from the best child score at this node
+            @return vector of moves with mover-perspective scores
         */
-        inline std::vector<int> get_all_best_moves(Board *b) {
-            std::vector<int> policies;
+        inline std::vector<Book_value> get_all_moves_within_child_loss(Board *b, int max_child_loss) {
+            std::vector<std::pair<int, int>> value_policies;
             uint64_t legal = b->get_legal();
             int max_value = -INF;
             Flip flip;
@@ -1550,20 +1551,37 @@ class Book {
                     }
                     if (contain(b)) {
                         Book_elem elem = get(b);
-                        if (sgn * elem.value > max_value) {
-                            max_value = sgn * elem.value;
-                            policies.clear();
-                        }
-                        if (sgn * elem.value == max_value) {
-                            policies.emplace_back(cell);
-                        }
+                        int value = sgn * elem.value;
+                        max_value = std::max(max_value, value);
+                        value_policies.emplace_back(value, cell);
                     }
                     if (sgn == 1) {
                         b->pass();
                     }
                 b->undo_board(&flip);
             }
+            std::vector<Book_value> policies;
+            for (const std::pair<int, int>& value_policy: value_policies) {
+                if (value_policy.first >= max_value - max_child_loss) {
+                    Book_value book_value;
+                    book_value.policy = value_policy.second;
+                    book_value.value = value_policy.first;
+                    policies.emplace_back(book_value);
+                }
+            }
             return policies;
+        }
+
+        inline std::vector<int> get_all_moves_within_range(Board *b, int value_range) {
+            std::vector<int> policies;
+            for (const Book_value& book_value: get_all_moves_within_child_loss(b, value_range)) {
+                policies.emplace_back(book_value.policy);
+            }
+            return policies;
+        }
+
+        inline std::vector<int> get_all_best_moves(Board *b) {
+            return get_all_moves_within_range(b, 0);
         }
 
         /*
