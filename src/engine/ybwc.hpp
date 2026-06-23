@@ -27,12 +27,21 @@ constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 6;
 constexpr int YBWC_END_SPLIT_MIN_DEPTH = 15;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
 // constexpr int YBWC_N_ELDER_CHILD = 1;
+#if IS_GGS_TOURNAMENT
+constexpr int YBWC_MID_N_YOUNGER_CHILD = 3;
+#else
 constexpr int YBWC_MID_N_YOUNGER_CHILD = 2;
+#endif
 constexpr int YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD = 3;
 constexpr int YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH = 23;
 constexpr int YBWC_END_N_YOUNGER_CHILD = 1;
+#if IS_GGS_TOURNAMENT
+constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD = 3;
+constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH = 20;
+#else
 constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD = 6;
 constexpr int YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH = 16;
+#endif
 // constexpr int YBWC_MAX_RUNNING_COUNT = 5;
 constexpr int YBWC_NOT_PUSHED = -124;
 constexpr int YBWC_PUSHED = 124;

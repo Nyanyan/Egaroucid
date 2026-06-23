@@ -15,8 +15,14 @@
 constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
 #endif
 
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
-#define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 2000 // ms
+#if IS_GGS_TOURNAMENT
+    #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 320 // ms / move
+    #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 3500 // ms
+    #define TIME_MANAGEMENT_GGS_FIRST_MOVE_COE 0.16
+#else
+    #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
+    #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 2000 // ms
+#endif
 // #define TIME_MANAGEMENT_REMAINING_MOVES_OFFSET 15 // 15 * 2 = 30 moves
 #define TIME_MANAGEMENT_N_MOVES_COE_30_OR_MORE 1.2 // 1.4
 #define TIME_MANAGEMENT_N_MOVES_COE_40_OR_MORE_ADDITIONAL 0.1 // 0.5 // additional search
@@ -45,7 +51,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         if (show_log) {
             std::cerr << "first move time limit" << std::endl;
         }
-        return remaining_time_msec_margin * 0.1;
+        return remaining_time_msec_margin * TIME_MANAGEMENT_GGS_FIRST_MOVE_COE;
     }
 #endif
 
@@ -54,7 +60,14 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double complete_const_a = 0.60; //2.1747;
     constexpr double complete_const_b = 0.75;
     constexpr double complete_nps = 7.0e8;
+#if IS_GGS_TOURNAMENT
+    double complete_use_time = (double)remaining_time_msec_margin * 0.6;
+    if (n_empties >= 32) {
+        complete_use_time = std::min(complete_use_time, 42000.0);
+    }
+#else
     double complete_use_time = (double)remaining_time_msec_margin * 0.9;
+#endif
     double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
 
     // try endgame search
@@ -62,7 +75,11 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double endgame_const_a = 0.05; //1.8654;
     constexpr double endgame_const_b = 0.62;
     constexpr double endgame_nps = 3.5e8;
+#if IS_GGS_TOURNAMENT
+    double endgame_use_time = (double)remaining_time_msec_margin * 0.1;
+#else
     double endgame_use_time = (double)remaining_time_msec_margin * 0.15;
+#endif
     double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
 
     if (show_log) {
@@ -70,6 +87,18 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     }
 
     // midgame search time
+#if IS_GGS_TOURNAMENT
+    double phase_time_coe = 1.75;
+    if (n_empties >= 45) {
+        phase_time_coe = 1.20;
+    } else if (n_empties >= 34) {
+        phase_time_coe = 1.30;
+    } else if (n_empties >= 22) {
+        phase_time_coe = 1.50;
+    }
+    double remaining_moves_proc = std::max(3.0, remaining_moves + 2.0);
+    uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(phase_time_coe * remaining_time_msec_margin / remaining_moves_proc));
+#else
     double remaining_moves_proc = 0;
     if (remaining_time_msec_margin < remaining_time_msec) {
         if (remaining_moves >= 30 / 2) { // 30 or more
@@ -83,6 +112,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     }
     remaining_moves_proc = std::max(2.0, remaining_moves_proc); // at least 2 moves
     uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(remaining_time_msec_margin / remaining_moves_proc));
+#endif
 
     if (n_empties <= complete_search_depth) {
         if (show_log) {

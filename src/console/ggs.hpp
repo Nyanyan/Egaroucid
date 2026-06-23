@@ -8,6 +8,8 @@
     @license GPL-3.0-or-later
 */
 #pragma once
+#include <filesystem>
+#include <unordered_map>
 #include "./../engine/engine_all.hpp"
 #include "option.hpp"
 #include "util.hpp"
@@ -27,6 +29,106 @@
 #define GGS_USE_PONDER true
 #define GGS_N_PONDER_PARALLEL 1
 
+struct GGS_Clock_Params {
+    bool initialized;
+    uint64_t initial_msec;
+    uint64_t increment_msec;
+    uint64_t extension_msec;
+    int initial_moves;
+    int increment_moves;
+    int extension_moves;
+    bool initial_loss;
+    bool increment_add;
+    bool extension_add;
+
+    GGS_Clock_Params()
+        : initialized(false),
+          initial_msec(0),
+          increment_msec(0),
+          extension_msec(0),
+          initial_moves(0),
+          increment_moves(1),
+          extension_moves(0),
+          initial_loss(true),
+          increment_add(true),
+          extension_add(true) {}
+};
+
+inline uint64_t ggs_time_safety_margin_msec(uint64_t remaining_time_msec) {
+    if (remaining_time_msec > 120000ULL) {
+        return 6000ULL;
+    }
+    if (remaining_time_msec > 60000ULL) {
+        return 5000ULL;
+    }
+    if (remaining_time_msec > 30000ULL) {
+        return 3500ULL;
+    }
+    if (remaining_time_msec > 10000ULL) {
+        return 2500ULL;
+    }
+    if (remaining_time_msec > 3000ULL) {
+        return 1500ULL;
+    }
+    if (remaining_time_msec > 1000ULL) {
+        return 1000ULL;
+    }
+    return 1000ULL;
+}
+
+inline uint64_t ggs_clock_future_increment_msec(const Board &board, const GGS_Clock_Params &clock) {
+    if (!clock.initialized || clock.increment_msec == 0ULL || !clock.increment_add || clock.increment_moves <= 0) {
+        return 0ULL;
+    }
+    const int n_empties = HW2 - board.n_discs();
+    const uint64_t remaining_own_moves = std::max(1, (n_empties + 1) / 2);
+    return clock.increment_msec * remaining_own_moves / (uint64_t)clock.increment_moves;
+}
+
+inline uint64_t ggs_clock_adjusted_time_for_allocation(const Board &board, uint64_t safe_remaining_time_msec, uint64_t raw_remaining_time_msec, const GGS_Clock_Params &clock) {
+    const uint64_t future_increment = ggs_clock_future_increment_msec(board, clock);
+    if (future_increment == 0ULL) {
+        return safe_remaining_time_msec;
+    }
+    const uint64_t activation_time = clock.increment_msec * 2ULL + ggs_time_safety_margin_msec(raw_remaining_time_msec);
+    if (raw_remaining_time_msec <= activation_time) {
+        return safe_remaining_time_msec;
+    }
+    return safe_remaining_time_msec + std::min<uint64_t>(future_increment, safe_remaining_time_msec * 2ULL);
+}
+
+inline uint64_t ggs_subtract_elapsed_or_floor(uint64_t remaining_time_msec, uint64_t elapsed_msec) {
+    if (remaining_time_msec > elapsed_msec + 1ULL) {
+        return remaining_time_msec - elapsed_msec;
+    }
+    return 1ULL;
+}
+
+inline bool ggs_engine_show_log(const Options *options) {
+#if IS_GGS_TOURNAMENT
+    (void)options;
+    return false;
+#else
+    return options->show_log;
+#endif
+}
+
+Search_result ggs_fallback_search_result(Board board) {
+    Search_result res;
+    uint64_t legal = board.get_legal();
+    if (legal == 0ULL) {
+        res.policy = MOVE_PASS;
+        res.value = 0;
+        return res;
+    }
+    uint64_t preferred = legal & 0x8100000000000081ULL;
+    uint64_t candidates = preferred ? preferred : legal;
+    res.policy = first_bit(&candidates);
+    res.value = mid_evaluate(&board);
+    res.depth = 0;
+    res.probability = 0;
+    return res;
+}
 
 struct GGS_Board {
     std::string game_id;
@@ -39,6 +141,7 @@ struct GGS_Board {
     uint64_t remaining_seconds_white;
     Board board;
     int player_to_move;
+    GGS_Clock_Params clock;
 
     GGS_Board() {
         game_id = "";
@@ -54,7 +157,7 @@ struct GGS_Board {
         player_to_move = -1;
     }
 
-    bool is_valid() {
+    bool is_valid() const {
         return (board.player != 0 || board.opponent != 0) && player_to_move != -1;
     }
 };
@@ -76,7 +179,369 @@ struct GGS_Match {
     }
 };
 
+void ggs_print_info(std::string str, Options *options);
+
+struct GGS_Move_Hint {
+    int policy;
+    int count;
+
+    GGS_Move_Hint()
+        : policy(MOVE_UNDEFINED), count(0) {}
+
+    GGS_Move_Hint(int policy_, int count_)
+        : policy(policy_), count(count_) {}
+};
+
+struct GGS_Pending_Move {
+    bool active;
+    GGS_Board board;
+    Search_result result;
+    uint64_t ready_time;
+    uint64_t max_wait_msec;
+
+    GGS_Pending_Move()
+        : active(false), ready_time(0), max_wait_msec(0) {}
+};
+
+struct GGS_Pending_Search {
+    bool active;
+    GGS_Board board;
+    int search_slot;
+    thread_id_t thread_id;
+    uint64_t ready_time;
+    uint64_t max_wait_msec;
+
+    GGS_Pending_Search()
+        : active(false), search_slot(GGS_NON_SYNCHRO_ID), thread_id(THREAD_ID_NONE), ready_time(0), max_wait_msec(0) {}
+};
+
+using GGS_Move_Hint_Table = std::unordered_map<std::string, GGS_Move_Hint>;
+using GGS_Ponder_Result_Table = std::unordered_map<std::string, Search_result>;
+
+constexpr int GGS_GAME_LOG_WINNER_HINT_WEIGHT = 2;
+constexpr int GGS_LIVE_OPPONENT_HINT_WEIGHT = 3;
+
+inline std::string ggs_move_hint_key(const Board &board) {
+    return board.to_str();
+}
+
+inline bool ggs_is_legal_hint(const Board &board, int policy) {
+    return is_valid_policy(policy) && (board.get_legal() & (1ULL << policy));
+}
+
+inline bool ggs_is_usable_ponder_result(const Board &board, const Search_result &result) {
+    if (
+        !result.is_end_search ||
+        result.depth < HW2 - board.n_discs() ||
+        !is_valid_policy(result.policy) ||
+        !(board.get_legal() & (1ULL << result.policy))
+    ) {
+        return false;
+    }
+    return result.probability == 100;
+}
+
+inline bool ggs_is_cacheable_ponder_result(const Search_result &result) {
+    return result.is_end_search && result.probability == 100 && is_valid_policy(result.policy);
+}
+
+Search_result ggs_get_ponder_result(const GGS_Ponder_Result_Table &ponder_results, const Board &board) {
+    auto it = ponder_results.find(board.to_str());
+    if (it == ponder_results.end() || !ggs_is_usable_ponder_result(board, it->second)) {
+        return Search_result();
+    }
+    return it->second;
+}
+
+Search_result ggs_hint_search_result(Board board, int policy) {
+    Search_result res = ggs_fallback_search_result(board);
+    res.policy = policy;
+    res.value = mid_evaluate(&board);
+    res.depth = 0;
+    res.probability = 0;
+    return res;
+}
+
+inline bool ggs_should_play_hint_without_search(const Board &board, int policy) {
+    if (!ggs_is_legal_hint(board, policy)) {
+        return false;
+    }
+#if IS_GGS_TOURNAMENT
+    return board.n_discs() <= 20;
+#else
+    return board.n_discs() <= 20;
+#endif
+}
+
+inline bool ggs_should_override_with_hint(const Board &board, int policy, const Search_result &search_result) {
+    if (!ggs_is_legal_hint(board, policy) || policy == search_result.policy) {
+        return false;
+    }
+    const int n_discs = board.n_discs();
+    if (!is_valid_policy(search_result.policy)) {
+        return true;
+    }
+#if IS_GGS_TOURNAMENT
+    if (n_discs <= 22 && (search_result.value <= -2 || search_result.depth < 29 || search_result.probability < 88)) {
+        return true;
+    }
+    if (n_discs <= 30 && (search_result.value <= -6 || search_result.depth < 27)) {
+        return true;
+    }
+    return false;
+#else
+    if (n_discs <= 24 && search_result.probability < 93) {
+        return true;
+    }
+    if (n_discs <= 30 && (search_result.value <= -4 || search_result.depth < 27)) {
+        return true;
+    }
+    return false;
+#endif
+}
+
+int ggs_get_move_hint(const GGS_Move_Hint_Table &move_hints, const Board &board) {
+    auto it = move_hints.find(ggs_move_hint_key(board));
+    if (it == move_hints.end()) {
+        return MOVE_UNDEFINED;
+    }
+    return ggs_is_legal_hint(board, it->second.policy) ? it->second.policy : MOVE_UNDEFINED;
+}
+
+void ggs_apply_move_hint_to_search_result(
+    const GGS_Board &ggs_board,
+    const GGS_Move_Hint_Table &move_hints,
+    Search_result *search_result,
+    Options *options
+) {
+    const int hint_policy = ggs_get_move_hint(move_hints, ggs_board.board);
+    if (
+        hint_policy == search_result->policy ||
+        (!ggs_should_play_hint_without_search(ggs_board.board, hint_policy) && !ggs_should_override_with_hint(ggs_board.board, hint_policy, *search_result))
+    ) {
+        return;
+    }
+    if (options->show_log) {
+        std::cerr << "ggs late synchro hint overrides search " << idx_to_coord(search_result->policy) << " -> " << idx_to_coord(hint_policy)
+                  << " value " << search_result->value << " depth " << search_result->depth << "@" << search_result->probability << "%"
+                  << " " << ggs_board.board.to_str() << std::endl;
+    }
+    *search_result = ggs_hint_search_result(ggs_board.board, hint_policy);
+}
+
+void ggs_record_move_hint(GGS_Move_Hint_Table *move_hints, const Board &board, int policy, int weight = 1) {
+    if (!ggs_is_legal_hint(board, policy)) {
+        return;
+    }
+    if (weight <= 0) {
+        return;
+    }
+    std::string key = ggs_move_hint_key(board);
+    auto it = move_hints->find(key);
+    if (it == move_hints->end()) {
+        (*move_hints)[key] = GGS_Move_Hint(policy, weight);
+        return;
+    }
+    if (it->second.policy == policy) {
+        it->second.count += weight;
+    } else if (it->second.count < weight) {
+        it->second = GGS_Move_Hint(policy, weight - it->second.count);
+    } else if (it->second.count == weight) {
+        move_hints->erase(it);
+    } else {
+        it->second.count -= weight;
+    }
+    if (move_hints->size() > 65536) {
+        move_hints->clear();
+    }
+}
+
+void ggs_record_opponent_move_hint(
+    GGS_Move_Hint_Table *move_hints,
+    GGS_Board ggs_boards[][HW2 + 1],
+    const GGS_Board &ggs_board,
+    Options *options
+) {
+    if (!ggs_board.is_synchro || ggs_board.synchro_id < 0 || ggs_board.synchro_id >= 2 || !is_valid_policy(ggs_board.last_move)) {
+        return;
+    }
+    const int last_player = ggs_board.player_to_move == BLACK ? WHITE : BLACK;
+    const std::string last_player_name = last_player == BLACK ? ggs_board.player_black : ggs_board.player_white;
+    if (last_player_name == options->ggs_username) {
+        return;
+    }
+
+    const int n_discs = ggs_board.board.n_discs();
+    if (n_discs <= 0) {
+        return;
+    }
+    GGS_Board &previous = ggs_boards[ggs_board.synchro_id][n_discs - 1];
+    if (!previous.is_valid() || !ggs_is_legal_hint(previous.board, ggs_board.last_move)) {
+        return;
+    }
+    Board next = previous.board.copy();
+    Flip flip;
+    calc_flip(&flip, &next, ggs_board.last_move);
+    next.move_board(&flip);
+    if (next != ggs_board.board) {
+        return;
+    }
+
+    ggs_record_move_hint(move_hints, previous.board, ggs_board.last_move, GGS_LIVE_OPPONENT_HINT_WEIGHT);
+    if (options->show_log) {
+    #if IS_GGS_TOURNAMENT
+        std::cerr << "ggs live synchro hint " << idx_to_coord(ggs_board.last_move)
+                  << " " << previous.board.to_str() << std::endl;
+    #else
+        ggs_print_info("synchro hint " + previous.board.to_str() + " -> " + idx_to_coord(ggs_board.last_move), options);
+    #endif
+    }
+}
+
+inline bool ggs_line_starts_with(const std::string &line, const std::string &prefix) {
+    return line.rfind(prefix, 0) == 0;
+}
+
+inline std::string ggs_line_value(const std::string &line, const std::string &prefix) {
+    return ggs_line_starts_with(line, prefix) ? line.substr(prefix.size()) : "";
+}
+
+int ggs_seed_move_hints_from_game_log_file(GGS_Move_Hint_Table *move_hints, const std::filesystem::path &path, Options *options) {
+    std::ifstream ifs(path);
+    if (!ifs) {
+        return 0;
+    }
+
+    std::string line;
+    std::string black;
+    std::string white;
+    std::string initial_board;
+    std::string transcript;
+    int black_score = SCORE_UNDEFINED;
+    while (std::getline(ifs, line)) {
+        if (ggs_line_starts_with(line, "black: ")) {
+            black = ggs_line_value(line, "black: ");
+        } else if (ggs_line_starts_with(line, "white: ")) {
+            white = ggs_line_value(line, "white: ");
+        } else if (ggs_line_starts_with(line, "initial board: ")) {
+            initial_board = ggs_line_value(line, "initial board: ");
+        } else if (ggs_line_starts_with(line, "transcript: ")) {
+            transcript = ggs_line_value(line, "transcript: ");
+        } else if (ggs_line_starts_with(line, "black's score: ")) {
+            try {
+                black_score = std::stoi(ggs_line_value(line, "black's score: "));
+            } catch (const std::exception&) {
+                black_score = SCORE_UNDEFINED;
+            }
+        }
+    }
+
+    if (
+        black_score == -99 ||
+        black_score == SCORE_UNDEFINED ||
+        initial_board.size() < HW2 + 2 ||
+        transcript.size() < 2 ||
+        (black != options->ggs_username && white != options->ggs_username)
+    ) {
+        return 0;
+    }
+
+    #if !IS_GGS_TOURNAMENT
+        if (black_score == 0) {
+            return 0;
+        }
+    #endif
+    const int winner_player = black_score > 0 ? BLACK : WHITE;
+    Board board(initial_board);
+    int player_to_move = initial_board[initial_board.size() - 1] == 'O' ? WHITE : BLACK;
+    int n_registered = 0;
+    for (size_t i = 0; i + 1 < transcript.size(); i += 2) {
+        uint64_t legal = board.get_legal();
+        if (legal == 0ULL) {
+            board.pass();
+            player_to_move ^= 1;
+            legal = board.get_legal();
+            if (legal == 0ULL) {
+                break;
+            }
+        }
+
+        const int policy = get_coord_from_chars(transcript[i], transcript[i + 1]);
+        if (!is_valid_policy(policy) || !(legal & (1ULL << policy))) {
+            break;
+        }
+
+        #if IS_GGS_TOURNAMENT
+        const std::string move_player_name = player_to_move == BLACK ? black : white;
+        if (move_player_name != options->ggs_username) {
+            ggs_record_move_hint(move_hints, board, policy, GGS_GAME_LOG_WINNER_HINT_WEIGHT);
+            n_registered += GGS_GAME_LOG_WINNER_HINT_WEIGHT;
+        }
+        #else
+        if (player_to_move == winner_player) {
+            ggs_record_move_hint(move_hints, board, policy, GGS_GAME_LOG_WINNER_HINT_WEIGHT);
+            n_registered += GGS_GAME_LOG_WINNER_HINT_WEIGHT;
+        }
+        #endif
+
+        Flip flip;
+        calc_flip(&flip, &board, policy);
+        board.move_board(&flip);
+        player_to_move ^= 1;
+    }
+    return n_registered;
+}
+
+void ggs_seed_move_hints_from_game_logs(GGS_Move_Hint_Table *move_hints, Options *options) {
+#if IS_GGS_TOURNAMENT
+    (void)move_hints;
+    (void)options;
+    return;
+#endif
+    if (!options->ggs_game_log_to_file || options->ggs_game_log_dir.empty()) {
+        return;
+    }
+    int n_files = 0;
+    int n_hints = 0;
+    try {
+        std::filesystem::path dir(options->ggs_game_log_dir);
+        if (!std::filesystem::exists(dir)) {
+            return;
+        }
+        for (const std::filesystem::directory_entry &entry: std::filesystem::directory_iterator(dir)) {
+            if (!entry.is_regular_file() || entry.path().extension() != ".txt") {
+                continue;
+            }
+            ++n_files;
+            n_hints += ggs_seed_move_hints_from_game_log_file(move_hints, entry.path(), options);
+        }
+    } catch (const std::exception &e) {
+        #if IS_GGS_TOURNAMENT
+        if (options->show_log) {
+            std::cerr << "ggs failed to seed synchro hints: " << e.what() << std::endl;
+        }
+        #else
+        ggs_print_info(std::string("failed to seed synchro hints: ") + e.what(), options);
+        #endif
+        return;
+    }
+    #if IS_GGS_TOURNAMENT
+    if (options->show_log) {
+        std::cerr << "ggs seeded opponent hints files " << n_files
+                  << " moves " << n_hints
+                  << " boards " << move_hints->size() << std::endl;
+    }
+    #else
+    ggs_print_info("seeded synchro hints files " + std::to_string(n_files) + " moves " + std::to_string(n_hints) + " boards " + std::to_string(move_hints->size()), options);
+    #endif
+}
+
 void ggs_print_send(std::string str, Options *options) { // cyan
+#if IS_GGS_TOURNAMENT
+    (void)str;
+    (void)options;
+    return;
+#endif
     std::stringstream ss(str);
     std::string line;
     std::ofstream ofs;
@@ -97,6 +562,11 @@ void ggs_print_send(std::string str, Options *options) { // cyan
 }
 
 void ggs_print_receive(std::string str, Options *options) { // green
+#if IS_GGS_TOURNAMENT
+    (void)str;
+    (void)options;
+    return;
+#endif
     std::stringstream ss(str);
     std::string line;
     std::ofstream ofs;
@@ -117,6 +587,11 @@ void ggs_print_receive(std::string str, Options *options) { // green
 }
 
 void ggs_print_info(std::string str, Options *options) { // yellow
+#if IS_GGS_TOURNAMENT
+    (void)str;
+    (void)options;
+    return;
+#endif
     std::stringstream ss(str);
     std::string line;
     std::ofstream ofs;
@@ -278,6 +753,146 @@ std::string ggs_match_request_get_id(std::string line) {
     return "";
 }
 
+bool ggs_parse_clock_time_msec(const std::string &str, uint64_t *msec) {
+    if (str.empty()) {
+        *msec = 0ULL;
+        return true;
+    }
+    std::vector<std::string> parts = split_by_delimiter(str, ":");
+    if (parts.empty() || parts.size() > 3) {
+        return false;
+    }
+    uint64_t values[3] = {0ULL, 0ULL, 0ULL};
+    try {
+        for (int i = 0; i < (int)parts.size(); ++i) {
+            if (parts[i].empty()) {
+                return false;
+            }
+            values[3 - parts.size() + i] = (uint64_t)std::stoull(parts[i]);
+        }
+    } catch (const std::exception&) {
+        return false;
+    }
+    *msec = ((values[0] * 60ULL + values[1]) * 60ULL + values[2]) * 1000ULL;
+    return true;
+}
+
+bool ggs_parse_clock_segment(
+    const std::string &segment,
+    uint64_t *time_msec,
+    int *n_moves,
+    bool *additive_or_loss,
+    bool default_additive_or_loss
+) {
+    std::vector<std::string> parts = split_by_delimiter(segment, ",");
+    if (parts.empty() || parts.size() > 2) {
+        return false;
+    }
+    if (!ggs_parse_clock_time_msec(parts[0], time_msec)) {
+        return false;
+    }
+    *additive_or_loss = default_additive_or_loss;
+    if (parts.size() == 2) {
+        std::string moves = parts[1];
+        if (!moves.empty() && (moves[0] == 'N' || moves[0] == 'n')) {
+            *additive_or_loss = false;
+            moves.erase(0, 1);
+        }
+        try {
+            *n_moves = moves.empty() ? 0 : std::stoi(moves);
+        } catch (const std::exception&) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ggs_parse_clock_params(const std::string &clock_str, GGS_Clock_Params *clock) {
+    if (clock_str.empty()) {
+        return false;
+    }
+    GGS_Clock_Params parsed;
+    std::vector<std::string> segments = split_by_delimiter(clock_str, "/");
+    if (segments.empty() || segments.size() > 3) {
+        return false;
+    }
+    if (!ggs_parse_clock_segment(segments[0], &parsed.initial_msec, &parsed.initial_moves, &parsed.initial_loss, true)) {
+        return false;
+    }
+    if (segments.size() >= 2) {
+        if (!ggs_parse_clock_segment(segments[1], &parsed.increment_msec, &parsed.increment_moves, &parsed.increment_add, true)) {
+            return false;
+        }
+        if (parsed.increment_moves < 1) {
+            return false;
+        }
+    }
+    if (segments.size() >= 3) {
+        if (!ggs_parse_clock_segment(segments[2], &parsed.extension_msec, &parsed.extension_moves, &parsed.extension_add, true)) {
+            return false;
+        }
+    }
+    parsed.initialized = true;
+    *clock = parsed;
+    return true;
+}
+
+std::string ggs_clock_summary(const GGS_Clock_Params &clock) {
+    if (!clock.initialized) {
+        return "uninitialized";
+    }
+    return "initial " + std::to_string(clock.initial_msec / 1000ULL) +
+           "s inc " + std::to_string(clock.increment_msec / 1000ULL) +
+           "s/" + std::to_string(clock.increment_moves) +
+           (clock.increment_add ? " add" : " bronstein") +
+           " ext " + std::to_string(clock.extension_msec / 1000ULL) +
+           "s/" + std::to_string(clock.extension_moves) +
+           (clock.extension_add ? " add" : " reset");
+}
+
+bool ggs_match_request_get_clock(std::string line, const std::string &username, GGS_Clock_Params *clock) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() < 10) {
+        return false;
+    }
+    std::string clock_str;
+    if (words[4] == username && words.size() >= 6) {
+        clock_str = words[5];
+    } else if (words[9] == username) {
+        clock_str = (words.size() >= 11 && words[10].find('/') != std::string::npos) ? words[10] : words[5];
+    }
+    return ggs_parse_clock_params(clock_str, clock);
+}
+
+void ggs_accept_match_requests(std::vector<std::string> server_replies, SOCKET &sock, GGS_Clock_Params *clock_params, Options *options) {
+    if (!options->ggs_accept_request) {
+        return;
+    }
+    for (std::string server_reply: server_replies) {
+        if (server_reply.size()) {
+            std::string os_info = ggs_get_os_info(server_reply);
+            if (ggs_is_match_request(os_info, options->ggs_username)) {
+                std::string request_id = ggs_match_request_get_id(os_info);
+                if (request_id.size()) {
+                    GGS_Clock_Params request_clock;
+                    if (ggs_match_request_get_clock(os_info, options->ggs_username, &request_clock)) {
+                        *clock_params = request_clock;
+                        if (options->show_log) {
+                            std::cerr << "ggs clock " << ggs_clock_summary(*clock_params) << std::endl;
+                            if (clock_params->extension_msec > 0ULL && clock_params->increment_msec == 0ULL) {
+                                std::cerr << "ggs clock note: extension time is not per-move increment" << std::endl;
+                            }
+                        }
+                    }
+                    std::string accept_cmd = "ts accept " + request_id;
+                    ggs_send_message(sock, accept_cmd + "\n", options);
+                    ggs_print_info("match request accepted " + request_id, options);
+                }
+            }
+        }
+    }
+}
+
 bool ggs_is_join_tournament_message(std::string line) {
     // something like "nyanyan: tell /td join .1" or "nyanyan: t /td join .1"
     std::vector<std::string> words = split_by_space(line);
@@ -423,9 +1038,23 @@ GGS_Board ggs_get_board(std::string str) {
     return res;
 }
 
-Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thread_id, bool *searching) {
+Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thread_id, bool *searching, int hint_policy, Search_result ponder_result) {
     Search_result search_result;
     if (ggs_board.board.get_legal()) {
+        if (ggs_is_usable_ponder_result(ggs_board.board, ponder_result)) {
+            if (options->show_log) {
+                std::cerr << "ggs exact ponder selected " << idx_to_coord(ponder_result.policy)
+                          << " value " << ponder_result.value << " depth " << ponder_result.depth << "@100% "
+                          << ggs_board.board.to_str() << std::endl;
+            }
+            return ponder_result;
+        }
+        if (ggs_should_play_hint_without_search(ggs_board.board, hint_policy)) {
+            if (options->show_log) {
+                std::cerr << "ggs synchro hint selected without search " << idx_to_coord(hint_policy) << " " << ggs_board.board.to_str() << std::endl;
+            }
+            return ggs_hint_search_result(ggs_board.board, hint_policy);
+        }
 
         uint64_t remaining_time_msec = 0;
         if (ggs_board.player_to_move == BLACK) {
@@ -433,11 +1062,14 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         } else {
             remaining_time_msec = ggs_board.remaining_seconds_white * 1000;
         }
-        if (remaining_time_msec > 5000) {
-            remaining_time_msec -= 5000;
+        const uint64_t raw_remaining_time_msec = remaining_time_msec;
+        const uint64_t safety_margin = ggs_time_safety_margin_msec(raw_remaining_time_msec);
+        if (remaining_time_msec > safety_margin) {
+            remaining_time_msec -= safety_margin;
         } else {
             remaining_time_msec = std::max<uint64_t>(remaining_time_msec * 0.1, 1ULL);
         }
+        remaining_time_msec = ggs_clock_adjusted_time_for_allocation(ggs_board.board, remaining_time_msec, raw_remaining_time_msec, ggs_board.clock);
 
         // // special code for s8r14 5 min
         uint64_t strt = tim();
@@ -464,9 +1096,28 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         //     */
         //     std::cerr << std::endl;
         // }
-        remaining_time_msec -= tim() - strt;
+        remaining_time_msec = ggs_subtract_elapsed_or_floor(remaining_time_msec, tim() - strt);
 
-        search_result = ai_time_limit(ggs_board.board, true, 0, true, options->show_log, remaining_time_msec, thread_id, searching);
+        if (remaining_time_msec <= 50ULL) {
+            search_result = ggs_fallback_search_result(ggs_board.board);
+        } else {
+            search_result = ai_time_limit(ggs_board.board, true, 0, true, ggs_engine_show_log(options), remaining_time_msec, thread_id, searching);
+            const uint64_t legal = ggs_board.board.get_legal();
+            if (ggs_should_override_with_hint(ggs_board.board, hint_policy, search_result)) {
+                if (options->show_log) {
+                    std::cerr << "ggs synchro hint overrides search " << idx_to_coord(search_result.policy) << " -> " << idx_to_coord(hint_policy)
+                              << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%"
+                              << " " << ggs_board.board.to_str() << std::endl;
+                }
+                search_result.policy = hint_policy;
+                search_result.value = mid_evaluate(&ggs_board.board);
+                search_result.depth = 0;
+                search_result.probability = 0;
+            }
+            if (!is_valid_policy(search_result.policy) || !(legal & (1ULL << search_result.policy))) {
+                search_result = ggs_fallback_search_result(ggs_board.board);
+            }
+        }
     } else { // pass
         search_result.policy = MOVE_PASS;
     }
@@ -483,24 +1134,350 @@ void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_resu
     ggs_send_message(sock, ggs_move_cmd + "\n", options);
 }
 
-void ggs_start_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL], Board board, bool show_log, int synchro_id, bool ponder_searchings[]) {
+inline bool ggs_is_my_turn(const GGS_Board &ggs_board, Options *options) {
+    return (
+        (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) ||
+        (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE)
+    );
+}
+
+inline uint64_t ggs_remaining_time_msec_to_move(const GGS_Board &ggs_board) {
+    return (ggs_board.player_to_move == BLACK ? ggs_board.remaining_seconds_black : ggs_board.remaining_seconds_white) * 1000ULL;
+}
+
+inline uint64_t ggs_synchro_hint_wait_msec(const GGS_Board &ggs_board) {
+    const int n_discs = ggs_board.board.n_discs();
+    const uint64_t remaining_time_msec = ggs_remaining_time_msec_to_move(ggs_board);
+    if (n_discs <= 20 && remaining_time_msec > 120000ULL) {
+        return 1500ULL;
+    }
+    if (n_discs <= 28 && remaining_time_msec > 80000ULL) {
+        return 900ULL;
+    }
+    if (remaining_time_msec > 50000ULL) {
+        return 500ULL;
+    }
+    return 300ULL;
+}
+
+bool ggs_same_position_waiting_for_opponent(
+    const GGS_Board &ggs_board,
+    GGS_Board ggs_boards[][HW2 + 1],
+    Options *options
+) {
+    if (!ggs_board.is_synchro || ggs_board.synchro_id < 0 || ggs_board.synchro_id >= 2) {
+        return false;
+    }
+    const int n_discs = ggs_board.board.n_discs();
+    const GGS_Board &paired_board = ggs_boards[ggs_board.synchro_id ^ 1][n_discs];
+    return (
+        paired_board.is_valid() &&
+        paired_board.board == ggs_board.board &&
+        paired_board.player_to_move == ggs_board.player_to_move &&
+        !ggs_is_my_turn(paired_board, options)
+    );
+}
+
+bool ggs_synchro_partner_may_provide_hint(
+    const GGS_Board &ggs_board,
+    GGS_Board ggs_boards[][HW2 + 1],
+    const int ggs_boards_n_discs[],
+    Options *options
+) {
+    if (ggs_same_position_waiting_for_opponent(ggs_board, ggs_boards, options)) {
+        return true;
+    }
+    if (!ggs_board.is_synchro || ggs_board.synchro_id < 0 || ggs_board.synchro_id >= 2) {
+        return false;
+    }
+    const int n_discs = ggs_board.board.n_discs();
+    const int paired_n_discs = ggs_boards_n_discs[ggs_board.synchro_id ^ 1];
+    return paired_n_discs < n_discs;
+}
+
+bool ggs_should_wait_for_synchro_hint(
+    const GGS_Board &ggs_board,
+    const Search_result &search_result,
+    const GGS_Move_Hint_Table &move_hints,
+    GGS_Board ggs_boards[][HW2 + 1],
+    Options *options
+) {
+    if (ggs_get_move_hint(move_hints, ggs_board.board) != MOVE_UNDEFINED) {
+        return false;
+    }
+    const int n_discs = ggs_board.board.n_discs();
+    if (n_discs > 28 || ggs_remaining_time_msec_to_move(ggs_board) < 45000ULL) {
+        return false;
+    }
+#if IS_GGS_TOURNAMENT
+    if (search_result.value > -8 || search_result.depth >= 27) {
+        return false;
+    }
+    return ggs_same_position_waiting_for_opponent(ggs_board, ggs_boards, options);
+#else
+    if (search_result.value > -16 || search_result.depth >= 24) {
+        return false;
+    }
+    return ggs_same_position_waiting_for_opponent(ggs_board, ggs_boards, options);
+#endif
+}
+
+inline uint64_t ggs_synchro_hint_search_delay_msec(const GGS_Board &ggs_board) {
+    const int n_discs = ggs_board.board.n_discs();
+    const uint64_t remaining_time_msec = ggs_remaining_time_msec_to_move(ggs_board);
+    if (n_discs <= 20 && remaining_time_msec > 120000ULL) {
+        return 1200ULL;
+    }
+    if (n_discs <= 28 && remaining_time_msec > 80000ULL) {
+        return 700ULL;
+    }
+    return 350ULL;
+}
+
+bool ggs_should_delay_search_for_synchro_hint(
+    const GGS_Board &ggs_board,
+    const GGS_Move_Hint_Table &move_hints,
+    GGS_Board ggs_boards[][HW2 + 1],
+    const int ggs_boards_n_discs[],
+    Options *options
+) {
+#if IS_GGS_TOURNAMENT
+    (void)ggs_board;
+    (void)move_hints;
+    (void)ggs_boards;
+    (void)ggs_boards_n_discs;
+    (void)options;
+    return false;
+#else
+    if (ggs_get_move_hint(move_hints, ggs_board.board) != MOVE_UNDEFINED) {
+        return false;
+    }
+    const int n_discs = ggs_board.board.n_discs();
+    if (n_discs > 28 || ggs_remaining_time_msec_to_move(ggs_board) < 50000ULL) {
+        return false;
+    }
+    return ggs_synchro_partner_may_provide_hint(ggs_board, ggs_boards, ggs_boards_n_discs, options);
+#endif
+}
+
+void ggs_store_pending_move(GGS_Pending_Move *pending_move, const GGS_Board &ggs_board, const Search_result &search_result) {
+    pending_move->active = true;
+    pending_move->board = ggs_board;
+    pending_move->result = search_result;
+    pending_move->ready_time = tim();
+    pending_move->max_wait_msec = ggs_synchro_hint_wait_msec(ggs_board);
+}
+
+void ggs_store_pending_search(
+    GGS_Pending_Search *pending_search,
+    const GGS_Board &ggs_board,
+    int search_slot,
+    thread_id_t thread_id
+) {
+    pending_search->active = true;
+    pending_search->board = ggs_board;
+    pending_search->search_slot = search_slot;
+    pending_search->thread_id = thread_id;
+    pending_search->ready_time = tim();
+    pending_search->max_wait_msec = ggs_synchro_hint_search_delay_msec(ggs_board);
+}
+
+bool ggs_try_send_pending_move(GGS_Pending_Move *pending_move, const GGS_Move_Hint_Table &move_hints, SOCKET &sock, Options *options) {
+    if (!pending_move->active) {
+        return false;
+    }
+    const bool hint_arrived = ggs_get_move_hint(move_hints, pending_move->board.board) != MOVE_UNDEFINED;
+    if (!hint_arrived && tim() - pending_move->ready_time < pending_move->max_wait_msec) {
+        return false;
+    }
+
+    if (options->show_log) {
+        std::cerr << "ggs pending move send " << pending_move->board.game_id
+                  << " reason " << (hint_arrived ? "hint" : "timeout")
+                  << " waited " << (tim() - pending_move->ready_time)
+                  << " " << pending_move->board.board.to_str() << std::endl;
+    }
+    ggs_apply_move_hint_to_search_result(pending_move->board, move_hints, &pending_move->result, options);
+    const uint64_t legal = pending_move->board.board.get_legal();
+    if (legal && (!is_valid_policy(pending_move->result.policy) || !(legal & (1ULL << pending_move->result.policy)))) {
+        pending_move->result = ggs_fallback_search_result(pending_move->board.board);
+    }
+    ggs_send_move(pending_move->board, sock, pending_move->result, options);
+    pending_move->active = false;
+    return true;
+}
+
+void ggs_launch_ai_search(
+    std::future<Search_result> ai_futures[],
+    bool ai_searchings[],
+    GGS_Board ggs_boards_searching[],
+    const GGS_Board &ggs_board,
+    int search_slot,
+    thread_id_t thread_id,
+    const GGS_Move_Hint_Table &move_hints,
+    const GGS_Ponder_Result_Table &ponder_results,
+    Options *options
+) {
+    int hint_policy = ggs_get_move_hint(move_hints, ggs_board.board);
+    Search_result ponder_result = ggs_get_ponder_result(ponder_results, ggs_board.board);
+    if (options->show_log && is_valid_policy(hint_policy)) {
+        std::cerr << "synchro hint candidate before search " << ggs_board.game_id << " " << idx_to_coord(hint_policy) << std::endl;
+    }
+#if !IS_GGS_TOURNAMENT
+    if (options->show_log && ggs_is_usable_ponder_result(ggs_board.board, ponder_result)) {
+        std::cerr << "exact ponder candidate before search " << ggs_board.game_id << " " << idx_to_coord(ponder_result.policy) << std::endl;
+    }
+#endif
+    ai_searchings[search_slot] = true;
+    ggs_boards_searching[search_slot] = ggs_board;
+    ai_futures[search_slot] = std::async(std::launch::async, ggs_search, ggs_board, options, thread_id, &ai_searchings[search_slot], hint_policy, ponder_result);
+}
+
+bool ggs_try_launch_pending_search(
+    GGS_Pending_Search *pending_search,
+    std::future<Search_result> ai_futures[],
+    bool ai_searchings[],
+    GGS_Board ggs_boards_searching[],
+    const GGS_Move_Hint_Table &move_hints,
+    const GGS_Ponder_Result_Table &ponder_results,
+    Options *options
+) {
+    if (!pending_search->active) {
+        return false;
+    }
+    if (ai_searchings[pending_search->search_slot]) {
+        return false;
+    }
+    const bool hint_arrived = ggs_get_move_hint(move_hints, pending_search->board.board) != MOVE_UNDEFINED;
+    if (!hint_arrived && tim() - pending_search->ready_time < pending_search->max_wait_msec) {
+        return false;
+    }
+    if (options->show_log) {
+        std::cerr << "ggs pending search launch " << pending_search->board.game_id
+                  << " reason " << (hint_arrived ? "hint" : "timeout")
+                  << " waited " << (tim() - pending_search->ready_time)
+                  << " " << pending_search->board.board.to_str() << std::endl;
+    }
+    ggs_launch_ai_search(
+        ai_futures,
+        ai_searchings,
+        ggs_boards_searching,
+        pending_search->board,
+        pending_search->search_slot,
+        pending_search->thread_id,
+        move_hints,
+        ponder_results,
+        options
+    );
+    pending_search->active = false;
+    return true;
+}
+
+int ggs_record_ponder_results(GGS_Ponder_Result_Table *ponder_results, const std::vector<Ponder_elem> &results) {
+    int n_recorded = 0;
+    for (const Ponder_elem &elem: results) {
+        if (
+            elem.response_board_key.empty() ||
+            !ggs_is_cacheable_ponder_result(elem.response)
+        ) {
+            continue;
+        }
+        (*ponder_results)[elem.response_board_key] = elem.response;
+        ++n_recorded;
+    }
+    if (ponder_results->size() > 4096) {
+        ponder_results->clear();
+    }
+    return n_recorded;
+}
+
+void ggs_terminate_ponder(
+    std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
+    bool ponder_searchings[],
+    int synchro_id,
+    GGS_Ponder_Result_Table *ponder_results,
+    Options *options
+);
+
+void ggs_start_ponder(
+    std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
+    Board board,
+    bool show_log,
+    int synchro_id,
+    bool ponder_searchings[],
+    GGS_Ponder_Result_Table *ponder_results,
+    Options *options
+) {
+    if (synchro_id < 0) {
+        synchro_id = GGS_NON_SYNCHRO_ID;
+    }
+    if (ponder_searchings[synchro_id]) {
+        ggs_terminate_ponder(ponder_futures, ponder_searchings, synchro_id, ponder_results, options);
+    }
     ponder_searchings[synchro_id] = true;
     for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
         ponder_futures[synchro_id][ponder_i] = std::async(std::launch::async, ai_ponder, board, show_log, synchro_id, &ponder_searchings[synchro_id]); // set ponder
     }
 }
 
-void ggs_terminate_ponder(std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL], bool ponder_searchings[], int synchro_id) {
+void ggs_terminate_ponder(
+    std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
+    bool ponder_searchings[],
+    int synchro_id,
+    GGS_Ponder_Result_Table *ponder_results,
+    Options *options
+) {
+    if (synchro_id < 0) {
+        synchro_id = GGS_NON_SYNCHRO_ID;
+    }
     ponder_searchings[synchro_id] = false; // terminate ponder
     std::vector<std::vector<Ponder_elem>> results;
+    int n_recorded = 0;
     for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
         if (ponder_futures[synchro_id][ponder_i].valid()) {
             results.emplace_back(ponder_futures[synchro_id][ponder_i].get());
+            n_recorded += ggs_record_ponder_results(ponder_results, results.back());
         }
     }
+    #if !IS_GGS_TOURNAMENT
+    if (n_recorded > 0 && options->show_log) {
+        ggs_print_info("stored exact ponder results " + std::to_string(n_recorded), options);
+    }
+    #endif
+#if !IS_GGS_TOURNAMENT
     for (std::vector<Ponder_elem> result: results) {
         print_ponder_result(result);
     }
+#endif
+}
+
+bool ggs_has_valid_ponder_future(std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL], int synchro_id) {
+    if (synchro_id < 0) {
+        synchro_id = GGS_NON_SYNCHRO_ID;
+    }
+    for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+        if (ponder_futures[synchro_id][ponder_i].valid()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ggs_terminate_all_ponders(
+    std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
+    bool ponder_searchings[],
+    GGS_Ponder_Result_Table *ponder_results,
+    Options *options
+) {
+    for (int i = 0; i < 2; ++i) {
+        if (ponder_searchings[i] || ggs_has_valid_ponder_future(ponder_futures, i)) {
+            ggs_terminate_ponder(ponder_futures, ponder_searchings, i, ponder_results, options);
+        }
+    }
+}
+
+bool ggs_any_ai_searching(const bool ai_searchings[]) {
+    return ai_searchings[0] || ai_searchings[1];
 }
 
 void ggs_client(Options *options) {
@@ -523,20 +1500,29 @@ void ggs_client(Options *options) {
     ggs_receive_message(&sock, options);
 
     // initialize
+    std::vector<std::string> init_replies;
+    GGS_Clock_Params ggs_clock_params;
     ggs_send_message(sock, "ms /os\n", options);
-    ggs_receive_message(&sock, options);
+    init_replies = ggs_receive_message(&sock, options);
+    ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
     ggs_send_message(sock, "ts client -\n", options);
-    ggs_receive_message(&sock, options);
+    init_replies = ggs_receive_message(&sock, options);
+    ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
     
     std::future<std::string> user_input_f;
     std::future<std::vector<std::string>> ggs_message_f;
     std::future<Search_result> ai_futures[2];
     bool ai_searchings[2] = {false, false};
     GGS_Board ggs_boards_searching[2];
+    GGS_Pending_Move pending_moves[2];
+    GGS_Pending_Search pending_searches[2];
     std::future<std::vector<Ponder_elem>> ponder_futures[2][GGS_N_PONDER_PARALLEL];
     bool ponder_searchings[2] = {false, false};
     GGS_Board ggs_boards[2][HW2 + 1];
     int ggs_boards_n_discs[2] = {0, 0};
+    GGS_Move_Hint_Table move_hints;
+    GGS_Ponder_Result_Table ponder_results;
+    ggs_seed_move_hints_from_game_logs(&move_hints, options);
     bool match_playing = false;
     int thread_sizes[2];
     int thread_sizes_before[2];
@@ -579,36 +1565,6 @@ void ggs_client(Options *options) {
         } else {
             user_input_f = std::async(std::launch::async, ggs_get_user_input);
         }
-        // check search result
-        if (match_playing) {
-            // check ai search & send move
-            for (int i = 0; i < 2; ++i) {
-                if (ai_searchings[i]) {
-                    if (ai_futures[i].valid()) {
-                        if (ai_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            Search_result search_result = ai_futures[i].get();
-                            ai_searchings[i] = false;
-                            ggs_send_move(ggs_boards_searching[i], sock, search_result, options);
-                            last_sent_time = tim();
-                        }
-                    }
-                }
-            }
-            // check ponder ends
-            for (int i = 0; i < 2; ++i) {
-                if (ponder_searchings[i]) {
-                    for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
-                        if (ponder_futures[i][ponder_i].valid()) {
-                            if (ponder_futures[i][ponder_i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                                ponder_futures[i][ponder_i].get();
-                                ponder_searchings[i] = false;
-                                ggs_print_info("ponder end " + std::to_string(i), options);
-                            }
-                        }
-                    }
-                }
-            }
-        }
         // check server reply
         std::vector<std::string> server_replies;
         if (ggs_message_f.valid()) {
@@ -631,8 +1587,15 @@ void ggs_client(Options *options) {
                         playing_same_board = true;
                         for (int i = 0; i < 2; ++i) {
                             ai_searchings[i] = false;
-                            ponder_searchings[i] = false;
+                            pending_moves[i].active = false;
+                            pending_searches[i].active = false;
+                            ggs_boards_n_discs[i] = 0;
+                            for (int n_discs = 0; n_discs <= HW2; ++n_discs) {
+                                ggs_boards[i][n_discs] = GGS_Board();
+                            }
                         }
+                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+                        move_hints.clear();
                         for (int i = 0; i < 2; ++i) {
                             matches[i].init();
                         }
@@ -645,14 +1608,18 @@ void ggs_client(Options *options) {
                     std::string os_info = ggs_get_os_info(server_reply);
                     if (ggs_is_board_info(os_info)) {
                         GGS_Board ggs_board = ggs_get_board(server_reply);
+                        ggs_board.clock = ggs_clock_params;
                         if (ggs_board.is_valid()) {
                             if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
+                                #if !IS_GGS_TOURNAMENT
                                 ggs_print_info("ggs board synchro id " + std::to_string(ggs_board.synchro_id), options);
+                                #endif
                                 // set board info
                                 if (ggs_board.is_synchro) { // synchro game
                                     int n_discs = ggs_board.board.n_discs();
                                     ggs_boards[ggs_board.synchro_id][n_discs] = ggs_board;
                                     ggs_boards_n_discs[ggs_board.synchro_id] = n_discs;
+                                    ggs_record_opponent_move_hint(&move_hints, ggs_boards, ggs_board, options);
                                     //std::cerr << "synchro game memo " << "n_discs " << ggs_board.board.n_discs() << " " << ggs_board.board.to_str() << std::endl;
                                 }
                                 // update match
@@ -668,14 +1635,18 @@ void ggs_client(Options *options) {
                                     matches[match_idx].result_black = -99;
                                     matches[match_idx].transcript = "";
                                 }
+                                #if !IS_GGS_TOURNAMENT
                                 ggs_print_info("match log received " + std::to_string(match_idx) + " " + std::to_string(ggs_board.last_move) + " " + idx_to_coord(ggs_board.last_move), options);
+                                #endif
                                 if (is_valid_policy(ggs_board.last_move)) {
                                     matches[match_idx].transcript += idx_to_coord(ggs_board.last_move);
                                     if (
                                         (ggs_board.player_to_move == BLACK && ggs_board.player_black == options->ggs_username) || 
                                         (ggs_board.player_to_move == WHITE && ggs_board.player_white == options->ggs_username)
                                     ) {
+                                        #if !IS_GGS_TOURNAMENT
                                         std::cerr << "opponent moved " << idx_to_coord(ggs_board.last_move) << std::endl;
+                                        #endif
                                     }
                                 }
                             }
@@ -693,8 +1664,10 @@ void ggs_client(Options *options) {
                         match_playing = false;
                         for (int i = 0; i < 2; ++i) {
                             ai_searchings[i] = false;
-                            ponder_searchings[i] = false;
+                            pending_moves[i].active = false;
+                            pending_searches[i].active = false;
                         }
+                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
                         if (options->ggs_game_log_to_file) {
                             for (int i = 0; i < 2; ++i) {
                                 if (!matches[i].is_initialized()) {
@@ -734,8 +1707,10 @@ void ggs_client(Options *options) {
                                 }
                             }
                         }
+#if !IS_GGS_TOURNAMENT
                         transposition_table.init();
                         ggs_print_info("clearned TT up", options);
+#endif
                     }
                 }
             }
@@ -748,6 +1723,16 @@ void ggs_client(Options *options) {
                             // match end
                             if (ggs_is_match_request(os_info, options->ggs_username)) {
                                 std::string request_id = ggs_match_request_get_id(os_info);
+                                GGS_Clock_Params request_clock;
+                                if (ggs_match_request_get_clock(os_info, options->ggs_username, &request_clock)) {
+                                    ggs_clock_params = request_clock;
+                                    if (options->show_log) {
+                                        std::cerr << "ggs clock " << ggs_clock_summary(ggs_clock_params) << std::endl;
+                                        if (ggs_clock_params.extension_msec > 0ULL && ggs_clock_params.increment_msec == 0ULL) {
+                                            std::cerr << "ggs clock note: extension time is not per-move increment" << std::endl;
+                                        }
+                                    }
+                                }
                                 std::string accept_cmd = "ts accept " + request_id;
                                 ggs_send_message(sock, accept_cmd + "\n", options);
                                 last_sent_time = tim();
@@ -779,6 +1764,7 @@ void ggs_client(Options *options) {
                     if (ggs_is_board_info(os_info)) {
                         //std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
+                        ggs_board.clock = ggs_clock_params;
                         if (ggs_board.is_valid()) {
                             if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
                                 bool need_to_move = 
@@ -797,15 +1783,23 @@ void ggs_client(Options *options) {
                                         playing_same_board = false;
                                     }
                                     if (need_to_move) { // Egaroucid should move
-                                        ggs_terminate_ponder(ponder_futures, ponder_searchings, ggs_board.synchro_id);
-                                        if (!ggs_board.board.is_end()) {
-                                            ai_searchings[ggs_board.synchro_id] = true;
-                                            ggs_boards_searching[ggs_board.synchro_id] = ggs_board;
+                                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+                                        if (!ggs_board.board.is_end() && !ai_searchings[ggs_board.synchro_id] && !pending_searches[ggs_board.synchro_id].active) {
 #if GGS_USE_PONDER
-                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, ggs_board.synchro_id, &ai_searchings[ggs_board.synchro_id]); // set search
+                                            const thread_id_t search_thread_id = ggs_board.synchro_id;
 #else
-                                            ai_futures[ggs_board.synchro_id] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[ggs_board.synchro_id]); // set search
+                                            const thread_id_t search_thread_id = THREAD_ID_NONE;
 #endif
+                                            if (ggs_should_delay_search_for_synchro_hint(ggs_board, move_hints, ggs_boards, ggs_boards_n_discs, options)) {
+                                                ggs_store_pending_search(&pending_searches[ggs_board.synchro_id], ggs_board, ggs_board.synchro_id, search_thread_id);
+                                                if (options->show_log) {
+                                                    std::cerr << "ggs pending search wait " << ggs_board.game_id
+                                                              << " max " << pending_searches[ggs_board.synchro_id].max_wait_msec
+                                                              << " " << ggs_board.board.to_str() << std::endl;
+                                                }
+                                            } else {
+                                                ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, ggs_board.synchro_id, search_thread_id, move_hints, ponder_results, options);
+                                            }
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
                                             new_calculation_start = true;
                                             std::string msg = "Egaroucid thinking... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
@@ -813,8 +1807,8 @@ void ggs_client(Options *options) {
                                         }
                                     } else { // Opponent's move
 #if GGS_USE_PONDER
-                                        if (!ggs_board.board.is_end()) {
-                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
+                                        if (!ggs_any_ai_searching(ai_searchings) && !ggs_board.board.is_end()) {
+                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings, &ponder_results, options);
                                             // ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
                                             new_calculation_start = true;
                                             std::string msg = "Egaroucid pondering... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
@@ -825,17 +1819,15 @@ void ggs_client(Options *options) {
                                 } else { // non-synchro game
                                     playing_synchro_game = false;
                                     if (need_to_move) { // Egaroucid should move
-                                        ggs_terminate_ponder(ponder_futures, ponder_searchings, GGS_NON_SYNCHRO_ID);
+                                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
                                         if (!ggs_board.board.is_end()) {
-                                            ai_searchings[GGS_NON_SYNCHRO_ID] = true;
-                                            ggs_boards_searching[GGS_NON_SYNCHRO_ID] = ggs_board;
-                                            ai_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ggs_search, ggs_board, options, THREAD_ID_NONE, &ai_searchings[GGS_NON_SYNCHRO_ID]); // set search
+                                            ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, GGS_NON_SYNCHRO_ID, THREAD_ID_NONE, move_hints, ponder_results, options);
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, GGS_NON_SYNCHRO_ID, ponder_searchings);
                                         }
                                     } else { // Opponent's move
 #if GGS_USE_PONDER
-                                        if (!ggs_board.board.is_end()) {
-                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
+                                        if (!ggs_any_ai_searching(ai_searchings) && !ggs_board.board.is_end()) {
+                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings, &ponder_results, options);
                                             // ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
                                         }
 #endif
@@ -847,16 +1839,74 @@ void ggs_client(Options *options) {
                 }
             }
         }
+        for (int i = 0; i < 2; ++i) {
+            if (ggs_try_launch_pending_search(&pending_searches[i], ai_futures, ai_searchings, ggs_boards_searching, move_hints, ponder_results, options)) {
+                new_calculation_start = true;
+            }
+        }
+        // Check completed searches after processing received boards so queued synchro moves can become hints before sending.
+        if (match_playing) {
+            for (int i = 0; i < 2; ++i) {
+                if (ai_searchings[i]) {
+                    if (ai_futures[i].valid()) {
+                        if (ai_futures[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            Search_result search_result = ai_futures[i].get();
+                            ai_searchings[i] = false;
+                            ggs_apply_move_hint_to_search_result(ggs_boards_searching[i], move_hints, &search_result, options);
+                            if (ggs_should_wait_for_synchro_hint(ggs_boards_searching[i], search_result, move_hints, ggs_boards, options)) {
+                                ggs_store_pending_move(&pending_moves[i], ggs_boards_searching[i], search_result);
+                                if (options->show_log) {
+                                #if IS_GGS_TOURNAMENT
+                                    std::cerr << "ggs pending move wait " << ggs_boards_searching[i].game_id
+                                              << " max " << pending_moves[i].max_wait_msec
+                                              << " " << ggs_boards_searching[i].board.to_str() << std::endl;
+                                #else
+                                    ggs_print_info("waiting synchro hint " + ggs_boards_searching[i].game_id + " max " + std::to_string(pending_moves[i].max_wait_msec) + " ms", options);
+                                #endif
+                                }
+                            } else {
+                                ggs_send_move(ggs_boards_searching[i], sock, search_result, options);
+                                last_sent_time = tim();
+                            }
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < 2; ++i) {
+                if (ponder_searchings[i]) {
+                    for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+                        if (ponder_futures[i][ponder_i].valid()) {
+                            if (ponder_futures[i][ponder_i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                                std::vector<Ponder_elem> ponder_result = ponder_futures[i][ponder_i].get();
+                                int n_recorded = ggs_record_ponder_results(&ponder_results, ponder_result);
+                                ponder_searchings[i] = false;
+                                #if !IS_GGS_TOURNAMENT
+                                ggs_print_info("ponder end " + std::to_string(i), options);
+                                if (n_recorded > 0) {
+                                    ggs_print_info("stored exact ponder results " + std::to_string(n_recorded), options);
+                                }
+                                #endif
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < 2; ++i) {
+            if (ggs_try_send_pending_move(&pending_moves[i], move_hints, sock, options)) {
+                last_sent_time = tim();
+            }
+        }
 #if GGS_USE_PONDER
         // thread manager
         thread_sizes_before[0] = thread_sizes[0];
         thread_sizes_before[1] = thread_sizes[1];
         if (playing_synchro_game) {
             int full_threads = thread_pool.size();
-            int full_threads_enhanced = std::max((int)(full_threads * 1.2), full_threads + 3);
-            int reduced_threads = full_threads_enhanced / 2;
-            int prioritized_threads = std::min(full_threads_enhanced - 1, (int)(full_threads_enhanced * 0.95));
-            int non_prioritized_threads = full_threads_enhanced - prioritized_threads;
+            int full_threads_enhanced = full_threads + std::max(1, full_threads / 4);
+            int reduced_threads = std::max(1, full_threads / 2);
+            int non_prioritized_threads = full_threads >= 12 ? 1 : 0;
+            int prioritized_threads = full_threads - non_prioritized_threads;
             prioritized_threads = std::min(prioritized_threads, full_threads);
             // int non_prioritized_threads = 1;
             // int prioritized_threads = full_threads - 1;

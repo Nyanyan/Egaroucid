@@ -29,12 +29,21 @@ constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
+constexpr double PONDER_UCB_COE = 0.6;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
+#if IS_GGS_TOURNAMENT
+constexpr bool AI_TL_USE_EARLY_BREAK = false;
+#else
 constexpr bool AI_TL_USE_EARLY_BREAK = true;
+#endif
 constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 26;
 constexpr int AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH = 29;
+#if IS_GGS_TOURNAMENT
+constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 31;
+#else
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
+#endif
 constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
@@ -48,6 +57,8 @@ struct Ponder_elem {
     uint_fast8_t mpc_level;
     bool is_endgame_search;
     bool is_complete_search;
+    std::string response_board_key;
+    Search_result response;
 };
 
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t thread_id, bool *searching);
@@ -69,7 +80,11 @@ inline int get_ai_tl_mid_verify_mpc_level(int depth) {
     if (depth < AI_TL_MID_VERIFY_MIN_DEPTH) {
         return MPC_74_LEVEL;
     }
+#if IS_GGS_TOURNAMENT
+    return MPC_88_LEVEL;
+#else
     return depth >= 31 ? MPC_93_LEVEL : MPC_88_LEVEL;
+#endif
 }
 
 inline int get_ai_tl_early_break_mpc_level(int depth) {
@@ -98,11 +113,19 @@ struct Lazy_smp_worker_result {
 
 constexpr int LAZY_SMP_MIN_MID_DEPTH = 23;
 constexpr int LAZY_SMP_MIN_END_DEPTH = 30;
+#if IS_GGS_TOURNAMENT
 constexpr bool USE_MID_ROOT_LAZY_SMP = false;
+#else
+constexpr bool USE_MID_ROOT_LAZY_SMP = false;
+#endif
 constexpr int LAZY_SMP_MAX_MID_HELPER_THREADS = THREAD_SIZE_DEFAULT;
 constexpr int LAZY_SMP_MAX_END_HELPER_THREADS = 2;
 constexpr int LAZY_SMP_END_HELPER_MAX_ROOT_MOVES = 8;
+#if IS_GGS_TOURNAMENT
 constexpr int LAZY_SMP_MIN_PURE_MID_THREADS = 12;
+#else
+constexpr int LAZY_SMP_MIN_PURE_MID_THREADS = 12;
+#endif
 constexpr int LAZY_SMP_MAX_PURE_MID_DEPTH = 23;
 
 inline int lazy_smp_depth_bias(int worker_idx) {
@@ -416,6 +439,16 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     const int n_usable_threads = thread_pool.get_max_thread_size(thread_id);
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
+    uint64_t fallback_legal = use_legal == LEGAL_UNDEFINED ? board.get_legal() : use_legal;
+    if (fallback_legal) {
+        uint64_t preferred = fallback_legal & 0x8100000000000081ULL;
+        uint64_t candidates = preferred ? preferred : fallback_legal;
+        result->policy = first_bit(&candidates);
+        result->value = mid_evaluate(&board);
+        result->depth = 0;
+        result->is_end_search = false;
+        result->probability = 0;
+    }
     int main_depth = 1;
     int main_mpc_level = MPC_100_LEVEL;
     const int max_depth = HW2 - board.n_discs();
@@ -532,7 +565,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 result->nps = calc_nps(result->nodes, result->time);
             }
             if (verify_timeout) {
+#if IS_GGS_TOURNAMENT
+                verify_log = " verify-timeout-use-main";
+#else
                 break;
+#endif
             }
             if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
                 double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
@@ -2215,7 +2252,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = -INF;
             } else {
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
-                ucb = move_list[i].value / (double)HW2 + 0.6 * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
+                ucb = move_list[i].value / (double)HW2 + PONDER_UCB_COE * sqrt(log(2.0 * (double)n_searched_all) / (double)move_list[i].count);
             }
             if (ucb > max_ucb) {
                 selected_idx = i;
@@ -2254,6 +2291,8 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             get_level(move_list[selected_idx].level, board.n_discs() - 4, &is_mid_search, &move_list[selected_idx].depth, &move_list[selected_idx].mpc_level);
             move_list[selected_idx].is_endgame_search = !is_mid_search;
             move_list[selected_idx].is_complete_search = !is_mid_search && move_list[selected_idx].mpc_level == MPC_100_LEVEL;
+            move_list[selected_idx].response_board_key = n_board.to_str();
+            move_list[selected_idx].response = search_result;
             ++move_list[selected_idx].count;
             if (move_list[selected_idx].value == INF || !is_mid_search) {
                 move_list[selected_idx].value = v;

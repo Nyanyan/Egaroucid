@@ -17,6 +17,11 @@
 #include "hash.hpp"
 
 #if USE_CRC32C_HASH
+    #ifdef _MSC_VER
+        #include <intrin.h>
+    #else
+        #include <x86intrin.h>
+    #endif
 uint32_t global_hash_bit_mask = (1U << DEFAULT_HASH_LEVEL) - 1;
 #endif
 

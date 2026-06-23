@@ -100,8 +100,13 @@
         #endif
 
         // CRC32C Hash
-        #define USE_CRC32C_HASH false
-        #define USE_CRC32C_HASH_LTT false
+        #if IS_GGS_TOURNAMENT
+            #define USE_CRC32C_HASH true
+            #define USE_CRC32C_HASH_LTT true
+        #else
+            #define USE_CRC32C_HASH false
+            #define USE_CRC32C_HASH_LTT false
+        #endif
 
         // TT init with SIMD
         #define USE_SIMD_TT_INIT false
