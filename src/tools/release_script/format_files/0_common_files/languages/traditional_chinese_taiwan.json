@@ -237,7 +237,7 @@
             "umigame_value": "最小記憶數",
             "depth": "深度",
             "single_move_loss": "單步子損",
-            "max_child_loss": "最大子損",
+            "max_child_loss": "最大允許估值",
             "apply_setting": "套用設定",
             "opening": "定石",
             "next_move": "下一步",

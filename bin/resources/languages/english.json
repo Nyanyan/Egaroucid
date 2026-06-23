@@ -237,7 +237,7 @@
             "umigame_value": "Min Memorize Number",
             "depth": "Depth",
             "single_move_loss": "Errors per Move",
-            "max_child_loss": "Integration Errors",
+            "max_child_loss": "Max Allowed Eval",
             "apply_setting": "Apply Setting",
             "opening": "Opening",
             "next_move": "Next Move",

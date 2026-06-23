@@ -2643,6 +2643,35 @@ private:
             getData().graph_resources.branch == GRAPH_MODE_NORMAL;
     }
 
+    bool is_umigame_value_eval_allowed(int score_black) const {
+        if (umigame_value_applied_black_max_loss < UMIGAME_VALUE_MAX_PLAYER_LOSS_INF && score_black > umigame_value_applied_black_max_loss) {
+            return false;
+        }
+        if (umigame_value_applied_white_max_loss < UMIGAME_VALUE_MAX_PLAYER_LOSS_INF && score_black < -umigame_value_applied_white_max_loss) {
+            return false;
+        }
+        return true;
+    }
+
+    int book_value_to_black_score(const Book_elem& elem, int player) const {
+        return player == BLACK ? elem.value : -elem.value;
+    }
+
+    void add_umigame_job_if_displayed(int cell, Board board, int player, int request_id, const Umigame_condition& condition) {
+        if (!book.contain(board)) {
+            return;
+        }
+        Book_elem elem = book.get(board);
+        if (!is_umigame_value_eval_allowed(book_value_to_black_score(elem, player))) {
+            return;
+        }
+        add_umigame_future_job(
+            cell,
+            request_id,
+            std::async(std::launch::async, get_umigame, board, player, umigame_value_applied_depth, condition)
+        );
+    }
+
     void calculate_umigame() {
         if (!changing_scene) {
             uint64_t legal = getData().history_elem.board.get_legal();
@@ -2653,22 +2682,17 @@ private:
                 Board board = getData().history_elem.board;
                 int n_player = getData().history_elem.player ^ 1;
                 const int request_id = umigame_status.request_id;
-                Umigame_condition condition(
-                    umigame_value_applied_max_move_loss,
-                    umigame_value_applied_black_max_loss,
-                    umigame_value_applied_white_max_loss);
+                Umigame_condition condition(umigame_value_applied_max_move_loss);
                 Flip flip;
                 for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                     calc_flip(&flip, &board, cell);
                     board.move_board(&flip);
                         if (board.get_legal() == 0ULL) {
                             board.pass();
-                            if (book.contain(board)) {
-                                add_umigame_future_job(cell, request_id, std::async(std::launch::async, get_umigame, board, n_player ^ 1, umigame_value_applied_depth, condition));
-                            }
+                            add_umigame_job_if_displayed(cell, board, n_player ^ 1, request_id, condition);
                             board.pass();
-                        } else if (book.contain(board)) {
-                            add_umigame_future_job(cell, request_id, std::async(std::launch::async, get_umigame, board, n_player, umigame_value_applied_depth, condition));
+                        } else {
+                            add_umigame_job_if_displayed(cell, board, n_player, request_id, condition);
                         }
                     board.undo_board(&flip);
                 }

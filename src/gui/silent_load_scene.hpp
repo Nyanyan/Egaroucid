@@ -84,8 +84,8 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->use_book_learn_error_sum = true;
     settings->umigame_value_depth = 60;
     settings->umigame_value_max_move_loss = 0;
-    settings->umigame_value_black_max_loss = 10;
-    settings->umigame_value_white_max_loss = 10;
+    settings->umigame_value_black_max_loss = UMIGAME_VALUE_MAX_PLAYER_LOSS_INF;
+    settings->umigame_value_white_max_loss = UMIGAME_VALUE_MAX_PLAYER_LOSS_INF;
     settings->show_graph_value = true;
     settings->show_graph_sum_of_loss = false;
     settings->show_random_board_graph = false;

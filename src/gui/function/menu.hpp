@@ -190,6 +190,14 @@ private:
         return x;
     }
 
+    String format_player_loss_bar_value(int value) const {
+        return value >= max_elem ? U"Inf" : Format(value);
+    }
+
+    int player_loss_label_width(std::string lang_name) const {
+        return static_cast<int>(std::ceil(region_ascii(U"BInf WInf", font_size, lang_name, font)));
+    }
+
     void refresh_bar_circles() {
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
             bar_circle.x = value_to_bar_x(*bar_elem);
@@ -572,7 +580,7 @@ public:
                 bar_circle.draw(bar_circle_color);
             }
         } else if (mode == MENU_MODE_2BARS) {
-            String range_str = bars_player_loss ? Format(U"B", *bar_elem1, U" W", *bar_elem2) : Format(*bar_elem1, U"~", *bar_elem2);
+            String range_str = bars_player_loss ? Format(U"B", format_player_loss_bar_value(*bar_elem1), U" W", format_player_loss_bar_value(*bar_elem2)) : Format(*bar_elem1, U"~", *bar_elem2);
             font(range_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
             if (bars_player_loss) {
                 bar_rect.draw(bar_color);
@@ -685,7 +693,8 @@ public:
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
             w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
         } else if (mode == MENU_MODE_2BARS) {
-            w += current_bar_size() + bar_value_offset * 3 + bar_additional_offset;
+            const int value_width = bars_player_loss ? player_loss_label_width(lang_name) : bar_value_offset * 3;
+            w += current_bar_size() + value_width + bar_additional_offset + menu_child_offset + 4;
         }
         return std::make_pair(h, w);
     }

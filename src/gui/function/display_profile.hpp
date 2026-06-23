@@ -21,8 +21,8 @@ struct Display_profile_values {
     bool use_umigame_value{ false };
     int umigame_value_depth{ 60 };
     int umigame_value_max_move_loss{ 0 };
-    int umigame_value_black_max_loss{ 10 };
-    int umigame_value_white_max_loss{ 10 };
+    int umigame_value_black_max_loss{ UMIGAME_VALUE_MAX_PLAYER_LOSS_INF };
+    int umigame_value_white_max_loss{ UMIGAME_VALUE_MAX_PLAYER_LOSS_INF };
     bool show_legal{ true };
     bool show_graph{ true };
     bool show_opening_on_cell{ true };

@@ -239,7 +239,7 @@
             "umigame_value": "うみがめ数",
             "depth": "深さ",
             "single_move_loss": "1手あたりの誤差",
-            "max_child_loss": "積算誤差",
+            "max_child_loss": "最大許容評価値",
             "apply_setting": "設定を適用",
             "opening": "定石",
             "next_move": "直後の手",
