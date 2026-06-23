@@ -34,6 +34,8 @@ shutdown_event = threading.Event()
 shutdown_started = False
 ntest_runtime_dirs = []
 ntest_play_lock = threading.Lock()
+failure_lock = threading.Lock()
+first_failure = None
 
 
 def suppress_windows_error_dialogs():
@@ -177,6 +179,7 @@ def save_kifu_results(battle_no, opening_idx, game_results):
 PROTOCOL_CONSOLE = 'console'
 PROTOCOL_GTP = 'gtp'
 NTEST_TOTAL_PROCESSES = 2
+NTEST_MAX_LEVEL = 2
 
 random.seed(57)
 
@@ -419,6 +422,19 @@ def shutdown_all_processes():
     cleanup_ntest_runtime_dirs()
 
 
+def record_failure(exc):
+    global first_failure
+
+    with failure_lock:
+        if first_failure is None:
+            first_failure = exc
+
+
+def get_recorded_failure():
+    with failure_lock:
+        return first_failure
+
+
 def handle_shutdown_signal(signum, frame):
     shutdown_event.set()
     if shutdown_started:
@@ -554,6 +570,12 @@ def supports_depthprobrange(cmd):
     return 'Egaroucid_for_Console' in cmd
 
 
+def get_engine_level(name):
+    if name == 'Ntest':
+        return min(LEVEL, NTEST_MAX_LEVEL)
+    return LEVEL
+
+
 def normalize_player_info(info):
     if len(info) == 2:
         return info[0], info[1], PROTOCOL_CONSOLE
@@ -585,8 +607,26 @@ def pass_engine_move(player_idx, proc_idx, player):
         send_gtp_command(player_idx, proc_idx, 'play ' + gtp_color(player) + ' pass\n')
 
 
-def gen_engine_move(player_idx, proc_idx, o):
+def sync_gtp_board_to_record(player_idx, proc_idx, record):
+    replay = othello()
+    send_gtp_command(player_idx, proc_idx, 'clear_board\n')
+
+    for i in range(0, len(record), 2):
+        if not replay.check_legal():
+            send_gtp_command(player_idx, proc_idx, 'play ' + gtp_color(replay.player) + ' pass\n')
+            replay.player = 1 - replay.player
+            replay.check_legal()
+
+        coord = record[i:i + 2]
+        send_gtp_command(player_idx, proc_idx, 'play ' + gtp_color(replay.player) + ' ' + coord + '\n')
+        if not replay.move(int(coord[1]) - 1, ord(coord[0]) - ord('a')):
+            raise RuntimeError('failed to replay record for gtp engine: ' + players[player_idx][NAME_IDX] + ' record=' + record)
+
+
+def gen_engine_move(player_idx, proc_idx, o, record):
     if is_gtp_player(player_idx):
+        if is_ntest_player(player_idx):
+            sync_gtp_board_to_record(player_idx, proc_idx, record)
         return send_gtp_command(player_idx, proc_idx, 'genmove ' + gtp_color(o.player) + '\n')
     return send_move_command(player_idx, proc_idx, build_setboard_command(o))
 
@@ -604,11 +644,12 @@ results_lock = threading.Lock()
 
 for info in player_info:
     name, cmd, protocol = normalize_player_info(info)
+    engine_level = get_engine_level(name)
     # level option
     if name == '6.0.X':
-        cmd_with_options = cmd + ' ' + str(LEVEL)
+        cmd_with_options = cmd + ' ' + str(engine_level)
     else:
-        cmd_with_options = cmd + ' -l ' + str(LEVEL)
+        cmd_with_options = cmd + ' -l ' + str(engine_level)
     # depth option
     if DEPTH is not None and supports_depthprobrange(cmd):
         cmd_with_options += ' -depthprobrange 1 60 ' + str(DEPTH) + ' 100'
@@ -620,10 +661,15 @@ for info in player_info:
     else:
         cmd_with_options += ' -t ' + str(N_THREADS)
     n_player_processes = get_total_processes_for_player(name)
-    if n_player_processes == N_TOTAL_PROCESSES:
-        print(name, cmd_with_options)
+    notes = []
+    if engine_level != LEVEL:
+        notes.append('engine level: {}'.format(engine_level))
+    if n_player_processes != N_TOTAL_PROCESSES:
+        notes.append('processes: {}'.format(n_player_processes))
+    if notes:
+        print(name, cmd_with_options, '(' + ', '.join(notes) + ')')
     else:
-        print(name, cmd_with_options, '(processes: {})'.format(n_player_processes))
+        print(name, cmd_with_options)
 
     process_cmds = []
     process_cwds = []
@@ -703,7 +749,19 @@ def play_single_game_impl(p0_idx, p1_idx, opening_idx, p0_is_black):
 
             player_idx = player_idxes[o.player ^ player]
             proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-            line = gen_engine_move(player_idx, proc_idx, o)
+            try:
+                line = gen_engine_move(player_idx, proc_idx, o, record)
+            except Exception as e:
+                raise RuntimeError(
+                    'engine move failed: engine={} proc={} record={} player={} board={} cause={}'.format(
+                        players[player_idx][NAME_IDX],
+                        proc_idx,
+                        record,
+                        o.player,
+                        build_setboard_command(o).strip(),
+                        e,
+                    )
+                )
             coord = line[-2:].lower()
             try:
                 y = int(coord[1]) - 1
@@ -766,8 +824,8 @@ def play_battle(p0_idx, p1_idx, opening_idx):
         for future in as_completed([future_black, future_white]):
             try:
                 future_results[future] = future.result()
-            except Exception:
-                shutdown_all_processes()
+            except Exception as e:
+                record_failure(e)
                 raise
 
         game_results = [future_results[future_black], future_results[future_white]]
@@ -1035,7 +1093,15 @@ try:
     while futures:
         for future in as_completed(list(futures.keys())):
             p0, p1, opening_idx = futures.pop(future)
-            game_results = future.result()
+            try:
+                game_results = future.result()
+            except Exception as e:
+                record_failure(e)
+                shutdown_all_processes()
+                first = get_recorded_failure()
+                if first is not None and first is not e:
+                    raise first
+                raise
             completed_battles += 1
             save_kifu_results(completed_battles, opening_idx, game_results)
             # print_collect_progress(completed_battles, total_battles)
