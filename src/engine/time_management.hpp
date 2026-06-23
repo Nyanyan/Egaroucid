@@ -19,6 +19,7 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 320 // ms / move
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 3500 // ms
     #define TIME_MANAGEMENT_GGS_FIRST_MOVE_COE 0.16
+    #define TIME_MANAGEMENT_GGS_FIRST_REPLY_MOVE_COE 0.13
 #else
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 2000 // ms
@@ -46,12 +47,19 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     }
 
 #if IS_GGS_TOURNAMENT
-    // first move
+    // First own moves around the s8r14 setup. The second player otherwise gets
+    // only a normal midgame slice for their first response.
     if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES) {
         if (show_log) {
             std::cerr << "first move time limit" << std::endl;
         }
         return remaining_time_msec_margin * TIME_MANAGEMENT_GGS_FIRST_MOVE_COE;
+    }
+    if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES - 1) {
+        if (show_log) {
+            std::cerr << "first reply move time limit" << std::endl;
+        }
+        return remaining_time_msec_margin * TIME_MANAGEMENT_GGS_FIRST_REPLY_MOVE_COE;
     }
 #endif
 
