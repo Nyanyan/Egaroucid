@@ -204,7 +204,9 @@ player_info = [
     # ['7.6.0', 'versions/Egaroucid_for_Console_7_6_0_Windows_SIMD/Egaroucid_for_Console_7_6_0_SIMD.exe -quiet -nobook'],
     # ['7.5.0', 'versions/Egaroucid_for_Console_7_5_0_Windows_SIMD/Egaroucid_for_Console_7_5_0_SIMD.exe -quiet -nobook'],
     ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -q'],
-    ['Ntest', 'versions/ntest/ntest.exe --gtp', PROTOCOL_GTP],
+    # Ntest is disabled for equal-depth battles because the bundled GTP engine
+    # crashes reproducibly at level 3 and above on legal positions.
+    # ['Ntest', 'versions/ntest/ntest.exe --gtp', PROTOCOL_GTP],
 ]
 
 N_BATTLES_PER_ROUND = len(player_info) * (len(player_info) - 1) // 2
