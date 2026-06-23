@@ -22,6 +22,12 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
 //constexpr int MPC_SUB_DEPTH_VALUE_THRESHOLD = 20;
 constexpr int MPC_ERROR0_OFFSET = 4;
 
+#if IS_GGS_TOURNAMENT
+constexpr double MPC_ERROR_SCALE = 1.02;
+#else
+constexpr double MPC_ERROR_SCALE = 1.0;
+#endif
+
 // constants from standard normal distribution table
 // two-sided test                                         74.0  88.0  93.0  98.0  99.0  99.9 100 (%)
 constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 3.29, 9.99};
@@ -54,6 +60,10 @@ inline double probcut_sigma(int n_discs, int depth1, int depth2) {
     double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
     return res;
+}
+
+inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
+    return ceil(MPC_ERROR_SCALE * SELECTIVITY_MPCT[mpc_level] * sigma);
 }
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
@@ -108,7 +118,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         int static_error = mpc_error[search->mpc_level][search->n_discs][0][depth];
 #else
         double mpct = SELECTIVITY_MPCT[search->mpc_level];
-        int static_error = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
+        int static_error = ceil(MPC_ERROR_SCALE * mpct * probcut_sigma(search->n_discs, 0, depth));
 #endif
         if (d0value >= beta + static_error) {
             *v = beta;
@@ -130,7 +140,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         int error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
 #else
         double mpct = SELECTIVITY_MPCT[mpc_level];
-        int error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
+        int error_search = ceil(MPC_ERROR_SCALE * mpct * probcut_sigma(search->n_discs, search_depth, depth));
 #endif
         // if (is_end_search) {
         //     error_search += 1.5;
@@ -219,7 +229,7 @@ void mpc_init() {
         for (n_discs = 0; n_discs < HW2 + 1; ++n_discs) {
             for (depth1 = 0; depth1 < HW2 - 3; ++depth1) {
                 for (depth2 = 0; depth2 < HW2 - 3; ++depth2) {
-                    mpc_error[mpc_level][n_discs][depth1][depth2] = ceil(SELECTIVITY_MPCT[mpc_level] * probcut_sigma(n_discs, depth1, depth2));
+                    mpc_error[mpc_level][n_discs][depth1][depth2] = probcut_error(mpc_level, probcut_sigma(n_discs, depth1, depth2));
                 }
             }
         }
