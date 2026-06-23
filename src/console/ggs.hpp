@@ -716,7 +716,10 @@ std::string ggs_get_os_info(std::string str) {
 
 std::string ggs_get_user_input() {
     std::string res;
-    std::getline(std::cin, res);
+    if (!std::getline(std::cin, res)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        return "";
+    }
     return res;
 }
 
@@ -1566,8 +1569,6 @@ void ggs_client(Options *options) {
         if (user_input_f.valid()) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::string user_input = user_input_f.get();
-                ggs_send_message(sock, user_input + "\n", options);
-                last_sent_time = tim();
                 if (user_input == "quit") {
                     global_searching = false;
                     for (int ai_i = 0; ai_i < 2; ++ai_i) {
@@ -1581,6 +1582,9 @@ void ggs_client(Options *options) {
                         }
                     }
                     break;
+                } else if (!user_input.empty()) {
+                    ggs_send_message(sock, user_input + "\n", options);
+                    last_sent_time = tim();
                 }
             }
         } else {
