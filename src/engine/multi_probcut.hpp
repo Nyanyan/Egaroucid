@@ -23,7 +23,10 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
 constexpr int MPC_ERROR0_OFFSET = 4;
 
 #if IS_GGS_TOURNAMENT
-constexpr double MPC_ERROR_SCALE = 1.04;
+    #ifndef GGS_TOURNAMENT_MPC_ERROR_SCALE
+        #define GGS_TOURNAMENT_MPC_ERROR_SCALE 1.06
+    #endif
+constexpr double MPC_ERROR_SCALE = GGS_TOURNAMENT_MPC_ERROR_SCALE;
 #else
 constexpr double MPC_ERROR_SCALE = 1.0;
 #endif

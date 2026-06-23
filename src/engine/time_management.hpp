@@ -98,9 +98,9 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 #if IS_GGS_TOURNAMENT
     double phase_time_coe = 1.75;
     if (n_empties >= 45) {
-        phase_time_coe = 1.20;
-    } else if (n_empties >= 34) {
         phase_time_coe = 1.30;
+    } else if (n_empties >= 34) {
+        phase_time_coe = 1.42;
     } else if (n_empties >= 22) {
         phase_time_coe = 1.50;
     }
