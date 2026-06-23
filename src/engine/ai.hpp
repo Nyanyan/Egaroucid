@@ -40,7 +40,7 @@ constexpr bool AI_TL_USE_EARLY_BREAK = true;
 constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 26;
 constexpr int AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH = 29;
 #if IS_GGS_TOURNAMENT
-constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 31;
+constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 30;
 #else
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
 #endif
