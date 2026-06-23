@@ -94,7 +94,11 @@ N_PHASES = 60
 #     195, 196, 197, 198, 199, 200, 201, 202, 203, 204, # random boards 40-49
 #     205, 206, 207, 208, 209, 210, 211, 212, 213, # random boards 50-58
 # ]
-board_sub_dir_nums = [259, 260, 261, 262]
+# board_sub_dir_nums = [259, 260, 261, 262]
+board_sub_dir_nums = [
+    311, # first11_all book
+    313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, # GGS-formatted data
+]
 board_sub_dir_nums.sort()
 #'''
 

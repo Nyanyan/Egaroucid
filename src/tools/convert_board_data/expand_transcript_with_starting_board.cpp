@@ -1,5 +1,4 @@
 #include "./../../engine/board.hpp"
-#include "./../../engine/util.hpp"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -25,10 +24,39 @@ struct Trs_Convert_transcript_info{
     int8_t policy;
 };
 
-void trs_convert_transcript_from_starting_board(std::string line, std::ofstream *fout){
-    std::string starting_board = line.substr(0, 66);
-    std::string transcript = line.substr(67);
-    std::pair<Board, int> board_player = convert_board_from_str(starting_board);
+std::pair<Board, int> trs_convert_board_from_str(const std::string &board_str) {
+    Board board;
+    if (!board.from_str(board_str)) {
+        return std::make_pair(board, -1);
+    }
+    if (is_black_like_char(board_str[HW2])) {
+        return std::make_pair(board, BLACK);
+    }
+    if (is_white_like_char(board_str[HW2])) {
+        return std::make_pair(board, WHITE);
+    }
+    return std::make_pair(board, -1);
+}
+
+bool trs_convert_transcript_from_starting_board(const std::string &line, std::ofstream *fout){
+    std::istringstream ss(line);
+    std::string board_str;
+    std::string player_str;
+    std::string transcript;
+    if (!(ss >> board_str >> player_str)){
+        return false;
+    }
+    ss >> transcript;
+    if (board_str.size() != HW2 || player_str.size() != 1 || transcript.size() % 2 != 0){
+        std::cerr << "invalid transcript line skipped: " << line << std::endl;
+        return false;
+    }
+    std::string starting_board = board_str + player_str;
+    std::pair<Board, int> board_player = trs_convert_board_from_str(starting_board);
+    if (board_player.second == -1){
+        std::cerr << "invalid starting board skipped: " << line << std::endl;
+        return false;
+    }
     int8_t y, x;
     std::vector<Trs_Convert_transcript_info> boards;
     Trs_Convert_transcript_info board;
@@ -44,23 +72,27 @@ void trs_convert_transcript_from_starting_board(std::string line, std::ofstream 
         if (x < 0 || x >= HW)
             x = (int)(transcript[i] - 'A');
         y = (int)(transcript[i + 1] - '1');
+        if (x < 0 || x >= HW || y < 0 || y >= HW){
+            std::cerr << "invalid move found in move " << i / 2 << " in " << transcript << std::endl;
+            return false;
+        }
         board.policy = HW2_M1 - (y * HW + x);
         boards.emplace_back(board);
         calc_flip(&flip, &board.board, board.policy);
         if (flip.flip == 0ULL){
             std::cerr << "illegal move found in move " << i / 2 << " in " << transcript << std::endl;
-            return;
+            return false;
         }
         board.board.move_board(&flip);
         board.player ^= 1;
     }
     if (board.board.get_legal()){
-        return;
+        return false;
     }
     board.board.pass();
     board.player ^= 1;
     if (board.board.get_legal()){
-        return;
+        return false;
     }
     int8_t score = board.board.score_player();
     int8_t rev_score = -score;
@@ -75,6 +107,7 @@ void trs_convert_transcript_from_starting_board(std::string line, std::ofstream 
             fout->write((char*)&rev_score, 1);
         }
     }
+    return true;
 }
 
 int main(int argc, char* argv[]){
@@ -104,8 +137,9 @@ int main(int argc, char* argv[]){
         }
         std::string line;
         while (std::getline(ifs, line)){
-            trs_convert_transcript_from_starting_board(line, &fout);
-            ++t;
+            if (trs_convert_transcript_from_starting_board(line, &fout)){
+                ++t;
+            }
         }
     }
     std::cerr << std::endl;

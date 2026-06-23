@@ -144,7 +144,8 @@ train_data_nums = [
     216, 217, 218, 219, 220, # random39-35
     # 222, # random0
     223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, # random12-23 level 15
-    # 311, # first11_all lv.23
+    311, # first11_all lv.23
+    313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, # GGS-formatted data
 ]
 if int(phase) >= 12:
     train_data_nums.extend([18, 19, 20, 21, 24, 25, 28, 29, 30, 31]) # old data (without records27)

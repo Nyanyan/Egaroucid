@@ -4,7 +4,11 @@ import glob
 
 transcript_root_dir = './../../../train_data/transcript/'
 board_root_dir = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/'
-board_sub_dir_nums = [89]
+board_sub_dir_nums = [
+    # 89, 
+    # 313, 314, 315, 316, 317, 318, 319, 320, 321, 323, # GGS-formatted data
+    322, 324, # GGS-formatted data
+]
 log_file = os.environ['EGAROUCID_DATA'] + '/train_data/board_data/log.txt'
 
 FILE_INTERVAL = 100
@@ -28,7 +32,7 @@ for board_sub_dir_num in board_sub_dir_nums:
         print(cmd)
         p = subprocess.Popen(cmd.split(), stderr=subprocess.DEVNULL, stdout=subprocess.PIPE)
         log = out_file + '\t' + p.stdout.readline().decode().replace('\r', '').replace('\n', '')
-        print(log)
+        print('log', log)
         with open(log_file, 'a') as f:
             f.write(log + '\n')
         s_file = e_file
