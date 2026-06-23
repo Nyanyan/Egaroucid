@@ -45,6 +45,7 @@ bin/document/*.egbk3.bak
 bin/data_44
 bin/data_46
 bin/tools/data
+bin/tmp
 
 # Egaroucid duplicated resources
 bin/LICENSE
