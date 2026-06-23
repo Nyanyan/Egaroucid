@@ -751,6 +751,26 @@ bool ggs_is_board_info(std::string line) {
     return false;
 }
 
+bool ggs_is_game_end(std::string line) {
+    std::vector<std::string> words = split_by_space(line);
+    return words.size() >= 9 && words[1] == "end";
+}
+
+bool ggs_parse_game_end(std::string line, std::string *game_id, std::string *first_player, int *score) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() < 9 || words[1] != "end") {
+        return false;
+    }
+    try {
+        *game_id = words[2];
+        *first_player = words[4];
+        *score = (int)std::round(std::stod(words.back()));
+    } catch (const std::exception&) {
+        return false;
+    }
+    return true;
+}
+
 bool ggs_is_match_request(std::string line, std::string username) {
     std::vector<std::string> words = split_by_space(line);
     if (words.size() >= 10) {
@@ -1683,6 +1703,24 @@ void ggs_client(Options *options) {
             for (std::string server_reply: server_replies) {
                 if (server_reply.size()) {
                     std::string os_info = ggs_get_os_info(server_reply);
+                    if (ggs_is_game_end(os_info)) {
+                        std::string game_id;
+                        std::string first_player;
+                        int first_player_score;
+                        if (ggs_parse_game_end(os_info, &game_id, &first_player, &first_player_score)) {
+                            for (int i = 0; i < 2; ++i) {
+                                if (!matches[i].is_initialized() && matches[i].game_id == game_id) {
+                                    matches[i].result_black = matches[i].player_black == first_player ? first_player_score : -first_player_score;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // match end
+            for (std::string server_reply: server_replies) {
+                if (server_reply.size()) {
+                    std::string os_info = ggs_get_os_info(server_reply);
                     // match end
                     if (ggs_is_match_end(os_info, options->ggs_username)) {
                         ggs_print_info("match end!", options);
@@ -1718,7 +1756,7 @@ void ggs_client(Options *options) {
                                         }
                                         if (board.is_end()) {
                                             matches[i].result_black = player_sgn * board.score_player();
-                                        } else {
+                                        } else if (matches[i].result_black == -99) {
                                             matches[i].result_black = -99;
                                         }
                                         ofs << matches[i].game_id << std::endl;
