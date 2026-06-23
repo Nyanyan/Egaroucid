@@ -179,7 +179,6 @@ def save_kifu_results(battle_no, opening_idx, game_results):
 PROTOCOL_CONSOLE = 'console'
 PROTOCOL_GTP = 'gtp'
 NTEST_TOTAL_PROCESSES = 2
-NTEST_MAX_LEVEL = 2
 
 random.seed(57)
 
@@ -570,12 +569,6 @@ def supports_depthprobrange(cmd):
     return 'Egaroucid_for_Console' in cmd
 
 
-def get_engine_level(name):
-    if name == 'Ntest':
-        return min(LEVEL, NTEST_MAX_LEVEL)
-    return LEVEL
-
-
 def normalize_player_info(info):
     if len(info) == 2:
         return info[0], info[1], PROTOCOL_CONSOLE
@@ -644,12 +637,11 @@ results_lock = threading.Lock()
 
 for info in player_info:
     name, cmd, protocol = normalize_player_info(info)
-    engine_level = get_engine_level(name)
     # level option
     if name == '6.0.X':
-        cmd_with_options = cmd + ' ' + str(engine_level)
+        cmd_with_options = cmd + ' ' + str(LEVEL)
     else:
-        cmd_with_options = cmd + ' -l ' + str(engine_level)
+        cmd_with_options = cmd + ' -l ' + str(LEVEL)
     # depth option
     if DEPTH is not None and supports_depthprobrange(cmd):
         cmd_with_options += ' -depthprobrange 1 60 ' + str(DEPTH) + ' 100'
@@ -662,8 +654,6 @@ for info in player_info:
         cmd_with_options += ' -t ' + str(N_THREADS)
     n_player_processes = get_total_processes_for_player(name)
     notes = []
-    if engine_level != LEVEL:
-        notes.append('engine level: {}'.format(engine_level))
     if n_player_processes != N_TOTAL_PROCESSES:
         notes.append('processes: {}'.format(n_player_processes))
     if notes:
