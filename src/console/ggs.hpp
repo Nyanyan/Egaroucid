@@ -955,7 +955,7 @@ GGS_Board ggs_get_board(std::string str) {
     int n_board_identifier_used = 1;
     while (std::getline(ss, line, '\n')) {
         std::vector<std::string> words = split_by_space(line);
-        if (line[0] == '|') {
+        if (!line.empty() && line[0] == '|') {
             if (line.find(" move(s)") != std::string::npos) {
                 if (line.substr(0, 10) != "|0 move(s)") { // happens in stored game
                     //std::cout << "stored game" << std::endl;
@@ -1023,8 +1023,17 @@ GGS_Board ggs_get_board(std::string str) {
         board_str += " *";
     } else if (res.player_to_move == WHITE) {
         board_str += " O";
+    } else {
+        return res;
     }
-    res.board.from_str(board_str);
+    if (remove_spaces(board_str).size() != HW2 + 1) {
+        return res;
+    }
+    if (!res.board.from_str(board_str)) {
+        res.board = Board();
+        res.player_to_move = -1;
+        return res;
+    }
 
     // std::cerr << "game_id " << res.game_id << std::endl;
     // std::cerr << "is_synchro " << res.is_synchro << std::endl;
