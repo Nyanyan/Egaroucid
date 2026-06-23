@@ -12,6 +12,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "bit.hpp"
+#include "last_flip_common.hpp"
 
 /*
     @brief constant of number of flipping discs
@@ -188,5 +189,44 @@ constexpr int_fast8_t N_LAST_FLIP[N_8BIT][HW] = {
     {2, 1, 0, 0, 0, 0, 0, 0}, {2, 1, 1, 2, 0, 0, 0, 0}, {0, 1, 0, 1, 0, 0, 0, 0}, {0, 1, 0, 1, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0, 0, 0}, {1, 0, 1, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0}
 };
 
+inline int_fast8_t count_last_flip(uint64_t player, const uint_fast8_t place) {
+    player &= ~(1ULL << place);
+    const int x = place & 7;
+    const int y = place >> 3;
+    int_fast8_t res =
+        N_LAST_FLIP[join_h_line(player, y)][x] +
+        N_LAST_FLIP[join_v_line(player, x)][y];
+#if USE_BIT_GATHER_OPTIMIZE
+    res += count_last_flip_diag_both(player, place) & 0xFF;
+#else
+    res += N_LAST_FLIP[join_d7_line(player, x + y)][x];
+    res += N_LAST_FLIP[join_d9_line(player, x + 7 - y)][x];
+#endif
+    return res;
+}
+
+#if LAST_FLIP_PASS_OPT
+inline uint_fast16_t count_last_flip_both(uint64_t player, const uint_fast8_t place) {
+    player &= ~(1ULL << place);
+    const int x = place & 7;
+    const int y = place >> 3;
+    uint_fast16_t res =
+        N_LAST_FLIP_BOTH[join_h_line(player, y)][x] +
+        N_LAST_FLIP_BOTH[join_v_line(player, x)][y];
+#if USE_BIT_GATHER_OPTIMIZE
+    res += count_last_flip_diag_both(player, place);
+#else
+    const uint_fast8_t d7 = join_d7_line(player, x + y);
+    const uint_fast8_t d9 = join_d9_line(player, x + 7 - y);
+    res += N_LAST_FLIP[d7][x];
+    res += N_LAST_FLIP[d9][x];
+    res += (N_LAST_FLIP[LAST_FLIP_DIAGONAL_LINE_MASK_T[x + y] ^ d7][x] +
+            N_LAST_FLIP[LAST_FLIP_DIAGONAL_LINE_MASK_T[x + 7 - y] ^ d9][x]) << 8;
+#endif
+    return res;
+}
+#endif
+
 inline void last_flip_init() {
+    last_flip_common_init();
 }
