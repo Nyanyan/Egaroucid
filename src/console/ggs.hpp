@@ -406,6 +406,21 @@ inline std::string ggs_line_value(const std::string &line, const std::string &pr
     return ggs_line_starts_with(line, prefix) ? line.substr(prefix.size()) : "";
 }
 
+inline void ggs_write_log_lines(const std::string &prefix, const std::string &str, Options *options) {
+    if (!options->ggs_log_to_file) {
+        return;
+    }
+    std::ofstream ofs(options->ggs_log_file, std::ios::app);
+    if (!ofs) {
+        return;
+    }
+    std::stringstream ss(str);
+    std::string line;
+    while (std::getline(ss, line, '\n')) {
+        ofs << prefix << line << std::endl;
+    }
+}
+
 int ggs_seed_move_hints_from_game_log_file(GGS_Move_Hint_Table *move_hints, const std::filesystem::path &path, Options *options) {
     std::ifstream ifs(path);
     if (!ifs) {
@@ -538,8 +553,7 @@ void ggs_seed_move_hints_from_game_logs(GGS_Move_Hint_Table *move_hints, Options
 
 void ggs_print_send(std::string str, Options *options) { // cyan
 #if IS_GGS_TOURNAMENT
-    (void)str;
-    (void)options;
+    ggs_write_log_lines(GGS_SEND_HEADER, str, options);
     return;
 #endif
     std::stringstream ss(str);
@@ -563,8 +577,7 @@ void ggs_print_send(std::string str, Options *options) { // cyan
 
 void ggs_print_receive(std::string str, Options *options) { // green
 #if IS_GGS_TOURNAMENT
-    (void)str;
-    (void)options;
+    ggs_write_log_lines(GGS_REPLY_HEADER, str, options);
     return;
 #endif
     std::stringstream ss(str);
@@ -577,7 +590,7 @@ void ggs_print_receive(std::string str, Options *options) { // green
     while (std::getline(ss, line, '\n')) {
         std::cout << GGS_REPLY_HEADER << line << std::endl;
         if (options->ggs_log_to_file) {
-            ofs << GGS_REPLY_HEADER << line;
+            ofs << GGS_REPLY_HEADER << line << std::endl;
         }
     }
     std::cout << "\033[0m";
@@ -588,8 +601,7 @@ void ggs_print_receive(std::string str, Options *options) { // green
 
 void ggs_print_info(std::string str, Options *options) { // yellow
 #if IS_GGS_TOURNAMENT
-    (void)str;
-    (void)options;
+    ggs_write_log_lines(GGS_INFO_HEADER, str, options);
     return;
 #endif
     std::stringstream ss(str);
