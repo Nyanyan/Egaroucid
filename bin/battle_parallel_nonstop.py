@@ -8,6 +8,8 @@ import time
 import atexit
 import signal
 import ctypes
+import shutil
+import tempfile
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
 from elo_rating_backcal import fit_elo_from_winrates_with_interval
@@ -30,6 +32,8 @@ process_registry_lock = threading.Lock()
 shutdown_lock = threading.Lock()
 shutdown_event = threading.Event()
 shutdown_started = False
+ntest_runtime_dirs = []
+ntest_play_lock = threading.Lock()
 
 
 def suppress_windows_error_dialogs():
@@ -172,6 +176,7 @@ def save_kifu_results(battle_no, opening_idx, game_results):
 
 PROTOCOL_CONSOLE = 'console'
 PROTOCOL_GTP = 'gtp'
+NTEST_TOTAL_PROCESSES = 2
 
 random.seed(57)
 
@@ -211,14 +216,67 @@ RATING_IDX = 5
 PROC_POOL_IDX = 6
 CMD_IDX = 7
 PROTOCOL_IDX = 8
+CWD_IDX = 9
 
 
-def start_engine(cmd):
+def get_ntest_runtime_root():
+    return os.path.join(
+        tempfile.gettempdir(),
+        'egaroucid_ntest_{}_{}'.format(os.getpid(), time.strftime('%Y%m%d_%H%M%S')),
+    )
+
+
+NTEST_RUNTIME_ROOT = get_ntest_runtime_root()
+
+
+def ignore_ntest_runtime_files(src, names):
+    return [name for name in names if name.lower().endswith('.book')]
+
+
+def make_ntest_process_start_info(cmd, proc_idx):
+    cmd_parts = cmd.split()
+    source_exe = cmd_parts[0]
+    source_dir = os.path.abspath(os.path.dirname(source_exe))
+    target_dir = os.path.join(NTEST_RUNTIME_ROOT, 'proc_{}'.format(proc_idx))
+    shutil.copytree(source_dir, target_dir, ignore=ignore_ntest_runtime_files)
+    ntest_runtime_dirs.append(target_dir)
+    cmd_parts[0] = os.path.join(target_dir, os.path.basename(source_exe))
+    return ' '.join(cmd_parts), target_dir
+
+
+def make_process_start_info(name, cmd, protocol, proc_idx):
+    if name == 'Ntest' and protocol == PROTOCOL_GTP:
+        return make_ntest_process_start_info(cmd, proc_idx)
+    return cmd, None
+
+
+def get_total_processes_for_player(name):
+    if name == 'Ntest':
+        return NTEST_TOTAL_PROCESSES
+    return N_TOTAL_PROCESSES
+
+
+def cleanup_ntest_runtime_dirs():
+    while ntest_runtime_dirs:
+        target_dir = ntest_runtime_dirs.pop()
+        try:
+            shutil.rmtree(target_dir, ignore_errors=True)
+        except Exception:
+            pass
+    try:
+        shutil.rmtree(NTEST_RUNTIME_ROOT, ignore_errors=True)
+    except Exception:
+        pass
+
+
+def start_engine(cmd, cwd=None):
     popen_kwargs = {
         'stdin': subprocess.PIPE,
         'stdout': subprocess.PIPE,
         'stderr': subprocess.DEVNULL,
     }
+    if cwd is not None:
+        popen_kwargs['cwd'] = cwd
     if os.name == 'nt':
         popen_kwargs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
     else:
@@ -358,6 +416,8 @@ def shutdown_all_processes():
         close_process_pipes(proc)
         unregister_process(proc)
 
+    cleanup_ntest_runtime_dirs()
+
 
 def handle_shutdown_signal(signum, frame):
     shutdown_event.set()
@@ -386,12 +446,13 @@ install_shutdown_handlers()
 def restart_process(player_idx, proc_idx):
     if shutdown_event.is_set():
         raise RuntimeError('shutdown in progress')
-    cmd = players[player_idx][CMD_IDX]
+    cmd = players[player_idx][CMD_IDX][proc_idx]
+    cwd = players[player_idx][CWD_IDX][proc_idx]
     proc = players[player_idx][SUBPROCESS_IDX][proc_idx]
     close_process(proc, send_quit=False)
     if shutdown_event.is_set():
         raise RuntimeError('shutdown in progress')
-    new_proc = start_engine(cmd)
+    new_proc = start_engine(cmd, cwd=cwd)
     players[player_idx][SUBPROCESS_IDX][proc_idx] = new_proc
     print('restart', players[player_idx][NAME_IDX], 'proc', proc_idx)
     return new_proc
@@ -530,6 +591,14 @@ def gen_engine_move(player_idx, proc_idx, o):
     return send_move_command(player_idx, proc_idx, build_setboard_command(o))
 
 
+def is_ntest_player(player_idx):
+    return players[player_idx][NAME_IDX] == 'Ntest'
+
+
+def should_serialize_game(p0_idx, p1_idx):
+    return is_ntest_player(p0_idx) or is_ntest_player(p1_idx)
+
+
 players = []
 results_lock = threading.Lock()
 
@@ -550,14 +619,23 @@ for info in player_info:
         cmd_with_options += ' --threads ' + str(N_THREADS)
     else:
         cmd_with_options += ' -t ' + str(N_THREADS)
-    print(name, cmd_with_options)
+    n_player_processes = get_total_processes_for_player(name)
+    if n_player_processes == N_TOTAL_PROCESSES:
+        print(name, cmd_with_options)
+    else:
+        print(name, cmd_with_options, '(processes: {})'.format(n_player_processes))
 
-    subprocesses = [
-        start_engine(cmd_with_options)
-        for _ in range(N_TOTAL_PROCESSES)
-    ]
+    process_cmds = []
+    process_cwds = []
+    subprocesses = []
+    for proc_idx in range(n_player_processes):
+        process_cmd, process_cwd = make_process_start_info(name, cmd_with_options, protocol, proc_idx)
+        process_cmds.append(process_cmd)
+        process_cwds.append(process_cwd)
+        subprocesses.append(start_engine(process_cmd, cwd=process_cwd))
+
     proc_pool = [queue.Queue(), queue.Queue()]
-    half = N_TOTAL_PROCESSES // 2
+    half = n_player_processes // 2
     for proc_idx in range(half):
         proc_pool[0].put(proc_idx)
         proc_pool[1].put(proc_idx + half)
@@ -570,12 +648,20 @@ for info in player_info:
         [0 for _ in range(len(player_info))],
         Elo_player(1500),
         proc_pool,
-        cmd_with_options,
-        protocol
+        process_cmds,
+        protocol,
+        process_cwds
     ])
 
 
 def play_single_game(p0_idx, p1_idx, opening_idx, p0_is_black):
+    if should_serialize_game(p0_idx, p1_idx):
+        with ntest_play_lock:
+            return play_single_game_impl(p0_idx, p1_idx, opening_idx, p0_is_black)
+    return play_single_game_impl(p0_idx, p1_idx, opening_idx, p0_is_black)
+
+
+def play_single_game_impl(p0_idx, p1_idx, opening_idx, p0_is_black):
     player_idxes = [p0_idx, p1_idx]
     opening = openings[opening_idx]
     player = 1 if p0_is_black else 0
