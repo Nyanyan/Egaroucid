@@ -70,8 +70,10 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double complete_nps = 7.0e8;
 #if IS_GGS_TOURNAMENT
     double complete_use_time = (double)remaining_time_msec_margin * 0.6;
-    if (n_empties >= 30) {
+    if (n_empties >= 32) {
         complete_use_time = std::min(complete_use_time, 30000.0);
+    } else if (n_empties >= 30) {
+        complete_use_time = std::min(complete_use_time, 15000.0);
     }
 #else
     double complete_use_time = (double)remaining_time_msec_margin * 0.9;
