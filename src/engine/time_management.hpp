@@ -102,9 +102,11 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     if (n_empties >= 45) {
         phase_time_coe = 1.30;
     } else if (n_empties >= 34) {
-        phase_time_coe = 1.42;
+        phase_time_coe = 1.55;
     } else if (n_empties >= 22) {
-        phase_time_coe = 1.50;
+        phase_time_coe = 1.65;
+    } else {
+        phase_time_coe = 1.95;
     }
     double remaining_moves_proc = std::max(3.0, remaining_moves + 2.0);
     uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(phase_time_coe * remaining_time_msec_margin / remaining_moves_proc));
