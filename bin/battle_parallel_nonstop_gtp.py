@@ -71,6 +71,11 @@ def parse_args():
         metavar='NAME=CMD',
         help='override player_info; repeat for each player'
     )
+    parser.add_argument(
+        '--problem-file',
+        default=PROBLEM_FILE,
+        help='opening/problem file to use instead of the default XOT set.'
+    )
     return parser.parse_args()
 
 
@@ -187,7 +192,7 @@ def parse_player_spec(spec):
     exit(1)
 
 
-with open(PROBLEM_FILE, 'r') as f:
+with open(args.problem_file, 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
 random.shuffle(openings)
 
