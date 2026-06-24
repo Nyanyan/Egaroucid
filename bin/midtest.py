@@ -22,7 +22,7 @@ try:
     if len(sys.argv) >= 4:
         hash_level = int(sys.argv[3])
     if len(sys.argv) >= 5:
-        exe = sys.argv[5]
+        exe = sys.argv[4]
 except:
     print('usage: python midtest.py [level=23] [n_threads=32] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
     exit()
