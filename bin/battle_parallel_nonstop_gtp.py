@@ -1,6 +1,5 @@
 import subprocess
 import random
-import numpy as np
 import argparse
 import os
 import queue
@@ -9,9 +8,15 @@ import atexit
 import signal
 from othello_py import *
 from elo_rating import Elo_player, update_rating, update_rating_draw
-from elo_rating_backcal import fit_elo_from_winrates_with_interval
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+
+try:
+    import numpy as np
+    from elo_rating_backcal import fit_elo_from_winrates_with_interval
+except ModuleNotFoundError:
+    np = None
+    fit_elo_from_winrates_with_interval = None
 
 
 PROBLEM_FILE = 'problem/xot/openingslarge.txt' # XOT (8 moves)
@@ -58,6 +63,13 @@ def parse_args():
         type=int,
         default=None,
         help='set Egaroucid search depth with -depthprobrange 1 60 <depth> 100'
+    )
+    parser.add_argument(
+        '--player',
+        action='append',
+        default=[],
+        metavar='NAME=CMD',
+        help='override player_info; repeat for each player'
     )
     return parser.parse_args()
 
@@ -162,6 +174,19 @@ def save_kifu_results(battle_no, opening_idx, game_results):
 
 random.seed(57)
 
+
+def parse_player_spec(spec):
+    name, sep, cmd = spec.partition('=')
+    name = name.strip()
+    cmd = cmd.strip()
+    if sep and name and cmd:
+        return [name, cmd]
+
+    print('invalid --player spec: ' + spec)
+    print('use NAME=CMD')
+    exit(1)
+
+
 with open(PROBLEM_FILE, 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
 random.shuffle(openings)
@@ -188,6 +213,9 @@ player_info = [
     # ['Edax4.6', 'versions/edax_4_6/wEdax-x86-64-v3.exe -gtp -q'],
     # ['Neural5', 'versions/neural-reversi-cli-5.0.0-windows-x86_64-v3.exe gtp'],
 ]
+
+if args.player:
+    player_info = [parse_player_spec(spec) for spec in args.player]
 
 N_BATTLES_PER_ROUND = len(player_info) * (len(player_info) - 1) // 2
 
@@ -622,6 +650,9 @@ def play_battle(p0_idx, p1_idx, opening_idx):
 
 
 def get_estimated_elo_from_history():
+    if np is None or fit_elo_from_winrates_with_interval is None:
+        return {}
+
     names = [players[i][NAME_IDX] for i in range(len(players))]
     n_players = len(players)
     win_rates = np.full((n_players, n_players), np.nan, dtype=float)
