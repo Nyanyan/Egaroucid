@@ -1634,6 +1634,21 @@ void ggs_terminate_all_ponders(
     }
 }
 
+void ggs_terminate_ponder_if_active(
+    std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
+    bool ponder_searchings[],
+    int synchro_id,
+    GGS_Ponder_Result_Table *ponder_results,
+    Options *options
+) {
+    if (synchro_id < 0 || synchro_id >= 2) {
+        return;
+    }
+    if (ponder_searchings[synchro_id] || ggs_has_valid_ponder_future(ponder_futures, synchro_id)) {
+        ggs_terminate_ponder(ponder_futures, ponder_searchings, synchro_id, ponder_results, options);
+    }
+}
+
 bool ggs_any_ai_searching(const bool ai_searchings[]) {
     return ai_searchings[0] || ai_searchings[1];
 }
@@ -1960,7 +1975,11 @@ void ggs_client(Options *options) {
                                         playing_same_board = false;
                                     }
                                     if (need_to_move) { // Egaroucid should move
+#if IS_GGS_TOURNAMENT
+                                        ggs_terminate_ponder_if_active(ponder_futures, ponder_searchings, ggs_board.synchro_id, &ponder_results, options);
+#else
                                         ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+#endif
                                         if (!ggs_board.board.is_end() && !ai_searchings[ggs_board.synchro_id] && !pending_searches[ggs_board.synchro_id].active) {
 #if GGS_USE_PONDER
                                             const thread_id_t search_thread_id = ggs_board.synchro_id;
@@ -2090,7 +2109,11 @@ void ggs_client(Options *options) {
             int full_threads = thread_pool.size();
             int full_threads_enhanced = full_threads + std::max(1, full_threads / 4);
             int reduced_threads = std::max(1, full_threads / 2);
+#if IS_GGS_TOURNAMENT
+            int non_prioritized_threads = full_threads >= 6 ? 1 : 0;
+#else
             int non_prioritized_threads = full_threads >= 12 ? 1 : 0;
+#endif
             int prioritized_threads = full_threads - non_prioritized_threads;
             prioritized_threads = std::min(prioritized_threads, full_threads);
             // int non_prioritized_threads = 1;
