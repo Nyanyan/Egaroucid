@@ -30,6 +30,41 @@ class othello:
         
         # 石数 n_stones[0]: 黒 n_stones[1]: 白
         self.n_stones = [2, 2]
+
+    def set_board_from_str(self, board_line):
+        parts = board_line.strip().split()
+        if len(parts) == 0 or len(parts[0]) != hw2:
+            return False
+
+        cells = parts[0]
+        self.grid = [[vacant for _ in range(hw)] for _ in range(hw)]
+        self.n_stones = [0, 0]
+        for y in range(hw):
+            for x in range(hw):
+                cell = cells[y * hw + x]
+                if cell == 'X' or cell == 'B' or cell == 'b':
+                    self.grid[y][x] = black
+                    self.n_stones[black] += 1
+                elif cell == 'O' or cell == 'W' or cell == 'w':
+                    self.grid[y][x] = white
+                    self.n_stones[white] += 1
+                elif cell == '-' or cell == '.':
+                    self.grid[y][x] = vacant
+                else:
+                    return False
+
+        if len(parts) >= 2:
+            side = parts[1]
+            if side == 'X' or side == 'B' or side == 'b':
+                self.player = black
+            elif side == 'O' or side == 'W' or side == 'w':
+                self.player = white
+            else:
+                return False
+        else:
+            self.player = black if ((self.n_stones[black] + self.n_stones[white]) % 2 == 0) else white
+
+        return True
     
     
     # 合法手生成 合法手が1つ以上あればTrueを、なければFalseを返す

@@ -98,6 +98,13 @@ if SAVE_KIFU_PATH is True:
 
 SCRIPT_START_TIME = time.time()
 
+
+def is_board_problem_line(line):
+    parts = line.strip().split()
+    if len(parts) == 0 or len(parts[0]) != hw2:
+        return False
+    return all(c in 'XxBbOoWw-.' for c in parts[0])
+
 if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
     print('N_TOTAL_PROCESSES must be an even number >= 2')
     exit(1)
@@ -194,6 +201,9 @@ def parse_player_spec(spec):
 
 with open(args.problem_file, 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
+if any(is_board_problem_line(opening) for opening in openings):
+    print('board problem files require battle_parallel_nonstop.py with console protocol engines')
+    exit(1)
 random.shuffle(openings)
 
 # name, cmd

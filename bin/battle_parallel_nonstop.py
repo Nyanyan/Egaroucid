@@ -114,6 +114,13 @@ if SAVE_KIFU_PATH is True:
 
 SCRIPT_START_TIME = time.time()
 
+
+def is_board_problem_line(line):
+    parts = line.strip().split()
+    if len(parts) == 0 or len(parts[0]) != hw2:
+        return False
+    return all(c in 'XxBbOoWw-.' for c in parts[0])
+
 if N_TOTAL_PROCESSES < 2 or N_TOTAL_PROCESSES % 2 != 0:
     print('N_TOTAL_PROCESSES must be an even number >= 2')
     exit(1)
@@ -744,6 +751,7 @@ def play_single_game_impl(p0_idx, p1_idx, opening_idx, p0_is_black):
     player_idxes = [p0_idx, p1_idx]
     opening = openings[opening_idx]
     player = 1 if p0_is_black else 0
+    board_problem = is_board_problem_line(opening)
     p0_proc_idx = None
     p1_proc_idx = None
     record = ''
@@ -755,21 +763,28 @@ def play_single_game_impl(p0_idx, p1_idx, opening_idx, p0_is_black):
         clear_engine_board(p0_idx, p0_proc_idx)
         clear_engine_board(p1_idx, p1_proc_idx)
 
-        for i in range(0, len(opening), 2):
-            if not o.check_legal():
+        if board_problem:
+            if is_gtp_player(p0_idx) or is_gtp_player(p1_idx):
+                raise RuntimeError('board problem files require console protocol engines')
+            if not o.set_board_from_str(opening):
+                raise RuntimeError('invalid board problem line: ' + opening)
+            record = 'board:' + ' '.join(opening.strip().split())
+        else:
+            for i in range(0, len(opening), 2):
+                if not o.check_legal():
+                    for player_idx in [p0_idx, p1_idx]:
+                        proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
+                        pass_engine_move(player_idx, proc_idx, o.player)
+                    o.player = 1 - o.player
+                    o.check_legal()
+                x = ord(opening[i].lower()) - ord('a')
+                y = int(opening[i + 1]) - 1
+                coord = opening[i] + opening[i + 1]
                 for player_idx in [p0_idx, p1_idx]:
                     proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-                    pass_engine_move(player_idx, proc_idx, o.player)
-                o.player = 1 - o.player
-                o.check_legal()
-            x = ord(opening[i].lower()) - ord('a')
-            y = int(opening[i + 1]) - 1
-            coord = opening[i] + opening[i + 1]
-            for player_idx in [p0_idx, p1_idx]:
-                proc_idx = p0_proc_idx if player_idx == p0_idx else p1_proc_idx
-                play_engine_move(player_idx, proc_idx, o.player, coord)
-            record += coord
-            o.move(y, x)
+                    play_engine_move(player_idx, proc_idx, o.player, coord)
+                record += coord
+                o.move(y, x)
 
         while True:
             if not o.check_legal():
