@@ -20,15 +20,18 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
 
 //constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 5;
 //constexpr int MPC_SUB_DEPTH_VALUE_THRESHOLD = 20;
-constexpr int MPC_ERROR0_OFFSET = 4;
-
 #if IS_GGS_TOURNAMENT
     #ifndef GGS_TOURNAMENT_MPC_ERROR_SCALE
         #define GGS_TOURNAMENT_MPC_ERROR_SCALE 1.10
     #endif
+    #ifndef GGS_TOURNAMENT_MPC_ERROR0_OFFSET
+        #define GGS_TOURNAMENT_MPC_ERROR0_OFFSET 4
+    #endif
 constexpr double MPC_ERROR_SCALE = GGS_TOURNAMENT_MPC_ERROR_SCALE;
+constexpr int MPC_ERROR0_OFFSET = GGS_TOURNAMENT_MPC_ERROR0_OFFSET;
 #else
 constexpr double MPC_ERROR_SCALE = 1.0;
+constexpr int MPC_ERROR0_OFFSET = 4;
 #endif
 
 // constants from standard normal distribution table

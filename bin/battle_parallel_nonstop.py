@@ -37,6 +37,7 @@ process_registry_lock = threading.Lock()
 shutdown_lock = threading.Lock()
 shutdown_event = threading.Event()
 shutdown_started = False
+last_cpu_times = None
 ntest_runtime_dirs = []
 ntest_play_lock = threading.Lock()
 failure_lock = threading.Lock()
@@ -55,6 +56,100 @@ def suppress_windows_error_dialogs():
 
 
 suppress_windows_error_dialogs()
+
+
+if os.name == 'nt':
+    class FILETIME(ctypes.Structure):
+        _fields_ = [
+            ('dwLowDateTime', ctypes.c_ulong),
+            ('dwHighDateTime', ctypes.c_ulong),
+        ]
+
+    class MEMORYSTATUSEX(ctypes.Structure):
+        _fields_ = [
+            ('dwLength', ctypes.c_ulong),
+            ('dwMemoryLoad', ctypes.c_ulong),
+            ('ullTotalPhys', ctypes.c_ulonglong),
+            ('ullAvailPhys', ctypes.c_ulonglong),
+            ('ullTotalPageFile', ctypes.c_ulonglong),
+            ('ullAvailPageFile', ctypes.c_ulonglong),
+            ('ullTotalVirtual', ctypes.c_ulonglong),
+            ('ullAvailVirtual', ctypes.c_ulonglong),
+            ('ullAvailExtendedVirtual', ctypes.c_ulonglong),
+        ]
+
+
+def filetime_to_int(filetime):
+    return (int(filetime.dwHighDateTime) << 32) + int(filetime.dwLowDateTime)
+
+
+def get_cpu_times():
+    if os.name != 'nt':
+        return None
+
+    idle = FILETIME()
+    kernel = FILETIME()
+    user = FILETIME()
+    if not ctypes.windll.kernel32.GetSystemTimes(ctypes.byref(idle), ctypes.byref(kernel), ctypes.byref(user)):
+        return None
+    return filetime_to_int(idle), filetime_to_int(kernel), filetime_to_int(user)
+
+
+def get_cpu_percent_since_last_call():
+    global last_cpu_times
+
+    now = get_cpu_times()
+    if now is None:
+        return None
+    if last_cpu_times is None:
+        last_cpu_times = now
+        return None
+
+    idle, kernel, user = now
+    last_idle, last_kernel, last_user = last_cpu_times
+    last_cpu_times = now
+
+    idle_diff = idle - last_idle
+    total_diff = (kernel - last_kernel) + (user - last_user)
+    if total_diff <= 0:
+        return None
+    return max(0.0, min(100.0, 100.0 * (1.0 - idle_diff / total_diff)))
+
+
+def get_memory_status():
+    if os.name != 'nt':
+        return None
+
+    status = MEMORYSTATUSEX()
+    status.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+    if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+        return None
+    total_mb = status.ullTotalPhys / (1024 * 1024)
+    available_mb = status.ullAvailPhys / (1024 * 1024)
+    return total_mb, available_mb, status.dwMemoryLoad
+
+
+def get_live_engine_process_count():
+    with process_registry_lock:
+        return sum(1 for proc in process_registry if proc.poll() is None)
+
+
+def format_resource_status():
+    parts = []
+    cpu_percent = get_cpu_percent_since_last_call()
+    if cpu_percent is None:
+        parts.append('cpu=warming')
+    else:
+        parts.append('cpu={:.1f}%'.format(cpu_percent))
+
+    memory_status = get_memory_status()
+    if memory_status is not None:
+        total_mb, available_mb, memory_load = memory_status
+        used_mb = max(0.0, total_mb - available_mb)
+        parts.append('mem={:.1f}/{:.1f}GB {}%'.format(used_mb / 1024, total_mb / 1024, memory_load))
+
+    parts.append('procs={}'.format(get_live_engine_process_count()))
+    return 'Resource: ' + ' '.join(parts)
 
 
 def parse_args():
@@ -1077,6 +1172,7 @@ def print_status(completed, total, target_per_pair, copy_estimated_ratings_to_cl
         get_eta_text(completed, total),
         get_battles_per_minute(completed),
     ))
+    print(format_resource_status())
     depth_text = ''
     if DEPTH is not None:
         depth_text = ' depth ' + str(DEPTH)
