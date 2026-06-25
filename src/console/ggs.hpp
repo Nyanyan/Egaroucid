@@ -28,6 +28,14 @@
 
 #define GGS_USE_PONDER true
 #define GGS_N_PONDER_PARALLEL 1
+#if IS_GGS_TOURNAMENT
+    #ifndef GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY
+        #define GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY false
+    #endif
+constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY;
+#else
+constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = true;
+#endif
 
 struct GGS_Clock_Params {
     bool initialized;
@@ -1390,14 +1398,14 @@ bool ggs_should_delay_search_for_synchro_hint(
     const int ggs_boards_n_discs[],
     Options *options
 ) {
-#if IS_GGS_TOURNAMENT
-    (void)ggs_board;
-    (void)move_hints;
-    (void)ggs_boards;
-    (void)ggs_boards_n_discs;
-    (void)options;
-    return false;
-#else
+    if constexpr (!GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY) {
+        (void)ggs_board;
+        (void)move_hints;
+        (void)ggs_boards;
+        (void)ggs_boards_n_discs;
+        (void)options;
+        return false;
+    }
     if (ggs_get_move_hint(move_hints, ggs_board.board) != MOVE_UNDEFINED) {
         return false;
     }
@@ -1406,7 +1414,6 @@ bool ggs_should_delay_search_for_synchro_hint(
         return false;
     }
     return ggs_synchro_partner_may_provide_hint(ggs_board, ggs_boards, ggs_boards_n_discs, options);
-#endif
 }
 
 void ggs_store_pending_move(GGS_Pending_Move *pending_move, const GGS_Board &ggs_board, const Search_result &search_result) {
