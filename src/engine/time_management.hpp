@@ -24,6 +24,18 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_FIRST_REPLY_MOVE_COE
         #define TIME_MANAGEMENT_GGS_FIRST_REPLY_MOVE_COE 0.15
     #endif
+    #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_45_OR_MORE
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_45_OR_MORE 1.30
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_34_OR_MORE
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_34_OR_MORE 1.55
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_22_OR_MORE
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_22_OR_MORE 1.65
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_LATE
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_LATE 1.95
+    #endif
 #else
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 2000 // ms
@@ -102,15 +114,13 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
     // midgame search time
 #if IS_GGS_TOURNAMENT
-    double phase_time_coe = 1.75;
+    double phase_time_coe = TIME_MANAGEMENT_GGS_PHASE_TIME_COE_LATE;
     if (n_empties >= 45) {
-        phase_time_coe = 1.30;
+        phase_time_coe = TIME_MANAGEMENT_GGS_PHASE_TIME_COE_45_OR_MORE;
     } else if (n_empties >= 34) {
-        phase_time_coe = 1.55;
+        phase_time_coe = TIME_MANAGEMENT_GGS_PHASE_TIME_COE_34_OR_MORE;
     } else if (n_empties >= 22) {
-        phase_time_coe = 1.65;
-    } else {
-        phase_time_coe = 1.95;
+        phase_time_coe = TIME_MANAGEMENT_GGS_PHASE_TIME_COE_22_OR_MORE;
     }
     double remaining_moves_proc = std::max(3.0, remaining_moves + 2.0);
     uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(phase_time_coe * remaining_time_msec_margin / remaining_moves_proc));
