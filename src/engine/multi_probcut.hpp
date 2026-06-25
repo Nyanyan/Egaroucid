@@ -27,11 +27,21 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
     #ifndef GGS_TOURNAMENT_MPC_ERROR0_OFFSET
         #define GGS_TOURNAMENT_MPC_ERROR0_OFFSET 3
     #endif
+    #ifndef GGS_TOURNAMENT_MPC_DEPTH_NUMERATOR
+        #define GGS_TOURNAMENT_MPC_DEPTH_NUMERATOR 2
+    #endif
+    #ifndef GGS_TOURNAMENT_MPC_DEPTH_DENOMINATOR
+        #define GGS_TOURNAMENT_MPC_DEPTH_DENOMINATOR 5
+    #endif
 constexpr double MPC_ERROR_SCALE = GGS_TOURNAMENT_MPC_ERROR_SCALE;
 constexpr int MPC_ERROR0_OFFSET = GGS_TOURNAMENT_MPC_ERROR0_OFFSET;
+constexpr int MPC_DEPTH_NUMERATOR = GGS_TOURNAMENT_MPC_DEPTH_NUMERATOR;
+constexpr int MPC_DEPTH_DENOMINATOR = GGS_TOURNAMENT_MPC_DEPTH_DENOMINATOR;
 #else
 constexpr double MPC_ERROR_SCALE = 1.0;
 constexpr int MPC_ERROR0_OFFSET = 4;
+constexpr int MPC_DEPTH_NUMERATOR = 2;
+constexpr int MPC_DEPTH_DENOMINATOR = 5;
 #endif
 
 // constants from standard normal distribution table
@@ -88,12 +98,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
     @return cutoff occurred?
 */
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings) {
-    int search_depth;
-    if (is_end_search) {
-        search_depth = ((depth * 2 / 5) & 0b11111110) + (depth & 1); // depth / 3 + parity
-    } else {
-        search_depth = ((depth * 2 / 5) & 0b11111110) + (depth & 1);
-    }
+    int search_depth = ((depth * MPC_DEPTH_NUMERATOR / MPC_DEPTH_DENOMINATOR) & 0b11111110) + (depth & 1);
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
     int d0value = mid_evaluate_diff(search);
     /*
