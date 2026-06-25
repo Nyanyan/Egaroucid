@@ -32,9 +32,14 @@
     #ifndef GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY
         #define GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY false
     #endif
+    #ifndef GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS
+        #define GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS 0
+    #endif
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY;
+constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS;
 #else
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = true;
+constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = 0;
 #endif
 
 struct GGS_Clock_Params {
@@ -1367,6 +1372,13 @@ bool ggs_should_wait_for_synchro_hint(
         return false;
     }
 #if IS_GGS_TOURNAMENT
+    if (
+        GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS > 0 &&
+        n_discs <= GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS &&
+        ggs_same_position_waiting_for_opponent(ggs_board, ggs_boards, options)
+    ) {
+        return true;
+    }
     if (search_result.value > -8 || search_result.depth >= 27) {
         return false;
     }
