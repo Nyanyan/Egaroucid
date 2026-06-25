@@ -120,19 +120,29 @@ struct Lazy_smp_worker_result {
 constexpr int LAZY_SMP_MIN_MID_DEPTH = 23;
 constexpr int LAZY_SMP_MIN_END_DEPTH = 30;
 #if IS_GGS_TOURNAMENT
-constexpr bool USE_MID_ROOT_LAZY_SMP = false;
+    #ifndef GGS_TOURNAMENT_USE_MID_ROOT_LAZY_SMP
+        #define GGS_TOURNAMENT_USE_MID_ROOT_LAZY_SMP false
+    #endif
 #else
-constexpr bool USE_MID_ROOT_LAZY_SMP = false;
+    #define GGS_TOURNAMENT_USE_MID_ROOT_LAZY_SMP false
 #endif
+constexpr bool USE_MID_ROOT_LAZY_SMP = GGS_TOURNAMENT_USE_MID_ROOT_LAZY_SMP;
 constexpr int LAZY_SMP_MAX_MID_HELPER_THREADS = THREAD_SIZE_DEFAULT;
 constexpr int LAZY_SMP_MAX_END_HELPER_THREADS = 2;
 constexpr int LAZY_SMP_END_HELPER_MAX_ROOT_MOVES = 8;
 #if IS_GGS_TOURNAMENT
-constexpr int LAZY_SMP_MIN_PURE_MID_THREADS = 12;
+    #ifndef GGS_TOURNAMENT_LAZY_SMP_MIN_PURE_MID_THREADS
+        #define GGS_TOURNAMENT_LAZY_SMP_MIN_PURE_MID_THREADS 12
+    #endif
+    #ifndef GGS_TOURNAMENT_LAZY_SMP_MAX_PURE_MID_DEPTH
+        #define GGS_TOURNAMENT_LAZY_SMP_MAX_PURE_MID_DEPTH 23
+    #endif
 #else
-constexpr int LAZY_SMP_MIN_PURE_MID_THREADS = 12;
+    #define GGS_TOURNAMENT_LAZY_SMP_MIN_PURE_MID_THREADS 12
+    #define GGS_TOURNAMENT_LAZY_SMP_MAX_PURE_MID_DEPTH 23
 #endif
-constexpr int LAZY_SMP_MAX_PURE_MID_DEPTH = 23;
+constexpr int LAZY_SMP_MIN_PURE_MID_THREADS = GGS_TOURNAMENT_LAZY_SMP_MIN_PURE_MID_THREADS;
+constexpr int LAZY_SMP_MAX_PURE_MID_DEPTH = GGS_TOURNAMENT_LAZY_SMP_MAX_PURE_MID_DEPTH;
 
 inline int lazy_smp_depth_bias(int worker_idx) {
     if (worker_idx <= 0) {
