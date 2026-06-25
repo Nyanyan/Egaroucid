@@ -38,6 +38,12 @@ constexpr bool AI_TL_USE_EARLY_BREAK = false;
 constexpr bool AI_TL_USE_EARLY_BREAK = true;
 #endif
 constexpr int AI_TL_MID_VERIFY_MIN_DEPTH = 26;
+#if IS_GGS_TOURNAMENT
+    #ifndef GGS_TOURNAMENT_MID_VERIFY_93_MIN_DEPTH
+        #define GGS_TOURNAMENT_MID_VERIFY_93_MIN_DEPTH 100
+    #endif
+constexpr int AI_TL_GGS_MID_VERIFY_93_MIN_DEPTH = GGS_TOURNAMENT_MID_VERIFY_93_MIN_DEPTH;
+#endif
 constexpr int AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH = 29;
 #if IS_GGS_TOURNAMENT
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 30;
@@ -81,7 +87,7 @@ inline int get_ai_tl_mid_verify_mpc_level(int depth) {
         return MPC_74_LEVEL;
     }
 #if IS_GGS_TOURNAMENT
-    return MPC_88_LEVEL;
+    return depth >= AI_TL_GGS_MID_VERIFY_93_MIN_DEPTH ? MPC_93_LEVEL : MPC_88_LEVEL;
 #else
     return depth >= 31 ? MPC_93_LEVEL : MPC_88_LEVEL;
 #endif
