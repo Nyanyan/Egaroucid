@@ -3,6 +3,7 @@ import random
 import argparse
 import os
 import queue
+import sys
 import time
 import atexit
 import signal
@@ -56,6 +57,12 @@ def suppress_windows_error_dialogs():
 
 
 suppress_windows_error_dialogs()
+
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except AttributeError:
+    pass
 
 
 if os.name == 'nt':
