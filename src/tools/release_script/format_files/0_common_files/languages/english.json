@@ -283,7 +283,7 @@
         "undo": "Undo",
         "go_to_first_position": "Go to First Position",
         "go_to_last_position": "Go Forward to Last Position",
-        "go_to_random_generated_position": "Go to Random Generated Position",
+        "go_to_random_generated_position": "Random Position",
         "save_this_branch": "Save this Branch",
         "generate_xot_board": "Generate XOT Position",
         "generate_random_board": {
