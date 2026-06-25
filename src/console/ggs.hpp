@@ -35,11 +35,21 @@
     #ifndef GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS
         #define GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS 0
     #endif
+    #ifndef GGS_TOURNAMENT_NON_PRIORITIZED_THREADS
+        #define GGS_TOURNAMENT_NON_PRIORITIZED_THREADS 1
+    #endif
+    #ifndef GGS_TOURNAMENT_NON_PRIORITIZED_MIN_FULL_THREADS
+        #define GGS_TOURNAMENT_NON_PRIORITIZED_MIN_FULL_THREADS 6
+    #endif
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY;
 constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS;
+constexpr int GGS_NON_PRIORITIZED_THREADS = GGS_TOURNAMENT_NON_PRIORITIZED_THREADS;
+constexpr int GGS_NON_PRIORITIZED_MIN_FULL_THREADS = GGS_TOURNAMENT_NON_PRIORITIZED_MIN_FULL_THREADS;
 #else
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = true;
 constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = 0;
+constexpr int GGS_NON_PRIORITIZED_THREADS = 1;
+constexpr int GGS_NON_PRIORITIZED_MIN_FULL_THREADS = 12;
 #endif
 
 struct GGS_Clock_Params {
@@ -2129,10 +2139,11 @@ void ggs_client(Options *options) {
             int full_threads_enhanced = full_threads + std::max(1, full_threads / 4);
             int reduced_threads = std::max(1, full_threads / 2);
 #if IS_GGS_TOURNAMENT
-            int non_prioritized_threads = full_threads >= 6 ? 1 : 0;
+            int non_prioritized_threads = full_threads >= GGS_NON_PRIORITIZED_MIN_FULL_THREADS ? GGS_NON_PRIORITIZED_THREADS : 0;
 #else
-            int non_prioritized_threads = full_threads >= 12 ? 1 : 0;
+            int non_prioritized_threads = full_threads >= GGS_NON_PRIORITIZED_MIN_FULL_THREADS ? GGS_NON_PRIORITIZED_THREADS : 0;
 #endif
+            non_prioritized_threads = std::clamp(non_prioritized_threads, 0, std::max(0, full_threads - 1));
             int prioritized_threads = full_threads - non_prioritized_threads;
             prioritized_threads = std::min(prioritized_threads, full_threads);
             // int non_prioritized_threads = 1;
