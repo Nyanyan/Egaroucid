@@ -236,6 +236,7 @@
             "disc_value_number": "數值",
             "umigame_value": "最小記憶數",
             "depth": "深度",
+            "integration_error": "累計子損",
             "opening": "定石",
             "next_move": "下一步",
             "next_move_change_view": "切換顯示方式",

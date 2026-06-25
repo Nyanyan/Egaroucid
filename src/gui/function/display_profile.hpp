@@ -20,6 +20,9 @@ struct Display_profile_values {
     bool show_hint_level{ true };
     bool use_umigame_value{ false };
     int umigame_value_depth{ 60 };
+    int umigame_value_score_min{ UMIGAME_VALUE_SCORE_MIN };
+    int umigame_value_score_max{ UMIGAME_VALUE_SCORE_MAX };
+    int umigame_value_integration_error{ 0 };
     bool show_legal{ true };
     bool show_graph{ true };
     bool show_opening_on_cell{ true };
@@ -69,6 +72,14 @@ inline void ensure_display_settings_dir(const Directories& directories) {
 inline void normalize_display_profile_values(Display_profile_values* values) {
     values->n_disc_hint = std::clamp(values->n_disc_hint, 1, SHOW_ALL_HINT);
     values->umigame_value_depth = std::clamp(values->umigame_value_depth, 1, 60);
+    values->umigame_value_score_min = normalize_umigame_score_slider_value(values->umigame_value_score_min);
+    values->umigame_value_score_max = normalize_umigame_score_slider_value(values->umigame_value_score_max);
+    values->umigame_value_score_min = std::clamp(values->umigame_value_score_min, UMIGAME_VALUE_SCORE_MIN, UMIGAME_VALUE_SCORE_MAX - UMIGAME_VALUE_SCORE_MIN_GAP);
+    values->umigame_value_score_max = std::clamp(values->umigame_value_score_max, UMIGAME_VALUE_SCORE_MIN + UMIGAME_VALUE_SCORE_MIN_GAP, UMIGAME_VALUE_SCORE_MAX);
+    if (values->umigame_value_score_min > values->umigame_value_score_max - UMIGAME_VALUE_SCORE_MIN_GAP) {
+        values->umigame_value_score_min = values->umigame_value_score_max - UMIGAME_VALUE_SCORE_MIN_GAP;
+    }
+    values->umigame_value_integration_error = std::clamp(values->umigame_value_integration_error, UMIGAME_VALUE_INTEGRATION_ERROR_MIN, UMIGAME_VALUE_INTEGRATION_ERROR_MAX);
     values->pv_length = std::clamp(values->pv_length, PV_LENGTH_SETTING_MIN, PV_LENGTH_SETTING_MAX);
 
     if (values->play_ordering_board_format == values->play_ordering_transcript_format) {
@@ -92,6 +103,9 @@ inline Display_profile_values to_display_profile_values(const Settings& settings
     values.show_hint_level = settings.show_hint_level;
     values.use_umigame_value = settings.use_umigame_value;
     values.umigame_value_depth = settings.umigame_value_depth;
+    values.umigame_value_score_min = settings.umigame_value_score_min;
+    values.umigame_value_score_max = settings.umigame_value_score_max;
+    values.umigame_value_integration_error = settings.umigame_value_integration_error;
     values.show_legal = settings.show_legal;
     values.show_graph = settings.show_graph;
     values.show_opening_on_cell = settings.show_opening_on_cell;
@@ -132,6 +146,9 @@ inline Display_profile_values to_display_profile_values(const Menu_elements& men
     values.show_hint_level = menu_elements.show_hint_level;
     values.use_umigame_value = menu_elements.use_umigame_value;
     values.umigame_value_depth = menu_elements.umigame_value_depth;
+    values.umigame_value_score_min = menu_elements.umigame_value_score_min;
+    values.umigame_value_score_max = menu_elements.umigame_value_score_max;
+    values.umigame_value_integration_error = menu_elements.umigame_value_integration_error;
     values.show_legal = menu_elements.show_legal;
     values.show_graph = menu_elements.show_graph;
     values.show_opening_on_cell = menu_elements.show_opening_on_cell;
@@ -173,6 +190,9 @@ inline void apply_display_profile_values(const Display_profile_values& values, S
     settings->show_hint_level = normalized_values.show_hint_level;
     settings->use_umigame_value = normalized_values.use_umigame_value;
     settings->umigame_value_depth = normalized_values.umigame_value_depth;
+    settings->umigame_value_score_min = normalized_values.umigame_value_score_min;
+    settings->umigame_value_score_max = normalized_values.umigame_value_score_max;
+    settings->umigame_value_integration_error = normalized_values.umigame_value_integration_error;
     settings->show_legal = normalized_values.show_legal;
     settings->show_graph = normalized_values.show_graph;
     settings->show_opening_on_cell = normalized_values.show_opening_on_cell;
@@ -212,6 +232,9 @@ inline void apply_display_profile_values(const Display_profile_values& values, M
     menu_elements->show_hint_level = normalized_values.show_hint_level;
     menu_elements->use_umigame_value = normalized_values.use_umigame_value;
     menu_elements->umigame_value_depth = normalized_values.umigame_value_depth;
+    menu_elements->umigame_value_score_min = normalized_values.umigame_value_score_min;
+    menu_elements->umigame_value_score_max = normalized_values.umigame_value_score_max;
+    menu_elements->umigame_value_integration_error = normalized_values.umigame_value_integration_error;
     menu_elements->show_legal = normalized_values.show_legal;
     menu_elements->show_graph = normalized_values.show_graph;
     menu_elements->show_opening_on_cell = normalized_values.show_opening_on_cell;
@@ -276,6 +299,10 @@ inline void export_display_profile_json(JSON& json, const Display_profile_values
     json[U"show_hint_level"] = normalized_values.show_hint_level;
     json[U"use_umigame_value"] = normalized_values.use_umigame_value;
     json[U"umigame_value_depth"] = normalized_values.umigame_value_depth;
+    json[U"umigame_value_score_slider_version"] = UMIGAME_VALUE_SCORE_SLIDER_VERSION;
+    json[U"umigame_value_score_min"] = normalized_values.umigame_value_score_min;
+    json[U"umigame_value_score_max"] = normalized_values.umigame_value_score_max;
+    json[U"umigame_value_integration_error"] = normalized_values.umigame_value_integration_error;
     json[U"show_legal"] = normalized_values.show_legal;
     json[U"show_graph"] = normalized_values.show_graph;
     json[U"show_opening_on_cell"] = normalized_values.show_opening_on_cell;
@@ -318,6 +345,13 @@ inline bool load_display_profile_values(const FilePath& path, Display_profile_va
     import_display_profile_bool(json, U"show_hint_level", &values->show_hint_level);
     import_display_profile_bool(json, U"use_umigame_value", &values->use_umigame_value);
     import_display_profile_int(json, U"umigame_value_depth", &values->umigame_value_depth);
+    import_display_profile_int(json, U"umigame_value_score_min", &values->umigame_value_score_min);
+    import_display_profile_int(json, U"umigame_value_score_max", &values->umigame_value_score_max);
+    if (json[U"umigame_value_score_slider_version"].getType() != JSONValueType::Number) {
+        values->umigame_value_score_min = migrate_legacy_umigame_score_slider_value(values->umigame_value_score_min);
+        values->umigame_value_score_max = migrate_legacy_umigame_score_slider_value(values->umigame_value_score_max);
+    }
+    import_display_profile_int(json, U"umigame_value_integration_error", &values->umigame_value_integration_error);
     import_display_profile_bool(json, U"show_legal", &values->show_legal);
     import_display_profile_bool(json, U"show_graph", &values->show_graph);
     import_display_profile_bool(json, U"show_opening_on_cell", &values->show_opening_on_cell);
@@ -369,6 +403,9 @@ inline bool equals_display_profile_values(const Display_profile_values& lhs, con
     if (lhs.show_hint_level != rhs.show_hint_level) return false;
     if (lhs.use_umigame_value != rhs.use_umigame_value) return false;
     if (lhs.umigame_value_depth != rhs.umigame_value_depth) return false;
+    if (lhs.umigame_value_score_min != rhs.umigame_value_score_min) return false;
+    if (lhs.umigame_value_score_max != rhs.umigame_value_score_max) return false;
+    if (lhs.umigame_value_integration_error != rhs.umigame_value_integration_error) return false;
     if (lhs.show_legal != rhs.show_legal) return false;
     if (lhs.show_graph != rhs.show_graph) return false;
     if (lhs.show_opening_on_cell != rhs.show_opening_on_cell) return false;

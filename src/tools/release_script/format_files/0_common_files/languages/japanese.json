@@ -238,6 +238,7 @@
             "disc_value_number": "表示個数",
             "umigame_value": "うみがめ数",
             "depth": "深さ",
+            "integration_error": "累積石損",
             "opening": "定石",
             "next_move": "直後の手",
             "next_move_change_view": "表示変更",

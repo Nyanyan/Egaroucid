@@ -13,6 +13,57 @@
 #include <iostream>
 #include <Siv3D.hpp>
 #include "./../../../engine/engine_all.hpp"
+
+constexpr int UMIGAME_VALUE_SCORE_MIN = 0;
+constexpr int UMIGAME_VALUE_SCORE_MAX = 18;
+constexpr int UMIGAME_VALUE_SCORE_MIN_GAP = 0;
+constexpr int UMIGAME_VALUE_SCORE_SLIDER_VERSION = 2;
+constexpr int UMIGAME_VALUE_INTEGRATION_ERROR_MIN = 0;
+constexpr int UMIGAME_VALUE_INTEGRATION_ERROR_MAX = 21;
+constexpr int UMIGAME_VALUE_INTEGRATION_ERROR_UNLIMITED = UMIGAME_VALUE_INTEGRATION_ERROR_MAX;
+
+inline int umigame_score_slider_to_score(int value) {
+    static constexpr int score_values[UMIGAME_VALUE_SCORE_MAX - UMIGAME_VALUE_SCORE_MIN + 1] = {
+        -64, -8, -7, -6, -5, -4, -3, -2, -1,
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 64
+    };
+    value = std::clamp(value, UMIGAME_VALUE_SCORE_MIN, UMIGAME_VALUE_SCORE_MAX);
+    return score_values[value - UMIGAME_VALUE_SCORE_MIN];
+}
+
+inline int migrate_legacy_umigame_score_slider_value(int value) {
+    if (9 <= value && value <= 17) {
+        return value + 1;
+    }
+    return value;
+}
+
+inline int umigame_score_to_slider(int score) {
+    int best_value = UMIGAME_VALUE_SCORE_MIN;
+    int best_error = INF;
+    for (int value = UMIGAME_VALUE_SCORE_MIN; value <= UMIGAME_VALUE_SCORE_MAX; ++value) {
+        const int mapped_score = umigame_score_slider_to_score(value);
+        const int error = std::abs(mapped_score - score);
+        if (error < best_error) {
+            best_error = error;
+            best_value = value;
+        }
+    }
+    return best_value;
+}
+
+inline int normalize_umigame_score_slider_value(int value) {
+    if (value < UMIGAME_VALUE_SCORE_MIN || UMIGAME_VALUE_SCORE_MAX < value) {
+        return umigame_score_to_slider(value);
+    }
+    return std::clamp(value, UMIGAME_VALUE_SCORE_MIN, UMIGAME_VALUE_SCORE_MAX);
+}
+
+inline int umigame_integration_error_slider_to_error(int value) {
+    value = std::clamp(value, UMIGAME_VALUE_INTEGRATION_ERROR_MIN, UMIGAME_VALUE_INTEGRATION_ERROR_MAX);
+    return value == UMIGAME_VALUE_INTEGRATION_ERROR_UNLIMITED ? INF : value;
+}
+
 #include "./../menu.hpp"
 #include "info.hpp"
 #include "url.hpp"
@@ -317,9 +368,7 @@ inline bool last_window_focused = true;
 
 inline void apply_enabled_state(const bool enabled) {
 #if SIV3D_PLATFORM(WINDOWS)
-    if (enabled) {
-        Platform::Windows::TextInput::EnableIME();
-    } else {
+    if (!enabled) {
         Platform::Windows::TextInput::DisableIME();
     }
 #else
@@ -488,6 +537,9 @@ struct Settings {
     bool use_disc_hint;
     bool use_umigame_value;
     int umigame_value_depth;
+    int umigame_value_score_min;
+    int umigame_value_score_max;
+    int umigame_value_integration_error;
     int n_disc_hint;
     bool show_legal;
     bool show_graph;
@@ -658,6 +710,9 @@ struct Menu_elements {
     bool show_hint_level;
     bool use_umigame_value;
     int umigame_value_depth;
+    int umigame_value_score_min;
+    int umigame_value_score_max;
+    int umigame_value_integration_error;
     bool show_legal;
     bool show_graph;
     bool show_opening_on_cell;
@@ -816,6 +871,9 @@ struct Menu_elements {
         show_hint_level = settings->show_hint_level;
         use_umigame_value = settings->use_umigame_value;
         umigame_value_depth = settings->umigame_value_depth;
+        umigame_value_score_min = settings->umigame_value_score_min;
+        umigame_value_score_max = settings->umigame_value_score_max;
+        umigame_value_integration_error = settings->umigame_value_integration_error;
         show_legal = settings->show_legal;
         show_graph = settings->show_graph;
         show_opening_on_cell = settings->show_opening_on_cell;
@@ -1306,10 +1364,17 @@ struct Game_abstract {
     String game_date;      // YYYY-MM-DD format (user-specified game date)
 };
 
+struct Umigame_future_job {
+    int cell;
+    int request_id;
+    std::future<Umigame_result> future;
+};
+
 struct Umigame_status {
     bool umigame_calculating{ false };
     bool umigame_calculated{ false };
-    std::future<Umigame_result> umigame_future[HW2];
+    int request_id{ 0 };
+    std::vector<Umigame_future_job> umigame_future_jobs;
     Umigame_result umigame[HW2];
 };
 

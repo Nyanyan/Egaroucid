@@ -116,6 +116,12 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
             side_menu.init_check(language.get("display", "cell", "umigame_value") + get_shortcut_key_info(U"show_umigame_value"), &menu_elements->use_umigame_value, menu_elements->use_umigame_value);
             side_side_menu.init_bar(language.get("display", "cell", "depth"), &menu_elements->umigame_value_depth, menu_elements->umigame_value_depth, 1, 60);
             side_menu.push(side_side_menu);
+            side_side_menu.init_bar(language.get("display", "cell", "integration_error"), &menu_elements->umigame_value_integration_error, menu_elements->umigame_value_integration_error, UMIGAME_VALUE_INTEGRATION_ERROR_MIN, UMIGAME_VALUE_INTEGRATION_ERROR_MAX);
+            side_side_menu.set_bar_display_mapper(umigame_integration_error_slider_to_error);
+            side_menu.push(side_side_menu);
+            side_side_menu.init_2bars(language.get("operation", "generate_random_board", "score_range"), &menu_elements->umigame_value_score_min, &menu_elements->umigame_value_score_max, menu_elements->umigame_value_score_min, menu_elements->umigame_value_score_max, UMIGAME_VALUE_SCORE_MIN, UMIGAME_VALUE_SCORE_MAX, UMIGAME_VALUE_SCORE_MIN_GAP, resources->arrow_left);
+            side_side_menu.set_bar_display_mapper(umigame_score_slider_to_score);
+            side_menu.push(side_side_menu);
             menu_e.push(side_menu);
             side_menu.init_check(language.get("display", "cell", "opening") + get_shortcut_key_info(U"show_opening_on_cell"), &menu_elements->show_opening_on_cell, menu_elements->show_opening_on_cell);
             menu_e.push(side_menu);

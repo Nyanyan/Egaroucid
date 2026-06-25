@@ -238,6 +238,7 @@
             "disc_value_number": "数量",
             "umigame_value": "海龟数量",
             "depth": "深度",
+            "integration_error": "累计子损",
             "opening": "定式",
             "next_move": "落点提示",
             "next_move_change_view": "改变视图",

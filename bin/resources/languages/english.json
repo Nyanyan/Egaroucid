@@ -236,6 +236,7 @@
             "disc_value_number": "Number",
             "umigame_value": "Min Memorize Number",
             "depth": "Depth",
+            "integration_error": "Integration Error",
             "opening": "Opening",
             "next_move": "Next Move",
             "next_move_change_view": "Change View",

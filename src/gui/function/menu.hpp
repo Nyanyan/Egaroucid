@@ -141,6 +141,18 @@ private:
     // display image on the menu (for language selection)
     bool use_image;
     Texture image;
+    int (*bar_display_mapper)(int);
+
+    String format_bar_value(int value) const {
+        if (bar_display_mapper == nullptr) {
+            return Format(value);
+        }
+        const int display_value = bar_display_mapper(value);
+        if (display_value >= INF) {
+            return U"Inf";
+        }
+        return Format(display_value);
+    }
 
     int cursor_to_bar_value(double cursor_x, bool is_right_elem = false) const {
         if (max_elem == min_elem) {
@@ -243,6 +255,7 @@ public:
         is_clicked = false;
         use_image = false;
         arrow_left = al;
+        bar_display_mapper = nullptr;
     }
 
     void init_bar(String s, int *c, int d, int mn, int mx) {
@@ -261,6 +274,11 @@ public:
         max_elem = mx;
         is_clicked = false;
         use_image = false;
+        bar_display_mapper = nullptr;
+    }
+
+    void set_bar_display_mapper(int (*mapper)(int)) {
+        bar_display_mapper = mapper;
     }
 
     void init_check(String s, bool *c, bool d) {
@@ -543,7 +561,7 @@ public:
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 font(unchecked_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
             } else {
-                font(*bar_elem).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
+                font(format_bar_value(*bar_elem)).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
             }
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 bar_rect.draw(ColorF(bar_color, 0.5));
@@ -557,7 +575,7 @@ public:
                 bar_circle.draw(bar_circle_color);
             }
         } else if (mode == MENU_MODE_2BARS) {
-            String range_str = Format(*bar_elem1, U"~", *bar_elem2);
+            String range_str = format_bar_value(*bar_elem1) + U"~" + format_bar_value(*bar_elem2);
             font(range_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
             Rect left_label(bar_rect.x, bar_rect.y, bar_rect.w / 2, bar_rect.h);
             Rect right_label(bar_rect.x + bar_rect.w / 2, bar_rect.y, bar_rect.w - bar_rect.w / 2, bar_rect.h);
@@ -676,6 +694,7 @@ public:
         children.clear();
         str = U"";
         bar_active_circle = 0;
+        bar_display_mapper = nullptr;
     }
 
     int menu_mode() const {
