@@ -85,7 +85,7 @@
             "double_click_to_load": "Double click a profile to load",
             "current": "Current",
             "modified_from_profile": "Modified from this profile",
-            "auto_save": "AI Auto-Save"
+            "auto_save": "AI Profile Auto-Save"
         }
     },
     "ai_settings": {
@@ -227,7 +227,7 @@
         "display": "Display",
         "profile": {
             "profile": "Display Profile",
-            "auto_save": "Display Auto-Save"
+            "auto_save": "Display Profile Auto-Save"
         },
         "cell": {
             "display_on_cell": "On Cell",
