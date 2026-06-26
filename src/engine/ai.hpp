@@ -54,9 +54,14 @@ constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = GGS_TOURNAMENT_POLICY_CHANG
         #define GGS_TOURNAMENT_ENDGAME_INITIAL_MPC_LEVEL MPC_74_LEVEL
     #endif
 constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = GGS_TOURNAMENT_ENDGAME_INITIAL_MPC_LEVEL;
+    #ifndef GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN
+        #define GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN 1
+    #endif
+constexpr int AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN = GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN;
 #else
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
 constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = MPC_74_LEVEL;
+constexpr int AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN = 0;
 #endif
 constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
 
@@ -596,7 +601,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     is_valid_policy(previous_result.policy) &&
                     (use_legal & (1ULL << previous_result.policy)) &&
                     previous_result.value != SCORE_UNDEFINED &&
-                    id_result.first <= previous_result.value
+                    id_result.first + AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN <= previous_result.value
                 ) {
                     const uint64_t accumulated_nodes = result->nodes;
                     const uint64_t elapsed = tim() - strt;
