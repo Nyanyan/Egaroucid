@@ -83,6 +83,9 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->use_book_learn_error_per_move = true;
     settings->use_book_learn_error_sum = true;
     settings->umigame_value_depth = 60;
+    settings->umigame_value_score_min = UMIGAME_VALUE_SCORE_MIN;
+    settings->umigame_value_score_max = UMIGAME_VALUE_SCORE_MAX;
+    settings->umigame_value_integration_error = 0;
     settings->show_graph_value = true;
     settings->show_graph_sum_of_loss = false;
     settings->show_random_board_graph = false;
@@ -451,6 +454,9 @@ void init_settings(const Directories* directories, const Resources* resources, S
         if (init_settings_import_int(setting_json, U"umigame_value_depth", &settings->umigame_value_depth) != ERR_OK) {
             std::cerr << "err34" << std::endl;
         }
+        init_settings_import_int(setting_json, U"umigame_value_score_min", &settings->umigame_value_score_min);
+        init_settings_import_int(setting_json, U"umigame_value_score_max", &settings->umigame_value_score_max);
+        init_settings_import_int(setting_json, U"umigame_value_integration_error", &settings->umigame_value_integration_error);
         if (init_settings_import_bool(setting_json, U"show_graph_value", &settings->show_graph_value) != ERR_OK) {
             std::cerr << "err35" << std::endl;
         }
@@ -568,6 +574,18 @@ void init_settings(const Directories* directories, const Resources* resources, S
     settings->othello_quest_mode = std::clamp(settings->othello_quest_mode, 0, 2);
     settings->auto_save_ai_profile_mode = std::clamp(settings->auto_save_ai_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);
     settings->auto_save_display_profile_mode = std::clamp(settings->auto_save_display_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);
+    if (setting_json[U"umigame_value_score_slider_version"].getType() != JSONValueType::Number) {
+        settings->umigame_value_score_min = migrate_legacy_umigame_score_slider_value(settings->umigame_value_score_min);
+        settings->umigame_value_score_max = migrate_legacy_umigame_score_slider_value(settings->umigame_value_score_max);
+    }
+    settings->umigame_value_score_min = normalize_umigame_score_slider_value(settings->umigame_value_score_min);
+    settings->umigame_value_score_max = normalize_umigame_score_slider_value(settings->umigame_value_score_max);
+    settings->umigame_value_score_min = std::clamp(settings->umigame_value_score_min, UMIGAME_VALUE_SCORE_MIN, UMIGAME_VALUE_SCORE_MAX - UMIGAME_VALUE_SCORE_MIN_GAP);
+    settings->umigame_value_score_max = std::clamp(settings->umigame_value_score_max, UMIGAME_VALUE_SCORE_MIN + UMIGAME_VALUE_SCORE_MIN_GAP, UMIGAME_VALUE_SCORE_MAX);
+    if (settings->umigame_value_score_min > settings->umigame_value_score_max - UMIGAME_VALUE_SCORE_MIN_GAP) {
+        settings->umigame_value_score_min = settings->umigame_value_score_max - UMIGAME_VALUE_SCORE_MIN_GAP;
+    }
+    settings->umigame_value_integration_error = std::clamp(settings->umigame_value_integration_error, UMIGAME_VALUE_INTEGRATION_ERROR_MIN, UMIGAME_VALUE_INTEGRATION_ERROR_MAX);
 
     // Keep compatibility with legacy scalar settings when profiles or curves are absent.
     sync_ai_loss_curves_from_scalar(settings);

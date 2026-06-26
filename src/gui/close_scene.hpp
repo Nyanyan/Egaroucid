@@ -109,6 +109,10 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"use_book_learn_error_per_move"] = menu_elements.use_book_learn_error_per_move;
     setting_json[U"use_book_learn_error_sum"] = menu_elements.use_book_learn_error_sum;
     setting_json[U"umigame_value_depth"] = menu_elements.umigame_value_depth;
+    setting_json[U"umigame_value_score_slider_version"] = UMIGAME_VALUE_SCORE_SLIDER_VERSION;
+    setting_json[U"umigame_value_score_min"] = menu_elements.umigame_value_score_min;
+    setting_json[U"umigame_value_score_max"] = menu_elements.umigame_value_score_max;
+    setting_json[U"umigame_value_integration_error"] = menu_elements.umigame_value_integration_error;
     setting_json[U"show_graph_value"] = menu_elements.show_graph_value;
     setting_json[U"show_graph_sum_of_loss"] = menu_elements.show_graph_sum_of_loss;
     setting_json[U"show_random_board_graph"] = menu_elements.show_random_board_graph;
