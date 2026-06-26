@@ -1601,7 +1601,7 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         if (remaining_time_msec <= 50ULL) {
             search_result = ggs_fallback_search_result(ggs_board.board);
         } else {
-            search_result = ai_time_limit(ggs_board.board, true, 0, true, ggs_engine_show_log(options), remaining_time_msec, thread_id, searching);
+            search_result = ai_time_limit(ggs_board.board, !options->nobook, 0, true, ggs_engine_show_log(options), remaining_time_msec, thread_id, searching);
             const uint64_t legal = ggs_board.board.get_legal();
             if (ggs_should_override_with_hint(ggs_board.board, hint_policy, search_result)) {
                 ggs_print_debug(

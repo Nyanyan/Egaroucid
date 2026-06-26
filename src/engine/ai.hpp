@@ -1804,20 +1804,21 @@ constexpr int AI_TL_GGS_AMBIGUITY_MAX_N_EMPTY = 48;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_MIN_TIME_LIMIT = 4500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_MIN_REMAINING_TIME = 35000ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_PROBE_MIN_TIME = 500ULL;
-constexpr uint64_t AI_TL_GGS_AMBIGUITY_PROBE_MAX_TIME = 1400ULL;
-constexpr double AI_TL_GGS_AMBIGUITY_PROBE_TIME_COE = 0.10;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_PROBE_MAX_TIME = 1600ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_PROBE_TIME_COE = 0.12;
 constexpr double AI_TL_GGS_AMBIGUITY_CLOSE_VALUE = AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_BASE_BONUS = 2500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE = 3600ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_BONUS_PER_SHALLOW_CLOSE_MOVE = 1200ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS = 2500ULL;
-constexpr uint64_t AI_TL_GGS_AMBIGUITY_MAX_BONUS = 22000ULL;
-constexpr double AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE = 1.10;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_MAX_BONUS = 28000ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE = 1.35;
 constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
 constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 2000ULL;
-constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE = 1600ULL;
-constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS = 8500ULL;
-constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 0.55;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE = 1900ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS = 11500ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 0.75;
 
 inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
@@ -1912,6 +1913,9 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
 
     uint64_t bonus = AI_TL_GGS_AMBIGUITY_BASE_BONUS +
                      AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE * (uint64_t)(reliable_close_moves - 1);
+    if (close_moves > reliable_close_moves) {
+        bonus += AI_TL_GGS_AMBIGUITY_BONUS_PER_SHALLOW_CLOSE_MOVE * (uint64_t)(close_moves - reliable_close_moves);
+    }
     const double second_gap = best_value - second_value;
     if (second_gap <= AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
         bonus += AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS;
