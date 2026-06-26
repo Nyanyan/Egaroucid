@@ -1818,6 +1818,24 @@ constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 2000ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE = 1600ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS = 8500ULL;
 constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 0.55;
+constexpr double AI_TL_GGS_AMBIGUITY_VALUE_FULL = 4.0;
+constexpr double AI_TL_GGS_AMBIGUITY_VALUE_REDUCED = 18.0;
+constexpr double AI_TL_GGS_AMBIGUITY_VALUE_MAX_SCALE = 1.15;
+constexpr double AI_TL_GGS_AMBIGUITY_VALUE_MIN_SCALE = 0.35;
+
+inline double ai_time_limit_ggs_ambiguity_value_scale(double best_value) {
+    const double abs_value = best_value < 0.0 ? -best_value : best_value;
+    if (abs_value <= AI_TL_GGS_AMBIGUITY_VALUE_FULL) {
+        return AI_TL_GGS_AMBIGUITY_VALUE_MAX_SCALE;
+    }
+    if (abs_value >= AI_TL_GGS_AMBIGUITY_VALUE_REDUCED) {
+        return AI_TL_GGS_AMBIGUITY_VALUE_MIN_SCALE;
+    }
+    const double t = (abs_value - AI_TL_GGS_AMBIGUITY_VALUE_FULL) /
+                     (AI_TL_GGS_AMBIGUITY_VALUE_REDUCED - AI_TL_GGS_AMBIGUITY_VALUE_FULL);
+    return AI_TL_GGS_AMBIGUITY_VALUE_MAX_SCALE +
+           (AI_TL_GGS_AMBIGUITY_VALUE_MIN_SCALE - AI_TL_GGS_AMBIGUITY_VALUE_MAX_SCALE) * t;
+}
 
 inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
@@ -1892,6 +1910,8 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     if (reliable_close_moves < 2) {
         uint64_t bonus = AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS +
                          AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE * (uint64_t)(close_moves - 1);
+        const double value_scale = ai_time_limit_ggs_ambiguity_value_scale(best_value);
+        bonus = (uint64_t)((double)bonus * value_scale);
         bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS);
         bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE));
 
@@ -1903,6 +1923,7 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
                       << " reliable " << reliable_close_moves
                       << " best_depth " << best_depth
                       << " second_gap " << best_value - second_value
+                      << " value_scale " << value_scale
                       << " bonus " << bonus
                       << " tl " << time_limit << " -> " << boosted_time_limit
                       << " moves" << close_move_str.str() << std::endl;
@@ -1916,6 +1937,8 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     if (second_gap <= AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
         bonus += AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS;
     }
+    const double value_scale = ai_time_limit_ggs_ambiguity_value_scale(best_value);
+    bonus = (uint64_t)((double)bonus * value_scale);
     bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_MAX_BONUS);
     bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE));
 
@@ -1926,6 +1949,7 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
         std::cerr << "ggs ambiguity close_moves " << close_moves << "/" << valid_moves
                   << " reliable " << reliable_close_moves
                   << " second_gap " << second_gap
+                  << " value_scale " << value_scale
                   << " bonus " << bonus
                   << " tl " << time_limit << " -> " << boosted_time_limit
                   << " moves" << close_move_str.str() << std::endl;
