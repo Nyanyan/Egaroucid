@@ -56,15 +56,20 @@ std::atomic_bool ggs_socket_closing(false);
     #ifndef GGS_TOURNAMENT_NON_PRIORITIZED_MIN_FULL_THREADS
         #define GGS_TOURNAMENT_NON_PRIORITIZED_MIN_FULL_THREADS 6
     #endif
+    #ifndef GGS_TOURNAMENT_TERMINATE_ALL_PONDERS_MAX_DISCS
+        #define GGS_TOURNAMENT_TERMINATE_ALL_PONDERS_MAX_DISCS 30
+    #endif
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY;
 constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS;
 constexpr int GGS_NON_PRIORITIZED_THREADS = GGS_TOURNAMENT_NON_PRIORITIZED_THREADS;
 constexpr int GGS_NON_PRIORITIZED_MIN_FULL_THREADS = GGS_TOURNAMENT_NON_PRIORITIZED_MIN_FULL_THREADS;
+constexpr int GGS_TERMINATE_ALL_PONDERS_MAX_DISCS = GGS_TOURNAMENT_TERMINATE_ALL_PONDERS_MAX_DISCS;
 #else
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = true;
 constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = 0;
 constexpr int GGS_NON_PRIORITIZED_THREADS = 1;
 constexpr int GGS_NON_PRIORITIZED_MIN_FULL_THREADS = 12;
+constexpr int GGS_TERMINATE_ALL_PONDERS_MAX_DISCS = 0;
 #endif
 
 struct GGS_Clock_Params {
@@ -2374,7 +2379,11 @@ void ggs_client(Options *options) {
                                     }
                                     if (need_to_move) { // Egaroucid should move
 #if IS_GGS_TOURNAMENT
-                                        ggs_terminate_ponder_if_active(ponder_futures, ponder_searchings, ggs_board.synchro_id, &ponder_results, options);
+                                        if (ggs_board.board.n_discs() <= GGS_TERMINATE_ALL_PONDERS_MAX_DISCS) {
+                                            ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+                                        } else {
+                                            ggs_terminate_ponder_if_active(ponder_futures, ponder_searchings, ggs_board.synchro_id, &ponder_results, options);
+                                        }
 #else
                                         ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
 #endif
