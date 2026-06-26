@@ -1777,6 +1777,8 @@ constexpr uint64_t AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE = 3600ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS = 2500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_MAX_BONUS = 22000ULL;
 constexpr double AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE = 1.10;
+constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
+constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
 
 inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
@@ -1801,6 +1803,7 @@ inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint6
 inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std::vector<Ponder_elem> &move_list, uint64_t time_limit, uint64_t remaining_time_msec, bool show_log) {
     double best_value = -INF;
     double second_value = -INF;
+    int best_depth = 0;
     int valid_moves = 0;
     for (const Ponder_elem &elem: move_list) {
         if (elem.count <= 0) {
@@ -1810,6 +1813,7 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
         if (elem.value > best_value) {
             second_value = best_value;
             best_value = elem.value;
+            best_depth = elem.depth;
         } else if (elem.value > second_value) {
             second_value = elem.value;
         }
@@ -1822,14 +1826,22 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     }
 
     int close_moves = 0;
+    int reliable_close_moves = 0;
     std::ostringstream close_move_str;
     for (const Ponder_elem &elem: move_list) {
         if (elem.count <= 0 || elem.value < best_value - AI_TL_GGS_AMBIGUITY_CLOSE_VALUE) {
             continue;
         }
         ++close_moves;
+        const bool reliable = elem.depth >= AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH && elem.depth + AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE >= best_depth;
+        if (reliable) {
+            ++reliable_close_moves;
+        }
         if (show_log) {
             close_move_str << " " << idx_to_coord(elem.flip.pos) << "(" << std::fixed << std::setprecision(2) << elem.value << ")";
+            if (!reliable) {
+                close_move_str << "?d" << elem.depth;
+            }
         }
     }
     if (close_moves < 2) {
@@ -1838,8 +1850,19 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
         }
         return time_limit;
     }
+    if (reliable_close_moves < 2) {
+        if (show_log) {
+            std::cerr << "ggs ambiguity unreliable close_moves " << close_moves << "/" << valid_moves
+                      << " reliable " << reliable_close_moves
+                      << " best_depth " << best_depth
+                      << " second_gap " << best_value - second_value
+                      << " moves" << close_move_str.str() << std::endl;
+        }
+        return time_limit;
+    }
 
-    uint64_t bonus = AI_TL_GGS_AMBIGUITY_BASE_BONUS + AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE * (uint64_t)(close_moves - 1);
+    uint64_t bonus = AI_TL_GGS_AMBIGUITY_BASE_BONUS +
+                     AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE * (uint64_t)(reliable_close_moves - 1);
     const double second_gap = best_value - second_value;
     if (second_gap <= AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
         bonus += AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS;
@@ -1851,7 +1874,12 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     const double remaining_moves = (double)(n_empties + 1) / 2.0;
     const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
     if (show_log) {
-        std::cerr << "ggs ambiguity close_moves " << close_moves << "/" << valid_moves << " second_gap " << second_gap << " bonus " << bonus << " tl " << time_limit << " -> " << boosted_time_limit << " moves" << close_move_str.str() << std::endl;
+        std::cerr << "ggs ambiguity close_moves " << close_moves << "/" << valid_moves
+                  << " reliable " << reliable_close_moves
+                  << " second_gap " << second_gap
+                  << " bonus " << bonus
+                  << " tl " << time_limit << " -> " << boosted_time_limit
+                  << " moves" << close_move_str.str() << std::endl;
     }
     return boosted_time_limit;
 }

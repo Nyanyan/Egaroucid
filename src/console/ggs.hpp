@@ -143,7 +143,11 @@ inline uint64_t ggs_subtract_elapsed_or_floor(uint64_t remaining_time_msec, uint
 }
 
 inline bool ggs_engine_show_log(const Options *options) {
+#if IS_GGS_TOURNAMENT
+    return options->show_log || options->log_to_file;
+#else
     return options->show_log;
+#endif
 }
 
 Search_result ggs_fallback_search_result(Board board) {
