@@ -528,11 +528,23 @@ inline bool ggs_verbose_log(const Options *options) {
     return options->show_log;
 }
 
-inline void ggs_write_stderr_lines(const std::string &prefix, const std::string &str) {
+inline void ggs_print_colored_lines(const std::string &prefix, const std::string &str, Options *options, const std::string &color) {
     std::stringstream ss(str);
     std::string line;
+    std::ofstream ofs;
+    if (options->ggs_log_to_file) {
+        ofs.open(options->ggs_log_file, std::ios::app);
+    }
+    std::cout << color;
     while (std::getline(ss, line, '\n')) {
-        console_write_stderr_line(prefix + line);
+        std::cout << prefix << line << std::endl;
+        if (options->ggs_log_to_file) {
+            ofs << prefix << line << std::endl;
+        }
+    }
+    std::cout << "\033[0m";
+    if (options->ggs_log_to_file) {
+        ofs.close();
     }
 }
 
@@ -667,80 +679,18 @@ void ggs_seed_move_hints_from_game_logs(GGS_Move_Hint_Table *move_hints, Options
 }
 
 void ggs_print_send(std::string str, Options *options) { // cyan
-#if IS_GGS_TOURNAMENT
-    ggs_write_log_lines(GGS_SEND_HEADER, str, options);
-    return;
-#endif
-    std::stringstream ss(str);
-    std::string line;
-    std::ofstream ofs;
-    if (options->ggs_log_to_file) {
-        ofs.open(options->ggs_log_file, std::ios::app);
-    }
-    std::cout << "\033[36m";
-    while (std::getline(ss, line, '\n')) {
-        std::cout << GGS_SEND_HEADER << line << std::endl;
-        if (options->ggs_log_to_file) {
-            ofs << GGS_SEND_HEADER << line << std::endl;
-        }
-    }
-    std::cout << "\033[0m";
-    if (options->ggs_log_to_file) {
-        ofs.close();
-    }
+    ggs_print_colored_lines(GGS_SEND_HEADER, str, options, "\033[36m");
 }
 
 void ggs_print_receive(std::string str, Options *options) { // green
-#if IS_GGS_TOURNAMENT
-    ggs_write_log_lines(GGS_REPLY_HEADER, str, options);
-    return;
-#endif
-    std::stringstream ss(str);
-    std::string line;
-    std::ofstream ofs;
-    if (options->ggs_log_to_file) {
-        ofs.open(options->ggs_log_file, std::ios::app);
-    }
-    std::cout << "\033[32m";
-    while (std::getline(ss, line, '\n')) {
-        std::cout << GGS_REPLY_HEADER << line << std::endl;
-        if (options->ggs_log_to_file) {
-            ofs << GGS_REPLY_HEADER << line << std::endl;
-        }
-    }
-    std::cout << "\033[0m";
-    if (options->ggs_log_to_file) {
-        ofs.close();
-    }
+    ggs_print_colored_lines(GGS_REPLY_HEADER, str, options, "\033[32m");
 }
 
 void ggs_print_info(std::string str, Options *options) { // yellow
-#if IS_GGS_TOURNAMENT
-    ggs_write_log_lines(GGS_INFO_HEADER, str, options);
-    ggs_write_stderr_lines(GGS_INFO_HEADER, str);
-    return;
-#endif
-    std::stringstream ss(str);
-    std::string line;
-    std::ofstream ofs;
-    if (options->ggs_log_to_file) {
-        ofs.open(options->ggs_log_file, std::ios::app);
-    }
-    std::cout << "\033[33m";
-    while (std::getline(ss, line, '\n')) {
-        std::cout << GGS_INFO_HEADER << line << std::endl;
-        if (options->ggs_log_to_file) {
-            ofs << GGS_INFO_HEADER << line << std::endl;
-        }
-    }
-    std::cout << "\033[0m";
-    if (options->ggs_log_to_file) {
-        ofs.close();
-    }
+    ggs_print_colored_lines(GGS_INFO_HEADER, str, options, "\033[33m");
 }
 
 void ggs_report_error(std::string str, Options *options) {
-    console_write_stderr_line(str);
     std::cout << "[ERROR] " << str << std::endl;
     ggs_write_log_lines(GGS_INFO_HEADER, "[ERROR] " + str, options);
 }
