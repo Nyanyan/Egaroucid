@@ -44,6 +44,24 @@
 #define MODE_AI_AI 2
 #define MODE_HUMAN_HUMAN 3
 
+inline std::streambuf *console_original_stderr_buf = std::cerr.rdbuf();
+
+inline void console_write_original_stderr_line(const std::string &line) {
+    std::ostream original_stderr(console_original_stderr_buf);
+    original_stderr << line << std::endl;
+}
+
+inline bool console_stderr_is_redirected() {
+    return std::cerr.rdbuf() != console_original_stderr_buf;
+}
+
+inline void console_write_stderr_line(const std::string &line) {
+    std::cerr << line << std::endl;
+    if (console_stderr_is_redirected()) {
+        console_write_original_stderr_line(line);
+    }
+}
+
 std::string get_parent_path(char raw_path[]) {
     std::filesystem::path p = raw_path;
     //p = std::filesystem::canonical(p);

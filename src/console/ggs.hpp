@@ -143,12 +143,7 @@ inline uint64_t ggs_subtract_elapsed_or_floor(uint64_t remaining_time_msec, uint
 }
 
 inline bool ggs_engine_show_log(const Options *options) {
-#if IS_GGS_TOURNAMENT
-    (void)options;
-    return false;
-#else
     return options->show_log;
-#endif
 }
 
 Search_result ggs_fallback_search_result(Board board) {
@@ -218,6 +213,7 @@ struct GGS_Match {
 };
 
 void ggs_print_info(std::string str, Options *options);
+void ggs_print_debug(std::string str, Options *options);
 
 struct GGS_Move_Hint {
     int policy;
@@ -502,14 +498,7 @@ void ggs_record_opponent_move_hint(
     }
 
     ggs_record_move_hint(move_hints, previous.board, ggs_board.last_move, GGS_LIVE_OPPONENT_HINT_WEIGHT);
-    if (options->show_log) {
-    #if IS_GGS_TOURNAMENT
-        std::cerr << "ggs live synchro hint " << idx_to_coord(ggs_board.last_move)
-                  << " " << previous.board.to_str() << std::endl;
-    #else
-        ggs_print_info("synchro hint " + previous.board.to_str() + " -> " + idx_to_coord(ggs_board.last_move), options);
-    #endif
-    }
+    ggs_print_debug("synchro hint " + previous.board.to_str() + " -> " + idx_to_coord(ggs_board.last_move), options);
 }
 
 inline bool ggs_line_starts_with(const std::string &line, const std::string &prefix) {
@@ -532,6 +521,18 @@ inline void ggs_write_log_lines(const std::string &prefix, const std::string &st
     std::string line;
     while (std::getline(ss, line, '\n')) {
         ofs << prefix << line << std::endl;
+    }
+}
+
+inline bool ggs_verbose_log(const Options *options) {
+    return options->show_log;
+}
+
+inline void ggs_write_stderr_lines(const std::string &prefix, const std::string &str) {
+    std::stringstream ss(str);
+    std::string line;
+    while (std::getline(ss, line, '\n')) {
+        console_write_stderr_line(prefix + line);
     }
 }
 
@@ -716,6 +717,7 @@ void ggs_print_receive(std::string str, Options *options) { // green
 void ggs_print_info(std::string str, Options *options) { // yellow
 #if IS_GGS_TOURNAMENT
     ggs_write_log_lines(GGS_INFO_HEADER, str, options);
+    ggs_write_stderr_lines(GGS_INFO_HEADER, str);
     return;
 #endif
     std::stringstream ss(str);
@@ -738,9 +740,15 @@ void ggs_print_info(std::string str, Options *options) { // yellow
 }
 
 void ggs_report_error(std::string str, Options *options) {
-    std::cerr << str << std::endl;
+    console_write_stderr_line(str);
     std::cout << "[ERROR] " << str << std::endl;
     ggs_write_log_lines(GGS_INFO_HEADER, "[ERROR] " + str, options);
+}
+
+void ggs_print_debug(std::string str, Options *options) {
+    if (ggs_verbose_log(options)) {
+        ggs_print_info(str, options);
+    }
 }
 
 int ggs_send_raw(SOCKET &sock, const char *data, int len) {
@@ -856,7 +864,7 @@ std::string ggs_filter_telnet_control(SOCKET &sock, const char *data, int len, O
                 break;
             case TELNET_STATE_OPTION:
                 if (options->show_log) {
-                    ggs_print_info("telnet recv " + ggs_telnet_command_name(option_command) + " option " + std::to_string(c), options);
+                    ggs_print_debug("telnet recv " + ggs_telnet_command_name(option_command) + " option " + std::to_string(c), options);
                 }
                 ggs_send_telnet_negotiation(sock, option_command, c);
                 state = TELNET_STATE_DATA;
@@ -876,7 +884,7 @@ std::string ggs_filter_telnet_control(SOCKET &sock, const char *data, int len, O
 
 int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock, Options *options) {
     sock = INVALID_SOCKET;
-    ggs_print_info("winsock startup", options);
+    ggs_print_debug("winsock startup", options);
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::cerr << "Failed to initialize Winsock. Error Code: " << WSAGetLastError() << std::endl;
         return 1;
@@ -884,7 +892,7 @@ int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock, Opti
 
     const char* hostname = GGS_URL;
     const std::string port = std::to_string(GGS_PORT);
-    ggs_print_info("resolving " + std::string(hostname) + ":" + port, options);
+    ggs_print_debug("resolving " + std::string(hostname) + ":" + port, options);
     struct addrinfo hints;
     struct addrinfo *result = nullptr;
     ZeroMemory(&hints, sizeof(hints));
@@ -898,11 +906,11 @@ int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock, Opti
         WSACleanup();
         return 1;
     }
-    ggs_print_info("resolved " + std::string(hostname), options);
+    ggs_print_debug("resolved " + std::string(hostname), options);
 
     ZeroMemory(&server, sizeof(server));
     for (struct addrinfo *addr = result; addr != nullptr; addr = addr->ai_next) {
-        ggs_print_info("connecting to " + ggs_sockaddr_to_text(addr->ai_addr, static_cast<int>(addr->ai_addrlen)), options);
+        ggs_print_debug("connecting to " + ggs_sockaddr_to_text(addr->ai_addr, static_cast<int>(addr->ai_addrlen)), options);
         SOCKET candidate = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
         if (candidate == INVALID_SOCKET) {
             std::cerr << "Could not create socket. Error Code: " << WSAGetLastError() << std::endl;
@@ -916,7 +924,7 @@ int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock, Opti
         if (connect(candidate, addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == 0) {
             sock = candidate;
             freeaddrinfo(result);
-            ggs_print_info("socket connected", options);
+            ggs_print_debug("socket connected", options);
             return 0;
         }
 
@@ -990,9 +998,7 @@ bool ggs_receive_append(SOCKET *sock, Options *options, std::vector<std::string>
             return false;
         }
 
-        if (options->show_log) {
-            ggs_print_info("recv raw bytes " + std::to_string(recv_size), options);
-        }
+        ggs_print_debug("recv raw bytes " + std::to_string(recv_size), options);
         std::string text = ggs_filter_telnet_control(*sock, server_reply, recv_size, options);
         if (text.empty()) {
             continue;
@@ -1008,7 +1014,7 @@ std::vector<std::string> ggs_receive_message(SOCKET *sock, Options *options) {
 
     std::vector<std::string> res = ggs_extract_ready_messages(&receive_buffer);
     if (!res.empty()) {
-        ggs_print_info("using buffered READY reply count " + std::to_string(res.size()), options);
+        ggs_print_debug("using buffered READY reply count " + std::to_string(res.size()), options);
         return res;
     }
 
@@ -1018,14 +1024,14 @@ std::vector<std::string> ggs_receive_message(SOCKET *sock, Options *options) {
         }
         res = ggs_extract_ready_messages(&receive_buffer);
         if (!res.empty()) {
-            ggs_print_info("received READY reply count " + std::to_string(res.size()), options);
+            ggs_print_debug("received READY reply count " + std::to_string(res.size()), options);
             return res;
         }
     }
 }
 
 bool ggs_receive_until_text(SOCKET *sock, Options *options, const std::string &stage, const std::vector<std::string> &markers, std::string *received = nullptr) {
-    ggs_print_info("waiting for " + stage, options);
+    ggs_print_debug("waiting for " + stage, options);
     std::string &buffer = ggs_receive_buffer();
     std::vector<std::string> res;
     while (true) {
@@ -1039,7 +1045,7 @@ bool ggs_receive_until_text(SOCKET *sock, Options *options, const std::string &s
                     *received = buffer.substr(0, end_pos);
                 }
                 buffer.erase(0, end_pos);
-                ggs_print_info("received " + stage, options);
+                ggs_print_debug("received " + stage, options);
                 return true;
             }
         }
@@ -1051,7 +1057,7 @@ bool ggs_receive_until_text(SOCKET *sock, Options *options, const std::string &s
 }
 
 bool ggs_receive_required(SOCKET *sock, Options *options, const std::string &stage, std::vector<std::string> *received = nullptr) {
-    ggs_print_info("waiting for " + stage, options);
+    ggs_print_debug("waiting for " + stage, options);
     std::vector<std::string> replies = ggs_receive_message(sock, options);
     if (received != nullptr) {
         *received = replies;
@@ -1060,8 +1066,20 @@ bool ggs_receive_required(SOCKET *sock, Options *options, const std::string &sta
         ggs_report_error("GGS connection closed while waiting for " + stage + ".", options);
         return false;
     }
-    ggs_print_info("received " + stage + " replies " + std::to_string(replies.size()), options);
+    ggs_print_debug("received " + stage + " replies " + std::to_string(replies.size()), options);
     return true;
+}
+
+void ggs_log_server_errors(const std::vector<std::string> &server_replies, Options *options) {
+    for (const std::string &server_reply: server_replies) {
+        std::stringstream ss(server_reply);
+        std::string line;
+        while (std::getline(ss, line, '\n')) {
+            if (line.find("ERR") != std::string::npos || line.find("+err") != std::string::npos || line.find("-err") != std::string::npos) {
+                ggs_print_info("server error: " + line, options);
+            }
+        }
+    }
 }
 
 std::string ggs_get_os_info(std::string str) {
@@ -1273,7 +1291,7 @@ void ggs_accept_match_requests(std::vector<std::string> server_replies, SOCKET &
                     GGS_Clock_Params request_clock;
                     if (ggs_match_request_get_clock(os_info, options->ggs_username, &request_clock)) {
                         *clock_params = request_clock;
-                        if (options->show_log) {
+                        if (ggs_verbose_log(options)) {
                             std::cerr << "ggs clock " << ggs_clock_summary(*clock_params) << std::endl;
                             if (clock_params->extension_msec > 0ULL && clock_params->increment_msec == 0ULL) {
                                 std::cerr << "ggs clock note: extension time is not per-move increment" << std::endl;
@@ -1471,18 +1489,18 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
     Search_result search_result;
     if (ggs_board.board.get_legal()) {
         if (ggs_is_usable_ponder_result(ggs_board.board, ponder_result)) {
-            if (options->show_log) {
-                std::cerr << "ggs exact ponder selected " << idx_to_coord(ponder_result.policy)
-                          << " value " << ponder_result.value << " depth " << ponder_result.depth << "@100% "
-                          << ggs_board.board.to_str() << std::endl;
-            }
+            ggs_print_debug(
+                "ggs exact ponder selected " + idx_to_coord(ponder_result.policy) +
+                " value " + std::to_string(ponder_result.value) +
+                " depth " + std::to_string(ponder_result.depth) + "@100% " +
+                ggs_board.board.to_str(),
+                options
+            );
             ggs_log_search_result_summary("search exact ponder", ggs_board, ponder_result, hint_policy, hint_count, options);
             return ponder_result;
         }
         if (ggs_should_play_hint_without_search(ggs_board.board, hint_policy)) {
-            if (options->show_log) {
-                std::cerr << "ggs synchro hint selected without search " << idx_to_coord(hint_policy) << " " << ggs_board.board.to_str() << std::endl;
-            }
+            ggs_print_debug("ggs synchro hint selected without search " + idx_to_coord(hint_policy) + " " + ggs_board.board.to_str(), options);
             search_result = ggs_hint_search_result(ggs_board.board, hint_policy);
             ggs_log_search_result_summary("search hint only", ggs_board, search_result, hint_policy, hint_count, options);
             return search_result;
@@ -1541,18 +1559,16 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
             options
         );
 #else
-        if (options->show_log) {
-            ggs_print_info(
-                "search allocation game " + ggs_board.game_id +
-                " discs " + std::to_string(ggs_board.board.n_discs()) +
-                " raw " + std::to_string(raw_remaining_time_msec) +
-                " safety " + std::to_string(safety_margin) +
-                " limit " + std::to_string(remaining_time_msec) +
-                " inc " + std::to_string(ggs_board.clock.increment_msec) +
-                " ext " + std::to_string(ggs_board.clock.extension_msec),
-                options
-            );
-        }
+        ggs_print_debug(
+            "search allocation game " + ggs_board.game_id +
+            " discs " + std::to_string(ggs_board.board.n_discs()) +
+            " raw " + std::to_string(raw_remaining_time_msec) +
+            " safety " + std::to_string(safety_margin) +
+            " limit " + std::to_string(remaining_time_msec) +
+            " inc " + std::to_string(ggs_board.clock.increment_msec) +
+            " ext " + std::to_string(ggs_board.clock.extension_msec),
+            options
+        );
 #endif
 
         if (remaining_time_msec <= 50ULL) {
@@ -1561,11 +1577,13 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
             search_result = ai_time_limit(ggs_board.board, true, 0, true, ggs_engine_show_log(options), remaining_time_msec, thread_id, searching);
             const uint64_t legal = ggs_board.board.get_legal();
             if (ggs_should_override_with_hint(ggs_board.board, hint_policy, search_result)) {
-                if (options->show_log) {
-                    std::cerr << "ggs synchro hint overrides search " << idx_to_coord(search_result.policy) << " -> " << idx_to_coord(hint_policy)
-                              << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%"
-                              << " " << ggs_board.board.to_str() << std::endl;
-                }
+                ggs_print_debug(
+                    "ggs synchro hint overrides search " + idx_to_coord(search_result.policy) + " -> " + idx_to_coord(hint_policy) +
+                    " value " + std::to_string(search_result.value) +
+                    " depth " + std::to_string(search_result.depth) + "@" + std::to_string(search_result.probability) + "% " +
+                    ggs_board.board.to_str(),
+                    options
+                );
                 search_result.policy = hint_policy;
                 search_result.value = mid_evaluate(&ggs_board.board);
                 search_result.depth = 0;
@@ -1584,12 +1602,16 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
 
 void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_result, Options *options) {
     std::string ggs_move_cmd;
+    std::string move_text;
     if (search_result.policy == MOVE_PASS) {
         ggs_move_cmd = "t /os play " + ggs_board.game_id + " pa";
+        move_text = "pa";
     } else {
-        ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + idx_to_coord(search_result.policy) + "/" + std::to_string(search_result.value);
+        move_text = idx_to_coord(search_result.policy);
+        ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + move_text + "/" + std::to_string(search_result.value);
     }
     ggs_send_message(sock, ggs_move_cmd + "\n", options);
+    ggs_print_info("move sent game " + ggs_board.game_id + " move " + move_text + " value " + std::to_string(search_result.value), options);
 }
 
 inline bool ggs_is_my_turn(const GGS_Board &ggs_board, Options *options) {
@@ -1755,12 +1777,13 @@ bool ggs_try_send_pending_move(GGS_Pending_Move *pending_move, const GGS_Move_Hi
         return false;
     }
 
-    if (options->show_log) {
-        std::cerr << "ggs pending move send " << pending_move->board.game_id
-                  << " reason " << (hint_arrived ? "hint" : "timeout")
-                  << " waited " << (tim() - pending_move->ready_time)
-                  << " " << pending_move->board.board.to_str() << std::endl;
-    }
+    ggs_print_debug(
+        "ggs pending move send " + pending_move->board.game_id +
+        " reason " + std::string(hint_arrived ? "hint" : "timeout") +
+        " waited " + std::to_string(tim() - pending_move->ready_time) +
+        " " + pending_move->board.board.to_str(),
+        options
+    );
     ggs_apply_move_hint_to_search_result(pending_move->board, move_hints, &pending_move->result, options);
     const uint64_t legal = pending_move->board.board.get_legal();
     if (legal && (!is_valid_policy(pending_move->result.policy) || !(legal & (1ULL << pending_move->result.policy)))) {
@@ -1793,8 +1816,8 @@ void ggs_launch_ai_search(
     int hint_policy = ggs_get_move_hint(move_hints, ggs_board.board);
     int hint_count = ggs_get_move_hint_count(move_hints, ggs_board.board);
     Search_result ponder_result = ggs_get_ponder_result(ponder_results, ggs_board.board);
-    if (options->show_log && is_valid_policy(hint_policy)) {
-        std::cerr << "synchro hint candidate before search " << ggs_board.game_id << " " << idx_to_coord(hint_policy) << std::endl;
+    if (is_valid_policy(hint_policy)) {
+        ggs_print_debug("synchro hint candidate before search " + ggs_board.game_id + " " + idx_to_coord(hint_policy), options);
     }
 #if !IS_GGS_TOURNAMENT
     if (options->show_log && ggs_is_usable_ponder_result(ggs_board.board, ponder_result)) {
@@ -1825,12 +1848,13 @@ bool ggs_try_launch_pending_search(
     if (!hint_arrived && tim() - pending_search->ready_time < pending_search->max_wait_msec) {
         return false;
     }
-    if (options->show_log) {
-        std::cerr << "ggs pending search launch " << pending_search->board.game_id
-                  << " reason " << (hint_arrived ? "hint" : "timeout")
-                  << " waited " << (tim() - pending_search->ready_time)
-                  << " " << pending_search->board.board.to_str() << std::endl;
-    }
+    ggs_print_debug(
+        "ggs pending search launch " + pending_search->board.game_id +
+        " reason " + std::string(hint_arrived ? "hint" : "timeout") +
+        " waited " + std::to_string(tim() - pending_search->ready_time) +
+        " " + pending_search->board.board.to_str(),
+        options
+    );
     ggs_launch_ai_search(
         ai_futures,
         ai_searchings,
@@ -1987,12 +2011,12 @@ void ggs_client(Options *options) {
     }
 
     // login
-    ggs_print_info("sending username", options);
+    ggs_print_debug("sending username", options);
     if (ggs_send_message(sock, options->ggs_username + "\n", options) != 0 || !ggs_receive_until_text(&sock, options, "password prompt", {"Enter your password"})) {
         ggs_close(sock);
         return;
     }
-    ggs_print_info("sending password", options);
+    ggs_print_debug("sending password", options);
     if (ggs_send_message(sock, options->ggs_password + "\n", options, "<password>\n") != 0 || !ggs_receive_required(&sock, options, "login READY")) {
         ggs_close(sock);
         return;
@@ -2002,13 +2026,13 @@ void ggs_client(Options *options) {
     // initialize
     std::vector<std::string> init_replies;
     GGS_Clock_Params ggs_clock_params;
-    ggs_print_info("initializing GGS subscriptions: ms /os", options);
+    ggs_print_debug("initializing GGS subscriptions: ms /os", options);
     if (ggs_send_message(sock, "ms /os\n", options) != 0 || !ggs_receive_required(&sock, options, "ms /os response", &init_replies)) {
         ggs_close(sock);
         return;
     }
     ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
-    ggs_print_info("initializing GGS subscriptions: ts client -", options);
+    ggs_print_debug("initializing GGS subscriptions: ts client -", options);
     if (ggs_send_message(sock, "ts client -\n", options) != 0 || !ggs_receive_required(&sock, options, "ts client response", &init_replies)) {
         ggs_close(sock);
         return;
@@ -2068,6 +2092,7 @@ void ggs_client(Options *options) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::string user_input = user_input_f.get();
                 if (user_input == "quit") {
+                    ggs_print_info("stdin command received: quit", options);
                     ggs_print_info("quit requested; closing GGS client", options);
                     ggs_send_message(sock, "quit\n", options);
                     ggs_socket_closing.store(true);
@@ -2075,7 +2100,9 @@ void ggs_client(Options *options) {
                     stop_calculations();
                     break;
                 } else if (!user_input.empty()) {
+                    ggs_print_info("stdin command received: " + user_input, options);
                     ggs_send_message(sock, user_input + "\n", options);
+                    ggs_print_info("stdin command forwarded: " + user_input, options);
                     last_sent_time = tim();
                 }
             }
@@ -2098,6 +2125,7 @@ void ggs_client(Options *options) {
         }
         bool new_calculation_start = false;
         if (server_replies.size()) {
+            ggs_log_server_errors(server_replies, options);
             // match start
             for (std::string server_reply: server_replies) {
                 if (server_reply.size()) {
@@ -2266,7 +2294,7 @@ void ggs_client(Options *options) {
                                 GGS_Clock_Params request_clock;
                                 if (ggs_match_request_get_clock(os_info, options->ggs_username, &request_clock)) {
                                     ggs_clock_params = request_clock;
-                                    if (options->show_log) {
+                                    if (ggs_verbose_log(options)) {
                                         std::cerr << "ggs clock " << ggs_clock_summary(ggs_clock_params) << std::endl;
                                         if (ggs_clock_params.extension_msec > 0ULL && ggs_clock_params.increment_msec == 0ULL) {
                                             std::cerr << "ggs clock note: extension time is not per-move increment" << std::endl;
@@ -2336,11 +2364,12 @@ void ggs_client(Options *options) {
 #endif
                                             if (ggs_should_delay_search_for_synchro_hint(ggs_board, move_hints, ggs_boards, ggs_boards_n_discs, options)) {
                                                 ggs_store_pending_search(&pending_searches[ggs_board.synchro_id], ggs_board, ggs_board.synchro_id, search_thread_id);
-                                                if (options->show_log) {
-                                                    std::cerr << "ggs pending search wait " << ggs_board.game_id
-                                                              << " max " << pending_searches[ggs_board.synchro_id].max_wait_msec
-                                                              << " " << ggs_board.board.to_str() << std::endl;
-                                                }
+                                                ggs_print_debug(
+                                                    "ggs pending search wait " + ggs_board.game_id +
+                                                    " max " + std::to_string(pending_searches[ggs_board.synchro_id].max_wait_msec) +
+                                                    " " + ggs_board.board.to_str(),
+                                                    options
+                                                );
                                             } else {
                                                 ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, ggs_board.synchro_id, search_thread_id, move_hints, ponder_results, options);
                                             }
@@ -2407,15 +2436,12 @@ void ggs_client(Options *options) {
                             );
                             if (ggs_should_wait_for_synchro_hint(ggs_boards_searching[i], search_result, move_hints, ggs_boards, options)) {
                                 ggs_store_pending_move(&pending_moves[i], ggs_boards_searching[i], search_result);
-                                if (options->show_log) {
-                                #if IS_GGS_TOURNAMENT
-                                    std::cerr << "ggs pending move wait " << ggs_boards_searching[i].game_id
-                                              << " max " << pending_moves[i].max_wait_msec
-                                              << " " << ggs_boards_searching[i].board.to_str() << std::endl;
-                                #else
-                                    ggs_print_info("waiting synchro hint " + ggs_boards_searching[i].game_id + " max " + std::to_string(pending_moves[i].max_wait_msec) + " ms", options);
-                                #endif
-                                }
+                                ggs_print_debug(
+                                    "ggs pending move wait " + ggs_boards_searching[i].game_id +
+                                    " max " + std::to_string(pending_moves[i].max_wait_msec) +
+                                    " " + ggs_boards_searching[i].board.to_str(),
+                                    options
+                                );
                             } else {
                                 ggs_send_move(ggs_boards_searching[i], sock, search_result, options);
                                 last_sent_time = tim();
