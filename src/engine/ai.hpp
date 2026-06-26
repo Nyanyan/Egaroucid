@@ -1779,6 +1779,10 @@ constexpr uint64_t AI_TL_GGS_AMBIGUITY_MAX_BONUS = 22000ULL;
 constexpr double AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE = 1.10;
 constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
 constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 2000ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE = 1600ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS = 8500ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 0.55;
 
 inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
@@ -1851,14 +1855,24 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
         return time_limit;
     }
     if (reliable_close_moves < 2) {
+        uint64_t bonus = AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS +
+                         AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE * (uint64_t)(close_moves - 1);
+        bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS);
+        bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE));
+
+        const int n_empties = HW2 - board.n_discs();
+        const double remaining_moves = (double)(n_empties + 1) / 2.0;
+        const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
         if (show_log) {
             std::cerr << "ggs ambiguity unreliable close_moves " << close_moves << "/" << valid_moves
                       << " reliable " << reliable_close_moves
                       << " best_depth " << best_depth
                       << " second_gap " << best_value - second_value
+                      << " bonus " << bonus
+                      << " tl " << time_limit << " -> " << boosted_time_limit
                       << " moves" << close_move_str.str() << std::endl;
         }
-        return time_limit;
+        return boosted_time_limit;
     }
 
     uint64_t bonus = AI_TL_GGS_AMBIGUITY_BASE_BONUS +
