@@ -8,6 +8,7 @@
     @license GPL-3.0-or-later
 */
 #pragma once
+#include <atomic>
 #include <filesystem>
 #include <unordered_map>
 #include "./../engine/engine_all.hpp"
@@ -21,6 +22,18 @@
 #define GGS_REPLY_HEADER "GGS RECV> "
 #define GGS_SEND_HEADER "GGS SEND> "
 #define GGS_INFO_HEADER "GGS INFO> "
+#define GGS_RECEIVE_BUFFER_SIZE 20000
+#define GGS_CONNECTION_CLOSED_TOKEN "__EGAROUCID_GGS_CONNECTION_CLOSED__"
+
+#define TELNET_SE 240
+#define TELNET_SB 250
+#define TELNET_WILL 251
+#define TELNET_WONT 252
+#define TELNET_DO 253
+#define TELNET_DONT 254
+#define TELNET_IAC 255
+#define TELNET_ECHO 1
+#define TELNET_SUPPRESS_GO_AHEAD 3
 
 #define GGS_NON_SYNCHRO_ID 0
 
@@ -28,6 +41,8 @@
 
 #define GGS_USE_PONDER true
 #define GGS_N_PONDER_PARALLEL 1
+
+std::atomic_bool ggs_socket_closing(false);
 #if IS_GGS_TOURNAMENT
     #ifndef GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY
         #define GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY false
@@ -722,57 +737,196 @@ void ggs_print_info(std::string str, Options *options) { // yellow
     }
 }
 
-int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock) {
+void ggs_report_error(std::string str, Options *options) {
+    std::cerr << str << std::endl;
+    std::cout << "[ERROR] " << str << std::endl;
+    ggs_write_log_lines(GGS_INFO_HEADER, "[ERROR] " + str, options);
+}
+
+int ggs_send_raw(SOCKET &sock, const char *data, int len) {
+    int sent_total = 0;
+    while (sent_total < len) {
+        int sent = send(sock, data + sent_total, len - sent_total, 0);
+        if (sent == SOCKET_ERROR) {
+            std::cerr << "Send failed. Error Code: " << WSAGetLastError() << std::endl;
+            return 1;
+        }
+        if (sent == 0) {
+            std::cerr << "Send failed. Socket sent 0 bytes." << std::endl;
+            return 1;
+        }
+        sent_total += sent;
+    }
+    return 0;
+}
+
+std::string ggs_normalize_telnet_newlines(const std::string &msg) {
+    std::string res;
+    res.reserve(msg.size() + 8);
+    for (size_t i = 0; i < msg.size(); ++i) {
+        if (msg[i] == '\n' && (i == 0 || msg[i - 1] != '\r')) {
+            res += "\r\n";
+        } else {
+            res += msg[i];
+        }
+    }
+    return res;
+}
+
+inline bool ggs_accept_telnet_server_option(unsigned char option) {
+    return option == TELNET_ECHO || option == TELNET_SUPPRESS_GO_AHEAD;
+}
+
+inline bool ggs_accept_telnet_client_option(unsigned char option) {
+    return option == TELNET_SUPPRESS_GO_AHEAD;
+}
+
+void ggs_send_telnet_negotiation(SOCKET &sock, unsigned char command, unsigned char option) {
+    unsigned char reply_command = TELNET_DONT;
+    if (command == TELNET_WILL) {
+        reply_command = ggs_accept_telnet_server_option(option) ? TELNET_DO : TELNET_DONT;
+    } else if (command == TELNET_DO) {
+        reply_command = ggs_accept_telnet_client_option(option) ? TELNET_WILL : TELNET_WONT;
+    } else {
+        return;
+    }
+    const unsigned char reply[3] = {TELNET_IAC, reply_command, option};
+    ggs_send_raw(sock, reinterpret_cast<const char*>(reply), 3);
+}
+
+std::string ggs_telnet_command_name(unsigned char command) {
+    switch (command) {
+        case TELNET_WILL:
+            return "WILL";
+        case TELNET_WONT:
+            return "WONT";
+        case TELNET_DO:
+            return "DO";
+        case TELNET_DONT:
+            return "DONT";
+        default:
+            return std::to_string(command);
+    }
+}
+
+std::string ggs_sockaddr_to_text(const sockaddr *addr, int addr_len) {
+    char host[NI_MAXHOST];
+    char service[NI_MAXSERV];
+    if (getnameinfo(addr, addr_len, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
+        return "(unknown)";
+    }
+    return std::string(host) + ":" + service;
+}
+
+std::string ggs_filter_telnet_control(SOCKET &sock, const char *data, int len, Options *options) {
+    enum Telnet_State {
+        TELNET_STATE_DATA,
+        TELNET_STATE_IAC,
+        TELNET_STATE_OPTION,
+        TELNET_STATE_SUBNEGOTIATION,
+        TELNET_STATE_SUBNEGOTIATION_IAC
+    };
+    static Telnet_State state = TELNET_STATE_DATA;
+    static unsigned char option_command = 0;
+    std::string text;
+    text.reserve(len);
+
+    for (int i = 0; i < len; ++i) {
+        const unsigned char c = static_cast<unsigned char>(data[i]);
+        switch (state) {
+            case TELNET_STATE_DATA:
+                if (c == TELNET_IAC) {
+                    state = TELNET_STATE_IAC;
+                } else {
+                    text += static_cast<char>(c);
+                }
+                break;
+            case TELNET_STATE_IAC:
+                if (c == TELNET_IAC) {
+                    text += static_cast<char>(c);
+                    state = TELNET_STATE_DATA;
+                } else if (c == TELNET_WILL || c == TELNET_WONT || c == TELNET_DO || c == TELNET_DONT) {
+                    option_command = c;
+                    state = TELNET_STATE_OPTION;
+                } else if (c == TELNET_SB) {
+                    state = TELNET_STATE_SUBNEGOTIATION;
+                } else {
+                    state = TELNET_STATE_DATA;
+                }
+                break;
+            case TELNET_STATE_OPTION:
+                if (options->show_log) {
+                    ggs_print_info("telnet recv " + ggs_telnet_command_name(option_command) + " option " + std::to_string(c), options);
+                }
+                ggs_send_telnet_negotiation(sock, option_command, c);
+                state = TELNET_STATE_DATA;
+                break;
+            case TELNET_STATE_SUBNEGOTIATION:
+                if (c == TELNET_IAC) {
+                    state = TELNET_STATE_SUBNEGOTIATION_IAC;
+                }
+                break;
+            case TELNET_STATE_SUBNEGOTIATION_IAC:
+                state = c == TELNET_SE ? TELNET_STATE_DATA : TELNET_STATE_SUBNEGOTIATION;
+                break;
+        }
+    }
+    return text;
+}
+
+int ggs_connect(WSADATA &wsaData, struct sockaddr_in &server, SOCKET &sock, Options *options) {
+    sock = INVALID_SOCKET;
+    ggs_print_info("winsock startup", options);
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::cerr << "Failed to initialize Winsock. Error Code: " << WSAGetLastError() << std::endl;
         return 1;
     }
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-        std::cerr << "Could not create socket. Error Code: " << WSAGetLastError() << std::endl;
-        WSACleanup();
-        return 1;
-    }
-
-    
     const char* hostname = GGS_URL;
-    struct hostent* he = gethostbyname(hostname);
-    if (he == nullptr) {
-        std::cerr << "Failed to resolve hostname. Error Code: " << WSAGetLastError() << std::endl;
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
-
-    server.sin_addr.s_addr = *(u_long*)he->h_addr_list[0];
-    server.sin_family = AF_INET;
-    server.sin_port = htons(GGS_PORT);
-    
-    /*
-    const char* hostname = GGS_URL;
-    struct addrinfo hints, *result;
+    const std::string port = std::to_string(GGS_PORT);
+    ggs_print_info("resolving " + std::string(hostname) + ":" + port, options);
+    struct addrinfo hints;
+    struct addrinfo *result = nullptr;
     ZeroMemory(&hints, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
-    if (getaddrinfo(hostname, std::to_string(GGS_PORT).c_str(), &hints, &result) != 0) {
-        std::cerr << "Failed to resolve hostname. Error Code: " << WSAGetLastError() << std::endl;
-        closesocket(sock);
+
+    const int resolve_error = getaddrinfo(hostname, port.c_str(), &hints, &result);
+    if (resolve_error != 0) {
+        std::cerr << "Failed to resolve hostname. Error Code: " << resolve_error << std::endl;
         WSACleanup();
         return 1;
     }
+    ggs_print_info("resolved " + std::string(hostname), options);
 
-    memcpy(&server, result->ai_addr, result->ai_addrlen);
+    ZeroMemory(&server, sizeof(server));
+    for (struct addrinfo *addr = result; addr != nullptr; addr = addr->ai_next) {
+        ggs_print_info("connecting to " + ggs_sockaddr_to_text(addr->ai_addr, static_cast<int>(addr->ai_addrlen)), options);
+        SOCKET candidate = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+        if (candidate == INVALID_SOCKET) {
+            std::cerr << "Could not create socket. Error Code: " << WSAGetLastError() << std::endl;
+            continue;
+        }
+
+        if (addr->ai_family == AF_INET && addr->ai_addrlen <= sizeof(server)) {
+            memcpy(&server, addr->ai_addr, addr->ai_addrlen);
+        }
+
+        if (connect(candidate, addr->ai_addr, static_cast<int>(addr->ai_addrlen)) == 0) {
+            sock = candidate;
+            freeaddrinfo(result);
+            ggs_print_info("socket connected", options);
+            return 0;
+        }
+
+        std::cerr << "Connection attempt failed. Error Code: " << WSAGetLastError() << std::endl;
+        closesocket(candidate);
+    }
+
     freeaddrinfo(result);
-    */
-
-    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0) {
-        std::cerr << "Connection failed. Error Code: " << WSAGetLastError() << std::endl;
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
-    return 0;
+    WSACleanup();
+    return 1;
 }
 
 void ggs_close(SOCKET &sock) {
@@ -780,26 +934,134 @@ void ggs_close(SOCKET &sock) {
     WSACleanup();
 }
 
-int ggs_send_message(SOCKET &sock, std::string msg, Options *options) {
-    if (send(sock, msg.c_str(), msg.length(), 0) < 0) {
+int ggs_send_message(SOCKET &sock, std::string msg, Options *options, std::string log_msg = "") {
+    const std::string wire_msg = ggs_normalize_telnet_newlines(msg);
+    if (ggs_send_raw(sock, wire_msg.c_str(), static_cast<int>(wire_msg.size())) != 0) {
         return 1;
     }
-    ggs_print_send(msg, options);
+    ggs_print_send(log_msg.empty() ? msg : log_msg, options);
     return 0;
 }
 
-std::vector<std::string> ggs_receive_message(SOCKET *sock, Options *options) {
-    char server_reply[20000];
-    int recv_size;
+inline bool ggs_replies_connection_closed(const std::vector<std::string> &replies) {
+    return std::find(replies.begin(), replies.end(), std::string(GGS_CONNECTION_CLOSED_TOKEN)) != replies.end();
+}
+
+std::vector<std::string> ggs_extract_ready_messages(std::string *buffer) {
     std::vector<std::string> res;
-    if ((recv_size = recv(*sock, server_reply, 20000, 0)) == SOCKET_ERROR) {
-        std::cerr << "Recv failed. Error Code: " << WSAGetLastError() << std::endl;
-    } else {
-        server_reply[recv_size] = '\0';
-        res = split_by_delimiter(server_reply, GGS_READY);
-        ggs_print_receive(server_reply, options);
+    size_t ready_pos = buffer->find(GGS_READY);
+    while (ready_pos != std::string::npos) {
+        res.emplace_back(buffer->substr(0, ready_pos));
+        buffer->erase(0, ready_pos + std::string(GGS_READY).size());
+        ready_pos = buffer->find(GGS_READY);
     }
     return res;
+}
+
+std::string& ggs_receive_buffer() {
+    static std::string buffer;
+    return buffer;
+}
+
+bool ggs_receive_append(SOCKET *sock, Options *options, std::vector<std::string> *res) {
+    char server_reply[GGS_RECEIVE_BUFFER_SIZE];
+    while (true) {
+        int recv_size = recv(*sock, server_reply, GGS_RECEIVE_BUFFER_SIZE - 1, 0);
+        if (recv_size == SOCKET_ERROR) {
+            const int err = WSAGetLastError();
+            if (err == WSAEINTR) {
+                continue;
+            }
+            if (ggs_socket_closing.load()) {
+                res->emplace_back(GGS_CONNECTION_CLOSED_TOKEN);
+                return false;
+            }
+            std::cerr << "Recv failed. Error Code: " << err << std::endl;
+            res->emplace_back(GGS_CONNECTION_CLOSED_TOKEN);
+            return false;
+        }
+        if (recv_size == 0) {
+            if (ggs_socket_closing.load()) {
+                res->emplace_back(GGS_CONNECTION_CLOSED_TOKEN);
+                return false;
+            }
+            std::cerr << "GGS connection closed by server." << std::endl;
+            res->emplace_back(GGS_CONNECTION_CLOSED_TOKEN);
+            return false;
+        }
+
+        if (options->show_log) {
+            ggs_print_info("recv raw bytes " + std::to_string(recv_size), options);
+        }
+        std::string text = ggs_filter_telnet_control(*sock, server_reply, recv_size, options);
+        if (text.empty()) {
+            continue;
+        }
+        ggs_receive_buffer() += text;
+        ggs_print_receive(text, options);
+        return true;
+    }
+}
+
+std::vector<std::string> ggs_receive_message(SOCKET *sock, Options *options) {
+    std::string &receive_buffer = ggs_receive_buffer();
+
+    std::vector<std::string> res = ggs_extract_ready_messages(&receive_buffer);
+    if (!res.empty()) {
+        ggs_print_info("using buffered READY reply count " + std::to_string(res.size()), options);
+        return res;
+    }
+
+    while (true) {
+        if (!ggs_receive_append(sock, options, &res)) {
+            return res;
+        }
+        res = ggs_extract_ready_messages(&receive_buffer);
+        if (!res.empty()) {
+            ggs_print_info("received READY reply count " + std::to_string(res.size()), options);
+            return res;
+        }
+    }
+}
+
+bool ggs_receive_until_text(SOCKET *sock, Options *options, const std::string &stage, const std::vector<std::string> &markers, std::string *received = nullptr) {
+    ggs_print_info("waiting for " + stage, options);
+    std::string &buffer = ggs_receive_buffer();
+    std::vector<std::string> res;
+    while (true) {
+        for (const std::string &marker: markers) {
+            const size_t pos = buffer.find(marker);
+            if (pos != std::string::npos) {
+                const size_t marker_end_pos = pos + marker.size();
+                size_t end_pos = buffer.find('\n', marker_end_pos);
+                end_pos = end_pos == std::string::npos ? marker_end_pos : end_pos + 1;
+                if (received != nullptr) {
+                    *received = buffer.substr(0, end_pos);
+                }
+                buffer.erase(0, end_pos);
+                ggs_print_info("received " + stage, options);
+                return true;
+            }
+        }
+        if (!ggs_receive_append(sock, options, &res)) {
+            ggs_report_error("GGS connection closed while waiting for " + stage + ".", options);
+            return false;
+        }
+    }
+}
+
+bool ggs_receive_required(SOCKET *sock, Options *options, const std::string &stage, std::vector<std::string> *received = nullptr) {
+    ggs_print_info("waiting for " + stage, options);
+    std::vector<std::string> replies = ggs_receive_message(sock, options);
+    if (received != nullptr) {
+        *received = replies;
+    }
+    if (ggs_replies_connection_closed(replies)) {
+        ggs_report_error("GGS connection closed while waiting for " + stage + ".", options);
+        return false;
+    }
+    ggs_print_info("received " + stage + " replies " + std::to_string(replies.size()), options);
+    return true;
 }
 
 std::string ggs_get_os_info(std::string str) {
@@ -1708,32 +1970,51 @@ bool ggs_any_ai_searching(const bool ai_searchings[]) {
 
 void ggs_client(Options *options) {
     WSADATA wsaData;
-    SOCKET sock;
+    SOCKET sock = INVALID_SOCKET;
     struct sockaddr_in server;
+    ggs_socket_closing.store(false);
     
     // connect to GGS server
-    if (ggs_connect(wsaData, server, sock) != 0) {
+    ggs_print_info("GGS client start user " + options->ggs_username + " host " + std::string(GGS_URL) + ":" + std::to_string(GGS_PORT), options);
+    if (ggs_connect(wsaData, server, sock, options) != 0) {
         std::cout << "[ERROR] [FATAL] Failed to Connect" << std::endl;
         return;
     }
     ggs_print_info("Connected to server!", options);
-    ggs_receive_message(&sock, options);
+    if (!ggs_receive_until_text(&sock, options, "login prompt", {"Enter login"})) {
+        ggs_close(sock);
+        return;
+    }
 
     // login
-    ggs_send_message(sock, options->ggs_username + "\n", options);
-    ggs_receive_message(&sock, options);
-    ggs_send_message(sock, options->ggs_password + "\n", options);
-    ggs_receive_message(&sock, options);
+    ggs_print_info("sending username", options);
+    if (ggs_send_message(sock, options->ggs_username + "\n", options) != 0 || !ggs_receive_until_text(&sock, options, "password prompt", {"Enter your password"})) {
+        ggs_close(sock);
+        return;
+    }
+    ggs_print_info("sending password", options);
+    if (ggs_send_message(sock, options->ggs_password + "\n", options, "<password>\n") != 0 || !ggs_receive_required(&sock, options, "login READY")) {
+        ggs_close(sock);
+        return;
+    }
+    ggs_print_info("GGS login completed", options);
 
     // initialize
     std::vector<std::string> init_replies;
     GGS_Clock_Params ggs_clock_params;
-    ggs_send_message(sock, "ms /os\n", options);
-    init_replies = ggs_receive_message(&sock, options);
+    ggs_print_info("initializing GGS subscriptions: ms /os", options);
+    if (ggs_send_message(sock, "ms /os\n", options) != 0 || !ggs_receive_required(&sock, options, "ms /os response", &init_replies)) {
+        ggs_close(sock);
+        return;
+    }
     ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
-    ggs_send_message(sock, "ts client -\n", options);
-    init_replies = ggs_receive_message(&sock, options);
+    ggs_print_info("initializing GGS subscriptions: ts client -", options);
+    if (ggs_send_message(sock, "ts client -\n", options) != 0 || !ggs_receive_required(&sock, options, "ts client response", &init_replies)) {
+        ggs_close(sock);
+        return;
+    }
     ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
+    ggs_print_info("GGS initialization completed; entering main loop", options);
     
     std::future<std::string> user_input_f;
     std::future<std::vector<std::string>> ggs_message_f;
@@ -1748,6 +2029,21 @@ void ggs_client(Options *options) {
     int ggs_boards_n_discs[2] = {0, 0};
     GGS_Move_Hint_Table move_hints;
     GGS_Ponder_Result_Table ponder_results;
+    auto stop_calculations = [&]() {
+        global_searching = false;
+        for (int ai_i = 0; ai_i < 2; ++ai_i) {
+            if (ai_futures[ai_i].valid()) {
+                Search_result discarded_search_result = ai_futures[ai_i].get();
+                (void)discarded_search_result;
+            }
+            for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
+                if (ponder_futures[ai_i][ponder_i].valid()) {
+                    std::vector<Ponder_elem> discarded_ponder_result = ponder_futures[ai_i][ponder_i].get();
+                    (void)discarded_ponder_result;
+                }
+            }
+        }
+    };
     ggs_seed_move_hints_from_game_logs(&move_hints, options);
     bool match_playing = false;
     int thread_sizes[2];
@@ -1772,17 +2068,11 @@ void ggs_client(Options *options) {
             if (user_input_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::string user_input = user_input_f.get();
                 if (user_input == "quit") {
-                    global_searching = false;
-                    for (int ai_i = 0; ai_i < 2; ++ai_i) {
-                        if (ai_futures[ai_i].valid()) {
-                            ai_futures[ai_i].get();
-                        }
-                        for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
-                            if (ponder_futures[ai_i][ponder_i].valid()) {
-                                ponder_futures[ai_i][ponder_i].get();
-                            }
-                        }
-                    }
+                    ggs_print_info("quit requested; closing GGS client", options);
+                    ggs_send_message(sock, "quit\n", options);
+                    ggs_socket_closing.store(true);
+                    shutdown(sock, SD_BOTH);
+                    stop_calculations();
                     break;
                 } else if (!user_input.empty()) {
                     ggs_send_message(sock, user_input + "\n", options);
@@ -1800,6 +2090,11 @@ void ggs_client(Options *options) {
             }
         } else {
             ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock, options); // ask ggs message
+        }
+        if (ggs_replies_connection_closed(server_replies)) {
+            ggs_report_error("GGS connection is no longer available. Shutting down GGS client.", options);
+            stop_calculations();
+            break;
         }
         bool new_calculation_start = false;
         if (server_replies.size()) {
@@ -2243,5 +2538,11 @@ void ggs_client(Options *options) {
     }
 
     // close connection
+    ggs_socket_closing.store(true);
+    if (ggs_message_f.valid()) {
+        shutdown(sock, SD_BOTH);
+        std::vector<std::string> discarded_replies = ggs_message_f.get();
+        (void)discarded_replies;
+    }
     ggs_close(sock);
 }

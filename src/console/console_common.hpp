@@ -17,6 +17,10 @@
     #ifndef NOMINMAX
         #define NOMINMAX
     #endif
+    #if INCLUDE_GGS
+        #include <winsock2.h>
+        #include <ws2tcpip.h>
+    #endif
     #include <windows.h>
 #elif _WIN32
     #ifndef NOMINMAX
