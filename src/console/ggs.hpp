@@ -1055,6 +1055,32 @@ std::string ggs_board_get_id(std::string line) {
     return "";
 }
 
+uint64_t ggs_parse_remaining_seconds(const std::string &clock_text) {
+    std::string main_clock = clock_text.substr(0, clock_text.find(','));
+    if (main_clock.empty()) {
+        return 0ULL;
+    }
+    bool negative = false;
+    if (main_clock[0] == '-' || main_clock[0] == '+') {
+        negative = main_clock[0] == '-';
+        main_clock.erase(main_clock.begin());
+    }
+    const size_t colon = main_clock.find(':');
+    if (negative || colon == std::string::npos || colon == 0 || colon + 1 >= main_clock.size()) {
+        return 0ULL;
+    }
+    try {
+        const int minutes = std::stoi(main_clock.substr(0, colon));
+        const int seconds = std::stoi(main_clock.substr(colon + 1));
+        if (minutes < 0 || seconds < 0) {
+            return 0ULL;
+        }
+        return (uint64_t)minutes * 60ULL + (uint64_t)seconds;
+    } catch (const std::exception&) {
+        return 0ULL;
+    }
+}
+
 GGS_Board ggs_get_board(std::string str) {
     GGS_Board res;
     std::string os_info = ggs_get_os_info(str);
@@ -1140,9 +1166,7 @@ GGS_Board ggs_get_board(std::string str) {
             // users
             if (words.size() >= 4) {
                 std::string player_id = words[0].substr(1, words[0].size() - 1);
-                std::string remaining_time_minute = words[3].substr(0, 2);
-                std::string remaining_time_second = words[3].substr(3, 2);
-                uint64_t remaining_seconds = std::stoi(remaining_time_minute) * 60 + std::stoi(remaining_time_second);
+                uint64_t remaining_seconds = ggs_parse_remaining_seconds(words[3]);
                 if (words[2][0] == '*') {
                     res.player_black = player_id;
                     res.remaining_seconds_black = remaining_seconds;
