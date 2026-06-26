@@ -61,6 +61,7 @@ bin/ggs/id
 bin/ggs/log
 bin/ggs/etc
 bin/egaroucid_vs_edax_time_log
+bin/tuning_logs
 
 # bin directory (for Linux)
 bin/resources/engine
