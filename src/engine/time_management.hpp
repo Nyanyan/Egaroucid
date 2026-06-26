@@ -25,16 +25,43 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
         #define TIME_MANAGEMENT_GGS_FIRST_REPLY_MOVE_COE 0.15
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_45_OR_MORE
-        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_45_OR_MORE 1.30
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_45_OR_MORE 1.48
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_34_OR_MORE
-        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_34_OR_MORE 1.55
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_34_OR_MORE 1.78
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_22_OR_MORE
-        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_22_OR_MORE 1.65
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_22_OR_MORE 1.90
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PHASE_TIME_COE_LATE
-        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_LATE 1.95
+        #define TIME_MANAGEMENT_GGS_PHASE_TIME_COE_LATE 2.15
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_REMAINING_MOVES_EXTRA
+        #define TIME_MANAGEMENT_GGS_REMAINING_MOVES_EXTRA 1.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_TIME_COE
+        #define TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_TIME_COE 0.60
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_COMPLETE_USE_TIME_COE
+        #define TIME_MANAGEMENT_GGS_COMPLETE_USE_TIME_COE 0.65
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_CAP_32_OR_MORE
+        #define TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_CAP_32_OR_MORE 22000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_COMPLETE_USE_CAP_32_OR_MORE
+        #define TIME_MANAGEMENT_GGS_COMPLETE_USE_CAP_32_OR_MORE 24000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_CAP_30_OR_MORE
+        #define TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_CAP_30_OR_MORE 15000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_COMPLETE_USE_CAP_30_OR_MORE
+        #define TIME_MANAGEMENT_GGS_COMPLETE_USE_CAP_30_OR_MORE 19000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_ENDGAME_DEPTH_TIME_COE
+        #define TIME_MANAGEMENT_GGS_ENDGAME_DEPTH_TIME_COE 0.10
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_ENDGAME_USE_TIME_COE
+        #define TIME_MANAGEMENT_GGS_ENDGAME_USE_TIME_COE 0.14
     #endif
 #else
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
@@ -85,16 +112,20 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double complete_const_b = 0.75;
     constexpr double complete_nps = 7.0e8;
 #if IS_GGS_TOURNAMENT
-    double complete_use_time = (double)remaining_time_msec_margin * 0.6;
+    double complete_depth_time = (double)remaining_time_msec_margin * TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_TIME_COE;
+    double complete_use_time = (double)remaining_time_msec_margin * TIME_MANAGEMENT_GGS_COMPLETE_USE_TIME_COE;
     if (n_empties >= 32) {
-        complete_use_time = std::min(complete_use_time, 22000.0);
+        complete_depth_time = std::min(complete_depth_time, TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_CAP_32_OR_MORE);
+        complete_use_time = std::min(complete_use_time, TIME_MANAGEMENT_GGS_COMPLETE_USE_CAP_32_OR_MORE);
     } else if (n_empties >= 30) {
-        complete_use_time = std::min(complete_use_time, 15000.0);
+        complete_depth_time = std::min(complete_depth_time, TIME_MANAGEMENT_GGS_COMPLETE_DEPTH_CAP_30_OR_MORE);
+        complete_use_time = std::min(complete_use_time, TIME_MANAGEMENT_GGS_COMPLETE_USE_CAP_30_OR_MORE);
     }
 #else
     double complete_use_time = (double)remaining_time_msec_margin * 0.9;
+    double complete_depth_time = complete_use_time;
 #endif
-    double complete_search_depth = log(complete_use_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
+    double complete_search_depth = log(complete_depth_time / 1000.0 * complete_nps / complete_const_a) / complete_const_b;
 
     // try endgame search
     // Nodes(depth) = a * exp(b * depth)
@@ -102,11 +133,13 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     constexpr double endgame_const_b = 0.62;
     constexpr double endgame_nps = 3.5e8;
 #if IS_GGS_TOURNAMENT
-    double endgame_use_time = (double)remaining_time_msec_margin * 0.1;
+    double endgame_depth_time = (double)remaining_time_msec_margin * TIME_MANAGEMENT_GGS_ENDGAME_DEPTH_TIME_COE;
+    double endgame_use_time = (double)remaining_time_msec_margin * TIME_MANAGEMENT_GGS_ENDGAME_USE_TIME_COE;
 #else
     double endgame_use_time = (double)remaining_time_msec_margin * 0.15;
+    double endgame_depth_time = endgame_use_time;
 #endif
-    double endgame_search_depth = log(endgame_use_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
+    double endgame_search_depth = log(endgame_depth_time / 1000.0 * endgame_nps / endgame_const_a) / endgame_const_b;
 
     if (show_log) {
         std::cerr << "complete search depth " << complete_search_depth << " endgame search depth " << endgame_search_depth << " n_empties " << n_empties << std::endl;
@@ -122,7 +155,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     } else if (n_empties >= 22) {
         phase_time_coe = TIME_MANAGEMENT_GGS_PHASE_TIME_COE_22_OR_MORE;
     }
-    double remaining_moves_proc = std::max(3.0, remaining_moves + 2.0);
+    double remaining_moves_proc = std::max(3.0, remaining_moves + TIME_MANAGEMENT_GGS_REMAINING_MOVES_EXTRA);
     uint64_t midgame_use_time = std::max<uint64_t>(1ULL, (uint64_t)(phase_time_coe * remaining_time_msec_margin / remaining_moves_proc));
 #else
     double remaining_moves_proc = 0;

@@ -1183,13 +1183,15 @@ bool ggs_parse_clock_params(const std::string &clock_str, GGS_Clock_Params *cloc
     if (!ggs_parse_clock_segment(segments[0], &parsed.initial_msec, &parsed.initial_moves, &parsed.initial_loss, true)) {
         return false;
     }
-    if (segments.size() >= 2) {
+    if (segments.size() >= 2 && !segments[1].empty()) {
         if (!ggs_parse_clock_segment(segments[1], &parsed.increment_msec, &parsed.increment_moves, &parsed.increment_add, true)) {
             return false;
         }
         if (parsed.increment_moves < 1) {
             return false;
         }
+    } else if (segments.size() == 2) {
+        return false;
     }
     if (segments.size() >= 3) {
         if (!ggs_parse_clock_segment(segments[2], &parsed.extension_msec, &parsed.extension_moves, &parsed.extension_add, true)) {
@@ -1199,6 +1201,68 @@ bool ggs_parse_clock_params(const std::string &clock_str, GGS_Clock_Params *cloc
     parsed.initialized = true;
     *clock = parsed;
     return true;
+}
+
+bool ggs_parse_board_clock_time_msec(const std::string &segment, uint64_t *msec) {
+    const std::string time_part = segment.substr(0, segment.find(','));
+    return !time_part.empty() && ggs_parse_clock_time_msec(time_part, msec);
+}
+
+bool ggs_parse_board_clock_params(const std::string &clock_str, GGS_Clock_Params *clock) {
+    if (clock_str.empty()) {
+        return false;
+    }
+    GGS_Clock_Params parsed;
+    std::vector<std::string> segments = split_by_delimiter(clock_str, "/");
+    if (segments.empty() || segments.size() > 3) {
+        return false;
+    }
+    if (!ggs_parse_board_clock_time_msec(segments[0], &parsed.initial_msec)) {
+        return false;
+    }
+    if (segments.size() >= 2 && !segments[1].empty()) {
+        if (!ggs_parse_board_clock_time_msec(segments[1], &parsed.increment_msec)) {
+            return false;
+        }
+    } else if (segments.size() == 2) {
+        return false;
+    }
+    if (segments.size() >= 3 && !segments[2].empty()) {
+        if (!ggs_parse_board_clock_time_msec(segments[2], &parsed.extension_msec)) {
+            return false;
+        }
+    }
+    parsed.initialized = true;
+    *clock = parsed;
+    return true;
+}
+
+std::string ggs_clock_summary(const GGS_Clock_Params &clock);
+
+bool ggs_clock_control_params_equal(const GGS_Clock_Params &lhs, const GGS_Clock_Params &rhs) {
+    return lhs.initialized == rhs.initialized &&
+           lhs.increment_msec == rhs.increment_msec &&
+           lhs.extension_msec == rhs.extension_msec &&
+           lhs.increment_moves == rhs.increment_moves &&
+           lhs.extension_moves == rhs.extension_moves &&
+           lhs.increment_add == rhs.increment_add &&
+           lhs.extension_add == rhs.extension_add;
+}
+
+void ggs_apply_board_clock(GGS_Board *ggs_board, GGS_Clock_Params *clock_params, Options *options) {
+    if (ggs_board->clock.initialized) {
+        if (!clock_params->initialized || !ggs_clock_control_params_equal(*clock_params, ggs_board->clock)) {
+            *clock_params = ggs_board->clock;
+            ggs_print_info("ggs clock inferred from board " + ggs_clock_summary(*clock_params), options);
+            if (clock_params->extension_msec > 0ULL && clock_params->increment_msec == 0ULL) {
+                ggs_print_info("ggs clock note: extension time is not per-move increment", options);
+            }
+        } else {
+            ggs_board->clock = *clock_params;
+        }
+    } else {
+        ggs_board->clock = *clock_params;
+    }
 }
 
 std::string ggs_clock_summary(const GGS_Clock_Params &clock) {
@@ -1397,6 +1461,10 @@ GGS_Board ggs_get_board(std::string str) {
             if (words.size() >= 4) {
                 std::string player_id = words[0].substr(1, words[0].size() - 1);
                 uint64_t remaining_seconds = ggs_parse_remaining_seconds(words[3]);
+                GGS_Clock_Params board_clock;
+                if (ggs_parse_board_clock_params(words[3], &board_clock)) {
+                    res.clock = board_clock;
+                }
                 if (words[2][0] == '*') {
                     res.player_black = player_id;
                     res.remaining_seconds_black = remaining_seconds;
@@ -2108,9 +2176,9 @@ void ggs_client(Options *options) {
                     std::string os_info = ggs_get_os_info(server_reply);
                     if (ggs_is_board_info(os_info)) {
                         GGS_Board ggs_board = ggs_get_board(server_reply);
-                        ggs_board.clock = ggs_clock_params;
                         if (ggs_board.is_valid()) {
                             if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
+                                ggs_apply_board_clock(&ggs_board, &ggs_clock_params, options);
                                 #if !IS_GGS_TOURNAMENT
                                 ggs_print_info("ggs board synchro id " + std::to_string(ggs_board.synchro_id), options);
                                 #endif
@@ -2282,9 +2350,9 @@ void ggs_client(Options *options) {
                     if (ggs_is_board_info(os_info)) {
                         //std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
-                        ggs_board.clock = ggs_clock_params;
                         if (ggs_board.is_valid()) {
                             if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
+                                ggs_apply_board_clock(&ggs_board, &ggs_clock_params, options);
                                 bool need_to_move = 
                                     (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
                                     (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
