@@ -1763,6 +1763,100 @@ inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
     return is_valid_policy(last_unmasked_root_result->policy);
 }
 
+#if IS_GGS_TOURNAMENT
+constexpr int AI_TL_GGS_AMBIGUITY_MIN_N_EMPTY = 29;
+constexpr int AI_TL_GGS_AMBIGUITY_MAX_N_EMPTY = 48;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_MIN_TIME_LIMIT = 6500ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_MIN_REMAINING_TIME = 45000ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_PROBE_MIN_TIME = 700ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_PROBE_MAX_TIME = 1400ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_PROBE_TIME_COE = 0.10;
+constexpr double AI_TL_GGS_AMBIGUITY_CLOSE_VALUE = AI_TL_ADDITIONAL_SEARCH_THRESHOLD * 2.0;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_BASE_BONUS = 2500ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE = 3600ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS = 2500ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_MAX_BONUS = 22000ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE = 1.10;
+
+inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
+    const int n_empties = HW2 - board.n_discs();
+    if (n_empties < AI_TL_GGS_AMBIGUITY_MIN_N_EMPTY || n_empties > AI_TL_GGS_AMBIGUITY_MAX_N_EMPTY) {
+        return 0ULL;
+    }
+    if (time_limit < AI_TL_GGS_AMBIGUITY_MIN_TIME_LIMIT || remaining_time_msec < AI_TL_GGS_AMBIGUITY_MIN_REMAINING_TIME) {
+        return 0ULL;
+    }
+    if (pop_count_ull(board.get_legal()) < 2) {
+        return 0ULL;
+    }
+    uint64_t probe_time = (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_PROBE_TIME_COE);
+    probe_time = std::min<uint64_t>(probe_time, AI_TL_GGS_AMBIGUITY_PROBE_MAX_TIME);
+    probe_time = std::min<uint64_t>(probe_time, remaining_time_msec / 40ULL);
+    if (probe_time < AI_TL_GGS_AMBIGUITY_PROBE_MIN_TIME) {
+        return 0ULL;
+    }
+    return probe_time;
+}
+
+inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std::vector<Ponder_elem> &move_list, uint64_t time_limit, uint64_t remaining_time_msec, bool show_log) {
+    double best_value = -INF;
+    double second_value = -INF;
+    int valid_moves = 0;
+    for (const Ponder_elem &elem: move_list) {
+        if (elem.count <= 0) {
+            continue;
+        }
+        ++valid_moves;
+        if (elem.value > best_value) {
+            second_value = best_value;
+            best_value = elem.value;
+        } else if (elem.value > second_value) {
+            second_value = elem.value;
+        }
+    }
+    if (valid_moves < 2) {
+        if (show_log) {
+            std::cerr << "ggs ambiguity skip valid_moves " << valid_moves << std::endl;
+        }
+        return time_limit;
+    }
+
+    int close_moves = 0;
+    std::ostringstream close_move_str;
+    for (const Ponder_elem &elem: move_list) {
+        if (elem.count <= 0 || elem.value < best_value - AI_TL_GGS_AMBIGUITY_CLOSE_VALUE) {
+            continue;
+        }
+        ++close_moves;
+        if (show_log) {
+            close_move_str << " " << idx_to_coord(elem.flip.pos) << "(" << std::fixed << std::setprecision(2) << elem.value << ")";
+        }
+    }
+    if (close_moves < 2) {
+        if (show_log) {
+            std::cerr << "ggs ambiguity quiet best " << best_value << " second_gap " << best_value - second_value << std::endl;
+        }
+        return time_limit;
+    }
+
+    uint64_t bonus = AI_TL_GGS_AMBIGUITY_BASE_BONUS + AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE * (uint64_t)(close_moves - 1);
+    const double second_gap = best_value - second_value;
+    if (second_gap <= AI_TL_ADDITIONAL_SEARCH_THRESHOLD) {
+        bonus += AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS;
+    }
+    bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_MAX_BONUS);
+    bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE));
+
+    const int n_empties = HW2 - board.n_discs();
+    const double remaining_moves = (double)(n_empties + 1) / 2.0;
+    const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+    if (show_log) {
+        std::cerr << "ggs ambiguity close_moves " << close_moves << "/" << valid_moves << " second_gap " << second_gap << " bonus " << bonus << " tl " << time_limit << " -> " << boosted_time_limit << " moves" << close_move_str.str() << std::endl;
+    }
+    return boosted_time_limit;
+}
+#endif
+
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
     if (show_log) {
@@ -1884,6 +1978,24 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //         time_limit = 1;
     //     }
     // }
+#if IS_GGS_TOURNAMENT
+    uint64_t ambiguity_probe_time = ai_time_limit_ggs_ambiguity_probe_time(board, time_limit, remaining_time_msec);
+    if (ambiguity_probe_time > 0ULL && global_searching && *searching) {
+        if (show_log) {
+            std::cerr << "ggs ambiguity probe tl " << ambiguity_probe_time << std::endl;
+        }
+        uint64_t strt_ambiguity_probe = tim();
+        std::vector<Ponder_elem> ambiguity_move_list = ai_get_values(board, show_log, ambiguity_probe_time, thread_id);
+        uint64_t elapsed_ambiguity_probe = tim() - strt_ambiguity_probe;
+        time_limit = std::max<uint64_t>(1ULL, get_this_search_time_limit(time_limit, elapsed_ambiguity_probe));
+        if (remaining_time_msec > elapsed_ambiguity_probe) {
+            remaining_time_msec -= elapsed_ambiguity_probe;
+        } else {
+            remaining_time_msec = 1ULL;
+        }
+        time_limit = ai_time_limit_ggs_ambiguity_boost(board, ambiguity_move_list, time_limit, remaining_time_msec, show_log);
+    }
+#endif
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
