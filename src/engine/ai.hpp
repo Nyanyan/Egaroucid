@@ -50,8 +50,13 @@ constexpr int AI_TL_EARLY_BREAK_VERIFY_MIN_DEPTH = 29;
         #define GGS_TOURNAMENT_POLICY_CHANGE_VERIFY_MIN_DEPTH 28
     #endif
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = GGS_TOURNAMENT_POLICY_CHANGE_VERIFY_MIN_DEPTH;
+    #ifndef GGS_TOURNAMENT_ENDGAME_INITIAL_MPC_LEVEL
+        #define GGS_TOURNAMENT_ENDGAME_INITIAL_MPC_LEVEL MPC_74_LEVEL
+    #endif
+constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = GGS_TOURNAMENT_ENDGAME_INITIAL_MPC_LEVEL;
 #else
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
+constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = MPC_74_LEVEL;
 #endif
 constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
 
@@ -515,7 +520,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
         if (search_success) {
+            Search_result previous_result = *result;
             bool verify_timeout = false;
+            bool keep_previous_on_verify_timeout = false;
             std::string verify_log;
             if (
                 !main_is_complete_search &&
@@ -585,24 +592,44 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             if (verify_timeout) {
 #if IS_GGS_TOURNAMENT
-                verify_log = " verify-timeout-use-main";
+                if (
+                    is_valid_policy(previous_result.policy) &&
+                    (use_legal & (1ULL << previous_result.policy)) &&
+                    previous_result.value != SCORE_UNDEFINED &&
+                    id_result.first <= previous_result.value
+                ) {
+                    const uint64_t accumulated_nodes = result->nodes;
+                    const uint64_t elapsed = tim() - strt;
+                    const uint64_t nps = calc_nps(accumulated_nodes, elapsed);
+                    *result = previous_result;
+                    result->nodes = accumulated_nodes;
+                    result->time = elapsed;
+                    result->nps = nps;
+                    keep_previous_on_verify_timeout = true;
+                    verify_log = " verify-timeout-keep-previous";
+                } else {
+                    verify_log = " verify-timeout-use-main";
+                }
 #else
                 break;
 #endif
             }
-            if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
-                double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
-                result->value = round(n_value);
-            } else{
-                result->value = id_result.first;
+            bool policy_changed = false;
+            if (!keep_previous_on_verify_timeout) {
+                if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
+                    double n_value = (0.9 * result->value + 1.1 * id_result.first) / 2.0;
+                    result->value = round(n_value);
+                } else{
+                    result->value = id_result.first;
+                }
+                policy_changed = result->policy != id_result.second;
+                result->policy = id_result.second;
+                result->depth = main_depth;
+                result->is_end_search = main_is_end_search;
+                result->probability = SELECTIVITY_PERCENTAGE[main_mpc_level];
             }
-            bool policy_changed = result->policy != id_result.second;
-            result->policy = id_result.second;
-            result->depth = main_depth;
-            result->is_end_search = main_is_end_search;
-            result->probability = SELECTIVITY_PERCENTAGE[main_mpc_level];
             if (show_log) {
-                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(id_result.second) << verify_log << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(result->policy) << verify_log << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
             }
             uint64_t legal_without_bestmove = use_legal ^ (1ULL << result->policy);
             if (
@@ -718,7 +745,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 //#endif
             if (main_depth < max_depth) {
                 main_depth = max_depth;
-                main_mpc_level = MPC_74_LEVEL;
+                main_mpc_level = AI_TL_ENDGAME_INITIAL_MPC_LEVEL;
             } else {
                 if (main_mpc_level < MPC_100_LEVEL) {
                     ++main_mpc_level;
