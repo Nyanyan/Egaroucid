@@ -8,9 +8,11 @@
     @license GPL-3.0-or-later
 */
 #pragma once
+#include <algorithm>
 #include <atomic>
 #include <filesystem>
 #include <unordered_map>
+#include <vector>
 #include "./../engine/engine_all.hpp"
 #include "option.hpp"
 #include "util.hpp"
@@ -263,6 +265,9 @@ using GGS_Ponder_Result_Table = std::unordered_map<std::string, Search_result>;
 
 constexpr int GGS_GAME_LOG_WINNER_HINT_WEIGHT = 2;
 constexpr int GGS_LIVE_OPPONENT_HINT_WEIGHT = 3;
+#if IS_GGS_TOURNAMENT
+constexpr size_t GGS_TOURNAMENT_GAME_LOG_HINT_MAX_FILES = 256;
+#endif
 
 inline std::string ggs_move_hint_key(const Board &board) {
     return board.to_str();
@@ -315,21 +320,28 @@ Search_result ggs_hint_search_result(Board board, int policy) {
     return res;
 }
 
-inline bool ggs_should_play_hint_without_search(const Board &board, int policy) {
+inline bool ggs_should_play_hint_without_search(const Board &board, int policy, int hint_count) {
     if (!ggs_is_legal_hint(board, policy)) {
         return false;
     }
 #if IS_GGS_TOURNAMENT
-    return board.n_discs() <= 20;
+    return board.n_discs() <= 20 && hint_count >= GGS_LIVE_OPPONENT_HINT_WEIGHT;
 #else
     return board.n_discs() <= 20;
 #endif
 }
 
-inline bool ggs_should_override_with_hint(const Board &board, int policy, const Search_result &search_result) {
+inline bool ggs_should_override_with_hint(const Board &board, int policy, int hint_count, const Search_result &search_result) {
     if (!ggs_is_legal_hint(board, policy) || policy == search_result.policy) {
         return false;
     }
+#if IS_GGS_TOURNAMENT
+    if (hint_count < GGS_GAME_LOG_WINNER_HINT_WEIGHT) {
+        return false;
+    }
+#else
+    (void)hint_count;
+#endif
     const int n_discs = board.n_discs();
     if (!is_valid_policy(search_result.policy)) {
         return true;
@@ -422,7 +434,7 @@ void ggs_apply_move_hint_to_search_result(
     const int hint_count = ggs_get_move_hint_count(move_hints, ggs_board.board);
     if (
         hint_policy == search_result->policy ||
-        (!ggs_should_play_hint_without_search(ggs_board.board, hint_policy) && !ggs_should_override_with_hint(ggs_board.board, hint_policy, *search_result))
+        (!ggs_should_play_hint_without_search(ggs_board.board, hint_policy, hint_count) && !ggs_should_override_with_hint(ggs_board.board, hint_policy, hint_count, *search_result))
     ) {
         return;
     }
@@ -622,9 +634,10 @@ int ggs_seed_move_hints_from_game_log_file(GGS_Move_Hint_Table *move_hints, cons
             break;
         }
 
-        #if IS_GGS_TOURNAMENT
+#if IS_GGS_TOURNAMENT
         const std::string move_player_name = player_to_move == BLACK ? black : white;
-        if (move_player_name != options->ggs_username) {
+        const bool mover_did_not_lose = player_to_move == BLACK ? black_score >= 0 : black_score <= 0;
+        if (move_player_name != options->ggs_username && mover_did_not_lose) {
             ggs_record_move_hint(move_hints, board, policy, GGS_GAME_LOG_WINNER_HINT_WEIGHT);
             n_registered += GGS_GAME_LOG_WINNER_HINT_WEIGHT;
         }
@@ -644,11 +657,6 @@ int ggs_seed_move_hints_from_game_log_file(GGS_Move_Hint_Table *move_hints, cons
 }
 
 void ggs_seed_move_hints_from_game_logs(GGS_Move_Hint_Table *move_hints, Options *options) {
-#if IS_GGS_TOURNAMENT
-    (void)move_hints;
-    (void)options;
-    return;
-#endif
     if (!options->ggs_game_log_to_file || options->ggs_game_log_dir.empty()) {
         return;
     }
@@ -659,12 +667,28 @@ void ggs_seed_move_hints_from_game_logs(GGS_Move_Hint_Table *move_hints, Options
         if (!std::filesystem::exists(dir)) {
             return;
         }
+        struct Game_Log_File {
+            std::filesystem::path path;
+            std::filesystem::file_time_type write_time;
+        };
+        std::vector<Game_Log_File> game_log_files;
         for (const std::filesystem::directory_entry &entry: std::filesystem::directory_iterator(dir)) {
             if (!entry.is_regular_file() || entry.path().extension() != ".txt") {
                 continue;
             }
+            game_log_files.push_back(Game_Log_File{entry.path(), entry.last_write_time()});
+        }
+        std::sort(game_log_files.begin(), game_log_files.end(), [](const Game_Log_File &a, const Game_Log_File &b) {
+            return a.write_time > b.write_time;
+        });
+#if IS_GGS_TOURNAMENT
+        if (game_log_files.size() > GGS_TOURNAMENT_GAME_LOG_HINT_MAX_FILES) {
+            game_log_files.resize(GGS_TOURNAMENT_GAME_LOG_HINT_MAX_FILES);
+        }
+#endif
+        for (const Game_Log_File &entry: game_log_files) {
             ++n_files;
-            n_hints += ggs_seed_move_hints_from_game_log_file(move_hints, entry.path(), options);
+            n_hints += ggs_seed_move_hints_from_game_log_file(move_hints, entry.path, options);
         }
     } catch (const std::exception &e) {
         #if IS_GGS_TOURNAMENT
@@ -678,9 +702,7 @@ void ggs_seed_move_hints_from_game_logs(GGS_Move_Hint_Table *move_hints, Options
     }
     #if IS_GGS_TOURNAMENT
     if (options->show_log) {
-        std::cerr << "ggs seeded opponent hints files " << n_files
-                  << " moves " << n_hints
-                  << " boards " << move_hints->size() << std::endl;
+        ggs_print_info("seeded safe opponent hints files " + std::to_string(n_files) + " moves " + std::to_string(n_hints) + " boards " + std::to_string(move_hints->size()), options);
     }
     #else
     ggs_print_info("seeded synchro hints files " + std::to_string(n_files) + " moves " + std::to_string(n_hints) + " boards " + std::to_string(move_hints->size()), options);
@@ -1526,7 +1548,7 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
             ggs_log_search_result_summary("search exact ponder", ggs_board, ponder_result, hint_policy, hint_count, options);
             return ponder_result;
         }
-        if (ggs_should_play_hint_without_search(ggs_board.board, hint_policy)) {
+        if (ggs_should_play_hint_without_search(ggs_board.board, hint_policy, hint_count)) {
             ggs_print_debug("ggs synchro hint selected without search " + idx_to_coord(hint_policy) + " " + ggs_board.board.to_str(), options);
             search_result = ggs_hint_search_result(ggs_board.board, hint_policy);
             ggs_log_search_result_summary("search hint only", ggs_board, search_result, hint_policy, hint_count, options);
@@ -1603,7 +1625,7 @@ Search_result ggs_search(GGS_Board ggs_board, Options *options, thread_id_t thre
         } else {
             search_result = ai_time_limit(ggs_board.board, !options->nobook, 0, true, ggs_engine_show_log(options), remaining_time_msec, thread_id, searching);
             const uint64_t legal = ggs_board.board.get_legal();
-            if (ggs_should_override_with_hint(ggs_board.board, hint_policy, search_result)) {
+            if (ggs_should_override_with_hint(ggs_board.board, hint_policy, hint_count, search_result)) {
                 ggs_print_debug(
                     "ggs synchro hint overrides search " + idx_to_coord(search_result.policy) + " -> " + idx_to_coord(hint_policy) +
                     " value " + std::to_string(search_result.value) +
