@@ -64,6 +64,17 @@ constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = MPC_74_LEVEL;
 constexpr int AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN = 0;
 #endif
 constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
+#if IS_GGS_TOURNAMENT
+constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_DEPTH = 30;
+constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_N_EMPTY = 35;
+constexpr uint_fast8_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MPC_LEVEL = MPC_88_LEVEL;
+constexpr double AI_TL_GGS_DEFENSIVE_ALT_VERIFY_VALUE_MIN = -12.0;
+constexpr double AI_TL_GGS_DEFENSIVE_ALT_VERIFY_VALUE_MAX = -3.0;
+constexpr uint64_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_TIME_LEFT = 1800ULL;
+constexpr uint64_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MAIN_TIME = 25000ULL;
+constexpr uint64_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_TIME = 6500ULL;
+constexpr double AI_TL_GGS_DEFENSIVE_ALT_VERIFY_TIME_COE = 0.25;
+#endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
 
@@ -486,6 +497,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     }
     int before_raw_value = -100;
     bool policy_changed_before = true;
+#if IS_GGS_TOURNAMENT
+    bool defensive_alt_verify_done = false;
+#endif
     while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
@@ -619,6 +633,107 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 break;
 #endif
             }
+#if IS_GGS_TOURNAMENT
+            if (
+                !verify_timeout &&
+                !keep_previous_on_verify_timeout &&
+                !main_is_complete_search &&
+                !main_is_end_search &&
+                max_depth <= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_N_EMPTY &&
+                main_depth >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_DEPTH &&
+                main_mpc_level >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MPC_LEVEL &&
+                main_mpc_level < MPC_100_LEVEL &&
+                time_limit >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MAIN_TIME &&
+                !defensive_alt_verify_done &&
+                AI_TL_GGS_DEFENSIVE_ALT_VERIFY_VALUE_MIN <= id_result.first &&
+                id_result.first <= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_VALUE_MAX &&
+                is_valid_policy(id_result.second) &&
+                (fallback_legal & (1ULL << id_result.second))
+            ) {
+                const uint64_t alternative_legal = fallback_legal & ~(1ULL << id_result.second);
+                const uint64_t time_left_for_verify = get_this_search_time_limit(time_limit, tim() - strt);
+                if (alternative_legal != 0ULL && time_left_for_verify >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_TIME_LEFT) {
+                    uint64_t defensive_verify_budget = std::min<uint64_t>(
+                        time_left_for_verify,
+                        std::min<uint64_t>(
+                            AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_TIME,
+                            (uint64_t)((double)time_limit * AI_TL_GGS_DEFENSIVE_ALT_VERIFY_TIME_COE)
+                        )
+                    );
+                    defensive_verify_budget = std::max<uint64_t>(defensive_verify_budget, AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_TIME_LEFT);
+                    defensive_alt_verify_done = true;
+                    const int current_policy = id_result.second;
+                    const uint_fast8_t verify_mpc_level = std::max<uint_fast8_t>(
+                        main_mpc_level,
+                        AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MPC_LEVEL
+                    );
+                    uint64_t defensive_verify_strt = tim();
+                    int current_value = id_result.first;
+                    int alternative_value = SCORE_UNDEFINED;
+                    int alternative_policy = MOVE_NOMOVE;
+                    bool defensive_verify_timeout = false;
+                    Search defensive_verify_search(&board, verify_mpc_level, use_multi_thread, false);
+                    defensive_verify_search.thread_id = thread_id;
+                    bool defensive_verify_searching = true;
+                    uint64_t time_limit_defensive_verify = get_this_search_time_limit(defensive_verify_budget, tim() - defensive_verify_strt);
+                    std::future<std::pair<int, int>> alternative_verify_f = std::async(std::launch::async, first_nega_scout_legal, &defensive_verify_search, alpha, beta, main_depth, main_is_end_search, clogs, alternative_legal, strt, &defensive_verify_searching);
+                    if (alternative_verify_f.wait_for(std::chrono::milliseconds(time_limit_defensive_verify)) == std::future_status::ready) {
+                        std::pair<int, int> alternative_verify_result = alternative_verify_f.get();
+                        alternative_value = alternative_verify_result.first;
+                        alternative_policy = alternative_verify_result.second;
+                    } else {
+                        defensive_verify_searching = false;
+                        try {
+                            alternative_verify_f.get();
+                        } catch (const std::exception &e) {
+                        }
+                        defensive_verify_timeout = true;
+                    }
+                    if (
+                        !defensive_verify_timeout &&
+                        is_valid_policy(alternative_policy) &&
+                        alternative_value > id_result.first
+                    ) {
+                        time_limit_defensive_verify = get_this_search_time_limit(defensive_verify_budget, tim() - defensive_verify_strt);
+                        std::future<std::pair<int, int>> current_verify_f = std::async(std::launch::async, first_nega_scout_legal, &defensive_verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << current_policy, strt, &defensive_verify_searching);
+                        if (current_verify_f.wait_for(std::chrono::milliseconds(time_limit_defensive_verify)) == std::future_status::ready) {
+                            std::pair<int, int> current_verify_result = current_verify_f.get();
+                            current_value = current_verify_result.first;
+                        } else {
+                            defensive_verify_searching = false;
+                            try {
+                                current_verify_f.get();
+                            } catch (const std::exception &e) {
+                            }
+                            defensive_verify_timeout = true;
+                        }
+                    }
+                    if (defensive_verify_timeout) {
+                        if (show_log) {
+                            std::ostringstream ss;
+                            ss << " defensive-alt@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% terminated";
+                            verify_log += ss.str();
+                        }
+                    } else {
+                        std::ostringstream ss;
+                        ss << " defensive-alt@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% "
+                           << idx_to_coord(current_policy) << "=" << current_value << " "
+                           << idx_to_coord(alternative_policy) << "=" << alternative_value;
+                        if (is_valid_policy(alternative_policy) && alternative_value > current_value) {
+                            id_result = std::make_pair(alternative_value, alternative_policy);
+                            ss << "->" << idx_to_coord(alternative_policy);
+                        } else {
+                            id_result = std::make_pair(current_value, current_policy);
+                            ss << "->" << idx_to_coord(current_policy);
+                        }
+                        verify_log += ss.str();
+                    }
+                    result->nodes += defensive_verify_search.n_nodes;
+                    result->time = tim() - strt;
+                    result->nps = calc_nps(result->nodes, result->time);
+                }
+            }
+#endif
             bool policy_changed = false;
             if (!keep_previous_on_verify_timeout) {
                 if (result->value != SCORE_UNDEFINED && !main_is_end_search) {
@@ -1823,6 +1938,12 @@ constexpr double AI_TL_GGS_AMBIGUITY_DEFENSIVE_SECOND_GAP = 6.0;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_DEFENSIVE_BASE_BONUS = 3500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS = 8500ULL;
 constexpr double AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS_COE = 0.80;
+constexpr double AI_TL_GGS_AMBIGUITY_DEEP_BAD_BEST_MIN = -18.0;
+constexpr double AI_TL_GGS_AMBIGUITY_DEEP_BAD_BEST_MAX = -10.0;
+constexpr double AI_TL_GGS_AMBIGUITY_DEEP_BAD_SECOND_GAP = 5.0;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_DEEP_BAD_BASE_BONUS = 1800ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_DEEP_BAD_MAX_BONUS = 4800ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_DEEP_BAD_MAX_BONUS_COE = 0.35;
 constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
 constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 2000ULL;
@@ -1911,6 +2032,27 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
             if (show_log) {
                 std::cerr << "ggs ambiguity defensive best " << best_value
+                          << " second_gap " << second_gap
+                          << " bonus " << bonus
+                          << " tl " << time_limit << " -> " << boosted_time_limit << std::endl;
+            }
+            return boosted_time_limit;
+        }
+        if (
+            AI_TL_GGS_AMBIGUITY_DEEP_BAD_BEST_MIN <= best_value &&
+            best_value < AI_TL_GGS_AMBIGUITY_DEEP_BAD_BEST_MAX &&
+            second_gap <= AI_TL_GGS_AMBIGUITY_DEEP_BAD_SECOND_GAP
+        ) {
+            const double gap_ratio = std::max(0.0, std::min(1.0, (AI_TL_GGS_AMBIGUITY_DEEP_BAD_SECOND_GAP - second_gap) / AI_TL_GGS_AMBIGUITY_DEEP_BAD_SECOND_GAP));
+            uint64_t bonus = AI_TL_GGS_AMBIGUITY_DEEP_BAD_BASE_BONUS +
+                             (uint64_t)((double)(AI_TL_GGS_AMBIGUITY_DEEP_BAD_MAX_BONUS - AI_TL_GGS_AMBIGUITY_DEEP_BAD_BASE_BONUS) * gap_ratio);
+            bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_DEEP_BAD_MAX_BONUS);
+            bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_DEEP_BAD_MAX_BONUS_COE));
+            const int n_empties = HW2 - board.n_discs();
+            const double remaining_moves = (double)(n_empties + 1) / 2.0;
+            const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+            if (show_log) {
+                std::cerr << "ggs ambiguity deep-bad best " << best_value
                           << " second_gap " << second_gap
                           << " bonus " << bonus
                           << " tl " << time_limit << " -> " << boosted_time_limit << std::endl;
