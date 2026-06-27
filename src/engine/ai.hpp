@@ -1811,8 +1811,12 @@ constexpr uint64_t AI_TL_GGS_AMBIGUITY_BASE_BONUS = 2500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_BONUS_PER_CLOSE_MOVE = 3600ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_BONUS_PER_SHALLOW_CLOSE_MOVE = 1200ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_TINY_GAP_BONUS = 2500ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_NARROW_GAP_BONUS = 4500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_MAX_BONUS = 28000ULL;
 constexpr double AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE = 1.35;
+constexpr double AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE = 2.5;
+constexpr double AI_TL_GGS_AMBIGUITY_NARROW_SECOND_GAP = 4.5;
+constexpr double AI_TL_GGS_AMBIGUITY_NARROW_GAP_BONUS_COE = 0.55;
 constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
 constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 2000ULL;
@@ -1885,8 +1889,29 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
         }
     }
     if (close_moves < 2) {
+        const double second_gap = best_value - second_value;
+        if (
+            -AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE <= best_value &&
+            best_value <= AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE &&
+            second_gap <= AI_TL_GGS_AMBIGUITY_NARROW_SECOND_GAP
+        ) {
+            uint64_t bonus = std::min<uint64_t>(
+                AI_TL_GGS_AMBIGUITY_NARROW_GAP_BONUS,
+                (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_NARROW_GAP_BONUS_COE)
+            );
+            const int n_empties = HW2 - board.n_discs();
+            const double remaining_moves = (double)(n_empties + 1) / 2.0;
+            const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+            if (show_log) {
+                std::cerr << "ggs ambiguity narrow best " << best_value
+                          << " second_gap " << second_gap
+                          << " bonus " << bonus
+                          << " tl " << time_limit << " -> " << boosted_time_limit << std::endl;
+            }
+            return boosted_time_limit;
+        }
         if (show_log) {
-            std::cerr << "ggs ambiguity quiet best " << best_value << " second_gap " << best_value - second_value << std::endl;
+            std::cerr << "ggs ambiguity quiet best " << best_value << " second_gap " << second_gap << std::endl;
         }
         return time_limit;
     }
