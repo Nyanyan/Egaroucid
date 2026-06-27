@@ -1817,6 +1817,12 @@ constexpr double AI_TL_GGS_AMBIGUITY_MAX_BONUS_COE = 1.35;
 constexpr double AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE = 3.0;
 constexpr double AI_TL_GGS_AMBIGUITY_NARROW_SECOND_GAP = 5.0;
 constexpr double AI_TL_GGS_AMBIGUITY_NARROW_GAP_BONUS_COE = 0.65;
+constexpr double AI_TL_GGS_AMBIGUITY_DEFENSIVE_BEST_MIN = -10.0;
+constexpr double AI_TL_GGS_AMBIGUITY_DEFENSIVE_BEST_MAX = -3.0;
+constexpr double AI_TL_GGS_AMBIGUITY_DEFENSIVE_SECOND_GAP = 6.0;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_DEFENSIVE_BASE_BONUS = 3500ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS = 8500ULL;
+constexpr double AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS_COE = 0.80;
 constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
 constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 2000ULL;
@@ -1890,6 +1896,27 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     }
     if (close_moves < 2) {
         const double second_gap = best_value - second_value;
+        if (
+            AI_TL_GGS_AMBIGUITY_DEFENSIVE_BEST_MIN <= best_value &&
+            best_value <= AI_TL_GGS_AMBIGUITY_DEFENSIVE_BEST_MAX &&
+            second_gap <= AI_TL_GGS_AMBIGUITY_DEFENSIVE_SECOND_GAP
+        ) {
+            const double gap_ratio = std::max(0.0, std::min(1.0, (AI_TL_GGS_AMBIGUITY_DEFENSIVE_SECOND_GAP - second_gap) / AI_TL_GGS_AMBIGUITY_DEFENSIVE_SECOND_GAP));
+            uint64_t bonus = AI_TL_GGS_AMBIGUITY_DEFENSIVE_BASE_BONUS +
+                             (uint64_t)((double)(AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS - AI_TL_GGS_AMBIGUITY_DEFENSIVE_BASE_BONUS) * gap_ratio);
+            bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS);
+            bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS_COE));
+            const int n_empties = HW2 - board.n_discs();
+            const double remaining_moves = (double)(n_empties + 1) / 2.0;
+            const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+            if (show_log) {
+                std::cerr << "ggs ambiguity defensive best " << best_value
+                          << " second_gap " << second_gap
+                          << " bonus " << bonus
+                          << " tl " << time_limit << " -> " << boosted_time_limit << std::endl;
+            }
+            return boosted_time_limit;
+        }
         if (
             -AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE <= best_value &&
             best_value <= AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE &&
