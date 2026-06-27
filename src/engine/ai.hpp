@@ -76,6 +76,12 @@ constexpr uint64_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_TIME_LEFT = 1800ULL;
 constexpr uint64_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MAIN_TIME = 25000ULL;
 constexpr uint64_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_TIME = 6500ULL;
 constexpr double AI_TL_GGS_DEFENSIVE_ALT_VERIFY_TIME_COE = 0.25;
+constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MIN_N_EMPTY = 36;
+constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MAX_N_EMPTY = 43;
+constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MIN_DEPTH = 29;
+constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MIN = -12;
+constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MAX = -6;
+constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MAX_GAIN = 1;
 #endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
@@ -544,8 +550,36 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             Search_result previous_result = *result;
             bool verify_timeout = false;
             bool keep_previous_on_verify_timeout = false;
+            bool skip_policy_change_as_bad_stable = false;
             std::string verify_log;
+#if IS_GGS_TOURNAMENT
             if (
+                !main_is_complete_search &&
+                !main_is_end_search &&
+                AI_TL_GGS_BAD_STABLE_SWITCH_MIN_N_EMPTY <= max_depth &&
+                max_depth <= AI_TL_GGS_BAD_STABLE_SWITCH_MAX_N_EMPTY &&
+                main_depth >= AI_TL_GGS_BAD_STABLE_SWITCH_MIN_DEPTH &&
+                main_mpc_level == MPC_74_LEVEL &&
+                is_valid_policy(previous_result.policy) &&
+                is_valid_policy(id_result.second) &&
+                previous_result.policy != id_result.second &&
+                (use_legal & (1ULL << previous_result.policy)) &&
+                (use_legal & (1ULL << id_result.second)) &&
+                AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MIN <= previous_result.value &&
+                previous_result.value <= AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MAX &&
+                id_result.first <= previous_result.value + AI_TL_GGS_BAD_STABLE_SWITCH_MAX_GAIN
+            ) {
+                std::ostringstream ss;
+                ss << " bad-stable-skip-switch "
+                   << idx_to_coord(previous_result.policy) << "=" << previous_result.value << " "
+                   << idx_to_coord(id_result.second) << "=" << id_result.first;
+                verify_log = ss.str();
+                id_result = std::make_pair(previous_result.value, previous_result.policy);
+                skip_policy_change_as_bad_stable = true;
+            }
+#endif
+            if (
+                !skip_policy_change_as_bad_stable &&
                 !main_is_complete_search &&
                 main_depth >= AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH &&
                 main_mpc_level < MPC_100_LEVEL &&
