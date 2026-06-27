@@ -55,7 +55,7 @@ constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = GGS_TOURNAMENT_POLICY_CHANG
     #endif
 constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = GGS_TOURNAMENT_ENDGAME_INITIAL_MPC_LEVEL;
     #ifndef GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN
-        #define GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN 1
+        #define GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN 0
     #endif
 constexpr int AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN = GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN;
 #else
@@ -65,6 +65,8 @@ constexpr int AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN = 0;
 #endif
 constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
 #if IS_GGS_TOURNAMENT
+constexpr uint64_t AI_TL_GGS_POLICY_CHANGE_VERIFY_MAX_TIME = 9000ULL;
+constexpr double AI_TL_GGS_POLICY_CHANGE_VERIFY_TIME_COE = 0.40;
 constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_DEPTH = 30;
 constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_N_EMPTY = 35;
 constexpr uint_fast8_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MPC_LEVEL = MPC_88_LEVEL;
@@ -561,7 +563,19 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 Search verify_search(&board, verify_mpc_level, use_multi_thread, false);
                 verify_search.thread_id = thread_id;
                 bool verify_searching = true;
+#if IS_GGS_TOURNAMENT
+                uint64_t verify_budget = std::min<uint64_t>(
+                    get_this_search_time_limit(time_limit, tim() - strt),
+                    std::min<uint64_t>(
+                        AI_TL_GGS_POLICY_CHANGE_VERIFY_MAX_TIME,
+                        (uint64_t)((double)time_limit * AI_TL_GGS_POLICY_CHANGE_VERIFY_TIME_COE)
+                    )
+                );
+                uint64_t verify_strt = tim();
+                uint64_t time_limit_verify = get_this_search_time_limit(verify_budget, tim() - verify_strt);
+#else
                 uint64_t time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
+#endif
                 std::future<std::pair<int, int>> previous_verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << previous_policy, strt, &verify_searching);
                 if (previous_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
                     std::pair<int, int> previous_verify_result = previous_verify_f.get();
@@ -575,7 +589,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     verify_timeout = true;
                 }
                 if (!verify_timeout) {
+#if IS_GGS_TOURNAMENT
+                    time_limit_verify = get_this_search_time_limit(verify_budget, tim() - verify_strt);
+#else
                     time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
+#endif
                     std::future<std::pair<int, int>> new_verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << new_policy, strt, &verify_searching);
                     if (new_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
                         std::pair<int, int> new_verify_result = new_verify_f.get();
