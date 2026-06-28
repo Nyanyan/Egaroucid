@@ -2524,6 +2524,10 @@ void ggs_client(Options *options) {
                             }
                         }
                         ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+#if IS_GGS_TOURNAMENT
+                        transposition_table.init();
+                        ggs_print_info("cleared TT at match start", options);
+#endif
                         move_hints = seeded_move_hints;
                         #if IS_GGS_TOURNAMENT
                         ggs_print_info("restored seeded safe opponent hints boards " + std::to_string(move_hints.size()), options);
