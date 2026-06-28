@@ -2448,6 +2448,9 @@ void ggs_client(Options *options) {
     ggs_seed_verified_analysis_hints(&seeded_move_hints, options);
     move_hints = seeded_move_hints;
     bool match_playing = false;
+#if IS_GGS_TOURNAMENT
+    bool ggs_tt_clean = true;
+#endif
     int thread_sizes[2];
     int thread_sizes_before[2];
     for (int i = 0; i < 2; ++i) {
@@ -2525,8 +2528,11 @@ void ggs_client(Options *options) {
                         }
                         ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
 #if IS_GGS_TOURNAMENT
-                        transposition_table.init();
-                        ggs_print_info("cleared TT at match start", options);
+                        if (!ggs_tt_clean) {
+                            transposition_table.init();
+                            ggs_print_info("cleared stale TT at match start", options);
+                        }
+                        ggs_tt_clean = false;
 #endif
                         move_hints = seeded_move_hints;
                         #if IS_GGS_TOURNAMENT
@@ -2666,6 +2672,9 @@ void ggs_client(Options *options) {
                         }
                         if (GGS_CLEAR_TT_ON_MATCH_END) {
                             transposition_table.init();
+#if IS_GGS_TOURNAMENT
+                            ggs_tt_clean = true;
+#endif
                             ggs_print_info("cleared TT after match", options);
                         }
                     }
