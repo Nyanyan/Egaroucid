@@ -30,6 +30,11 @@ constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
 constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
 constexpr double PONDER_UCB_COE = 0.6;
+#if IS_GGS_TOURNAMENT
+constexpr bool PONDER_USE_SELFPLAY = false;
+#else
+constexpr bool PONDER_USE_SELFPLAY = true;
+#endif
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 #if IS_GGS_TOURNAMENT
@@ -2985,7 +2990,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         int level = move_list[selected_idx].level + 1;
         Search_result search_result = ai_searching_thread_id(n_board, level, false, 0, true, false, thread_id, searching);
         double v = -search_result.value;
-        if (move_list[selected_idx].depth >= PONDER_START_SELFPLAY_DEPTH && !move_list[selected_idx].is_endgame_search) { // selfplay
+        if (PONDER_USE_SELFPLAY && move_list[selected_idx].depth >= PONDER_START_SELFPLAY_DEPTH && !move_list[selected_idx].is_endgame_search) { // selfplay
             double max_value = -INF;
             for (int i = 0; i < canput; ++i) {
                 max_value = std::max(max_value, move_list[i].value);
