@@ -2042,16 +2042,16 @@ inline uint64_t ggs_synchro_hint_search_delay_msec(const GGS_Board &ggs_board) {
     const uint64_t remaining_time_msec = ggs_remaining_time_msec_to_move(ggs_board);
 #if IS_GGS_TOURNAMENT
     if (n_discs <= 16 && remaining_time_msec > 150000ULL) {
-        return 12000ULL;
-    }
-    if (n_discs <= 20 && remaining_time_msec > 100000ULL) {
-        return 6000ULL;
-    }
-    if (n_discs <= 24 && remaining_time_msec > 70000ULL) {
         return 2500ULL;
     }
+    if (n_discs <= 20 && remaining_time_msec > 100000ULL) {
+        return 1200ULL;
+    }
+    if (n_discs <= 24 && remaining_time_msec > 70000ULL) {
+        return 700ULL;
+    }
     if (n_discs <= GGS_LIVE_HINT_WAIT_MAX_DISCS && remaining_time_msec > 60000ULL) {
-        return 900ULL;
+        return 350ULL;
     }
 #endif
     if (n_discs <= 20 && remaining_time_msec > 120000ULL) {
