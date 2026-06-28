@@ -74,6 +74,28 @@ I would like to hear your opinion.
 
 
 
+## AI-Assisted Contributions
+
+AI-assisted contributions are welcome in Egaroucid. Please follow this policy when you use AI tools for contribution work.
+
+- You may use AI tools to write code and prepare contributions.
+- Do not submit contributions that were left entirely to AI. The human contributor must understand the change.
+- Review every line of AI-generated code before contributing it.
+- The human who used the AI tool is responsible for the contribution and for all AI-assisted code in it.
+- If a pull request includes code written with AI assistance, disclose the AI usage in the pull request description.
+- For commits that contain AI-generated code, include commit trailers naming the AI tools with `Generated-by:` and/or `Assisted-by:`, and add the human reviewer with `Signed-off-by:`.
+
+```
+Generated-by: Claude
+Assisted-by: GitHub Copilot
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+- AI-generated pull request descriptions are not prohibited, but writing them yourself, or using AI only for translation, is recommended.
+- If you use AI to draft a pull request description, make sure the wording is commonly used and easy to understand. If the meaning is unclear, maintainers may ask follow-up questions or close the pull request without notice.
+
+
+
 ## License
 
 GNU General Public License v3.0 or later
