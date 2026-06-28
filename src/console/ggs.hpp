@@ -47,10 +47,10 @@
 std::atomic_bool ggs_socket_closing(false);
 #if IS_GGS_TOURNAMENT
     #ifndef GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY
-        #define GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY false
+        #define GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY true
     #endif
     #ifndef GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS
-        #define GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS 0
+        #define GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS 30
     #endif
     #ifndef GGS_TOURNAMENT_NON_PRIORITIZED_THREADS
         #define GGS_TOURNAMENT_NON_PRIORITIZED_THREADS 0
@@ -306,9 +306,12 @@ constexpr int GGS_GAME_LOG_WINNER_HINT_WEIGHT = 2;
 constexpr int GGS_LIVE_OPPONENT_HINT_WEIGHT = 3;
 #if IS_GGS_TOURNAMENT
 constexpr size_t GGS_TOURNAMENT_GAME_LOG_HINT_MAX_FILES = 256;
+constexpr int GGS_LIVE_HINT_WAIT_MAX_DISCS = 30;
 constexpr int GGS_SYNCHRO_PAIR_CONTEXT_MAX_DISC_GAP = 12;
 constexpr int GGS_SYNCHRO_PAIR_TIME_BOOST_MAX_DISC = 36;
 constexpr uint64_t GGS_SYNCHRO_PAIR_TIME_BOOST_MIN_RAW_REMAINING = 45000ULL;
+#else
+constexpr int GGS_LIVE_HINT_WAIT_MAX_DISCS = 28;
 #endif
 
 inline std::string ggs_move_hint_key(const Board &board) {
@@ -397,6 +400,18 @@ inline bool ggs_should_override_with_hint(const Board &board, int policy, int hi
         return true;
     }
 #if IS_GGS_TOURNAMENT
+    const bool live_opponent_hint = hint_count >= GGS_LIVE_OPPONENT_HINT_WEIGHT;
+    if (live_opponent_hint) {
+        if (n_discs <= 24 && (search_result.value <= 8 || search_result.depth < 34 || search_result.probability < 93)) {
+            return true;
+        }
+        if (n_discs <= 30 && (search_result.value <= 2 || search_result.depth < 32 || search_result.probability < 88)) {
+            return true;
+        }
+        if (n_discs <= 32 && (search_result.value <= -2 || search_result.depth < 30)) {
+            return true;
+        }
+    }
     if (n_discs <= 22 && (search_result.value <= -2 || search_result.depth < 29 || search_result.probability < 88)) {
         return true;
     }
@@ -1871,6 +1886,16 @@ inline uint64_t ggs_remaining_time_msec_to_move(const GGS_Board &ggs_board) {
     return (ggs_board.player_to_move == BLACK ? ggs_board.remaining_seconds_black : ggs_board.remaining_seconds_white) * 1000ULL;
 }
 
+inline void ggs_subtract_elapsed_from_remaining_time_to_move(GGS_Board *ggs_board, uint64_t elapsed_msec) {
+    uint64_t *remaining_seconds = ggs_board->player_to_move == BLACK ? &ggs_board->remaining_seconds_black : &ggs_board->remaining_seconds_white;
+    const uint64_t elapsed_seconds = (elapsed_msec + 999ULL) / 1000ULL;
+    if (*remaining_seconds > elapsed_seconds) {
+        *remaining_seconds -= elapsed_seconds;
+    } else {
+        *remaining_seconds = 0ULL;
+    }
+}
+
 inline uint64_t ggs_synchro_hint_wait_msec(const GGS_Board &ggs_board) {
     const int n_discs = ggs_board.board.n_discs();
     const uint64_t remaining_time_msec = ggs_remaining_time_msec_to_move(ggs_board);
@@ -1932,7 +1957,7 @@ bool ggs_should_wait_for_synchro_hint(
         return false;
     }
     const int n_discs = ggs_board.board.n_discs();
-    if (n_discs > 28 || ggs_remaining_time_msec_to_move(ggs_board) < 45000ULL) {
+    if (n_discs > GGS_LIVE_HINT_WAIT_MAX_DISCS || ggs_remaining_time_msec_to_move(ggs_board) < 45000ULL) {
         return false;
     }
 #if IS_GGS_TOURNAMENT
@@ -1942,6 +1967,9 @@ bool ggs_should_wait_for_synchro_hint(
         ggs_same_position_waiting_for_opponent(ggs_board, ggs_boards, options)
     ) {
         return true;
+    }
+    if (n_discs <= GGS_LIVE_HINT_WAIT_MAX_DISCS && search_result.value <= 4) {
+        return ggs_same_position_waiting_for_opponent(ggs_board, ggs_boards, options);
     }
     if (search_result.value > -8 || search_result.depth >= 27) {
         return false;
@@ -1958,10 +1986,24 @@ bool ggs_should_wait_for_synchro_hint(
 inline uint64_t ggs_synchro_hint_search_delay_msec(const GGS_Board &ggs_board) {
     const int n_discs = ggs_board.board.n_discs();
     const uint64_t remaining_time_msec = ggs_remaining_time_msec_to_move(ggs_board);
+#if IS_GGS_TOURNAMENT
+    if (n_discs <= 16 && remaining_time_msec > 150000ULL) {
+        return 12000ULL;
+    }
+    if (n_discs <= 20 && remaining_time_msec > 100000ULL) {
+        return 6000ULL;
+    }
+    if (n_discs <= 24 && remaining_time_msec > 70000ULL) {
+        return 2500ULL;
+    }
+    if (n_discs <= GGS_LIVE_HINT_WAIT_MAX_DISCS && remaining_time_msec > 60000ULL) {
+        return 900ULL;
+    }
+#endif
     if (n_discs <= 20 && remaining_time_msec > 120000ULL) {
         return 1200ULL;
     }
-    if (n_discs <= 28 && remaining_time_msec > 80000ULL) {
+    if (n_discs <= GGS_LIVE_HINT_WAIT_MAX_DISCS && remaining_time_msec > 80000ULL) {
         return 700ULL;
     }
     return 350ULL;
@@ -1986,10 +2028,14 @@ bool ggs_should_delay_search_for_synchro_hint(
         return false;
     }
     const int n_discs = ggs_board.board.n_discs();
-    if (n_discs > 28 || ggs_remaining_time_msec_to_move(ggs_board) < 50000ULL) {
+    if (n_discs > GGS_LIVE_HINT_WAIT_MAX_DISCS || ggs_remaining_time_msec_to_move(ggs_board) < 50000ULL) {
         return false;
     }
+#if IS_GGS_TOURNAMENT
+    return ggs_same_position_waiting_for_opponent(ggs_board, ggs_boards, options);
+#else
     return ggs_synchro_partner_may_provide_hint(ggs_board, ggs_boards, ggs_boards_n_discs, options);
+#endif
 }
 
 void ggs_store_pending_move(GGS_Pending_Move *pending_move, const GGS_Board &ggs_board, const Search_result &search_result) {
@@ -2122,11 +2168,13 @@ bool ggs_try_launch_pending_search(
         " " + pending_search->board.board.to_str(),
         options
     );
+    GGS_Board search_board = pending_search->board;
+    ggs_subtract_elapsed_from_remaining_time_to_move(&search_board, tim() - pending_search->ready_time);
     ggs_launch_ai_search(
         ai_futures,
         ai_searchings,
         ggs_boards_searching,
-        pending_search->board,
+        search_board,
         pending_search->search_slot,
         pending_search->thread_id,
         move_hints,
