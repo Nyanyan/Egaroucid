@@ -84,6 +84,17 @@ constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MIN_DEPTH = 29;
 constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MIN = -12;
 constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MAX = -6;
 constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MAX_GAIN = 1;
+constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MIN_N_EMPTY = 29;
+constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MAX_N_EMPTY = 48;
+constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MIN_DEPTH = 30;
+constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_VALUE_MIN = -4;
+constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_VALUE_MAX = 4;
+constexpr uint_fast8_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_MPC_LEVEL = MPC_88_LEVEL;
+constexpr uint_fast8_t AI_TL_GGS_NARROW_ALT_VERIFY_SEARCH_MPC_LEVEL = MPC_88_LEVEL;
+constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_MAIN_TIME = 8000ULL;
+constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT = 2200ULL;
+constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MAX_TIME = 5200ULL;
+constexpr double AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE = 0.28;
 #endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
@@ -165,6 +176,33 @@ inline bool ai_tl_ggs_is_defensive_alt_verify_candidate(
         time_limit >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MAIN_TIME &&
         AI_TL_GGS_DEFENSIVE_ALT_VERIFY_VALUE_MIN <= value &&
         value <= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_VALUE_MAX &&
+        is_valid_policy(policy) &&
+        (legal & (1ULL << policy)) &&
+        (legal & ~(1ULL << policy));
+}
+
+inline bool ai_tl_ggs_is_narrow_alt_verify_candidate(
+    int max_depth,
+    int main_depth,
+    uint_fast8_t main_mpc_level,
+    bool main_is_complete_search,
+    uint64_t time_limit,
+    bool narrow_alt_verify_done,
+    int value,
+    int policy,
+    uint64_t legal
+) {
+    return
+        !narrow_alt_verify_done &&
+        !main_is_complete_search &&
+        AI_TL_GGS_NARROW_ALT_VERIFY_MIN_N_EMPTY <= max_depth &&
+        max_depth <= AI_TL_GGS_NARROW_ALT_VERIFY_MAX_N_EMPTY &&
+        main_depth >= AI_TL_GGS_NARROW_ALT_VERIFY_MIN_DEPTH &&
+        main_mpc_level >= AI_TL_GGS_NARROW_ALT_VERIFY_MIN_MPC_LEVEL &&
+        main_mpc_level < MPC_100_LEVEL &&
+        time_limit >= AI_TL_GGS_NARROW_ALT_VERIFY_MIN_MAIN_TIME &&
+        AI_TL_GGS_NARROW_ALT_VERIFY_VALUE_MIN <= value &&
+        value <= AI_TL_GGS_NARROW_ALT_VERIFY_VALUE_MAX &&
         is_valid_policy(policy) &&
         (legal & (1ULL << policy)) &&
         (legal & ~(1ULL << policy));
@@ -539,6 +577,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     bool policy_changed_before = true;
 #if IS_GGS_TOURNAMENT
     bool defensive_alt_verify_done = false;
+    bool narrow_alt_verify_done = false;
 #endif
     while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
         bool main_is_end_search = false;
@@ -840,6 +879,108 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         verify_log += ss.str();
                     }
                     result->nodes += defensive_verify_search.n_nodes;
+                    result->time = tim() - strt;
+                    result->nps = calc_nps(result->nodes, result->time);
+                }
+            }
+#endif
+#if IS_GGS_TOURNAMENT
+            if (
+                !verify_timeout &&
+                !keep_previous_on_verify_timeout &&
+                ai_tl_ggs_is_narrow_alt_verify_candidate(
+                    max_depth,
+                    main_depth,
+                    (uint_fast8_t)main_mpc_level,
+                    main_is_complete_search,
+                    time_limit,
+                    narrow_alt_verify_done,
+                    id_result.first,
+                    id_result.second,
+                    fallback_legal
+                )
+            ) {
+                const uint64_t alternative_legal = fallback_legal & ~(1ULL << id_result.second);
+                const uint64_t time_left_for_verify = get_this_search_time_limit(time_limit, tim() - strt);
+                if (alternative_legal != 0ULL && time_left_for_verify >= AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT) {
+                    uint64_t narrow_verify_budget = std::min<uint64_t>(
+                        time_left_for_verify,
+                        std::min<uint64_t>(
+                            AI_TL_GGS_NARROW_ALT_VERIFY_MAX_TIME,
+                            (uint64_t)((double)time_limit * AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE)
+                        )
+                    );
+                    narrow_verify_budget = std::max<uint64_t>(narrow_verify_budget, AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT);
+                    narrow_alt_verify_done = true;
+                    const int current_policy = id_result.second;
+                    const uint_fast8_t verify_mpc_level = std::max<uint_fast8_t>(
+                        main_mpc_level,
+                        AI_TL_GGS_NARROW_ALT_VERIFY_SEARCH_MPC_LEVEL
+                    );
+                    uint64_t narrow_verify_strt = tim();
+                    int current_value = id_result.first;
+                    int alternative_value = SCORE_UNDEFINED;
+                    int alternative_policy = MOVE_NOMOVE;
+                    bool narrow_verify_timeout = false;
+                    Search narrow_verify_search(&board, verify_mpc_level, use_multi_thread, false);
+                    narrow_verify_search.thread_id = thread_id;
+                    bool narrow_verify_searching = true;
+                    uint64_t time_limit_narrow_verify = get_this_search_time_limit(narrow_verify_budget, tim() - narrow_verify_strt);
+                    std::future<std::pair<int, int>> alternative_verify_f = std::async(std::launch::async, first_nega_scout_legal, &narrow_verify_search, alpha, beta, main_depth, main_is_end_search, clogs, alternative_legal, strt, &narrow_verify_searching);
+                    if (alternative_verify_f.wait_for(std::chrono::milliseconds(time_limit_narrow_verify)) == std::future_status::ready) {
+                        std::pair<int, int> alternative_verify_result = alternative_verify_f.get();
+                        alternative_value = alternative_verify_result.first;
+                        alternative_policy = alternative_verify_result.second;
+                    } else {
+                        narrow_verify_searching = false;
+                        try {
+                            std::pair<int, int> discarded_result = alternative_verify_f.get();
+                            (void)discarded_result;
+                        } catch (const std::exception &e) {
+                        }
+                        narrow_verify_timeout = true;
+                    }
+                    if (
+                        !narrow_verify_timeout &&
+                        is_valid_policy(alternative_policy) &&
+                        alternative_value > id_result.first
+                    ) {
+                        time_limit_narrow_verify = get_this_search_time_limit(narrow_verify_budget, tim() - narrow_verify_strt);
+                        std::future<std::pair<int, int>> current_verify_f = std::async(std::launch::async, first_nega_scout_legal, &narrow_verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << current_policy, strt, &narrow_verify_searching);
+                        if (current_verify_f.wait_for(std::chrono::milliseconds(time_limit_narrow_verify)) == std::future_status::ready) {
+                            std::pair<int, int> current_verify_result = current_verify_f.get();
+                            current_value = current_verify_result.first;
+                        } else {
+                            narrow_verify_searching = false;
+                            try {
+                                std::pair<int, int> discarded_result = current_verify_f.get();
+                                (void)discarded_result;
+                            } catch (const std::exception &e) {
+                            }
+                            narrow_verify_timeout = true;
+                        }
+                    }
+                    if (narrow_verify_timeout) {
+                        if (show_log) {
+                            std::ostringstream ss;
+                            ss << " narrow-alt@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% terminated";
+                            verify_log += ss.str();
+                        }
+                    } else {
+                        std::ostringstream ss;
+                        ss << " narrow-alt@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% "
+                           << idx_to_coord(current_policy) << "=" << current_value << " "
+                           << idx_to_coord(alternative_policy) << "=" << alternative_value;
+                        if (is_valid_policy(alternative_policy) && alternative_value > current_value) {
+                            id_result = std::make_pair(alternative_value, alternative_policy);
+                            ss << "->" << idx_to_coord(alternative_policy);
+                        } else {
+                            id_result = std::make_pair(current_value, current_policy);
+                            ss << "->" << idx_to_coord(current_policy);
+                        }
+                        verify_log += ss.str();
+                    }
+                    result->nodes += narrow_verify_search.n_nodes;
                     result->time = tim() - strt;
                     result->nps = calc_nps(result->nodes, result->time);
                 }
@@ -2059,8 +2200,9 @@ constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
 constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 2000ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE = 1900ULL;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BONUS = 3500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS = 11500ULL;
-constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 0.75;
+constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 1.00;
 
 inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
@@ -2198,6 +2340,14 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     if (reliable_close_moves < 2) {
         uint64_t bonus = AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS +
                          AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE * (uint64_t)(close_moves - 1);
+        const double second_gap = best_value - second_value;
+        if (
+            -AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE <= best_value &&
+            best_value <= AI_TL_GGS_AMBIGUITY_NARROW_BEST_ABS_VALUE &&
+            second_gap <= AI_TL_ADDITIONAL_SEARCH_THRESHOLD
+        ) {
+            bonus += AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BONUS;
+        }
         bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS);
         bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE));
 
@@ -2208,7 +2358,7 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             std::cerr << "ggs ambiguity unreliable close_moves " << close_moves << "/" << valid_moves
                       << " reliable " << reliable_close_moves
                       << " best_depth " << best_depth
-                      << " second_gap " << best_value - second_value
+                      << " second_gap " << second_gap
                       << " bonus " << bonus
                       << " tl " << time_limit << " -> " << boosted_time_limit
                       << " moves" << close_move_str.str() << std::endl;
