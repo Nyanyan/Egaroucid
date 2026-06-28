@@ -2321,6 +2321,7 @@ void ggs_client(Options *options) {
     GGS_Board ggs_boards[2][HW2 + 1];
     int ggs_boards_n_discs[2] = {0, 0};
     GGS_Move_Hint_Table move_hints;
+    GGS_Move_Hint_Table seeded_move_hints;
     GGS_Ponder_Result_Table ponder_results;
     auto stop_calculations = [&]() {
         global_searching = false;
@@ -2337,7 +2338,8 @@ void ggs_client(Options *options) {
             }
         }
     };
-    ggs_seed_move_hints_from_game_logs(&move_hints, options);
+    ggs_seed_move_hints_from_game_logs(&seeded_move_hints, options);
+    move_hints = seeded_move_hints;
     bool match_playing = false;
     int thread_sizes[2];
     int thread_sizes_before[2];
@@ -2415,7 +2417,12 @@ void ggs_client(Options *options) {
                             }
                         }
                         ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
-                        move_hints.clear();
+                        move_hints = seeded_move_hints;
+                        #if IS_GGS_TOURNAMENT
+                        ggs_print_info("restored seeded safe opponent hints boards " + std::to_string(move_hints.size()), options);
+                        #else
+                        ggs_print_debug("restored seeded synchro hints boards " + std::to_string(move_hints.size()), options);
+                        #endif
                         for (int i = 0; i < 2; ++i) {
                             matches[i].init();
                         }
