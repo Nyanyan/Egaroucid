@@ -3,6 +3,11 @@
 You can use Egaroucid's search engine as a standalone library independent from GUI / Console.  
 This API is experimental and may change in future versions.
 
+## AI Usage Notice
+
+The Egaroucid library interface was created with assistance from the AI agent Codex.  
+The Japanese and English versions of this library page were drafted by AI and edited by Nyanyan.
+
 ## Introduction
 The Egaroucid library provides the following features:
 
