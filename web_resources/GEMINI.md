@@ -18,7 +18,12 @@
 対応するファイルが`en`フォルダに存在しない場合は、`ja`フォルダのファイルを全文翻訳し、`en`フォルダ内の対応するパスに新規ファイルとして保存します。
 
 ### 注意事項
-Gemini CLIが完全に英訳した記事には、Gemini CLIが翻訳したことが分かるように、**必ず「This page was machine translated by Gemini CLI from the Japanese version. Please refer to the Japanese version for the official content.」**と記してください。
+Gemini CLIが完全に英訳した記事には、Gemini CLIが翻訳したことが分かるように、必ず次の注意書きを記してください。
+
+```text
+This page was machine translated by Gemini CLI from the Japanese version. Please refer to the Japanese version for the official content.
+```
+
 - この注意書きは太字で書いてください。
 - この注意書きは各記事のタイトル(h1タグ、`#`1つで始まる行)の直後に書いてください。
 - 「日本語版」という文字のところに日本語版へのリンク(URLのうち、"en"を"ja"に変更したもの)を貼ってください。ただし、リンクのうちindex.mdの部分は必要ありません。
