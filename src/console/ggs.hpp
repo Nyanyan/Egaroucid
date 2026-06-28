@@ -2370,6 +2370,10 @@ void ggs_client(Options *options) {
     
     // connect to GGS server
     ggs_print_info("GGS client start user " + options->ggs_username + " host " + std::string(GGS_URL) + ":" + std::to_string(GGS_PORT), options);
+#if IS_GGS_TOURNAMENT
+    transposition_table_auto_reset_importance = false;
+    ggs_print_info("disabled TT auto importance reset for GGS tournament", options);
+#endif
     if (ggs_connect(wsaData, server, sock, options) != 0) {
         std::cout << "[ERROR] [FATAL] Failed to Connect" << std::endl;
         return;
