@@ -1,6 +1,6 @@
 # Othello AI Egaroucid
 
-**This page is a machine translation of the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/). Please refer to the Japanese version for the official content.**
+**This page was machine translated by Gemini CLI from the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/). Please refer to the Japanese version for the official content.**
 
 <div style="text-align:center">Othello Application with one of the strongest AI in the world</div>
 

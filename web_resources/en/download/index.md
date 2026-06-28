@@ -1,6 +1,6 @@
 # Egaroucid Download
 
-**This page is a machine translation of the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/download/) for official content. Please refer to the Japanese version for the official content.**
+**This page was machine translated by Gemini CLI from the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/download/). Please refer to the Japanese version for the official content.**
 
 There are Install version and Portable version. With Install version, you should just download the installer and execute it to install. Installer automatically selects the optimal revision for your environment. With Portable version, you should download a zip file and unzip it.
 

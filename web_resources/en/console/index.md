@@ -1,6 +1,6 @@
 # Egaroucid for Console
 
-**This page is a machine translation of the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/console/) for official content. Please refer to the Japanese version for the official content.**
+**This page was machine translated by Gemini CLI from the [Japanese version](https://www.egaroucid.nyanyan.dev/ja/console/). Please refer to the Japanese version for the official content.**
 
 Operations differ depending on your OS. This software is for Windows, Linux and MacOS.
 
