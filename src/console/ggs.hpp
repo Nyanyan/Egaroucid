@@ -61,17 +61,22 @@ std::atomic_bool ggs_socket_closing(false);
     #ifndef GGS_TOURNAMENT_TERMINATE_ALL_PONDERS_MAX_DISCS
         #define GGS_TOURNAMENT_TERMINATE_ALL_PONDERS_MAX_DISCS 36
     #endif
+    #ifndef GGS_TOURNAMENT_CLEAR_TT_ON_MATCH_END
+        #define GGS_TOURNAMENT_CLEAR_TT_ON_MATCH_END true
+    #endif
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = GGS_TOURNAMENT_ENABLE_SYNCHRO_HINT_SEARCH_DELAY;
 constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = GGS_TOURNAMENT_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS;
 constexpr int GGS_NON_PRIORITIZED_THREADS = GGS_TOURNAMENT_NON_PRIORITIZED_THREADS;
 constexpr int GGS_NON_PRIORITIZED_MIN_FULL_THREADS = GGS_TOURNAMENT_NON_PRIORITIZED_MIN_FULL_THREADS;
 constexpr int GGS_TERMINATE_ALL_PONDERS_MAX_DISCS = GGS_TOURNAMENT_TERMINATE_ALL_PONDERS_MAX_DISCS;
+constexpr bool GGS_CLEAR_TT_ON_MATCH_END = GGS_TOURNAMENT_CLEAR_TT_ON_MATCH_END;
 #else
 constexpr bool GGS_ENABLE_SYNCHRO_HINT_SEARCH_DELAY = true;
 constexpr int GGS_EARLY_SYNCHRO_HINT_MOVE_WAIT_MAX_DISCS = 0;
 constexpr int GGS_NON_PRIORITIZED_THREADS = 1;
 constexpr int GGS_NON_PRIORITIZED_MIN_FULL_THREADS = 12;
 constexpr int GGS_TERMINATE_ALL_PONDERS_MAX_DISCS = 0;
+constexpr bool GGS_CLEAR_TT_ON_MATCH_END = true;
 #endif
 
 struct GGS_Clock_Params {
@@ -2601,10 +2606,10 @@ void ggs_client(Options *options) {
                                 }
                             }
                         }
-#if !IS_GGS_TOURNAMENT
-                        transposition_table.init();
-                        ggs_print_info("clearned TT up", options);
-#endif
+                        if (GGS_CLEAR_TT_ON_MATCH_END) {
+                            transposition_table.init();
+                            ggs_print_info("cleared TT after match", options);
+                        }
                     }
                 }
             }
