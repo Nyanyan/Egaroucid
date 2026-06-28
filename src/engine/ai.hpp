@@ -67,7 +67,9 @@ constexpr uint_fast8_t AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL = MPC_93_LEVEL;
 #if IS_GGS_TOURNAMENT
 constexpr uint64_t AI_TL_GGS_POLICY_CHANGE_VERIFY_MAX_TIME = 9000ULL;
 constexpr double AI_TL_GGS_POLICY_CHANGE_VERIFY_TIME_COE = 0.40;
-constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_DEPTH = 30;
+constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_EARLY_MAX_N_EMPTY = 48;
+constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_EARLY_MIN_DEPTH = 30;
+constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_DEPTH = 32;
 constexpr int AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_N_EMPTY = 48;
 constexpr uint_fast8_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MPC_LEVEL = MPC_74_LEVEL;
 constexpr uint_fast8_t AI_TL_GGS_DEFENSIVE_ALT_VERIFY_SEARCH_MPC_LEVEL = MPC_88_LEVEL;
@@ -84,6 +86,12 @@ constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MIN_DEPTH = 29;
 constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MIN = -12;
 constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_VALUE_MAX = -6;
 constexpr int AI_TL_GGS_BAD_STABLE_SWITCH_MAX_GAIN = 1;
+constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_N_EMPTY = 29;
+constexpr int AI_TL_GGS_HIGH_CONF_STICK_MAX_N_EMPTY = 48;
+constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_DEPTH = 25;
+constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_PREV_PROBABILITY = 88;
+constexpr int AI_TL_GGS_HIGH_CONF_STICK_VALUE_MIN = 0;
+constexpr int AI_TL_GGS_HIGH_CONF_STICK_MAX_GAIN = 2;
 constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MIN_N_EMPTY = 29;
 constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MAX_N_EMPTY = 48;
 constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MIN_DEPTH = 30;
@@ -95,6 +103,8 @@ constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_MAIN_TIME = 8000ULL;
 constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT = 2200ULL;
 constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MAX_TIME = 5200ULL;
 constexpr double AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE = 0.28;
+constexpr int AI_TL_GGS_ALT_VERIFY_RETRY_DEPTH_GAP = 3;
+constexpr int AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN = 1;
 #endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
@@ -165,12 +175,16 @@ inline bool ai_tl_ggs_is_defensive_alt_verify_candidate(
     int policy,
     uint64_t legal
 ) {
+    const int min_depth =
+        max_depth >= 44 && max_depth <= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_EARLY_MAX_N_EMPTY ?
+            AI_TL_GGS_DEFENSIVE_ALT_VERIFY_EARLY_MIN_DEPTH :
+            AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_DEPTH;
     return
         !defensive_alt_verify_done &&
         !main_is_complete_search &&
         !main_is_end_search &&
         max_depth <= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_N_EMPTY &&
-        main_depth >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_DEPTH &&
+        main_depth >= min_depth &&
         main_mpc_level >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MPC_LEVEL &&
         main_mpc_level < MPC_100_LEVEL &&
         time_limit >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_MAIN_TIME &&
@@ -206,6 +220,10 @@ inline bool ai_tl_ggs_is_narrow_alt_verify_candidate(
         is_valid_policy(policy) &&
         (legal & (1ULL << policy)) &&
         (legal & ~(1ULL << policy));
+}
+
+inline bool ai_tl_ggs_can_retry_alt_verify(int last_verify_depth, int main_depth) {
+    return last_verify_depth < 0 || main_depth >= last_verify_depth + AI_TL_GGS_ALT_VERIFY_RETRY_DEPTH_GAP;
 }
 #endif
 
@@ -576,8 +594,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     int before_raw_value = -100;
     bool policy_changed_before = true;
 #if IS_GGS_TOURNAMENT
-    bool defensive_alt_verify_done = false;
-    bool narrow_alt_verify_done = false;
+    int defensive_alt_verify_depth = -1;
+    int narrow_alt_verify_depth = -1;
 #endif
     while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
         bool main_is_end_search = false;
@@ -610,7 +628,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 main_is_complete_search,
                 main_is_end_search,
                 time_limit,
-                defensive_alt_verify_done,
+                !ai_tl_ggs_can_retry_alt_verify(defensive_alt_verify_depth, main_depth),
                 result->value,
                 result->policy,
                 fallback_legal
@@ -671,6 +689,35 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 ss << " bad-stable-skip-switch "
                    << idx_to_coord(previous_result.policy) << "=" << previous_result.value << " "
                    << idx_to_coord(id_result.second) << "=" << id_result.first;
+                verify_log = ss.str();
+                id_result = std::make_pair(previous_result.value, previous_result.policy);
+                skip_policy_change_as_bad_stable = true;
+            }
+            if (
+                !skip_policy_change_as_bad_stable &&
+                !main_is_complete_search &&
+                !main_is_end_search &&
+                AI_TL_GGS_HIGH_CONF_STICK_MIN_N_EMPTY <= max_depth &&
+                max_depth <= AI_TL_GGS_HIGH_CONF_STICK_MAX_N_EMPTY &&
+                main_depth >= AI_TL_GGS_HIGH_CONF_STICK_MIN_DEPTH &&
+                main_mpc_level == MPC_74_LEVEL &&
+                previous_result.probability >= AI_TL_GGS_HIGH_CONF_STICK_MIN_PREV_PROBABILITY &&
+                previous_result.depth + 1 >= main_depth &&
+                is_valid_policy(previous_result.policy) &&
+                is_valid_policy(id_result.second) &&
+                previous_result.policy != id_result.second &&
+                (use_legal & (1ULL << previous_result.policy)) &&
+                (use_legal & (1ULL << id_result.second)) &&
+                AI_TL_GGS_HIGH_CONF_STICK_VALUE_MIN <= previous_result.value &&
+                previous_result.value != SCORE_UNDEFINED &&
+                id_result.first <= previous_result.value + AI_TL_GGS_HIGH_CONF_STICK_MAX_GAIN
+            ) {
+                std::ostringstream ss;
+                ss << " high-conf-stick "
+                   << idx_to_coord(previous_result.policy) << "=" << previous_result.value
+                   << "@" << previous_result.depth << "/" << previous_result.probability << "% "
+                   << idx_to_coord(id_result.second) << "=" << id_result.first
+                   << "@" << main_depth << "/" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%";
                 verify_log = ss.str();
                 id_result = std::make_pair(previous_result.value, previous_result.policy);
                 skip_policy_change_as_bad_stable = true;
@@ -761,11 +808,13 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             if (verify_timeout) {
 #if IS_GGS_TOURNAMENT
+                const int verify_timeout_keep_margin =
+                    previous_result.value >= 0 ? AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN : AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN;
                 if (
                     is_valid_policy(previous_result.policy) &&
                     (use_legal & (1ULL << previous_result.policy)) &&
                     previous_result.value != SCORE_UNDEFINED &&
-                    id_result.first <= previous_result.value + AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN
+                    id_result.first <= previous_result.value + verify_timeout_keep_margin
                 ) {
                     const uint64_t accumulated_nodes = result->nodes;
                     const uint64_t elapsed = tim() - strt;
@@ -794,7 +843,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     main_is_complete_search,
                     main_is_end_search,
                     time_limit,
-                    defensive_alt_verify_done,
+                    !ai_tl_ggs_can_retry_alt_verify(defensive_alt_verify_depth, main_depth),
                     id_result.first,
                     id_result.second,
                     fallback_legal
@@ -811,12 +860,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         )
                     );
                     defensive_verify_budget = std::max<uint64_t>(defensive_verify_budget, AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_TIME_LEFT);
-                    defensive_alt_verify_done = true;
                     const int current_policy = id_result.second;
                     const uint_fast8_t verify_mpc_level = std::max<uint_fast8_t>(
                         main_mpc_level,
                         AI_TL_GGS_DEFENSIVE_ALT_VERIFY_SEARCH_MPC_LEVEL
                     );
+                    defensive_alt_verify_depth = main_depth;
                     uint64_t defensive_verify_strt = tim();
                     int current_value = id_result.first;
                     int alternative_value = SCORE_UNDEFINED;
@@ -894,7 +943,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     (uint_fast8_t)main_mpc_level,
                     main_is_complete_search,
                     time_limit,
-                    narrow_alt_verify_done,
+                    !ai_tl_ggs_can_retry_alt_verify(narrow_alt_verify_depth, main_depth),
                     id_result.first,
                     id_result.second,
                     fallback_legal
@@ -911,12 +960,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         )
                     );
                     narrow_verify_budget = std::max<uint64_t>(narrow_verify_budget, AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT);
-                    narrow_alt_verify_done = true;
                     const int current_policy = id_result.second;
                     const uint_fast8_t verify_mpc_level = std::max<uint_fast8_t>(
                         main_mpc_level,
                         AI_TL_GGS_NARROW_ALT_VERIFY_SEARCH_MPC_LEVEL
                     );
+                    narrow_alt_verify_depth = main_depth;
                     uint64_t narrow_verify_strt = tim();
                     int current_value = id_result.first;
                     int alternative_value = SCORE_UNDEFINED;
