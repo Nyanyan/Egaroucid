@@ -309,6 +309,7 @@ using GGS_Ponder_Result_Table = std::unordered_map<std::string, Search_result>;
 
 constexpr int GGS_GAME_LOG_WINNER_HINT_WEIGHT = 2;
 constexpr int GGS_LIVE_OPPONENT_HINT_WEIGHT = 3;
+constexpr int GGS_VERIFIED_ANALYSIS_HINT_WEIGHT = 9;
 #if IS_GGS_TOURNAMENT
 constexpr size_t GGS_TOURNAMENT_GAME_LOG_HINT_MAX_FILES = 256;
 constexpr int GGS_LIVE_HINT_WAIT_MAX_DISCS = 30;
@@ -405,6 +406,15 @@ inline bool ggs_should_override_with_hint(const Board &board, int policy, int hi
         return true;
     }
 #if IS_GGS_TOURNAMENT
+    const bool verified_analysis_hint = hint_count >= GGS_VERIFIED_ANALYSIS_HINT_WEIGHT;
+    if (
+        verified_analysis_hint &&
+        n_discs <= 36 &&
+        search_result.value <= -8 &&
+        (!search_result.is_end_search || search_result.probability < 100)
+    ) {
+        return true;
+    }
     const bool live_opponent_hint = hint_count >= GGS_LIVE_OPPONENT_HINT_WEIGHT;
     if (live_opponent_hint) {
         if (n_discs <= 24 && (search_result.value <= 8 || search_result.depth < 34 || search_result.probability < 93)) {
@@ -683,6 +693,45 @@ void ggs_record_move_hint(GGS_Move_Hint_Table *move_hints, const Board &board, i
     if (move_hints->size() > 65536) {
         move_hints->clear();
     }
+}
+
+int ggs_seed_verified_analysis_hints(GGS_Move_Hint_Table *move_hints, Options *options) {
+#if IS_GGS_TOURNAMENT
+    struct Verified_Analysis_Hint {
+        const char *board;
+        const char *move;
+    };
+    constexpr Verified_Analysis_Hint hints[] = {
+        {
+            "------------O---OXXOOOX-OOOOOXO-OOOXXOO-OOXXOO--O-XXX-----O----- X",
+            "b7"
+        }
+    };
+
+    int n_registered = 0;
+    for (const Verified_Analysis_Hint &hint: hints) {
+        std::pair<Board, int> board_player = convert_board_from_str(hint.board);
+        if (board_player.second == -1) {
+            continue;
+        }
+        Board board = board_player.first;
+        const int policy = get_coord_from_chars(hint.move[0], hint.move[1]);
+        const int before_count = ggs_get_move_hint_count(*move_hints, board);
+        ggs_record_move_hint(move_hints, board, policy, GGS_VERIFIED_ANALYSIS_HINT_WEIGHT);
+        const int after_count = ggs_get_move_hint_count(*move_hints, board);
+        if (after_count > before_count) {
+            n_registered += after_count - before_count;
+        }
+    }
+    if (n_registered > 0 && options->show_log) {
+        ggs_print_info("seeded verified analysis hints moves " + std::to_string(n_registered) + " boards " + std::to_string(move_hints->size()), options);
+    }
+    return n_registered;
+#else
+    (void)move_hints;
+    (void)options;
+    return 0;
+#endif
 }
 
 void ggs_record_opponent_move_hint(
@@ -2392,6 +2441,7 @@ void ggs_client(Options *options) {
         }
     };
     ggs_seed_move_hints_from_game_logs(&seeded_move_hints, options);
+    ggs_seed_verified_analysis_hints(&seeded_move_hints, options);
     move_hints = seeded_move_hints;
     bool match_playing = false;
     int thread_sizes[2];
