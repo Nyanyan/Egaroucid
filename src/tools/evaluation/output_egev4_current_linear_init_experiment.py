@@ -184,6 +184,11 @@ def main():
         default=[],
         help="optional *_fm.txt directory whose phases override the current-linear baseline in the output EGEV4"
     )
+    parser.add_argument(
+        "--override-phases",
+        default="",
+        help="optional comma-separated phases or ranges allowed to override; empty means every phase found"
+    )
     args = parser.parse_args()
 
     if args.dim <= 0:
@@ -229,6 +234,9 @@ def main():
         phase_payloads = [None for _ in range(N_PHASES)]
         override_dirs = [Path(input_dir) for input_dir in args.override_input_dirs]
         phase_files = collect_override_files(override_dirs)
+        override_phases = set(parse_phase_list(args.override_phases)) if args.override_phases else None
+        if override_phases is not None:
+            phase_files = {phase: path for phase, path in phase_files.items() if phase in override_phases}
         override_summaries = []
         for phase, path in sorted(phase_files.items()):
             payload, ls, vs, nz_l, nz_v = make_text_override_payload(path, args.dim)
