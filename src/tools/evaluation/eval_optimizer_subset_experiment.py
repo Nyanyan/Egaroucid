@@ -6,8 +6,13 @@ from pathlib import Path
 
 
 VARIANT_EXE = {
+    "baseline_20260513_all_off": "eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260513_all_off.exe",
     "stable": "eval_optimizer_cuda_stable_adam_12_2_0.exe",
     "robust": "eval_optimizer_cuda_robust_adam_12_2_0.exe",
+}
+
+LEGACY_TRAINED_CWD_VARIANTS = {
+    "baseline_20260513_all_off",
 }
 
 
@@ -73,6 +78,9 @@ def main():
     log_dir = output_dir / "logs"
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
+    legacy_trained_cwd = args.variant in LEGACY_TRAINED_CWD_VARIANTS
+    if legacy_trained_cwd:
+        (output_dir / "trained").mkdir(parents=True, exist_ok=True)
 
     phases = parse_phases(args.phases)
     env = os.environ.copy()
@@ -93,6 +101,7 @@ def main():
         f.write(f"round_ms={args.round_ms}\n")
         f.write(f"max_files_per_phase={args.max_files_per_phase}\n")
         f.write(f"initial_dir={args.initial_dir or ''}\n")
+        f.write(f"legacy_trained_cwd={legacy_trained_cwd}\n")
 
     summary_path = output_dir / "summary.tsv"
     with summary_path.open("w", encoding="utf-8", newline="\n") as summary_file:
@@ -130,7 +139,7 @@ def main():
             with stdout_path.open("w", encoding="utf-8") as stdout, stderr_path.open("w", encoding="utf-8") as stderr:
                 completed = subprocess.run(
                     cmd,
-                    cwd=script_dir,
+                    cwd=output_dir if legacy_trained_cwd else script_dir,
                     env=env,
                     stdout=stdout,
                     stderr=stderr,
