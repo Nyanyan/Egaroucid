@@ -73,7 +73,13 @@ def parse_phase_from_name(path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-dir", required=True)
+    parser.add_argument(
+        "--input-dir",
+        dest="input_dirs",
+        action="append",
+        required=True,
+        help="directory containing *_fm.txt files; repeat to merge phases, with later directories overriding earlier ones"
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument("--dim", type=int, default=2)
     parser.add_argument(
@@ -85,17 +91,18 @@ def main():
     parser.add_argument("--timestamp", default=None)
     args = parser.parse_args()
 
-    input_dir = Path(args.input_dir)
+    input_dirs = [Path(input_dir) for input_dir in args.input_dirs]
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
 
     phase_files = {}
-    for path in sorted(input_dir.glob("*_fm.txt")):
-        phase = parse_phase_from_name(path)
-        if phase is not None:
-            phase_files[phase] = path
+    for input_dir in input_dirs:
+        for path in sorted(input_dir.glob("*_fm.txt")):
+            phase = parse_phase_from_name(path)
+            if phase is not None:
+                phase_files[phase] = path
     if not phase_files:
-        raise RuntimeError(f"no *_fm.txt files found in {input_dir}")
+        raise RuntimeError(f"no *_fm.txt files found in {', '.join(str(path) for path in input_dirs)}")
 
     zero_payload = bytes(N_PARAMS_PER_PHASE * (2 + args.dim))
     payloads = [zero_payload for _ in range(N_PHASES)]
@@ -139,6 +146,7 @@ def main():
 
     print(f"wrote {output}")
     print(f"version {VERSION_LINEAR_FM_INT16_INT8} phases {N_PHASES} params_per_phase {N_PARAMS_PER_PHASE} dim {args.dim}")
+    print("input_dirs " + " ".join(str(path) for path in input_dirs))
     print(f"fill_missing {args.fill_missing}")
     for phase, source, nz_l, nz_v, ls, vs in summaries:
         if phase in phase_files or source == "hold-last":
