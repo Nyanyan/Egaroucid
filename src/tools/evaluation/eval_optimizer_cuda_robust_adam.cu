@@ -92,6 +92,25 @@ inline uint64_t get_env_u64(const char *key, uint64_t default_value){
     return (uint64_t)parsed;
 }
 
+inline std::string get_env_string(const char *key, const std::string &default_value){
+    const char *value = std::getenv(key);
+    if (value == nullptr || value[0] == '\0'){
+        return default_value;
+    }
+    return std::string(value);
+}
+
+inline std::string join_path(const std::string &dir, const std::string &filename){
+    if (dir.empty()){
+        return filename;
+    }
+    char back = dir.back();
+    if (back == '/' || back == '\\'){
+        return dir + filename;
+    }
+    return dir + "/" + filename;
+}
+
 /*
     @brief initialize some arrays
 */
@@ -428,7 +447,8 @@ __global__ void adam(const int phase, const int eval_size, double *device_eval_a
     @brief Output Parameters as integer
 */
 void adj_output_param(int phase, int eval_size, double *host_eval_arr) {
-    std::string filename = std::string("trained/") + std::to_string(phase) + ".txt";
+    std::string trained_dir = get_env_string("EGAROUCID_EVAL_TRAINED_DIR", "trained");
+    std::string filename = join_path(trained_dir, std::to_string(phase) + ".txt");
     std::ofstream ofs(filename);
     if (!ofs.is_open()) {
         std::cerr << "cannot open " << filename << ", output to stdout" << std::endl;
@@ -442,7 +462,8 @@ void adj_output_param(int phase, int eval_size, double *host_eval_arr) {
 }
 
 void adj_output_weight(int phase, int eval_size, int *weight_arr) {
-    std::string filename = std::string("trained/weight_") + std::to_string(phase) + ".txt";
+    std::string trained_dir = get_env_string("EGAROUCID_EVAL_TRAINED_DIR", "trained");
+    std::string filename = join_path(trained_dir, std::string("weight_") + std::to_string(phase) + ".txt");
     std::ofstream ofs(filename);
     if (!ofs.is_open()) {
         std::cerr << "cannot open " << filename << ", output to stdout" << std::endl;
