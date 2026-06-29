@@ -94,23 +94,29 @@ def clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
 
-def make_text_override_payload(path, dim):
+def make_text_override_payload(path, dim, current_linear=None, vector_multiplier=1.0):
     linear, vectors = read_fm_text(path, dim)
+    use_current_linear = current_linear is not None
+    if use_current_linear and len(current_linear) != N_PARAMS_PER_PHASE:
+        raise ValueError("current_linear must contain one phase of parameters")
     linear_max = max((abs(v) for v in linear), default=0.0)
-    vector_max = max((abs(v) for vec in vectors for v in vec), default=0.0)
-    linear_scale = quant_scale(linear_max, 32767.0)
+    vector_max = max((abs(v * vector_multiplier) for vec in vectors for v in vec), default=0.0)
+    linear_scale = 1.0 / STEP if use_current_linear else quant_scale(linear_max, 32767.0)
     vector_scale = quant_scale(vector_max, 127.0)
     payload = bytearray()
     nz_linear = 0
     nz_vector = 0
     for idx in range(N_PARAMS_PER_PHASE):
-        q_linear = 0 if linear_scale == 0.0 else int(round(linear[idx] / linear_scale))
+        if use_current_linear:
+            q_linear = int(current_linear[idx])
+        else:
+            q_linear = 0 if linear_scale == 0.0 else int(round(linear[idx] / linear_scale))
         q_linear = clamp(q_linear, -32767, 32767)
         if q_linear != 0:
             nz_linear += 1
         payload += struct.pack("<h", q_linear)
         for d in range(dim):
-            q_vec = 0 if vector_scale == 0.0 else int(round(vectors[d][idx] / vector_scale))
+            q_vec = 0 if vector_scale == 0.0 else int(round(vectors[d][idx] * vector_multiplier / vector_scale))
             q_vec = clamp(q_vec, -127, 127)
             if q_vec != 0:
                 nz_vector += 1
@@ -189,10 +195,30 @@ def main():
         default="",
         help="optional comma-separated phases or ranges allowed to override; empty means every phase found"
     )
+    parser.add_argument(
+        "--override-linear-source",
+        choices=["trained", "current"],
+        default="trained",
+        help="linear weights for overridden phases; current keeps EGEV2 linear weights and applies only FM vectors"
+    )
+    parser.add_argument(
+        "--override-vector-multiplier",
+        type=float,
+        default=1.0,
+        help="multiplier applied to FM vectors from override *_fm.txt before quantization"
+    )
+    parser.add_argument(
+        "--override-fill-missing",
+        choices=["none", "hold-last"],
+        default="none",
+        help="when overriding a phase range, hold-last reuses the last override file for missing later phases"
+    )
     args = parser.parse_args()
 
     if args.dim <= 0:
         raise ValueError("--dim must be positive")
+    if args.override_vector_multiplier < 0.0:
+        raise ValueError("--override-vector-multiplier must be non-negative")
     if not args.output and not args.text_dir:
         raise ValueError("at least one of --output or --text-dir is required")
     if args.text_dir and not args.text_phases:
@@ -237,9 +263,26 @@ def main():
         override_phases = set(parse_phase_list(args.override_phases)) if args.override_phases else None
         if override_phases is not None:
             phase_files = {phase: path for phase, path in phase_files.items() if phase in override_phases}
+        if args.override_fill_missing == "hold-last":
+            fill_phases = override_phases if override_phases is not None else set(range(N_PHASES))
+            last_path = None
+            for phase in range(N_PHASES):
+                if phase in phase_files:
+                    last_path = phase_files[phase]
+                elif phase in fill_phases and last_path is not None:
+                    phase_files[phase] = last_path
         override_summaries = []
         for phase, path in sorted(phase_files.items()):
-            payload, ls, vs, nz_l, nz_v = make_text_override_payload(path, args.dim)
+            current_linear = None
+            if args.override_linear_source == "current":
+                start = phase * N_PARAMS_PER_PHASE
+                current_linear = values[start:start + N_PARAMS_PER_PHASE]
+            payload, ls, vs, nz_l, nz_v = make_text_override_payload(
+                path,
+                args.dim,
+                current_linear,
+                args.override_vector_multiplier,
+            )
             phase_payloads[phase] = payload
             linear_scales[phase] = ls
             vector_scales[phase] = vs
@@ -267,6 +310,9 @@ def main():
         print(f"linear_scale {1.0 / STEP:.10g} vector_scale 1")
         if override_dirs:
             print("override_input_dirs " + " ".join(str(path) for path in override_dirs))
+            print(f"override_linear_source {args.override_linear_source}")
+            print(f"override_vector_multiplier {args.override_vector_multiplier:.10g}")
+            print(f"override_fill_missing {args.override_fill_missing}")
             for phase, path, nz_l, nz_v, ls, vs in override_summaries:
                 print(f"phase {phase} override {path} nz_linear {nz_l} nz_vector {nz_v} linear_scale {ls:.10g} vector_scale {vs:.10g}")
     print(f"expanded_values {len(values)} nonzero {n_nonzero} max {max_value} min {min_value}")
