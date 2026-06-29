@@ -2499,8 +2499,10 @@ constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT = 20000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME = 70000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME = 6000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME = 20000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME = 11000ULL;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE = 0.45;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 3.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 12.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES = 4;
@@ -2556,7 +2558,7 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
     bool show_log
 ) {
     AI_TL_GGS_Selfplay_Resolve_Result result;
-    const uint64_t selfplay_time = ai_time_limit_ggs_selfplay_resolve_time(board, time_limit, remaining_time_msec);
+    uint64_t selfplay_time = ai_time_limit_ggs_selfplay_resolve_time(board, time_limit, remaining_time_msec);
     if (selfplay_time == 0ULL || move_list.size() < 2) {
         return result;
     }
@@ -2573,6 +2575,15 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         best_value > AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX
     ) {
         return result;
+    }
+    if (
+        best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ||
+        AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX < best_value
+    ) {
+        selfplay_time = std::min<uint64_t>(selfplay_time, AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME);
+        if (selfplay_time < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME) {
+            return result;
+        }
     }
 
     int n_good_moves = 0;
