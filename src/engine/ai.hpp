@@ -2568,6 +2568,7 @@ constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE = 0.45;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 3.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 12.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP = 1.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN = 1.0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_MIN_OVERRIDE_DEPTH = 22;
@@ -2704,6 +2705,10 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         std::cerr << " depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[result.mpc_level] << "%" << std::endl;
     }
     return result;
+}
+
+inline bool ai_time_limit_ggs_selfplay_resolve_is_confident(const AI_TL_GGS_Selfplay_Resolve_Result &result) {
+    return result.second_value == -INF || result.value >= result.second_value + AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP;
 }
 #endif
 
@@ -2877,6 +2882,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         selfplay_resolve_result.valid &&
         is_valid_policy(search_result.policy) &&
         selfplay_resolve_result.policy != search_result.policy &&
+        ai_time_limit_ggs_selfplay_resolve_is_confident(selfplay_resolve_result) &&
         (
             !selfplay_resolve_result.wide_value ||
             selfplay_resolve_result.is_endgame_search ||
