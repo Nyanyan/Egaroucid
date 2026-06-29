@@ -67,6 +67,8 @@ constexpr int AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN = GGS_TOURNAMENT_VERIFY_TIMEOUT_K
         #define GGS_TOURNAMENT_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN 0
     #endif
 constexpr int AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN = GGS_TOURNAMENT_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN;
+constexpr int AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MIN_PROBABILITY = 88;
+constexpr uint64_t AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_LOW_CONF_KEEP_MAX_TIME = 14000ULL;
 #else
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
 constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = MPC_74_LEVEL;
@@ -818,7 +820,15 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #if IS_GGS_TOURNAMENT
                 const int verify_timeout_keep_margin =
                     previous_result.value >= 0 ? AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN : AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN;
+                const bool can_keep_previous_on_verify_timeout =
+                    previous_result.value < 0 ||
+                    time_limit < AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_LOW_CONF_KEEP_MAX_TIME ||
+                    (
+                        previous_result.probability >= AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MIN_PROBABILITY &&
+                        previous_result.depth + 1 >= main_depth
+                    );
                 if (
+                    can_keep_previous_on_verify_timeout &&
                     is_valid_policy(previous_result.policy) &&
                     (use_legal & (1ULL << previous_result.policy)) &&
                     previous_result.value != SCORE_UNDEFINED &&
