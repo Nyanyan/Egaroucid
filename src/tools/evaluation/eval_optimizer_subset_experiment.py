@@ -74,7 +74,7 @@ def main():
         print(f"missing executable: {exe}", file=sys.stderr)
         return 1
 
-    train_root = Path(args.train_root or (os.environ["EGAROUCID_DATA"] + "/train_data/bin_data/20241125_1"))
+    train_root = Path(args.train_root or (os.environ["EGAROUCID_DATA"] + "/train_data/bin_data/20241125_1")).resolve()
     output_dir = Path(args.output_dir).resolve()
     log_dir = output_dir / "logs"
     output_dir.mkdir(parents=True, exist_ok=True)

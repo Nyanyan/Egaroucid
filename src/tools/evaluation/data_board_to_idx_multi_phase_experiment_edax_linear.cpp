@@ -1,0 +1,152 @@
+/*
+    Egaroucid Project
+
+    @file data_board_to_idx_multi_phase_experiment_edax_linear.cpp
+        One-pass board-data converter for the isolated Edax-linear experiment
+    @date 2026
+    @author Takuto Yamana, Codex
+    @license GPL-3.0-or-later
+*/
+
+#include <algorithm>
+#include <array>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "evaluation_definition_experiment_edax_linear.hpp"
+
+struct Datum {
+    int16_t n;
+    int16_t player_short;
+    uint16_t idxes[ADJ_N_FEATURES];
+    int16_t score_short;
+};
+
+inline void write_datum(std::ofstream &fout, const Datum &datum) {
+    fout.write((char*)&datum.n, 2);
+    fout.write((char*)&datum.player_short, 2);
+    fout.write((char*)datum.idxes, 2 * ADJ_N_FEATURES);
+    fout.write((char*)&datum.score_short, 2);
+}
+
+int main(int argc, char *argv[]) {
+    std::cerr << EVAL_DEFINITION_NAME << std::endl;
+    std::cerr << EVAL_DEFINITION_DESCRIPTION << std::endl;
+    if (argc < 10) {
+        std::cerr << "input [input dir] [start file no] [end file no exclusive] [output root dir] [output file name] [max_n_data_per_phase] [use_n_moves_min] [use_n_moves_max] [min_n_data_per_phase]" << std::endl;
+        return 1;
+    }
+
+    evaluation_definition_init();
+
+    const std::string input_dir = argv[1];
+    const int start_file = std::atoi(argv[2]);
+    const int end_file = std::atoi(argv[3]);
+    const std::filesystem::path output_root_dir = argv[4];
+    const std::string output_file_name = argv[5];
+    const int max_n_data_per_phase = std::atoi(argv[6]);
+    const int use_n_moves_min = std::atoi(argv[7]);
+    const int use_n_moves_max = std::atoi(argv[8]);
+    const int min_n_data_per_phase = std::atoi(argv[9]);
+
+    std::array<std::ofstream, ADJ_N_PHASES> fout;
+    std::array<int, ADJ_N_PHASES> n_data{};
+    std::array<std::vector<Datum>, ADJ_N_PHASES> data_memo;
+
+    for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
+        std::filesystem::path phase_dir = output_root_dir / std::to_string(phase);
+        std::filesystem::create_directories(phase_dir);
+        std::filesystem::path output_file = phase_dir / output_file_name;
+        fout[phase].open(output_file, std::ios::out | std::ios::binary | std::ios::trunc);
+        if (!fout[phase]) {
+            std::cerr << "can't open output file " << output_file << std::endl;
+            return 1;
+        }
+    }
+
+    auto all_phase_full = [&]() {
+        if (max_n_data_per_phase <= 0) {
+            return false;
+        }
+        return std::all_of(n_data.begin(), n_data.end(), [&](int n) {
+            return n >= max_n_data_per_phase;
+        });
+    };
+
+    Board board;
+    int8_t player, score, policy;
+    uint16_t idxes[ADJ_N_FEATURES];
+    FILE *fp;
+
+    for (int file_idx = start_file; file_idx < end_file; ++file_idx) {
+        if (all_phase_full()) {
+            break;
+        }
+        std::string file = input_dir + "/" + std::to_string(file_idx) + ".dat";
+        if (fopen_s(&fp, file.c_str(), "rb") != 0) {
+            std::cerr << "can't open data " << file << std::endl;
+            continue;
+        }
+        std::cerr << "reading " << file << std::endl;
+        while (!all_phase_full()) {
+            if (fread(&(board.player), 8, 1, fp) < 1) {
+                break;
+            }
+            fread(&(board.opponent), 8, 1, fp);
+            fread(&player, 1, 1, fp);
+            fread(&policy, 1, 1, fp);
+            fread(&score, 1, 1, fp);
+
+            int16_t n = (int16_t)pop_count_ull(board.player | board.opponent);
+            int phase = calc_phase(&board, player);
+            if (phase < 0 || phase >= ADJ_N_PHASES) {
+                continue;
+            }
+            if (max_n_data_per_phase > 0 && n_data[phase] >= max_n_data_per_phase) {
+                continue;
+            }
+            if (n - 4 < use_n_moves_min || n - 4 > use_n_moves_max) {
+                continue;
+            }
+
+            adj_calc_features(&board, idxes);
+
+            Datum datum;
+            datum.n = n;
+            datum.player_short = player;
+            for (int i = 0; i < ADJ_N_FEATURES; ++i) {
+                datum.idxes[i] = idxes[i];
+            }
+            datum.score_short = score;
+            write_datum(fout[phase], datum);
+            if ((int)data_memo[phase].size() < min_n_data_per_phase) {
+                data_memo[phase].emplace_back(datum);
+            }
+            ++n_data[phase];
+        }
+        fclose(fp);
+    }
+
+    for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
+        if (n_data[phase] == 0 && min_n_data_per_phase > 0) {
+            std::cerr << "phase " << phase << " has no data to repeat" << std::endl;
+            continue;
+        }
+        int memo_idx = 0;
+        while (n_data[phase] < min_n_data_per_phase && !data_memo[phase].empty()) {
+            write_datum(fout[phase], data_memo[phase][memo_idx]);
+            ++n_data[phase];
+            memo_idx = (memo_idx + 1) % data_memo[phase].size();
+        }
+    }
+
+    for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
+        fout[phase].close();
+        std::cerr << "phase " << phase << " " << n_data[phase] << std::endl;
+    }
+
+    return 0;
+}
