@@ -21,6 +21,7 @@
 #include <iterator>
 #include <random>
 #include <algorithm>
+#include <cstdlib>
 #include <time.h>
 #include <chrono>
 #define OPTIMIZER_INCLUDE
@@ -76,6 +77,19 @@ struct Adj_Data {
 */
 inline uint64_t tim(){
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
+
+inline uint64_t get_env_u64(const char *key, uint64_t default_value){
+    const char *value = std::getenv(key);
+    if (value == nullptr || value[0] == '\0'){
+        return default_value;
+    }
+    char *end_ptr = nullptr;
+    unsigned long long parsed = std::strtoull(value, &end_ptr, 10);
+    if (end_ptr == value){
+        return default_value;
+    }
+    return (uint64_t)parsed;
 }
 
 /*
@@ -694,7 +708,8 @@ int main(int argc, char* argv[]) {
     std::uniform_int_distribution<int> randint_eval(0, eval_size - 1); // [0, eval_size - 1] (include last)
     uint64_t round_n_loop = 0, round_n_updated = 0, round_n_improve = 0;
     uint64_t round_strt = tim();
-    uint64_t round_tl = 60000; // 60s
+    uint64_t round_tl = get_env_u64("EGAROUCID_EVAL_ROUND_TL_MS", 60000); // 60s by default
+    std::cerr << "round_tl " << round_tl << " ms" << std::endl;
     while (tim() - round_strt < round_tl && ((double)round_n_improve * 100.0 / round_n_loop > 0.01 || round_n_loop < 100)){ // improve percentage > 1% or loop_count < 100
         int change_idx = randint_eval(engine);
         if (host_eval_arr_roundup[change_idx] != host_eval_arr_rounddown[change_idx]){
