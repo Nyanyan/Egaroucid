@@ -103,6 +103,12 @@ constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_DEPTH = 25;
 constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_PREV_PROBABILITY = 88;
 constexpr int AI_TL_GGS_HIGH_CONF_STICK_VALUE_MIN = 0;
 constexpr int AI_TL_GGS_HIGH_CONF_STICK_MAX_GAIN = 2;
+constexpr int AI_TL_GGS_WINNING_STICK_MIN_N_EMPTY = 36;
+constexpr int AI_TL_GGS_WINNING_STICK_MAX_N_EMPTY = 48;
+constexpr int AI_TL_GGS_WINNING_STICK_MIN_DEPTH = 28;
+constexpr int AI_TL_GGS_WINNING_STICK_MAX_DEPTH_LAG = 2;
+constexpr int AI_TL_GGS_WINNING_STICK_VALUE_MIN = 6;
+constexpr int AI_TL_GGS_WINNING_STICK_MAX_GAIN = 2;
 constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MIN_N_EMPTY = 29;
 constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MAX_N_EMPTY = 48;
 constexpr int AI_TL_GGS_NARROW_ALT_VERIFY_MIN_DEPTH = 30;
@@ -724,6 +730,34 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             ) {
                 std::ostringstream ss;
                 ss << " high-conf-stick "
+                   << idx_to_coord(previous_result.policy) << "=" << previous_result.value
+                   << "@" << previous_result.depth << "/" << previous_result.probability << "% "
+                   << idx_to_coord(id_result.second) << "=" << id_result.first
+                   << "@" << main_depth << "/" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%";
+                verify_log = ss.str();
+                id_result = std::make_pair(previous_result.value, previous_result.policy);
+                skip_policy_change_as_bad_stable = true;
+            }
+            if (
+                !skip_policy_change_as_bad_stable &&
+                !main_is_complete_search &&
+                !main_is_end_search &&
+                AI_TL_GGS_WINNING_STICK_MIN_N_EMPTY <= max_depth &&
+                max_depth <= AI_TL_GGS_WINNING_STICK_MAX_N_EMPTY &&
+                main_depth >= AI_TL_GGS_WINNING_STICK_MIN_DEPTH &&
+                main_mpc_level <= MPC_88_LEVEL &&
+                previous_result.depth + AI_TL_GGS_WINNING_STICK_MAX_DEPTH_LAG >= main_depth &&
+                is_valid_policy(previous_result.policy) &&
+                is_valid_policy(id_result.second) &&
+                previous_result.policy != id_result.second &&
+                (use_legal & (1ULL << previous_result.policy)) &&
+                (use_legal & (1ULL << id_result.second)) &&
+                previous_result.value >= AI_TL_GGS_WINNING_STICK_VALUE_MIN &&
+                previous_result.value != SCORE_UNDEFINED &&
+                id_result.first <= previous_result.value + AI_TL_GGS_WINNING_STICK_MAX_GAIN
+            ) {
+                std::ostringstream ss;
+                ss << " winning-stick "
                    << idx_to_coord(previous_result.policy) << "=" << previous_result.value
                    << "@" << previous_result.depth << "/" << previous_result.probability << "% "
                    << idx_to_coord(id_result.second) << "=" << id_result.first
@@ -2779,8 +2813,13 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         search_result.is_end_search = selfplay_resolve_result.is_endgame_search;
     }
 #endif
+    const uint64_t whole_elapsed = tim() - strt;
+    if (search_result.time < whole_elapsed) {
+        search_result.time = whole_elapsed;
+        search_result.nps = calc_nps(search_result.nodes, search_result.time);
+    }
     if (show_log) {
-        std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
+        std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << whole_elapsed << " " << board.to_str() << std::endl << std::endl;
     }
     return search_result;
 }
