@@ -716,6 +716,26 @@ int ggs_seed_verified_analysis_hints(GGS_Move_Hint_Table *move_hints, Options *o
         {
             "----------O-------O-XO----OXO----XXXXO----XXOX------------------ X",
             "g5"
+        },
+        {
+            "----------XO-O----OOOO----OOOO----OXOX---XXXX-X---OX------------ X",
+            "b5"
+        },
+        {
+            "------------------OOXX----OOOOO---OOOOO---OOOXX----XOX-------X-- X",
+            "h6"
+        },
+        {
+            "------------------OOOX----OOOOO--OXXXX----XOXX------X----------- X",
+            "c7"
+        },
+        {
+            "-------------X----OOXX---OOXOOO--OOXXX----XOXX------X----------- X",
+            "b6"
+        },
+        {
+            "------------------XOOO----OOXX----OOX------OXX------X------X---- X",
+            "e2"
         }
     };
 
