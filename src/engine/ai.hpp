@@ -2505,6 +2505,7 @@ constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 3.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 12.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN = 1.0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES = 4;
 
 struct AI_TL_GGS_Selfplay_Resolve_Result {
@@ -2515,6 +2516,7 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
     int depth;
     uint_fast8_t mpc_level;
     bool is_endgame_search;
+    bool wide_value;
     int n_good_moves;
 
     AI_TL_GGS_Selfplay_Resolve_Result()
@@ -2525,6 +2527,7 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
           depth(0),
           mpc_level(MPC_74_LEVEL),
           is_endgame_search(false),
+          wide_value(false),
           n_good_moves(0) {}
 };
 
@@ -2576,10 +2579,10 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
     ) {
         return result;
     }
-    if (
+    result.wide_value =
         best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ||
-        AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX < best_value
-    ) {
+        AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX < best_value;
+    if (result.wide_value) {
         selfplay_time = std::min<uint64_t>(selfplay_time, AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME);
         if (selfplay_time < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME) {
             return result;
@@ -2809,7 +2812,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         selfplay_resolve_result.valid &&
         is_valid_policy(search_result.policy) &&
         selfplay_resolve_result.policy != search_result.policy &&
-        selfplay_resolve_result.value + AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN >= search_result.value
+        selfplay_resolve_result.value >= search_result.value +
+            (selfplay_resolve_result.wide_value ?
+                AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN :
+                AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN)
     ) {
         if (show_log) {
             std::cerr << "ggs selfplay resolve overrides main "
