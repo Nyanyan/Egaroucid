@@ -2506,6 +2506,7 @@ constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 12.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN = 1.0;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_MIN_OVERRIDE_DEPTH = 22;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES = 4;
 
 struct AI_TL_GGS_Selfplay_Resolve_Result {
@@ -2812,6 +2813,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         selfplay_resolve_result.valid &&
         is_valid_policy(search_result.policy) &&
         selfplay_resolve_result.policy != search_result.policy &&
+        (
+            !selfplay_resolve_result.wide_value ||
+            selfplay_resolve_result.is_endgame_search ||
+            selfplay_resolve_result.depth >= AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_MIN_OVERRIDE_DEPTH
+        ) &&
         selfplay_resolve_result.value >= search_result.value +
             (selfplay_resolve_result.wide_value ?
                 AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN :
