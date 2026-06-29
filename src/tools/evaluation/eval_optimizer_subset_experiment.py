@@ -9,6 +9,7 @@ VARIANT_EXE = {
     "baseline_20260513_all_off": "eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260513_all_off.exe",
     "stable": "eval_optimizer_cuda_stable_adam_12_2_0.exe",
     "robust": "eval_optimizer_cuda_robust_adam_12_2_0.exe",
+    "robust_anchor": "eval_optimizer_cuda_robust_adam_anchor_12_2_0.exe",
     "robust_edax_linear": "eval_optimizer_cuda_robust_adam_edax_linear_12_2_0.exe",
 }
 
@@ -34,7 +35,39 @@ def parse_phases(value):
     return phases
 
 
-def pick_train_files(phase_dir, max_files):
+def parse_file_ids(value):
+    if value is None:
+        return None
+    file_ids = []
+    for part in value.split(","):
+        part = part.strip()
+        if part:
+            file_ids.append(int(part))
+    return file_ids
+
+
+def parse_alpha_by_phase(value):
+    alpha_by_phase = {}
+    if value is None:
+        return alpha_by_phase
+    for part in value.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        phase_s, alpha_s = part.split(":", 1)
+        alpha = float(alpha_s)
+        for phase in parse_phases(phase_s):
+            alpha_by_phase[phase] = alpha
+    return alpha_by_phase
+
+
+def pick_train_files(phase_dir, max_files, file_ids=None):
+    if file_ids is not None:
+        return [
+            phase_dir / f"{file_id}.dat"
+            for file_id in file_ids
+            if (phase_dir / f"{file_id}.dat").exists() and (phase_dir / f"{file_id}.dat").stat().st_size > 0
+        ]
     files = [p for p in phase_dir.glob("*.dat") if p.stat().st_size > 0]
     files.sort(key=lambda p: (p.stat().st_size, p.name))
     return files[:max_files]
@@ -63,6 +96,8 @@ def main():
     parser.add_argument("--reduce-lr-ratio", type=float, default=0.8)
     parser.add_argument("--round-ms", type=int, default=200)
     parser.add_argument("--max-files-per-phase", type=int, default=1)
+    parser.add_argument("--file-ids", default=None)
+    parser.add_argument("--alpha-by-phase", default=None)
     parser.add_argument("--train-root", default=None)
     parser.add_argument("--initial-dir", default=None)
     parser.add_argument("--timeout-sec", type=int, default=0)
@@ -85,6 +120,8 @@ def main():
         (output_dir / "trained").mkdir(parents=True, exist_ok=True)
 
     phases = parse_phases(args.phases)
+    file_ids = parse_file_ids(args.file_ids)
+    alpha_by_phase = parse_alpha_by_phase(args.alpha_by_phase)
     env = os.environ.copy()
     env["EGAROUCID_EVAL_TRAINED_DIR"] = str(output_dir)
     env["EGAROUCID_EVAL_ROUND_TL_MS"] = str(args.round_ms)
@@ -102,19 +139,25 @@ def main():
         f.write(f"reduce_lr_ratio={args.reduce_lr_ratio}\n")
         f.write(f"round_ms={args.round_ms}\n")
         f.write(f"max_files_per_phase={args.max_files_per_phase}\n")
+        f.write(f"file_ids={args.file_ids or ''}\n")
+        f.write(f"alpha_by_phase={args.alpha_by_phase or ''}\n")
         f.write(f"initial_dir={initial_dir or ''}\n")
         f.write(f"legacy_trained_cwd={legacy_trained_cwd}\n")
+        for key in ("EGAROUCID_EVAL_ANCHOR_LAMBDA", "EGAROUCID_EVAL_ANCHOR_MAX_DELTA"):
+            if key in env:
+                f.write(f"{key}={env[key]}\n")
 
     summary_path = output_dir / "summary.tsv"
     with summary_path.open("w", encoding="utf-8", newline="\n") as summary_file:
-        summary_file.write("phase\treturn_code\tfiles\tsummary\n")
+        summary_file.write("phase\treturn_code\talpha\tfiles\tsummary\n")
 
         for phase in phases:
             phase_dir = train_root / str(phase)
-            train_files = pick_train_files(phase_dir, args.max_files_per_phase)
+            train_files = pick_train_files(phase_dir, args.max_files_per_phase, file_ids)
             if not train_files:
                 print(f"phase {phase}: no train data in {phase_dir}", file=sys.stderr)
                 return 1
+            phase_alpha = alpha_by_phase.get(phase, args.alpha)
 
             in_file = "none.txt"
             if initial_dir is not None:
@@ -128,7 +171,7 @@ def main():
                 "0",
                 "0",
                 str(args.seconds),
-                str(args.alpha),
+                str(phase_alpha),
                 str(args.n_patience),
                 str(args.reduce_lr_patience),
                 str(args.reduce_lr_ratio),
@@ -149,10 +192,10 @@ def main():
                 )
             summary = read_last_line(stdout_path) or read_last_line(stderr_path)
             file_names = ",".join(p.name for p in train_files)
-            summary_file.write(f"{phase}\t{completed.returncode}\t{file_names}\t{summary}\n")
+            summary_file.write(f"{phase}\t{completed.returncode}\t{phase_alpha}\t{file_names}\t{summary}\n")
             summary_file.flush()
             print(
-                f"phase {phase:02d} rc={completed.returncode} "
+                f"phase {phase:02d} rc={completed.returncode} alpha={phase_alpha} "
                 f"files={[p.name for p in train_files]} summary={summary}"
             )
             if completed.returncode != 0:
