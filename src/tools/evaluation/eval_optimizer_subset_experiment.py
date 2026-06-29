@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -61,6 +62,21 @@ def parse_alpha_by_phase(value):
     return alpha_by_phase
 
 
+def parse_schedule_log(path):
+    schedule_text = Path(path).read_text(encoding="utf-8", errors="replace")
+    file_ids_by_phase = {}
+    alpha_by_phase = {}
+    pattern = re.compile(
+        r"phase\s+(\d+).*?alpha\s+([0-9.]+).*?train_data_nums=\[(.*?)\]",
+        re.DOTALL,
+    )
+    for phase_s, alpha_s, file_ids_s in pattern.findall(schedule_text):
+        phase = int(phase_s)
+        alpha_by_phase[phase] = float(alpha_s)
+        file_ids_by_phase[phase] = [int(value) for value in re.findall(r"\d+", file_ids_s)]
+    return file_ids_by_phase, alpha_by_phase
+
+
 def pick_train_files(phase_dir, max_files, file_ids=None):
     if file_ids is not None:
         return [
@@ -98,6 +114,7 @@ def main():
     parser.add_argument("--max-files-per-phase", type=int, default=1)
     parser.add_argument("--file-ids", default=None)
     parser.add_argument("--alpha-by-phase", default=None)
+    parser.add_argument("--schedule-log", default=None)
     parser.add_argument("--train-root", default=None)
     parser.add_argument("--initial-dir", default=None)
     parser.add_argument("--timeout-sec", type=int, default=0)
@@ -120,8 +137,13 @@ def main():
         (output_dir / "trained").mkdir(parents=True, exist_ok=True)
 
     phases = parse_phases(args.phases)
+    file_ids_by_phase = {}
+    log_alpha_by_phase = {}
+    if args.schedule_log is not None:
+        file_ids_by_phase, log_alpha_by_phase = parse_schedule_log(args.schedule_log)
     file_ids = parse_file_ids(args.file_ids)
-    alpha_by_phase = parse_alpha_by_phase(args.alpha_by_phase)
+    alpha_by_phase = log_alpha_by_phase
+    alpha_by_phase.update(parse_alpha_by_phase(args.alpha_by_phase))
     env = os.environ.copy()
     env["EGAROUCID_EVAL_TRAINED_DIR"] = str(output_dir)
     env["EGAROUCID_EVAL_ROUND_TL_MS"] = str(args.round_ms)
@@ -141,6 +163,7 @@ def main():
         f.write(f"max_files_per_phase={args.max_files_per_phase}\n")
         f.write(f"file_ids={args.file_ids or ''}\n")
         f.write(f"alpha_by_phase={args.alpha_by_phase or ''}\n")
+        f.write(f"schedule_log={args.schedule_log or ''}\n")
         f.write(f"initial_dir={initial_dir or ''}\n")
         f.write(f"legacy_trained_cwd={legacy_trained_cwd}\n")
         for key in ("EGAROUCID_EVAL_ANCHOR_LAMBDA", "EGAROUCID_EVAL_ANCHOR_MAX_DELTA"):
@@ -153,7 +176,8 @@ def main():
 
         for phase in phases:
             phase_dir = train_root / str(phase)
-            train_files = pick_train_files(phase_dir, args.max_files_per_phase, file_ids)
+            phase_file_ids = file_ids if file_ids is not None else file_ids_by_phase.get(phase)
+            train_files = pick_train_files(phase_dir, args.max_files_per_phase, phase_file_ids)
             if not train_files:
                 print(f"phase {phase}: no train data in {phase_dir}", file=sys.stderr)
                 return 1
