@@ -410,7 +410,7 @@ inline bool ggs_should_override_with_hint(const Board &board, int policy, int hi
     if (
         verified_analysis_hint &&
         n_discs <= 36 &&
-        (!search_result.is_end_search || search_result.probability < 100)
+        (!search_result.is_end_search || search_result.probability < 98)
     ) {
         return true;
     }
