@@ -56,6 +56,15 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_MOBILITY)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_mobility.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_mobility.hpp"
+    #endif
+#endif
+
 #ifndef EVALUATE_SIMD_HEADER
     #define EVALUATE_SIMD_HEADER "evaluate_simd.hpp"
 #endif
