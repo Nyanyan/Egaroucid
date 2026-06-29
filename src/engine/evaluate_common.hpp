@@ -20,7 +20,7 @@ constexpr int N_PATTERNS = 13;          // Edax linear model pattern groups
 #else
 constexpr int N_PATTERNS = 16;          // number of patterns used
 #endif
-#if defined(EVALUATE_EXPERIMENT_7_7_BETA)
+#if defined(EVALUATE_EXPERIMENT_7_7_BETA) || defined(EVALUATE_EXPERIMENT_7_7_FM)
 constexpr int MAX_CELL_PATTERNS = 17;   // 7.7 beta uses up to 17 patterns per cell
 #elif defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_FM)
 constexpr int MAX_CELL_PATTERNS = 7;    // Edax linear uses up to 7 patterns per cell
@@ -60,7 +60,7 @@ constexpr int STEP_2 = 16; // STEP / 2
 
 // constexpr int STEP_MO_END = 32; // 1 disc = 64
 // constexpr int STEP_2_MO_END = 16; // STEP / 2
-#if defined(EVALUATE_EXPERIMENT_7_7_BETA)
+#if defined(EVALUATE_EXPERIMENT_7_7_BETA) || defined(EVALUATE_EXPERIMENT_7_7_FM)
 constexpr int STEP_MO_END = 32;
 constexpr int STEP_2_MO_END = 16;
 #endif
