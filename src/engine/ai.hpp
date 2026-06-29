@@ -124,6 +124,11 @@ constexpr int AI_TL_GGS_ALT_VERIFY_RETRY_DEPTH_GAP = 3;
 #endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
+#if IS_GGS_TOURNAMENT
+constexpr int AI_TL_ADDITIONAL_SELFPLAY_BALANCED_PASSES = 2;
+#else
+constexpr int AI_TL_ADDITIONAL_SELFPLAY_BALANCED_PASSES = 1;
+#endif
 
 struct Ponder_elem {
     Flip flip;
@@ -132,6 +137,7 @@ struct Ponder_elem {
     int level;
     int depth;
     uint_fast8_t mpc_level;
+    int selfplay_count;
     bool is_endgame_search;
     bool is_complete_search;
     std::string response_board_key;
@@ -2569,10 +2575,13 @@ constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 3.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 12.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP = 1.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SINGLE_PASS_MIN_RESULT_GAP = 2.5;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN = 1.0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_MIN_OVERRIDE_DEPTH = 22;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES = 4;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_SELFPLAYED_TOP_MOVES = 2;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REPEATED_TOP_COUNT = 2;
 
 struct AI_TL_GGS_Selfplay_Resolve_Result {
     bool valid;
@@ -2584,6 +2593,11 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
     bool is_endgame_search;
     bool wide_value;
     int n_good_moves;
+    int selfplayed_moves;
+    int top_selfplay_count;
+    int second_selfplay_count;
+    bool top_two_selfplayed;
+    bool top_two_selfplay_aligned;
 
     AI_TL_GGS_Selfplay_Resolve_Result()
         : valid(false),
@@ -2594,7 +2608,12 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
           mpc_level(MPC_74_LEVEL),
           is_endgame_search(false),
           wide_value(false),
-          n_good_moves(0) {}
+          n_good_moves(0),
+          selfplayed_moves(0),
+          top_selfplay_count(0),
+          second_selfplay_count(0),
+          top_two_selfplayed(false),
+          top_two_selfplay_aligned(false) {}
 };
 
 inline uint64_t ai_time_limit_ggs_selfplay_resolve_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
@@ -2692,8 +2711,23 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
     result.mpc_level = selfplay_move_list[0].mpc_level;
     result.is_endgame_search = selfplay_move_list[0].is_endgame_search;
     result.n_good_moves = n_good_moves;
+    result.top_selfplay_count = selfplay_move_list[0].selfplay_count;
+    for (int i = 0; i < n_good_moves && i < (int)selfplay_move_list.size(); ++i) {
+        if (selfplay_move_list[i].selfplay_count > 0) {
+            ++result.selfplayed_moves;
+        }
+    }
     if (selfplay_move_list.size() >= 2 && selfplay_move_list[1].count > 0) {
         result.second_value = selfplay_move_list[1].value;
+        result.second_selfplay_count = selfplay_move_list[1].selfplay_count;
+        result.top_two_selfplayed =
+            selfplay_move_list[0].selfplay_count > 0 &&
+            selfplay_move_list[1].selfplay_count > 0;
+        result.top_two_selfplay_aligned =
+            result.top_two_selfplayed &&
+            selfplay_move_list[0].selfplay_count == selfplay_move_list[1].selfplay_count &&
+            selfplay_move_list[0].depth == selfplay_move_list[1].depth &&
+            selfplay_move_list[0].mpc_level == selfplay_move_list[1].mpc_level;
     }
 
     if (show_log) {
@@ -2702,13 +2736,27 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         if (result.second_value != -INF) {
             std::cerr << " second=" << result.second_value;
         }
-        std::cerr << " depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[result.mpc_level] << "%" << std::endl;
+        std::cerr << " depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[result.mpc_level] << "%"
+                  << " selfplayed " << result.selfplayed_moves << "/" << n_good_moves
+                  << " top_counts " << result.top_selfplay_count << "/" << result.second_selfplay_count
+                  << " aligned " << result.top_two_selfplay_aligned << std::endl;
     }
     return result;
 }
 
 inline bool ai_time_limit_ggs_selfplay_resolve_is_confident(const AI_TL_GGS_Selfplay_Resolve_Result &result) {
-    return result.second_value == -INF || result.value >= result.second_value + AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP;
+    const double result_gap = result.value - result.second_value;
+    const bool repeated_top =
+        result.top_selfplay_count >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REPEATED_TOP_COUNT &&
+        result.second_selfplay_count >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REPEATED_TOP_COUNT;
+    return
+        result.top_two_selfplayed &&
+        result.top_two_selfplay_aligned &&
+        result.selfplayed_moves >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_SELFPLAYED_TOP_MOVES &&
+        (
+            (repeated_top && result_gap >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP) ||
+            result_gap >= AI_TL_GGS_SELFPLAY_RESOLVE_SINGLE_PASS_MIN_RESULT_GAP
+        );
 }
 #endif
 
@@ -3277,6 +3325,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         move_list[idx].level = 0;
         move_list[idx].depth = 0;
         move_list[idx].mpc_level = MPC_74_LEVEL;
+        move_list[idx].selfplay_count = 0;
         move_list[idx].is_endgame_search = false;
         move_list[idx].is_complete_search = false;
         ++idx;
@@ -3426,6 +3475,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
         move_list[idx].count = 0;
         move_list[idx].depth = 0;
         move_list[idx].mpc_level = MPC_74_LEVEL;
+        move_list[idx].selfplay_count = 0;
         move_list[idx].is_endgame_search = false;
         move_list[idx].is_complete_search = false;
         ++idx;
@@ -3678,13 +3728,25 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
         }
         double max_val = -INF;
         int selected_idx = -1;
+        int min_selfplay_count = INF;
         for (int i = 0; i < n_good_moves; ++i) {
-            //if (!move_list[i].is_complete_search) {
             if (!(move_list[i].is_endgame_search && move_list[i].mpc_level >= MPC_99_LEVEL)) {
-                if (levels[i] == initial_level * n_same_level) {
+                min_selfplay_count = std::min(min_selfplay_count, move_list[i].selfplay_count);
+            }
+        }
+        if (min_selfplay_count < AI_TL_ADDITIONAL_SELFPLAY_BALANCED_PASSES) {
+            for (int i = 0; i < n_good_moves; ++i) {
+                if (
+                    !(move_list[i].is_endgame_search && move_list[i].mpc_level >= MPC_99_LEVEL) &&
+                    move_list[i].selfplay_count == min_selfplay_count
+                ) {
                     selected_idx = i;
                     break;
-                } else {
+                }
+            }
+        } else {
+            for (int i = 0; i < n_good_moves; ++i) {
+                if (!(move_list[i].is_endgame_search && move_list[i].mpc_level >= MPC_99_LEVEL)) {
                     double val = move_list[i].value + myrandom() * threshold * 2.0 + (double)(60 - initial_level - levels[i] / n_same_level) * 0.5; // 2 level for 1 score
                     if (val > max_val) {
                         max_val = val;
@@ -3723,6 +3785,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                 move_list[selected_idx].is_endgame_search = (HW2 - n_board.n_discs()) <= depth;
                 move_list[selected_idx].is_complete_search = move_list[selected_idx].is_endgame_search && mpc_level == MPC_100_LEVEL;
                 ++move_list[selected_idx].count;
+                ++move_list[selected_idx].selfplay_count;
                 std::cerr << " value " << move_list[selected_idx].value << " depth " << depth << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "% " << tim() - strt << " ms" << std::endl;
                 is_first_searches[selected_idx] = false;
                 ++levels[selected_idx];
