@@ -84,6 +84,21 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_LOW_TIME_MAX_USE_COE
         #define TIME_MANAGEMENT_GGS_LOW_TIME_MAX_USE_COE 0.25
     #endif
+    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_N_EMPTY
+        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_N_EMPTY 32
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_N_EMPTY
+        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_N_EMPTY 36
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_REMAINING
+        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_REMAINING 25000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC
+        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC 12000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_TIME
+        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_TIME 12000.0
+    #endif
     #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_N_EMPTY
         #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_N_EMPTY 30
     #endif
@@ -256,7 +271,25 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         selected_time = midgame_use_time;
     }
 #if IS_GGS_TOURNAMENT
-    uint64_t late_endgame_forced_time = 0ULL;
+    uint64_t endgame_forced_time = 0ULL;
+    if (
+        TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_N_EMPTY <= n_empties &&
+        n_empties <= TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_N_EMPTY &&
+        n_empties <= endgame_search_depth &&
+        (double)remaining_time_msec >= TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_REMAINING &&
+        (double)remaining_time_msec > TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC
+    ) {
+        endgame_forced_time = (uint64_t)std::min(
+            TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_TIME,
+            (double)remaining_time_msec - TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC
+        );
+        if (endgame_forced_time > selected_time) {
+            if (show_log) {
+                std::cerr << "ggs early endgame force tl " << selected_time << " -> " << endgame_forced_time << std::endl;
+            }
+            selected_time = endgame_forced_time;
+        }
+    }
     if (
         TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_N_EMPTY <= n_empties &&
         n_empties <= TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_N_EMPTY &&
@@ -264,23 +297,23 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         (double)remaining_time_msec >= TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_REMAINING &&
         (double)remaining_time_msec > TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_LEAVE_MSEC
     ) {
-        late_endgame_forced_time = (uint64_t)std::min(
+        endgame_forced_time = (uint64_t)std::min(
             TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_TIME,
             (double)remaining_time_msec - TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_LEAVE_MSEC
         );
-        if (late_endgame_forced_time > selected_time) {
+        if (endgame_forced_time > selected_time) {
             if (show_log) {
-                std::cerr << "ggs late endgame force tl " << selected_time << " -> " << late_endgame_forced_time << std::endl;
+                std::cerr << "ggs late endgame force tl " << selected_time << " -> " << endgame_forced_time << std::endl;
             }
-            selected_time = late_endgame_forced_time;
+            selected_time = endgame_forced_time;
         }
     }
     const uint64_t capped_time = time_management_ggs_cap_time_limit(selected_time, remaining_time_msec, remaining_moves);
-    if (late_endgame_forced_time > capped_time) {
+    if (endgame_forced_time > capped_time) {
         if (show_log) {
-            std::cerr << "ggs late endgame bypass cap " << capped_time << " -> " << late_endgame_forced_time << std::endl;
+            std::cerr << "ggs endgame force bypass cap " << capped_time << " -> " << endgame_forced_time << std::endl;
         }
-        return late_endgame_forced_time;
+        return endgame_forced_time;
     }
     if (show_log && (ggs_time_scale < 0.999 || capped_time < selected_time)) {
         std::cerr << "ggs time adjust scale " << ggs_time_scale << " capped " << capped_time << " from " << selected_time << std::endl;
