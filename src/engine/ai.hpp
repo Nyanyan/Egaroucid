@@ -2234,7 +2234,7 @@ inline bool ai_time_limit_presearch(Board board, bool use_multi_thread, bool sho
 
 #if IS_GGS_TOURNAMENT
 constexpr int AI_TL_GGS_AMBIGUITY_MIN_N_EMPTY = 29;
-constexpr int AI_TL_GGS_AMBIGUITY_MAX_N_EMPTY = 48;
+constexpr int AI_TL_GGS_AMBIGUITY_MAX_N_EMPTY = 50;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_MIN_TIME_LIMIT = 1800ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_MIN_REMAINING_TIME = 25000ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_PROBE_MIN_TIME = 220ULL;
@@ -2458,6 +2458,140 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     }
     return boosted_time_limit;
 }
+
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY = 44;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_N_EMPTY = 50;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT = 24000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME = 85000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME = 8000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME = 16000ULL;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE = 0.40;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 2.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 4.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.25;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES = 4;
+
+struct AI_TL_GGS_Selfplay_Resolve_Result {
+    bool valid;
+    int policy;
+    double value;
+    double second_value;
+    int depth;
+    uint_fast8_t mpc_level;
+    bool is_endgame_search;
+    int n_good_moves;
+
+    AI_TL_GGS_Selfplay_Resolve_Result()
+        : valid(false),
+          policy(MOVE_UNDEFINED),
+          value(-INF),
+          second_value(-INF),
+          depth(0),
+          mpc_level(MPC_74_LEVEL),
+          is_endgame_search(false),
+          n_good_moves(0) {}
+};
+
+inline uint64_t ai_time_limit_ggs_selfplay_resolve_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
+    const int n_empties = HW2 - board.n_discs();
+    if (
+        n_empties < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY ||
+        n_empties > AI_TL_GGS_SELFPLAY_RESOLVE_MAX_N_EMPTY ||
+        time_limit < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT ||
+        remaining_time_msec < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME
+    ) {
+        return 0ULL;
+    }
+    uint64_t selfplay_time = std::min<uint64_t>(
+        AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME,
+        (uint64_t)((double)time_limit * AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE)
+    );
+    selfplay_time = std::min<uint64_t>(selfplay_time, remaining_time_msec / 8ULL);
+    if (selfplay_time < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME) {
+        return 0ULL;
+    }
+    return selfplay_time;
+}
+
+inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
+    const Board &board,
+    std::vector<Ponder_elem> move_list,
+    uint64_t time_limit,
+    uint64_t remaining_time_msec,
+    thread_id_t thread_id,
+    bool show_log
+) {
+    AI_TL_GGS_Selfplay_Resolve_Result result;
+    const uint64_t selfplay_time = ai_time_limit_ggs_selfplay_resolve_time(board, time_limit, remaining_time_msec);
+    if (selfplay_time == 0ULL || move_list.size() < 2) {
+        return result;
+    }
+
+    double best_value = -INF;
+    for (const Ponder_elem &elem: move_list) {
+        if (elem.count > 0) {
+            best_value = std::max(best_value, elem.value);
+        }
+    }
+    if (
+        best_value == -INF ||
+        best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX ||
+        best_value > AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX
+    ) {
+        return result;
+    }
+
+    int n_good_moves = 0;
+    for (const Ponder_elem &elem: move_list) {
+        if (elem.count <= 0 || elem.value < best_value - AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE) {
+            continue;
+        }
+        ++n_good_moves;
+    }
+    n_good_moves = std::min(n_good_moves, AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES);
+    if (n_good_moves < 2) {
+        return result;
+    }
+
+    if (show_log) {
+        std::cerr << "ggs selfplay resolve tl " << selfplay_time
+                  << " n_good_moves " << n_good_moves
+                  << " best " << best_value << std::endl;
+    }
+    std::vector<Ponder_elem> selfplay_move_list = ai_additional_selfplay(
+        board,
+        show_log,
+        move_list,
+        n_good_moves,
+        AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE,
+        selfplay_time,
+        thread_id
+    );
+    if (selfplay_move_list.empty() || selfplay_move_list[0].count <= 0) {
+        return result;
+    }
+
+    result.valid = is_valid_policy(selfplay_move_list[0].flip.pos);
+    result.policy = selfplay_move_list[0].flip.pos;
+    result.value = selfplay_move_list[0].value;
+    result.depth = selfplay_move_list[0].depth;
+    result.mpc_level = selfplay_move_list[0].mpc_level;
+    result.is_endgame_search = selfplay_move_list[0].is_endgame_search;
+    result.n_good_moves = n_good_moves;
+    if (selfplay_move_list.size() >= 2 && selfplay_move_list[1].count > 0) {
+        result.second_value = selfplay_move_list[1].value;
+    }
+
+    if (show_log) {
+        std::cerr << "ggs selfplay resolve result "
+                  << idx_to_coord(result.policy) << "=" << std::fixed << std::setprecision(2) << result.value;
+        if (result.second_value != -INF) {
+            std::cerr << " second=" << result.second_value;
+        }
+        std::cerr << " depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[result.mpc_level] << "%" << std::endl;
+    }
+    return result;
+}
 #endif
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
@@ -2582,13 +2716,17 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     //     }
     // }
 #if IS_GGS_TOURNAMENT
+    AI_TL_GGS_Selfplay_Resolve_Result selfplay_resolve_result;
+    std::vector<Ponder_elem> ambiguity_move_list;
+    bool has_ambiguity_move_list = false;
     uint64_t ambiguity_probe_time = ai_time_limit_ggs_ambiguity_probe_time(board, time_limit, remaining_time_msec);
     if (ambiguity_probe_time > 0ULL && global_searching && *searching) {
         if (show_log) {
             std::cerr << "ggs ambiguity probe tl " << ambiguity_probe_time << std::endl;
         }
         uint64_t strt_ambiguity_probe = tim();
-        std::vector<Ponder_elem> ambiguity_move_list = ai_get_values(board, show_log, ambiguity_probe_time, thread_id);
+        ambiguity_move_list = ai_get_values(board, show_log, ambiguity_probe_time, thread_id);
+        has_ambiguity_move_list = true;
         uint64_t elapsed_ambiguity_probe = tim() - strt_ambiguity_probe;
         time_limit = std::max<uint64_t>(1ULL, get_this_search_time_limit(time_limit, elapsed_ambiguity_probe));
         if (remaining_time_msec > elapsed_ambiguity_probe) {
@@ -2598,11 +2736,49 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         }
         time_limit = ai_time_limit_ggs_ambiguity_boost(board, ambiguity_move_list, time_limit, remaining_time_msec, show_log);
     }
+    if (has_ambiguity_move_list && global_searching && *searching) {
+        uint64_t strt_selfplay_resolve = tim();
+        selfplay_resolve_result = ai_time_limit_ggs_selfplay_resolve(
+            board,
+            ambiguity_move_list,
+            time_limit,
+            remaining_time_msec,
+            thread_id,
+            show_log
+        );
+        uint64_t elapsed_selfplay_resolve = tim() - strt_selfplay_resolve;
+        time_limit = std::max<uint64_t>(1ULL, get_this_search_time_limit(time_limit, elapsed_selfplay_resolve));
+        if (remaining_time_msec > elapsed_selfplay_resolve) {
+            remaining_time_msec -= elapsed_selfplay_resolve;
+        } else {
+            remaining_time_msec = 1ULL;
+        }
+    }
 #endif
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
     Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+#if IS_GGS_TOURNAMENT
+    if (
+        selfplay_resolve_result.valid &&
+        is_valid_policy(search_result.policy) &&
+        selfplay_resolve_result.policy != search_result.policy &&
+        selfplay_resolve_result.value + AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN >= search_result.value
+    ) {
+        if (show_log) {
+            std::cerr << "ggs selfplay resolve overrides main "
+                      << idx_to_coord(search_result.policy) << "=" << search_result.value
+                      << " -> " << idx_to_coord(selfplay_resolve_result.policy) << "="
+                      << std::fixed << std::setprecision(2) << selfplay_resolve_result.value << std::endl;
+        }
+        search_result.policy = selfplay_resolve_result.policy;
+        search_result.value = (int)std::round(selfplay_resolve_result.value);
+        search_result.depth = selfplay_resolve_result.depth;
+        search_result.probability = SELECTIVITY_PERCENTAGE[selfplay_resolve_result.mpc_level];
+        search_result.is_end_search = selfplay_resolve_result.is_endgame_search;
+    }
+#endif
     if (show_log) {
         std::cerr << "ai_time_limit selected " << idx_to_coord(search_result.policy) << " value " << search_result.value << " depth " << search_result.depth << "@" << search_result.probability << "%" << " time " << tim() - strt << " " << board.to_str() << std::endl << std::endl;
     }
