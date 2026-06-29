@@ -444,16 +444,25 @@ inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
     // return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
 }
 
+inline void append_current_fm_simd_ids(__m256i idx8, int active_ids[], int &n_active) {
+    int values[8];
+    _mm256_storeu_si256((__m256i*)values, idx8);
+    for (int i = 0; i < 8; ++i) {
+        active_ids[n_active++] = values[i] - 1;
+    }
+}
+
 inline int calc_pattern(const int phase_idx, Eval_features *features, const int num0) {
-    uint16_t feature_ids_1origin[N_PATTERN_FEATURES];
     int active_ids[N_PATTERN_FEATURES + 1];
     int n_active = 0;
-    for (int i = 0; i < N_EVAL_VECTORS; ++i) {
-        _mm256_storeu_si256((__m256i*)(feature_ids_1origin + i * 16), features->f256[i]);
-    }
-    for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
-        active_ids[n_active++] = (int)feature_ids_1origin[i] - 1;
-    }
+    append_current_fm_simd_ids(_mm256_cvtepu16_epi32(features->f128[0]), active_ids, n_active);
+    append_current_fm_simd_ids(_mm256_cvtepu16_epi32(features->f128[1]), active_ids, n_active);
+    append_current_fm_simd_ids(_mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[2]), _mm256_set1_epi32(PATTERN6_START_IDX)), active_ids, n_active);
+    append_current_fm_simd_ids(_mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[3]), _mm256_set1_epi32(PATTERN4_START_IDX)), active_ids, n_active);
+    append_current_fm_simd_ids(calc_idx8_comp(features->f128[4], 0), active_ids, n_active);
+    append_current_fm_simd_ids(calc_idx8_comp(features->f128[5], 1), active_ids, n_active);
+    append_current_fm_simd_ids(calc_idx8_comp(features->f128[6], 2), active_ids, n_active);
+    append_current_fm_simd_ids(calc_idx8_comp(features->f128[7], 3), active_ids, n_active);
     active_ids[n_active++] = CURRENT_FM_N_PATTERN_PARAMS_RAW + num0;
     return current_fm_score_from_ids(phase_idx, active_ids, n_active);
 }
