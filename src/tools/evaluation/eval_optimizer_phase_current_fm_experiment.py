@@ -19,6 +19,8 @@ def main():
     parser.add_argument("--reduce-lr-ratio", type=float, default=0.7)
     parser.add_argument("--train-root", required=True)
     parser.add_argument("--train-ids", required=True, help="comma-separated train data IDs")
+    parser.add_argument("--exclude-train-ids", default="", help="comma-separated train data IDs to skip")
+    parser.add_argument("--max-train-file-bytes", type=int, default=0, help="skip train files larger than this size; 0 disables the filter")
     parser.add_argument("--initial-dir", default="")
     parser.add_argument("--work-dir", required=True)
     parser.add_argument("--exe", default="src/tools/evaluation/eval_optimizer_fm_cuda_12_2_0.exe")
@@ -32,11 +34,20 @@ def main():
     train_root = Path(args.train_root)
     if not train_root.is_absolute():
         train_root = (repo / train_root).resolve()
-    train_files = [
-        train_root / str(args.phase) / f"{train_id}.dat"
-        for train_id in parse_ids(args.train_ids)
-    ]
-    train_files = [path for path in train_files if path.exists() and path.stat().st_size > 0]
+    excluded_ids = set(parse_ids(args.exclude_train_ids))
+    train_files = []
+    for train_id in parse_ids(args.train_ids):
+        if train_id in excluded_ids:
+            continue
+        path = train_root / str(args.phase) / f"{train_id}.dat"
+        if not path.exists():
+            continue
+        size = path.stat().st_size
+        if size <= 0:
+            continue
+        if args.max_train_file_bytes > 0 and size > args.max_train_file_bytes:
+            continue
+        train_files.append(path)
     if not train_files:
         raise RuntimeError("no non-empty training files found")
 

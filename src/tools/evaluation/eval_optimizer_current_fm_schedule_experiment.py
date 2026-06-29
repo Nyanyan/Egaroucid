@@ -69,6 +69,8 @@ def main():
     parser.add_argument("--train-root", required=True)
     parser.add_argument("--train-ids", default="", help="fallback comma-separated train data IDs")
     parser.add_argument("--file-id-limit", type=int, default=0)
+    parser.add_argument("--exclude-train-ids", default="", help="comma-separated train data IDs to skip")
+    parser.add_argument("--max-train-file-bytes", type=int, default=0, help="skip train files larger than this size; 0 disables the filter")
     parser.add_argument("--initial-dir", default="")
     parser.add_argument("--work-dir", required=True)
     parser.add_argument("--n-patience", type=int, default=100)
@@ -103,6 +105,8 @@ def main():
         f.write(f"train_root={args.train_root}\n")
         f.write(f"train_ids={args.train_ids}\n")
         f.write(f"file_id_limit={args.file_id_limit}\n")
+        f.write(f"exclude_train_ids={args.exclude_train_ids}\n")
+        f.write(f"max_train_file_bytes={args.max_train_file_bytes}\n")
         f.write(f"initial_dir={args.initial_dir}\n")
         f.write(f"n_patience={args.n_patience}\n")
         f.write(f"reduce_lr_patience={args.reduce_lr_patience}\n")
@@ -129,6 +133,8 @@ def main():
             "--alpha", str(phase_alpha),
             "--train-root", args.train_root,
             "--train-ids", ",".join(str(elem) for elem in ids),
+            "--exclude-train-ids", args.exclude_train_ids,
+            "--max-train-file-bytes", str(args.max_train_file_bytes),
             "--work-dir", args.work_dir,
             "--n-patience", str(args.n_patience),
             "--reduce-lr-patience", str(args.reduce_lr_patience),
