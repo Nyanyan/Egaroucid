@@ -75,6 +75,7 @@ def main():
         return 1
 
     train_root = Path(args.train_root or (os.environ["EGAROUCID_DATA"] + "/train_data/bin_data/20241125_1")).resolve()
+    initial_dir = Path(args.initial_dir).resolve() if args.initial_dir is not None else None
     output_dir = Path(args.output_dir).resolve()
     log_dir = output_dir / "logs"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -101,7 +102,7 @@ def main():
         f.write(f"reduce_lr_ratio={args.reduce_lr_ratio}\n")
         f.write(f"round_ms={args.round_ms}\n")
         f.write(f"max_files_per_phase={args.max_files_per_phase}\n")
-        f.write(f"initial_dir={args.initial_dir or ''}\n")
+        f.write(f"initial_dir={initial_dir or ''}\n")
         f.write(f"legacy_trained_cwd={legacy_trained_cwd}\n")
 
     summary_path = output_dir / "summary.tsv"
@@ -116,8 +117,8 @@ def main():
                 return 1
 
             in_file = "none.txt"
-            if args.initial_dir is not None:
-                candidate = Path(args.initial_dir) / f"{phase}.txt"
+            if initial_dir is not None:
+                candidate = initial_dir / f"{phase}.txt"
                 if candidate.exists():
                     in_file = str(candidate)
 
