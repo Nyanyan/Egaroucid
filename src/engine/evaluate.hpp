@@ -10,8 +10,26 @@
 
 #pragma once
 #include "setting.hpp"
+
+#if defined(EVALUATE_EXPERIMENT_7_7_BETA)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_beta.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_beta.hpp"
+    #endif
+#endif
+
+#ifndef EVALUATE_SIMD_HEADER
+    #define EVALUATE_SIMD_HEADER "evaluate_simd.hpp"
+#endif
+
+#ifndef EVALUATE_GENERIC_HEADER
+    #define EVALUATE_GENERIC_HEADER "evaluate_generic.hpp"
+#endif
+
 #if USE_SIMD_EVALUATION
-#include "evaluate_simd.hpp"
+#include EVALUATE_SIMD_HEADER
 #else
-#include "evaluate_generic.hpp"
+#include EVALUATE_GENERIC_HEADER
 #endif

@@ -16,7 +16,11 @@
 */
 // disc patterns
 constexpr int N_PATTERNS = 16;          // number of patterns used
+#if defined(EVALUATE_EXPERIMENT_7_7_BETA)
+constexpr int MAX_CELL_PATTERNS = 17;   // 7.7 beta uses up to 17 patterns per cell
+#else
 constexpr int MAX_CELL_PATTERNS = 15;   // 1 cell belongs up to 15 patterns
+#endif
 constexpr int MAX_PATTERN_CELLS = 10;   // up to 10 cells for a pattern
 constexpr int MAX_EVALUATE_IDX = 59049; // 3^10: up to 10 cells for pattern
 constexpr int N_PATTERN_FEATURES = 64;  // 64 features are used
@@ -46,6 +50,10 @@ constexpr int STEP_2 = 16; // STEP / 2
 
 // constexpr int STEP_MO_END = 32; // 1 disc = 64
 // constexpr int STEP_2_MO_END = 16; // STEP / 2
+#if defined(EVALUATE_EXPERIMENT_7_7_BETA)
+constexpr int STEP_MO_END = 32;
+constexpr int STEP_2_MO_END = 16;
+#endif
 
 /*
     @brief 3 ^ N definition
