@@ -18,6 +18,28 @@ def write_phase(path, values):
             f.write(f"{value}\n")
 
 
+def parse_phases(value, n_phases):
+    if value is None or value.strip() == "":
+        return set(range(n_phases))
+    phases = set()
+    for part in value.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            start_s, end_s = part.split("-", 1)
+            start = int(start_s)
+            end = int(end_s)
+            step = 1 if start <= end else -1
+            phases.update(range(start, end + step, step))
+        else:
+            phases.add(int(part))
+    invalid = [phase for phase in phases if phase < 0 or phase >= n_phases]
+    if invalid:
+        raise SystemExit(f"phase out of range: {sorted(invalid)}")
+    return phases
+
+
 def blend_values(base, candidate, ratio):
     return [
         int(round((1.0 - ratio) * base_value + ratio * candidate_value))
@@ -32,10 +54,12 @@ def main():
     parser.add_argument("output_dir")
     parser.add_argument("--phases", type=int, default=60)
     parser.add_argument("--ratio", type=float, required=True)
+    parser.add_argument("--blend-phases", default=None)
     args = parser.parse_args()
 
     if not (0.0 <= args.ratio <= 1.0):
         raise SystemExit("--ratio must be in [0.0, 1.0]")
+    blend_phases = parse_phases(args.blend_phases, args.phases)
 
     base_dir = Path(args.base_dir)
     candidate_dir = Path(args.candidate_dir)
@@ -64,7 +88,10 @@ def main():
                 f"base={len(base)} candidate={len(candidate)}"
             )
 
-        blended = blend_values(base, candidate, args.ratio)
+        if phase in blend_phases:
+            blended = blend_values(base, candidate, args.ratio)
+        else:
+            blended = list(base)
         write_phase(output_dir / f"{phase}.txt", blended)
 
         deltas = [value - base_value for value, base_value in zip(blended, base)]
@@ -97,6 +124,7 @@ def main():
         f.write(f"output_dir={output_dir.resolve()}\n")
         f.write(f"phases={args.phases}\n")
         f.write(f"ratio={args.ratio}\n")
+        f.write(f"blend_phases={args.blend_phases or '0-' + str(args.phases - 1)}\n")
         f.write(f"total_params={total_params}\n")
         f.write(f"total_changed={total_changed}\n")
         f.write(f"avg_abs_delta_from_base={total_abs_delta / max(1, total_params):.6f}\n")
