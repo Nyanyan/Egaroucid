@@ -9,6 +9,7 @@ VARIANT_EXE = {
     "baseline_20260513_all_off": "eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260513_all_off.exe",
     "stable": "eval_optimizer_cuda_stable_adam_12_2_0.exe",
     "robust": "eval_optimizer_cuda_robust_adam_12_2_0.exe",
+    "robust_edax_linear": "eval_optimizer_cuda_robust_adam_edax_linear_12_2_0.exe",
 }
 
 LEGACY_TRAINED_CWD_VARIANTS = {

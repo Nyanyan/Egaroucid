@@ -15,17 +15,27 @@
     @brief evaluation pattern definition
 */
 // disc patterns
+#if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR)
+constexpr int N_PATTERNS = 13;          // Edax linear model pattern groups
+#else
 constexpr int N_PATTERNS = 16;          // number of patterns used
+#endif
 #if defined(EVALUATE_EXPERIMENT_7_7_BETA)
 constexpr int MAX_CELL_PATTERNS = 17;   // 7.7 beta uses up to 17 patterns per cell
+#elif defined(EVALUATE_EXPERIMENT_EDAX_LINEAR)
+constexpr int MAX_CELL_PATTERNS = 7;    // Edax linear uses up to 7 patterns per cell
 #else
 constexpr int MAX_CELL_PATTERNS = 15;   // 1 cell belongs up to 15 patterns
 #endif
 constexpr int MAX_PATTERN_CELLS = 10;   // up to 10 cells for a pattern
 constexpr int MAX_EVALUATE_IDX = 59049; // 3^10: up to 10 cells for pattern
+#if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR)
+constexpr int N_PATTERN_FEATURES = 47;  // Edax linear board features plus bias
+#else
 constexpr int N_PATTERN_FEATURES = 64;  // 64 features are used
+#endif
 #if USE_SIMD_EVALUATION
-constexpr int N_EVAL_VECTORS = 4; // 16 (elems per 256 bit vector) * N_EVAL_VECTORS >= N_PATTERN_FEATURES
+constexpr int N_EVAL_VECTORS = (N_PATTERN_FEATURES + 15) / 16; // 16 elems per 256 bit vector
 #endif
 
 // additional features

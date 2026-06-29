@@ -1,0 +1,149 @@
+/*
+    Egaroucid Project
+
+    @file evaluation_definition_experiment_edax_linear.hpp
+        Isolated Edax-linear Evaluation Function Definition
+    @date 2026
+    @author Takuto Yamana, Codex
+    @license GPL-3.0-or-later
+*/
+
+#pragma once
+#ifndef OPTIMIZER_INCLUDE
+    #include "./../../engine/board.hpp"
+#endif
+#include "evaluation_definition_common.hpp"
+
+#define EVAL_DEFINITION_NAME "experiment_edax_linear"
+#define EVAL_DEFINITION_DESCRIPTION "Edax linear pattern set without geometric packing + bias"
+
+#define ADJ_N_PATTERNS 13
+#define ADJ_N_SYMMETRY_PATTERNS 47
+#define ADJ_MAX_PATTERN_CELLS 10
+#define ADJ_N_ADDITIONAL_EVALS 0
+#define ADJ_MAX_STONE_NUM 65
+#define ADJ_MAX_EVALUATE_IDX 59049
+#define ADJ_N_EVAL 13
+#define ADJ_N_FEATURES 47
+#define ADJ_N_PHASES 60
+#define ADJ_N_PHASE_DISCS 1
+#define ADJ_STEP 32
+#define ADJ_STEP_2 16
+#define ADJ_EVAL_PARAM_MAX 4091
+
+struct Adj_Feature_to_coord {
+    uint_fast8_t n_cells;
+    uint_fast8_t cells[ADJ_MAX_PATTERN_CELLS];
+};
+
+constexpr Adj_Feature_to_coord adj_feature_to_coord[ADJ_N_SYMMETRY_PATTERNS] = {
+    { 9, {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C1, COORD_A3, COORD_C2, COORD_B3, COORD_C3, COORD_NO}},
+    { 9, {COORD_H1, COORD_G1, COORD_H2, COORD_G2, COORD_F1, COORD_H3, COORD_F2, COORD_G3, COORD_F3, COORD_NO}},
+    { 9, {COORD_A8, COORD_A7, COORD_B8, COORD_B7, COORD_A6, COORD_C8, COORD_B6, COORD_C7, COORD_C6, COORD_NO}},
+    { 9, {COORD_H8, COORD_H7, COORD_G8, COORD_G7, COORD_H6, COORD_F8, COORD_G6, COORD_F7, COORD_F6, COORD_NO}},
+    {10, {COORD_A5, COORD_A4, COORD_A3, COORD_A2, COORD_A1, COORD_B2, COORD_B1, COORD_C1, COORD_D1, COORD_E1}},
+    {10, {COORD_H5, COORD_H4, COORD_H3, COORD_H2, COORD_H1, COORD_G2, COORD_G1, COORD_F1, COORD_E1, COORD_D1}},
+    {10, {COORD_A4, COORD_A5, COORD_A6, COORD_A7, COORD_A8, COORD_B7, COORD_B8, COORD_C8, COORD_D8, COORD_E8}},
+    {10, {COORD_H4, COORD_H5, COORD_H6, COORD_H7, COORD_H8, COORD_G7, COORD_G8, COORD_F8, COORD_E8, COORD_D8}},
+    {10, {COORD_B2, COORD_A1, COORD_B1, COORD_C1, COORD_D1, COORD_E1, COORD_F1, COORD_G1, COORD_H1, COORD_G2}},
+    {10, {COORD_B7, COORD_A8, COORD_B8, COORD_C8, COORD_D8, COORD_E8, COORD_F8, COORD_G8, COORD_H8, COORD_G7}},
+    {10, {COORD_B2, COORD_A1, COORD_A2, COORD_A3, COORD_A4, COORD_A5, COORD_A6, COORD_A7, COORD_A8, COORD_B7}},
+    {10, {COORD_G2, COORD_H1, COORD_H2, COORD_H3, COORD_H4, COORD_H5, COORD_H6, COORD_H7, COORD_H8, COORD_G7}},
+    {10, {COORD_A1, COORD_C1, COORD_D1, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_E1, COORD_F1, COORD_H1}},
+    {10, {COORD_A8, COORD_C8, COORD_D8, COORD_C7, COORD_D7, COORD_E7, COORD_F7, COORD_E8, COORD_F8, COORD_H8}},
+    {10, {COORD_A1, COORD_A3, COORD_A4, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_A5, COORD_A6, COORD_A8}},
+    {10, {COORD_H1, COORD_H3, COORD_H4, COORD_G3, COORD_G4, COORD_G5, COORD_G6, COORD_H5, COORD_H6, COORD_H8}},
+    { 8, {COORD_A2, COORD_B2, COORD_C2, COORD_D2, COORD_E2, COORD_F2, COORD_G2, COORD_H2, COORD_NO, COORD_NO}},
+    { 8, {COORD_A7, COORD_B7, COORD_C7, COORD_D7, COORD_E7, COORD_F7, COORD_G7, COORD_H7, COORD_NO, COORD_NO}},
+    { 8, {COORD_B1, COORD_B2, COORD_B3, COORD_B4, COORD_B5, COORD_B6, COORD_B7, COORD_B8, COORD_NO, COORD_NO}},
+    { 8, {COORD_G1, COORD_G2, COORD_G3, COORD_G4, COORD_G5, COORD_G6, COORD_G7, COORD_G8, COORD_NO, COORD_NO}},
+    { 8, {COORD_A3, COORD_B3, COORD_C3, COORD_D3, COORD_E3, COORD_F3, COORD_G3, COORD_H3, COORD_NO, COORD_NO}},
+    { 8, {COORD_A6, COORD_B6, COORD_C6, COORD_D6, COORD_E6, COORD_F6, COORD_G6, COORD_H6, COORD_NO, COORD_NO}},
+    { 8, {COORD_C1, COORD_C2, COORD_C3, COORD_C4, COORD_C5, COORD_C6, COORD_C7, COORD_C8, COORD_NO, COORD_NO}},
+    { 8, {COORD_F1, COORD_F2, COORD_F3, COORD_F4, COORD_F5, COORD_F6, COORD_F7, COORD_F8, COORD_NO, COORD_NO}},
+    { 8, {COORD_A4, COORD_B4, COORD_C4, COORD_D4, COORD_E4, COORD_F4, COORD_G4, COORD_H4, COORD_NO, COORD_NO}},
+    { 8, {COORD_A5, COORD_B5, COORD_C5, COORD_D5, COORD_E5, COORD_F5, COORD_G5, COORD_H5, COORD_NO, COORD_NO}},
+    { 8, {COORD_D1, COORD_D2, COORD_D3, COORD_D4, COORD_D5, COORD_D6, COORD_D7, COORD_D8, COORD_NO, COORD_NO}},
+    { 8, {COORD_E1, COORD_E2, COORD_E3, COORD_E4, COORD_E5, COORD_E6, COORD_E7, COORD_E8, COORD_NO, COORD_NO}},
+    { 8, {COORD_A1, COORD_B2, COORD_C3, COORD_D4, COORD_E5, COORD_F6, COORD_G7, COORD_H8, COORD_NO, COORD_NO}},
+    { 8, {COORD_A8, COORD_B7, COORD_C6, COORD_D5, COORD_E4, COORD_F3, COORD_G2, COORD_H1, COORD_NO, COORD_NO}},
+    { 7, {COORD_B1, COORD_C2, COORD_D3, COORD_E4, COORD_F5, COORD_G6, COORD_H7, COORD_NO, COORD_NO, COORD_NO}},
+    { 7, {COORD_H2, COORD_G3, COORD_F4, COORD_E5, COORD_D6, COORD_C7, COORD_B8, COORD_NO, COORD_NO, COORD_NO}},
+    { 7, {COORD_A2, COORD_B3, COORD_C4, COORD_D5, COORD_E6, COORD_F7, COORD_G8, COORD_NO, COORD_NO, COORD_NO}},
+    { 7, {COORD_G1, COORD_F2, COORD_E3, COORD_D4, COORD_C5, COORD_B6, COORD_A7, COORD_NO, COORD_NO, COORD_NO}},
+    { 6, {COORD_C1, COORD_D2, COORD_E3, COORD_F4, COORD_G5, COORD_H6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 6, {COORD_A3, COORD_B4, COORD_C5, COORD_D6, COORD_E7, COORD_F8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 6, {COORD_F1, COORD_E2, COORD_D3, COORD_C4, COORD_B5, COORD_A6, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 6, {COORD_H3, COORD_G4, COORD_F5, COORD_E6, COORD_D7, COORD_C8, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 5, {COORD_D1, COORD_E2, COORD_F3, COORD_G4, COORD_H5, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 5, {COORD_A4, COORD_B5, COORD_C6, COORD_D7, COORD_E8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 5, {COORD_E1, COORD_D2, COORD_C3, COORD_B4, COORD_A5, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 5, {COORD_H4, COORD_G5, COORD_F6, COORD_E7, COORD_D8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 4, {COORD_D1, COORD_C2, COORD_B3, COORD_A4, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 4, {COORD_A5, COORD_B6, COORD_C7, COORD_D8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 4, {COORD_E1, COORD_F2, COORD_G3, COORD_H4, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 4, {COORD_H5, COORD_G6, COORD_F7, COORD_E8, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}},
+    { 0, {COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO, COORD_NO}}
+};
+
+constexpr int adj_pattern_n_cells[ADJ_N_PATTERNS] = {
+    9, 10, 10, 10, 8, 8, 8, 8, 7, 6, 5, 4, 0
+};
+
+constexpr int adj_eval_sizes[ADJ_N_EVAL] = {
+    P39, P310, P310, P310, P38, P38, P38, P38, P37, P36, P35, P34, P30
+};
+
+constexpr int adj_feature_to_eval_idx[ADJ_N_FEATURES] = {
+    0, 0, 0, 0,
+    1, 1, 1, 1,
+    2, 2, 2, 2,
+    3, 3, 3, 3,
+    4, 4, 4, 4,
+    5, 5, 5, 5,
+    6, 6, 6, 6,
+    7, 7,
+    8, 8, 8, 8,
+    9, 9, 9, 9,
+    10, 10, 10, 10,
+    11, 11, 11, 11,
+    12
+};
+
+int adj_pick_digit3(int num, int d, int n_digit) {
+    num /= adj_pow3[n_digit - 1 - d];
+    return num % 3;
+}
+
+uint16_t adj_calc_rev_idx(int, int idx) {
+    return (uint16_t)idx;
+}
+
+#ifndef OPTIMIZER_INCLUDE
+
+inline int adj_pick_pattern(const uint_fast8_t b_arr[], int pattern_idx) {
+    int res = 0;
+    for (int i = 0; i < adj_feature_to_coord[pattern_idx].n_cells; ++i) {
+        res *= 3;
+        res += b_arr[adj_feature_to_coord[pattern_idx].cells[i]];
+    }
+    return res;
+}
+
+void adj_calc_features(Board *board, uint16_t res[]) {
+    uint_fast8_t b_arr[HW2];
+    board->translate_to_arr_player(b_arr);
+    for (int i = 0; i < ADJ_N_SYMMETRY_PATTERNS; ++i) {
+        res[i] = adj_pick_pattern(b_arr, i);
+    }
+}
+
+int calc_phase(Board *board, int16_t) {
+    return (pop_count_ull(board->player | board->opponent) - 4) / ADJ_N_PHASE_DISCS;
+}
+
+void evaluation_definition_init() {
+    mobility_init();
+}
+
+#endif

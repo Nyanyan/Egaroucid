@@ -1,0 +1,2 @@
+#define EVALUATION_DEFINITION_HEADER "evaluation_definition_experiment_edax_linear.hpp"
+#include "eval_optimizer_cuda_robust_adam.cu"
