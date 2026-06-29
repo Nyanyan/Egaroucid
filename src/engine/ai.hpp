@@ -2493,6 +2493,70 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
     return boosted_time_limit;
 }
 
+constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_N_EMPTY = 36;
+constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_N_EMPTY = 41;
+constexpr uint64_t AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_REMAINING_TIME = 25000ULL;
+constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_VALUE = -14.0;
+constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_BEST_VALUE = -3.0;
+constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_PROBE_ADVANTAGE = 0.75;
+constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_DEPTH = 14;
+constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_DEPTH = 30;
+constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_PROBABILITY = SELECTIVITY_PERCENTAGE[MPC_88_LEVEL];
+
+inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
+    const Board &board,
+    const std::vector<Ponder_elem> &move_list,
+    const Search_result &search_result,
+    uint64_t remaining_time_msec,
+    bool show_log
+) {
+    const int n_empties = HW2 - board.n_discs();
+    if (
+        n_empties < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_N_EMPTY ||
+        n_empties > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_N_EMPTY ||
+        remaining_time_msec < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_REMAINING_TIME ||
+        !is_valid_policy(search_result.policy) ||
+        search_result.depth > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_DEPTH ||
+        search_result.probability > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_PROBABILITY
+    ) {
+        return nullptr;
+    }
+
+    const Ponder_elem *best = nullptr;
+    const Ponder_elem *selected = nullptr;
+    for (const Ponder_elem &elem: move_list) {
+        if (elem.count <= 0 || !is_valid_policy(elem.flip.pos)) {
+            continue;
+        }
+        if (best == nullptr || elem.value > best->value) {
+            best = &elem;
+        }
+        if (elem.flip.pos == search_result.policy) {
+            selected = &elem;
+        }
+    }
+    if (
+        best == nullptr ||
+        selected == nullptr ||
+        best->flip.pos == search_result.policy ||
+        best->depth < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_DEPTH ||
+        best->value < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_VALUE ||
+        best->value > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_BEST_VALUE ||
+        best->value < selected->value + AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_PROBE_ADVANTAGE
+    ) {
+        return nullptr;
+    }
+
+    if (show_log) {
+        std::cerr << "ggs late ambiguity fallback "
+                  << idx_to_coord(search_result.policy) << "=" << std::fixed << std::setprecision(2) << selected->value
+                  << " -> " << idx_to_coord(best->flip.pos) << "=" << best->value
+                  << " main " << search_result.value << " depth "
+                  << search_result.depth << "@" << search_result.probability << "%" << std::endl;
+    }
+    return best;
+}
+
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY = 42;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_N_EMPTY = 50;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT = 20000ULL;
@@ -2834,6 +2898,22 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         search_result.depth = selfplay_resolve_result.depth;
         search_result.probability = SELECTIVITY_PERCENTAGE[selfplay_resolve_result.mpc_level];
         search_result.is_end_search = selfplay_resolve_result.is_endgame_search;
+    }
+    if (has_ambiguity_move_list) {
+        const Ponder_elem *late_fallback = ai_time_limit_ggs_late_ambiguity_fallback(
+            board,
+            ambiguity_move_list,
+            search_result,
+            remaining_time_msec,
+            show_log
+        );
+        if (late_fallback != nullptr) {
+            search_result.policy = late_fallback->flip.pos;
+            search_result.value = (int)std::round(late_fallback->value);
+            search_result.depth = late_fallback->depth;
+            search_result.probability = SELECTIVITY_PERCENTAGE[late_fallback->mpc_level];
+            search_result.is_end_search = late_fallback->is_endgame_search;
+        }
     }
 #endif
     const uint64_t whole_elapsed = tim() - strt;
