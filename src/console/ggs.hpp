@@ -1961,9 +1961,24 @@ inline void ggs_subtract_elapsed_from_remaining_time_to_move(GGS_Board *ggs_boar
     }
 }
 
-inline uint64_t ggs_synchro_hint_wait_msec(const GGS_Board &ggs_board) {
+inline uint64_t ggs_synchro_hint_wait_msec(const GGS_Board &ggs_board, const Search_result &search_result) {
     const int n_discs = ggs_board.board.n_discs();
     const uint64_t remaining_time_msec = ggs_remaining_time_msec_to_move(ggs_board);
+    if (
+        n_discs <= 20 &&
+        remaining_time_msec > 100000ULL &&
+        search_result.value <= -8
+    ) {
+        return 7000ULL;
+    }
+    if (
+        n_discs <= 24 &&
+        remaining_time_msec > 80000ULL &&
+        search_result.value <= -6 &&
+        (search_result.depth < 32 || search_result.probability < 93)
+    ) {
+        return 4500ULL;
+    }
     if (n_discs <= 20 && remaining_time_msec > 120000ULL) {
         return 1500ULL;
     }
@@ -2108,7 +2123,7 @@ void ggs_store_pending_move(GGS_Pending_Move *pending_move, const GGS_Board &ggs
     pending_move->board = ggs_board;
     pending_move->result = search_result;
     pending_move->ready_time = tim();
-    pending_move->max_wait_msec = ggs_synchro_hint_wait_msec(ggs_board);
+    pending_move->max_wait_msec = ggs_synchro_hint_wait_msec(ggs_board, search_result);
 }
 
 void ggs_store_pending_search(
