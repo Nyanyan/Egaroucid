@@ -410,7 +410,6 @@ inline bool ggs_should_override_with_hint(const Board &board, int policy, int hi
     if (
         verified_analysis_hint &&
         n_discs <= 36 &&
-        search_result.value <= -8 &&
         (!search_result.is_end_search || search_result.probability < 100)
     ) {
         return true;
@@ -705,6 +704,18 @@ int ggs_seed_verified_analysis_hints(GGS_Move_Hint_Table *move_hints, Options *o
         {
             "------------O---OXXOOOX-OOOOOXO-OOOXXOO-OOXXOO--O-XXX-----O----- X",
             "b7"
+        },
+        {
+            "----------O-O-----OOOOOO-OOOOXX--OOXXXXX-XXXXXX---OX------------ X",
+            "a5"
+        },
+        {
+            "-----------------XO-OO----XXOX----OXOX----O-OO----O------------- X",
+            "d3"
+        },
+        {
+            "----------O-------O-XO----OXO----XXXXO----XXOX------------------ X",
+            "g5"
         }
     };
 
