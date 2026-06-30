@@ -329,7 +329,22 @@ struct Contest_record_queue {
         : active_workers(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {}
 };
 
-std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, int level, bool use_multi_thread, thread_id_t thread_id) {
+bool contest_record_should_use_search_threads(Contest_record_queue *queue, int n_workers, bool use_multi_thread) {
+    if (use_multi_thread || queue == nullptr || n_workers <= 1) {
+        return use_multi_thread;
+    }
+    std::lock_guard<std::mutex> lock(queue->mtx);
+    return !queue->stop && queue->tasks.empty() && queue->active_workers < n_workers;
+}
+
+std::vector<Contest_record_scored_move> contest_record_score_moves(
+    Board board,
+    int level,
+    bool use_multi_thread,
+    thread_id_t thread_id,
+    Contest_record_queue *queue,
+    int n_workers
+) {
     std::vector<Contest_record_scored_move> res;
     uint64_t legal = board.get_legal();
     Flip flip;
@@ -337,7 +352,8 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, 
         calc_flip(&flip, &board, cell);
         board.move_board(&flip);
         bool searching = true;
-        Search_result search_result = ai_searching_thread_id(board, level, false, 0, use_multi_thread, false, thread_id, &searching);
+        const bool search_use_multi_thread = contest_record_should_use_search_threads(queue, n_workers, use_multi_thread);
+        Search_result search_result = ai_searching_thread_id(board, level, false, 0, search_use_multi_thread, false, thread_id, &searching);
         int value = search_result.value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -search_result.value;
         res.emplace_back((int)cell, value);
         board.undo_board(&flip);
@@ -357,7 +373,9 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
     bool use_multi_thread,
     thread_id_t thread_id,
     Contest_record_score_cache *score_cache,
-    std::mutex *score_cache_mtx
+    std::mutex *score_cache_mtx,
+    Contest_record_queue *queue,
+    int n_workers
 ) {
     {
         std::lock_guard<std::mutex> lock(*score_cache_mtx);
@@ -366,7 +384,7 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
             return it->second;
         }
     }
-    std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread, thread_id);
+    std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread, thread_id, queue, n_workers);
     {
         std::lock_guard<std::mutex> lock(*score_cache_mtx);
         auto it = score_cache->find(board);
@@ -378,12 +396,13 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
     return res;
 }
 
-int contest_record_leaf_value(Board board, bool use_multi_thread, thread_id_t thread_id) {
+int contest_record_leaf_value(Board board, bool use_multi_thread, thread_id_t thread_id, Contest_record_queue *queue, int n_workers) {
     if (board.is_end()) {
         return board.score_player();
     }
     bool searching = true;
-    Search_result search_result = ai_searching_thread_id(board, MAX_LEVEL, false, 0, use_multi_thread, false, thread_id, &searching);
+    const bool search_use_multi_thread = contest_record_should_use_search_threads(queue, n_workers, use_multi_thread);
+    Search_result search_result = ai_searching_thread_id(board, MAX_LEVEL, false, 0, search_use_multi_thread, false, thread_id, &searching);
     if (search_result.value != SCORE_UNDEFINED) {
         return search_result.value;
     }
@@ -439,7 +458,9 @@ Contest_record_expand_result contest_record_expand_state(
     Contest_record_score_cache *score_cache,
     std::mutex *score_cache_mtx,
     bool use_multi_thread,
-    thread_id_t thread_id
+    thread_id_t thread_id,
+    Contest_record_queue *queue,
+    int n_workers
 ) {
     Contest_record_expand_result result;
     while (HW2 - state.board.n_discs() > cut_empty && state.board.get_legal() == 0ULL && !state.board.is_end()) {
@@ -451,20 +472,20 @@ Contest_record_expand_result contest_record_expand_state(
                 state.board,
                 state.transcript,
                 state.loss_sum,
-                contest_record_leaf_value(state.board, use_multi_thread, thread_id)
+                contest_record_leaf_value(state.board, use_multi_thread, thread_id, queue, n_workers)
             );
         }
         return result;
     }
 
-    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(state.board, options->level, use_multi_thread, thread_id, score_cache, score_cache_mtx);
+    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(state.board, options->level, use_multi_thread, thread_id, score_cache, score_cache_mtx, queue, n_workers);
     if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
         if (state.loss_sum == target_loss_sum) {
             result.leaves.emplace_back(
                 state.board,
                 state.transcript,
                 state.loss_sum,
-                contest_record_leaf_value(state.board, use_multi_thread, thread_id)
+                contest_record_leaf_value(state.board, use_multi_thread, thread_id, queue, n_workers)
             );
         }
         return result;
@@ -565,7 +586,9 @@ void contest_record_worker_loop(
             score_cache,
             score_cache_mtx,
             use_multi_thread,
-            THREAD_ID_NONE
+            THREAD_ID_NONE,
+            queue,
+            n_workers
         );
 
         {
@@ -642,7 +665,7 @@ std::string contest_record_play_one_game(
     int loss_sum = 0;
     Flip flip;
     while (HW2 - board.n_discs() > cut_empty && board.check_pass()) {
-        std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves(board, options->level, true, THREAD_ID_NONE);
+        std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves(board, options->level, true, THREAD_ID_NONE, nullptr, 1);
         if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
             break;
         }
@@ -667,7 +690,7 @@ std::string contest_record_play_one_game(
         calc_flip(&flip, &board, selected.policy);
         board.move_board(&flip);
     }
-    int leaf_value = contest_record_leaf_value(board, true, THREAD_ID_NONE);
+    int leaf_value = contest_record_leaf_value(board, true, THREAD_ID_NONE, nullptr, 1);
     std::ostringstream oss;
     oss << "record: " << game_idx << '\n';
     oss << "initial board: " << initial_board << '\n';
