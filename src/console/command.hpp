@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+#include <filesystem>
 #include <string>
 #include <sstream>
 #include <cctype>
@@ -54,6 +55,23 @@ void allocate_time(Options *options, State *state) {
     }
 }
 
+void clear_contest_book(State *state) {
+    state->contest_book.clear();
+    state->contest_book_start = "";
+}
+
+void load_contest_book_for_board(Board_info *board, Options *options, State *state) {
+    clear_contest_book(state);
+    if (!options->contest_book) {
+        return;
+    }
+    std::string initial_board = board->board.to_str(board->player);
+    std::filesystem::path contest_book_path = contest_book_path_for_start(options->contest_book_dir, initial_board);
+    if (state->contest_book.init(contest_book_path.string(), options->show_log)) {
+        state->contest_book_start = initial_board;
+    }
+}
+
 void update_time(int player, State *state, Options *options, uint64_t elapsed) {
     if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
         uint64_t *remaining_time_msec;
@@ -72,6 +90,7 @@ void update_time(int player, State *state, Options *options, uint64_t elapsed) {
 
 void init_board(Board_info *board, Options *options, State *state) {
     board->reset();
+    clear_contest_book(state);
     allocate_time(options, state);
 }
 
@@ -212,7 +231,15 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         }
     }
     Search_result result;
-    if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+    if (options->contest_book && state->contest_book.get_search_result(board->board, &result)) {
+        if (options->show_log) {
+            std::cerr << "contest book selected " << idx_to_coord(result.policy)
+                      << " value " << result.value
+                      << " boards " << state->contest_book.size()
+                      << " " << board->board.to_str()
+                      << std::endl;
+        }
+    } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
         if (options->play_loss && myrandom() < options->play_loss_ratio) { // play with loss
             result = ai_loss(board->board, options->level, true, 0, true, options->show_log, options->play_loss_max);
         } else { // normal search
@@ -280,6 +307,7 @@ void setboard(Board_info *board, Options *options, State *state, std::string boa
     board->players.emplace_back(board->player);
     board->ply_vec = 0;
     allocate_time(options, state);
+    load_contest_book_for_board(board, options, state);
 }
 
 void set_level(Options *options, std::string level_str) {

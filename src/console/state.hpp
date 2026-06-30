@@ -9,6 +9,7 @@
 */
 #pragma once
 #include "./../engine/engine_all.hpp"
+#include "./../engine/contest_book.hpp"
 
 struct State {
     bool book_changed;
@@ -16,11 +17,14 @@ struct State {
     uint64_t remaining_time_msec_white;
     std::future<std::vector<Ponder_elem>> ponder_future;
     bool ponder_searching;
+    Contest_book contest_book;
+    std::string contest_book_start;
 
     State() {
         book_changed = false;
         remaining_time_msec_black = 0;
         remaining_time_msec_white = 0;
         ponder_searching = false;
+        contest_book_start = "";
     }
 };
