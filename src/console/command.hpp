@@ -327,6 +327,7 @@ bool contest_book_analyze_result(const Board &board, const Contest_book &contest
     if (!is_valid_policy(played_move) || !(legal & (1ULL << played_move))) {
         return false;
     }
+    const int n_legal = pop_count_ull(legal);
     result->played_move = played_move;
     result->played_score = SCORE_UNDEFINED;
     result->played_depth = SEARCH_BOOK;
@@ -349,6 +350,9 @@ bool contest_book_analyze_result(const Board &board, const Contest_book &contest
         }
     }
     if (result->played_score == SCORE_UNDEFINED) {
+        return false;
+    }
+    if (result->alt_move == -1 && n_legal > 1) {
         return false;
     }
     if (result->alt_move == -1) {
