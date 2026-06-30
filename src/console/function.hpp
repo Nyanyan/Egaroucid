@@ -318,10 +318,18 @@ struct Contest_record_expand_result {
     std::vector<Contest_record_leaf> leaves;
 };
 
+struct Contest_record_active_search {
+    thread_id_t thread_id;
+    bool *searching;
+
+    Contest_record_active_search(thread_id_t thread_id_, bool *searching_)
+        : thread_id(thread_id_), searching(searching_) {}
+};
+
 struct Contest_record_queue {
     std::deque<Contest_record_state> tasks;
     std::unordered_set<std::string> seen_transcripts;
-    std::vector<thread_id_t> active_search_thread_ids;
+    std::vector<Contest_record_active_search> active_searches;
     std::array<int, THREAD_ID_SIZE> helper_thread_limits;
     std::mutex mtx;
     std::condition_variable cv;
@@ -331,7 +339,7 @@ struct Contest_record_queue {
     bool stop;
 
     Contest_record_queue(int n_generated_, int n_records_limit_, std::unordered_set<std::string> seen_transcripts_)
-        : tasks(), seen_transcripts(std::move(seen_transcripts_)), active_search_thread_ids(), helper_thread_limits(), active_workers(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {
+        : tasks(), seen_transcripts(std::move(seen_transcripts_)), active_searches(), helper_thread_limits(), active_workers(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {
         helper_thread_limits.fill(THREAD_SIZE_DEFAULT);
     }
 };
@@ -361,7 +369,10 @@ void contest_record_rebalance_search_helpers_locked(
     int n_workers,
     std::vector<Contest_record_helper_update> *updates
 ) {
-    const int active_searches = (int)queue->active_search_thread_ids.size();
+    if (queue->stop) {
+        return;
+    }
+    const int active_searches = (int)queue->active_searches.size();
     if (active_searches == 0) {
         return;
     }
@@ -370,7 +381,7 @@ void contest_record_rebalance_search_helpers_locked(
     const int base_helpers = helper_budget / active_searches;
     const int extra_helpers = helper_budget % active_searches;
     for (int i = 0; i < active_searches; ++i) {
-        const thread_id_t active_thread_id = queue->active_search_thread_ids[i];
+        const thread_id_t active_thread_id = queue->active_searches[i].thread_id;
         const int target_helpers = base_helpers + (i < extra_helpers ? 1 : 0);
         if (queue->helper_thread_limits[active_thread_id] != target_helpers) {
             queue->helper_thread_limits[active_thread_id] = target_helpers;
@@ -379,18 +390,49 @@ void contest_record_rebalance_search_helpers_locked(
     }
 }
 
-bool contest_record_begin_search(Contest_record_queue *queue, int n_workers, thread_id_t thread_id) {
-    if (queue == nullptr || n_workers <= 1 || thread_id == THREAD_ID_NONE) {
+void contest_record_request_stop_locked(
+    Contest_record_queue *queue,
+    std::vector<Contest_record_helper_update> *updates
+) {
+    queue->stop = true;
+    queue->tasks.clear();
+    for (Contest_record_active_search &active_search: queue->active_searches) {
+        if (active_search.searching != nullptr) {
+            *active_search.searching = false;
+        }
+        if (active_search.thread_id >= 0 && active_search.thread_id < THREAD_ID_SIZE && queue->helper_thread_limits[active_search.thread_id] != 0) {
+            queue->helper_thread_limits[active_search.thread_id] = 0;
+            updates->emplace_back(active_search.thread_id, 0);
+        }
+    }
+}
+
+bool contest_record_should_stop(Contest_record_queue *queue) {
+    if (queue == nullptr) {
+        return false;
+    }
+    std::lock_guard<std::mutex> lock(queue->mtx);
+    return queue->stop;
+}
+
+bool contest_record_begin_search(Contest_record_queue *queue, int n_workers, thread_id_t thread_id, bool *searching) {
+    if (queue == nullptr || n_workers <= 1 || thread_id == THREAD_ID_NONE || searching == nullptr) {
         return false;
     }
     std::vector<Contest_record_helper_update> updates;
     {
         std::lock_guard<std::mutex> lock(queue->mtx);
         if (queue->stop) {
+            *searching = false;
             return false;
         }
-        if (std::find(queue->active_search_thread_ids.begin(), queue->active_search_thread_ids.end(), thread_id) == queue->active_search_thread_ids.end()) {
-            queue->active_search_thread_ids.emplace_back(thread_id);
+        auto it = std::find_if(queue->active_searches.begin(), queue->active_searches.end(), [&](const Contest_record_active_search &active_search) {
+            return active_search.thread_id == thread_id;
+        });
+        if (it == queue->active_searches.end()) {
+            queue->active_searches.emplace_back(thread_id, searching);
+        } else {
+            it->searching = searching;
         }
         contest_record_rebalance_search_helpers_locked(queue, n_workers, &updates);
     }
@@ -405,15 +447,19 @@ void contest_record_end_search(Contest_record_queue *queue, int n_workers, threa
     std::vector<Contest_record_helper_update> updates;
     {
         std::lock_guard<std::mutex> lock(queue->mtx);
-        auto it = std::find(queue->active_search_thread_ids.begin(), queue->active_search_thread_ids.end(), thread_id);
-        if (it != queue->active_search_thread_ids.end()) {
-            queue->active_search_thread_ids.erase(it);
+        auto it = std::find_if(queue->active_searches.begin(), queue->active_searches.end(), [&](const Contest_record_active_search &active_search) {
+            return active_search.thread_id == thread_id;
+        });
+        if (it != queue->active_searches.end()) {
+            queue->active_searches.erase(it);
         }
         if (queue->helper_thread_limits[thread_id] != 0) {
             queue->helper_thread_limits[thread_id] = 0;
             updates.emplace_back(thread_id, 0);
         }
-        contest_record_rebalance_search_helpers_locked(queue, n_workers, &updates);
+        if (!queue->stop) {
+            contest_record_rebalance_search_helpers_locked(queue, n_workers, &updates);
+        }
     }
     contest_record_apply_helper_updates(updates);
 }
@@ -429,9 +475,16 @@ Search_result contest_record_ai_search(
     bool searching = true;
     const bool dynamic_multi_thread = queue != nullptr && n_workers > 1 && thread_id != THREAD_ID_NONE;
     if (dynamic_multi_thread) {
-        contest_record_begin_search(queue, n_workers, thread_id);
+        if (!contest_record_begin_search(queue, n_workers, thread_id, &searching)) {
+            return Search_result();
+        }
+    } else if (contest_record_should_stop(queue)) {
+        return Search_result();
     }
-    Search_result search_result = ai_searching_thread_id(board, level, false, 0, dynamic_multi_thread ? true : use_multi_thread, false, thread_id, &searching);
+    Search_result search_result;
+    if (searching) {
+        search_result = ai_searching_thread_id(board, level, false, 0, dynamic_multi_thread ? true : use_multi_thread, false, thread_id, &searching);
+    }
     if (dynamic_multi_thread) {
         contest_record_end_search(queue, n_workers, thread_id);
     }
@@ -480,6 +533,9 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(
 
     Flip flip;
     for (int policy: policies) {
+        if (contest_record_should_stop(queue)) {
+            break;
+        }
         calc_flip(&flip, &board, policy);
         board.move_board(&flip);
         Search_result search_result = contest_record_ai_search(board, level, use_multi_thread, thread_id, queue, n_workers);
@@ -490,6 +546,9 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(
         }
         res.emplace_back(policy, value);
         board.undo_board(&flip);
+    }
+    if (contest_record_should_stop(queue)) {
+        return res;
     }
     std::sort(res.begin(), res.end(), [](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
         if (a.value != b.value) {
@@ -519,6 +578,9 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
         }
     }
     std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread, thread_id, queue, n_workers, contest_book);
+    if (contest_record_should_stop(queue)) {
+        return res;
+    }
     {
         std::lock_guard<std::mutex> lock(*score_cache_mtx);
         auto it = score_cache->find(board);
@@ -534,9 +596,15 @@ int contest_record_leaf_value(Board board, bool use_multi_thread, thread_id_t th
     if (board.is_end()) {
         return board.score_player();
     }
+    if (contest_record_should_stop(queue)) {
+        return SCORE_UNDEFINED;
+    }
     Search_result search_result = contest_record_ai_search(board, MAX_LEVEL, use_multi_thread, thread_id, queue, n_workers);
     if (search_result.value != SCORE_UNDEFINED) {
         return search_result.value;
+    }
+    if (contest_record_should_stop(queue)) {
+        return SCORE_UNDEFINED;
     }
     return mid_evaluate(&board);
 }
@@ -636,29 +704,46 @@ Contest_record_expand_result contest_record_expand_state(
     const Contest_book *contest_book
 ) {
     Contest_record_expand_result result;
+    if (contest_record_should_stop(queue)) {
+        return result;
+    }
     while (HW2 - state.board.n_discs() > cut_empty && state.board.get_legal() == 0ULL && !state.board.is_end()) {
         state.board.pass();
     }
+    if (contest_record_should_stop(queue)) {
+        return result;
+    }
     if (HW2 - state.board.n_discs() <= cut_empty || state.board.is_end()) {
         if (state.loss_sum == target_loss_sum) {
+            int leaf_value = contest_record_leaf_value(state.board, use_multi_thread, thread_id, queue, n_workers);
+            if (leaf_value == SCORE_UNDEFINED && contest_record_should_stop(queue)) {
+                return result;
+            }
             result.leaves.emplace_back(
                 state.board,
                 state.transcript,
                 state.loss_sum,
-                contest_record_leaf_value(state.board, use_multi_thread, thread_id, queue, n_workers)
+                leaf_value
             );
         }
         return result;
     }
 
     std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(state.board, options->level, use_multi_thread, thread_id, score_cache, score_cache_mtx, queue, n_workers, contest_book);
+    if (contest_record_should_stop(queue)) {
+        return result;
+    }
     if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
         if (state.loss_sum == target_loss_sum) {
+            int leaf_value = contest_record_leaf_value(state.board, use_multi_thread, thread_id, queue, n_workers);
+            if (leaf_value == SCORE_UNDEFINED && contest_record_should_stop(queue)) {
+                return result;
+            }
             result.leaves.emplace_back(
                 state.board,
                 state.transcript,
                 state.loss_sum,
-                contest_record_leaf_value(state.board, use_multi_thread, thread_id, queue, n_workers)
+                leaf_value
             );
         }
         return result;
@@ -667,6 +752,9 @@ Contest_record_expand_result contest_record_expand_state(
     int best_value = scored_moves[0].value;
     Flip flip;
     for (const Contest_record_scored_move &move: scored_moves) {
+        if (contest_record_should_stop(queue)) {
+            break;
+        }
         if (move.value == SCORE_UNDEFINED) {
             continue;
         }
@@ -703,11 +791,12 @@ void contest_record_process_expand_result_locked(
     Contest_record_queue *queue,
     const Contest_record_expand_result &result,
     const std::string &initial_board,
-    std::ofstream &ofs
+    std::ofstream &ofs,
+    std::vector<Contest_record_helper_update> *helper_updates
 ) {
     for (const Contest_record_leaf &leaf: result.leaves) {
         if (queue->n_generated >= queue->n_records_limit) {
-            queue->stop = true;
+            contest_record_request_stop_locked(queue, helper_updates);
             break;
         }
         if (queue->seen_transcripts.find(leaf.transcript) != queue->seen_transcripts.end()) {
@@ -717,11 +806,15 @@ void contest_record_process_expand_result_locked(
         contest_record_write_record(ofs, initial_board, leaf.transcript, leaf.board, leaf.loss_sum, leaf.leaf_value, queue->n_generated);
         ++queue->n_generated;
         ofs.flush();
+        if (queue->n_generated >= queue->n_records_limit) {
+            contest_record_request_stop_locked(queue, helper_updates);
+            break;
+        }
     }
     if (!queue->stop && queue->n_generated < queue->n_records_limit) {
         contest_record_push_next_states(&queue->tasks, result.next_states);
     } else {
-        queue->stop = true;
+        contest_record_request_stop_locked(queue, helper_updates);
     }
 }
 
@@ -774,10 +867,10 @@ void contest_record_worker_loop(
             std::lock_guard<std::mutex> lock(queue->mtx);
             --queue->active_workers;
             if (!queue->stop) {
-                contest_record_process_expand_result_locked(queue, result, initial_board, *ofs);
+                contest_record_process_expand_result_locked(queue, result, initial_board, *ofs, &helper_updates);
             }
             if (!queue->stop && queue->tasks.empty() && queue->active_workers == 0) {
-                queue->stop = true;
+                contest_record_request_stop_locked(queue, &helper_updates);
             }
             contest_record_rebalance_search_helpers_locked(queue, n_workers, &helper_updates);
         }
