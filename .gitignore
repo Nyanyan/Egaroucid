@@ -91,6 +91,7 @@ enc_temp_folder
 
 # test
 src/tools/evaluation/dl_test
+src/tools/evaluation/report/
 
 # .github
 # .github
