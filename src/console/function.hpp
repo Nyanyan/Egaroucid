@@ -10,11 +10,14 @@
 
 #pragma once
 #include <iostream>
+#include <condition_variable>
+#include <deque>
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
 #include <mutex>
 #include <sstream>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -289,8 +292,6 @@ struct Contest_record_scored_move {
 
 using Contest_record_score_cache = std::unordered_map<Board, std::vector<Contest_record_scored_move>, Contest_book_hash>;
 
-#define CONTEST_RECORD_THREAD_ID_BASE 10
-
 struct Contest_record_state {
     Board board;
     std::string transcript;
@@ -315,12 +316,17 @@ struct Contest_record_expand_result {
     std::vector<Contest_record_leaf> leaves;
 };
 
-struct Contest_record_running_task {
-    int slot;
-    std::future<Contest_record_expand_result> future;
+struct Contest_record_queue {
+    std::deque<Contest_record_state> tasks;
+    std::mutex mtx;
+    std::condition_variable cv;
+    int active_workers;
+    int n_generated;
+    int n_records_limit;
+    bool stop;
 
-    Contest_record_running_task(int slot_, std::future<Contest_record_expand_result> &&future_)
-        : slot(slot_), future(std::move(future_)) {}
+    Contest_record_queue(int n_generated_, int n_records_limit_)
+        : active_workers(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {}
 };
 
 std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, int level, bool use_multi_thread, thread_id_t thread_id) {
@@ -486,126 +492,71 @@ Contest_record_expand_result contest_record_expand_state(
     return result;
 }
 
-void contest_record_append_next_states(std::vector<Contest_record_state> *pending, const std::vector<Contest_record_state> &next_states) {
-    for (auto it = next_states.rbegin(); it != next_states.rend(); ++it) {
-        pending->emplace_back(*it);
-    }
-}
-
 int contest_record_parallel_width() {
-    return std::max(1, std::min(thread_pool.size() + 1, THREAD_ID_NONE - CONTEST_RECORD_THREAD_ID_BASE));
+    return std::max(1, thread_pool.size() + 1);
 }
 
-int contest_record_threads_for_progress(int progress_idx, int progress_width) {
-    int total_threads = thread_pool.size() + 1;
-    int base_threads = std::max(1, total_threads / progress_width);
-    int extra_threads = total_threads % progress_width;
-    return base_threads + (progress_idx < extra_threads ? 1 : 0);
-}
-
-bool contest_record_worker_slot_used(const std::vector<Contest_record_running_task> &tasks, int slot) {
-    for (const Contest_record_running_task &task: tasks) {
-        if (task.slot == slot) {
-            return true;
-        }
+void contest_record_push_next_states(
+    std::deque<Contest_record_state> *tasks,
+    const std::vector<Contest_record_state> &next_states
+) {
+    for (auto it = next_states.rbegin(); it != next_states.rend(); ++it) {
+        tasks->emplace_back(*it);
     }
-    return false;
 }
 
-int contest_record_first_available_worker_slot(const std::vector<Contest_record_running_task> &tasks, int max_width) {
-    for (int slot = 1; slot < max_width; ++slot) {
-        if (!contest_record_worker_slot_used(tasks, slot)) {
-            return slot;
-        }
-    }
-    return -1;
-}
-
-void contest_record_process_expand_result(
+void contest_record_process_expand_result_locked(
+    Contest_record_queue *queue,
     const Contest_record_expand_result &result,
-    std::vector<Contest_record_state> *pending,
     const std::string &initial_board,
-    int n_records_limit,
-    int *n_generated,
     std::ofstream &ofs
 ) {
     for (const Contest_record_leaf &leaf: result.leaves) {
-        if (*n_generated >= n_records_limit) {
+        if (queue->n_generated >= queue->n_records_limit) {
+            queue->stop = true;
             break;
         }
-        contest_record_write_record(ofs, initial_board, leaf.transcript, leaf.board, leaf.loss_sum, leaf.leaf_value, *n_generated);
-        ++(*n_generated);
+        contest_record_write_record(ofs, initial_board, leaf.transcript, leaf.board, leaf.loss_sum, leaf.leaf_value, queue->n_generated);
+        ++queue->n_generated;
         ofs.flush();
     }
-    if (*n_generated < n_records_limit) {
-        contest_record_append_next_states(pending, result.next_states);
+    if (!queue->stop && queue->n_generated < queue->n_records_limit) {
+        contest_record_push_next_states(&queue->tasks, result.next_states);
+    } else {
+        queue->stop = true;
     }
 }
 
-bool contest_record_collect_ready_tasks(
-    std::vector<Contest_record_running_task> *tasks,
-    std::vector<Contest_record_state> *pending,
+void contest_record_worker_loop(
+    Contest_record_queue *queue,
     const std::string &initial_board,
-    int n_records_limit,
-    int *n_generated,
-    std::ofstream &ofs,
-    bool wait_for_one
-) {
-    bool collected = false;
-    while (true) {
-        for (int i = 0; i < (int)tasks->size(); ++i) {
-            std::future_status status = (*tasks)[i].future.wait_for(wait_for_one ? std::chrono::milliseconds(1) : std::chrono::milliseconds(0));
-            if (status != std::future_status::ready) {
-                continue;
-            }
-            Contest_record_expand_result result = (*tasks)[i].future.get();
-            tasks->erase(tasks->begin() + i);
-            contest_record_process_expand_result(result, pending, initial_board, n_records_limit, n_generated, ofs);
-            collected = true;
-            --i;
-            if (wait_for_one) {
-                return true;
-            }
-        }
-        if (collected || !wait_for_one || tasks->empty()) {
-            return collected;
-        }
-    }
-}
-
-bool contest_record_launch_ready_tasks(
-    std::vector<Contest_record_state> *pending,
-    std::vector<Contest_record_running_task> *tasks,
     Options *options,
     int max_loss_per_move,
     int target_loss_sum,
     int cut_empty,
     Contest_record_score_cache *score_cache,
-    std::mutex *score_cache_mtx
+    std::mutex *score_cache_mtx,
+    std::ofstream *ofs,
+    int n_workers
 ) {
-    bool launched = false;
-    int max_width = contest_record_parallel_width();
-    while (!pending->empty()) {
-        int target_width = std::min(max_width, (int)pending->size() + (int)tasks->size());
-        int target_worker_count = std::max(0, target_width - 1);
-        if ((int)tasks->size() >= target_worker_count) {
-            break;
-        }
-        int slot = contest_record_first_available_worker_slot(*tasks, max_width);
-        if (slot < 0) {
-            break;
+    while (true) {
+        Contest_record_state state(Board(), "", 0);
+        bool use_multi_thread = false;
+        {
+            std::unique_lock<std::mutex> lock(queue->mtx);
+            queue->cv.wait(lock, [&]() {
+                return queue->stop || !queue->tasks.empty();
+            });
+            if (queue->stop) {
+                return;
+            }
+            state = queue->tasks.back();
+            queue->tasks.pop_back();
+            ++queue->active_workers;
+            use_multi_thread = n_workers > 1 && queue->active_workers == 1 && queue->tasks.empty();
         }
 
-        Contest_record_state state = pending->back();
-        pending->pop_back();
-        int progress_idx = (int)tasks->size() + 1;
-        int threads_for_state = contest_record_threads_for_progress(progress_idx, target_width);
-        thread_id_t thread_id = CONTEST_RECORD_THREAD_ID_BASE + slot;
-        thread_pool.set_max_thread_size(thread_id, threads_for_state);
-
-        bool pushed = false;
-        std::future<Contest_record_expand_result> future = thread_pool.push(thread_id, &pushed, std::bind(
-            contest_record_expand_state,
+        Contest_record_expand_result result = contest_record_expand_state(
             state,
             options,
             max_loss_per_move,
@@ -613,17 +564,22 @@ bool contest_record_launch_ready_tasks(
             cut_empty,
             score_cache,
             score_cache_mtx,
-            threads_for_state > 1,
-            thread_id
-        ));
-        if (!pushed) {
-            pending->emplace_back(state);
-            break;
+            use_multi_thread,
+            THREAD_ID_NONE
+        );
+
+        {
+            std::lock_guard<std::mutex> lock(queue->mtx);
+            --queue->active_workers;
+            if (!queue->stop) {
+                contest_record_process_expand_result_locked(queue, result, initial_board, *ofs);
+            }
+            if (!queue->stop && queue->tasks.empty() && queue->active_workers == 0) {
+                queue->stop = true;
+            }
         }
-        tasks->emplace_back(slot, std::move(future));
-        launched = true;
+        queue->cv.notify_all();
     }
-    return launched;
 }
 
 void contest_record_enumerate_exact_loss(
@@ -639,65 +595,37 @@ void contest_record_enumerate_exact_loss(
     Contest_record_score_cache *score_cache
 ) {
     std::mutex score_cache_mtx;
-    std::vector<Contest_record_state> pending;
-    pending.emplace_back(board, "", 0);
-    std::vector<Contest_record_running_task> tasks;
-    int last_width = -1;
-    int last_main_threads = -1;
-
-    while (((!pending.empty() && *n_generated < n_records_limit) || !tasks.empty())) {
-        if (*n_generated < n_records_limit) {
-            contest_record_launch_ready_tasks(
-                &pending,
-                &tasks,
-                options,
-                max_loss_per_move,
-                target_loss_sum,
-                cut_empty,
-                score_cache,
-                &score_cache_mtx
-            );
-        } else {
-            pending.clear();
-        }
-
-        bool progressed = contest_record_collect_ready_tasks(&tasks, &pending, initial_board, n_records_limit, n_generated, ofs, false);
-
-        if (*n_generated < n_records_limit && !pending.empty()) {
-            int target_width = std::min(contest_record_parallel_width(), (int)tasks.size() + 1);
-            int main_threads_for_state = contest_record_threads_for_progress(0, target_width);
-            if (target_width != last_width || main_threads_for_state != last_main_threads) {
-                std::cerr << "contest record parallel width " << target_width
-                          << " main_threads " << main_threads_for_state
-                          << " worker_tasks " << tasks.size()
-                          << " pending " << pending.size() << std::endl;
-                last_width = target_width;
-                last_main_threads = main_threads_for_state;
-            }
-
-            Contest_record_state state = pending.back();
-            pending.pop_back();
-            thread_id_t main_thread_id = CONTEST_RECORD_THREAD_ID_BASE;
-            thread_pool.set_max_thread_size(main_thread_id, std::max(0, main_threads_for_state - 1));
-            Contest_record_expand_result result = contest_record_expand_state(
-                state,
-                options,
-                max_loss_per_move,
-                target_loss_sum,
-                cut_empty,
-                score_cache,
-                &score_cache_mtx,
-                main_threads_for_state > 1,
-                main_thread_id
-            );
-            contest_record_process_expand_result(result, &pending, initial_board, n_records_limit, n_generated, ofs);
-            progressed = true;
-        }
-
-        if (!progressed && !tasks.empty()) {
-            contest_record_collect_ready_tasks(&tasks, &pending, initial_board, n_records_limit, n_generated, ofs, true);
+    Contest_record_queue queue(*n_generated, n_records_limit);
+    {
+        std::lock_guard<std::mutex> lock(queue.mtx);
+        queue.tasks.emplace_back(board, "", 0);
+    }
+    int n_workers = contest_record_parallel_width();
+    std::cerr << "contest record worker queue threads " << n_workers << std::endl;
+    std::vector<std::thread> workers;
+    workers.reserve(n_workers);
+    for (int i = 0; i < n_workers; ++i) {
+        workers.emplace_back(
+            contest_record_worker_loop,
+            &queue,
+            std::cref(initial_board),
+            options,
+            max_loss_per_move,
+            target_loss_sum,
+            cut_empty,
+            score_cache,
+            &score_cache_mtx,
+            &ofs,
+            n_workers
+        );
+    }
+    queue.cv.notify_all();
+    for (std::thread &worker: workers) {
+        if (worker.joinable()) {
+            worker.join();
         }
     }
+    *n_generated = queue.n_generated;
 }
 
 std::string contest_record_play_one_game(
