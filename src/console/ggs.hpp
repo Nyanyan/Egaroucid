@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <vector>
 #include "./../engine/engine_all.hpp"
+#include "./../engine/contest_book.hpp"
 #include "option.hpp"
 #include "util.hpp"
 #pragma comment(lib, "ws2_32.lib")
@@ -1800,10 +1801,25 @@ Search_result ggs_search(
     int hint_policy,
     int hint_count,
     Search_result ponder_result,
-    GGS_Synchro_Time_Context synchro_time_context
+    GGS_Synchro_Time_Context synchro_time_context,
+    const Contest_book *contest_book
 ) {
     Search_result search_result;
     if (ggs_board.board.get_legal()) {
+        if (contest_book != nullptr) {
+            Search_result contest_book_result;
+            if (contest_book->get_search_result(ggs_board.board, &contest_book_result)) {
+                ggs_print_info(
+                    "contest book selected " + idx_to_coord(contest_book_result.policy) +
+                    " value " + std::to_string(contest_book_result.value) +
+                    " boards " + std::to_string(contest_book->size()) +
+                    " " + ggs_board.board.to_str(),
+                    options
+                );
+                ggs_log_search_result_summary("search contest book", ggs_board, contest_book_result, hint_policy, hint_count, options);
+                return contest_book_result;
+            }
+        }
         if (ggs_is_usable_ponder_result(ggs_board.board, ponder_result)) {
             ggs_print_debug(
                 "ggs exact ponder selected " + idx_to_coord(ponder_result.policy) +
@@ -2191,6 +2207,7 @@ void ggs_launch_ai_search(
     const GGS_Move_Hint_Table &move_hints,
     const GGS_Ponder_Result_Table &ponder_results,
     const GGS_Synchro_Search_Record synchro_search_records[],
+    const Contest_book *contest_book,
     Options *options
 ) {
     int hint_policy = ggs_get_move_hint(move_hints, ggs_board.board);
@@ -2217,7 +2234,8 @@ void ggs_launch_ai_search(
         hint_policy,
         hint_count,
         ponder_result,
-        synchro_time_context
+        synchro_time_context,
+        contest_book
     );
 }
 
@@ -2229,6 +2247,7 @@ bool ggs_try_launch_pending_search(
     const GGS_Move_Hint_Table &move_hints,
     const GGS_Ponder_Result_Table &ponder_results,
     const GGS_Synchro_Search_Record synchro_search_records[],
+    const Contest_book contest_books[],
     Options *options
 ) {
     if (!pending_search->active) {
@@ -2260,6 +2279,7 @@ bool ggs_try_launch_pending_search(
         move_hints,
         ponder_results,
         synchro_search_records,
+        &contest_books[pending_search->search_slot],
         options
     );
     pending_search->active = false;
@@ -2455,6 +2475,7 @@ void ggs_client(Options *options) {
     GGS_Move_Hint_Table move_hints;
     GGS_Move_Hint_Table seeded_move_hints;
     GGS_Ponder_Result_Table ponder_results;
+    Contest_book contest_books[2];
     auto stop_calculations = [&]() {
         global_searching = false;
         for (int ai_i = 0; ai_i < 2; ++ai_i) {
@@ -2547,6 +2568,7 @@ void ggs_client(Options *options) {
                             pending_moves[i].active = false;
                             pending_searches[i].active = false;
                             synchro_search_records[i].clear();
+                            contest_books[i].clear();
                             ggs_boards_n_discs[i] = 0;
                             for (int n_discs = 0; n_discs <= HW2; ++n_discs) {
                                 ggs_boards[i][n_discs] = GGS_Board();
@@ -2604,6 +2626,11 @@ void ggs_client(Options *options) {
                                     matches[match_idx].initial_board = ggs_board.board.to_str(ggs_board.player_to_move);
                                     matches[match_idx].result_black = -99;
                                     matches[match_idx].transcript = "";
+                                    contest_books[match_idx].clear();
+                                    if (options->contest_book) {
+                                        std::filesystem::path contest_book_path = contest_book_path_for_start(options->contest_book_dir, matches[match_idx].initial_board);
+                                        contest_books[match_idx].init(contest_book_path.string(), ggs_engine_show_log(options));
+                                    }
                                 }
                                 #if !IS_GGS_TOURNAMENT
                                 ggs_print_info("match log received " + std::to_string(match_idx) + " " + std::to_string(ggs_board.last_move) + " " + idx_to_coord(ggs_board.last_move), options);
@@ -2799,7 +2826,7 @@ void ggs_client(Options *options) {
                                                     options
                                                 );
                                             } else {
-                                                ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, ggs_board.synchro_id, search_thread_id, move_hints, ponder_results, synchro_search_records, options);
+                                                ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, ggs_board.synchro_id, search_thread_id, move_hints, ponder_results, synchro_search_records, &contest_books[ggs_board.synchro_id], options);
                                             }
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
                                             new_calculation_start = true;
@@ -2822,7 +2849,7 @@ void ggs_client(Options *options) {
                                     if (need_to_move) { // Egaroucid should move
                                         ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
                                         if (!ggs_board.board.is_end()) {
-                                            ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, GGS_NON_SYNCHRO_ID, THREAD_ID_NONE, move_hints, ponder_results, synchro_search_records, options);
+                                            ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, GGS_NON_SYNCHRO_ID, THREAD_ID_NONE, move_hints, ponder_results, synchro_search_records, &contest_books[GGS_NON_SYNCHRO_ID], options);
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, GGS_NON_SYNCHRO_ID, ponder_searchings);
                                         }
                                     } else { // Opponent's move
@@ -2841,7 +2868,7 @@ void ggs_client(Options *options) {
             }
         }
         for (int i = 0; i < 2; ++i) {
-            if (ggs_try_launch_pending_search(&pending_searches[i], ai_futures, ai_searchings, ggs_boards_searching, move_hints, ponder_results, synchro_search_records, options)) {
+            if (ggs_try_launch_pending_search(&pending_searches[i], ai_futures, ai_searchings, ggs_boards_searching, move_hints, ponder_results, synchro_search_records, contest_books, options)) {
                 new_calculation_start = true;
             }
         }

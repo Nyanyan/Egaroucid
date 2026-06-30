@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS_BASE 31
+#define N_COMMANDLINE_OPTIONS_BASE 33
 
 #ifdef INCLUDE_GGS
     #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
@@ -54,6 +54,8 @@
 #define ID_PLAY_LOSS 28
 #define ID_SOLVE_RANDOM 29
 #define ID_LOGDIR 30
+#define ID_CONTEST_BOOK_DIR 31
+#define ID_NO_CONTEST_BOOK 32
 
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
@@ -108,6 +110,8 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_PLAY_LOSS,          {"-playloss"},                                      2, "<ratio> <max_loss>","Play with loss till <max_loss> with occurance ratio <ratio> (0.0 to 1.0) can't use with time allocated"},
     {ID_SOLVE_RANDOM,       {"-sr", "-solverandom"},                            2, "<n> <m>",           "Solve <n> boards (play randomly first <m> moves)"},
     {ID_LOGDIR,             {"-logdir"},                                        1, "<dir>",             "Save search log to file in <dir> (-logfile is prioritized)"},
+    {ID_CONTEST_BOOK_DIR,   {"-contestbook"},                                   1, "<dir>",             "Directory for contest book files"},
+    {ID_NO_CONTEST_BOOK,    {"-nocontestbook"},                                 0, "",                  "Disable contest book"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},

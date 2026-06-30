@@ -41,6 +41,8 @@ struct Options {
     bool play_loss;
     double play_loss_ratio;
     int play_loss_max;
+    bool contest_book;
+    std::string contest_book_dir;
 #ifdef INCLUDE_GGS
     bool ggs;
     std::string ggs_username;
@@ -186,6 +188,18 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] invalid play loss argument" << std::endl;
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] play loss argument out of range" << std::endl;
+        }
+    }
+    res.contest_book = !find_commandline_option(commandline_options, ID_NO_CONTEST_BOOK);
+    res.contest_book_dir = binary_path + "resources/contest_book";
+    if (find_commandline_option(commandline_options, ID_CONTEST_BOOK_DIR)) {
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_CONTEST_BOOK_DIR);
+        try {
+            res.contest_book_dir = arg[0];
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid contest book dir" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] contest book dir out of range" << std::endl;
         }
     }
     if (!res.log_to_file) {
