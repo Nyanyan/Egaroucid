@@ -2516,6 +2516,11 @@ constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_PROBE_ADVANTAGE = 0.75;
 constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_DEPTH = 14;
 constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_DEPTH = 30;
 constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_PROBABILITY = SELECTIVITY_PERCENTAGE[MPC_88_LEVEL];
+constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MIN_DEPTH = 31;
+constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MIN_BEST_DEPTH = 20;
+constexpr int AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MAX_VALUE = -10;
+constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MAX_PROBABILITY = SELECTIVITY_PERCENTAGE[MPC_74_LEVEL];
+constexpr double AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MIN_PROBE_ADVANTAGE = 1.5;
 
 inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
     const Board &board,
@@ -2529,10 +2534,19 @@ inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
         n_empties < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_N_EMPTY ||
         n_empties > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_N_EMPTY ||
         remaining_time_msec < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_REMAINING_TIME ||
-        !is_valid_policy(search_result.policy) ||
-        search_result.depth > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_DEPTH ||
-        search_result.probability > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_PROBABILITY
+        !is_valid_policy(search_result.policy)
     ) {
+        return nullptr;
+    }
+    const bool shallow_main_candidate =
+        search_result.depth <= AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_DEPTH &&
+        search_result.probability <= AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_MAIN_PROBABILITY;
+    const bool selective_end_candidate =
+        search_result.is_end_search &&
+        search_result.depth >= AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MIN_DEPTH &&
+        search_result.probability <= AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MAX_PROBABILITY &&
+        search_result.value <= AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MAX_VALUE;
+    if (!shallow_main_candidate && !selective_end_candidate) {
         return nullptr;
     }
 
@@ -2549,14 +2563,22 @@ inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
             selected = &elem;
         }
     }
+    const int min_best_depth =
+        selective_end_candidate ?
+            AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MIN_BEST_DEPTH :
+            AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_DEPTH;
+    const double min_probe_advantage =
+        selective_end_candidate ?
+            AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_SELECTIVE_END_MIN_PROBE_ADVANTAGE :
+            AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_PROBE_ADVANTAGE;
     if (
         best == nullptr ||
         selected == nullptr ||
         best->flip.pos == search_result.policy ||
-        best->depth < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_DEPTH ||
+        best->depth < min_best_depth ||
         best->value < AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_BEST_VALUE ||
         best->value > AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MAX_BEST_VALUE ||
-        best->value < selected->value + AI_TL_GGS_LATE_AMBIGUITY_FALLBACK_MIN_PROBE_ADVANTAGE
+        best->value < selected->value + min_probe_advantage
     ) {
         return nullptr;
     }
@@ -2971,7 +2993,8 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         );
         if (late_fallback != nullptr) {
             search_result.policy = late_fallback->flip.pos;
-            search_result.value = (int)std::round(late_fallback->value);
+            const int fallback_value = (int)std::round(late_fallback->value);
+            search_result.value = search_result.is_end_search ? std::min(search_result.value, fallback_value) : fallback_value;
             search_result.depth = late_fallback->depth;
             search_result.probability = SELECTIVITY_PERCENTAGE[late_fallback->mpc_level];
             search_result.is_end_search = late_fallback->is_endgame_search;
