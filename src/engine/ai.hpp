@@ -2593,7 +2593,8 @@ inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
     return best;
 }
 
-constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY = 42;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY = 36;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_FULL_MIN_N_EMPTY = 42;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_N_EMPTY = 50;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT = 20000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME = 70000ULL;
@@ -2601,15 +2602,23 @@ constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME = 6000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME = 20000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME = 11000ULL;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE = 0.45;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME_LIMIT = 10000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_REMAINING_TIME = 25000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME = 3500ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_TIME = 9000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_WIDE_VALUE_MAX_TIME = 6500ULL;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_TIME_COE = 0.42;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 3.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 12.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_ABS_MAX = 18.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP = 1.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SINGLE_PASS_MIN_RESULT_GAP = 2.5;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN = 1.0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_MIN_OVERRIDE_DEPTH = 22;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES = 4;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_GOOD_MOVES = 3;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_SELFPLAYED_TOP_MOVES = 2;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REPEATED_TOP_COUNT = 2;
 
@@ -2648,20 +2657,37 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
 
 inline uint64_t ai_time_limit_ggs_selfplay_resolve_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
+    const bool late_midgame = n_empties < AI_TL_GGS_SELFPLAY_RESOLVE_FULL_MIN_N_EMPTY;
+    const uint64_t min_time_limit = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME_LIMIT :
+        AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT;
+    const uint64_t min_remaining_time = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_REMAINING_TIME :
+        AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME;
     if (
         n_empties < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY ||
         n_empties > AI_TL_GGS_SELFPLAY_RESOLVE_MAX_N_EMPTY ||
-        time_limit < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT ||
-        remaining_time_msec < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME
+        time_limit < min_time_limit ||
+        remaining_time_msec < min_remaining_time
     ) {
         return 0ULL;
     }
+    const uint64_t max_time = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_TIME :
+        AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME;
+    const uint64_t min_time = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME :
+        AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME;
+    const double time_coe = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_TIME_COE :
+        AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE;
+    const uint64_t remaining_divisor = late_midgame ? 10ULL : 8ULL;
     uint64_t selfplay_time = std::min<uint64_t>(
-        AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME,
-        (uint64_t)((double)time_limit * AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE)
+        max_time,
+        (uint64_t)((double)time_limit * time_coe)
     );
-    selfplay_time = std::min<uint64_t>(selfplay_time, remaining_time_msec / 8ULL);
-    if (selfplay_time < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME) {
+    selfplay_time = std::min<uint64_t>(selfplay_time, remaining_time_msec / remaining_divisor);
+    if (selfplay_time < min_time) {
         return 0ULL;
     }
     return selfplay_time;
@@ -2687,10 +2713,14 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
             best_value = std::max(best_value, elem.value);
         }
     }
+    const bool late_midgame = (HW2 - board.n_discs()) < AI_TL_GGS_SELFPLAY_RESOLVE_FULL_MIN_N_EMPTY;
+    const double best_abs_max = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_ABS_MAX :
+        AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX;
     if (
         best_value == -INF ||
-        best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX ||
-        best_value > AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX
+        best_value < -best_abs_max ||
+        best_value > best_abs_max
     ) {
         return result;
     }
@@ -2698,8 +2728,14 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ||
         AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX < best_value;
     if (result.wide_value) {
-        selfplay_time = std::min<uint64_t>(selfplay_time, AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME);
-        if (selfplay_time < AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME) {
+        const uint64_t wide_max_time = late_midgame ?
+            AI_TL_GGS_SELFPLAY_RESOLVE_LATE_WIDE_VALUE_MAX_TIME :
+            AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME;
+        const uint64_t min_time = late_midgame ?
+            AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME :
+            AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME;
+        selfplay_time = std::min<uint64_t>(selfplay_time, wide_max_time);
+        if (selfplay_time < min_time) {
             return result;
         }
     }
@@ -2711,7 +2747,10 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         }
         ++n_good_moves;
     }
-    n_good_moves = std::min(n_good_moves, AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES);
+    n_good_moves = std::min(
+        n_good_moves,
+        late_midgame ? AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_GOOD_MOVES : AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES
+    );
     if (n_good_moves < 2) {
         return result;
     }
