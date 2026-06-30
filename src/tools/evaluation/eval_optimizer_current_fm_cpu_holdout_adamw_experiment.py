@@ -208,7 +208,8 @@ def train_vectors(linear_phase, train_records, holdout_records, args):
                     vel[d] = beta2 * vel[d] + (1.0 - beta2) * grad * grad
                     vec[d] -= lr_t * mom[d] / (math.sqrt(vel[d]) + eps)
                     if args.weight_decay > 0.0:
-                        vec[d] *= max(0.0, 1.0 - args.lr * args.weight_decay)
+                        decay = 1.0 - args.lr * args.weight_decay
+                        vec[d] *= decay if decay > 0.0 else 0.0
 
         train_mse, train_mae = metrics(linear_phase, vectors, train_records, args.dim)
         holdout_mse, holdout_mae = metrics(linear_phase, vectors, holdout_records, args.dim)
