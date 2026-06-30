@@ -148,7 +148,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit, thread_id_t thread_id);
 std::pair<int, int> ponder_selfplay(Board board_start, int root_depth, uint_fast8_t root_mpc_level, bool show_log, bool use_multi_thread, bool *searching);
 std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id, int aligned_min_level);
-std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id);
+std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id, int initial_level = 21);
 Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 Search_result selfplay_and_analyze_search_result(Board board, int level, bool show_log, thread_id_t thread_id, bool *searching);
 
@@ -2601,6 +2601,8 @@ constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME = 70000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME = 6000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME = 20000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME = 11000ULL;
+constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_VALUE_MAX_TIME = 22000ULL;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_TIME_COE = 0.65;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE = 0.45;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME_LIMIT = 10000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_REMAINING_TIME = 25000ULL;
@@ -2610,8 +2612,10 @@ constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_WIDE_VALUE_MAX_TIME = 6500ULL
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_TIME_COE = 0.42;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 3.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX = 12.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_ABS_MAX = 18.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_NEGATIVE_MAX = 20.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_POSITIVE_MAX = 12.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_NEGATIVE_MAX = 20.0;
+constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_POSITIVE_MAX = 18.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP = 1.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SINGLE_PASS_MIN_RESULT_GAP = 2.5;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
@@ -2714,13 +2718,16 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         }
     }
     const bool late_midgame = (HW2 - board.n_discs()) < AI_TL_GGS_SELFPLAY_RESOLVE_FULL_MIN_N_EMPTY;
-    const double best_abs_max = late_midgame ?
-        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_ABS_MAX :
-        AI_TL_GGS_SELFPLAY_RESOLVE_BEST_ABS_MAX;
+    const double best_negative_max = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_NEGATIVE_MAX :
+        AI_TL_GGS_SELFPLAY_RESOLVE_BEST_NEGATIVE_MAX;
+    const double best_positive_max = late_midgame ?
+        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_POSITIVE_MAX :
+        AI_TL_GGS_SELFPLAY_RESOLVE_BEST_POSITIVE_MAX;
     if (
         best_value == -INF ||
-        best_value < -best_abs_max ||
-        best_value > best_abs_max
+        best_value < -best_negative_max ||
+        best_value > best_positive_max
     ) {
         return result;
     }
@@ -2728,9 +2735,25 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ||
         AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX < best_value;
     if (result.wide_value) {
-        const uint64_t wide_max_time = late_midgame ?
-            AI_TL_GGS_SELFPLAY_RESOLVE_LATE_WIDE_VALUE_MAX_TIME :
-            AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME;
+        const bool bad_wide_value = best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX;
+        const uint64_t wide_max_time = bad_wide_value ?
+            (late_midgame ?
+                AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_TIME :
+                AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_VALUE_MAX_TIME) :
+            (late_midgame ?
+                AI_TL_GGS_SELFPLAY_RESOLVE_LATE_WIDE_VALUE_MAX_TIME :
+                AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME);
+        if (bad_wide_value) {
+            const uint64_t remaining_divisor = late_midgame ? 10ULL : 8ULL;
+            const uint64_t bad_wide_time = std::min<uint64_t>(
+                wide_max_time,
+                std::min<uint64_t>(
+                    (uint64_t)((double)time_limit * AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_TIME_COE),
+                    remaining_time_msec / remaining_divisor
+                )
+            );
+            selfplay_time = std::max(selfplay_time, bad_wide_time);
+        }
         const uint64_t min_time = late_midgame ?
             AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME :
             AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME;
@@ -2760,6 +2783,8 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
                   << " n_good_moves " << n_good_moves
                   << " best " << best_value << std::endl;
     }
+    const int selfplay_initial_level =
+        !late_midgame && best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ? 22 : 21;
     std::vector<Ponder_elem> selfplay_move_list = ai_additional_selfplay(
         board,
         show_log,
@@ -2767,7 +2792,8 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         n_good_moves,
         AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE,
         selfplay_time,
-        thread_id
+        thread_id,
+        selfplay_initial_level
     );
     if (selfplay_move_list.empty() || selfplay_move_list[0].count <= 0) {
         return result;
@@ -3754,13 +3780,13 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
     return move_list;
 }
 
-std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id) {
+std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id, int initial_level) {
     uint64_t strt = tim();
     if (show_log) {
         std::cerr << "additional selfplay tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
-    const int initial_level = 21;
+    initial_level = std::max(1, initial_level);
     constexpr int n_same_level = 1;
     std::vector<int> levels;
     for (int i = 0; i < n_good_moves; ++i) {
