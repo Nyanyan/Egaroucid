@@ -28,7 +28,7 @@ python src/tools/gen_contest_book/generate_all_records.py --games 128 --threads 
 
 既定値は、レベル21、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
 
-棋譜生成は、合計ロス上限を0から既定上限まで順に分割して実行します。そのため、ロスが少ない棋譜から優先して生成されます。
+棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。指定した棋譜数に達するか、上限lossまで列挙し終わると終了します。
 
 ## book構築
 
@@ -82,7 +82,7 @@ python src/tools/gen_contest_book/generate_all_records.py --games 128 --threads 
 
 Defaults are level 21, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
 
-Record generation splits runs by total-loss budget from 0 up to the configured limit, so lower-loss records are generated first.
+Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the requested number of records is reached or all records up to the configured loss limit are exhausted.
 
 ## Build Books
 

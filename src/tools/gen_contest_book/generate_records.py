@@ -15,16 +15,6 @@ from config import (
 from othello import normalize_board_text
 
 
-def iter_low_loss_batches(n_games: int, max_loss_total: int):
-    n_budgets = max_loss_total + 1
-    base = n_games // n_budgets
-    extra = n_games % n_budgets
-    for total_loss in range(n_budgets):
-        n_batch_games = base + (1 if total_loss < extra else 0)
-        if n_batch_games > 0:
-            yield total_loss, n_batch_games
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("initial_board")
@@ -47,24 +37,21 @@ def main() -> int:
     out_dir = args.out_dir or record_dir_for_start(initial_board)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    for total_loss, n_batch_games in iter_low_loss_batches(args.games, args.max_loss_total):
-        per_move_loss = min(args.max_loss_per_move, total_loss)
-        cmd = [
-            str(args.exe),
-            "-l", str(args.level),
-            "-thread", str(args.threads),
-            "-contestrecord",
-            initial_board,
-            str(n_batch_games),
-            str(out_dir),
-            str(per_move_loss),
-            str(total_loss),
-            str(args.cut_empty),
-        ]
-        if not args.use_existing_book:
-            cmd.insert(1, "-nobook")
-        print(f"generate {n_batch_games} games with per_move_loss={per_move_loss} total_loss={total_loss}", flush=True)
-        subprocess.run(cmd, cwd=CONSOLE_EXE.parents[1], check=True)
+    cmd = [
+        str(args.exe),
+        "-l", str(args.level),
+        "-thread", str(args.threads),
+        "-contestrecord",
+        initial_board,
+        str(args.games),
+        str(out_dir),
+        str(args.max_loss_per_move),
+        str(args.max_loss_total),
+        str(args.cut_empty),
+    ]
+    if not args.use_existing_book:
+        cmd.insert(1, "-nobook")
+    subprocess.run(cmd, cwd=CONSOLE_EXE.parents[1], check=True)
     return 0
 
 

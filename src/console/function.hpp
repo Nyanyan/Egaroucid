@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include "./../engine/engine_all.hpp"
@@ -285,6 +286,8 @@ struct Contest_record_scored_move {
         : policy(policy_), value(value_) {}
 };
 
+using Contest_record_score_cache = std::unordered_map<Board, std::vector<Contest_record_scored_move>, Contest_book_hash>;
+
 std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, int level, bool use_multi_thread) {
     std::vector<Contest_record_scored_move> res;
     uint64_t legal = board.get_legal();
@@ -303,6 +306,21 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, 
         }
         return a.policy < b.policy;
     });
+    return res;
+}
+
+std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
+    Board board,
+    int level,
+    bool use_multi_thread,
+    Contest_record_score_cache *score_cache
+) {
+    auto it = score_cache->find(board);
+    if (it != score_cache->end()) {
+        return it->second;
+    }
+    std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread);
+    (*score_cache)[board] = res;
     return res;
 }
 
@@ -336,6 +354,97 @@ bool contest_record_canonical_start(const std::string &raw_board, Board *board, 
     }
     *canonical_board = board->to_str(player_to_move);
     return true;
+}
+
+void contest_record_write_record(
+    std::ofstream &ofs,
+    const std::string &initial_board,
+    const std::string &transcript,
+    Board board,
+    int loss_sum,
+    int record_idx
+) {
+    int leaf_value = contest_record_leaf_value(board);
+    ofs << "record: " << record_idx << '\n';
+    ofs << "initial board: " << initial_board << '\n';
+    ofs << "transcript: " << transcript << '\n';
+    ofs << "leaf board: " << board.to_str() << '\n';
+    ofs << "leaf empty: " << (HW2 - board.n_discs()) << '\n';
+    ofs << "leaf value: " << leaf_value << '\n';
+    ofs << "loss sum: " << loss_sum << '\n';
+    ofs << '\n';
+}
+
+void contest_record_enumerate_exact_loss(
+    Board board,
+    const std::string &initial_board,
+    Options *options,
+    int max_loss_per_move,
+    int target_loss_sum,
+    int cut_empty,
+    std::string transcript,
+    int loss_sum,
+    int n_records_limit,
+    int *n_generated,
+    std::ofstream &ofs,
+    Contest_record_score_cache *score_cache
+) {
+    if (*n_generated >= n_records_limit) {
+        return;
+    }
+    while (HW2 - board.n_discs() > cut_empty && board.get_legal() == 0ULL && !board.is_end()) {
+        board.pass();
+    }
+    if (HW2 - board.n_discs() <= cut_empty || board.is_end()) {
+        if (loss_sum == target_loss_sum) {
+            contest_record_write_record(ofs, initial_board, transcript, board, loss_sum, *n_generated);
+            ++(*n_generated);
+            ofs.flush();
+        }
+        return;
+    }
+
+    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(board, options->level, true, score_cache);
+    if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
+        if (loss_sum == target_loss_sum) {
+            contest_record_write_record(ofs, initial_board, transcript, board, loss_sum, *n_generated);
+            ++(*n_generated);
+            ofs.flush();
+        }
+        return;
+    }
+
+    int best_value = scored_moves[0].value;
+    Flip flip;
+    for (const Contest_record_scored_move &move: scored_moves) {
+        if (*n_generated >= n_records_limit) {
+            return;
+        }
+        if (move.value == SCORE_UNDEFINED) {
+            continue;
+        }
+        int move_loss = best_value - move.value;
+        if (move_loss > max_loss_per_move || loss_sum + move_loss > target_loss_sum) {
+            continue;
+        }
+        Board next_board = board.copy();
+        calc_flip(&flip, &next_board, move.policy);
+        next_board.move_board(&flip);
+        contest_record_enumerate_exact_loss(
+            next_board,
+            initial_board,
+            options,
+            max_loss_per_move,
+            target_loss_sum,
+            cut_empty,
+            transcript + idx_to_coord(move.policy),
+            loss_sum + move_loss,
+            n_records_limit,
+            n_generated,
+            ofs,
+            score_cache
+        );
+    }
 }
 
 std::string contest_record_play_one_game(
@@ -433,14 +542,30 @@ void contest_record_commandline(std::vector<std::string> arg, Options *options) 
               << " total_loss " << max_loss_total
               << " cut_empty " << cut_empty
               << " output " << out_file.string() << std::endl;
-    for (int i = 0; i < n_games; ++i) {
-        ofs << contest_record_play_one_game(board_start, initial_board, options, max_loss_per_move, max_loss_total, cut_empty, i);
-        ofs.flush();
-        if (options->show_log) {
-            std::cerr << "contest record generated " << (i + 1) << "/" << n_games << std::endl;
-        }
+    int n_generated = 0;
+    Contest_record_score_cache score_cache;
+    for (int target_loss_sum = 0; target_loss_sum <= max_loss_total && n_generated < n_games; ++target_loss_sum) {
+        int n_before = n_generated;
+        std::cerr << "contest record enumerate loss " << target_loss_sum << std::endl;
+        contest_record_enumerate_exact_loss(
+            board_start,
+            initial_board,
+            options,
+            max_loss_per_move,
+            target_loss_sum,
+            cut_empty,
+            "",
+            0,
+            n_games,
+            &n_generated,
+            ofs,
+            &score_cache
+        );
+        std::cerr << "contest record loss " << target_loss_sum
+                  << " generated " << (n_generated - n_before)
+                  << " total " << n_generated << "/" << n_games << std::endl;
     }
-    std::cerr << "contest record generation done in " << tim() - strt << " ms" << std::endl;
+    std::cerr << "contest record generation done " << n_generated << "/" << n_games << " in " << tim() - strt << " ms" << std::endl;
 }
 
 void self_play(std::vector<std::string> arg, Options *options, State *state) {
