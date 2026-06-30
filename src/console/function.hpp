@@ -11,9 +11,13 @@
 #pragma once
 #include <iostream>
 #include <fstream>
+#include <filesystem>
+#include <algorithm>
+#include <sstream>
 #include <vector>
 #include <string>
 #include "./../engine/engine_all.hpp"
+#include "./../engine/contest_book.hpp"
 #include "command.hpp"
 
 #if USE_THREAD_MONITOR
@@ -271,6 +275,172 @@ std::string self_play_task(Board board_start, std::string pre_moves_transcript, 
         res += idx_to_coord(elem);
     }
     return res;
+}
+
+struct Contest_record_scored_move {
+    int policy;
+    int value;
+
+    Contest_record_scored_move(int policy_, int value_)
+        : policy(policy_), value(value_) {}
+};
+
+std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, int level, bool use_multi_thread) {
+    std::vector<Contest_record_scored_move> res;
+    uint64_t legal = board.get_legal();
+    Flip flip;
+    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+        calc_flip(&flip, &board, cell);
+        board.move_board(&flip);
+            Search_result search_result = ai(board, level, false, 0, use_multi_thread, false);
+            int value = search_result.value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -search_result.value;
+            res.emplace_back((int)cell, value);
+        board.undo_board(&flip);
+    }
+    std::sort(res.begin(), res.end(), [](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
+        if (a.value != b.value) {
+            return a.value > b.value;
+        }
+        return a.policy < b.policy;
+    });
+    return res;
+}
+
+int contest_record_leaf_value(Board board) {
+    if (board.is_end()) {
+        return board.score_player();
+    }
+    Search_result search_result = ai(board, MAX_LEVEL, false, 0, true, false);
+    if (search_result.value != SCORE_UNDEFINED) {
+        return search_result.value;
+    }
+    return mid_evaluate(&board);
+}
+
+bool contest_record_canonical_start(const std::string &raw_board, Board *board, std::string *canonical_board) {
+    std::string compact = raw_board;
+    compact.erase(std::remove_if(compact.begin(), compact.end(), ::isspace), compact.end());
+    if (compact.size() != HW2 + 1) {
+        std::cerr << "[ERROR] invalid contest start board length " << compact.size() << std::endl;
+        return false;
+    }
+    if (!board->from_str(raw_board)) {
+        return false;
+    }
+    int player_to_move = BLACK;
+    if (is_white_like_char(compact[HW2])) {
+        player_to_move = WHITE;
+    } else if (!is_black_like_char(compact[HW2])) {
+        std::cerr << "[ERROR] invalid contest start player" << std::endl;
+        return false;
+    }
+    *canonical_board = board->to_str(player_to_move);
+    return true;
+}
+
+std::string contest_record_play_one_game(
+    Board board_start,
+    const std::string &initial_board,
+    Options *options,
+    int max_loss_per_move,
+    int max_loss_total,
+    int cut_empty,
+    int game_idx
+) {
+    Board board = board_start.copy();
+    std::string transcript;
+    int loss_sum = 0;
+    Flip flip;
+    while (HW2 - board.n_discs() > cut_empty && board.check_pass()) {
+        std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves(board, options->level, true);
+        if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
+            break;
+        }
+        int best_value = scored_moves[0].value;
+        std::vector<Contest_record_scored_move> candidates;
+        for (const Contest_record_scored_move &move: scored_moves) {
+            if (move.value == SCORE_UNDEFINED) {
+                continue;
+            }
+            int loss = best_value - move.value;
+            if (loss <= max_loss_per_move && loss_sum + loss <= max_loss_total) {
+                candidates.emplace_back(move);
+            }
+        }
+        if (candidates.empty()) {
+            candidates.emplace_back(scored_moves[0]);
+        }
+        int selected_idx = myrandrange(0, (int)candidates.size());
+        Contest_record_scored_move selected = candidates[selected_idx];
+        loss_sum += best_value - selected.value;
+        transcript += idx_to_coord(selected.policy);
+        calc_flip(&flip, &board, selected.policy);
+        board.move_board(&flip);
+    }
+    int leaf_value = contest_record_leaf_value(board);
+    std::ostringstream oss;
+    oss << "record: " << game_idx << '\n';
+    oss << "initial board: " << initial_board << '\n';
+    oss << "transcript: " << transcript << '\n';
+    oss << "leaf board: " << board.to_str() << '\n';
+    oss << "leaf empty: " << (HW2 - board.n_discs()) << '\n';
+    oss << "leaf value: " << leaf_value << '\n';
+    oss << "loss sum: " << loss_sum << '\n';
+    oss << '\n';
+    return oss.str();
+}
+
+void contest_record_commandline(std::vector<std::string> arg, Options *options) {
+    if (arg.size() < 6) {
+        std::cerr << "[ERROR] [FATAL] please input <board> <n> <dir> <per_move_loss> <total_loss> <cut_empty>" << std::endl;
+        std::exit(1);
+    }
+    int n_games = 0;
+    int max_loss_per_move = 0;
+    int max_loss_total = 0;
+    int cut_empty = 0;
+    try {
+        n_games = std::stoi(arg[1]);
+        max_loss_per_move = std::stoi(arg[3]);
+        max_loss_total = std::stoi(arg[4]);
+        cut_empty = std::stoi(arg[5]);
+    } catch (const std::exception&) {
+        std::cerr << "[ERROR] invalid contest record argument" << std::endl;
+        std::exit(1);
+    }
+    if (n_games <= 0 || max_loss_per_move < 0 || max_loss_total < 0 || cut_empty < 0 || HW2 <= cut_empty) {
+        std::cerr << "[ERROR] contest record argument out of range" << std::endl;
+        std::exit(1);
+    }
+    Board board_start;
+    std::string initial_board;
+    if (!contest_record_canonical_start(arg[0], &board_start, &initial_board)) {
+        std::exit(1);
+    }
+
+    std::filesystem::path out_dir(arg[2]);
+    std::filesystem::create_directories(out_dir);
+    std::filesystem::path out_file = out_dir / (get_current_datetime_for_file() + "_" + std::to_string(tim()) + ".txt");
+    std::ofstream ofs(out_file);
+    if (!ofs) {
+        std::cerr << "[ERROR] can't open contest record file " << out_file.string() << std::endl;
+        std::exit(1);
+    }
+    uint64_t strt = tim();
+    std::cerr << "contest record generation start games " << n_games
+              << " level " << options->level
+              << " per_move_loss " << max_loss_per_move
+              << " total_loss " << max_loss_total
+              << " cut_empty " << cut_empty
+              << " output " << out_file.string() << std::endl;
+    for (int i = 0; i < n_games; ++i) {
+        ofs << contest_record_play_one_game(board_start, initial_board, options, max_loss_per_move, max_loss_total, cut_empty, i);
+        ofs.flush();
+        if (options->show_log) {
+            std::cerr << "contest record generated " << (i + 1) << "/" << n_games << std::endl;
+        }
+    }
+    std::cerr << "contest record generation done in " << tim() - strt << " ms" << std::endl;
 }
 
 void self_play(std::vector<std::string> arg, Options *options, State *state) {
