@@ -215,7 +215,19 @@ def train_vectors(linear_phase, train_records, holdout_records, args):
                 mom = m[param_id]
                 vel = v[param_id]
                 for d in range(args.dim):
-                    grad = -residual * (sums[d] - vec[d]) + args.l2 * vec[d]
+                    try:
+                        grad = -residual * (sums[d] - vec[d]) + args.l2 * vec[d]
+                    except TypeError as exc:
+                        raise TypeError(
+                            "bad gradient value "
+                            f"phase={args.phase} step={step} rec_idx={rec_idx} "
+                            f"param_id={param_id} d={d} "
+                            f"residual_type={type(residual).__name__} "
+                            f"sum_type={type(sums[d]).__name__} "
+                            f"vec_type={type(vec[d]).__name__} "
+                            f"l2_type={type(args.l2).__name__} "
+                            f"residual={residual!r} sum={sums[d]!r} vec={vec[d]!r} l2={args.l2!r}"
+                        ) from exc
                     mom[d] = beta1 * mom[d] + (1.0 - beta1) * grad
                     vel[d] = beta2 * vel[d] + (1.0 - beta2) * grad * grad
                     vec[d] -= lr_t * mom[d] / (math.sqrt(vel[d]) + eps)
