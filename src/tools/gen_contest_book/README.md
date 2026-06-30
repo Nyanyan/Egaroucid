@@ -17,16 +17,16 @@ clang++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.exe -
 1つの開始局面から棋譜を生成します。
 
 ```powershell
-python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 128 --threads 1
+python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 512 --threads 1
 ```
 
 開始局面一覧を上から順に処理して棋譜を生成します。
 
 ```powershell
-python src/tools/gen_contest_book/generate_all_records.py --games 128 --threads 1 --resume
+python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1 --resume
 ```
 
-既定値は、レベル21、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
+既定値は、開始局面あたり512棋譜、レベル21、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
 
 棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。指定した棋譜数に達するか、上限lossまで列挙し終わると終了します。
 
@@ -97,16 +97,16 @@ clang++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.exe -
 Generate records for one start:
 
 ```powershell
-python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 128 --threads 1
+python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 512 --threads 1
 ```
 
 Generate records for starts in list order:
 
 ```powershell
-python src/tools/gen_contest_book/generate_all_records.py --games 128 --threads 1 --resume
+python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1 --resume
 ```
 
-Defaults are level 21, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
+Defaults are 512 records per start, level 21, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
 
 Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the requested number of records is reached or all records up to the configured loss limit are exhausted.
 
