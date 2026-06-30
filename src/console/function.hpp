@@ -13,6 +13,7 @@
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
+#include <mutex>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
@@ -288,16 +289,43 @@ struct Contest_record_scored_move {
 
 using Contest_record_score_cache = std::unordered_map<Board, std::vector<Contest_record_scored_move>, Contest_book_hash>;
 
-std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, int level, bool use_multi_thread) {
+#define CONTEST_RECORD_THREAD_ID_BASE 10
+
+struct Contest_record_state {
+    Board board;
+    std::string transcript;
+    int loss_sum;
+
+    Contest_record_state(Board board_, std::string transcript_, int loss_sum_)
+        : board(board_), transcript(transcript_), loss_sum(loss_sum_) {}
+};
+
+struct Contest_record_leaf {
+    Board board;
+    std::string transcript;
+    int loss_sum;
+    int leaf_value;
+
+    Contest_record_leaf(Board board_, std::string transcript_, int loss_sum_, int leaf_value_)
+        : board(board_), transcript(transcript_), loss_sum(loss_sum_), leaf_value(leaf_value_) {}
+};
+
+struct Contest_record_expand_result {
+    std::vector<Contest_record_state> next_states;
+    std::vector<Contest_record_leaf> leaves;
+};
+
+std::vector<Contest_record_scored_move> contest_record_score_moves(Board board, int level, bool use_multi_thread, thread_id_t thread_id) {
     std::vector<Contest_record_scored_move> res;
     uint64_t legal = board.get_legal();
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &board, cell);
         board.move_board(&flip);
-            Search_result search_result = ai(board, level, false, 0, use_multi_thread, false);
-            int value = search_result.value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -search_result.value;
-            res.emplace_back((int)cell, value);
+        bool searching = true;
+        Search_result search_result = ai_searching_thread_id(board, level, false, 0, use_multi_thread, false, thread_id, &searching);
+        int value = search_result.value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -search_result.value;
+        res.emplace_back((int)cell, value);
         board.undo_board(&flip);
     }
     std::sort(res.begin(), res.end(), [](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
@@ -313,22 +341,35 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
     Board board,
     int level,
     bool use_multi_thread,
-    Contest_record_score_cache *score_cache
+    thread_id_t thread_id,
+    Contest_record_score_cache *score_cache,
+    std::mutex *score_cache_mtx
 ) {
-    auto it = score_cache->find(board);
-    if (it != score_cache->end()) {
-        return it->second;
+    {
+        std::lock_guard<std::mutex> lock(*score_cache_mtx);
+        auto it = score_cache->find(board);
+        if (it != score_cache->end()) {
+            return it->second;
+        }
     }
-    std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread);
-    (*score_cache)[board] = res;
+    std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread, thread_id);
+    {
+        std::lock_guard<std::mutex> lock(*score_cache_mtx);
+        auto it = score_cache->find(board);
+        if (it != score_cache->end()) {
+            return it->second;
+        }
+        (*score_cache)[board] = res;
+    }
     return res;
 }
 
-int contest_record_leaf_value(Board board) {
+int contest_record_leaf_value(Board board, bool use_multi_thread, thread_id_t thread_id) {
     if (board.is_end()) {
         return board.score_player();
     }
-    Search_result search_result = ai(board, MAX_LEVEL, false, 0, true, false);
+    bool searching = true;
+    Search_result search_result = ai_searching_thread_id(board, MAX_LEVEL, false, 0, use_multi_thread, false, thread_id, &searching);
     if (search_result.value != SCORE_UNDEFINED) {
         return search_result.value;
     }
@@ -362,9 +403,9 @@ void contest_record_write_record(
     const std::string &transcript,
     Board board,
     int loss_sum,
+    int leaf_value,
     int record_idx
 ) {
-    int leaf_value = contest_record_leaf_value(board);
     ofs << "record: " << record_idx << '\n';
     ofs << "initial board: " << initial_board << '\n';
     ofs << "transcript: " << transcript << '\n';
@@ -375,6 +416,78 @@ void contest_record_write_record(
     ofs << '\n';
 }
 
+Contest_record_expand_result contest_record_expand_state(
+    Contest_record_state state,
+    Options *options,
+    int max_loss_per_move,
+    int target_loss_sum,
+    int cut_empty,
+    Contest_record_score_cache *score_cache,
+    std::mutex *score_cache_mtx,
+    bool use_multi_thread,
+    thread_id_t thread_id
+) {
+    Contest_record_expand_result result;
+    while (HW2 - state.board.n_discs() > cut_empty && state.board.get_legal() == 0ULL && !state.board.is_end()) {
+        state.board.pass();
+    }
+    if (HW2 - state.board.n_discs() <= cut_empty || state.board.is_end()) {
+        if (state.loss_sum == target_loss_sum) {
+            result.leaves.emplace_back(
+                state.board,
+                state.transcript,
+                state.loss_sum,
+                contest_record_leaf_value(state.board, use_multi_thread, thread_id)
+            );
+        }
+        return result;
+    }
+
+    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(state.board, options->level, use_multi_thread, thread_id, score_cache, score_cache_mtx);
+    if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
+        if (state.loss_sum == target_loss_sum) {
+            result.leaves.emplace_back(
+                state.board,
+                state.transcript,
+                state.loss_sum,
+                contest_record_leaf_value(state.board, use_multi_thread, thread_id)
+            );
+        }
+        return result;
+    }
+
+    int best_value = scored_moves[0].value;
+    Flip flip;
+    for (const Contest_record_scored_move &move: scored_moves) {
+        if (move.value == SCORE_UNDEFINED) {
+            continue;
+        }
+        int move_loss = best_value - move.value;
+        if (move_loss > max_loss_per_move || state.loss_sum + move_loss > target_loss_sum) {
+            continue;
+        }
+        Board next_board = state.board.copy();
+        calc_flip(&flip, &next_board, move.policy);
+        next_board.move_board(&flip);
+        result.next_states.emplace_back(
+            next_board,
+            state.transcript + idx_to_coord(move.policy),
+            state.loss_sum + move_loss
+        );
+    }
+    return result;
+}
+
+void contest_record_append_next_states(std::vector<Contest_record_state> *pending, const std::vector<Contest_record_state> &next_states) {
+    for (auto it = next_states.rbegin(); it != next_states.rend(); ++it) {
+        pending->emplace_back(*it);
+    }
+}
+
+int contest_record_parallel_width() {
+    return std::max(1, std::min(thread_pool.size() + 1, THREAD_ID_NONE - CONTEST_RECORD_THREAD_ID_BASE));
+}
+
 void contest_record_enumerate_exact_loss(
     Board board,
     const std::string &initial_board,
@@ -382,68 +495,110 @@ void contest_record_enumerate_exact_loss(
     int max_loss_per_move,
     int target_loss_sum,
     int cut_empty,
-    std::string transcript,
-    int loss_sum,
     int n_records_limit,
     int *n_generated,
     std::ofstream &ofs,
     Contest_record_score_cache *score_cache
 ) {
-    if (*n_generated >= n_records_limit) {
-        return;
-    }
-    while (HW2 - board.n_discs() > cut_empty && board.get_legal() == 0ULL && !board.is_end()) {
-        board.pass();
-    }
-    if (HW2 - board.n_discs() <= cut_empty || board.is_end()) {
-        if (loss_sum == target_loss_sum) {
-            contest_record_write_record(ofs, initial_board, transcript, board, loss_sum, *n_generated);
-            ++(*n_generated);
-            ofs.flush();
-        }
-        return;
-    }
+    std::mutex score_cache_mtx;
+    std::vector<Contest_record_state> pending;
+    pending.emplace_back(board, "", 0);
+    int last_batch_size = -1;
+    int last_threads_per_state = -1;
 
-    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(board, options->level, true, score_cache);
-    if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
-        if (loss_sum == target_loss_sum) {
-            contest_record_write_record(ofs, initial_board, transcript, board, loss_sum, *n_generated);
-            ++(*n_generated);
-            ofs.flush();
+    while (!pending.empty() && *n_generated < n_records_limit) {
+        int batch_size = std::min((int)pending.size(), contest_record_parallel_width());
+        int total_threads = thread_pool.size() + 1;
+        int base_threads = std::max(1, total_threads / batch_size);
+        int extra_threads = total_threads % batch_size;
+        if (batch_size != last_batch_size || base_threads != last_threads_per_state) {
+            std::cerr << "contest record parallel width " << batch_size
+                      << " threads_per_progress " << base_threads << (extra_threads ? "+1" : "")
+                      << " pending " << pending.size() << std::endl;
+            last_batch_size = batch_size;
+            last_threads_per_state = base_threads;
         }
-        return;
-    }
 
-    int best_value = scored_moves[0].value;
-    Flip flip;
-    for (const Contest_record_scored_move &move: scored_moves) {
-        if (*n_generated >= n_records_limit) {
-            return;
+        std::vector<Contest_record_state> batch;
+        batch.reserve(batch_size);
+        for (int i = 0; i < batch_size; ++i) {
+            batch.emplace_back(pending.back());
+            pending.pop_back();
         }
-        if (move.value == SCORE_UNDEFINED) {
-            continue;
+
+        std::vector<Contest_record_expand_result> results(batch_size);
+        std::vector<std::future<Contest_record_expand_result>> tasks;
+        std::vector<int> task_indices;
+        tasks.reserve(std::max(0, batch_size - 1));
+        task_indices.reserve(std::max(0, batch_size - 1));
+
+        for (int i = 1; i < batch_size; ++i) {
+            int threads_for_state = base_threads + (i < extra_threads ? 1 : 0);
+            thread_id_t thread_id = CONTEST_RECORD_THREAD_ID_BASE + i;
+            thread_pool.set_max_thread_size(thread_id, threads_for_state);
+            bool pushed = false;
+            tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(
+                contest_record_expand_state,
+                batch[i],
+                options,
+                max_loss_per_move,
+                target_loss_sum,
+                cut_empty,
+                score_cache,
+                &score_cache_mtx,
+                threads_for_state > 1,
+                thread_id
+            )));
+            if (pushed) {
+                task_indices.emplace_back(i);
+            } else {
+                tasks.pop_back();
+                results[i] = contest_record_expand_state(
+                    batch[i],
+                    options,
+                    max_loss_per_move,
+                    target_loss_sum,
+                    cut_empty,
+                    score_cache,
+                    &score_cache_mtx,
+                    false,
+                    THREAD_ID_NONE
+                );
+            }
         }
-        int move_loss = best_value - move.value;
-        if (move_loss > max_loss_per_move || loss_sum + move_loss > target_loss_sum) {
-            continue;
-        }
-        Board next_board = board.copy();
-        calc_flip(&flip, &next_board, move.policy);
-        next_board.move_board(&flip);
-        contest_record_enumerate_exact_loss(
-            next_board,
-            initial_board,
+
+        int main_threads_for_state = base_threads + (extra_threads > 0 ? 1 : 0);
+        thread_id_t main_thread_id = CONTEST_RECORD_THREAD_ID_BASE;
+        thread_pool.set_max_thread_size(main_thread_id, std::max(0, main_threads_for_state - 1));
+        results[0] = contest_record_expand_state(
+            batch[0],
             options,
             max_loss_per_move,
             target_loss_sum,
             cut_empty,
-            transcript + idx_to_coord(move.policy),
-            loss_sum + move_loss,
-            n_records_limit,
-            n_generated,
-            ofs,
-            score_cache
+            score_cache,
+            &score_cache_mtx,
+            main_threads_for_state > 1,
+            main_thread_id
         );
+
+        for (int i = 0; i < (int)tasks.size(); ++i) {
+            results[task_indices[i]] = tasks[i].get();
+        }
+
+        for (const Contest_record_expand_result &result: results) {
+            for (const Contest_record_leaf &leaf: result.leaves) {
+                if (*n_generated >= n_records_limit) {
+                    return;
+                }
+                contest_record_write_record(ofs, initial_board, leaf.transcript, leaf.board, leaf.loss_sum, leaf.leaf_value, *n_generated);
+                ++(*n_generated);
+                ofs.flush();
+            }
+        }
+        for (auto it = results.rbegin(); it != results.rend(); ++it) {
+            contest_record_append_next_states(&pending, it->next_states);
+        }
     }
 }
 
@@ -461,7 +616,7 @@ std::string contest_record_play_one_game(
     int loss_sum = 0;
     Flip flip;
     while (HW2 - board.n_discs() > cut_empty && board.check_pass()) {
-        std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves(board, options->level, true);
+        std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves(board, options->level, true, THREAD_ID_NONE);
         if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
             break;
         }
@@ -486,7 +641,7 @@ std::string contest_record_play_one_game(
         calc_flip(&flip, &board, selected.policy);
         board.move_board(&flip);
     }
-    int leaf_value = contest_record_leaf_value(board);
+    int leaf_value = contest_record_leaf_value(board, true, THREAD_ID_NONE);
     std::ostringstream oss;
     oss << "record: " << game_idx << '\n';
     oss << "initial board: " << initial_board << '\n';
@@ -554,8 +709,6 @@ void contest_record_commandline(std::vector<std::string> arg, Options *options) 
             max_loss_per_move,
             target_loss_sum,
             cut_empty,
-            "",
-            0,
             n_games,
             &n_generated,
             ofs,

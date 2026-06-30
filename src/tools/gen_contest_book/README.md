@@ -40,6 +40,8 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 
 棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。指定した棋譜数に達するか、上限lossまで列挙し終わると終了します。
 
+`--threads` を2以上にすると、Egaroucid側は候補進行数に応じて並列化します。最初は1進行に全スレッドを割り当て、候補進行が増えるにつれて1進行あたりのスレッド数を減らし、最終的には指定スレッド数ぶんの進行を同時に処理します。
+
 ## book構築
 
 1つの開始局面のbookを構築します。
@@ -129,6 +131,8 @@ When combined with `--skip`, the script skips that many additional positions aft
 Defaults are 512 records per start, level 21, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
 
 Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the requested number of records is reached or all records up to the configured loss limit are exhausted.
+
+When `--threads` is 2 or larger, Egaroucid parallelizes by active progressions. It starts by assigning all threads to one progression, then reduces threads per progression as more candidates appear, eventually processing as many progressions in parallel as the requested thread count.
 
 ## Build Books
 
