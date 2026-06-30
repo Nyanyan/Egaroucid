@@ -25,18 +25,18 @@ python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 
 開始局面一覧を上から順に処理して棋譜を生成します。
 
 ```powershell
-python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1 --resume
+python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1
 ```
 
 途中の開始局面から走査したい場合は、一覧に含まれる局面を `--start-board` に指定します。指定した局面を含めて処理を開始します。
 
 ```powershell
-python src/tools/gen_contest_book/generate_all_records.py --start-board "<initial board>" --resume
+python src/tools/gen_contest_book/generate_all_records.py --start-board "<initial board>"
 ```
 
 `--skip` と併用すると、`--start-board` の局面からさらに指定数だけ飛ばします。
 
-既定値は、開始局面あたり512棋譜、16棋譜ごとの反復更新、レベル21、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
+既定値は、開始局面あたり512棋譜、16棋譜ごとの反復更新、レベル19、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
 
 棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。指定した棋譜数に達するか、上限lossまで列挙し終わると終了します。
 
@@ -118,18 +118,18 @@ python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 
 Generate records for starts in list order:
 
 ```powershell
-python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1 --resume
+python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1
 ```
 
 To resume scanning from a specific start position, pass a board from the start list to `--start-board`. The specified position is included.
 
 ```powershell
-python src/tools/gen_contest_book/generate_all_records.py --start-board "<initial board>" --resume
+python src/tools/gen_contest_book/generate_all_records.py --start-board "<initial board>"
 ```
 
 When combined with `--skip`, the script skips that many additional positions after `--start-board`.
 
-Defaults are 512 records per start, iterative updates every 16 records, level 21, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
+Defaults are 512 records per start, iterative updates every 16 records, level 19, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
 
 Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the requested number of records is reached or all records up to the configured loss limit are exhausted.
 

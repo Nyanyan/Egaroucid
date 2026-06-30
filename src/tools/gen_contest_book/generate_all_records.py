@@ -13,7 +13,6 @@ from config import (
     DEFAULT_THREADS,
     WORK_DIR,
     iter_start_boards,
-    record_dir_for_start,
 )
 from othello import normalize_board_text
 
@@ -40,7 +39,7 @@ def main() -> int:
     parser.add_argument("--max-book-loss", type=int, default=DEFAULT_BOOK_MAX_LOSS)
     parser.add_argument("--cut-empty", type=int, default=DEFAULT_CUT_EMPTY)
     parser.add_argument("--use-existing-book", action="store_true")
-    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--resume", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     if args.skip < 0:
@@ -61,10 +60,6 @@ def main() -> int:
     script = WORK_DIR / "generate_records.py"
     for idx, board in enumerate(boards, start=start_idx):
         initial_board = normalize_board_text(board)
-        out_dir = record_dir_for_start(initial_board)
-        if args.resume and out_dir.exists() and any(out_dir.glob("*.txt")):
-            print(f"[{idx}] skip existing {initial_board}")
-            continue
         print(f"[{idx}] generate {initial_board}")
         cmd = [
             sys.executable,
