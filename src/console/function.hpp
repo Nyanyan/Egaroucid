@@ -321,20 +321,55 @@ struct Contest_record_queue {
     std::mutex mtx;
     std::condition_variable cv;
     int active_workers;
+    int active_helper_threads;
     int n_generated;
     int n_records_limit;
     bool stop;
 
     Contest_record_queue(int n_generated_, int n_records_limit_)
-        : active_workers(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {}
+        : active_workers(0), active_helper_threads(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {}
 };
 
-bool contest_record_should_use_search_threads(Contest_record_queue *queue, int n_workers, bool use_multi_thread) {
-    if (use_multi_thread || queue == nullptr || n_workers <= 1) {
-        return use_multi_thread;
+constexpr int CONTEST_RECORD_THREAD_ID_BASE = 2;
+
+thread_id_t contest_record_thread_id(int worker_idx) {
+    return CONTEST_RECORD_THREAD_ID_BASE + worker_idx;
+}
+
+int contest_record_reserve_search_helpers(Contest_record_queue *queue, int n_workers, thread_id_t thread_id) {
+    if (queue == nullptr || n_workers <= 1 || thread_id == THREAD_ID_NONE) {
+        return 0;
     }
-    std::lock_guard<std::mutex> lock(queue->mtx);
-    return !queue->stop && queue->tasks.empty() && queue->active_workers < n_workers;
+    int helper_threads = 0;
+    {
+        std::lock_guard<std::mutex> lock(queue->mtx);
+        if (!queue->stop) {
+            const int active_workers = std::max(1, queue->active_workers);
+            const int pending_tasks = (int)queue->tasks.size();
+            const int idle_worker_slots = n_workers - active_workers - pending_tasks;
+            const int available_helpers = idle_worker_slots - queue->active_helper_threads;
+            if (available_helpers > 0) {
+                const int helpers_per_task = std::max(1, idle_worker_slots / active_workers);
+                helper_threads = std::min(available_helpers, helpers_per_task);
+                queue->active_helper_threads += helper_threads;
+            }
+        }
+    }
+    if (helper_threads > 0) {
+        thread_pool.set_max_thread_size(thread_id, helper_threads);
+    }
+    return helper_threads;
+}
+
+void contest_record_release_search_helpers(Contest_record_queue *queue, thread_id_t thread_id, int helper_threads) {
+    if (queue == nullptr || helper_threads <= 0 || thread_id == THREAD_ID_NONE) {
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(queue->mtx);
+        queue->active_helper_threads = std::max(0, queue->active_helper_threads - helper_threads);
+    }
+    thread_pool.set_max_thread_size(thread_id, 0);
 }
 
 std::vector<Contest_record_scored_move> contest_record_score_moves(
@@ -352,8 +387,10 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(
         calc_flip(&flip, &board, cell);
         board.move_board(&flip);
         bool searching = true;
-        const bool search_use_multi_thread = contest_record_should_use_search_threads(queue, n_workers, use_multi_thread);
+        const int helper_threads = contest_record_reserve_search_helpers(queue, n_workers, thread_id);
+        const bool search_use_multi_thread = queue == nullptr ? use_multi_thread : helper_threads > 0;
         Search_result search_result = ai_searching_thread_id(board, level, false, 0, search_use_multi_thread, false, thread_id, &searching);
+        contest_record_release_search_helpers(queue, thread_id, helper_threads);
         int value = search_result.value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -search_result.value;
         res.emplace_back((int)cell, value);
         board.undo_board(&flip);
@@ -401,8 +438,10 @@ int contest_record_leaf_value(Board board, bool use_multi_thread, thread_id_t th
         return board.score_player();
     }
     bool searching = true;
-    const bool search_use_multi_thread = contest_record_should_use_search_threads(queue, n_workers, use_multi_thread);
+    const int helper_threads = contest_record_reserve_search_helpers(queue, n_workers, thread_id);
+    const bool search_use_multi_thread = queue == nullptr ? use_multi_thread : helper_threads > 0;
     Search_result search_result = ai_searching_thread_id(board, MAX_LEVEL, false, 0, search_use_multi_thread, false, thread_id, &searching);
+    contest_record_release_search_helpers(queue, thread_id, helper_threads);
     if (search_result.value != SCORE_UNDEFINED) {
         return search_result.value;
     }
@@ -558,11 +597,11 @@ void contest_record_worker_loop(
     Contest_record_score_cache *score_cache,
     std::mutex *score_cache_mtx,
     std::ofstream *ofs,
-    int n_workers
+    int n_workers,
+    thread_id_t search_thread_id
 ) {
     while (true) {
         Contest_record_state state(Board(), "", 0);
-        bool use_multi_thread = false;
         {
             std::unique_lock<std::mutex> lock(queue->mtx);
             queue->cv.wait(lock, [&]() {
@@ -574,7 +613,6 @@ void contest_record_worker_loop(
             state = queue->tasks.back();
             queue->tasks.pop_back();
             ++queue->active_workers;
-            use_multi_thread = n_workers > 1 && queue->active_workers == 1 && queue->tasks.empty();
         }
 
         Contest_record_expand_result result = contest_record_expand_state(
@@ -585,8 +623,8 @@ void contest_record_worker_loop(
             cut_empty,
             score_cache,
             score_cache_mtx,
-            use_multi_thread,
-            THREAD_ID_NONE,
+            false,
+            search_thread_id,
             queue,
             n_workers
         );
@@ -639,7 +677,8 @@ void contest_record_enumerate_exact_loss(
             score_cache,
             &score_cache_mtx,
             &ofs,
-            n_workers
+            n_workers,
+            contest_record_thread_id(i)
         );
     }
     queue.cv.notify_all();

@@ -40,7 +40,7 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 
 棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。指定した棋譜数に達するか、上限lossまで列挙し終わると終了します。
 
-`--threads` を2以上にすると、Egaroucid側は共有タスクキューで並列化します。1本しか進行がない間はその探索に全スレッドを使い、棋譜上の分岐で新しい進行が増えたらキューへ追加します。各workerは空き次第、自分でキューから次の進行を取り出して処理します。キューが空で外側workerに空きがある場合は、合法手評価や30空き完全読みの直前にも状況を見直し、残っている探索へ空きスレッドを使わせます。
+`--threads` を2以上にすると、Egaroucid側は共有タスクキューで並列化します。1本しか進行がない間はその探索に全スレッドを使い、棋譜上の分岐で新しい進行が増えたらキューへ追加します。各workerは空き次第、自分でキューから次の進行を取り出して処理します。実行中タスクと待ちタスクの合計がworker数を下回った場合は、合法手評価や30空き完全読みの直前に空きworker分のhelper slotを予約し、残っている各タスクが複数スレッドを使えるようにします。
 
 ## book構築
 
@@ -132,7 +132,7 @@ Defaults are 512 records per start, level 21, per-move loss 2, total loss 4, and
 
 Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the requested number of records is reached or all records up to the configured loss limit are exhausted.
 
-When `--threads` is 2 or larger, Egaroucid parallelizes with a shared task queue. While there is only one progression, that search can use all threads. When branch points create more progressions, they are pushed to the queue, and each worker pulls the next progression as soon as it becomes free. If the queue becomes empty and outer workers are idle, Egaroucid rechecks before scoring each legal move and before the 30-empty exact solve, then lets the remaining searches use the idle helper threads.
+When `--threads` is 2 or larger, Egaroucid parallelizes with a shared task queue. While there is only one progression, that search can use all threads. When branch points create more progressions, they are pushed to the queue, and each worker pulls the next progression as soon as it becomes free. If the number of running plus queued tasks drops below the worker count, Egaroucid reserves helper slots before scoring each legal move and before the 30-empty exact solve, so the remaining tasks can use multiple threads without exceeding the configured budget.
 
 ## Build Books
 
