@@ -80,13 +80,13 @@ Get-Content -Encoding UTF8 (Get-ChildItem src/tools/gen_contest_book/trained/*.e
 
 先頭に `# contest_book_v1` があり、以降に `<64マスの盤面> X <評価値> <手>:<スコア> ...` の行が出ていれば、少なくとも構築形式は正しく出力されています。
 
-対局時の読み込み確認は、`-contestbook` と `-noise` を指定してコンソールを起動し、ログを見ます。開始局面に対応するbookが見つかると `contest book loaded ...`、bookから着手できると `contest book selected ...` が出ます。
+対局時の読み込み確認は、`-contestbook` と `-noise` を指定してコンソールを起動し、ログを見ます。開始局面に対応するbookが見つかると `contest book loaded ...`、`go` でbookから着手できると `contest book selected ...` が出ます。`hint` では `contest book hinted ...`、`analyze` では `contest book analyzed ...` が出ます。
 
 ```powershell
 .\bin\Egaroucid_for_Console.exe -noise -contestbook src/tools/gen_contest_book/trained <other options>
 ```
 
-実戦投入前には、対象の開始局面で `contest book selected` が出ること、選ばれた手が合法手であること、bookがない開始局面では通常探索に戻ることを確認してください。
+実戦投入前には、対象の開始局面で `go` / `hint` / `analyze` がcontest bookを参照すること、選ばれた手が合法手であること、bookがない開始局面では通常探索に戻ることを確認してください。
 
 ---
 
@@ -172,10 +172,10 @@ Get-Content -Encoding UTF8 (Get-ChildItem src/tools/gen_contest_book/trained/*.e
 
 The file should start with `# contest_book_v1`, followed by lines like `<64-cell board> X <value> <move>:<score> ...`. If so, the build output is at least structurally valid.
 
-For runtime loading, run the console with `-contestbook` and `-noise`, then watch the log. When a matching start-position book is found, the log shows `contest book loaded ...`. When a move is actually selected from the book, it shows `contest book selected ...`.
+For runtime loading, run the console with `-contestbook` and `-noise`, then watch the log. When a matching start-position book is found, the log shows `contest book loaded ...`. When `go` selects a move from the book, it shows `contest book selected ...`. The `hint` command logs `contest book hinted ...`, and `analyze` logs `contest book analyzed ...`.
 
 ```powershell
 .\bin\Egaroucid_for_Console.exe -noise -contestbook src/tools/gen_contest_book/trained <other options>
 ```
 
-Before using the book in a real match, confirm that `contest book selected` appears for the target start position, that the selected move is legal, and that positions without a matching book fall back to normal search.
+Before using the book in a real match, confirm that `go` / `hint` / `analyze` use the contest book for the target start position, that selected moves are legal, and that positions without a matching book fall back to normal search.

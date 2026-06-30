@@ -278,6 +278,85 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     return result;
 }
 
+Search_result contest_book_move_to_search_result(int policy, int value) {
+    Search_result result;
+    result.policy = policy;
+    result.value = value;
+    result.depth = SEARCH_BOOK;
+    result.time = 0;
+    result.nodes = 0;
+    result.clog_time = 0;
+    result.clog_nodes = 0;
+    result.nps = 0;
+    result.is_end_search = false;
+    result.probability = -1;
+    return result;
+}
+
+std::vector<Search_result> contest_book_hint_results(const Board &board, const Contest_book &contest_book, int max_results, uint64_t *legal) {
+    std::vector<Search_result> result;
+    Contest_book_entry entry;
+    if (!contest_book.get(board, &entry)) {
+        return result;
+    }
+    std::vector<Contest_book_move> moves = entry.moves;
+    std::sort(moves.begin(), moves.end(), [](const Contest_book_move &a, const Contest_book_move &b) {
+        if (a.value != b.value) {
+            return a.value > b.value;
+        }
+        return a.policy < b.policy;
+    });
+    for (const Contest_book_move &move: moves) {
+        if ((int)result.size() >= max_results) {
+            break;
+        }
+        if (is_valid_policy(move.policy) && (*legal & (1ULL << move.policy))) {
+            result.emplace_back(contest_book_move_to_search_result(move.policy, move.value));
+            *legal &= ~(1ULL << move.policy);
+        }
+    }
+    return result;
+}
+
+bool contest_book_analyze_result(const Board &board, const Contest_book &contest_book, int played_move, Analyze_result *result) {
+    Contest_book_entry entry;
+    if (!contest_book.get(board, &entry)) {
+        return false;
+    }
+    uint64_t legal = board.get_legal();
+    if (!is_valid_policy(played_move) || !(legal & (1ULL << played_move))) {
+        return false;
+    }
+    result->played_move = played_move;
+    result->played_score = SCORE_UNDEFINED;
+    result->played_depth = SEARCH_BOOK;
+    result->played_probability = -1;
+    result->alt_move = -1;
+    result->alt_score = -SCORE_INF;
+    result->alt_depth = -1;
+    result->alt_probability = 0;
+    for (const Contest_book_move &move: entry.moves) {
+        if (!is_valid_policy(move.policy) || !(legal & (1ULL << move.policy))) {
+            continue;
+        }
+        if (move.policy == played_move) {
+            result->played_score = move.value;
+        } else if (move.value > result->alt_score) {
+            result->alt_move = move.policy;
+            result->alt_score = move.value;
+            result->alt_depth = SEARCH_BOOK;
+            result->alt_probability = -1;
+        }
+    }
+    if (result->played_score == SCORE_UNDEFINED) {
+        return false;
+    }
+    if (result->alt_move == -1) {
+        result->alt_score = -SCORE_INF;
+    }
+    return true;
+}
+
 void go(Board_info *board, Options *options, State *state, uint64_t start_time) {
     int before_player = board->player;
     Search_result result = go_noprint(board, options, state);
@@ -356,18 +435,34 @@ void hint(Board_info *board, Options *options, State *state, std::string arg) {
     uint64_t legal = board->board.get_legal();
     if (n_show > pop_count_ull(legal))
         n_show = pop_count_ull(legal);
-    std::vector<Book_value> result_book_value = book.get_all_moves_with_value(&board->board);
     std::vector<Search_result> result;
-    for (Book_value elem: result_book_value)
-        result.emplace_back(elem.to_search_result());
+    if (options->contest_book) {
+        result = contest_book_hint_results(board->board, state->contest_book, n_show, &legal);
+        if (options->show_log && !result.empty()) {
+            std::cerr << "contest book hinted " << result.size()
+                      << " moves boards " << state->contest_book.size()
+                      << " " << board->board.to_str()
+                      << std::endl;
+        }
+    }
     if ((int)result.size() < n_show) {
-        for (const Search_result &elem: result)
-            legal ^= 1ULL << elem.policy;
+        std::vector<Book_value> result_book_value = book.get_all_moves_with_value(&board->board);
+        for (Book_value elem: result_book_value) {
+            if ((int)result.size() >= n_show) {
+                break;
+            }
+            if (is_valid_policy(elem.policy) && (legal & (1ULL << elem.policy))) {
+                result.emplace_back(elem.to_search_result());
+                legal &= ~(1ULL << elem.policy);
+            }
+        }
+    }
+    if ((int)result.size() < n_show) {
         int n_show_ai = n_show - (int)result.size();
         for (int i = 0; i < n_show_ai; ++i) {
             Search_result elem = ai_legal(board->board, options->level, true, 0, true, false, legal);
             result.emplace_back(elem);
-            legal ^= 1ULL << elem.policy;
+            legal &= ~(1ULL << elem.policy);
         }
     }
     std::sort(result.rbegin(), result.rend());
@@ -385,7 +480,18 @@ inline void analyze(Board_info *board, Options *options, State *state) {
         uint64_t played_board = (n_board.player | n_board.opponent) ^ (board->boards[i + 1].player | board->boards[i + 1].opponent);
         if (pop_count_ull(played_board) == 1) {
             uint_fast8_t played_move = ctz(played_board);
-            Analyze_result result = ai_analyze(n_board, options->level, true, played_move);
+            Analyze_result result;
+            bool contest_book_used = options->contest_book && contest_book_analyze_result(n_board, state->contest_book, played_move, &result);
+            if (contest_book_used) {
+                if (options->show_log) {
+                    std::cerr << "contest book analyzed played " << idx_to_coord(played_move)
+                              << " boards " << state->contest_book.size()
+                              << " " << n_board.to_str()
+                              << std::endl;
+                }
+            } else {
+                result = ai_analyze(n_board, options->level, true, played_move);
+            }
             std::string judge = "";
             ++summary[board->players[i]].n_ply;
             if (result.alt_score > result.played_score) {
