@@ -318,7 +318,20 @@ std::vector<Search_result> contest_book_hint_results(const Board &board, const C
     return result;
 }
 
-bool contest_book_analyze_result(const Board &board, const Contest_book &contest_book, int played_move, Analyze_result *result) {
+void contest_book_set_analyze_played(Analyze_result *result, const Search_result &search_result) {
+    result->played_score = search_result.value;
+    result->played_depth = search_result.depth;
+    result->played_probability = search_result.probability;
+}
+
+void contest_book_set_analyze_alt(Analyze_result *result, const Search_result &search_result) {
+    result->alt_move = search_result.policy;
+    result->alt_score = search_result.value;
+    result->alt_depth = search_result.depth;
+    result->alt_probability = search_result.probability;
+}
+
+bool contest_book_analyze_result(const Board &board, const Contest_book &contest_book, int level, int played_move, Analyze_result *result) {
     Contest_book_entry entry;
     if (!contest_book.get(board, &entry)) {
         return false;
@@ -327,38 +340,48 @@ bool contest_book_analyze_result(const Board &board, const Contest_book &contest
     if (!is_valid_policy(played_move) || !(legal & (1ULL << played_move))) {
         return false;
     }
-    const int n_legal = pop_count_ull(legal);
     result->played_move = played_move;
     result->played_score = SCORE_UNDEFINED;
-    result->played_depth = SEARCH_BOOK;
-    result->played_probability = -1;
+    result->played_depth = -1;
+    result->played_probability = 0;
     result->alt_move = -1;
     result->alt_score = -SCORE_INF;
     result->alt_depth = -1;
     result->alt_probability = 0;
+    uint64_t book_legal = 0ULL;
+    bool used_contest_book = false;
     for (const Contest_book_move &move: entry.moves) {
         if (!is_valid_policy(move.policy) || !(legal & (1ULL << move.policy))) {
             continue;
         }
+        book_legal |= 1ULL << move.policy;
+        Search_result book_result = contest_book_move_to_search_result(move.policy, move.value);
         if (move.policy == played_move) {
-            result->played_score = move.value;
+            contest_book_set_analyze_played(result, book_result);
+            used_contest_book = true;
         } else if (move.value > result->alt_score) {
-            result->alt_move = move.policy;
-            result->alt_score = move.value;
-            result->alt_depth = SEARCH_BOOK;
-            result->alt_probability = -1;
+            contest_book_set_analyze_alt(result, book_result);
+            used_contest_book = true;
         }
     }
     if (result->played_score == SCORE_UNDEFINED) {
-        return false;
+        Search_result played_search = ai_legal(board, level, true, 0, true, false, 1ULL << played_move);
+        if (!is_valid_policy(played_search.policy)) {
+            return false;
+        }
+        contest_book_set_analyze_played(result, played_search);
     }
-    if (result->alt_move == -1 && n_legal > 1) {
-        return false;
+    uint64_t non_book_alt_legal = (legal & ~(1ULL << played_move)) & ~book_legal;
+    if (non_book_alt_legal) {
+        Search_result alt_search = ai_legal(board, level, true, 0, true, false, non_book_alt_legal);
+        if (is_valid_policy(alt_search.policy) && alt_search.value > result->alt_score) {
+            contest_book_set_analyze_alt(result, alt_search);
+        }
     }
     if (result->alt_move == -1) {
         result->alt_score = -SCORE_INF;
     }
-    return true;
+    return used_contest_book;
 }
 
 void go(Board_info *board, Options *options, State *state, uint64_t start_time) {
@@ -485,7 +508,7 @@ inline void analyze(Board_info *board, Options *options, State *state) {
         if (pop_count_ull(played_board) == 1) {
             uint_fast8_t played_move = ctz(played_board);
             Analyze_result result;
-            bool contest_book_used = options->contest_book && contest_book_analyze_result(n_board, state->contest_book, played_move, &result);
+            bool contest_book_used = options->contest_book && contest_book_analyze_result(n_board, state->contest_book, options->level, played_move, &result);
             if (contest_book_used) {
                 if (options->show_log) {
                     std::cerr << "contest book analyzed played " << idx_to_coord(played_move)
