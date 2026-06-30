@@ -16,9 +16,18 @@ from config import (
 from othello import normalize_board_text
 
 
+def find_start_index(boards: list[str], start_board: str) -> int:
+    normalized_start = normalize_board_text(start_board)
+    for idx, board in enumerate(boards):
+        if normalize_board_text(board) == normalized_start:
+            return idx
+    raise ValueError(f"--start-board not found in start list: {normalized_start}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--games", type=int, default=DEFAULT_GAMES_PER_START)
+    parser.add_argument("--start-board")
     parser.add_argument("--skip", type=int, default=0)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--level", type=int, default=DEFAULT_LEVEL)
@@ -29,14 +38,23 @@ def main() -> int:
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
 
+    if args.skip < 0:
+        raise ValueError("--skip must be non-negative")
+    if args.limit is not None and args.limit < 0:
+        raise ValueError("--limit must be non-negative")
+
     boards = list(iter_start_boards())
+    start_idx = 0
+    if args.start_board:
+        start_idx = find_start_index(boards, args.start_board)
     if args.skip:
-        boards = boards[args.skip:]
+        start_idx += args.skip
+    boards = boards[start_idx:]
     if args.limit is not None:
         boards = boards[:args.limit]
 
     script = WORK_DIR / "generate_records.py"
-    for idx, board in enumerate(boards, start=args.skip):
+    for idx, board in enumerate(boards, start=start_idx):
         initial_board = normalize_board_text(board)
         out_dir = record_dir_for_start(initial_board)
         if args.resume and out_dir.exists() and any(out_dir.glob("*.txt")):
