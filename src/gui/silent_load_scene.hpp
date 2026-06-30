@@ -94,6 +94,7 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_opening_name = true;
     settings->show_principal_variation = true;
     settings->show_timer = false;
+    settings->timer_time_limit_min = TIMER_TIME_LIMIT_DEFAULT;
     settings->show_laser_pointer = false;
     settings->show_ai_focus = false;
     settings->pv_length = 7;
@@ -479,6 +480,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
         if (init_settings_import_bool(setting_json, U"show_timer", &settings->show_timer) != ERR_OK) {
             std::cerr << "err40-1" << std::endl;
         }
+        init_settings_import_int(setting_json, U"timer_time_limit_min", &settings->timer_time_limit_min);
         if (init_settings_import_bool(setting_json, U"show_laser_pointer", &settings->show_laser_pointer) != ERR_OK) {
             std::cerr << "err41" << std::endl;
         }
@@ -574,6 +576,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
     settings->othello_quest_mode = std::clamp(settings->othello_quest_mode, 0, 2);
     settings->auto_save_ai_profile_mode = std::clamp(settings->auto_save_ai_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);
     settings->auto_save_display_profile_mode = std::clamp(settings->auto_save_display_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);
+    settings->timer_time_limit_min = std::clamp(settings->timer_time_limit_min, TIMER_TIME_LIMIT_MIN, TIMER_TIME_LIMIT_MAX);
     if (setting_json[U"umigame_value_score_slider_version"].getType() != JSONValueType::Number) {
         settings->umigame_value_score_min = migrate_legacy_umigame_score_slider_value(settings->umigame_value_score_min);
         settings->umigame_value_score_max = migrate_legacy_umigame_score_slider_value(settings->umigame_value_score_max);

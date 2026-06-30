@@ -142,8 +142,12 @@ private:
     bool use_image;
     Texture image;
     int (*bar_display_mapper)(int);
+    String (*bar_display_formatter)(int);
 
     String format_bar_value(int value) const {
+        if (bar_display_formatter != nullptr) {
+            return bar_display_formatter(value);
+        }
         if (bar_display_mapper == nullptr) {
             return Format(value);
         }
@@ -256,6 +260,7 @@ public:
         use_image = false;
         arrow_left = al;
         bar_display_mapper = nullptr;
+        bar_display_formatter = nullptr;
     }
 
     void init_bar(String s, int *c, int d, int mn, int mx) {
@@ -275,10 +280,15 @@ public:
         is_clicked = false;
         use_image = false;
         bar_display_mapper = nullptr;
+        bar_display_formatter = nullptr;
     }
 
     void set_bar_display_mapper(int (*mapper)(int)) {
         bar_display_mapper = mapper;
+    }
+
+    void set_bar_display_formatter(String (*formatter)(int)) {
+        bar_display_formatter = formatter;
     }
 
     void init_check(String s, bool *c, bool d) {
@@ -695,6 +705,7 @@ public:
         str = U"";
         bar_active_circle = 0;
         bar_display_mapper = nullptr;
+        bar_display_formatter = nullptr;
     }
 
     int menu_mode() const {

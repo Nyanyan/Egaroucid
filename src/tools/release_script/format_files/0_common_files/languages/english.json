@@ -259,7 +259,9 @@
             "display_on_info_area": "On Info Area",
             "opening_name": "Opening",
             "principal_variation": "Best Line",
-            "timer": "Timer"
+            "timer": "Timer",
+            "timer_time_limit": "Time Limit",
+            "timer_time_limit_none": "N/A"
         },
         "graph": {
             "display_on_graph_area": "On Graph Area",
@@ -338,7 +340,10 @@
         "forced_finished": "Forced Line Ended",
         "playing": "Playing",
         "analyzing": "Analyzing",
-        "calculation_stopped": "AI Paused"
+        "calculation_stopped": "AI Paused",
+        "timer_start": "Start",
+        "timer_pause": "Pause",
+        "timer_reset": "Reset"
     },
     "edit_board": {
         "player": "Player",

@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <algorithm>
 #include <iostream>
 #include <future>
 #include <functional>
@@ -127,13 +128,13 @@ String format_elapsed_time_msec(int64_t msec) {
     return Unicode::Widen(oss.str());
 }
 
-void draw_elapsed_time_pair(const Fonts& fonts, const int font_size, const int y, const int64_t black_time_msec, const int64_t white_time_msec) {
+void draw_elapsed_time_pair(const Fonts& fonts, const Colors& colors, const int font_size, const int y, const int64_t black_time_msec, const int64_t white_time_msec, bool black_time_limit_reached = false, bool white_time_limit_reached = false) {
     constexpr int TIMER_LEFT_OFFSET = 95;
     constexpr int TIMER_RIGHT_OFFSET = 95;
     String black_time = format_elapsed_time_msec(black_time_msec);
     String white_time = format_elapsed_time_msec(white_time_msec);
-    fonts.font(black_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 - TIMER_LEFT_OFFSET, y));
-    fonts.font(white_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 + TIMER_RIGHT_OFFSET, y));
+    fonts.font(black_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 - TIMER_LEFT_OFFSET, y), black_time_limit_reached ? colors.red : Palette::White);
+    fonts.font(white_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 + TIMER_RIGHT_OFFSET, y), white_time_limit_reached ? colors.red : Palette::White);
 }
 
 String get_forced_opening_status_text(int forced_opening_status) {
@@ -159,7 +160,7 @@ String join_info_status_text(const String& lhs, const String& rhs) {
     return lhs + U" " + rhs;
 }
 
-void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, int forced_opening_status, int playing_mode, int64_t black_time_msec = -1, int64_t white_time_msec = -1) {
+void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_elements menu_elements, bool pausing_in_pass, std::string principal_variation, int forced_opening_status, int playing_mode, int64_t black_time_msec = -1, int64_t white_time_msec = -1, bool black_time_limit_reached = false, bool white_time_limit_reached = false) {
     s3d::RoundRect round_rect{ INFO_SX, INFO_SY, INFO_WIDTH, INFO_HEIGHT, INFO_RECT_RADIUS };
     round_rect.drawFrame(INFO_RECT_THICKNESS, colors.white);
     // 1st line
@@ -187,7 +188,15 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     } else {
         moves_line = language.get("info", "game_end");
     }
-    fonts.font(moves_line).draw(15, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
+    int moves_line_font_size = 15;
+    double moves_line_max_width = INFO_WIDTH - 16;
+    if (menu_elements.show_timer && playing_mode != PLAYING_MODE_NONE) {
+        moves_line_max_width = std::max(40.0, (double)(TIMER_RESET_BUTTON_SX - (TIMER_START_BUTTON_SX + TIMER_CONTROL_BUTTON_WIDTH) - 18));
+    }
+    while (moves_line_font_size > 10 && fonts.font(moves_line).region(moves_line_font_size, Vec2{ 0, 0 }).w > moves_line_max_width) {
+        --moves_line_font_size;
+    }
+    fonts.font(moves_line).draw(moves_line_font_size, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
     dy += 23;
     if (black_time_msec < 0) {
         black_time_msec = history_elem.black_time_msec;
@@ -195,7 +204,15 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
     if (white_time_msec < 0) {
         white_time_msec = history_elem.white_time_msec;
     }
-    const bool show_timer = menu_elements.show_timer;
+    const bool show_timer = menu_elements.show_timer && !menu_elements.show_ai_focus;
+    const int timer_limit_min = std::clamp(menu_elements.timer_time_limit_min, TIMER_TIME_LIMIT_MIN, TIMER_TIME_LIMIT_MAX);
+    const int64_t timer_limit_msec = timer_limit_min <= TIMER_TIME_LIMIT_NONE ? 0 : static_cast<int64_t>(timer_limit_min) * 60 * 1000;
+    if (timer_limit_msec > 0) {
+        black_time_limit_reached = black_time_limit_reached || black_time_msec >= timer_limit_msec;
+        white_time_limit_reached = white_time_limit_reached || white_time_msec >= timer_limit_msec;
+        black_time_msec = std::max<int64_t>(0, timer_limit_msec - black_time_msec);
+        white_time_msec = std::max<int64_t>(0, timer_limit_msec - white_time_msec);
+    }
     const bool show_pv = menu_elements.show_principal_variation;
     const bool show_timer_on_line4 = show_timer;
     const bool show_level_on_line4 = !show_timer_on_line4;
@@ -272,7 +289,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
                 fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
             }
         } else {
-            draw_elapsed_time_pair(fonts, 11, static_cast<int>(up + height / 2), black_time_msec, white_time_msec);
+            draw_elapsed_time_pair(fonts, colors, 11, static_cast<int>(up + height / 2), black_time_msec, white_time_msec, black_time_limit_reached, white_time_limit_reached);
             if (has_line4_status_text) {
                 fonts.font(line4_status_text).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
             }
@@ -299,7 +316,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
             }
             fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         } else {
-            draw_elapsed_time_pair(fonts, 12, INFO_SY + dy + 8, black_time_msec, white_time_msec);
+            draw_elapsed_time_pair(fonts, colors, 12, INFO_SY + dy + 8, black_time_msec, white_time_msec, black_time_limit_reached, white_time_limit_reached);
             if (has_line4_status_text) {
                 fonts.font(line4_status_text).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + 8));
             }

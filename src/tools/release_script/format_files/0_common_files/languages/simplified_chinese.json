@@ -261,7 +261,9 @@
             "display_on_info_area": "情报显示",
             "opening_name": "定式名",
             "principal_variation": "AI推荐变化",
-            "timer": "计时器"
+            "timer": "计时器",
+            "timer_time_limit": "时间限制",
+            "timer_time_limit_none": "无"
         },
         "graph": {
             "display_on_graph_area": "图像显示",
@@ -340,7 +342,10 @@
         "forced_finished": "强制进行结束",
         "playing": "对局中",
         "analyzing": "分析中",
-        "calculation_stopped": "计算已停止"
+        "calculation_stopped": "计算已停止",
+        "timer_start": "开始",
+        "timer_pause": "暂停",
+        "timer_reset": "重置"
     },
     "edit_board": {
         "player": "玩家",

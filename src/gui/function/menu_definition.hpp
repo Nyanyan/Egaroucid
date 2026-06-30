@@ -24,6 +24,13 @@ String get_shortcut_key_info(String key) {
     return U" (" + res + U")";
 }
 
+String format_timer_time_limit_min(int value) {
+    if (value <= TIMER_TIME_LIMIT_NONE) {
+        return language.get("display", "info", "timer_time_limit_none");
+    }
+    return Format(value);
+}
+
 Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, std::string lang_name) {
     Menu menu;
     menu_title title;
@@ -149,7 +156,8 @@ Menu create_menu(Menu_elements* menu_elements, Resources *resources, Font font, 
         menu_e.init_button(language.get("display", "info", "display_on_info_area"), &menu_elements->dummy);
             side_menu.init_check(language.get("display", "info", "opening_name") + get_shortcut_key_info(U"show_opening_name"), &menu_elements->show_opening_name, menu_elements->show_opening_name);
             menu_e.push(side_menu);
-            side_menu.init_check(language.get("display", "info", "timer") + get_shortcut_key_info(U"show_timer"), &menu_elements->show_timer, menu_elements->show_timer);
+            side_menu.init_bar_check(language.get("display", "info", "timer") + get_shortcut_key_info(U"show_timer"), &menu_elements->timer_time_limit_min, menu_elements->timer_time_limit_min, TIMER_TIME_LIMIT_MIN, TIMER_TIME_LIMIT_MAX, &menu_elements->show_timer, menu_elements->show_timer, U"×");
+            side_menu.set_bar_display_formatter(format_timer_time_limit_min);
             menu_e.push(side_menu);
             side_menu.init_bar_check(language.get("display", "info", "principal_variation") + get_shortcut_key_info(U"show_principal_variation"), &menu_elements->pv_length, menu_elements->pv_length, PV_LENGTH_SETTING_MIN, PV_LENGTH_SETTING_MAX, &menu_elements->show_principal_variation, menu_elements->show_principal_variation, U"-");
             menu_e.push(side_menu);

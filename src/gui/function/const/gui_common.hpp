@@ -206,6 +206,22 @@ constexpr int INFO_RECT_THICKNESS = 5;
 constexpr int INFO_WIDTH = WINDOW_SIZE_X - 10 - INFO_SX;
 constexpr int INFO_HEIGHT = 200 - INFO_SY - 12;
 constexpr int AI_FOCUS_INFO_COLOR_RECT_WIDTH = 90 + INFO_DISC_RADIUS + 3;
+constexpr int TIMER_CONTROL_BUTTON_WIDTH = 58;
+constexpr int TIMER_CONTROL_BUTTON_HEIGHT = 24;
+constexpr int TIMER_CONTROL_BUTTON_RADIUS = 5;
+constexpr int TIMER_CONTROL_BUTTON_MARGIN_X = 12;
+constexpr int TIMER_CONTROL_BUTTON_TOP_Y = INFO_SY + 11;
+constexpr int TIMER_START_BUTTON_SX = INFO_SX + TIMER_CONTROL_BUTTON_MARGIN_X;
+constexpr int TIMER_START_BUTTON_SY = TIMER_CONTROL_BUTTON_TOP_Y;
+constexpr int TIMER_RESET_BUTTON_SX = INFO_SX + INFO_WIDTH - TIMER_CONTROL_BUTTON_MARGIN_X - TIMER_CONTROL_BUTTON_WIDTH;
+constexpr int TIMER_RESET_BUTTON_SY = TIMER_CONTROL_BUTTON_TOP_Y;
+constexpr int TIMER_PAUSE_BUTTON_SX = INFO_SX + (INFO_WIDTH - TIMER_CONTROL_BUTTON_WIDTH) / 2;
+constexpr int TIMER_PAUSE_BUTTON_SY = INFO_SY + 83;
+constexpr int TIMER_CONTROL_BUTTON_FONT_SIZE = 12;
+constexpr int TIMER_TIME_LIMIT_NONE = 0;
+constexpr int TIMER_TIME_LIMIT_MIN = TIMER_TIME_LIMIT_NONE;
+constexpr int TIMER_TIME_LIMIT_MAX = 60;
+constexpr int TIMER_TIME_LIMIT_DEFAULT = TIMER_TIME_LIMIT_NONE;
 
 // graph mode constants
 constexpr int GRAPH_MODE_NORMAL = 0;
@@ -582,6 +598,7 @@ struct Settings {
     bool show_opening_name;
     bool show_principal_variation;
     bool show_timer;
+    int timer_time_limit_min;
     bool show_ai_focus;
     int pv_length;
     std::string screenshot_saving_dir;
@@ -735,6 +752,7 @@ struct Menu_elements {
     bool show_opening_name;
     bool show_principal_variation;
     bool show_timer;
+    int timer_time_limit_min;
     bool show_ai_focus;
     int pv_length;
     bool show_value_when_ai_calculating;
@@ -896,6 +914,7 @@ struct Menu_elements {
         show_opening_name = settings->show_opening_name;
         show_principal_variation = settings->show_principal_variation;
         show_timer = settings->show_timer;
+        timer_time_limit_min = settings->timer_time_limit_min;
         show_ai_focus = settings->show_ai_focus;
         pv_length = settings->pv_length;
         show_value_when_ai_calculating = settings->show_value_when_ai_calculating;

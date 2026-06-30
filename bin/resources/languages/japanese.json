@@ -261,7 +261,9 @@
             "display_on_info_area": "情報エリアへの表示",
             "opening_name": "定石",
             "principal_variation": "最善筋",
-            "timer": "タイマー"
+            "timer": "タイマー",
+            "timer_time_limit": "時間制限",
+            "timer_time_limit_none": "なし"
         },
         "graph": {
             "display_on_graph_area": "グラフエリアへの表示",
@@ -340,7 +342,10 @@
         "forced_finished": "強制進行終了",
         "playing": "対局中",
         "analyzing": "分析中",
-        "calculation_stopped": "計算停止中"
+        "calculation_stopped": "計算停止中",
+        "timer_start": "開始",
+        "timer_pause": "一時停止",
+        "timer_reset": "リセット"
     },
     "edit_board": {
         "player": "手番",
