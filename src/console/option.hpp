@@ -191,9 +191,9 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] play loss argument out of range" << std::endl;
         }
     }
-    res.contest_book = !find_commandline_option(commandline_options, ID_NO_CONTEST_BOOK);
+    res.contest_book = find_commandline_option(commandline_options, ID_CONTEST_BOOK_DIR);
     res.contest_book_dir = (std::filesystem::path(binary_path) / ".." / "src" / "tools" / "gen_contest_book" / "trained").lexically_normal().string();
-    if (find_commandline_option(commandline_options, ID_CONTEST_BOOK_DIR)) {
+    if (res.contest_book) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_CONTEST_BOOK_DIR);
         try {
             res.contest_book_dir = arg[0];
@@ -202,6 +202,9 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] contest book dir out of range" << std::endl;
         }
+    }
+    if (find_commandline_option(commandline_options, ID_NO_CONTEST_BOOK)) {
+        res.contest_book = false;
     }
     if (!res.log_to_file) {
         if (find_commandline_option(commandline_options, ID_LOGDIR)) {

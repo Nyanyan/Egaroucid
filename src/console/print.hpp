@@ -62,7 +62,11 @@ void print_version() {
 void print_commandline_options_list() {
     std::cout << "Commandline options:" << std::endl;
     for (int i = 0; i < N_COMMANDLINE_OPTIONS; ++i) {
-        if (commandline_option_data[i].id != ID_NONE) {
+        if (
+            commandline_option_data[i].id != ID_NONE &&
+            commandline_option_data[i].id != ID_CONTEST_BOOK_DIR &&
+            commandline_option_data[i].id != ID_NO_CONTEST_BOOK
+        ) {
             std::string s;
             for (int j = 0; j < (int)commandline_option_data[i].names.size(); ++j) {
                 if (j != 0)
