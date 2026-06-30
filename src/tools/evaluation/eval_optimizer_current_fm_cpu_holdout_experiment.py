@@ -64,6 +64,13 @@ def parse_ids(text):
     return [int(elem.strip()) for elem in text.split(",") if elem.strip()]
 
 
+def parse_phases(text):
+    phases = parse_ids(text)
+    if not phases:
+        raise ValueError("phase list is empty")
+    return phases
+
+
 def load_unzip_egev2(path):
     data = Path(path).read_bytes()
     if len(data) < 4:
@@ -232,46 +239,50 @@ def vector_scale_for(vectors):
     return max_abs / 127.0 if max_abs > 0.0 else 1.0, max_abs
 
 
-def write_egev4(output, timestamp, linear_values, phase, vectors, dim):
-    vector_scale, vector_max_abs = vector_scale_for(vectors)
+def write_egev4(output, timestamp, linear_values, phase_vectors, dim):
+    vector_scales = [1.0 for _ in range(N_PHASES)]
+    phase_stats = {}
+    for phase, vectors in phase_vectors.items():
+        vector_scale, vector_max_abs = vector_scale_for(vectors)
+        vector_scales[phase] = vector_scale
+        phase_stats[phase] = {
+            "vector_scale": vector_scale,
+            "vector_max_abs": vector_max_abs,
+            "nonzero_vector_values": 0,
+        }
+
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    nz_vector_phase = 0
     with output.open("wb") as f:
         f.write(timestamp.encode("ascii"))
         f.write(b"EGEV")
         f.write(struct.pack("<4i", VERSION_LINEAR_FM_INT16_INT8, N_PHASES, N_PARAMS_PER_PHASE, dim))
         f.write(struct.pack("<60f", *([1.0 / STEP] * N_PHASES)))
-        vector_scales = [1.0 for _ in range(N_PHASES)]
-        vector_scales[phase] = vector_scale
         f.write(struct.pack("<60f", *vector_scales))
         for phase_idx in range(N_PHASES):
             base = phase_idx * N_PARAMS_PER_PHASE
-            phase_vectors = vectors if phase_idx == phase else {}
+            vectors = phase_vectors.get(phase_idx, {})
             phase_vector_scale = vector_scales[phase_idx]
             for param_id in range(N_PARAMS_PER_PHASE):
                 q_linear = clamp(int(linear_values[base + param_id]), -32767, 32767)
                 f.write(struct.pack("<h", q_linear))
-                vec = phase_vectors.get(param_id)
+                vec = vectors.get(param_id)
                 for d in range(dim):
                     value = 0.0 if vec is None else vec[d]
                     q_vec = int(round(value / phase_vector_scale)) if phase_vector_scale != 0.0 else 0
                     q_vec = clamp(q_vec, -127, 127)
-                    if phase_idx == phase and q_vec != 0:
-                        nz_vector_phase += 1
+                    if phase_idx in phase_stats and q_vec != 0:
+                        phase_stats[phase_idx]["nonzero_vector_values"] += 1
                     f.write(struct.pack("b", q_vec))
-    return {
-        "vector_scale": vector_scale,
-        "vector_max_abs": vector_max_abs,
-        "nonzero_vector_values": nz_vector_phase,
-    }
+    return phase_stats
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-egev2", required=True)
     parser.add_argument("--data-root", required=True)
-    parser.add_argument("--phase", type=int, required=True)
+    parser.add_argument("--phase", type=int, default=None)
+    parser.add_argument("--phases", default=None)
     parser.add_argument("--train-ids", required=True)
     parser.add_argument("--holdout-ids", required=True)
     parser.add_argument("--output-egev4", required=True)
@@ -292,17 +303,22 @@ def main():
         raise ValueError("--dim must be positive")
     if args.epochs <= 0:
         raise ValueError("--epochs must be positive")
-    if not (0 <= args.phase < N_PHASES):
-        raise ValueError("--phase out of range")
+    if args.phase is None and args.phases is None:
+        raise ValueError("either --phase or --phases is required")
+    if args.phase is not None and args.phases is not None:
+        raise ValueError("use only one of --phase or --phases")
+
+    phases = parse_phases(args.phases) if args.phases is not None else [args.phase]
+    if len(set(phases)) != len(phases):
+        raise ValueError("duplicate phase in phase list")
+    for phase in phases:
+        if not (0 <= phase < N_PHASES):
+            raise ValueError(f"phase {phase} out of range")
 
     linear_values = load_unzip_egev2(args.input_egev2)
     expected = N_PHASES * N_PARAMS_PER_PHASE
     if len(linear_values) != expected:
         raise ValueError(f"{args.input_egev2} expands to {len(linear_values)} values; expected {expected}")
-    linear_phase = [
-        linear_values[args.phase * N_PARAMS_PER_PHASE + param_id] / STEP
-        for param_id in range(N_PARAMS_PER_PHASE)
-    ]
 
     train_ids = parse_ids(args.train_ids)
     holdout_ids = parse_ids(args.holdout_ids)
@@ -310,20 +326,38 @@ def main():
         raise ValueError("--train-ids and --holdout-ids are required")
 
     start = time.time()
-    train_records = read_records(args.data_root, args.phase, train_ids, args.max_records_per_file)
-    holdout_records = read_records(args.data_root, args.phase, holdout_ids, args.max_records_per_file)
-    vectors, best_epoch, history = train_vectors(linear_phase, train_records, holdout_records, args)
+    phase_results = {}
+    phase_vectors = {}
+    for phase in phases:
+        phase_args = copy.copy(args)
+        phase_args.phase = phase
+        linear_phase = [
+            linear_values[phase * N_PARAMS_PER_PHASE + param_id] / STEP
+            for param_id in range(N_PARAMS_PER_PHASE)
+        ]
+        train_records = read_records(args.data_root, phase, train_ids, args.max_records_per_file)
+        holdout_records = read_records(args.data_root, phase, holdout_ids, args.max_records_per_file)
+        vectors, best_epoch, history = train_vectors(linear_phase, train_records, holdout_records, phase_args)
+        phase_vectors[phase] = vectors
+        phase_results[phase] = {
+            "best_epoch": best_epoch,
+            "history": history,
+            "n_train": len(train_records),
+            "n_holdout": len(holdout_records),
+        }
 
     timestamp = args.timestamp or _datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     if len(timestamp) != 14 or not timestamp.isdigit():
         raise ValueError("--timestamp must be 14 digits")
-    vector_stats = write_egev4(args.output_egev4, timestamp, linear_values, args.phase, vectors, args.dim)
+    vector_stats = write_egev4(args.output_egev4, timestamp, linear_values, phase_vectors, args.dim)
     elapsed_ms = int((time.time() - start) * 1000)
 
     summary = Path(args.summary)
     summary.parent.mkdir(parents=True, exist_ok=True)
     with summary.open("w", encoding="utf-8", newline="\n") as f:
-        f.write(f"phase={args.phase}\n")
+        if len(phases) == 1:
+            f.write(f"phase={phases[0]}\n")
+        f.write(f"phases={','.join(str(elem) for elem in phases)}\n")
         f.write(f"train_ids={','.join(str(elem) for elem in train_ids)}\n")
         f.write(f"holdout_ids={','.join(str(elem) for elem in holdout_ids)}\n")
         f.write(f"max_records_per_file={args.max_records_per_file}\n")
@@ -334,26 +368,36 @@ def main():
         f.write(f"residual_clip={args.residual_clip}\n")
         f.write(f"l2={args.l2}\n")
         f.write(f"early_stop_patience={args.early_stop_patience}\n")
-        f.write(f"n_train={len(train_records)}\n")
-        f.write(f"n_holdout={len(holdout_records)}\n")
-        f.write(f"best_epoch={best_epoch}\n")
-        f.write(f"vector_scale={vector_stats['vector_scale']:.10g}\n")
-        f.write(f"vector_max_abs={vector_stats['vector_max_abs']:.10g}\n")
-        f.write(f"nonzero_vector_values={vector_stats['nonzero_vector_values']}\n")
+        f.write(f"total_n_train={sum(phase_results[phase]['n_train'] for phase in phases)}\n")
+        f.write(f"total_n_holdout={sum(phase_results[phase]['n_holdout'] for phase in phases)}\n")
         f.write(f"elapsed_ms={elapsed_ms}\n")
-        f.write("epoch\ttrain_mse\ttrain_mae\tholdout_mse\tholdout_mae\tn_vectors\n")
-        for row in history:
-            f.write(
-                f"{row['epoch']}\t{row['train_mse']:.10g}\t{row['train_mae']:.10g}\t"
-                f"{row['holdout_mse']:.10g}\t{row['holdout_mae']:.10g}\t{row['n_vectors']}\n"
-            )
+        for phase in phases:
+            result = phase_results[phase]
+            stats = vector_stats[phase]
+            f.write(f"\n[phase {phase}]\n")
+            f.write(f"n_train={result['n_train']}\n")
+            f.write(f"n_holdout={result['n_holdout']}\n")
+            f.write(f"best_epoch={result['best_epoch']}\n")
+            f.write(f"vector_scale={stats['vector_scale']:.10g}\n")
+            f.write(f"vector_max_abs={stats['vector_max_abs']:.10g}\n")
+            f.write(f"nonzero_vector_values={stats['nonzero_vector_values']}\n")
+            f.write("epoch\ttrain_mse\ttrain_mae\tholdout_mse\tholdout_mae\tn_vectors\n")
+            for row in result["history"]:
+                f.write(
+                    f"{row['epoch']}\t{row['train_mse']:.10g}\t{row['train_mae']:.10g}\t"
+                    f"{row['holdout_mse']:.10g}\t{row['holdout_mae']:.10g}\t{row['n_vectors']}\n"
+                )
 
-    best = history[best_epoch]
-    print(
-        f"phase {args.phase} n_train {len(train_records)} n_holdout {len(holdout_records)} "
-        f"best_epoch {best_epoch} best_holdout_MAE {best['holdout_mae']:.8g} "
-        f"nonzero_vector_values {vector_stats['nonzero_vector_values']} elapsed_ms {elapsed_ms}"
-    )
+    for phase in phases:
+        result = phase_results[phase]
+        best = result["history"][result["best_epoch"]]
+        stats = vector_stats[phase]
+        print(
+            f"phase {phase} n_train {result['n_train']} n_holdout {result['n_holdout']} "
+            f"best_epoch {result['best_epoch']} best_holdout_MAE {best['holdout_mae']:.8g} "
+            f"nonzero_vector_values {stats['nonzero_vector_values']}"
+        )
+    print(f"elapsed_ms {elapsed_ms}")
     print(f"wrote {args.output_egev4}")
     print(f"summary {summary}")
 
