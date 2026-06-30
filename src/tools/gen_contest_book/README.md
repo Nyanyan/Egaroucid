@@ -40,4 +40,4 @@ Build books in start-list order:
 python src/tools/gen_contest_book/build_all_books.py --resume
 ```
 
-The generated book files are written under `data/books`. Runtime loading uses the same sanitized start-board filename with the `.egcb` extension.
+The generated book files are written under `trained`, one `.egcb` file per start position. The console also looks there by default. Use `-contestbook <dir>` to override the runtime directory.

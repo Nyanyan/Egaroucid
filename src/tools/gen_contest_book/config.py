@@ -7,7 +7,8 @@ DATA_DIR = WORK_DIR / "data"
 START_DIR = DATA_DIR / "records321_14_random_setup"
 GAME_RECORDS_DIR = DATA_DIR / "game_records"
 BOOK_RECORDS_DIR = DATA_DIR / "book_records"
-BOOK_DIR = DATA_DIR / "books"
+TRAINED_DIR = WORK_DIR / "trained"
+BOOK_DIR = TRAINED_DIR
 CONSOLE_EXE = ROOT_DIR / "bin" / "Egaroucid_for_Console.exe"
 
 DEFAULT_LEVEL = 21

@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+#include <filesystem>
 #include "./../engine/engine_all.hpp"
 #include "commandline_option.hpp"
 #include "console_common.hpp"
@@ -191,7 +192,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.contest_book = !find_commandline_option(commandline_options, ID_NO_CONTEST_BOOK);
-    res.contest_book_dir = binary_path + "resources/contest_book";
+    res.contest_book_dir = (std::filesystem::path(binary_path) / ".." / "src" / "tools" / "gen_contest_book" / "trained").lexically_normal().string();
     if (find_commandline_option(commandline_options, ID_CONTEST_BOOK_DIR)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_CONTEST_BOOK_DIR);
         try {
