@@ -449,18 +449,34 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(
 ) {
     std::vector<Contest_record_scored_move> res;
     uint64_t legal = board.get_legal();
+    uint64_t remaining_legal = legal;
+    std::vector<Contest_record_scored_move> book_moves;
     Contest_book_entry book_entry;
     if (contest_book != nullptr && contest_book->get(board, &book_entry)) {
         for (const Contest_book_move &move: book_entry.moves) {
-            if (is_valid_policy(move.policy) && (legal & (1ULL << move.policy)) && move.value != SCORE_UNDEFINED) {
-                res.emplace_back(move.policy, move.value);
-                legal &= ~(1ULL << move.policy);
+            if (is_valid_policy(move.policy) && (remaining_legal & (1ULL << move.policy)) && move.value != SCORE_UNDEFINED) {
+                book_moves.emplace_back(move.policy, move.value);
+                remaining_legal &= ~(1ULL << move.policy);
             }
+        }
+        std::sort(book_moves.begin(), book_moves.end(), [](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
+            if (a.value != b.value) {
+                return a.value > b.value;
+            }
+            return a.policy < b.policy;
+        });
+        if (remaining_legal == 0ULL) {
+            return book_moves;
         }
     }
     std::vector<int> policies;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+    for (uint_fast8_t cell = first_bit(&remaining_legal); remaining_legal; cell = next_bit(&remaining_legal)) {
         policies.emplace_back((int)cell);
+    }
+    // A provisional book may miss a move that later proves better. Search those gaps first,
+    // then rescore book moves so all candidates are compared on the same search basis.
+    for (const Contest_record_scored_move &move: book_moves) {
+        policies.emplace_back(move.policy);
     }
 
     Flip flip;
