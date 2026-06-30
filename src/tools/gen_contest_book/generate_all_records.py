@@ -3,11 +3,13 @@ import subprocess
 import sys
 
 from config import (
+    DEFAULT_BOOK_MAX_LOSS,
     DEFAULT_CUT_EMPTY,
     DEFAULT_GAMES_PER_START,
     DEFAULT_LEVEL,
     DEFAULT_MAX_LOSS_PER_MOVE,
     DEFAULT_MAX_LOSS_TOTAL,
+    DEFAULT_RECORD_BATCH_SIZE,
     DEFAULT_THREADS,
     WORK_DIR,
     iter_start_boards,
@@ -27,6 +29,7 @@ def find_start_index(boards: list[str], start_board: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--games", type=int, default=DEFAULT_GAMES_PER_START)
+    parser.add_argument("--batch-size", type=int, default=DEFAULT_RECORD_BATCH_SIZE)
     parser.add_argument("--start-board")
     parser.add_argument("--skip", type=int, default=0)
     parser.add_argument("--limit", type=int)
@@ -34,7 +37,9 @@ def main() -> int:
     parser.add_argument("--threads", type=int, default=DEFAULT_THREADS)
     parser.add_argument("--max-loss-per-move", type=int, default=DEFAULT_MAX_LOSS_PER_MOVE)
     parser.add_argument("--max-loss-total", type=int, default=DEFAULT_MAX_LOSS_TOTAL)
+    parser.add_argument("--max-book-loss", type=int, default=DEFAULT_BOOK_MAX_LOSS)
     parser.add_argument("--cut-empty", type=int, default=DEFAULT_CUT_EMPTY)
+    parser.add_argument("--use-existing-book", action="store_true")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
 
@@ -66,12 +71,16 @@ def main() -> int:
             str(script),
             initial_board,
             "--games", str(args.games),
+            "--batch-size", str(args.batch_size),
             "--level", str(args.level),
             "--threads", str(args.threads),
             "--max-loss-per-move", str(args.max_loss_per_move),
             "--max-loss-total", str(args.max_loss_total),
+            "--max-book-loss", str(args.max_book_loss),
             "--cut-empty", str(args.cut_empty),
         ]
+        if args.use_existing_book:
+            cmd.append("--use-existing-book")
         subprocess.run(cmd, cwd=WORK_DIR, check=True)
     return 0
 

@@ -19,6 +19,7 @@
 #include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <string>
 #include "./../engine/engine_all.hpp"
@@ -318,6 +319,7 @@ struct Contest_record_expand_result {
 
 struct Contest_record_queue {
     std::deque<Contest_record_state> tasks;
+    std::unordered_set<std::string> seen_transcripts;
     std::mutex mtx;
     std::condition_variable cv;
     int active_workers;
@@ -326,8 +328,8 @@ struct Contest_record_queue {
     int n_records_limit;
     bool stop;
 
-    Contest_record_queue(int n_generated_, int n_records_limit_)
-        : active_workers(0), active_helper_threads(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {}
+    Contest_record_queue(int n_generated_, int n_records_limit_, std::unordered_set<std::string> seen_transcripts_)
+        : tasks(), seen_transcripts(std::move(seen_transcripts_)), active_workers(0), active_helper_threads(0), n_generated(n_generated_), n_records_limit(n_records_limit_), stop(false) {}
 };
 
 constexpr int CONTEST_RECORD_THREAD_ID_BASE = 2;
@@ -378,10 +380,20 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(
     bool use_multi_thread,
     thread_id_t thread_id,
     Contest_record_queue *queue,
-    int n_workers
+    int n_workers,
+    const Contest_book *contest_book
 ) {
     std::vector<Contest_record_scored_move> res;
     uint64_t legal = board.get_legal();
+    Contest_book_entry book_entry;
+    if (contest_book != nullptr && contest_book->get(board, &book_entry)) {
+        for (const Contest_book_move &move: book_entry.moves) {
+            if (is_valid_policy(move.policy) && (legal & (1ULL << move.policy)) && move.value != SCORE_UNDEFINED) {
+                res.emplace_back(move.policy, move.value);
+                legal &= ~(1ULL << move.policy);
+            }
+        }
+    }
     Flip flip;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&flip, &board, cell);
@@ -412,7 +424,8 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
     Contest_record_score_cache *score_cache,
     std::mutex *score_cache_mtx,
     Contest_record_queue *queue,
-    int n_workers
+    int n_workers,
+    const Contest_book *contest_book
 ) {
     {
         std::lock_guard<std::mutex> lock(*score_cache_mtx);
@@ -421,7 +434,7 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
             return it->second;
         }
     }
-    std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread, thread_id, queue, n_workers);
+    std::vector<Contest_record_scored_move> res = contest_record_score_moves(board, level, use_multi_thread, thread_id, queue, n_workers, contest_book);
     {
         std::lock_guard<std::mutex> lock(*score_cache_mtx);
         auto it = score_cache->find(board);
@@ -488,6 +501,46 @@ void contest_record_write_record(
     ofs << '\n';
 }
 
+std::unordered_set<std::string> contest_record_load_existing_transcripts(
+    const std::filesystem::path &out_dir,
+    const std::string &initial_board
+) {
+    std::unordered_set<std::string> transcripts;
+    std::error_code ec;
+    if (!std::filesystem::is_directory(out_dir, ec)) {
+        return transcripts;
+    }
+    const std::string initial_prefix = "initial board: ";
+    const std::string transcript_prefix = "transcript: ";
+    for (const std::filesystem::directory_entry &entry: std::filesystem::directory_iterator(out_dir, ec)) {
+        if (ec) {
+            break;
+        }
+        std::error_code entry_ec;
+        if (!entry.is_regular_file(entry_ec) || entry.path().extension() != ".txt") {
+            continue;
+        }
+        std::ifstream ifs(entry.path());
+        if (!ifs) {
+            continue;
+        }
+        bool block_matches = false;
+        std::string line;
+        while (std::getline(ifs, line)) {
+            if (line.rfind(initial_prefix, 0) == 0) {
+                block_matches = line.substr(initial_prefix.size()) == initial_board;
+            } else if (line.rfind(transcript_prefix, 0) == 0) {
+                if (block_matches) {
+                    transcripts.insert(line.substr(transcript_prefix.size()));
+                }
+            } else if (line.empty()) {
+                block_matches = false;
+            }
+        }
+    }
+    return transcripts;
+}
+
 Contest_record_expand_result contest_record_expand_state(
     Contest_record_state state,
     Options *options,
@@ -499,7 +552,8 @@ Contest_record_expand_result contest_record_expand_state(
     bool use_multi_thread,
     thread_id_t thread_id,
     Contest_record_queue *queue,
-    int n_workers
+    int n_workers,
+    const Contest_book *contest_book
 ) {
     Contest_record_expand_result result;
     while (HW2 - state.board.n_discs() > cut_empty && state.board.get_legal() == 0ULL && !state.board.is_end()) {
@@ -517,7 +571,7 @@ Contest_record_expand_result contest_record_expand_state(
         return result;
     }
 
-    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(state.board, options->level, use_multi_thread, thread_id, score_cache, score_cache_mtx, queue, n_workers);
+    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(state.board, options->level, use_multi_thread, thread_id, score_cache, score_cache_mtx, queue, n_workers, contest_book);
     if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
         if (state.loss_sum == target_loss_sum) {
             result.leaves.emplace_back(
@@ -576,6 +630,10 @@ void contest_record_process_expand_result_locked(
             queue->stop = true;
             break;
         }
+        if (queue->seen_transcripts.find(leaf.transcript) != queue->seen_transcripts.end()) {
+            continue;
+        }
+        queue->seen_transcripts.insert(leaf.transcript);
         contest_record_write_record(ofs, initial_board, leaf.transcript, leaf.board, leaf.loss_sum, leaf.leaf_value, queue->n_generated);
         ++queue->n_generated;
         ofs.flush();
@@ -598,7 +656,8 @@ void contest_record_worker_loop(
     std::mutex *score_cache_mtx,
     std::ofstream *ofs,
     int n_workers,
-    thread_id_t search_thread_id
+    thread_id_t search_thread_id,
+    const Contest_book *contest_book
 ) {
     while (true) {
         Contest_record_state state(Board(), "", 0);
@@ -626,7 +685,8 @@ void contest_record_worker_loop(
             false,
             search_thread_id,
             queue,
-            n_workers
+            n_workers,
+            contest_book
         );
 
         {
@@ -653,10 +713,12 @@ void contest_record_enumerate_exact_loss(
     int n_records_limit,
     int *n_generated,
     std::ofstream &ofs,
-    Contest_record_score_cache *score_cache
+    Contest_record_score_cache *score_cache,
+    std::unordered_set<std::string> *seen_transcripts,
+    const Contest_book *contest_book
 ) {
     std::mutex score_cache_mtx;
-    Contest_record_queue queue(*n_generated, n_records_limit);
+    Contest_record_queue queue(*n_generated, n_records_limit, *seen_transcripts);
     {
         std::lock_guard<std::mutex> lock(queue.mtx);
         queue.tasks.emplace_back(board, "", 0);
@@ -678,7 +740,8 @@ void contest_record_enumerate_exact_loss(
             &score_cache_mtx,
             &ofs,
             n_workers,
-            contest_record_thread_id(i)
+            contest_record_thread_id(i),
+            contest_book
         );
     }
     queue.cv.notify_all();
@@ -688,6 +751,7 @@ void contest_record_enumerate_exact_loss(
         }
     }
     *n_generated = queue.n_generated;
+    *seen_transcripts = std::move(queue.seen_transcripts);
 }
 
 std::string contest_record_play_one_game(
@@ -704,7 +768,7 @@ std::string contest_record_play_one_game(
     int loss_sum = 0;
     Flip flip;
     while (HW2 - board.n_discs() > cut_empty && board.check_pass()) {
-        std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves(board, options->level, true, THREAD_ID_NONE, nullptr, 1);
+        std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves(board, options->level, true, THREAD_ID_NONE, nullptr, 1, nullptr);
         if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
             break;
         }
@@ -772,6 +836,15 @@ void contest_record_commandline(std::vector<std::string> arg, Options *options) 
 
     std::filesystem::path out_dir(arg[2]);
     std::filesystem::create_directories(out_dir);
+    std::unordered_set<std::string> seen_transcripts = contest_record_load_existing_transcripts(out_dir, initial_board);
+    Contest_book contest_book;
+    Contest_book *contest_book_ptr = nullptr;
+    if (options->contest_book) {
+        std::filesystem::path contest_book_path = contest_book_path_for_start(options->contest_book_dir, initial_board);
+        if (contest_book.init(contest_book_path.string(), true)) {
+            contest_book_ptr = &contest_book;
+        }
+    }
     std::filesystem::path out_file = out_dir / (get_current_datetime_for_file() + "_" + std::to_string(tim()) + ".txt");
     std::ofstream ofs(out_file);
     if (!ofs) {
@@ -784,6 +857,7 @@ void contest_record_commandline(std::vector<std::string> arg, Options *options) 
               << " per_move_loss " << max_loss_per_move
               << " total_loss " << max_loss_total
               << " cut_empty " << cut_empty
+              << " existing " << seen_transcripts.size()
               << " output " << out_file.string() << std::endl;
     int n_generated = 0;
     Contest_record_score_cache score_cache;
@@ -800,7 +874,9 @@ void contest_record_commandline(std::vector<std::string> arg, Options *options) 
             n_games,
             &n_generated,
             ofs,
-            &score_cache
+            &score_cache,
+            &seen_transcripts,
+            contest_book_ptr
         );
         std::cerr << "contest record loss " << target_loss_sum
                   << " generated " << (n_generated - n_before)
