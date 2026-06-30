@@ -1,4 +1,7 @@
+from functools import lru_cache
 from pathlib import Path
+
+from othello import normalize_board_text
 
 
 WORK_DIR = Path(__file__).resolve().parent
@@ -19,6 +22,7 @@ DEFAULT_MAX_LOSS_TOTAL = 4
 DEFAULT_BOOK_MAX_LOSS = 4
 DEFAULT_CUT_EMPTY = 30
 BOOK_EXTENSION = ".egcb"
+START_INDEX_WIDTH = 7
 
 
 def sanitize_board_name(board: str) -> str:
@@ -34,9 +38,26 @@ def iter_start_boards(start_dir: Path = START_DIR):
                     yield board
 
 
+@lru_cache(maxsize=None)
+def start_board_indices(start_dir: Path = START_DIR) -> dict[str, int]:
+    return {
+        normalize_board_text(board): idx
+        for idx, board in enumerate(iter_start_boards(start_dir))
+    }
+
+
+def board_name_for_start(board: str) -> str:
+    normalized_board = normalize_board_text(board)
+    name = sanitize_board_name(normalized_board)
+    idx = start_board_indices().get(normalized_board)
+    if idx is None:
+        return name
+    return f"{idx:0{START_INDEX_WIDTH}d}_{name}"
+
+
 def record_dir_for_start(board: str) -> Path:
-    return BOOK_RECORDS_DIR / sanitize_board_name(board)
+    return BOOK_RECORDS_DIR / board_name_for_start(board)
 
 
 def book_path_for_start(board: str) -> Path:
-    return BOOK_DIR / f"{sanitize_board_name(board)}{BOOK_EXTENSION}"
+    return BOOK_DIR / f"{board_name_for_start(board)}{BOOK_EXTENSION}"

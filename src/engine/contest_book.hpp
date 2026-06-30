@@ -15,6 +15,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <unordered_map>
 #include <vector>
 #include "board.hpp"
@@ -65,7 +66,27 @@ inline std::string contest_book_sanitize_name(std::string name) {
 }
 
 inline std::filesystem::path contest_book_path_for_start(const std::string &dir, const std::string &initial_board) {
-    return std::filesystem::path(dir) / (contest_book_sanitize_name(initial_board) + CONTEST_BOOK_EXTENSION);
+    std::filesystem::path root(dir);
+    std::string filename = contest_book_sanitize_name(initial_board) + CONTEST_BOOK_EXTENSION;
+    std::filesystem::path exact_path = root / filename;
+    std::error_code ec;
+    if (std::filesystem::exists(exact_path, ec)) {
+        return exact_path;
+    }
+    if (!std::filesystem::is_directory(root, ec)) {
+        return exact_path;
+    }
+    std::string prefixed_suffix = "_" + filename;
+    for (const std::filesystem::directory_entry &entry: std::filesystem::directory_iterator(root, ec)) {
+        if (ec) {
+            break;
+        }
+        std::string candidate = entry.path().filename().string();
+        if (candidate.size() >= prefixed_suffix.size() && candidate.ends_with(prefixed_suffix)) {
+            return entry.path();
+        }
+    }
+    return exact_path;
 }
 
 class Contest_book {

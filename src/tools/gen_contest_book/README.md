@@ -4,6 +4,8 @@
 
 生成されるbookは開始局面ごとに別ファイルとなり、`trained` フォルダに `.egcb` 形式で保存されます。`trained` は `.gitignore` の `**/trained` によりgit管理対象外です。
 
+`data/book_records` の開始局面別フォルダ名と `trained` のbookファイル名には、`records321_14_random_setup` 内の通し番号を `0000000_...` の形で先頭に付けます。
+
 ## コンソールのコンパイル
 
 リポジトリルートで実行してください。
@@ -91,6 +93,8 @@ Get-Content -Encoding UTF8 (Get-ChildItem src/tools/gen_contest_book/trained/*.e
 This directory contains scripts for generating records and building the independent contest book format.
 
 Generated books are stored as one `.egcb` file per start position under the `trained` directory. The `trained` directory is ignored by git through the `**/trained` rule in `.gitignore`.
+
+Start-specific directories under `data/book_records` and book files under `trained` are prefixed with the start-list serial number from `records321_14_random_setup`, for example `0000000_...`.
 
 ## Compile Console
 
