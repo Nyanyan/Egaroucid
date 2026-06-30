@@ -450,33 +450,32 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(
     std::vector<Contest_record_scored_move> res;
     uint64_t legal = board.get_legal();
     uint64_t remaining_legal = legal;
-    std::vector<Contest_record_scored_move> book_moves;
+    std::unordered_map<int, int> book_values;
+    std::vector<int> book_policies;
     Contest_book_entry book_entry;
     if (contest_book != nullptr && contest_book->get(board, &book_entry)) {
         for (const Contest_book_move &move: book_entry.moves) {
             if (is_valid_policy(move.policy) && (remaining_legal & (1ULL << move.policy)) && move.value != SCORE_UNDEFINED) {
-                book_moves.emplace_back(move.policy, move.value);
+                book_values[move.policy] = move.value;
+                book_policies.emplace_back(move.policy);
                 remaining_legal &= ~(1ULL << move.policy);
             }
         }
-        std::sort(book_moves.begin(), book_moves.end(), [](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
-            if (a.value != b.value) {
-                return a.value > b.value;
+        std::sort(book_policies.begin(), book_policies.end(), [&](int a, int b) {
+            if (book_values[a] != book_values[b]) {
+                return book_values[a] > book_values[b];
             }
-            return a.policy < b.policy;
+            return a < b;
         });
-        if (remaining_legal == 0ULL) {
-            return book_moves;
-        }
     }
     std::vector<int> policies;
     for (uint_fast8_t cell = first_bit(&remaining_legal); remaining_legal; cell = next_bit(&remaining_legal)) {
         policies.emplace_back((int)cell);
     }
-    // A provisional book may miss a move that later proves better. Search those gaps first,
-    // then rescore book moves so all candidates are compared on the same search basis.
-    for (const Contest_record_scored_move &move: book_moves) {
-        policies.emplace_back(move.policy);
+    // Search book gaps first. For book moves, keep the better of the book value and
+    // the fresh midgame search value before loss filtering.
+    for (int policy: book_policies) {
+        policies.emplace_back(policy);
     }
 
     Flip flip;
@@ -485,6 +484,10 @@ std::vector<Contest_record_scored_move> contest_record_score_moves(
         board.move_board(&flip);
         Search_result search_result = contest_record_ai_search(board, level, use_multi_thread, thread_id, queue, n_workers);
         int value = search_result.value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -search_result.value;
+        auto book_value_it = book_values.find(policy);
+        if (book_value_it != book_values.end()) {
+            value = value == SCORE_UNDEFINED ? book_value_it->second : std::max(value, book_value_it->second);
+        }
         res.emplace_back(policy, value);
         board.undo_board(&flip);
     }
