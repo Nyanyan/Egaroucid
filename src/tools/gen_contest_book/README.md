@@ -26,7 +26,7 @@ python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 
 python src/tools/gen_contest_book/generate_all_records.py --games 128 --threads 1 --resume
 ```
 
-既定値は、レベル21、1手あたり3石損まで、1局合計6石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
+既定値は、レベル21、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
 
 ## book構築
 
@@ -78,7 +78,7 @@ Generate records for starts in list order:
 python src/tools/gen_contest_book/generate_all_records.py --games 128 --threads 1 --resume
 ```
 
-Defaults are level 21, per-move loss 3, total loss 6, and cut at 30 empties. These can be changed with command-line options.
+Defaults are level 21, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
 
 ## Build Books
 
