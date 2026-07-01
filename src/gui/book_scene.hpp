@@ -247,8 +247,8 @@ public:
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         const int export_book_sy = 20 + SCENE_ICON_WIDTH + 40;
         const int edax_selector_y = export_book_sy + 150;
-        edax_additional_calculation_button.init(X_CENTER - 245, edax_selector_y, 235, 36, 12, language.get("book", "edax_additional_calculation"), 18, getData().fonts.font, getData().colors.black, getData().colors.white);
-        edax_no_additional_calculation_button.init(X_CENTER + 10, edax_selector_y, 235, 36, 12, language.get("book", "edax_no_additional_calculation"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+        edax_additional_calculation_button.init(X_CENTER - 245, edax_selector_y, 235, 36, 12, language.get("book", "edax_additional_calculation"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+        edax_no_additional_calculation_button.init(X_CENTER + 10, edax_selector_y, 235, 36, 12, language.get("book", "edax_no_additional_calculation"), 18, getData().fonts.font, getData().colors.gray, getData().colors.black);
         text_area.text = Unicode::Widen(getData().directories.document_dir + "book_copy.egbk3");
         text_area.cursorPos = text_area.text.size();
         book_exporting = false;
@@ -297,10 +297,10 @@ public:
             level_bar.draw();
             bool level_bar_changeable = level_bar.is_changeable();
             if (edax_format && button_enabled) {
-                edax_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.black : getData().colors.white;
-                edax_additional_calculation_button.font_color = edax_additional_calculation ? getData().colors.white : getData().colors.black;
-                edax_no_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.white : getData().colors.black;
-                edax_no_additional_calculation_button.font_color = edax_additional_calculation ? getData().colors.black : getData().colors.white;
+                edax_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.white : getData().colors.gray;
+                edax_additional_calculation_button.font_color = getData().colors.black;
+                edax_no_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.gray : getData().colors.white;
+                edax_no_additional_calculation_button.font_color = getData().colors.black;
                 if (level_bar_changeable) {
                     edax_additional_calculation_button.disable_notransparent();
                     edax_no_additional_calculation_button.disable_notransparent();
@@ -310,10 +310,6 @@ public:
                 }
                 edax_additional_calculation_button.draw();
                 edax_no_additional_calculation_button.draw();
-                Button *selected_edax_button = edax_additional_calculation ? &edax_additional_calculation_button : &edax_no_additional_calculation_button;
-                Button *unselected_edax_button = edax_additional_calculation ? &edax_no_additional_calculation_button : &edax_additional_calculation_button;
-                unselected_edax_button->rect.drawFrame(1.0, getData().colors.black);
-                selected_edax_button->rect.drawFrame(4.0, getData().colors.cyan);
                 if (edax_additional_calculation_button.clicked()) {
                     edax_additional_calculation = true;
                 }

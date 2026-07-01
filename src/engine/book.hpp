@@ -1240,44 +1240,6 @@ class Book {
             }
         }
 
-        void collect_edax_export_boards_without_additional_calculation(Board board, std::unordered_set<Board, Book_hash> &export_boards, std::unordered_set<Board, Book_hash> &pass_boards) {
-            board = representative_board(board);
-            if (!contain_representative(board)) {
-                return;
-            }
-            if (board.get_legal() == 0ULL && !board.is_end()) {
-                Board passed_board = board.copy();
-                passed_board.pass();
-                passed_board = representative_board(passed_board);
-                if (contain_representative(passed_board)) {
-                    pass_boards.emplace(board);
-                    collect_edax_export_boards_without_additional_calculation(passed_board, export_boards, pass_boards);
-                }
-                return;
-            }
-            if (!export_boards.emplace(board).second) {
-                return;
-            }
-            std::vector<Book_value> links = get_edax_links(&board);
-            Flip flip;
-            for (Book_value &link: links) {
-                calc_flip(&flip, &board, link.policy);
-                board.move_board(&flip);
-                    if (board.get_legal() == 0ULL && !board.is_end()) {
-                        Board pass_board = representative_board(board);
-                        Board passed_board = board.copy();
-                        passed_board.pass();
-                        passed_board = representative_board(passed_board);
-                        if (contain_representative(passed_board)) {
-                            pass_boards.emplace(pass_board);
-                            collect_edax_export_boards_without_additional_calculation(passed_board, export_boards, pass_boards);
-                        }
-                    } else if (!board.is_end()) {
-                        collect_edax_export_boards_without_additional_calculation(board, export_boards, pass_boards);
-                    }
-                board.undo_board(&flip);
-            }
-        }
         /*
             @brief save as Edax-formatted book (.dat)
 
@@ -1290,24 +1252,15 @@ class Book {
                 check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             }
             std::unordered_set<Board, Book_hash> pass_boards;
-            std::unordered_set<Board, Book_hash> export_boards;
             std::vector<Board> boards_to_write;
             Board root_board;
             root_board.reset();
             std::cerr << "pass board calculating..." << std::endl;
             reset_seen();
-            if (additional_calculation) {
-                get_pass_boards(root_board, pass_boards);
-                boards_to_write.reserve(book.size());
-                for (auto itr = book.begin(); itr != book.end(); ++itr) {
-                    boards_to_write.emplace_back(itr->first);
-                }
-            } else {
-                collect_edax_export_boards_without_additional_calculation(root_board, export_boards, pass_boards);
-                boards_to_write.reserve(export_boards.size());
-                for (const Board &board: export_boards) {
-                    boards_to_write.emplace_back(board);
-                }
+            get_pass_boards(root_board, pass_boards);
+            boards_to_write.reserve(book.size());
+            for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                boards_to_write.emplace_back(itr->first);
             }
             reset_seen();
             std::cerr << "pass board calculated " << pass_boards.size() << std::endl;
@@ -1345,7 +1298,7 @@ class Book {
                     edax_level = 1;
                 }
             }
-            int header_level = additional_calculation ? edax_level : level;
+            int header_level = edax_level;
             fout.write((char*)&header_level, 4);
             int n_empties = HW2;
             for (const Board &board: boards_to_write) {
@@ -1436,6 +1389,59 @@ class Book {
                 //short_val_max = book_elem.value;
                 b = board_to_write;
                 uint64_t legal = b.get_legal();
+                if (legal == 0ULL && !b.is_end()) {
+                    Board passed_board = b.copy();
+                    passed_board.pass();
+                    bool has_pass_child = contain(passed_board);
+                    Book_elem passed_elem;
+                    if (has_pass_child) {
+                        passed_elem = get(passed_board);
+                        n_lines = passed_elem.n_lines;
+                        short_val = (short)passed_elem.value;
+                    } else {
+                        n_lines = book_elem.n_lines;
+                    }
+                    if (!additional_calculation && level == LEVEL_UNDEFINED) {
+                        char_level = has_pass_child ? passed_elem.level : book_elem.level;
+                    } else {
+                        char_level = (char)edax_level;
+                    }
+                    if (char_level < 1) {
+                        char_level = 1;
+                    }
+                    if (char_level > 60) {
+                        char_level = 60;
+                    }
+                    if (has_pass_child) {
+                        n_link = 1;
+                        link_value = (char)passed_elem.value;
+                        link_move = MOVE_PASS;
+                        leaf_val = SCORE_UNDEFINED;
+                        leaf_move = MOVE_NOMOVE;
+                    } else {
+                        n_link = 0;
+                        leaf_val = is_valid_score(short_val) ? (char)short_val : 0;
+                        leaf_move = MOVE_PASS;
+                    }
+                    fout.write((char*)&board_to_write.player, 8);
+                    fout.write((char*)&board_to_write.opponent, 8);
+                    fout.write((char*)&n_win, 4);
+                    fout.write((char*)&n_draw, 4);
+                    fout.write((char*)&n_lose, 4);
+                    fout.write((char*)&n_lines, 4);
+                    fout.write((char*)&short_val, 2);
+                    fout.write((char*)&short_val_min, 2);
+                    fout.write((char*)&short_val_max, 2);
+                    fout.write((char*)&n_link, 1);
+                    fout.write((char*)&char_level, 1);
+                    if (has_pass_child) {
+                        fout.write((char*)&link_value, 1);
+                        fout.write((char*)&link_move, 1);
+                    }
+                    fout.write((char*)&leaf_val, 1);
+                    fout.write((char*)&leaf_move, 1);
+                    continue;
+                }
                 std::vector<Book_value> all_links = get_all_moves_with_value(&b);
                 std::vector<Book_value> links = additional_calculation ? all_links : get_edax_links(&b);
                 n_link = (char)links.size();
