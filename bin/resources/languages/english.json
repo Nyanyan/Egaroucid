@@ -259,7 +259,7 @@
             "display_on_info_area": "On Info Area",
             "opening_name": "Opening",
             "principal_variation": "Best Line",
-            "timer": "Timer",
+            "timer": "Timer (min.)",
             "timer_time_limit": "Time Limit",
             "timer_time_limit_none": "N/A"
         },

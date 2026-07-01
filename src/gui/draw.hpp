@@ -128,13 +128,19 @@ String format_elapsed_time_msec(int64_t msec) {
     return Unicode::Widen(oss.str());
 }
 
-void draw_elapsed_time_pair(const Fonts& fonts, const Colors& colors, const int font_size, const int y, const int64_t black_time_msec, const int64_t white_time_msec, bool black_time_limit_reached = false, bool white_time_limit_reached = false) {
+void draw_elapsed_time_pair(const Fonts& fonts, const int font_size, const int y, const int64_t black_time_msec, const int64_t white_time_msec, bool black_time_limit_reached = false, bool white_time_limit_reached = false) {
     constexpr int TIMER_LEFT_OFFSET = 95;
     constexpr int TIMER_RIGHT_OFFSET = 95;
+    constexpr uint64_t TIMER_LIMIT_BLINK_INTERVAL_MSEC = 500;
     String black_time = format_elapsed_time_msec(black_time_msec);
     String white_time = format_elapsed_time_msec(white_time_msec);
-    fonts.font(black_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 - TIMER_LEFT_OFFSET, y), black_time_limit_reached ? colors.red : Palette::White);
-    fonts.font(white_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 + TIMER_RIGHT_OFFSET, y), white_time_limit_reached ? colors.red : Palette::White);
+    const bool show_limit_reached_text = (Time::GetMillisec() / TIMER_LIMIT_BLINK_INTERVAL_MSEC) % 2 == 0;
+    if (!black_time_limit_reached || show_limit_reached_text) {
+        fonts.font(black_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 - TIMER_LEFT_OFFSET, y), Palette::White);
+    }
+    if (!white_time_limit_reached || show_limit_reached_text) {
+        fonts.font(white_time).draw(font_size, Arg::center(INFO_SX + INFO_WIDTH / 2 + TIMER_RIGHT_OFFSET, y), Palette::White);
+    }
 }
 
 String get_forced_opening_status_text(int forced_opening_status) {
@@ -289,7 +295,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
                 fonts.font(level_info).draw(12, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
             }
         } else {
-            draw_elapsed_time_pair(fonts, colors, 11, static_cast<int>(up + height / 2), black_time_msec, white_time_msec, black_time_limit_reached, white_time_limit_reached);
+            draw_elapsed_time_pair(fonts, 11, static_cast<int>(up + height / 2), black_time_msec, white_time_msec, black_time_limit_reached, white_time_limit_reached);
             if (has_line4_status_text) {
                 fonts.font(line4_status_text).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, up + height / 2));
             }
@@ -316,7 +322,7 @@ void draw_info(Colors colors, History_elem history_elem, Fonts fonts, Menu_eleme
             }
             fonts.font(level_info).draw(12, Arg::topCenter(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy));
         } else {
-            draw_elapsed_time_pair(fonts, colors, 12, INFO_SY + dy + 8, black_time_msec, white_time_msec, black_time_limit_reached, white_time_limit_reached);
+            draw_elapsed_time_pair(fonts, 12, INFO_SY + dy + 8, black_time_msec, white_time_msec, black_time_limit_reached, white_time_limit_reached);
             if (has_line4_status_text) {
                 fonts.font(line4_status_text).draw(11, Arg::center(INFO_SX + INFO_WIDTH / 2, INFO_SY + dy + 8));
             }

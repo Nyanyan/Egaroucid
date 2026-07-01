@@ -261,7 +261,7 @@
             "display_on_info_area": "情報エリアへの表示",
             "opening_name": "定石",
             "principal_variation": "最善筋",
-            "timer": "タイマー",
+            "timer": "タイマー (分)",
             "timer_time_limit": "時間制限",
             "timer_time_limit_none": "なし"
         },
