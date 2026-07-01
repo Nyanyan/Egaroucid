@@ -36,13 +36,13 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 
 `--skip` と併用すると、`--start-board` の局面からさらに指定数だけ飛ばします。
 
-既定値は、開始局面あたり512棋譜、16棋譜ごとの反復更新、レベル19、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。これらはコマンドラインオプションで変更できます。
+既定値は、開始局面あたり512棋譜、16棋譜ごとの反復更新、レベル19、1手あたり2石損まで、1局合計4石損まで、28空きで打ち切りです。これらはコマンドラインオプションで変更できます。
 
 棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。指定した棋譜数に達するか、上限lossまで列挙し終わると終了します。
 
 `generate_records.py` は `--batch-size 16` ごとに一旦 `build_book.py` を実行し、`trained` に仮bookを作ります。次のバッチからはその仮bookを `-contestbook` としてEgaroucidに渡し、bookにある手評価を活用しながら残りの手を探索して棋譜生成を続けます。既存の棋譜は開始局面フォルダ内の transcript で重複判定し、同じ棋譜は再保存しません。
 
-`--threads` を2以上にすると、Egaroucid側は共有タスクキューで並列化します。1本しか進行がない間はその探索に全スレッドを使い、棋譜上の分岐で新しい進行が増えたらキューへ追加します。各workerは空き次第、自分でキューから次の進行を取り出して処理します。実行中タスクと待ちタスクの合計がworker数を下回った場合は、合法手評価や30空き完全読みの直前に空きworker分のhelper slotを予約し、残っている各タスクが複数スレッドを使えるようにします。
+`--threads` を2以上にすると、Egaroucid側は共有タスクキューで並列化します。1本しか進行がない間はその探索に全スレッドを使い、棋譜上の分岐で新しい進行が増えたらキューへ追加します。各workerは空き次第、自分でキューから次の進行を取り出して処理します。実行中タスクと待ちタスクの合計がworker数を下回った場合は、合法手評価や28空き完全読みの直前に空きworker分のhelper slotを予約し、残っている各タスクが複数スレッドを使えるようにします。
 
 ## book構築
 
@@ -58,7 +58,7 @@ python src/tools/gen_contest_book/build_book.py "<initial board>"
 python src/tools/gen_contest_book/build_all_books.py --resume
 ```
 
-book構築時は、生成棋譜に加えて `data/game_records` 内の実戦棋譜も同じ形式として読み込みます。開始局面から合計4石損までの局面を収録する設定が既定値です。
+book構築時は、生成棋譜に加えて `data/game_records` 内の実戦棋譜も同じ形式として読み込みます。開始局面から合計4石損までの局面を収録する設定が既定値です。生成棋譜に `leaf empty` がある場合、`build_book.py` はその空き数に合わせてbook掲載範囲を自動決定します。新規の28空き棋譜では28空きまで、過去の30空き棋譜だけから構築する場合は30空きまで出力できます。明示したい場合は `--cut-empty 28` や `--cut-empty 30` を指定してください。
 
 ## 対局時の読み込み
 
@@ -129,13 +129,13 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 
 When combined with `--skip`, the script skips that many additional positions after `--start-board`.
 
-Defaults are 512 records per start, iterative updates every 16 records, level 19, per-move loss 2, total loss 4, and cut at 30 empties. These can be changed with command-line options.
+Defaults are 512 records per start, iterative updates every 16 records, level 19, per-move loss 2, total loss 4, and cut at 28 empties. These can be changed with command-line options.
 
 Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the requested number of records is reached or all records up to the configured loss limit are exhausted.
 
 `generate_records.py` runs `build_book.py` after each `--batch-size 16` records and writes a provisional book under `trained`. The next batch passes that provisional book back to Egaroucid through `-contestbook`, so move scores already present in the book are reused while missing legal moves are still searched. Existing records are deduplicated by transcript in the start-position record directory and are not written again.
 
-When `--threads` is 2 or larger, Egaroucid parallelizes with a shared task queue. While there is only one progression, that search can use all threads. When branch points create more progressions, they are pushed to the queue, and each worker pulls the next progression as soon as it becomes free. If the number of running plus queued tasks drops below the worker count, Egaroucid reserves helper slots before scoring each legal move and before the 30-empty exact solve, so the remaining tasks can use multiple threads without exceeding the configured budget.
+When `--threads` is 2 or larger, Egaroucid parallelizes with a shared task queue. While there is only one progression, that search can use all threads. When branch points create more progressions, they are pushed to the queue, and each worker pulls the next progression as soon as it becomes free. If the number of running plus queued tasks drops below the worker count, Egaroucid reserves helper slots before scoring each legal move and before the 28-empty exact solve, so the remaining tasks can use multiple threads without exceeding the configured budget.
 
 ## Build Books
 
@@ -151,7 +151,7 @@ Build books in start-list order:
 python src/tools/gen_contest_book/build_all_books.py --resume
 ```
 
-The builder reads generated records and also treats game records in `data/game_records` as the same record format. By default, it records positions up to a total loss of 4 discs from the start position.
+The builder reads generated records and also treats game records in `data/game_records` as the same record format. By default, it records positions up to a total loss of 4 discs from the start position. When generated records contain `leaf empty`, `build_book.py` automatically uses that empty count as the book output cutoff. New 28-empty records produce a 28-empty book, while old 30-empty records can still produce a 30-empty book. Use `--cut-empty 28` or `--cut-empty 30` to force a cutoff explicitly.
 
 ## Runtime Loading
 

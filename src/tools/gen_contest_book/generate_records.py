@@ -74,6 +74,7 @@ def build_provisional_book(args: argparse.Namespace, initial_board: str, out_dir
         "--records-dir", str(out_dir),
         "--output", str(output),
         "--max-book-loss", str(args.max_book_loss),
+        "--cut-empty", str(args.cut_empty),
     ]
     subprocess.run(cmd, cwd=WORK_DIR, check=True)
 

@@ -11,6 +11,7 @@ def main() -> int:
     parser.add_argument("--skip", type=int, default=0)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--max-book-loss", type=int, default=DEFAULT_BOOK_MAX_LOSS)
+    parser.add_argument("--cut-empty", type=int)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--no-game-records", action="store_true")
     args = parser.parse_args()
@@ -35,6 +36,8 @@ def main() -> int:
             initial_board,
             "--max-book-loss", str(args.max_book_loss),
         ]
+        if args.cut_empty is not None:
+            cmd.extend(["--cut-empty", str(args.cut_empty)])
         if args.no_game_records:
             cmd.append("--no-game-records")
         subprocess.run(cmd, cwd=WORK_DIR, check=True)
