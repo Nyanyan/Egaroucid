@@ -294,6 +294,9 @@ struct Contest_record_scored_move {
 
 using Contest_record_score_cache = std::unordered_map<Board, std::vector<Contest_record_scored_move>, Contest_book_hash>;
 
+constexpr int CONTEST_RECORD_LEAF_SEARCH_DEPTH = 30;
+constexpr uint_fast8_t CONTEST_RECORD_LEAF_SEARCH_MPC_LEVEL = MPC_999_LEVEL;
+
 struct Contest_record_state {
     Board board;
     std::string transcript;
@@ -491,6 +494,46 @@ Search_result contest_record_ai_search(
     return search_result;
 }
 
+Search_result contest_record_tree_search(
+    Board board,
+    int depth,
+    uint_fast8_t mpc_level,
+    bool use_multi_thread,
+    thread_id_t thread_id,
+    Contest_record_queue *queue,
+    int n_workers
+) {
+    bool searching = true;
+    const bool dynamic_multi_thread = queue != nullptr && n_workers > 1 && thread_id != THREAD_ID_NONE;
+    if (dynamic_multi_thread) {
+        if (!contest_record_begin_search(queue, n_workers, thread_id, &searching)) {
+            return Search_result();
+        }
+    } else if (contest_record_should_stop(queue)) {
+        return Search_result();
+    }
+    Search_result search_result;
+    if (searching) {
+        search_result = tree_search_legal(
+            board,
+            -SCORE_MAX,
+            SCORE_MAX,
+            depth,
+            mpc_level,
+            false,
+            board.get_legal(),
+            dynamic_multi_thread ? true : use_multi_thread,
+            TIME_LIMIT_INF,
+            thread_id,
+            &searching
+        );
+    }
+    if (dynamic_multi_thread) {
+        contest_record_end_search(queue, n_workers, thread_id);
+    }
+    return search_result;
+}
+
 std::vector<Contest_record_scored_move> contest_record_score_moves(
     Board board,
     int level,
@@ -593,20 +636,33 @@ std::vector<Contest_record_scored_move> contest_record_score_moves_cached(
 }
 
 int contest_record_leaf_value(Board board, bool use_multi_thread, thread_id_t thread_id, Contest_record_queue *queue, int n_workers) {
-    if (board.is_end()) {
-        return board.score_player();
+    int value_sign = 1;
+    if (board.get_legal() == 0ULL) {
+        board.pass();
+        if (board.get_legal() == 0ULL) {
+            return -board.score_player();
+        }
+        value_sign = -1;
     }
     if (contest_record_should_stop(queue)) {
         return SCORE_UNDEFINED;
     }
-    Search_result search_result = contest_record_ai_search(board, MAX_LEVEL, use_multi_thread, thread_id, queue, n_workers);
+    Search_result search_result = contest_record_tree_search(
+        board,
+        CONTEST_RECORD_LEAF_SEARCH_DEPTH,
+        CONTEST_RECORD_LEAF_SEARCH_MPC_LEVEL,
+        use_multi_thread,
+        thread_id,
+        queue,
+        n_workers
+    );
     if (search_result.value != SCORE_UNDEFINED) {
-        return search_result.value;
+        return value_sign * search_result.value;
     }
     if (contest_record_should_stop(queue)) {
         return SCORE_UNDEFINED;
     }
-    return mid_evaluate(&board);
+    return value_sign * mid_evaluate(&board);
 }
 
 bool contest_record_canonical_start(const std::string &raw_board, Board *board, std::string *canonical_board) {
@@ -644,6 +700,8 @@ void contest_record_write_record(
     ofs << "transcript: " << transcript << '\n';
     ofs << "leaf board: " << board.to_str() << '\n';
     ofs << "leaf empty: " << (HW2 - board.n_discs()) << '\n';
+    ofs << "leaf search depth: " << CONTEST_RECORD_LEAF_SEARCH_DEPTH << '\n';
+    ofs << "leaf search selectivity: " << SELECTIVITY_PERCENTAGE[CONTEST_RECORD_LEAF_SEARCH_MPC_LEVEL] << '\n';
     ofs << "leaf value: " << leaf_value << '\n';
     ofs << "loss sum: " << loss_sum << '\n';
     ofs << '\n';
@@ -976,6 +1034,8 @@ std::string contest_record_play_one_game(
     oss << "transcript: " << transcript << '\n';
     oss << "leaf board: " << board.to_str() << '\n';
     oss << "leaf empty: " << (HW2 - board.n_discs()) << '\n';
+    oss << "leaf search depth: " << CONTEST_RECORD_LEAF_SEARCH_DEPTH << '\n';
+    oss << "leaf search selectivity: " << SELECTIVITY_PERCENTAGE[CONTEST_RECORD_LEAF_SEARCH_MPC_LEVEL] << '\n';
     oss << "leaf value: " << leaf_value << '\n';
     oss << "loss sum: " << loss_sum << '\n';
     oss << '\n';
