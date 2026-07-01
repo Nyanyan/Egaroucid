@@ -1246,9 +1246,11 @@ class Book {
             @param file                 file name to save
             @param bak_file             backup file name
         */
-        inline void save_bin_edax(std::string file, int level) {
-            bool stop = false;
-            check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+        inline void save_bin_edax(std::string file, int level, bool additional_calculation = true) {
+            if (additional_calculation) {
+                bool stop = false;
+                check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+            }
             std::unordered_set<Board, Book_hash> pass_boards;
             Board root_board;
             root_board.reset();
@@ -1291,7 +1293,8 @@ class Book {
                     edax_level = 1;
                 }
             }
-            fout.write((char*)&edax_level, 4);
+            int header_level = additional_calculation ? edax_level : level;
+            fout.write((char*)&header_level, 4);
             int n_empties = HW2;
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
                 n_empties = std::min(n_empties, HW2 + 1 - itr->first.n_discs());
@@ -1323,7 +1326,17 @@ class Book {
                 Book_elem passed_elem = get(passed_board);
                 n_lines = passed_elem.n_lines;
                 short_val = (short)passed_elem.value;
-                char_level = (char)edax_level;
+                if (!additional_calculation && level == LEVEL_UNDEFINED) {
+                    b = pass_board.copy();
+                    b.pass();
+                    if (contain(b)) {
+                        char_level = get(b).level;
+                    } else {
+                        char_level = 1;
+                    }
+                } else {
+                    char_level = (char)edax_level;
+                }
                 if (char_level < 1) {
                     char_level = 1;
                 }
@@ -1383,32 +1396,50 @@ class Book {
                 }
                 int mobility = pop_count_ull(legal);
                 if (leaf_move == MOVE_NOMOVE && (int)n_link != mobility) {
-                    Leaf edax_leaf = get_edax_leaf(&b, links);
-                    bool edax_leaf_ok = is_valid_score(edax_leaf.value) && is_valid_policy(edax_leaf.move) && ((legal & (1ULL << edax_leaf.move)) != 0ULL);
-                    if (edax_leaf_ok) {
-                        for (const Book_value &link: links) {
-                            if (link.policy == edax_leaf.move) {
-                                edax_leaf_ok = false;
-                                break;
+                    if (additional_calculation) {
+                        Leaf edax_leaf = get_edax_leaf(&b, links);
+                        bool edax_leaf_ok = is_valid_score(edax_leaf.value) && is_valid_policy(edax_leaf.move) && ((legal & (1ULL << edax_leaf.move)) != 0ULL);
+                        if (edax_leaf_ok) {
+                            for (const Book_value &link: links) {
+                                if (link.policy == edax_leaf.move) {
+                                    edax_leaf_ok = false;
+                                    break;
+                                }
                             }
                         }
-                    }
-                    if (edax_leaf_ok) {
-                        leaf_val = edax_leaf.value;
-                        leaf_move = edax_leaf.move;
-                    } else {
-                        uint64_t missing = legal;
-                        for (const Book_value &link: links) {
-                            missing &= ~(1ULL << link.policy);
+                        if (edax_leaf_ok) {
+                            leaf_val = edax_leaf.value;
+                            leaf_move = edax_leaf.move;
+                        } else {
+                            uint64_t missing = legal;
+                            for (const Book_value &link: links) {
+                                missing &= ~(1ULL << link.policy);
+                            }
+                            if (missing) {
+                                leaf_move = first_bit(&missing);
+                                leaf_val = is_valid_score(short_val) ? short_val : 0;
+                            }
                         }
-                        if (missing) {
-                            leaf_move = first_bit(&missing);
-                            leaf_val = is_valid_score(short_val) ? short_val : 0;
+                    } else if (!links.empty()) {
+                        // Keep the export inside the existing book: use the worst linked move as Edax's leaf.
+                        int worst_link_idx = 0;
+                        for (int i = 1; i < (int)links.size(); ++i) {
+                            if (links[i].value < links[worst_link_idx].value) {
+                                worst_link_idx = i;
+                            }
                         }
+                        leaf_val = (char)links[worst_link_idx].value;
+                        leaf_move = (char)links[worst_link_idx].policy;
+                        links.erase(links.begin() + worst_link_idx);
+                        n_link = (char)links.size();
                     }
                 }
                 n_lines = itr->second.n_lines;
-                char_level = (char)edax_level;
+                if (!additional_calculation && level == LEVEL_UNDEFINED) {
+                    char_level = itr->second.level;
+                } else {
+                    char_level = (char)edax_level;
+                }
                 if (char_level < 1) {
                     char_level = 1;
                 }
@@ -1439,6 +1470,9 @@ class Book {
             std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << std::endl;
         }
 
+        inline void save_bin_edax_without_additional_calculation(std::string file, int level) {
+            save_bin_edax(file, level, false);
+        }
         /*
             @brief register a board to book
 
@@ -2875,6 +2909,10 @@ void book_save_as_egaroucid(std::string file, int level) {
 
 void book_save_as_edax(std::string file, int level) {
     book.save_bin_edax(file, level);
+}
+
+void book_save_as_edax_without_additional_calculation(std::string file, int level) {
+    book.save_bin_edax_without_additional_calculation(file, level);
 }
 
 void book_fix(bool *stop) {
