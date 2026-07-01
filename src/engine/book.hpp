@@ -1240,6 +1240,44 @@ class Book {
             }
         }
 
+        void collect_edax_export_boards_without_additional_calculation(Board board, std::unordered_set<Board, Book_hash> &export_boards, std::unordered_set<Board, Book_hash> &pass_boards) {
+            board = representative_board(board);
+            if (!contain_representative(board)) {
+                return;
+            }
+            if (board.get_legal() == 0ULL && !board.is_end()) {
+                Board passed_board = board.copy();
+                passed_board.pass();
+                passed_board = representative_board(passed_board);
+                if (contain_representative(passed_board)) {
+                    pass_boards.emplace(board);
+                    collect_edax_export_boards_without_additional_calculation(passed_board, export_boards, pass_boards);
+                }
+                return;
+            }
+            if (!export_boards.emplace(board).second) {
+                return;
+            }
+            std::vector<Book_value> links = get_edax_links(&board);
+            Flip flip;
+            for (Book_value &link: links) {
+                calc_flip(&flip, &board, link.policy);
+                board.move_board(&flip);
+                    if (board.get_legal() == 0ULL && !board.is_end()) {
+                        Board pass_board = representative_board(board);
+                        Board passed_board = board.copy();
+                        passed_board.pass();
+                        passed_board = representative_board(passed_board);
+                        if (contain_representative(passed_board)) {
+                            pass_boards.emplace(pass_board);
+                            collect_edax_export_boards_without_additional_calculation(passed_board, export_boards, pass_boards);
+                        }
+                    } else if (!board.is_end()) {
+                        collect_edax_export_boards_without_additional_calculation(board, export_boards, pass_boards);
+                    }
+                board.undo_board(&flip);
+            }
+        }
         /*
             @brief save as Edax-formatted book (.dat)
 
@@ -1252,11 +1290,25 @@ class Book {
                 check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             }
             std::unordered_set<Board, Book_hash> pass_boards;
+            std::unordered_set<Board, Book_hash> export_boards;
+            std::vector<Board> boards_to_write;
             Board root_board;
             root_board.reset();
             std::cerr << "pass board calculating..." << std::endl;
             reset_seen();
-            get_pass_boards(root_board, pass_boards);
+            if (additional_calculation) {
+                get_pass_boards(root_board, pass_boards);
+                boards_to_write.reserve(book.size());
+                for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                    boards_to_write.emplace_back(itr->first);
+                }
+            } else {
+                collect_edax_export_boards_without_additional_calculation(root_board, export_boards, pass_boards);
+                boards_to_write.reserve(export_boards.size());
+                for (const Board &board: export_boards) {
+                    boards_to_write.emplace_back(board);
+                }
+            }
             reset_seen();
             std::cerr << "pass board calculated " << pass_boards.size() << std::endl;
             std::ofstream fout;
@@ -1296,8 +1348,11 @@ class Book {
             int header_level = additional_calculation ? edax_level : level;
             fout.write((char*)&header_level, 4);
             int n_empties = HW2;
-            for (auto itr = book.begin(); itr != book.end(); ++itr) {
-                n_empties = std::min(n_empties, HW2 + 1 - itr->first.n_discs());
+            for (const Board &board: boards_to_write) {
+                n_empties = std::min(n_empties, HW2 + 1 - board.n_discs());
+            }
+            for (const Board &board: pass_boards) {
+                n_empties = std::min(n_empties, HW2 + 1 - board.n_discs());
             }
             fout.write((char*)&n_empties, 4);
             int err_mid = 0;
@@ -1306,7 +1361,7 @@ class Book {
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-            int n_position = book.size() + pass_boards.size();
+            int n_position = (int)(boards_to_write.size() + pass_boards.size());
             fout.write((char*)&n_position, 4);
             int n_win = 0, n_draw = 0, n_lose = 0;
             uint32_t n_lines;
@@ -1318,7 +1373,7 @@ class Book {
             char n_link;
             Board b;
             int percent = -1;
-            int n_boards = (int)book.size();
+            int n_boards = (int)boards_to_write.size();
             int t = 0;
             for (Board pass_board: pass_boards) {
                 Board passed_board = pass_board.copy();
@@ -1364,9 +1419,13 @@ class Book {
                 fout.write((char*)&leaf_val, 1);
                 fout.write((char*)&leaf_move, 1);
             }
-            for (auto itr = book.begin(); itr != book.end(); ++itr) {
-                book_elem = itr->second;
-                int n_percent = (double)t / n_boards * 100;
+            for (const Board &board_to_write: boards_to_write) {
+                auto book_itr = book.find(board_to_write);
+                if (book_itr == book.end()) {
+                    continue;
+                }
+                book_elem = book_itr->second;
+                int n_percent = n_boards == 0 ? 100 : (double)t / n_boards * 100;
                 if (n_percent > percent) {
                     percent = n_percent;
                     std::cerr << "converting book " << percent << "%" << std::endl;
@@ -1375,12 +1434,13 @@ class Book {
                 short_val = book_elem.value;
                 //short_val_min = book_elem.value;
                 //short_val_max = book_elem.value;
-                b = itr->first;
+                b = board_to_write;
                 uint64_t legal = b.get_legal();
-                std::vector<Book_value> links = get_all_moves_with_value(&b);
+                std::vector<Book_value> all_links = get_all_moves_with_value(&b);
+                std::vector<Book_value> links = additional_calculation ? all_links : get_edax_links(&b);
                 n_link = (char)links.size();
-                leaf_val = itr->second.leaf.value;
-                leaf_move = itr->second.leaf.move;
+                leaf_val = book_elem.leaf.value;
+                leaf_move = book_elem.leaf.move;
                 bool leaf_ok = is_valid_score(leaf_val) && is_valid_policy(leaf_move) && ((legal & (1ULL << leaf_move)) != 0ULL);
                 if (leaf_ok) {
                     for (const Book_value &link: links) {
@@ -1420,23 +1480,52 @@ class Book {
                                 leaf_val = is_valid_score(short_val) ? short_val : 0;
                             }
                         }
-                    } else if (!links.empty()) {
-                        // Keep the export inside the existing book: use the worst linked move as Edax's leaf.
-                        int worst_link_idx = 0;
-                        for (int i = 1; i < (int)links.size(); ++i) {
-                            if (links[i].value < links[worst_link_idx].value) {
-                                worst_link_idx = i;
+                    } else {
+                        auto choose_worst_idx = [](const std::vector<Book_value> &values) {
+                            int worst_idx = 0;
+                            for (int i = 1; i < (int)values.size(); ++i) {
+                                if (values[i].value < values[worst_idx].value) {
+                                    worst_idx = i;
+                                }
+                            }
+                            return worst_idx;
+                        };
+                        auto has_policy = [](const std::vector<Book_value> &values, int policy) {
+                            for (const Book_value &value: values) {
+                                if (value.policy == policy) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        };
+                        std::vector<Book_value> leaf_candidates;
+                        for (const Book_value &link: all_links) {
+                            if (!has_policy(links, link.policy)) {
+                                leaf_candidates.emplace_back(link);
                             }
                         }
-                        leaf_val = (char)links[worst_link_idx].value;
-                        leaf_move = (char)links[worst_link_idx].policy;
-                        links.erase(links.begin() + worst_link_idx);
-                        n_link = (char)links.size();
+                        if (!leaf_candidates.empty()) {
+                            int leaf_idx = choose_worst_idx(leaf_candidates);
+                            leaf_val = (char)leaf_candidates[leaf_idx].value;
+                            leaf_move = (char)leaf_candidates[leaf_idx].policy;
+                        } else if (!links.empty()) {
+                            int worst_link_idx = choose_worst_idx(links);
+                            leaf_val = (char)links[worst_link_idx].value;
+                            leaf_move = (char)links[worst_link_idx].policy;
+                            links.erase(links.begin() + worst_link_idx);
+                            n_link = (char)links.size();
+                        } else {
+                            uint64_t missing = legal;
+                            if (missing) {
+                                leaf_move = first_bit(&missing);
+                                leaf_val = is_valid_score(short_val) ? short_val : 0;
+                            }
+                        }
                     }
                 }
-                n_lines = itr->second.n_lines;
+                n_lines = book_elem.n_lines;
                 if (!additional_calculation && level == LEVEL_UNDEFINED) {
-                    char_level = itr->second.level;
+                    char_level = book_elem.level;
                 } else {
                     char_level = (char)edax_level;
                 }
@@ -1446,8 +1535,8 @@ class Book {
                 if (char_level > 60) {
                     char_level = 60;
                 }
-                fout.write((char*)&itr->first.player, 8);
-                fout.write((char*)&itr->first.opponent, 8);
+                fout.write((char*)&board_to_write.player, 8);
+                fout.write((char*)&board_to_write.opponent, 8);
                 fout.write((char*)&n_win, 4);
                 fout.write((char*)&n_draw, 4);
                 fout.write((char*)&n_lose, 4);
@@ -1467,7 +1556,7 @@ class Book {
                 fout.write((char*)&leaf_move, 1);
             }
             fout.close();
-            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << book.size() << std::endl;
+            std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << boards_to_write.size() << std::endl;
         }
 
         inline void save_bin_edax_without_additional_calculation(std::string file, int level) {
