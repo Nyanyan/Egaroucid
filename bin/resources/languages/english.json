@@ -142,6 +142,8 @@
         "export_with_specified_level": "Export with Level",
         "egaroucid_format": "Egaroucid Format",
         "edax_format": "Edax Format",
+        "edax_additional_calculation": "With Extra Calc",
+        "edax_no_additional_calculation": "No Extra Calc",
         "undefined_format": "Please input egbk3 (Egaroucid) or dat (Edax) format",
         "book_reduce": "Book Reduce",
         "reducing": "Reducing",

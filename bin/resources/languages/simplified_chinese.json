@@ -142,6 +142,8 @@
         "export_with_specified_level": "以指定级别导出",
         "egaroucid_format": "Egaroucid格式",
         "edax_format": "Edax格式",
+        "edax_additional_calculation": "附加计算",
+        "edax_no_additional_calculation": "无附加计算",
         "undefined_format": "请输入egbk3(Egaroucid)或dat(Edax)格式",
         "book_reduce": "开局库精简",
         "reducing": "精简中...",

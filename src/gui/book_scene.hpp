@@ -228,12 +228,15 @@ private:
     Button back_button;
     Button go_with_level_button;
     Button go_button;
+    Button edax_additional_calculation_button;
+    Button edax_no_additional_calculation_button;
     Slidebar level_bar;
     std::string book_file;
     int level;
     std::future<void> save_book_edax_future;
     bool book_exporting;
     bool done;
+    bool edax_additional_calculation;
     TextEditState text_area;
 
 public:
@@ -242,12 +245,15 @@ public:
         back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        edax_additional_calculation_button.init(X_CENTER - 210, 322, 200, 32, 12, language.get("book", "edax_additional_calculation"), 17, getData().fonts.font, getData().colors.black, getData().colors.white);
+        edax_no_additional_calculation_button.init(X_CENTER + 10, 322, 200, 32, 12, language.get("book", "edax_no_additional_calculation"), 17, getData().fonts.font, getData().colors.white, getData().colors.black);
         text_area.text = Unicode::Widen(getData().directories.document_dir + "book_copy.egbk3");
         text_area.cursorPos = text_area.text.size();
         book_exporting = false;
         done = false;
+        edax_additional_calculation = true;
         level = getData().menu_elements.level;
-        level_bar.init(X_CENTER - 220, 355, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
+        level_bar.init(X_CENTER - 220, 368, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
     }
 
     void update() override {
@@ -267,13 +273,14 @@ public:
             book_file = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").narrow();
             std::string ext = get_extension(book_file);
             bool button_enabled = false;
+            bool edax_format = ext == "dat";
             String book_format_str;
             if (ext == BOOK_EXTENSION_NODOT) {
                 book_format_str = language.get("book", "egaroucid_format");
                 go_button.enable();
                 go_with_level_button.enable();
                 button_enabled = true;
-            } else if (ext == "dat") {
+            } else if (edax_format) {
                 book_format_str = language.get("book", "edax_format");
                 go_button.enable();
                 go_with_level_button.enable();
@@ -283,12 +290,34 @@ public:
                 go_button.disable();
                 go_with_level_button.disable();
             }
-            getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 142), getData().colors.white);
+            getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 125), getData().colors.white);
 
             level_bar.draw();
-            
+            bool level_bar_changeable = level_bar.is_changeable();
+            if (edax_format && button_enabled) {
+                edax_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.black : getData().colors.white;
+                edax_additional_calculation_button.font_color = edax_additional_calculation ? getData().colors.white : getData().colors.black;
+                edax_no_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.white : getData().colors.black;
+                edax_no_additional_calculation_button.font_color = edax_additional_calculation ? getData().colors.black : getData().colors.white;
+                if (level_bar_changeable) {
+                    edax_additional_calculation_button.disable_notransparent();
+                    edax_no_additional_calculation_button.disable_notransparent();
+                } else {
+                    edax_additional_calculation_button.enable();
+                    edax_no_additional_calculation_button.enable();
+                }
+                edax_additional_calculation_button.draw();
+                edax_no_additional_calculation_button.draw();
+                if (edax_additional_calculation_button.clicked()) {
+                    edax_additional_calculation = true;
+                }
+                if (edax_no_additional_calculation_button.clicked()) {
+                    edax_additional_calculation = false;
+                }
+            }
+
             if (button_enabled) {
-                if (level_bar.is_changeable()) {
+                if (level_bar_changeable) {
                     back_button.disable_notransparent();
                     go_with_level_button.disable_notransparent();
                     go_button.disable_notransparent();
@@ -308,15 +337,23 @@ public:
             if (go_with_level_button.clicked()) {
                 if (ext == BOOK_EXTENSION_NODOT) {
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);
-                } else if (ext == "dat") {
-                    save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
+                } else if (edax_format) {
+                    if (edax_additional_calculation) {
+                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
+                    } else {
+                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax_without_additional_calculation, book_file, level);
+                    }
                 }
                 book_exporting = true;
             } else if (go_button.clicked() || (return_pressed && button_enabled)) {
                 if (ext == BOOK_EXTENSION_NODOT) {
                     save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, LEVEL_UNDEFINED);
-                } else if (ext == "dat") {
-                    save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, LEVEL_UNDEFINED);
+                } else if (edax_format) {
+                    if (edax_additional_calculation) {
+                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, LEVEL_UNDEFINED);
+                    } else {
+                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax_without_additional_calculation, book_file, LEVEL_UNDEFINED);
+                    }
                 }
                 book_exporting = true;
             }
