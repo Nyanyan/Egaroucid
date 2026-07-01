@@ -56,6 +56,15 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_CURRENT_FM_PATTERN_ONLY)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_current_fm_pattern_only.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_current_fm_pattern_only.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_MOBILITY)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_mobility.hpp"
