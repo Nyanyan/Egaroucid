@@ -18,11 +18,11 @@
 #include <shellapi.h>
 #endif
 
-inline String data_migration_input_path(const TextEditState& text_area) {
+inline String data_migration_input_path(const TextAreaEditState& text_area) {
     return data_migration_slash_path(text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").trimmed());
 }
 
-inline bool data_migration_return_pressed(const TextEditState& text_area) {
+inline bool data_migration_return_pressed(const TextAreaEditState& text_area) {
     return text_area.enterKey;
 }
 
@@ -98,7 +98,7 @@ private:
     Button default_button;
     Button export_button;
     Button open_folder_button;
-    TextEditState text_area;
+    TextAreaEditState text_area;
     std::future<Data_migration_result> export_future;
     Data_migration_result result;
     bool exporting{ false };
@@ -115,8 +115,7 @@ public:
     Export_settings_data(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(true);
         init_buttons();
-        text_area.text = data_migration_default_export_destination();
-        text_area.cursorPos = text_area.text.size();
+        set_path_textarea_text(text_area, data_migration_default_export_destination());
     }
 
     void update() override {
@@ -160,10 +159,9 @@ public:
             getData().fonts.font(language.get("data_migration", "export_description")).draw(14, Arg::topCenter(X_CENTER, sy + 38), getData().colors.white);
 
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 65 }, 600, TEXTBOX_MAX_CHARS, true, false);
+            path_text_area_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 65 }, SizeF{600, 60}, TEXTBOX_MAX_CHARS);
             if (DragDrop::HasNewFilePaths()) {
-                text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
-                text_area.cursorPos = text_area.text.size();
+                set_path_textarea_text(text_area, DragDrop::GetDroppedFilePaths()[0].path);
             }
 
             const String destination_dir = data_migration_input_path(text_area);
@@ -183,8 +181,7 @@ public:
             }
             default_button.draw();
             if (default_button.clicked()) {
-                text_area.text = data_migration_default_export_destination();
-                text_area.cursorPos = text_area.text.size();
+                set_path_textarea_text(text_area, data_migration_default_export_destination());
             }
             export_button.draw();
             if (valid_dir && !forbidden_dir && (export_button.clicked() || data_migration_return_pressed(text_area))) {
@@ -202,7 +199,7 @@ class Import_settings_data : public App::Scene {
 private:
     Button back_button;
     Button import_button;
-    TextEditState text_area;
+    TextAreaEditState text_area;
     std::future<Data_migration_result> import_future;
     Data_migration_result result;
     bool importing{ false };
@@ -258,11 +255,10 @@ public:
             getData().fonts.font(language.get("data_migration", "import_warning")).draw(13, Arg::topCenter(X_CENTER, sy + 60), getData().colors.white);
 
             text_area.active = true;
-            text_box_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 85 }, 600, TEXTBOX_MAX_CHARS, true, false);
+            path_text_area_with_ime_candidate_window(text_area, Vec2{ X_CENTER - 300, sy + 85 }, SizeF{600, 60}, TEXTBOX_MAX_CHARS);
             bool path_dragged = false;
             if (DragDrop::HasNewFilePaths()) {
-                text_area.text = DragDrop::GetDroppedFilePaths()[0].path;
-                text_area.cursorPos = text_area.text.size();
+                set_path_textarea_text(text_area, DragDrop::GetDroppedFilePaths()[0].path);
                 path_dragged = true;
             }
 
