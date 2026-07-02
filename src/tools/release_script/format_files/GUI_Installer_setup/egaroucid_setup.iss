@@ -35,7 +35,7 @@ LicenseFile={#EGAROUCID_RELEASE_DIR}\files\license.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 SetupIconFile={#EGAROUCID_RELEASE_DIR}\files\favicon.ico
-WizardSmallImageFile={#EGAROUCID_RELEASE_DIR}\files\resources\img\icon.png
+WizardSmallImageFile={#EGAROUCID_RELEASE_DIR}\files\resources\img\icon_wizard.bmp
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
