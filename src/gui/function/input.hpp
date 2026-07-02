@@ -269,6 +269,12 @@ inline bool text_area_with_ime_candidate_window(
     return changed;
 }
 
+inline void set_path_textarea_text(TextAreaEditState& text, const String& value) {
+    text.text = value;
+    text.cursorPos = text.text.size();
+    text.rebuildGlyphs();
+}
+
 inline bool remove_path_textarea_line_breaks(TextAreaEditState& text) {
     const size_t cursor_pos = Min<size_t>(text.cursorPos, text.text.size());
     const String before_cursor = text.text.substr(0, cursor_pos).replaced(U"\r", U"").replaced(U"\n", U"");
@@ -303,6 +309,7 @@ inline bool path_text_area_with_ime_candidate_window(
     }
     return changed;
 }
+
 inline bool text_box_with_ime_candidate_window(
     TextEditState& text,
     const Vec2& pos,
