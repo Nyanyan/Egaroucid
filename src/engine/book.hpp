@@ -1269,11 +1269,15 @@ class Book {
             @param file                 file name to save
             @param bak_file             backup file name
         */
-        inline void save_bin_edax(std::string file, int level, bool additional_calculation = true, bool *stop_saving = nullptr) {
+        inline void save_bin_edax(std::string file, int level, bool additional_calculation = true, bool *stop_saving = nullptr, int leaf_recalculation_level = ADD_LEAF_SPECIAL_LEVEL) {
             if (additional_calculation) {
                 bool stop = false;
                 bool *stop_ptr = stop_saving ? stop_saving : &stop;
-                check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop_ptr);
+                int edax_leaf_recalculation_level = leaf_recalculation_level;
+                if (edax_leaf_recalculation_level != ADD_LEAF_SPECIAL_LEVEL) {
+                    edax_leaf_recalculation_level = std::clamp(edax_leaf_recalculation_level, 1, MAX_LEVEL);
+                }
+                check_add_leaf_all_search(edax_leaf_recalculation_level, stop_ptr);
                 if (stop_saving && *stop_saving) {
                     return;
                 }
@@ -3130,14 +3134,18 @@ void book_save_as_egaroucid(std::string file, int level, bool *stop_saving) {
     rename(tmp_file.c_str(), file.c_str());
 }
 
-void book_save_as_edax(std::string file, int level) {
-    book.save_bin_edax(file, level);
+void book_save_as_edax(std::string file, int level, int leaf_recalculation_level) {
+    book.save_bin_edax(file, level, true, nullptr, leaf_recalculation_level);
 }
 
-void book_save_as_edax(std::string file, int level, bool *stop_saving) {
+void book_save_as_edax(std::string file, int level) {
+    book_save_as_edax(file, level, ADD_LEAF_SPECIAL_LEVEL);
+}
+
+void book_save_as_edax(std::string file, int level, int leaf_recalculation_level, bool *stop_saving) {
     const std::string tmp_file = file + ".tmp";
     remove(tmp_file.c_str());
-    book.save_bin_edax(tmp_file, level, true, stop_saving);
+    book.save_bin_edax(tmp_file, level, true, stop_saving, leaf_recalculation_level);
     if (stop_saving && *stop_saving) {
         remove(tmp_file.c_str());
         return;
@@ -3149,6 +3157,10 @@ void book_save_as_edax(std::string file, int level, bool *stop_saving) {
     exported.close();
     remove(file.c_str());
     rename(tmp_file.c_str(), file.c_str());
+}
+
+void book_save_as_edax(std::string file, int level, bool *stop_saving) {
+    book_save_as_edax(file, level, ADD_LEAF_SPECIAL_LEVEL, stop_saving);
 }
 
 void book_save_as_edax_without_additional_calculation(std::string file, int level) {
