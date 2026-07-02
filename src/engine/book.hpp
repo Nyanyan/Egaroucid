@@ -1513,6 +1513,15 @@ class Book {
                             }
                             return worst_idx;
                         };
+                        auto choose_best_idx = [](const std::vector<Book_value> &values) {
+                            int best_idx = 0;
+                            for (int i = 1; i < (int)values.size(); ++i) {
+                                if (values[i].value > values[best_idx].value) {
+                                    best_idx = i;
+                                }
+                            }
+                            return best_idx;
+                        };
                         auto has_policy = [](const std::vector<Book_value> &values, int policy) {
                             for (const Book_value &value: values) {
                                 if (value.policy == policy) {
@@ -1528,7 +1537,7 @@ class Book {
                             }
                         }
                         if (!leaf_candidates.empty()) {
-                            int leaf_idx = choose_worst_idx(leaf_candidates);
+                            int leaf_idx = choose_best_idx(leaf_candidates);
                             leaf_val = (char)leaf_candidates[leaf_idx].value;
                             leaf_move = (char)leaf_candidates[leaf_idx].policy;
                         } else if (!links.empty()) {
