@@ -269,6 +269,40 @@ inline bool text_area_with_ime_candidate_window(
     return changed;
 }
 
+inline bool remove_path_textarea_line_breaks(TextAreaEditState& text) {
+    const size_t cursor_pos = Min<size_t>(text.cursorPos, text.text.size());
+    const String before_cursor = text.text.substr(0, cursor_pos).replaced(U"\r", U"").replaced(U"\n", U"");
+    const String after_cursor = text.text.substr(cursor_pos).replaced(U"\r", U"").replaced(U"\n", U"");
+    const String sanitized = before_cursor + after_cursor;
+    if (sanitized == text.text) {
+        return false;
+    }
+    text.text = sanitized;
+    text.cursorPos = before_cursor.size();
+    text.rebuildGlyphs();
+    return true;
+}
+
+inline bool path_text_area_with_ime_candidate_window(
+    TextAreaEditState& text,
+    const Vec2& pos,
+    const SizeF& size = SizeF{ 600, 60 },
+    size_t maxChars = SimpleGUI::PreferredTextAreaMaxChars,
+    bool enabled = true
+) {
+    const bool was_active = text.active;
+    bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
+    changed = remove_path_textarea_line_breaks(text) || changed;
+
+    if (enabled && was_active && text.enterKey) {
+        text.active = true;
+    }
+
+    if (enabled && text.active) {
+        gui_textarea_ime::request_textarea_ime_candidate_window(text, pos, size);
+    }
+    return changed;
+}
 inline bool text_box_with_ime_candidate_window(
     TextEditState& text,
     const Vec2& pos,
