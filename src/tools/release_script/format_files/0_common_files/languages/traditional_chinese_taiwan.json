@@ -144,7 +144,7 @@
         "edax_format": "Edax格式",
         "edax_additional_calculation": "附加計算",
         "edax_no_additional_calculation": "無附加計算",
-        "edax_leaf_recalculation_level": "葉節點重算等級",
+        "edax_leaf_recalculation_level": "葉等級",
         "undefined_format": "請輸入egbk3(Egaroucid)或dat(Edax)格式",
         "book_reduce": "簡化開局庫",
         "reducing": "簡化中...",

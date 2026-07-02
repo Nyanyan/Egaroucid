@@ -144,7 +144,7 @@
         "edax_format": "Edax形式",
         "edax_additional_calculation": "追加計算あり",
         "edax_no_additional_calculation": "追加計算なし",
-        "edax_leaf_recalculation_level": "リーフ再計算レベル",
+        "edax_leaf_recalculation_level": "リーフレベル",
         "undefined_format": "egbk3形式(Egaroucid)かdat形式(Edax)で入力してください",
         "book_reduce": "Book削減",
         "reducing": "削減中",

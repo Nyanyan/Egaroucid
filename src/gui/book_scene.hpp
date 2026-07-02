@@ -260,12 +260,12 @@ private:
 public:
     Export_book(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(true);
-        back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY + 15, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY + 15, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY + 15, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        const int export_book_sy = 20 + SCENE_ICON_WIDTH + 40;
-        const int edax_selector_y = export_book_sy + 150;
+        const int export_book_sy = 20 + SCENE_ICON_WIDTH + 25;
+        const int edax_selector_y = export_book_sy + 140;
         Radio_button_element radio_button_elem;
         edax_export_radio.init();
         radio_button_elem.init(X_CENTER - 225, edax_selector_y + 18, getData().fonts.font, 18, language.get("book", "edax_additional_calculation"), true);
@@ -280,8 +280,8 @@ public:
         close_after_export_stop = false;
         level = getData().menu_elements.level;
         edax_leaf_recalculation_level = ADD_LEAF_SPECIAL_LEVEL_SEARCH_LEVEL;
-        level_bar.init(X_CENTER - 220, export_book_sy + 198, 440, 20, language.get("ai_settings", "level"), 18, getData().colors.white, getData().fonts.font, 1, 60, &level);
-        edax_leaf_level_bar.init(X_CENTER - 220, export_book_sy + 228, 440, 20, language.get("book", "edax_leaf_recalculation_level"), 18, getData().colors.white, getData().fonts.font, 1, 60, &edax_leaf_recalculation_level);
+        level_bar.init(X_CENTER - 220, export_book_sy + 180, 440, 20, language.get("ai_settings", "level"), 18, getData().colors.white, getData().fonts.font, 1, 60, &level);
+        edax_leaf_level_bar.init(X_CENTER - 220, export_book_sy + 210, 440, 20, language.get("book", "edax_leaf_recalculation_level"), 18, getData().colors.white, getData().fonts.font, 1, 60, &edax_leaf_recalculation_level);
     }
 
     void update() override {
@@ -295,9 +295,10 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         const int icon_width = SCENE_ICON_WIDTH;
+        const int logo_width = 95;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
-        getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
-        int sy = 20 + icon_width + 40;
+        getData().resources.logo.scaled((double)logo_width / getData().resources.logo.width()).draw(X_CENTER - logo_width / 2, 20 + icon_width);
+        int sy = 20 + icon_width + 25;
         if (!book_exporting) {
             getData().fonts.font(language.get("book", "export_book")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             text_area.active = true;
