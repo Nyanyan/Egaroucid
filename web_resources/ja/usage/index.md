@@ -395,8 +395,11 @@ AIの設定を変更すると、プロファイルの上書き保存ボタンが
 
 Egaroucidでは、よく使う機能にショートカットキーを割り当ててありますが、これを自由に追加・変更できる設定です。Egaroucidのほぼすべての機能に対してショートカットキーを自由に割り当て可能です。表示されていない機能はスクロールすると見えるようになります。スクロールはマウスホイールのほか、上下ボタンやPage Up、Page Downボタンでも可能です。
 
+バージョン7.8.2からは検索欄が追加され、機能名でショートカット設定項目を絞り込めます。項目数が多いので、設定したい機能名の一部を入力して探すと便利です。
+
 <div class="centering_box">
     <img class="pic2" src="img/shortcut_key_settings.png">
+    <img class="pic2" src="img/shortcut_key_search.png">
 </div>
 
 すでに登録されているショートカットキーを削除(解除)したい場合は、削除ボタンを押します。
@@ -419,6 +422,12 @@ Ctrl、Shift、Altキーは同時押しに対応しています。つまり、Ct
 
 <div class="centering_box">
     <img class="pic2" src="img/shortcut_key_settings_4.png">
+</div>
+
+バージョン7.8.2からは、保存済みのAIプロファイルもショートカットキーの割り当て対象になりました。特定のAIプロファイルをよく使う場合、キー操作で直接読み込めます。
+
+<div class="centering_box">
+    <img class="pic2" src="img/ai_profile_shortcut_key.png">
 </div>
 
 初期設定ボタンを押すとデフォルトのショートカットキー設定に一括変更できます。初期設定は以下の通りです。
@@ -481,10 +490,13 @@ Ctrl、Shift、Altキーは同時押しに対応しています。つまり、Ct
 
 画面右上のスペースに、ボタンを6つ配置しました。これらのボタンには自由に機能を割り当てられます。メニューを開かずに使いたい機能がある場合や、ショートカットキーを覚えにくい機能をすぐ使いたい場合に便利です。
 
+AIプロファイルも割り当てられるので、画面右上のボタンから練習用、解析用などのAI設定を素早く切り替えられます。
+
 <div class="centering_box">
     <img class="pic2" src="img/custom_buttons.png">
     <img class="pic2" src="img/custom_button_setting1.png">
     <img class="pic2" src="img/custom_button_setting2.png">
+    <img class="pic2" src="img/ai_profile_shortcut_button.png">
 </div>
 
 
@@ -492,6 +504,12 @@ Ctrl、Shift、Altキーは同時押しに対応しています。つまり、Ct
 ### マウス追加ボタン設定
 
 バージョン7.8.1からは、キーボードだけでなくマウスボタンにもショートカットを割り当てられるようになりました。マウスのサイドボタンなどを使うと、局面を進める・戻す、AIに1手打たせる、といった操作を手元で行えます。
+
+バージョン7.8.2からは、マウス追加ボタンにもAIプロファイルを割り当てられます。
+
+<div class="centering_box">
+    <img class="pic2" src="img/ai_profile_mouse_button.png">
+</div>
 
 
 
