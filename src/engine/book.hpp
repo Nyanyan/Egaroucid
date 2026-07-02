@@ -1153,7 +1153,7 @@ class Book {
             @param file                 file name to save
             @param bak_file             backup file name
         */
-        inline void save_egbk3(std::string file, std::string bak_file, bool use_backup, int level) {
+        inline void save_egbk3(std::string file, std::string bak_file, bool use_backup, int level, bool *stop_saving) {
             if (use_backup) {
                 if (remove(bak_file.c_str()) == -1) {
                     std::cerr << "cannot delete backup. you can ignore this error." << std::endl;
@@ -1176,6 +1176,9 @@ class Book {
             fout.write((char*)&n_book, 4);
             int t = 0, percent = -1, n_boards = (int)book.size();
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                if (stop_saving && *stop_saving) {
+                    break;
+                }
                 ++t;
                 int n_percent = (double)t / n_boards * 100;
                 if (n_percent > percent) {
@@ -1197,8 +1200,17 @@ class Book {
                 fout.write((char*)&char_leaf_level, 1);
             }
             fout.close();
+            if (stop_saving && *stop_saving) {
+                remove(file.c_str());
+                std::cerr << "book saving stopped" << std::endl;
+                return;
+            }
             int book_size = (int)book.size();
             std::cerr << "saved " << t << " boards , book_size " << book_size << std::endl;
+        }
+
+        inline void save_egbk3(std::string file, std::string bak_file, bool use_backup, int level) {
+            save_egbk3(file, bak_file, use_backup, level, nullptr);
         }
 
         inline void save_egbk3(std::string file, std::string bak_file) {
@@ -1209,7 +1221,14 @@ class Book {
             save_egbk3(file, "", false, level);
         }
 
-        void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards, bool additional_calculation = true, const std::unordered_set<Board, Book_hash> *export_boards = nullptr) {
+        inline void save_egbk3(std::string file, int level, bool *stop_saving) {
+            save_egbk3(file, "", false, level, stop_saving);
+        }
+
+        void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards, bool additional_calculation = true, const std::unordered_set<Board, Book_hash> *export_boards = nullptr, bool *stop_saving = nullptr) {
+            if (stop_saving && *stop_saving) {
+                return;
+            }
             board = representative_board(board);
             if (contain_representative(board)) {
                 if (book[board].seen) {
@@ -1227,15 +1246,18 @@ class Book {
                 bool passed_board_exists = contain_edax_export_board(passed_board, export_boards);
                 if (!contain_representative(board) && passed_board_exists) {
                     pass_boards.emplace(board);
-                    get_pass_boards(passed_board, pass_boards, additional_calculation, export_boards);
+                    get_pass_boards(passed_board, pass_boards, additional_calculation, export_boards, stop_saving);
                 }
             } else {
                 std::vector<Book_value> links = additional_calculation ? get_all_moves_with_value(&board) : get_edax_links(&board, export_boards);
                 Flip flip;
                 for (Book_value &link: links) {
+                    if (stop_saving && *stop_saving) {
+                        break;
+                    }
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        get_pass_boards(board, pass_boards, additional_calculation, export_boards);
+                        get_pass_boards(board, pass_boards, additional_calculation, export_boards, stop_saving);
                     board.undo_board(&flip);
                 }
             }
@@ -1247,10 +1269,14 @@ class Book {
             @param file                 file name to save
             @param bak_file             backup file name
         */
-        inline void save_bin_edax(std::string file, int level, bool additional_calculation = true) {
+        inline void save_bin_edax(std::string file, int level, bool additional_calculation = true, bool *stop_saving = nullptr) {
             if (additional_calculation) {
                 bool stop = false;
-                check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
+                bool *stop_ptr = stop_saving ? stop_saving : &stop;
+                check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, stop_ptr);
+                if (stop_saving && *stop_saving) {
+                    return;
+                }
             }
             std::unordered_set<Board, Book_hash> pass_boards;
             std::unordered_set<Board, Book_hash> edax_export_boards;
@@ -1260,6 +1286,9 @@ class Book {
             const std::unordered_set<Board, Book_hash> *edax_export_boards_ptr = nullptr;
             if (!additional_calculation) {
                 for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                    if (stop_saving && *stop_saving) {
+                        return;
+                    }
                     if (should_write_edax_position_without_additional_calculation(itr->first)) {
                         edax_export_boards.emplace(itr->first);
                     }
@@ -1268,14 +1297,26 @@ class Book {
             }
             std::cerr << "pass board calculating..." << std::endl;
             reset_seen();
-            get_pass_boards(root_board, pass_boards, additional_calculation, edax_export_boards_ptr);
+            get_pass_boards(root_board, pass_boards, additional_calculation, edax_export_boards_ptr, stop_saving);
+            if (stop_saving && *stop_saving) {
+                reset_seen();
+                return;
+            }
             boards_to_write.reserve(additional_calculation ? book.size() : edax_export_boards.size());
             if (additional_calculation) {
                 for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                    if (stop_saving && *stop_saving) {
+                        reset_seen();
+                        return;
+                    }
                     boards_to_write.emplace_back(itr->first);
                 }
             } else {
                 for (const Board &board: edax_export_boards) {
+                    if (stop_saving && *stop_saving) {
+                        reset_seen();
+                        return;
+                    }
                     boards_to_write.emplace_back(board);
                 }
             }
@@ -1346,6 +1387,9 @@ class Book {
             int n_boards = (int)boards_to_write.size();
             int t = 0;
             for (Board pass_board: pass_boards) {
+                if (stop_saving && *stop_saving) {
+                    break;
+                }
                 Board passed_board = pass_board.copy();
                 passed_board.pass();
                 Book_elem passed_elem = get(passed_board);
@@ -1390,6 +1434,9 @@ class Book {
                 fout.write((char*)&leaf_move, 1);
             }
             for (const Board &board_to_write: boards_to_write) {
+                if (stop_saving && *stop_saving) {
+                    break;
+                }
                 auto book_itr = book.find(board_to_write);
                 if (book_itr == book.end()) {
                     continue;
@@ -1588,11 +1635,20 @@ class Book {
                 fout.write((char*)&leaf_move, 1);
             }
             fout.close();
+            if (stop_saving && *stop_saving) {
+                remove(file.c_str());
+                std::cerr << "book saving stopped" << std::endl;
+                return;
+            }
             std::cerr << "saved " << t << " boards as a edax-formatted book " << n_position << " " << boards_to_write.size() << std::endl;
         }
 
         inline void save_bin_edax_without_additional_calculation(std::string file, int level) {
             save_bin_edax(file, level, false);
+        }
+
+        inline void save_bin_edax_without_additional_calculation(std::string file, int level, bool *stop_saving) {
+            save_bin_edax(file, level, false, stop_saving);
         }
         /*
             @brief register a board to book
@@ -3057,12 +3113,24 @@ void book_save_as_egaroucid(std::string file, int level) {
     book.save_egbk3(file, level);
 }
 
+void book_save_as_egaroucid(std::string file, int level, bool *stop_saving) {
+    book.save_egbk3(file, level, stop_saving);
+}
+
 void book_save_as_edax(std::string file, int level) {
     book.save_bin_edax(file, level);
 }
 
+void book_save_as_edax(std::string file, int level, bool *stop_saving) {
+    book.save_bin_edax(file, level, true, stop_saving);
+}
+
 void book_save_as_edax_without_additional_calculation(std::string file, int level) {
     book.save_bin_edax_without_additional_calculation(file, level);
+}
+
+void book_save_as_edax_without_additional_calculation(std::string file, int level, bool *stop_saving) {
+    book.save_bin_edax_without_additional_calculation(file, level, stop_saving);
 }
 
 void book_fix(bool *stop) {
