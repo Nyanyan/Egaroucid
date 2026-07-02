@@ -2,7 +2,7 @@
 
 オセロAI Egaroucidの公式ドキュメントです。各機能の使い方を簡単に紹介します。このページの内容は最新バージョンに合わせてありますが、更新が追いつかない場合もあります。
 
-最終更新: 2026/05/17 Egaroucid 7.8.1
+最終更新: 2026/07/02 Egaroucid 7.8.2
 
 INSERT_TABLE_OF_CONTENTS_HERE
 
@@ -21,6 +21,8 @@ INSERT_TABLE_OF_CONTENTS_HERE
 <div class="centering_box">
     <img class="pic2" src="img/screen.png">
 </div>
+
+バージョン7.8.2からは、Egaroucidを閉じたときのウィンドウサイズと位置を自動で保存し、次回起動時に復元します。保存された位置が現在のモニタに表示できない場合は、従来通りの位置で起動します。
 
 ### 盤面
 
