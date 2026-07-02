@@ -230,8 +230,10 @@ private:
     Button stop_button;
     Radio_button edax_export_radio;
     Slidebar level_bar;
+    Slidebar edax_leaf_level_bar;
     std::string book_file;
     int level;
+    int edax_leaf_recalculation_level;
     std::future<void> save_book_edax_future;
     bool book_exporting;
     bool done;
@@ -247,7 +249,7 @@ private:
             save_book_edax_future = std::async(std::launch::async, static_cast<void (*)(std::string, int, bool*)>(book_save_as_egaroucid), book_file, export_level, &stop_exporting);
         } else if (ext == "dat") {
             if (edax_additional_calculation) {
-                save_book_edax_future = std::async(std::launch::async, static_cast<void (*)(std::string, int, bool*)>(book_save_as_edax), book_file, export_level, &stop_exporting);
+                save_book_edax_future = std::async(std::launch::async, static_cast<void (*)(std::string, int, int, bool*)>(book_save_as_edax), book_file, export_level, edax_leaf_recalculation_level, &stop_exporting);
             } else {
                 save_book_edax_future = std::async(std::launch::async, static_cast<void (*)(std::string, int, bool*)>(book_save_as_edax_without_additional_calculation), book_file, export_level, &stop_exporting);
             }
@@ -258,9 +260,9 @@ private:
 public:
     Export_book(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(true);
-        back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY + 15, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY + 15, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY + 15, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         const int export_book_sy = 20 + SCENE_ICON_WIDTH + 40;
         const int edax_selector_y = export_book_sy + 150;
@@ -277,7 +279,9 @@ public:
         stop_exporting = false;
         close_after_export_stop = false;
         level = getData().menu_elements.level;
-        level_bar.init(X_CENTER - 220, export_book_sy + 205, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
+        edax_leaf_recalculation_level = ADD_LEAF_SPECIAL_LEVEL_SEARCH_LEVEL;
+        level_bar.init(X_CENTER - 220, export_book_sy + 198, 440, 20, language.get("ai_settings", "level"), 18, getData().colors.white, getData().fonts.font, 1, 60, &level);
+        edax_leaf_level_bar.init(X_CENTER - 220, export_book_sy + 228, 440, 20, language.get("book", "edax_leaf_recalculation_level"), 18, getData().colors.white, getData().fonts.font, 1, 60, &edax_leaf_recalculation_level);
     }
 
     void update() override {
@@ -321,11 +325,12 @@ public:
             }
             getData().fonts.font(book_format_str).draw(18, Arg::topCenter(X_CENTER, sy + 108), getData().colors.white);
 
+            bool slider_changeable = level_bar.is_changeable() || edax_leaf_level_bar.is_changeable();
             level_bar.draw();
-            bool level_bar_changeable = level_bar.is_changeable();
+            slider_changeable = slider_changeable || level_bar.is_changeable();
             if (edax_format && button_enabled) {
                 edax_export_radio.set_checked(edax_additional_calculation ? 0 : 1);
-                if (level_bar_changeable) {
+                if (slider_changeable) {
                     for (Radio_button_element &elem: edax_export_radio.elems) {
                         elem.draw();
                     }
@@ -333,10 +338,14 @@ public:
                     edax_export_radio.draw();
                     edax_additional_calculation = edax_export_radio.checked == 0;
                 }
+                if (edax_additional_calculation) {
+                    edax_leaf_level_bar.draw();
+                    slider_changeable = slider_changeable || edax_leaf_level_bar.is_changeable();
+                }
             }
 
             if (button_enabled) {
-                if (level_bar_changeable) {
+                if (slider_changeable) {
                     back_button.disable_notransparent();
                     go_with_level_button.disable_notransparent();
                     go_button.disable_notransparent();

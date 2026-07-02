@@ -144,6 +144,7 @@
         "edax_format": "Edax Format",
         "edax_additional_calculation": "With Extra Calc",
         "edax_no_additional_calculation": "No Extra Calc",
+        "edax_leaf_recalculation_level": "Leaf Recalc Level",
         "undefined_format": "Please input egbk3 (Egaroucid) or dat (Edax) format",
         "book_reduce": "Book Reduce",
         "reducing": "Reducing",
