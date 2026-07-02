@@ -380,10 +380,12 @@ $mが選ばれる確率 = \frac{w}{\sum{\{W\}}}$
 
 AIの設定を変更すると、プロファイルの上書き保存ボタンが出現します。このボタンを押すと簡単にプロファイルを上書きできます。
 
-プロファイルを保存せずにEgaroucidを閉じると、自動で閉じたときの設定を新規プロファイルとして保存します。
+バージョン7.8.2からは、AIプロファイルの自動保存方法を選択できます。「上書き保存」にすると、Egaroucidを閉じるときに現在のAIプロファイルへ自動で保存します。「新規保存」にすると、閉じたときの設定を新しいAIプロファイルとして保存します。
 
 <div class="centering_box">
     <img class="pic2" src="img/setting_profile.png">
+    <img class="pic2" src="img/ai_profile_auto_save.png">
+    <img class="pic2" src="img/ai_profile_auto_save_rename.png">
 </div>
 
 
