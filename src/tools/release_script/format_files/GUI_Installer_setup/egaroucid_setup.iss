@@ -32,6 +32,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}_{#version_dir}
 DisableProgramGroupPage=yes
 LicenseFile={#EGAROUCID_RELEASE_DIR}\files\license.txt
+OutputBaseFilename={#MyAppName}_{#version_dir}_Installer
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 SetupIconFile={#EGAROUCID_RELEASE_DIR}\files\favicon.ico
