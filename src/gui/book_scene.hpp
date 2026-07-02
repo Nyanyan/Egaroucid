@@ -228,7 +228,8 @@ private:
     Button back_button;
     Button go_with_level_button;
     Button go_button;
-    Radio_button edax_export_radio;
+    Button edax_additional_calculation_button;
+    Button edax_no_additional_calculation_button;
     Slidebar level_bar;
     std::string book_file;
     int level;
@@ -246,12 +247,8 @@ public:
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         const int export_book_sy = 20 + SCENE_ICON_WIDTH + 40;
         const int edax_selector_y = export_book_sy + 150;
-        Radio_button_element radio_button_elem;
-        edax_export_radio.init();
-        radio_button_elem.init(X_CENTER - 225, edax_selector_y + 18, getData().fonts.font, 18, language.get("book", "edax_additional_calculation"), true);
-        edax_export_radio.push(radio_button_elem);
-        radio_button_elem.init(X_CENTER + 30, edax_selector_y + 18, getData().fonts.font, 18, language.get("book", "edax_no_additional_calculation"), false);
-        edax_export_radio.push(radio_button_elem);
+        edax_additional_calculation_button.init(X_CENTER - 245, edax_selector_y, 235, 36, 12, language.get("book", "edax_additional_calculation"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+        edax_no_additional_calculation_button.init(X_CENTER + 10, edax_selector_y, 235, 36, 12, language.get("book", "edax_no_additional_calculation"), 18, getData().fonts.font, getData().colors.gray, getData().colors.black);
         text_area.text = Unicode::Widen(getData().directories.document_dir + "book_copy.egbk3");
         text_area.cursorPos = text_area.text.size();
         book_exporting = false;
@@ -300,14 +297,24 @@ public:
             level_bar.draw();
             bool level_bar_changeable = level_bar.is_changeable();
             if (edax_format && button_enabled) {
-                edax_export_radio.set_checked(edax_additional_calculation ? 0 : 1);
+                edax_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.white : getData().colors.gray;
+                edax_additional_calculation_button.font_color = getData().colors.black;
+                edax_no_additional_calculation_button.button_color = edax_additional_calculation ? getData().colors.gray : getData().colors.white;
+                edax_no_additional_calculation_button.font_color = getData().colors.black;
                 if (level_bar_changeable) {
-                    for (Radio_button_element &elem: edax_export_radio.elems) {
-                        elem.draw();
-                    }
+                    edax_additional_calculation_button.disable_notransparent();
+                    edax_no_additional_calculation_button.disable_notransparent();
                 } else {
-                    edax_export_radio.draw();
-                    edax_additional_calculation = edax_export_radio.checked == 0;
+                    edax_additional_calculation_button.enable();
+                    edax_no_additional_calculation_button.enable();
+                }
+                edax_additional_calculation_button.draw();
+                edax_no_additional_calculation_button.draw();
+                if (edax_additional_calculation_button.clicked()) {
+                    edax_additional_calculation = true;
+                }
+                if (edax_no_additional_calculation_button.clicked()) {
+                    edax_additional_calculation = false;
                 }
             }
 
