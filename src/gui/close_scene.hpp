@@ -155,11 +155,11 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json.save(U"{}setting.json"_fmt(Unicode::Widen(directories.appdata_dir)));
 }
 
-void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Forced_openings forced_openings, Window_state window_state) {
+void save_app_data(Menu_elements menu_elements, Settings* settings, Directories directories, User_settings user_settings, Book_information book_information, Window_state window_state) {
     if (!window_state.loading) {
-        save_modified_ai_profile_if_needed(menu_elements, &settings, directories);
-        save_modified_display_profile_if_needed(menu_elements, &settings, directories);
-        save_settings(menu_elements, settings, directories, user_settings, window_state);
+        save_modified_ai_profile_if_needed(menu_elements, settings, directories);
+        save_modified_display_profile_if_needed(menu_elements, settings, directories);
+        save_settings(menu_elements, *settings, directories, user_settings, window_state);
         String shortcut_key_file = U"{}shortcut_key.json"_fmt(Unicode::Widen(directories.appdata_dir));
         shortcut_keys.save_settings(shortcut_key_file);
         String shortcut_button_file = U"{}shortcut_button.json"_fmt(Unicode::Widen(directories.appdata_dir));
@@ -170,8 +170,12 @@ void close_app(Menu_elements menu_elements, Settings settings, Directories direc
         // No need to save here as the folder structure is already saved when OK is clicked
     }
     if (book_information.changed) {
-        book.save_egbk3(settings.book_file, settings.book_file + ".bak");
+        book.save_egbk3(settings->book_file, settings->book_file + ".bak");
     }
+}
+
+void close_app(Menu_elements menu_elements, Settings settings, Directories directories, User_settings user_settings, Book_information book_information, Forced_openings forced_openings, Window_state window_state) {
+    save_app_data(menu_elements, &settings, directories, user_settings, book_information, window_state);
 }
 
 void update_current_window_position(Window_state* window_state) {

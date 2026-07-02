@@ -12,6 +12,7 @@
 #include <future>
 #include <iostream>
 #include "./../engine/engine_all.hpp"
+#include "close_scene.hpp"
 #include "function/function_all.hpp"
 #if SIV3D_PLATFORM(WINDOWS)
 #include <Windows.h>
@@ -92,6 +93,28 @@ inline void reload_egaroucid_settings_after_data_import(Common_resources* data) 
     data->graph_resources.need_init = false;
 }
 
+struct Data_migration_export_task_result {
+    Data_migration_result migration_result;
+    Settings saved_settings;
+};
+
+inline Data_migration_export_task_result save_and_export_egaroucid_settings_data(
+    Menu_elements menu_elements,
+    Settings settings,
+    Directories directories,
+    User_settings user_settings,
+    Book_information book_information,
+    Window_state window_state,
+    String destination_dir
+) {
+    save_app_data(menu_elements, &settings, directories, user_settings, book_information, window_state);
+
+    Data_migration_export_task_result result;
+    result.migration_result = export_egaroucid_settings_data(directories, destination_dir);
+    result.saved_settings = settings;
+    return result;
+}
+
 class Export_settings_data : public App::Scene {
 private:
     Button back_button;
@@ -99,7 +122,7 @@ private:
     Button export_button;
     Button open_folder_button;
     TextAreaEditState text_area;
-    std::future<Data_migration_result> export_future;
+    std::future<Data_migration_export_task_result> export_future;
     Data_migration_result result;
     bool exporting{ false };
     bool finished{ false };
@@ -133,7 +156,9 @@ public:
         if (exporting) {
             getData().fonts.font(language.get("data_migration", "exporting")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (export_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                result = export_future.get();
+                const Data_migration_export_task_result task_result = export_future.get();
+                result = task_result.migration_result;
+                getData().settings = task_result.saved_settings;
                 exporting = false;
                 finished = true;
             }
@@ -185,7 +210,18 @@ public:
             }
             export_button.draw();
             if (valid_dir && !forbidden_dir && (export_button.clicked() || data_migration_return_pressed(text_area))) {
-                export_future = std::async(std::launch::async, export_egaroucid_settings_data, getData().directories, destination_dir);
+                update_current_window_position(&getData().window_state);
+                export_future = std::async(
+                    std::launch::async,
+                    save_and_export_egaroucid_settings_data,
+                    getData().menu_elements,
+                    getData().settings,
+                    getData().directories,
+                    getData().user_settings,
+                    getData().book_information,
+                    getData().window_state,
+                    destination_dir
+                );
                 exporting = true;
             }
         }
