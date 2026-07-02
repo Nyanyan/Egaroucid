@@ -127,7 +127,7 @@ public:
         getData().fonts.font(language.get("in_out", "input_screenshot_saving_dir")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
         text_area.active = true;
         bool text_changed = path_text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 80}, SizeF{600, 60}, TEXTBOX_MAX_CHARS);
-        bool return_pressed = text_area.enterKey;
+        bool return_pressed = path_text_area_return_pressed(text_area);
         dir = text_area.text.replaced(U"\r", U"").replaced(U"\n", U"").replaced(U"\\", U"/").narrow();
         if (dir.size()) {
             if (dir[dir.size() - 1] != '/') {

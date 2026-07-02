@@ -23,7 +23,7 @@ inline String data_migration_input_path(const TextAreaEditState& text_area) {
 }
 
 inline bool data_migration_return_pressed(const TextAreaEditState& text_area) {
-    return text_area.enterKey;
+    return path_text_area_return_pressed(text_area);
 }
 
 inline String data_migration_message_from_result(const Data_migration_result& result) {

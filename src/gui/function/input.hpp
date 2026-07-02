@@ -300,7 +300,7 @@ inline bool path_text_area_with_ime_candidate_window(
     bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
     changed = remove_path_textarea_line_breaks(text) || changed;
 
-    if (enabled && was_active && text.enterKey) {
+    if (enabled && was_active && KeyEnter.down()) {
         text.active = true;
     }
 
@@ -308,6 +308,10 @@ inline bool path_text_area_with_ime_candidate_window(
         gui_textarea_ime::request_textarea_ime_candidate_window(text, pos, size);
     }
     return changed;
+}
+
+inline bool path_text_area_return_pressed(const TextAreaEditState& text) {
+    return text.active && KeyEnter.down() && (not gui_textarea_ime::has_visible_ime_candidates());
 }
 
 inline bool text_box_with_ime_candidate_window(
