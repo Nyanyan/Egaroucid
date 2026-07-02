@@ -227,6 +227,7 @@ private:
     Button back_button;
     Button go_with_level_button;
     Button go_button;
+    Button stop_button;
     Radio_button edax_export_radio;
     Slidebar level_bar;
     std::string book_file;
@@ -235,7 +236,24 @@ private:
     bool book_exporting;
     bool done;
     bool edax_additional_calculation;
+    bool stop_exporting;
+    bool close_after_export_stop;
     TextAreaEditState text_area;
+
+    void start_export(const std::string &ext, int export_level) {
+        stop_exporting = false;
+        close_after_export_stop = false;
+        if (ext == BOOK_EXTENSION_NODOT) {
+            save_book_edax_future = std::async(std::launch::async, static_cast<void (*)(std::string, int, bool*)>(book_save_as_egaroucid), book_file, export_level, &stop_exporting);
+        } else if (ext == "dat") {
+            if (edax_additional_calculation) {
+                save_book_edax_future = std::async(std::launch::async, static_cast<void (*)(std::string, int, bool*)>(book_save_as_edax), book_file, export_level, &stop_exporting);
+            } else {
+                save_book_edax_future = std::async(std::launch::async, static_cast<void (*)(std::string, int, bool*)>(book_save_as_edax_without_additional_calculation), book_file, export_level, &stop_exporting);
+            }
+        }
+        book_exporting = true;
+    }
 
 public:
     Export_book(const InitData& init) : IScene{ init } {
@@ -243,6 +261,7 @@ public:
         back_button.init(BUTTON3_1_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_with_level_button.init(BUTTON3_2_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export_with_specified_level"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(BUTTON3_3_SX, GO_BACK_BUTTON_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "export"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        stop_button.init(BACK_BUTTON_SX, BACK_BUTTON_SY, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, BACK_BUTTON_RADIUS, language.get("book", "force_stop"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         const int export_book_sy = 20 + SCENE_ICON_WIDTH + 40;
         const int edax_selector_y = export_book_sy + 150;
         Radio_button_element radio_button_elem;
@@ -255,13 +274,20 @@ public:
         book_exporting = false;
         done = false;
         edax_additional_calculation = true;
+        stop_exporting = false;
+        close_after_export_stop = false;
         level = getData().menu_elements.level;
         level_bar.init(X_CENTER - 220, export_book_sy + 205, 440, 20, language.get("ai_settings", "level"), 20, getData().colors.white, getData().fonts.font, 1, 60, &level);
     }
 
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
-            changeScene(U"Close", SCENE_FADE_TIME);
+            if (book_exporting) {
+                stop_exporting = true;
+                close_after_export_stop = true;
+            } else {
+                changeScene(U"Close", SCENE_FADE_TIME);
+            }
         }
         Scene::SetBackground(getData().colors.green);
         const int icon_width = SCENE_ICON_WIDTH;
@@ -328,35 +354,25 @@ public:
                 changeScene(U"Main_scene", SCENE_FADE_TIME);
             }
             if (go_with_level_button.clicked()) {
-                if (ext == BOOK_EXTENSION_NODOT) {
-                    save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, level);
-                } else if (edax_format) {
-                    if (edax_additional_calculation) {
-                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, level);
-                    } else {
-                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax_without_additional_calculation, book_file, level);
-                    }
-                }
-                book_exporting = true;
+                start_export(ext, level);
             } else if (go_button.clicked() || (return_pressed && button_enabled)) {
-                if (ext == BOOK_EXTENSION_NODOT) {
-                    save_book_edax_future = std::async(std::launch::async, book_save_as_egaroucid, book_file, LEVEL_UNDEFINED);
-                } else if (edax_format) {
-                    if (edax_additional_calculation) {
-                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax, book_file, LEVEL_UNDEFINED);
-                    } else {
-                        save_book_edax_future = std::async(std::launch::async, book_save_as_edax_without_additional_calculation, book_file, LEVEL_UNDEFINED);
-                    }
-                }
-                book_exporting = true;
+                start_export(ext, LEVEL_UNDEFINED);
             }
         } else {
-            getData().fonts.font(language.get("book", "exporting")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            getData().fonts.font(stop_exporting ? language.get("book", "stopping") : language.get("book", "exporting")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            stop_button.draw();
+            if (!stop_exporting && stop_button.clicked()) {
+                stop_exporting = true;
+            }
             if (save_book_edax_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 save_book_edax_future.get();
                 done = true;
                 getData().graph_resources.need_init = false;
-                changeScene(U"Main_scene", SCENE_FADE_TIME);
+                if (close_after_export_stop) {
+                    changeScene(U"Close", SCENE_FADE_TIME);
+                } else {
+                    changeScene(U"Main_scene", SCENE_FADE_TIME);
+                }
             }
         }
     }
