@@ -3114,7 +3114,20 @@ void book_save_as_egaroucid(std::string file, int level) {
 }
 
 void book_save_as_egaroucid(std::string file, int level, bool *stop_saving) {
-    book.save_egbk3(file, level, stop_saving);
+    const std::string tmp_file = file + ".tmp";
+    remove(tmp_file.c_str());
+    book.save_egbk3(tmp_file, level, stop_saving);
+    if (stop_saving && *stop_saving) {
+        remove(tmp_file.c_str());
+        return;
+    }
+    std::ifstream exported(tmp_file, std::ios::binary);
+    if (!exported) {
+        return;
+    }
+    exported.close();
+    remove(file.c_str());
+    rename(tmp_file.c_str(), file.c_str());
 }
 
 void book_save_as_edax(std::string file, int level) {
@@ -3122,7 +3135,20 @@ void book_save_as_edax(std::string file, int level) {
 }
 
 void book_save_as_edax(std::string file, int level, bool *stop_saving) {
-    book.save_bin_edax(file, level, true, stop_saving);
+    const std::string tmp_file = file + ".tmp";
+    remove(tmp_file.c_str());
+    book.save_bin_edax(tmp_file, level, true, stop_saving);
+    if (stop_saving && *stop_saving) {
+        remove(tmp_file.c_str());
+        return;
+    }
+    std::ifstream exported(tmp_file, std::ios::binary);
+    if (!exported) {
+        return;
+    }
+    exported.close();
+    remove(file.c_str());
+    rename(tmp_file.c_str(), file.c_str());
 }
 
 void book_save_as_edax_without_additional_calculation(std::string file, int level) {
@@ -3130,7 +3156,20 @@ void book_save_as_edax_without_additional_calculation(std::string file, int leve
 }
 
 void book_save_as_edax_without_additional_calculation(std::string file, int level, bool *stop_saving) {
-    book.save_bin_edax_without_additional_calculation(file, level, stop_saving);
+    const std::string tmp_file = file + ".tmp";
+    remove(tmp_file.c_str());
+    book.save_bin_edax_without_additional_calculation(tmp_file, level, stop_saving);
+    if (stop_saving && *stop_saving) {
+        remove(tmp_file.c_str());
+        return;
+    }
+    std::ifstream exported(tmp_file, std::ios::binary);
+    if (!exported) {
+        return;
+    }
+    exported.close();
+    remove(file.c_str());
+    rename(tmp_file.c_str(), file.c_str());
 }
 
 void book_fix(bool *stop) {
