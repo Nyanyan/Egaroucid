@@ -97,9 +97,10 @@ struct Book_elem {
     Leaf leaf;
     uint32_t n_lines;
     bool seen; // used in various situation
+    bool edax_position; // true when imported from an Edax position record
 
     Book_elem()
-        : value(SCORE_UNDEFINED), level(LEVEL_UNDEFINED), n_lines(0), seen(false) {}
+        : value(SCORE_UNDEFINED), level(LEVEL_UNDEFINED), n_lines(0), seen(false), edax_position(false) {}
 };
 
 struct Book_info {
@@ -1114,6 +1115,7 @@ class Book {
                     book_elem.leaf.move = MOVE_UNDEFINED;
                     book_elem.leaf.level = level;
                     book_elem.n_lines = n_lines;
+                    book_elem.edax_position = true;
                     merge(board, book_elem);
                 }
                 // read leaf move (imported as position in Egaroucid book)
@@ -1138,6 +1140,7 @@ class Book {
                     book_elem.leaf.move = MOVE_UNDEFINED;
                     book_elem.leaf.level = level;
                     book_elem.n_lines = 1;
+                    book_elem.edax_position = false;
                     merge(board, book_elem);
                 }
             }
@@ -1209,8 +1212,9 @@ class Book {
             save_egbk3(file, "", false, level);
         }
 
-        void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards) {
+        void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards, const std::unordered_set<Board, Book_hash> *export_boards = nullptr) {
             board = representative_board(board);
+            bool board_is_in_export = contain_edax_export_board(board, export_boards);
             if (contain_representative(board)) {
                 if (book[board].seen) {
                     return;
@@ -1224,17 +1228,17 @@ class Book {
                 }
                 Board passed_board = board.copy();
                 passed_board.pass();
-                if (!contain_representative(board) && contain(passed_board)) {
+                if (!board_is_in_export && contain_edax_export_board(passed_board, export_boards)) {
                     pass_boards.emplace(board);
-                    get_pass_boards(passed_board, pass_boards);
+                    get_pass_boards(passed_board, pass_boards, export_boards);
                 }
             } else {
-                std::vector<Book_value> links = get_all_moves_with_value(&board);
+                std::vector<Book_value> links = get_all_moves_with_value(&board, export_boards);
                 Flip flip;
                 for (Book_value &link: links) {
                     calc_flip(&flip, &board, link.policy);
                     board.move_board(&flip);
-                        get_pass_boards(board, pass_boards);
+                        get_pass_boards(board, pass_boards, export_boards);
                     board.undo_board(&flip);
                 }
             }
@@ -1252,15 +1256,29 @@ class Book {
                 check_add_leaf_all_search(ADD_LEAF_SPECIAL_LEVEL, &stop);
             }
             std::unordered_set<Board, Book_hash> pass_boards;
+            std::unordered_set<Board, Book_hash> edax_export_boards;
             std::vector<Board> boards_to_write;
             Board root_board;
             root_board.reset();
+            const std::unordered_set<Board, Book_hash> *edax_export_boards_ptr = nullptr;
+            if (!additional_calculation) {
+                for (auto itr = book.begin(); itr != book.end(); ++itr) {
+                    if (itr->second.edax_position) {
+                        edax_export_boards.emplace(itr->first);
+                    }
+                }
+                if (!edax_export_boards.empty()) {
+                    edax_export_boards_ptr = &edax_export_boards;
+                }
+            }
             std::cerr << "pass board calculating..." << std::endl;
             reset_seen();
-            get_pass_boards(root_board, pass_boards);
-            boards_to_write.reserve(book.size());
+            get_pass_boards(root_board, pass_boards, edax_export_boards_ptr);
+            boards_to_write.reserve(edax_export_boards_ptr == nullptr ? book.size() : edax_export_boards.size());
             for (auto itr = book.begin(); itr != book.end(); ++itr) {
-                boards_to_write.emplace_back(itr->first);
+                if (edax_export_boards_ptr == nullptr || itr->second.edax_position) {
+                    boards_to_write.emplace_back(itr->first);
+                }
             }
             reset_seen();
             std::cerr << "pass board calculated " << pass_boards.size() << std::endl;
@@ -1392,7 +1410,7 @@ class Book {
                 if (legal == 0ULL && !b.is_end()) {
                     Board passed_board = b.copy();
                     passed_board.pass();
-                    bool has_pass_child = contain(passed_board);
+                    bool has_pass_child = contain_edax_export_board(passed_board, edax_export_boards_ptr);
                     Book_elem passed_elem;
                     if (has_pass_child) {
                         passed_elem = get(passed_board);
@@ -1443,7 +1461,7 @@ class Book {
                     continue;
                 }
                 std::vector<Book_value> all_links = get_all_moves_with_value(&b);
-                std::vector<Book_value> links = additional_calculation ? all_links : get_edax_links(&b);
+                std::vector<Book_value> links = additional_calculation ? all_links : get_edax_links(&b, edax_export_boards_ptr);
                 n_link = (char)links.size();
                 leaf_val = book_elem.leaf.value;
                 leaf_move = book_elem.leaf.move;
@@ -1616,6 +1634,17 @@ class Book {
             return contain_representative(representative_board(b));
         }
 
+        inline bool contain_edax_export_board(Board b, const std::unordered_set<Board, Book_hash> *export_boards) {
+            if (export_boards == nullptr) {
+                return contain(b);
+            }
+            return export_boards->find(representative_board(b)) != export_boards->end();
+        }
+
+        inline bool contain_edax_export_board(Board *b, const std::unordered_set<Board, Book_hash> *export_boards) {
+            return contain_edax_export_board(b->copy(), export_boards);
+        }
+
         /*
             @brief get registered score
 
@@ -1701,7 +1730,7 @@ class Book {
             @param b                    a board pointer to find
             @return vector of moves
         */
-        inline std::vector<Book_value> get_all_moves_with_value(Board *b) {
+        inline std::vector<Book_value> get_all_moves_with_value(Board *b, const std::unordered_set<Board, Book_hash> *export_boards = nullptr) {
             std::lock_guard<std::mutex> lock(mtx);
             std::vector<Book_value> policies;
             uint64_t legal = b->get_legal();
@@ -1710,14 +1739,14 @@ class Book {
                 calc_flip(&flip, b, cell);
                 b->move_board(&flip);
                     if (b->is_end()) {
-                        if (contain(b)) {
+                        if (contain_edax_export_board(b, export_boards)) {
                             Book_value book_value;
                             book_value.policy = cell;
                             book_value.value = -get(b).value;
                             policies.emplace_back(book_value);
                         } else {
                             b->pass();
-                                if (contain(b)) {
+                                if (contain_edax_export_board(b, export_boards)) {
                                     Book_value book_value;
                                     book_value.policy = cell;
                                     book_value.value = get(b).value;
@@ -1727,7 +1756,7 @@ class Book {
                         }
                     } else if (b->get_legal() == 0) {
                         b->pass();
-                            if (contain(b)) {
+                            if (contain_edax_export_board(b, export_boards)) {
                                 Book_value book_value;
                                 book_value.policy = cell;
                                 book_value.value = get(b).value;
@@ -1735,7 +1764,7 @@ class Book {
                             }
                         b->pass();
                     } else {
-                        if (contain(b)) {
+                        if (contain_edax_export_board(b, export_boards)) {
                             Book_value book_value;
                             book_value.policy = cell;
                             book_value.value = -get(b).value;
@@ -1747,7 +1776,7 @@ class Book {
             return policies;
         }
 
-        inline std::vector<Book_value> get_edax_links(Board *b) {
+        inline std::vector<Book_value> get_edax_links(Board *b, const std::unordered_set<Board, Book_hash> *export_boards = nullptr) {
             // std::lock_guard<std::mutex> lock(mtx); // avoid deadlock
             std::vector<Book_value> policies;
             uint64_t legal = b->get_legal();
@@ -1756,20 +1785,20 @@ class Book {
                 calc_flip(&flip, b, cell);
                 b->move_board(&flip);
                     if (b->is_end()) { // game over
-                        if (contain(b)) {
+                        if (contain_edax_export_board(b, export_boards)) {
                             Book_value book_value;
                             book_value.policy = cell;
                             book_value.value = -get(b).value;
-                            if (get_all_moves_with_value(b).size() > 0) {
+                            if (get_all_moves_with_value(b, export_boards).size() > 0) {
                                 policies.emplace_back(book_value);
                             }
                         } else {
                             b->pass();
-                                if (contain(b)) {
+                                if (contain_edax_export_board(b, export_boards)) {
                                     Book_value book_value;
                                     book_value.policy = cell;
                                     book_value.value = get(b).value;
-                                    if (get_all_moves_with_value(b).size() > 0) {
+                                    if (get_all_moves_with_value(b, export_boards).size() > 0) {
                                         policies.emplace_back(book_value);
                                     }
                                 }
@@ -1777,21 +1806,21 @@ class Book {
                         }
                     } else if (b->get_legal() == 0) { // pass
                         b->pass();
-                            if (contain(b)) {
+                            if (contain_edax_export_board(b, export_boards)) {
                                 Book_value book_value;
                                 book_value.policy = cell;
                                 book_value.value = get(b).value;
-                                if (get_all_moves_with_value(b).size() > 0) {
+                                if (get_all_moves_with_value(b, export_boards).size() > 0) {
                                     policies.emplace_back(book_value);
                                 }
                             }
                         b->pass();
                     } else { // normal move
-                        if (contain(b)) {
+                        if (contain_edax_export_board(b, export_boards)) {
                             Book_value book_value;
                             book_value.policy = cell;
                             book_value.value = -get(b).value;
-                            if (get_all_moves_with_value(b).size() > 0) {
+                            if (get_all_moves_with_value(b, export_boards).size() > 0) {
                                 policies.emplace_back(book_value);
                             }
                         }
@@ -2972,6 +3001,7 @@ class Book {
                 book_elem.leaf.move = elem.leaf.move;
                 book_elem.leaf.level = elem.leaf.level;
             }
+            book_elem.edax_position = book_elem.edax_position || elem.edax_position;
             return register_symmetric_book(b, book_elem);
         }
 };
