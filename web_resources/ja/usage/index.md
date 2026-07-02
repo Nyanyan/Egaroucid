@@ -1139,8 +1139,11 @@ GGFの例: <code>(;GM[Othello]PC[]PB[b_player]PW[w_player]RE[-32]TI[0]TY[8]BO[8 
 
 ショートカットキーとして、置く色を変えるのに黒ならBキー、白ならWキー、空きマスならEキーを割り当てています。また、Enterで取り込み、Escで戻ることができます。
 
+バージョン7.8.2からは「以後の局面も修正」オプションを使えます。局面を戻して盤面を編集するとき、このオプションをオンにして取り込むと、現在の局面だけでなく、その後の局面にも編集内容を反映できます。過去の入力ミスを途中から修正したい場合に便利です。
+
 <div class="centering_box">
     <img class="pic2" src="img/edit_board.png">
+    <img class="pic2" src="img/edit_board_following_positions.png">
 </div>
 
 
