@@ -503,6 +503,17 @@ Ctrl、Shift、Altキーは同時押しに対応しています。つまり、Ct
     <img class="pic2" src="img/display.png">
 </div>
 
+### 表示プロファイル
+
+表示に関する設定をプロファイルとして保存し、あとから切り替えられます。練習用、配信用、解析用など、盤面やグラフに出す情報を目的ごとに分けたい場合に便利です。
+
+AIプロファイルと同様に、プロファイルの読み込み、新規保存、名前編集、上書き保存ができます。また、Egaroucidを閉じるときの自動保存方法として、現在の表示プロファイルへ上書き保存するか、新しい表示プロファイルとして保存するかを選択できます。
+
+<div class="centering_box">
+    <img class="pic2" src="img/display_profile.png">
+    <img class="pic2" src="img/display_profile_auto_save.png">
+</div>
+
 
 ### 合法手への表示 > 合法手
 
