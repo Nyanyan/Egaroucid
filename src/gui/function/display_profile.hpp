@@ -45,6 +45,7 @@ struct Display_profile_values {
     bool show_opening_name{ true };
     bool show_principal_variation{ true };
     bool show_timer{ false };
+    int timer_time_limit_min{ TIMER_TIME_LIMIT_DEFAULT };
     bool show_ai_focus{ false };
     int pv_length{ 7 };
     bool show_value_when_ai_calculating{ false };
@@ -81,6 +82,7 @@ inline void normalize_display_profile_values(Display_profile_values* values) {
     }
     values->umigame_value_integration_error = std::clamp(values->umigame_value_integration_error, UMIGAME_VALUE_INTEGRATION_ERROR_MIN, UMIGAME_VALUE_INTEGRATION_ERROR_MAX);
     values->pv_length = std::clamp(values->pv_length, PV_LENGTH_SETTING_MIN, PV_LENGTH_SETTING_MAX);
+    values->timer_time_limit_min = std::clamp(values->timer_time_limit_min, TIMER_TIME_LIMIT_MIN, TIMER_TIME_LIMIT_MAX);
 
     if (values->play_ordering_board_format == values->play_ordering_transcript_format) {
         values->play_ordering_board_format = true;
@@ -128,6 +130,7 @@ inline Display_profile_values to_display_profile_values(const Settings& settings
     values.show_opening_name = settings.show_opening_name;
     values.show_principal_variation = settings.show_principal_variation;
     values.show_timer = settings.show_timer;
+    values.timer_time_limit_min = settings.timer_time_limit_min;
     values.show_ai_focus = settings.show_ai_focus;
     values.pv_length = settings.pv_length;
     values.show_value_when_ai_calculating = settings.show_value_when_ai_calculating;
@@ -171,6 +174,7 @@ inline Display_profile_values to_display_profile_values(const Menu_elements& men
     values.show_opening_name = menu_elements.show_opening_name;
     values.show_principal_variation = menu_elements.show_principal_variation;
     values.show_timer = menu_elements.show_timer;
+    values.timer_time_limit_min = menu_elements.timer_time_limit_min;
     values.show_ai_focus = menu_elements.show_ai_focus;
     values.pv_length = menu_elements.pv_length;
     values.show_value_when_ai_calculating = menu_elements.show_value_when_ai_calculating;
@@ -215,6 +219,7 @@ inline void apply_display_profile_values(const Display_profile_values& values, S
     settings->show_opening_name = normalized_values.show_opening_name;
     settings->show_principal_variation = normalized_values.show_principal_variation;
     settings->show_timer = normalized_values.show_timer;
+    settings->timer_time_limit_min = normalized_values.timer_time_limit_min;
     settings->show_ai_focus = normalized_values.show_ai_focus;
     settings->pv_length = normalized_values.pv_length;
     settings->show_value_when_ai_calculating = normalized_values.show_value_when_ai_calculating;
@@ -257,6 +262,7 @@ inline void apply_display_profile_values(const Display_profile_values& values, M
     menu_elements->show_opening_name = normalized_values.show_opening_name;
     menu_elements->show_principal_variation = normalized_values.show_principal_variation;
     menu_elements->show_timer = normalized_values.show_timer;
+    menu_elements->timer_time_limit_min = normalized_values.timer_time_limit_min;
     menu_elements->show_ai_focus = normalized_values.show_ai_focus;
     menu_elements->pv_length = normalized_values.pv_length;
     menu_elements->show_value_when_ai_calculating = normalized_values.show_value_when_ai_calculating;
@@ -325,6 +331,7 @@ inline void export_display_profile_json(JSON& json, const Display_profile_values
     json[U"show_opening_name"] = normalized_values.show_opening_name;
     json[U"show_principal_variation"] = normalized_values.show_principal_variation;
     json[U"show_timer"] = normalized_values.show_timer;
+    json[U"timer_time_limit_min"] = normalized_values.timer_time_limit_min;
     json[U"show_ai_focus"] = normalized_values.show_ai_focus;
     json[U"pv_length"] = normalized_values.pv_length;
     json[U"show_value_when_ai_calculating"] = normalized_values.show_value_when_ai_calculating;
@@ -374,6 +381,7 @@ inline bool load_display_profile_values(const FilePath& path, Display_profile_va
     import_display_profile_bool(json, U"show_opening_name", &values->show_opening_name);
     import_display_profile_bool(json, U"show_principal_variation", &values->show_principal_variation);
     import_display_profile_bool(json, U"show_timer", &values->show_timer);
+    import_display_profile_int(json, U"timer_time_limit_min", &values->timer_time_limit_min);
     import_display_profile_bool(json, U"show_ai_focus", &values->show_ai_focus);
     import_display_profile_int(json, U"pv_length", &values->pv_length);
     import_display_profile_bool(json, U"show_value_when_ai_calculating", &values->show_value_when_ai_calculating);
@@ -428,6 +436,7 @@ inline bool equals_display_profile_values(const Display_profile_values& lhs, con
     if (lhs.show_opening_name != rhs.show_opening_name) return false;
     if (lhs.show_principal_variation != rhs.show_principal_variation) return false;
     if (lhs.show_timer != rhs.show_timer) return false;
+    if (lhs.timer_time_limit_min != rhs.timer_time_limit_min) return false;
     if (lhs.show_ai_focus != rhs.show_ai_focus) return false;
     if (lhs.pv_length != rhs.pv_length) return false;
     if (lhs.show_value_when_ai_calculating != rhs.show_value_when_ai_calculating) return false;

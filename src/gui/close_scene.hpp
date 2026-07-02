@@ -121,6 +121,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_opening_name"] = menu_elements.show_opening_name;
     setting_json[U"show_principal_variation"] = menu_elements.show_principal_variation;
     setting_json[U"show_timer"] = menu_elements.show_timer;
+    setting_json[U"timer_time_limit_min"] = std::clamp(menu_elements.timer_time_limit_min, TIMER_TIME_LIMIT_MIN, TIMER_TIME_LIMIT_MAX);
     setting_json[U"show_laser_pointer"] = menu_elements.show_laser_pointer;
     setting_json[U"show_ai_focus"] = menu_elements.show_ai_focus;
     setting_json[U"pv_length"] = menu_elements.pv_length;

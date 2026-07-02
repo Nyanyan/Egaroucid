@@ -142,8 +142,12 @@ private:
     bool use_image;
     Texture image;
     int (*bar_display_mapper)(int);
+    String (*bar_display_formatter)(int);
 
     String format_bar_value(int value) const {
+        if (bar_display_formatter != nullptr) {
+            return bar_display_formatter(value);
+        }
         if (bar_display_mapper == nullptr) {
             return Format(value);
         }
@@ -203,6 +207,19 @@ private:
         }
     }
 
+    int bar_value_display_width() {
+        int width = 0;
+        if (mode == MENU_MODE_BAR_CHECK) {
+            width = std::max(width, static_cast<int>(font(unchecked_str).region(font_size, Vec2{ 0, 0 }).w));
+        }
+        if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+            width = std::max(width, static_cast<int>(font(format_bar_value(min_elem)).region(font_size, Vec2{ 0, 0 }).w));
+            width = std::max(width, static_cast<int>(font(format_bar_value(max_elem)).region(font_size, Vec2{ 0, 0 }).w));
+            width = std::max(width, static_cast<int>(font(format_bar_value(*bar_elem)).region(font_size, Vec2{ 0, 0 }).w));
+        }
+        return width;
+    }
+
 public:
     void init_button(String s, bool *c) {
         clear();
@@ -256,6 +273,7 @@ public:
         use_image = false;
         arrow_left = al;
         bar_display_mapper = nullptr;
+        bar_display_formatter = nullptr;
     }
 
     void init_bar(String s, int *c, int d, int mn, int mx) {
@@ -275,10 +293,15 @@ public:
         is_clicked = false;
         use_image = false;
         bar_display_mapper = nullptr;
+        bar_display_formatter = nullptr;
     }
 
     void set_bar_display_mapper(int (*mapper)(int)) {
         bar_display_mapper = mapper;
+    }
+
+    void set_bar_display_formatter(String (*formatter)(int)) {
+        bar_display_formatter = formatter;
     }
 
     void init_check(String s, bool *c, bool d) {
@@ -513,7 +536,7 @@ public:
         }
         // check clicked
         if (mode == MENU_MODE_BAR_CHECK) {
-            Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - bar_value_offset - rect.x, rect.h);
+            Rect bar_check_rect = Rect(rect.x, rect.y, bar_sx - std::max(bar_value_offset, bar_value_display_width()) - 8 - rect.x, rect.h);
             click_supporter.update(bar_check_rect);
             is_clicked = click_supporter.clicked();
         } else {
@@ -558,11 +581,13 @@ public:
             font(str).draw(font_size, rect.x + rect.h - menu_offset_y, rect.y + menu_offset_y, menu_font_color);
         }
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
+            String bar_value_text;
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
-                font(unchecked_str).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
+                bar_value_text = unchecked_str;
             } else {
-                font(format_bar_value(*bar_elem)).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
+                bar_value_text = format_bar_value(*bar_elem);
             }
+            font(bar_value_text).draw(font_size, Arg::topRight(bar_sx - menu_child_offset - 4, rect.y + menu_offset_y), menu_font_color);
             if (mode == MENU_MODE_BAR_CHECK && !(*is_checked)) {
                 bar_rect.draw(ColorF(bar_color, 0.5));
             } else {
@@ -673,7 +698,7 @@ public:
         }
         w += h;
         if (mode == MENU_MODE_BAR || mode == MENU_MODE_BAR_CHECK) {
-            w += MENU_BAR_SIZE + bar_value_offset + bar_additional_offset;
+            w += MENU_BAR_SIZE + std::max(bar_value_offset, bar_value_display_width()) + 8 + bar_additional_offset;
         } else if (mode == MENU_MODE_2BARS) {
             w += MENU_BAR_SIZE + bar_value_offset * 3 + bar_additional_offset;
         }
@@ -695,6 +720,7 @@ public:
         str = U"";
         bar_active_circle = 0;
         bar_display_mapper = nullptr;
+        bar_display_formatter = nullptr;
     }
 
     int menu_mode() const {

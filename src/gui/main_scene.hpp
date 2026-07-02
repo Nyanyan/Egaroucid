@@ -46,6 +46,9 @@ private:
     AI_status ai_status;
     Button start_game_button;
     Button pass_button;
+    Button timer_start_button;
+    Button timer_pause_button;
+    Button timer_reset_button;
     std::vector<Button> shortcut_buttons_grid;
     bool need_start_game_button;
     Umigame_status umigame_status;
@@ -66,6 +69,8 @@ private:
     Board turn_timer_anchor_board;
     int turn_timer_anchor_player;
     int turn_timer_anchor_branch;
+    bool turn_timer_paused;
+    bool turn_timer_started;
     bool forced_opening_finished_latched;
     bool ai_calculation_interrupted;
     bool hint_calculation_interrupted;
@@ -108,6 +113,7 @@ public:
         }
         start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
         pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+        init_timer_control_buttons();
         shortcut_buttons_grid.clear();
         for (int i = 0; i < SHORTCUT_BUTTON_GRID_COUNT; ++i) {
             Button button;
@@ -127,6 +133,8 @@ public:
         umigame_value_setting_changed_msec = 0;
         shortcut_key = SHORTCUT_KEY_UNDEFINED;
         shortcut_key_pressed = SHORTCUT_KEY_UNDEFINED;
+        turn_timer_paused = true;
+        turn_timer_started = false;
         forced_opening_finished_latched = false;
         ai_calculation_interrupted = false;
         hint_calculation_interrupted = false;
@@ -233,6 +241,8 @@ public:
             start_game_button.draw();
             if (!getData().menu.active() && (start_game_button.clicked() || shortcut_key == U"start_game")) {
                 need_start_game_button = false;
+                turn_timer_paused = true;
+                turn_timer_started = false;
                 reset_turn_timer_anchor();
                 stop_calculating();
                 resume_calculating();
@@ -257,6 +267,7 @@ public:
                 }
             }
         }
+        update_auto_ai_turn_timer();
         if (!ignore_move) {
             if (ai_should_move) {
                 ai_move();
@@ -422,8 +433,12 @@ public:
         int64_t display_black_time_msec;
         int64_t display_white_time_msec;
         get_display_timer_values(&display_black_time_msec, &display_white_time_msec);
+        const uint64_t timer_limit_msec = get_timer_time_limit_msec();
+        const bool black_time_limit_reached = timer_limit_msec > 0ULL && display_black_time_msec >= 0 && static_cast<uint64_t>(display_black_time_msec) >= timer_limit_msec;
+        const bool white_time_limit_reached = timer_limit_msec > 0ULL && display_white_time_msec >= 0 && static_cast<uint64_t>(display_white_time_msec) >= timer_limit_msec;
         int forced_opening_status = get_forced_opening_status_for_display();
-        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, forced_opening_status, playing_mode, display_black_time_msec, display_white_time_msec);
+        draw_info(getData().colors, getData().history_elem, getData().fonts, getData().menu_elements, pausing_in_pass, principal_variation, forced_opening_status, playing_mode, display_black_time_msec, display_white_time_msec, black_time_limit_reached, white_time_limit_reached);
+        update_timer_control_buttons();
 
         // draw local strategy policy
         if (ai_status.local_strategy_policy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore && !getData().menu.active()) {
@@ -481,6 +496,12 @@ private:
         turn_timer_anchor_branch = getData().graph_resources.branch;
     }
 
+    void reset_turn_timer_state() {
+        turn_timer_paused = true;
+        turn_timer_started = false;
+        reset_turn_timer_anchor();
+    }
+
     void sync_turn_timer_anchor_if_needed() {
         if (
             turn_timer_anchor_board != getData().history_elem.board ||
@@ -491,19 +512,23 @@ private:
         }
     }
 
-    void get_display_timer_values(int64_t* black_time_msec, int64_t* white_time_msec) {
-        *black_time_msec = getData().history_elem.black_time_msec;
-        *white_time_msec = getData().history_elem.white_time_msec;
+    bool is_turn_timer_countable_position() {
         bool latest_normal_position =
             getData().graph_resources.branch == GRAPH_MODE_NORMAL &&
             getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() &&
             getData().history_elem.board == getData().graph_resources.nodes[GRAPH_MODE_NORMAL].back().board;
-        bool timer_running =
+        return
             latest_normal_position &&
             !need_start_game_button &&
             !pausing_in_pass &&
             !changing_scene &&
             !getData().history_elem.board.is_end();
+    }
+
+    void get_display_timer_values(int64_t* black_time_msec, int64_t* white_time_msec) {
+        *black_time_msec = getData().history_elem.black_time_msec;
+        *white_time_msec = getData().history_elem.white_time_msec;
+        bool timer_running = is_turn_timer_countable_position() && !turn_timer_paused;
         if (timer_running) {
             sync_turn_timer_anchor_if_needed();
             int64_t elapsed = static_cast<int64_t>(Time::GetMillisec()) - static_cast<int64_t>(turn_timer_start_msec);
@@ -544,8 +569,31 @@ private:
         return FORCED_OPENING_STATUS_OUT;
     }
 
+    int get_current_history_node_idx() {
+        // node_find() matches by disc count, so verify the exact board/player before writing timer values.
+        int node_idx = getData().graph_resources.node_find(getData().graph_resources.branch, getData().history_elem.board.n_discs());
+        if (node_idx == -1) {
+            return -1;
+        }
+        const History_elem& node = getData().graph_resources.nodes[getData().graph_resources.branch][node_idx];
+        if (node.board != getData().history_elem.board || node.player != getData().history_elem.player) {
+            return -1;
+        }
+        return node_idx;
+    }
+
+    void sync_current_timer_to_graph_node(int node_idx) {
+        if (node_idx != -1) {
+            getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].black_time_msec = getData().history_elem.black_time_msec;
+            getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].white_time_msec = getData().history_elem.white_time_msec;
+        }
+    }
+
     void add_elapsed_time_to_current_player(int node_idx) {
         sync_turn_timer_anchor_if_needed();
+        if (turn_timer_paused || !is_turn_timer_countable_position()) {
+            return;
+        }
         int64_t elapsed = static_cast<int64_t>(Time::GetMillisec()) - static_cast<int64_t>(turn_timer_start_msec);
         if (elapsed < 0) {
             elapsed = 0;
@@ -555,9 +603,110 @@ private:
         } else {
             getData().history_elem.white_time_msec += elapsed;
         }
-        if (node_idx != -1) {
-            getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].black_time_msec = getData().history_elem.black_time_msec;
-            getData().graph_resources.nodes[getData().graph_resources.branch][node_idx].white_time_msec = getData().history_elem.white_time_msec;
+        sync_current_timer_to_graph_node(node_idx);
+    }
+
+    void settle_turn_timer_if_countable() {
+        if (turn_timer_paused || !is_turn_timer_countable_position()) {
+            reset_turn_timer_anchor();
+            return;
+        }
+        add_elapsed_time_to_current_player(get_current_history_node_idx());
+        reset_turn_timer_anchor();
+    }
+
+    void pause_turn_timer() {
+        if (turn_timer_paused) {
+            return;
+        }
+        add_elapsed_time_to_current_player(get_current_history_node_idx());
+        turn_timer_paused = true;
+        reset_turn_timer_anchor();
+    }
+
+    void start_turn_timer() {
+        turn_timer_paused = false;
+        turn_timer_started = true;
+        reset_turn_timer_anchor();
+    }
+
+    void reset_turn_timer_values() {
+        getData().history_elem.black_time_msec = 0;
+        getData().history_elem.white_time_msec = 0;
+        for (int branch = 0; branch < 2; ++branch) {
+            for (History_elem& node : getData().graph_resources.nodes[branch]) {
+                node.black_time_msec = 0;
+                node.white_time_msec = 0;
+            }
+        }
+        reset_turn_timer_anchor();
+    }
+
+    bool is_current_player_ai_controlled() {
+        if (putting_1_move_by_ai) {
+            return true;
+        }
+        return
+            (getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) ||
+            (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white);
+    }
+
+    void update_auto_ai_turn_timer() {
+        const bool should_auto_run = getData().menu_elements.show_timer && is_current_player_ai_controlled() && is_turn_timer_countable_position();
+        if (should_auto_run && turn_timer_paused && !turn_timer_started) {
+            start_turn_timer();
+        }
+    }
+
+    uint64_t get_timer_time_limit_msec() const {
+        const int limit_min = std::clamp(getData().menu_elements.timer_time_limit_min, TIMER_TIME_LIMIT_MIN, TIMER_TIME_LIMIT_MAX);
+        return limit_min <= TIMER_TIME_LIMIT_NONE ? 0ULL : static_cast<uint64_t>(limit_min) * 60ULL * 1000ULL;
+    }
+
+    void init_timer_control_buttons() {
+        timer_start_button.init(TIMER_START_BUTTON_SX, TIMER_START_BUTTON_SY, TIMER_CONTROL_BUTTON_WIDTH, TIMER_CONTROL_BUTTON_HEIGHT, TIMER_CONTROL_BUTTON_RADIUS, language.get("info", "timer_start"), TIMER_CONTROL_BUTTON_FONT_SIZE, getData().fonts.font, getData().colors.white, getData().colors.black);
+        timer_pause_button.init(TIMER_PAUSE_BUTTON_SX, TIMER_PAUSE_BUTTON_SY, TIMER_CONTROL_BUTTON_WIDTH, TIMER_CONTROL_BUTTON_HEIGHT, TIMER_CONTROL_BUTTON_RADIUS, language.get("info", "timer_pause"), TIMER_CONTROL_BUTTON_FONT_SIZE, getData().fonts.font, getData().colors.white, getData().colors.black);
+        timer_reset_button.init(TIMER_RESET_BUTTON_SX, TIMER_RESET_BUTTON_SY, TIMER_CONTROL_BUTTON_WIDTH, TIMER_CONTROL_BUTTON_HEIGHT, TIMER_CONTROL_BUTTON_RADIUS, language.get("info", "timer_reset"), TIMER_CONTROL_BUTTON_FONT_SIZE, getData().fonts.font, getData().colors.white, getData().colors.black);
+    }
+
+    void update_timer_control_buttons() {
+        if (!getData().menu_elements.show_timer || getData().menu_elements.show_ai_focus) {
+            return;
+        }
+        timer_start_button.move(TIMER_START_BUTTON_SX, TIMER_START_BUTTON_SY);
+        timer_pause_button.move(TIMER_PAUSE_BUTTON_SX, TIMER_PAUSE_BUTTON_SY);
+        timer_reset_button.move(TIMER_RESET_BUTTON_SX, TIMER_RESET_BUTTON_SY);
+
+        const bool menu_active = getData().menu.active();
+        const bool countable_position = is_turn_timer_countable_position();
+        if (menu_active || !turn_timer_paused || !countable_position) {
+            timer_start_button.disable();
+        } else {
+            timer_start_button.enable();
+        }
+        if (menu_active || turn_timer_paused || !countable_position) {
+            timer_pause_button.disable();
+        } else {
+            timer_pause_button.enable();
+        }
+        if (menu_active) {
+            timer_reset_button.disable();
+        } else {
+            timer_reset_button.enable();
+        }
+
+        timer_start_button.draw();
+        timer_pause_button.draw();
+        timer_reset_button.draw();
+
+        if (!menu_active && turn_timer_paused && timer_start_button.clicked()) {
+            start_turn_timer();
+        }
+        if (!menu_active && !turn_timer_paused && countable_position && timer_pause_button.clicked()) {
+            pause_turn_timer();
+        }
+        if (!menu_active && timer_reset_button.clicked()) {
+            reset_turn_timer_values();
         }
     }
 
@@ -833,6 +982,8 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             forced_opening_finished_latched = false;
+            turn_timer_paused = true;
+            turn_timer_started = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = false;
@@ -847,6 +998,8 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             forced_opening_finished_latched = false;
+            turn_timer_paused = true;
+            turn_timer_started = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = false;
             getData().menu_elements.ai_put_white = true;
@@ -861,6 +1014,8 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             forced_opening_finished_latched = false;
+            turn_timer_paused = true;
+            turn_timer_started = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = false;
@@ -875,6 +1030,8 @@ private:
             getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
             getData().game_information.init();
             forced_opening_finished_latched = false;
+            turn_timer_paused = true;
+            turn_timer_started = false;
             reset_turn_timer_anchor();
             getData().menu_elements.ai_put_black = true;
             getData().menu_elements.ai_put_white = true;
@@ -1222,6 +1379,7 @@ private:
                 getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
                 getData().game_information.init();
                 pausing_in_pass = false;
+                reset_turn_timer_state();
                 resume_calculating();
                 ai_status.random_board_generator_calculating = true;
                 ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range_min, getData().menu_elements.generate_random_board_score_range_max, getData().menu_elements.generate_random_board_moves, light_level, mid_level, adjustment_level, &ai_status.random_board_generator_calculating);
@@ -1698,6 +1856,7 @@ private:
                     getData().menu = create_menu(&getData().menu_elements, &getData().resources, getData().fonts.font, getData().resources.language_names[i]);
                     start_game_button.init(START_GAME_BUTTON_SX, START_GAME_BUTTON_SY, START_GAME_BUTTON_WIDTH, START_GAME_BUTTON_HEIGHT, START_GAME_BUTTON_RADIUS, language.get("play", "start_game"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
                     pass_button.init(PASS_BUTTON_SX, PASS_BUTTON_SY, PASS_BUTTON_WIDTH, PASS_BUTTON_HEIGHT, PASS_BUTTON_RADIUS, language.get("play", "pass"), 15, getData().fonts.font, getData().colors.white, getData().colors.black);
+                    init_timer_control_buttons();
                     re_calculate_openings();
                 }
             }
@@ -1773,6 +1932,9 @@ private:
             stop_calculating();
             resume_calculating();
         }
+        if (history_changed) {
+            settle_turn_timer_if_countable();
+        }
         getData().history_elem = next_history_elem;
         if (history_changed) {
             reset_turn_timer_anchor();
@@ -1817,6 +1979,7 @@ private:
         }
         update_xot_start_n_discs(&getData().graph_resources);
         reset_turn_timer_anchor();
+        update_auto_ai_turn_timer();
         resume_calculating();
     }
 
@@ -1914,6 +2077,7 @@ private:
                     }
                     ai_status.ai_thinking = false;
                     putting_1_move_by_ai = false;
+                    update_auto_ai_turn_timer();
                 }
             }
         }
@@ -3195,6 +3359,7 @@ private:
         getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
         getData().game_information.init();
         pausing_in_pass = false;
+        reset_turn_timer_state();
         resume_calculating();
         for (int policy : moves) {
             move_processing(HW2_M1 - policy);
@@ -3215,6 +3380,7 @@ private:
                 getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
                 getData().game_information.init();
                 pausing_in_pass = false;
+                reset_turn_timer_state();
                 resume_calculating();
                 for (int policy : moves) {
                     move_processing(HW2_M1 - policy);
