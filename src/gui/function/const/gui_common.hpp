@@ -384,7 +384,9 @@ inline bool last_window_focused = true;
 
 inline void apply_enabled_state(const bool enabled) {
 #if SIV3D_PLATFORM(WINDOWS)
-    if (!enabled) {
+    if (enabled) {
+        Platform::Windows::TextInput::EnableIME();
+    } else {
         Platform::Windows::TextInput::DisableIME();
     }
 #else
