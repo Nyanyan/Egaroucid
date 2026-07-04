@@ -83,6 +83,15 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_CURRENT_FM_DUAL_TYPE)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_current_fm_dual_type.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_current_fm_dual_type.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_CURRENT_FM_LINEAR_ONLY)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_current_fm_linear_only.hpp"
