@@ -32,12 +32,22 @@ Run once for each IME state:
 
 The shortcut log includes:
 
-- `focused`
 - `raw`
 - `win`
 - `input_source`
+- `hook_backend`
+- `hook_backend_reason`
 - `hook_installed`
 - `hook_error`
+- `hook_subclass_error`
+- `hook_install_thread_id`
+- `hook_hwnd_thread_id`
+- `hook_same_thread`
+- `hook_same_process`
+- `hook_current_wndproc_matches`
+- `message_state_synchronized`
+- `observed_keyboard_message_count`
+- `focused`
 - `pressed_vks`
 - `down_vks`
 - `message_down_vks`
@@ -46,7 +56,8 @@ The shortcut log includes:
 - `missing_expected_vks`
 - `modifier_mismatch`
 - `no_down`
-- `fallback_used`
+- `legacy_string_matcher_used`
+- `legacy_string_matcher_reason`
 - `candidate`
 - `down`
 - `pressed`
@@ -55,7 +66,17 @@ Interpretation:
 
 - `input_source=message` means Win32 queued key messages are feeding shortcut edge detection.
 - `input_source=polling_fallback` means the WndProc observer was unavailable and the legacy polling fallback was used.
-- `hook_installed=0` with `hook_error` set points at WndProc subclass installation failure.
+- `hook_backend=set_window_subclass` means the observer was installed with `SetWindowSubclass`.
+- `hook_backend=guarded_raw_wndproc` means the observer is still WM-message based, but uses the guarded raw WndProc path.
+- `hook_backend=polling_fallback` appears only when shortcut input is not coming from the WM observer.
+- `hook_backend_reason=cross_thread` is expected when the shortcut/check thread differs from the HWND owner thread.
+- `hook_backend_reason=subclass_failed`, `raw_chain_unsafe`, or `raw_install_failed` points at a hook installation or chain safety problem.
+- `hook_install_thread_id`, `hook_hwnd_thread_id`, and `hook_same_thread` show whether `SetWindowSubclass` is applicable.
+- `hook_same_process=1` is expected for the Siv3D window.
+- `hook_current_wndproc_matches=1` means the active observer is still present. For `set_window_subclass` this checks the subclass observer; for `guarded_raw_wndproc` it checks the raw WndProc.
+- `message_state_synchronized=1` means the per-frame shortcut snapshot was copied from the WM observer state.
+- `observed_keyboard_message_count` should increase when keyboard messages reach the observer.
+- `legacy_string_matcher_used=1` means the old Siv3D string matcher handled an unsupported custom shortcut name; normal WM-backed not-matched results must not use it.
 - In older logs, `extra_non_modifier_vks=Convert/Kana/NonConvert` with `win=Ctrl+V` means IME VK pollution and exact matching is too strict.
 - `pressed_vks=Ctrl+V` with `no_down=1` means the combination was held but the expected down edge was missed.
 - `missing_expected_vks=Ctrl` points at generic versus left/right Ctrl recognition.
@@ -92,7 +113,7 @@ Interpretation:
 - Any `unexpected_egaroucid_downs_during_external_phase` means Egaroucid received shortcut down events while it was not foreground.
 - Matrix failures after the external-window phase point at focus recovery state, stale modifiers, or first-frame recovery issues.
 - `input_source=message` and `hook_installed=1` should still be present after focus returns.
-- `hook_current_wndproc_matches=0` means the Siv3D window's current WndProc is no longer the shortcut observer.
+- `hook_current_wndproc_matches=0` means the active observer is no longer present or the raw WndProc chain became unsafe.
 - A stalled `observed_keyboard_message_count` while `raw` changes means Siv3D sees keyboard state but the shortcut WndProc is not receiving keyboard messages.
 
 Run system-level key sampling in parallel when needed:

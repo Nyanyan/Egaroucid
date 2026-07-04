@@ -931,6 +931,24 @@ enum class Windows_shortcut_hook_backend {
     raw_wndproc,
 };
 
+enum class Windows_shortcut_hook_backend_reason {
+    none,
+    hwnd_unavailable,
+    cross_thread,
+    subclass_failed,
+    raw_chain_unsafe,
+    raw_install_failed,
+};
+
+// Windows shortcut input records WM keyboard/focus messages instead of relying
+// on per-frame polling edges. VK codes remain the stable key identity. A
+// same-thread HWND can use SetWindowSubclass; Siv3D commonly exposes the HWND
+// from a different thread, where this uses a guarded raw WndProc observer. That
+// raw observer is still message-based, not polling-based. The WndProc only
+// records state and forwards messages; it must never consume or rewrite them.
+// Shared message state is mutex-protected and copied into a per-frame snapshot.
+// If the message hook becomes unsafe, shortcut detection falls back to polling
+// instead of trying to repair or overwrite a changed WndProc chain.
 struct Windows_shortcut_message_state {
     std::unordered_set<int> pressed_vks;
     std::unordered_set<int> pending_down_vks;
@@ -938,6 +956,7 @@ struct Windows_shortcut_message_state {
     HWND installed_hwnd = nullptr;
     WNDPROC previous_wndproc = nullptr;
     Windows_shortcut_hook_backend hook_backend = Windows_shortcut_hook_backend::none;
+    Windows_shortcut_hook_backend_reason hook_backend_reason = Windows_shortcut_hook_backend_reason::none;
     bool hook_installed = false;
     bool hook_install_failed = false;
     DWORD hook_error = 0;
@@ -958,7 +977,9 @@ struct Windows_shortcut_keyboard_state {
     std::unordered_set<int> down_vks;
     std::unordered_set<int> message_down_vks;
     Windows_shortcut_hook_backend hook_backend = Windows_shortcut_hook_backend::none;
+    Windows_shortcut_hook_backend_reason hook_backend_reason = Windows_shortcut_hook_backend_reason::none;
     bool input_source_message = false;
+    bool message_state_synchronized = false;
     bool hook_installed = false;
     bool hook_install_failed = false;
     DWORD hook_error = 0;
@@ -1219,6 +1240,7 @@ inline LRESULT CALLBACK windows_shortcut_subclass_proc(HWND hwnd, UINT msg, WPAR
         state.installed_hwnd = nullptr;
         state.previous_wndproc = nullptr;
         state.hook_backend = Windows_shortcut_hook_backend::none;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::none;
         state.hook_installed = false;
     }
 
@@ -1239,6 +1261,7 @@ inline LRESULT CALLBACK windows_shortcut_raw_wndproc(HWND hwnd, UINT msg, WPARAM
         state.installed_hwnd = nullptr;
         state.previous_wndproc = nullptr;
         state.hook_backend = Windows_shortcut_hook_backend::none;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::none;
         state.hook_installed = false;
     }
 
@@ -1312,10 +1335,12 @@ inline bool windows_shortcut_install_subclass_observer(HWND hwnd) {
         state.hook_install_failed = true;
         state.hook_error = error;
         state.hook_subclass_error = error;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::subclass_failed;
         return false;
     }
 
     state.hook_backend = Windows_shortcut_hook_backend::subclass;
+    state.hook_backend_reason = Windows_shortcut_hook_backend_reason::none;
     state.previous_wndproc = nullptr;
     state.hook_installed = true;
     state.hook_subclass_error = 0;
@@ -1332,6 +1357,7 @@ inline bool windows_shortcut_install_raw_wndproc_observer(HWND hwnd) {
     if (current_wndproc == 0 && current_error != 0) {
         state.hook_install_failed = true;
         state.hook_error = current_error;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::raw_install_failed;
         return false;
     }
     if (current_wndproc == reinterpret_cast<LONG_PTR>(&windows_shortcut_raw_wndproc)) {
@@ -1346,6 +1372,7 @@ inline bool windows_shortcut_install_raw_wndproc_observer(HWND hwnd) {
     if (previous == 0 && error != 0) {
         state.hook_install_failed = true;
         state.hook_error = error;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::raw_install_failed;
         return false;
     }
 
@@ -1360,12 +1387,20 @@ inline bool windows_shortcut_install_message_observer() {
     if (hwnd == nullptr) {
         std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
         Windows_shortcut_message_state& state = windows_shortcut_message_state();
+        state.hook_backend = Windows_shortcut_hook_backend::none;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::hwnd_unavailable;
         state.hook_installed = false;
         state.hook_install_failed = false;
         state.hook_error = 0;
         state.hook_subclass_error = 0;
         return false;
     }
+
+    DWORD hwnd_process_id = 0;
+    const DWORD install_thread_id = GetCurrentThreadId();
+    const DWORD hwnd_thread_id = GetWindowThreadProcessId(hwnd, &hwnd_process_id);
+    const DWORD current_process_id = GetCurrentProcessId();
+    const bool same_thread = (install_thread_id == hwnd_thread_id);
 
     bool hook_installed = false;
     HWND installed_hwnd = nullptr;
@@ -1393,6 +1428,7 @@ inline bool windows_shortcut_install_message_observer() {
         state.hook_installed = false;
         state.hook_install_failed = true;
         state.hook_error = ERROR_INVALID_HOOK_HANDLE;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::raw_chain_unsafe;
         windows_shortcut_clear_message_keys_unlocked(state);
         return false;
     }
@@ -1404,6 +1440,7 @@ inline bool windows_shortcut_install_message_observer() {
         Windows_shortcut_message_state& state = windows_shortcut_message_state();
         state.hook_install_failed = true;
         state.hook_error = ERROR_INVALID_HOOK_HANDLE;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::raw_chain_unsafe;
         windows_shortcut_clear_message_keys_unlocked(state);
         return false;
     }
@@ -1418,6 +1455,7 @@ inline bool windows_shortcut_install_message_observer() {
         state.installed_hwnd = hwnd;
         state.previous_wndproc = nullptr;
         state.hook_backend = Windows_shortcut_hook_backend::none;
+        state.hook_backend_reason = Windows_shortcut_hook_backend_reason::none;
         state.hook_installed = false;
         state.hook_install_failed = false;
         state.hook_error = 0;
@@ -1425,15 +1463,29 @@ inline bool windows_shortcut_install_message_observer() {
         state.hook_subclass_set_return = FALSE;
         state.hook_subclass_get_after_set = FALSE;
         state.hook_subclass_get_after_set_error = 0;
-        state.hook_install_thread_id = 0;
-        state.hook_hwnd_thread_id = 0;
-        state.hook_current_process_id = 0;
-        state.hook_hwnd_process_id = 0;
+        state.hook_install_thread_id = install_thread_id;
+        state.hook_hwnd_thread_id = hwnd_thread_id;
+        state.hook_current_process_id = current_process_id;
+        state.hook_hwnd_process_id = hwnd_process_id;
         windows_shortcut_clear_message_keys_unlocked(state);
     }
 
-    if (!windows_shortcut_install_subclass_observer(hwnd) &&
-        !windows_shortcut_install_raw_wndproc_observer(hwnd)) {
+    bool observer_installed = false;
+    if (same_thread) {
+        observer_installed = windows_shortcut_install_subclass_observer(hwnd);
+        if (!observer_installed) {
+            observer_installed = windows_shortcut_install_raw_wndproc_observer(hwnd);
+        }
+    } else {
+        {
+            std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
+            Windows_shortcut_message_state& state = windows_shortcut_message_state();
+            state.hook_backend_reason = Windows_shortcut_hook_backend_reason::cross_thread;
+        }
+        observer_installed = windows_shortcut_install_raw_wndproc_observer(hwnd);
+    }
+
+    if (!observer_installed) {
         std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
         Windows_shortcut_message_state& state = windows_shortcut_message_state();
         state.hook_installed = false;
@@ -1481,9 +1533,33 @@ inline std::string windows_shortcut_hook_backend_name(
         return "set_window_subclass";
     }
     if (keyboard_state->hook_backend == Windows_shortcut_hook_backend::raw_wndproc) {
-        return "raw_wndproc_fallback";
+        return "guarded_raw_wndproc";
     }
     return "polling_fallback";
+}
+
+inline std::string windows_shortcut_hook_backend_reason_name(
+    const Windows_shortcut_keyboard_state* keyboard_state
+) {
+    if (keyboard_state == nullptr) {
+        return "";
+    }
+    switch (keyboard_state->hook_backend_reason) {
+    case Windows_shortcut_hook_backend_reason::none:
+        return "none";
+    case Windows_shortcut_hook_backend_reason::hwnd_unavailable:
+        return "hwnd_unavailable";
+    case Windows_shortcut_hook_backend_reason::cross_thread:
+        return "cross_thread";
+    case Windows_shortcut_hook_backend_reason::subclass_failed:
+        return "subclass_failed";
+    case Windows_shortcut_hook_backend_reason::raw_chain_unsafe:
+        return "raw_chain_unsafe";
+    case Windows_shortcut_hook_backend_reason::raw_install_failed:
+        return "raw_install_failed";
+    default:
+        return "";
+    }
 }
 
 inline Windows_shortcut_keyboard_state collect_windows_shortcut_keyboard_state() {
@@ -1501,6 +1577,8 @@ inline Windows_shortcut_keyboard_state collect_windows_shortcut_keyboard_state()
             std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
             Windows_shortcut_message_state& message_state = windows_shortcut_message_state();
             state.hook_backend = message_state.hook_backend;
+            state.hook_backend_reason = message_state.hook_backend_reason;
+            state.message_state_synchronized = true;
             state.hook_installed = message_state.hook_installed;
             state.hook_install_failed = message_state.hook_install_failed;
             state.hook_error = message_state.hook_error;
@@ -1532,6 +1610,8 @@ inline Windows_shortcut_keyboard_state collect_windows_shortcut_keyboard_state()
         std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
         Windows_shortcut_message_state& message_state = windows_shortcut_message_state();
         state.hook_backend = message_state.hook_backend;
+        state.hook_backend_reason = message_state.hook_backend_reason;
+        state.message_state_synchronized = false;
         state.hook_installed = message_state.hook_installed;
         state.hook_install_failed = message_state.hook_install_failed;
         state.hook_error = message_state.hook_error;
@@ -1662,20 +1742,6 @@ inline bool windows_shortcut_modifier_state_matches(
         windows_shortcut_modifier_family_matches(keyboard_state, keys, U"Alt", U"Left Alt", U"Right Alt", VK_MENU, VK_LMENU, VK_RMENU);
 }
 
-inline bool windows_shortcut_non_modifier_state_matches(
-    const Windows_shortcut_keyboard_state& keyboard_state,
-    const std::unordered_set<int>& expected_vks
-) {
-    for (const int vk : keyboard_state.pressed_vks) {
-        if (!windows_shortcut_modifier_vk(vk) &&
-            expected_vks.find(vk) == expected_vks.end() &&
-            !windows_shortcut_ime_control_vk(vk)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 inline bool windows_shortcut_expected_key_down_found(
     const Windows_shortcut_keyboard_state& keyboard_state,
     const std::unordered_set<int>& expected_vks
@@ -1748,23 +1814,6 @@ inline bool get_windows_shortcut_match_details(
     return true;
 }
 
-inline bool check_windows_shortcut_key_state(
-    const Shortcut_key_elem& elem,
-    const Windows_shortcut_keyboard_state& keyboard_state,
-    bool* down_found,
-    bool* pressed_found
-) {
-    Windows_shortcut_match_details details;
-    if (!get_windows_shortcut_match_details(elem, keyboard_state, &details)) {
-        *down_found = false;
-        *pressed_found = false;
-        return false;
-    }
-    *down_found = details.down_found;
-    *pressed_found = details.pressed_found;
-    return true;
-}
-
 inline std::vector<String> get_windows_shortcut_inputs_for_diagnostics(const Windows_shortcut_keyboard_state* keyboard_state = nullptr) {
     std::vector<String> keys;
     auto vk_is_pressed = [&](const int vk) {
@@ -1806,7 +1855,8 @@ inline void shortcut_diagnostic_log(
     const Windows_shortcut_keyboard_state* windows_keyboard_state = nullptr,
     const Shortcut_key_elem* windows_candidate = nullptr,
     const Windows_shortcut_match_details* windows_details = nullptr,
-    const bool fallback_used = false
+    const bool legacy_string_matcher_used = false,
+    const char* legacy_string_matcher_reason = ""
 #endif
 ) {
 #if SIV3D_PLATFORM(WINDOWS)
@@ -1848,6 +1898,7 @@ inline void shortcut_diagnostic_log(
 #if SIV3D_PLATFORM(WINDOWS)
         << "\tinput_source=" << ((windows_keyboard_state != nullptr && windows_keyboard_state->input_source_message) ? "message" : "polling_fallback")
         << "\thook_backend=" << windows_shortcut_hook_backend_name(windows_keyboard_state)
+        << "\thook_backend_reason=" << windows_shortcut_hook_backend_reason_name(windows_keyboard_state)
         << "\thook_installed=" << ((windows_keyboard_state != nullptr && windows_keyboard_state->hook_installed) ? "1" : "0")
         << "\thook_error=" << ((windows_keyboard_state != nullptr && windows_keyboard_state->hook_install_failed) ? std::to_string(windows_keyboard_state->hook_error) : "")
         << "\thook_subclass_error=" << (windows_keyboard_state != nullptr &&
@@ -1864,6 +1915,7 @@ inline void shortcut_diagnostic_log(
         << "\thook_hwnd_process_id=" << (windows_keyboard_state != nullptr ? std::to_string(windows_keyboard_state->hook_hwnd_process_id) : "")
         << "\thook_same_process=" << (windows_keyboard_state != nullptr && windows_keyboard_state->hook_current_process_id == windows_keyboard_state->hook_hwnd_process_id ? "1" : "0")
         << "\thook_current_wndproc_matches=" << ((windows_keyboard_state != nullptr && windows_keyboard_state->hook_current_wndproc_matches) ? "1" : "0")
+        << "\tmessage_state_synchronized=" << ((windows_keyboard_state != nullptr && windows_keyboard_state->message_state_synchronized) ? "1" : "0")
         << "\tobserved_keyboard_message_count=" << (windows_keyboard_state != nullptr ? std::to_string(windows_keyboard_state->observed_keyboard_message_count) : "")
         << "\tfocused=" << ((windows_keyboard_state != nullptr && windows_keyboard_state->focused) ? "1" : "0")
         << "\tpressed_vks=" << (windows_keyboard_state != nullptr ? windows_shortcut_vk_set_to_string(windows_keyboard_state->pressed_vks) : "")
@@ -1874,7 +1926,8 @@ inline void shortcut_diagnostic_log(
         << "\tmissing_expected_vks=" << (windows_details != nullptr ? windows_shortcut_vk_set_to_string(windows_details->missing_expected_vks) : "")
         << "\tmodifier_mismatch=" << ((windows_details != nullptr && windows_details->modifier_mismatch) ? "1" : "0")
         << "\tno_down=" << ((windows_details != nullptr && windows_details->no_down) ? "1" : "0")
-        << "\tfallback_used=" << (fallback_used ? "1" : "0")
+        << "\tlegacy_string_matcher_used=" << (legacy_string_matcher_used ? "1" : "0")
+        << "\tlegacy_string_matcher_reason=" << legacy_string_matcher_reason
         << "\tcandidate=" << (windows_candidate != nullptr ? windows_candidate->name.narrow() : String(SHORTCUT_KEY_UNDEFINED).narrow())
 #endif
         << "\tdown=" << shortcut_name_down.narrow()
@@ -2097,7 +2150,17 @@ public:
                     }
                     *shortcut_name_pressed = elem.name;
 #if SIV3D_PLATFORM(WINDOWS)
-                    shortcut_diagnostic_log(keys, down_found, *shortcut_name_down, *shortcut_name_pressed, &windows_keyboard_state, best_windows_candidate, best_windows_candidate != nullptr ? &best_windows_details : nullptr, true);
+                    shortcut_diagnostic_log(
+                        keys,
+                        down_found,
+                        *shortcut_name_down,
+                        *shortcut_name_pressed,
+                        &windows_keyboard_state,
+                        best_windows_candidate,
+                        best_windows_candidate != nullptr ? &best_windows_details : nullptr,
+                        true,
+                        "unsupported_shortcut_name"
+                    );
 #else
                     shortcut_diagnostic_log(keys, down_found, *shortcut_name_down, *shortcut_name_pressed);
 #endif
