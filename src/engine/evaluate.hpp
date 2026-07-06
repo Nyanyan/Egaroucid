@@ -92,6 +92,15 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_CURRENT_FM_DUAL_TYPE_SIMDOPT)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_current_fm_dual_type_simdopt.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_current_fm_dual_type_simdopt.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_CURRENT_FM_DUAL_TYPE_PHASE_WEIGHT)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_current_fm_dual_type_phase_weight.hpp"
