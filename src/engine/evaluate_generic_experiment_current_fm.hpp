@@ -20,7 +20,10 @@
 #include "search.hpp"
 #include "util.hpp"
 #include "evaluate_common.hpp"
-#include "evaluate_experiment_current_fm_common.hpp"
+#ifndef EVALUATE_EXPERIMENT_CURRENT_FM_COMMON_HEADER
+    #define EVALUATE_EXPERIMENT_CURRENT_FM_COMMON_HEADER "evaluate_experiment_current_fm_common.hpp"
+#endif
+#include EVALUATE_EXPERIMENT_CURRENT_FM_COMMON_HEADER
 
 constexpr int EVAL_IDX_START_MOVE_ORDERING_END = 32;
 constexpr int EVAL_IDX_END_MOVE_ORDERING_END = 48;
