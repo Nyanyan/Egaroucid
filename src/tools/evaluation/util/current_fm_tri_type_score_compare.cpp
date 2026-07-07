@@ -72,8 +72,10 @@ int main(int argc, char **argv) {
         current_fm_cross_file.dim == 16 && current_fm_same_file.dim == 16 && current_fm_count_file.dim == 16;
     const bool use_dim8 =
         current_fm_cross_file.dim == 8 && current_fm_same_file.dim == 8 && current_fm_count_file.dim == 8;
-    if (!use_dim16 && !use_dim8) {
-        std::cerr << "SIMD direct check currently expects dim=8 or dim=16, found dims="
+    const bool use_dim4 =
+        current_fm_cross_file.dim == 4 && current_fm_same_file.dim == 4 && current_fm_count_file.dim == 4;
+    if (!use_dim16 && !use_dim8 && !use_dim4) {
+        std::cerr << "SIMD direct check currently expects dim=4, dim=8, or dim=16, found dims="
                   << current_fm_cross_file.dim << ','
                   << current_fm_same_file.dim << ','
                   << current_fm_count_file.dim << std::endl;
@@ -92,7 +94,9 @@ int main(int argc, char **argv) {
             c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE);
         const int simd_score = use_dim16
             ? current_fm_score_from_ids_simd16(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
-            : current_fm_score_from_ids_simd8(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE);
+            : (use_dim8
+                ? current_fm_score_from_ids_simd8(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
+                : current_fm_score_from_ids_simd4(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE));
         scalar_checksum += scalar_score;
         simd_checksum += simd_score;
 
