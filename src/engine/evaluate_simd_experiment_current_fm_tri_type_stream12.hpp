@@ -245,7 +245,10 @@ int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 
 inline bool load_eval_file(const char* file, bool show_log) {
-    return current_fm_load_egev4(file, show_log);
+    if (!current_fm_load_egev4(file, show_log)) {
+        return false;
+    }
+    return current_fm_stream12_prepare_sparse_masks();
 }
 
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
@@ -464,7 +467,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
     append_current_fm_simd_ids(calc_idx8_comp(features->f128[6], 2), active_ids, n_active);
     append_current_fm_simd_ids(calc_idx8_comp(features->f128[7], 3), active_ids, n_active);
     active_ids[n_active++] = CURRENT_FM_N_PATTERN_PARAMS_RAW + num0;
-    return current_fm_score_from_ids_stream12_unchecked(phase_idx, active_ids);
+    return current_fm_score_from_ids_stream12_sparse_unchecked(phase_idx, active_ids);
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {

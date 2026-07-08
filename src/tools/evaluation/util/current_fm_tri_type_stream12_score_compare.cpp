@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
     int64_t stream12_checked_checksum = 0;
     int64_t stream12_unchecked_checksum = 0;
     int64_t stream12_idx8_checksum = 0;
+    int64_t stream12_sparse_checksum = 0;
 
     for (uint64_t i = 0; i < n_cases; ++i) {
         const FmCompareCase &c = cases[(size_t)i];
@@ -99,17 +100,22 @@ int main(int argc, char **argv) {
         const int stream12_idx8_score = current_fm_score_from_idx8_stream12_unchecked(
             c.phase, idx8_groups, c.ids[STREAM12_COMPARE_N_PATTERN_FEATURES]
         );
+        const int stream12_sparse_score = current_fm_score_from_ids_stream12_sparse_unchecked(c.phase, c.ids);
         scalar_checksum += scalar_score;
         stream12_checked_checksum += stream12_checked_score;
         stream12_unchecked_checksum += stream12_unchecked_score;
         stream12_idx8_checksum += stream12_idx8_score;
+        stream12_sparse_checksum += stream12_sparse_score;
 
         const int diff = std::max(
             std::max(
                 std::abs(scalar_score - stream12_checked_score),
                 std::abs(scalar_score - stream12_unchecked_score)
             ),
-            std::abs(scalar_score - stream12_idx8_score)
+            std::max(
+                std::abs(scalar_score - stream12_idx8_score),
+                std::abs(scalar_score - stream12_sparse_score)
+            )
         );
         max_abs_diff = std::max(max_abs_diff, diff);
         if (diff != 0) {
@@ -120,6 +126,7 @@ int main(int argc, char **argv) {
                           << " checked=" << stream12_checked_score
                           << " unchecked=" << stream12_unchecked_score
                           << " idx8=" << stream12_idx8_score
+                          << " sparse=" << stream12_sparse_score
                           << " diff=" << diff << std::endl;
             }
             ++mismatches;
@@ -134,6 +141,7 @@ int main(int argc, char **argv) {
               << " stream12_checked_checksum=" << stream12_checked_checksum
               << " stream12_unchecked_checksum=" << stream12_unchecked_checksum
               << " stream12_idx8_checksum=" << stream12_idx8_checksum
+              << " stream12_sparse_checksum=" << stream12_sparse_checksum
               << std::endl;
     return mismatches == 0 ? 0 : 2;
 #endif

@@ -121,6 +121,10 @@ int main(int argc, char **argv) {
     run_benchmark("tri_type_fm_stream12_unchecked", cases, iterations, [](const int phase, const int ids[], const int) {
         return current_fm_score_from_ids_stream12_unchecked(phase, ids);
     });
+    current_fm_stream12_prepare_sparse_masks();
+    run_benchmark("tri_type_fm_stream12_sparse", cases, iterations, [](const int phase, const int ids[], const int) {
+        return current_fm_score_from_ids_stream12_sparse_unchecked(phase, ids);
+    });
     int64_t checksum = 0;
     size_t case_idx = 0;
     const uint64_t start = now_ms();
