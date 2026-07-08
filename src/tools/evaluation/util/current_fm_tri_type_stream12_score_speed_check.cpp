@@ -108,6 +108,9 @@ int main(int argc, char **argv) {
     std::vector<FmSpeedCase> cases = make_cases(case_count);
     run_benchmark("linear_only", cases, iterations, score_linear_only_from_ids);
     run_benchmark("tri_type_fm_existing", cases, iterations, current_fm_score_from_ids);
-    run_benchmark("tri_type_fm_stream12", cases, iterations, current_fm_score_from_ids_stream12);
+    run_benchmark("tri_type_fm_stream12_checked", cases, iterations, current_fm_score_from_ids_stream12);
+    run_benchmark("tri_type_fm_stream12_unchecked", cases, iterations, [](const int phase, const int ids[], const int) {
+        return current_fm_score_from_ids_stream12_unchecked(phase, ids);
+    });
     return 0;
 }

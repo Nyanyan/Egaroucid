@@ -464,7 +464,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
     append_current_fm_simd_ids(calc_idx8_comp(features->f128[6], 2), active_ids, n_active);
     append_current_fm_simd_ids(calc_idx8_comp(features->f128[7], 3), active_ids, n_active);
     active_ids[n_active++] = CURRENT_FM_N_PATTERN_PARAMS_RAW + num0;
-    return current_fm_score_from_ids_stream12(phase_idx, active_ids, n_active);
+    return current_fm_score_from_ids_stream12_unchecked(phase_idx, active_ids);
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {

@@ -79,23 +79,30 @@ int main(int argc, char **argv) {
     uint64_t mismatches = 0;
     int max_abs_diff = 0;
     int64_t scalar_checksum = 0;
-    int64_t stream12_checksum = 0;
+    int64_t stream12_checked_checksum = 0;
+    int64_t stream12_unchecked_checksum = 0;
 
     for (uint64_t i = 0; i < n_cases; ++i) {
         const FmCompareCase &c = cases[(size_t)i];
         const int scalar_score = current_fm_score_from_ids_quant(c.phase, c.ids, STREAM12_COMPARE_N_ACTIVE);
-        const int stream12_score = current_fm_score_from_ids_stream12(c.phase, c.ids, STREAM12_COMPARE_N_ACTIVE);
+        const int stream12_checked_score = current_fm_score_from_ids_stream12(c.phase, c.ids, STREAM12_COMPARE_N_ACTIVE);
+        const int stream12_unchecked_score = current_fm_score_from_ids_stream12_unchecked(c.phase, c.ids);
         scalar_checksum += scalar_score;
-        stream12_checksum += stream12_score;
+        stream12_checked_checksum += stream12_checked_score;
+        stream12_unchecked_checksum += stream12_unchecked_score;
 
-        const int diff = std::abs(scalar_score - stream12_score);
+        const int diff = std::max(
+            std::abs(scalar_score - stream12_checked_score),
+            std::abs(scalar_score - stream12_unchecked_score)
+        );
         max_abs_diff = std::max(max_abs_diff, diff);
         if (diff != 0) {
             if (mismatches < 10) {
                 std::cerr << "mismatch case=" << i
                           << " phase=" << c.phase
                           << " scalar=" << scalar_score
-                          << " stream12=" << stream12_score
+                          << " checked=" << stream12_checked_score
+                          << " unchecked=" << stream12_unchecked_score
                           << " diff=" << diff << std::endl;
             }
             ++mismatches;
@@ -107,7 +114,8 @@ int main(int argc, char **argv) {
               << " mismatches=" << mismatches
               << " max_abs_diff=" << max_abs_diff
               << " scalar_checksum=" << scalar_checksum
-              << " stream12_checksum=" << stream12_checksum
+              << " stream12_checked_checksum=" << stream12_checked_checksum
+              << " stream12_unchecked_checksum=" << stream12_unchecked_checksum
               << std::endl;
     return mismatches == 0 ? 0 : 2;
 #endif
