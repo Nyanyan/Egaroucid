@@ -70,13 +70,15 @@ int main(int argc, char **argv) {
     }
     const bool use_dim16 =
         current_fm_cross_file.dim == 16 && current_fm_same_file.dim == 16 && current_fm_count_file.dim == 16;
+    const bool use_dim12 =
+        current_fm_cross_file.dim == 12 && current_fm_same_file.dim == 12 && current_fm_count_file.dim == 12;
     const bool use_dim8 =
         current_fm_cross_file.dim == 8 && current_fm_same_file.dim == 8 && current_fm_count_file.dim == 8;
     const bool use_dim4 =
         current_fm_cross_file.dim == 4 && current_fm_same_file.dim == 4 && current_fm_count_file.dim == 4;
-    const bool use_mixed = !use_dim16 && !use_dim8 && !use_dim4 && current_fm_all_dims_have_specialized_simd();
-    if (!use_dim16 && !use_dim8 && !use_dim4 && !use_mixed) {
-        std::cerr << "SIMD direct check currently expects each bank dim to be 4, 8, or 16, found dims="
+    const bool use_mixed = !use_dim16 && !use_dim12 && !use_dim8 && !use_dim4 && current_fm_all_dims_have_specialized_simd();
+    if (!use_dim16 && !use_dim12 && !use_dim8 && !use_dim4 && !use_mixed) {
+        std::cerr << "SIMD direct check currently expects each bank dim to be 4, 8, 12, or 16, found dims="
                   << current_fm_cross_file.dim << ','
                   << current_fm_same_file.dim << ','
                   << current_fm_count_file.dim << std::endl;
@@ -95,11 +97,13 @@ int main(int argc, char **argv) {
             c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE);
         const int simd_score = use_dim16
             ? current_fm_score_from_ids_simd16(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
-            : (use_dim8
-                ? current_fm_score_from_ids_simd8(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
-                : (use_dim4
-                    ? current_fm_score_from_ids_simd4(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
-                    : current_fm_score_from_ids_simd_mixed(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)));
+            : (use_dim12
+                ? current_fm_score_from_ids_simd12(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
+                : (use_dim8
+                    ? current_fm_score_from_ids_simd8(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
+                    : (use_dim4
+                        ? current_fm_score_from_ids_simd4(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE)
+                        : current_fm_score_from_ids_simd_mixed(c.phase, c.ids, CURRENT_FM_SCORE_COMPARE_N_ACTIVE))));
         scalar_checksum += scalar_score;
         simd_checksum += simd_score;
 

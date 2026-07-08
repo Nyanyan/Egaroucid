@@ -419,6 +419,39 @@ inline void current_fm_add_vector_simd8(
 }
 
 template<bool UpdateTotal>
+inline void current_fm_add_vector_simd12(
+    const CurrentFmTriFile &src,
+    const int phase_idx,
+    const int id,
+    CurrentFmSimdAccum &accum,
+    const int pattern_type
+) {
+    const std::vector<int8_t> &phase_vectors = src.vector_quant_by_phase[phase_idx];
+    if (phase_vectors.empty()) {
+        return;
+    }
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 12;
+    const __m128i q8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    int32_t packed = 0;
+    std::memcpy(&packed, src_ptr + 8, sizeof(packed));
+    const __m128i q4 = _mm_cvtsi32_si128(packed);
+    const __m256i lo = _mm256_cvtepi8_epi32(q8);
+    const __m256i hi = _mm256_cvtepi8_epi32(q4);
+    const __m256i lo_sq = _mm256_mullo_epi32(lo, lo);
+    const __m256i hi_sq = _mm256_mullo_epi32(hi, hi);
+    if constexpr (UpdateTotal) {
+        accum.sum_lo = _mm256_add_epi32(accum.sum_lo, lo);
+        accum.sum_hi = _mm256_add_epi32(accum.sum_hi, hi);
+        accum.sum_sq_lo = _mm256_add_epi32(accum.sum_sq_lo, lo_sq);
+        accum.sum_sq_hi = _mm256_add_epi32(accum.sum_sq_hi, hi_sq);
+    }
+    accum.type_sum_lo[pattern_type] = _mm256_add_epi32(accum.type_sum_lo[pattern_type], lo);
+    accum.type_sum_hi[pattern_type] = _mm256_add_epi32(accum.type_sum_hi[pattern_type], hi);
+    accum.type_sum_sq_lo[pattern_type] = _mm256_add_epi32(accum.type_sum_sq_lo[pattern_type], lo_sq);
+    accum.type_sum_sq_hi[pattern_type] = _mm256_add_epi32(accum.type_sum_sq_hi[pattern_type], hi_sq);
+}
+
+template<bool UpdateTotal>
 inline void current_fm_add_vector_simd4(
     const CurrentFmTriFile &src,
     const int phase_idx,
@@ -513,6 +546,26 @@ inline void current_fm_load_vector_simd8(
     lo = _mm256_cvtepi8_epi32(q8);
 }
 
+inline void current_fm_load_vector_simd12(
+    const CurrentFmTriFile &src,
+    const int phase_idx,
+    const int id,
+    __m256i &lo,
+    __m256i &hi
+) {
+    const std::vector<int8_t> &phase_vectors = src.vector_quant_by_phase[phase_idx];
+    if (phase_vectors.empty()) {
+        return;
+    }
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 12;
+    const __m128i q8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    int32_t packed = 0;
+    std::memcpy(&packed, src_ptr + 8, sizeof(packed));
+    const __m128i q4 = _mm_cvtsi32_si128(packed);
+    lo = _mm256_cvtepi8_epi32(q8);
+    hi = _mm256_cvtepi8_epi32(q4);
+}
+
 inline void current_fm_load_vector_simd4(
     const CurrentFmTriFile &src,
     const int phase_idx,
@@ -556,6 +609,8 @@ inline void current_fm_add_vector_simd_auto(
 ) {
     if (src.dim == 16) {
         current_fm_add_vector_simd16<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
+    } else if (src.dim == 12) {
+        current_fm_add_vector_simd12<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
     } else if (src.dim == 8) {
         current_fm_add_vector_simd8<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
     } else {
@@ -572,6 +627,8 @@ inline void current_fm_load_vector_simd_auto(
 ) {
     if (src.dim == 16) {
         current_fm_load_vector_simd16(src, phase_idx, id, lo, hi);
+    } else if (src.dim == 12) {
+        current_fm_load_vector_simd12(src, phase_idx, id, lo, hi);
     } else if (src.dim == 8) {
         current_fm_load_vector_simd8(src, phase_idx, id, lo, hi);
     } else {
@@ -580,7 +637,7 @@ inline void current_fm_load_vector_simd_auto(
 }
 
 inline bool current_fm_dim_has_specialized_simd(const int dim) {
-    return dim == 4 || dim == 8 || dim == 16;
+    return dim == 4 || dim == 8 || dim == 12 || dim == 16;
 }
 
 inline bool current_fm_all_dims_have_specialized_simd() {
@@ -673,6 +730,56 @@ inline int current_fm_score_from_ids_simd16(const int phase_idx, const int activ
             count_pattern_sum_hi = _mm256_add_epi32(count_pattern_sum_hi, pattern_hi);
         } else if (id >= CURRENT_FM_N_PATTERN_PARAMS_RAW) {
             current_fm_load_vector_simd16(current_fm_count_file, phase_idx, id, count_vec_lo, count_vec_hi);
+        }
+    }
+
+    const double linear = (double)linear_quant_sum * linear_scale;
+    const double cross_interaction = current_fm_calc_cross_interaction_simd16(current_fm_cross_file, phase_idx, cross_accum);
+    const double same_interaction = current_fm_calc_same_interaction_simd16(current_fm_same_file, phase_idx, same_accum);
+    const double count_interaction = current_fm_calc_count_interaction_simd16(
+        phase_idx, count_pattern_sum_lo, count_pattern_sum_hi, count_vec_lo, count_vec_hi
+    );
+    const double score = linear
+        + current_fm_cross_weight * cross_interaction
+        + current_fm_same_weight * same_interaction
+        + current_fm_count_weight * count_interaction;
+    return std::clamp((int)std::llround(score), -SCORE_MAX, SCORE_MAX);
+}
+
+inline int current_fm_score_from_ids_simd12(const int phase_idx, const int active_ids[], const int n_active) {
+    if (!current_fm_loaded || phase_idx < 0 || N_PHASES <= phase_idx) {
+        return 0;
+    }
+    const size_t phase_base = (size_t)phase_idx * CURRENT_FM_N_PARAMS_PER_PHASE;
+    const double linear_scale = current_fm_cross_file.linear_scale[phase_idx];
+    CurrentFmSimdAccum cross_accum;
+    CurrentFmSimdAccum same_accum;
+    current_fm_clear_simd_accum(cross_accum);
+    current_fm_clear_simd_accum(same_accum);
+    __m256i count_pattern_sum_lo = _mm256_setzero_si256();
+    __m256i count_pattern_sum_hi = _mm256_setzero_si256();
+    __m256i count_vec_lo = _mm256_setzero_si256();
+    __m256i count_vec_hi = _mm256_setzero_si256();
+    int64_t linear_quant_sum = 0;
+
+    for (int i = 0; i < n_active; ++i) {
+        const int id = active_ids[i];
+        if (id < 0 || CURRENT_FM_N_PARAMS_PER_PHASE <= id) {
+            continue;
+        }
+        const size_t linear_idx = phase_base + (size_t)id;
+        linear_quant_sum += current_fm_cross_file.linear_quant[linear_idx];
+        const int pattern_type = current_fm_pattern_type_for_active(i, id);
+        if (pattern_type >= 0) {
+            current_fm_add_vector_simd12<true>(current_fm_cross_file, phase_idx, id, cross_accum, pattern_type);
+            current_fm_add_vector_simd12<false>(current_fm_same_file, phase_idx, id, same_accum, pattern_type);
+            __m256i pattern_lo = _mm256_setzero_si256();
+            __m256i pattern_hi = _mm256_setzero_si256();
+            current_fm_load_vector_simd12(current_fm_count_file, phase_idx, id, pattern_lo, pattern_hi);
+            count_pattern_sum_lo = _mm256_add_epi32(count_pattern_sum_lo, pattern_lo);
+            count_pattern_sum_hi = _mm256_add_epi32(count_pattern_sum_hi, pattern_hi);
+        } else if (id >= CURRENT_FM_N_PATTERN_PARAMS_RAW) {
+            current_fm_load_vector_simd12(current_fm_count_file, phase_idx, id, count_vec_lo, count_vec_hi);
         }
     }
 
@@ -794,6 +901,9 @@ inline int current_fm_score_from_ids(const int phase_idx, const int active_ids[]
 #if USE_SIMD
     if (current_fm_cross_file.dim == 16 && current_fm_same_file.dim == 16 && current_fm_count_file.dim == 16) {
         return current_fm_score_from_ids_simd16(phase_idx, active_ids, n_active);
+    }
+    if (current_fm_cross_file.dim == 12 && current_fm_same_file.dim == 12 && current_fm_count_file.dim == 12) {
+        return current_fm_score_from_ids_simd12(phase_idx, active_ids, n_active);
     }
     if (current_fm_cross_file.dim == 8 && current_fm_same_file.dim == 8 && current_fm_count_file.dim == 8) {
         return current_fm_score_from_ids_simd8(phase_idx, active_ids, n_active);
