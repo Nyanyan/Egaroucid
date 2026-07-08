@@ -22,6 +22,63 @@ inline void current_fm_load_dim12_ptr(const int8_t *base, const int id, __m256i 
     hi = _mm256_cvtepi8_epi32(q4);
 }
 
+const int8_t *current_fm_stream12_cross_ptr_by_phase[N_PHASES]{};
+const int8_t *current_fm_stream12_same_ptr_by_phase[N_PHASES]{};
+const int8_t *current_fm_stream12_count_ptr_by_phase[N_PHASES]{};
+const int16_t *current_fm_stream12_linear_ptr_by_phase[N_PHASES]{};
+double current_fm_stream12_linear_scale_by_phase[N_PHASES]{};
+double current_fm_stream12_cross_coeff_by_phase[N_PHASES]{};
+double current_fm_stream12_same_coeff_by_phase[N_PHASES]{};
+double current_fm_stream12_count_coeff_by_phase[N_PHASES]{};
+alignas(32) __m256i current_fm_stream12_count_vec_lo[N_PHASES][MAX_STONE_NUM];
+alignas(32) __m256i current_fm_stream12_count_vec_hi[N_PHASES][MAX_STONE_NUM];
+bool current_fm_stream12_cache_ready = false;
+
+inline bool current_fm_stream12_prepare_cache() {
+    current_fm_stream12_cache_ready = false;
+    if (!current_fm_loaded ||
+        current_fm_cross_file.dim != 12 ||
+        current_fm_same_file.dim != 12 ||
+        current_fm_count_file.dim != 12) {
+        return true;
+    }
+
+    const __m256i zero = _mm256_setzero_si256();
+    for (int phase = 0; phase < N_PHASES; ++phase) {
+        const std::vector<int8_t> &cross_phase_vectors = current_fm_cross_file.vector_quant_by_phase[phase];
+        const std::vector<int8_t> &same_phase_vectors = current_fm_same_file.vector_quant_by_phase[phase];
+        const std::vector<int8_t> &count_phase_vectors = current_fm_count_file.vector_quant_by_phase[phase];
+        current_fm_stream12_cross_ptr_by_phase[phase] = cross_phase_vectors.empty() ? nullptr : cross_phase_vectors.data();
+        current_fm_stream12_same_ptr_by_phase[phase] = same_phase_vectors.empty() ? nullptr : same_phase_vectors.data();
+        current_fm_stream12_count_ptr_by_phase[phase] = count_phase_vectors.empty() ? nullptr : count_phase_vectors.data();
+        current_fm_stream12_linear_ptr_by_phase[phase] =
+            current_fm_cross_file.linear_quant.data() + (size_t)phase * CURRENT_FM_N_PARAMS_PER_PHASE;
+        current_fm_stream12_linear_scale_by_phase[phase] = current_fm_cross_file.linear_scale[phase];
+        const double cross_scale = current_fm_cross_file.vector_scale[phase];
+        const double same_scale = current_fm_same_file.vector_scale[phase];
+        const double count_scale = current_fm_count_file.vector_scale[phase];
+        current_fm_stream12_cross_coeff_by_phase[phase] = current_fm_cross_weight * 0.5 * cross_scale * cross_scale;
+        current_fm_stream12_same_coeff_by_phase[phase] = current_fm_same_weight * 0.5 * same_scale * same_scale;
+        current_fm_stream12_count_coeff_by_phase[phase] = current_fm_count_weight * count_scale * count_scale;
+
+        for (int num = 0; num < MAX_STONE_NUM; ++num) {
+            current_fm_stream12_count_vec_lo[phase][num] = zero;
+            current_fm_stream12_count_vec_hi[phase][num] = zero;
+            if (current_fm_stream12_count_ptr_by_phase[phase] != nullptr) {
+                current_fm_load_dim12_ptr(
+                    current_fm_stream12_count_ptr_by_phase[phase],
+                    CURRENT_FM_N_PATTERN_PARAMS_RAW + num,
+                    current_fm_stream12_count_vec_lo[phase][num],
+                    current_fm_stream12_count_vec_hi[phase][num]
+                );
+            }
+        }
+    }
+
+    current_fm_stream12_cache_ready = true;
+    return true;
+}
+
 template<bool UpdateTotal>
 inline void current_fm_add_dim12_ptr(
     const int8_t *base,
@@ -165,17 +222,18 @@ inline int current_fm_score_from_ids_stream12_unchecked(const int phase_idx, con
         current_fm_count_file.dim != 12) {
         return current_fm_score_from_ids(phase_idx, active_ids, CURRENT_FM_N_PATTERN_FEATURES + 1);
     }
+    if (!current_fm_stream12_cache_ready) {
+        current_fm_stream12_prepare_cache();
+    }
+    if (!current_fm_stream12_cache_ready) {
+        return current_fm_score_from_ids(phase_idx, active_ids, CURRENT_FM_N_PATTERN_FEATURES + 1);
+    }
 
-    const size_t phase_base = (size_t)phase_idx * CURRENT_FM_N_PARAMS_PER_PHASE;
-    const int16_t *linear_ptr = current_fm_cross_file.linear_quant.data() + phase_base;
-    const double linear_scale = current_fm_cross_file.linear_scale[phase_idx];
     const __m256i zero = _mm256_setzero_si256();
-    const std::vector<int8_t> &cross_phase_vectors = current_fm_cross_file.vector_quant_by_phase[phase_idx];
-    const std::vector<int8_t> &same_phase_vectors = current_fm_same_file.vector_quant_by_phase[phase_idx];
-    const std::vector<int8_t> &count_phase_vectors = current_fm_count_file.vector_quant_by_phase[phase_idx];
-    const int8_t *cross_ptr = cross_phase_vectors.empty() ? nullptr : cross_phase_vectors.data();
-    const int8_t *same_ptr = same_phase_vectors.empty() ? nullptr : same_phase_vectors.data();
-    const int8_t *count_ptr = count_phase_vectors.empty() ? nullptr : count_phase_vectors.data();
+    const int16_t *linear_ptr = current_fm_stream12_linear_ptr_by_phase[phase_idx];
+    const int8_t *cross_ptr = current_fm_stream12_cross_ptr_by_phase[phase_idx];
+    const int8_t *same_ptr = current_fm_stream12_same_ptr_by_phase[phase_idx];
+    const int8_t *count_ptr = current_fm_stream12_count_ptr_by_phase[phase_idx];
 
     CurrentFmSimdAccum cross_accum;
     CurrentFmSimdAccum same_accum;
@@ -209,9 +267,9 @@ inline int current_fm_score_from_ids_stream12_unchecked(const int phase_idx, con
 
     const int count_id = active_ids[CURRENT_FM_N_PATTERN_FEATURES];
     linear_quant_sum += linear_ptr[count_id];
-    if (count_ptr != nullptr) {
-        current_fm_load_dim12_ptr(count_ptr, count_id, count_vec_lo, count_vec_hi);
-    }
+    const int count_num = count_id - CURRENT_FM_N_PATTERN_PARAMS_RAW;
+    count_vec_lo = current_fm_stream12_count_vec_lo[phase_idx][count_num];
+    count_vec_hi = current_fm_stream12_count_vec_hi[phase_idx][count_num];
 
     __m256i cross_same_lo = zero;
     __m256i cross_same_hi = zero;
@@ -249,13 +307,10 @@ inline int current_fm_score_from_ids_stream12_unchecked(const int phase_idx, con
         current_fm_reduce_epi32(_mm256_mullo_epi32(count_pattern_sum_lo, count_vec_lo)) +
         current_fm_reduce_epi32(_mm256_mullo_epi32(count_pattern_sum_hi, count_vec_hi));
 
-    const double cross_scale = current_fm_cross_file.vector_scale[phase_idx];
-    const double same_scale = current_fm_same_file.vector_scale[phase_idx];
-    const double count_scale = current_fm_count_file.vector_scale[phase_idx];
-    const double score = (double)linear_quant_sum * linear_scale
-        + current_fm_cross_weight * (0.5 * (double)cross_interaction_quant * cross_scale * cross_scale)
-        + current_fm_same_weight * (0.5 * (double)same_interaction_quant * same_scale * same_scale)
-        + current_fm_count_weight * ((double)count_interaction_quant * count_scale * count_scale);
+    const double score = (double)linear_quant_sum * current_fm_stream12_linear_scale_by_phase[phase_idx]
+        + current_fm_stream12_cross_coeff_by_phase[phase_idx] * (double)cross_interaction_quant
+        + current_fm_stream12_same_coeff_by_phase[phase_idx] * (double)same_interaction_quant
+        + current_fm_stream12_count_coeff_by_phase[phase_idx] * (double)count_interaction_quant;
     return std::clamp((int)std::llround(score), -SCORE_MAX, SCORE_MAX);
 }
 
@@ -280,17 +335,28 @@ inline int current_fm_score_from_idx8_stream12_unchecked(
         active_ids[n_active++] = count_id;
         return current_fm_score_from_ids(phase_idx, active_ids, n_active);
     }
+    if (!current_fm_stream12_cache_ready) {
+        current_fm_stream12_prepare_cache();
+    }
+    if (!current_fm_stream12_cache_ready) {
+        alignas(32) int active_ids[CURRENT_FM_N_PATTERN_FEATURES + 1];
+        int n_active = 0;
+        for (int group = 0; group < 8; ++group) {
+            alignas(32) int values[8];
+            _mm256_store_si256((__m256i*)values, idx8_groups[group]);
+            for (int i = 0; i < 8; ++i) {
+                active_ids[n_active++] = values[i] - 1;
+            }
+        }
+        active_ids[n_active++] = count_id;
+        return current_fm_score_from_ids(phase_idx, active_ids, n_active);
+    }
 
-    const size_t phase_base = (size_t)phase_idx * CURRENT_FM_N_PARAMS_PER_PHASE;
-    const int16_t *linear_ptr = current_fm_cross_file.linear_quant.data() + phase_base;
-    const double linear_scale = current_fm_cross_file.linear_scale[phase_idx];
     const __m256i zero = _mm256_setzero_si256();
-    const std::vector<int8_t> &cross_phase_vectors = current_fm_cross_file.vector_quant_by_phase[phase_idx];
-    const std::vector<int8_t> &same_phase_vectors = current_fm_same_file.vector_quant_by_phase[phase_idx];
-    const std::vector<int8_t> &count_phase_vectors = current_fm_count_file.vector_quant_by_phase[phase_idx];
-    const int8_t *cross_ptr = cross_phase_vectors.empty() ? nullptr : cross_phase_vectors.data();
-    const int8_t *same_ptr = same_phase_vectors.empty() ? nullptr : same_phase_vectors.data();
-    const int8_t *count_ptr = count_phase_vectors.empty() ? nullptr : count_phase_vectors.data();
+    const int16_t *linear_ptr = current_fm_stream12_linear_ptr_by_phase[phase_idx];
+    const int8_t *cross_ptr = current_fm_stream12_cross_ptr_by_phase[phase_idx];
+    const int8_t *same_ptr = current_fm_stream12_same_ptr_by_phase[phase_idx];
+    const int8_t *count_ptr = current_fm_stream12_count_ptr_by_phase[phase_idx];
 
     CurrentFmSimdAccum cross_accum;
     CurrentFmSimdAccum same_accum;
@@ -327,9 +393,9 @@ inline int current_fm_score_from_idx8_stream12_unchecked(
     }
 
     linear_quant_sum += linear_ptr[count_id];
-    if (count_ptr != nullptr) {
-        current_fm_load_dim12_ptr(count_ptr, count_id, count_vec_lo, count_vec_hi);
-    }
+    const int count_num = count_id - CURRENT_FM_N_PATTERN_PARAMS_RAW;
+    count_vec_lo = current_fm_stream12_count_vec_lo[phase_idx][count_num];
+    count_vec_hi = current_fm_stream12_count_vec_hi[phase_idx][count_num];
 
     __m256i cross_same_lo = zero;
     __m256i cross_same_hi = zero;
@@ -367,13 +433,10 @@ inline int current_fm_score_from_idx8_stream12_unchecked(
         current_fm_reduce_epi32(_mm256_mullo_epi32(count_pattern_sum_lo, count_vec_lo)) +
         current_fm_reduce_epi32(_mm256_mullo_epi32(count_pattern_sum_hi, count_vec_hi));
 
-    const double cross_scale = current_fm_cross_file.vector_scale[phase_idx];
-    const double same_scale = current_fm_same_file.vector_scale[phase_idx];
-    const double count_scale = current_fm_count_file.vector_scale[phase_idx];
-    const double score = (double)linear_quant_sum * linear_scale
-        + current_fm_cross_weight * (0.5 * (double)cross_interaction_quant * cross_scale * cross_scale)
-        + current_fm_same_weight * (0.5 * (double)same_interaction_quant * same_scale * same_scale)
-        + current_fm_count_weight * ((double)count_interaction_quant * count_scale * count_scale);
+    const double score = (double)linear_quant_sum * current_fm_stream12_linear_scale_by_phase[phase_idx]
+        + current_fm_stream12_cross_coeff_by_phase[phase_idx] * (double)cross_interaction_quant
+        + current_fm_stream12_same_coeff_by_phase[phase_idx] * (double)same_interaction_quant
+        + current_fm_stream12_count_coeff_by_phase[phase_idx] * (double)count_interaction_quant;
     return std::clamp((int)std::llround(score), -SCORE_MAX, SCORE_MAX);
 }
 #else

@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
     if (!current_fm_load_egev4(eval_spec.c_str(), true)) {
         return 1;
     }
+    current_fm_stream12_prepare_cache();
     if (current_fm_cross_file.dim != 12 || current_fm_same_file.dim != 12 || current_fm_count_file.dim != 12) {
         std::cerr << "stream12 checker expects all banks to be dim12, found dims="
                   << current_fm_cross_file.dim << ','
