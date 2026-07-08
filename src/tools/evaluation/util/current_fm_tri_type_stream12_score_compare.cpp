@@ -81,19 +81,35 @@ int main(int argc, char **argv) {
     int64_t scalar_checksum = 0;
     int64_t stream12_checked_checksum = 0;
     int64_t stream12_unchecked_checksum = 0;
+    int64_t stream12_idx8_checksum = 0;
 
     for (uint64_t i = 0; i < n_cases; ++i) {
         const FmCompareCase &c = cases[(size_t)i];
+        __m256i idx8_groups[8];
+        for (int group = 0; group < 8; ++group) {
+            alignas(32) int values[8];
+            for (int lane = 0; lane < 8; ++lane) {
+                values[lane] = c.ids[group * 8 + lane] + 1;
+            }
+            idx8_groups[group] = _mm256_load_si256((const __m256i*)values);
+        }
         const int scalar_score = current_fm_score_from_ids_quant(c.phase, c.ids, STREAM12_COMPARE_N_ACTIVE);
         const int stream12_checked_score = current_fm_score_from_ids_stream12(c.phase, c.ids, STREAM12_COMPARE_N_ACTIVE);
         const int stream12_unchecked_score = current_fm_score_from_ids_stream12_unchecked(c.phase, c.ids);
+        const int stream12_idx8_score = current_fm_score_from_idx8_stream12_unchecked(
+            c.phase, idx8_groups, c.ids[STREAM12_COMPARE_N_PATTERN_FEATURES]
+        );
         scalar_checksum += scalar_score;
         stream12_checked_checksum += stream12_checked_score;
         stream12_unchecked_checksum += stream12_unchecked_score;
+        stream12_idx8_checksum += stream12_idx8_score;
 
         const int diff = std::max(
-            std::abs(scalar_score - stream12_checked_score),
-            std::abs(scalar_score - stream12_unchecked_score)
+            std::max(
+                std::abs(scalar_score - stream12_checked_score),
+                std::abs(scalar_score - stream12_unchecked_score)
+            ),
+            std::abs(scalar_score - stream12_idx8_score)
         );
         max_abs_diff = std::max(max_abs_diff, diff);
         if (diff != 0) {
@@ -103,6 +119,7 @@ int main(int argc, char **argv) {
                           << " scalar=" << scalar_score
                           << " checked=" << stream12_checked_score
                           << " unchecked=" << stream12_unchecked_score
+                          << " idx8=" << stream12_idx8_score
                           << " diff=" << diff << std::endl;
             }
             ++mismatches;
@@ -116,6 +133,7 @@ int main(int argc, char **argv) {
               << " scalar_checksum=" << scalar_checksum
               << " stream12_checked_checksum=" << stream12_checked_checksum
               << " stream12_unchecked_checksum=" << stream12_unchecked_checksum
+              << " stream12_idx8_checksum=" << stream12_idx8_checksum
               << std::endl;
     return mismatches == 0 ? 0 : 2;
 #endif

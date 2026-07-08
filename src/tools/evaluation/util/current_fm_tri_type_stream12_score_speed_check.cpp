@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <random>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,7 @@
 struct FmSpeedCase {
     int phase;
     int ids[CURRENT_FM_N_PATTERN_FEATURES + 1];
+    std::array<__m256i, 8> idx8_groups;
 };
 
 inline uint64_t now_ms() {
@@ -50,6 +52,13 @@ std::vector<FmSpeedCase> make_cases(const size_t n_cases) {
             c.ids[i] = current_fm_pattern_offsets[pattern_idx] + local;
         }
         c.ids[CURRENT_FM_N_PATTERN_FEATURES] = CURRENT_FM_N_PATTERN_PARAMS_RAW + (int)(rng() % MAX_STONE_NUM);
+        for (int group = 0; group < 8; ++group) {
+            alignas(32) int values[8];
+            for (int lane = 0; lane < 8; ++lane) {
+                values[lane] = c.ids[group * 8 + lane] + 1;
+            }
+            c.idx8_groups[(size_t)group] = _mm256_load_si256((const __m256i*)values);
+        }
     }
     return cases;
 }
@@ -112,5 +121,25 @@ int main(int argc, char **argv) {
     run_benchmark("tri_type_fm_stream12_unchecked", cases, iterations, [](const int phase, const int ids[], const int) {
         return current_fm_score_from_ids_stream12_unchecked(phase, ids);
     });
+    int64_t checksum = 0;
+    size_t case_idx = 0;
+    const uint64_t start = now_ms();
+    for (uint64_t i = 0; i < iterations; ++i) {
+        const FmSpeedCase &c = cases[case_idx];
+        checksum += current_fm_score_from_idx8_stream12_unchecked(
+            c.phase, c.idx8_groups.data(), c.ids[CURRENT_FM_N_PATTERN_FEATURES]
+        );
+        ++case_idx;
+        if (case_idx == cases.size()) {
+            case_idx = 0;
+        }
+    }
+    const uint64_t elapsed = std::max<uint64_t>(1, now_ms() - start);
+    std::cout << "tri_type_fm_stream12_idx8"
+              << " iterations=" << iterations
+              << " elapsed_ms=" << elapsed
+              << " nps=" << (iterations * 1000ULL / elapsed)
+              << " checksum=" << checksum
+              << std::endl;
     return 0;
 }
