@@ -245,10 +245,7 @@ int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 
 inline bool load_eval_file(const char* file, bool show_log) {
-    if (!current_fm_load_egev4(file, show_log)) {
-        return false;
-    }
-    return current_fm_stream12_prepare_cache();
+    return current_fm_load_egev4(file, show_log);
 }
 
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {

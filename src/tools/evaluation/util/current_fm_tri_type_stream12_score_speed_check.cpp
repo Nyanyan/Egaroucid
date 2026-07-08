@@ -114,7 +114,6 @@ int main(int argc, char **argv) {
     if (!current_fm_load_egev4(eval_spec.c_str(), true)) {
         return 1;
     }
-    current_fm_stream12_prepare_cache();
     std::vector<FmSpeedCase> cases = make_cases(case_count);
     run_benchmark("linear_only", cases, iterations, score_linear_only_from_ids);
     run_benchmark("tri_type_fm_existing", cases, iterations, current_fm_score_from_ids);
