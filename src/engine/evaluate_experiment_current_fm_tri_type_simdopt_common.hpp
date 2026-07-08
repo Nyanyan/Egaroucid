@@ -419,6 +419,39 @@ inline void current_fm_add_vector_simd8(
 }
 
 template<bool UpdateTotal>
+inline void current_fm_add_vector_simd14(
+    const CurrentFmTriFile &src,
+    const int phase_idx,
+    const int id,
+    CurrentFmSimdAccum &accum,
+    const int pattern_type
+) {
+    const std::vector<int8_t> &phase_vectors = src.vector_quant_by_phase[phase_idx];
+    if (phase_vectors.empty()) {
+        return;
+    }
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 14;
+    const __m128i q8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    int64_t packed = 0;
+    std::memcpy(&packed, src_ptr + 8, 6);
+    const __m128i q6 = _mm_cvtsi64_si128(packed);
+    const __m256i lo = _mm256_cvtepi8_epi32(q8);
+    const __m256i hi = _mm256_cvtepi8_epi32(q6);
+    const __m256i lo_sq = _mm256_mullo_epi32(lo, lo);
+    const __m256i hi_sq = _mm256_mullo_epi32(hi, hi);
+    if constexpr (UpdateTotal) {
+        accum.sum_lo = _mm256_add_epi32(accum.sum_lo, lo);
+        accum.sum_hi = _mm256_add_epi32(accum.sum_hi, hi);
+        accum.sum_sq_lo = _mm256_add_epi32(accum.sum_sq_lo, lo_sq);
+        accum.sum_sq_hi = _mm256_add_epi32(accum.sum_sq_hi, hi_sq);
+    }
+    accum.type_sum_lo[pattern_type] = _mm256_add_epi32(accum.type_sum_lo[pattern_type], lo);
+    accum.type_sum_hi[pattern_type] = _mm256_add_epi32(accum.type_sum_hi[pattern_type], hi);
+    accum.type_sum_sq_lo[pattern_type] = _mm256_add_epi32(accum.type_sum_sq_lo[pattern_type], lo_sq);
+    accum.type_sum_sq_hi[pattern_type] = _mm256_add_epi32(accum.type_sum_sq_hi[pattern_type], hi_sq);
+}
+
+template<bool UpdateTotal>
 inline void current_fm_add_vector_simd12(
     const CurrentFmTriFile &src,
     const int phase_idx,
@@ -437,6 +470,39 @@ inline void current_fm_add_vector_simd12(
     const __m128i q4 = _mm_cvtsi32_si128(packed);
     const __m256i lo = _mm256_cvtepi8_epi32(q8);
     const __m256i hi = _mm256_cvtepi8_epi32(q4);
+    const __m256i lo_sq = _mm256_mullo_epi32(lo, lo);
+    const __m256i hi_sq = _mm256_mullo_epi32(hi, hi);
+    if constexpr (UpdateTotal) {
+        accum.sum_lo = _mm256_add_epi32(accum.sum_lo, lo);
+        accum.sum_hi = _mm256_add_epi32(accum.sum_hi, hi);
+        accum.sum_sq_lo = _mm256_add_epi32(accum.sum_sq_lo, lo_sq);
+        accum.sum_sq_hi = _mm256_add_epi32(accum.sum_sq_hi, hi_sq);
+    }
+    accum.type_sum_lo[pattern_type] = _mm256_add_epi32(accum.type_sum_lo[pattern_type], lo);
+    accum.type_sum_hi[pattern_type] = _mm256_add_epi32(accum.type_sum_hi[pattern_type], hi);
+    accum.type_sum_sq_lo[pattern_type] = _mm256_add_epi32(accum.type_sum_sq_lo[pattern_type], lo_sq);
+    accum.type_sum_sq_hi[pattern_type] = _mm256_add_epi32(accum.type_sum_sq_hi[pattern_type], hi_sq);
+}
+
+template<bool UpdateTotal>
+inline void current_fm_add_vector_simd10(
+    const CurrentFmTriFile &src,
+    const int phase_idx,
+    const int id,
+    CurrentFmSimdAccum &accum,
+    const int pattern_type
+) {
+    const std::vector<int8_t> &phase_vectors = src.vector_quant_by_phase[phase_idx];
+    if (phase_vectors.empty()) {
+        return;
+    }
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 10;
+    const __m128i q8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    int32_t packed = 0;
+    std::memcpy(&packed, src_ptr + 8, 2);
+    const __m128i q2 = _mm_cvtsi32_si128(packed);
+    const __m256i lo = _mm256_cvtepi8_epi32(q8);
+    const __m256i hi = _mm256_cvtepi8_epi32(q2);
     const __m256i lo_sq = _mm256_mullo_epi32(lo, lo);
     const __m256i hi_sq = _mm256_mullo_epi32(hi, hi);
     if constexpr (UpdateTotal) {
@@ -566,6 +632,46 @@ inline void current_fm_load_vector_simd12(
     hi = _mm256_cvtepi8_epi32(q4);
 }
 
+inline void current_fm_load_vector_simd14(
+    const CurrentFmTriFile &src,
+    const int phase_idx,
+    const int id,
+    __m256i &lo,
+    __m256i &hi
+) {
+    const std::vector<int8_t> &phase_vectors = src.vector_quant_by_phase[phase_idx];
+    if (phase_vectors.empty()) {
+        return;
+    }
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 14;
+    const __m128i q8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    int64_t packed = 0;
+    std::memcpy(&packed, src_ptr + 8, 6);
+    const __m128i q6 = _mm_cvtsi64_si128(packed);
+    lo = _mm256_cvtepi8_epi32(q8);
+    hi = _mm256_cvtepi8_epi32(q6);
+}
+
+inline void current_fm_load_vector_simd10(
+    const CurrentFmTriFile &src,
+    const int phase_idx,
+    const int id,
+    __m256i &lo,
+    __m256i &hi
+) {
+    const std::vector<int8_t> &phase_vectors = src.vector_quant_by_phase[phase_idx];
+    if (phase_vectors.empty()) {
+        return;
+    }
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 10;
+    const __m128i q8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    int32_t packed = 0;
+    std::memcpy(&packed, src_ptr + 8, 2);
+    const __m128i q2 = _mm_cvtsi32_si128(packed);
+    lo = _mm256_cvtepi8_epi32(q8);
+    hi = _mm256_cvtepi8_epi32(q2);
+}
+
 inline void current_fm_load_vector_simd4(
     const CurrentFmTriFile &src,
     const int phase_idx,
@@ -609,8 +715,12 @@ inline void current_fm_add_vector_simd_auto(
 ) {
     if (src.dim == 16) {
         current_fm_add_vector_simd16<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
+    } else if (src.dim == 14) {
+        current_fm_add_vector_simd14<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
     } else if (src.dim == 12) {
         current_fm_add_vector_simd12<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
+    } else if (src.dim == 10) {
+        current_fm_add_vector_simd10<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
     } else if (src.dim == 8) {
         current_fm_add_vector_simd8<UpdateTotal>(src, phase_idx, id, accum, pattern_type);
     } else {
@@ -627,8 +737,12 @@ inline void current_fm_load_vector_simd_auto(
 ) {
     if (src.dim == 16) {
         current_fm_load_vector_simd16(src, phase_idx, id, lo, hi);
+    } else if (src.dim == 14) {
+        current_fm_load_vector_simd14(src, phase_idx, id, lo, hi);
     } else if (src.dim == 12) {
         current_fm_load_vector_simd12(src, phase_idx, id, lo, hi);
+    } else if (src.dim == 10) {
+        current_fm_load_vector_simd10(src, phase_idx, id, lo, hi);
     } else if (src.dim == 8) {
         current_fm_load_vector_simd8(src, phase_idx, id, lo, hi);
     } else {
@@ -637,7 +751,7 @@ inline void current_fm_load_vector_simd_auto(
 }
 
 inline bool current_fm_dim_has_specialized_simd(const int dim) {
-    return dim == 4 || dim == 8 || dim == 12 || dim == 16;
+    return dim == 4 || dim == 8 || dim == 10 || dim == 12 || dim == 14 || dim == 16;
 }
 
 inline bool current_fm_all_dims_have_specialized_simd() {
