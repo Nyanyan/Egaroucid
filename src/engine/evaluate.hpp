@@ -119,6 +119,15 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_CURRENT_FM_TRI_TYPE_STREAM12)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_current_fm_tri_type_stream12.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_current_fm_tri_type_stream12.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_CURRENT_FM_DUAL_TYPE_PHASE_WEIGHT)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_current_fm_dual_type_phase_weight.hpp"
