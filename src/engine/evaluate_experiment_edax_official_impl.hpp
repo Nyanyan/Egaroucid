@@ -37,6 +37,8 @@ constexpr int EDAX_OFFICIAL_N_PATTERN_PARAMS_RAW = 226315;
 constexpr int EDAX_OFFICIAL_N_PACKED_PARAMS = 114364;
 constexpr int EDAX_OFFICIAL_N_PLY = 61;
 constexpr int EDAX_OFFICIAL_WEIGHT_STRIDE = EDAX_OFFICIAL_N_PATTERN_PARAMS_RAW;
+constexpr int EDAX_OFFICIAL_SCORE_STEP = 128;
+constexpr int EDAX_OFFICIAL_SCORE_STEP_2 = 64;
 
 constexpr Feature_to_coord feature_to_coord[N_PATTERN_FEATURES] = {
     { 9, {COORD_A1, COORD_B1, COORD_A2, COORD_B2, COORD_C1, COORD_A3, COORD_C2, COORD_B3, COORD_C3, COORD_NO}},
@@ -510,8 +512,8 @@ inline int mid_evaluate(Board *board) {
 #else
     int res = calc_pattern(phase_idx, &search.eval);
 #endif
-    res += res >= 0 ? STEP_2 : -STEP_2;
-    res /= STEP;
+    res += res >= 0 ? EDAX_OFFICIAL_SCORE_STEP_2 : -EDAX_OFFICIAL_SCORE_STEP_2;
+    res /= EDAX_OFFICIAL_SCORE_STEP;
     return std::clamp(res, -SCORE_MAX, SCORE_MAX);
 }
 
@@ -522,8 +524,8 @@ inline int mid_evaluate_diff(Search *search) {
 #else
     int res = calc_pattern(phase_idx, &search->eval);
 #endif
-    res += res >= 0 ? STEP_2 : -STEP_2;
-    res /= STEP;
+    res += res >= 0 ? EDAX_OFFICIAL_SCORE_STEP_2 : -EDAX_OFFICIAL_SCORE_STEP_2;
+    res /= EDAX_OFFICIAL_SCORE_STEP;
     return std::clamp(res, -SCORE_MAX, SCORE_MAX);
 }
 
@@ -533,8 +535,8 @@ inline int mid_evaluate_move_ordering_end(Search *search) {
 #else
     int res = calc_pattern_move_ordering_end(&search->eval);
 #endif
-    res += res >= 0 ? STEP_2 : -STEP_2;
-    res /= STEP;
+    res += res >= 0 ? EDAX_OFFICIAL_SCORE_STEP_2 : -EDAX_OFFICIAL_SCORE_STEP_2;
+    res /= EDAX_OFFICIAL_SCORE_STEP;
     return res;
 }
 
