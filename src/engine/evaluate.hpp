@@ -56,6 +56,15 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_EDAX_OFFICIAL_FM)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_edax_official_fm.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_edax_official_fm.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_EDAX_FM)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_edax_fm.hpp"
