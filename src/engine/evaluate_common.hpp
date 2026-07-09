@@ -15,21 +15,21 @@
     @brief evaluation pattern definition
 */
 // disc patterns
-#if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_LINEAR_CANONICAL) || defined(EVALUATE_EXPERIMENT_EDAX_FM)
+#if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_LINEAR_CANONICAL) || defined(EVALUATE_EXPERIMENT_EDAX_FM) || defined(EVALUATE_EXPERIMENT_EDAX_OFFICIAL)
 constexpr int N_PATTERNS = 13;          // Edax linear model pattern groups
 #else
 constexpr int N_PATTERNS = 16;          // number of patterns used
 #endif
 #if defined(EVALUATE_EXPERIMENT_7_7_BETA) || defined(EVALUATE_EXPERIMENT_7_7_FM)
 constexpr int MAX_CELL_PATTERNS = 17;   // 7.7 beta uses up to 17 patterns per cell
-#elif defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_LINEAR_CANONICAL) || defined(EVALUATE_EXPERIMENT_EDAX_FM)
+#elif defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_LINEAR_CANONICAL) || defined(EVALUATE_EXPERIMENT_EDAX_FM) || defined(EVALUATE_EXPERIMENT_EDAX_OFFICIAL)
 constexpr int MAX_CELL_PATTERNS = 7;    // Edax linear uses up to 7 patterns per cell
 #else
 constexpr int MAX_CELL_PATTERNS = 15;   // 1 cell belongs up to 15 patterns
 #endif
 constexpr int MAX_PATTERN_CELLS = 10;   // up to 10 cells for a pattern
 constexpr int MAX_EVALUATE_IDX = 59049; // 3^10: up to 10 cells for pattern
-#if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_LINEAR_CANONICAL) || defined(EVALUATE_EXPERIMENT_EDAX_FM)
+#if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_LINEAR_CANONICAL) || defined(EVALUATE_EXPERIMENT_EDAX_FM) || defined(EVALUATE_EXPERIMENT_EDAX_OFFICIAL)
 constexpr int N_PATTERN_FEATURES = 47;  // Edax linear board features plus bias
 #else
 constexpr int N_PATTERN_FEATURES = 64;  // 64 features are used
