@@ -57,6 +57,23 @@ std::vector<EdaxOfficialFmSpeedCase> make_cases(const size_t n_cases) {
     return cases;
 }
 
+std::vector<EdaxOfficialFmSpeedCase> make_cases(const size_t n_cases, const int phase_min, const int phase_max) {
+    std::mt19937 rng(20260710);
+    std::vector<EdaxOfficialFmSpeedCase> cases(n_cases);
+    const int lo = std::clamp(phase_min, 0, N_PHASES - 1);
+    const int hi = std::clamp(phase_max, lo, N_PHASES - 1);
+    for (EdaxOfficialFmSpeedCase &c: cases) {
+        c.phase = lo + (int)(rng() % (uint32_t)(hi - lo + 1));
+        for (int feature = 0; feature < N_PATTERN_FEATURES; ++feature) {
+            const int n_digits = pattern_sizes[feature_to_pattern[feature]];
+            const int span = pow3[n_digits];
+            c.values[feature] = (uint16_t)(rng() % (uint32_t)span);
+            c.ids[feature] = edax_official_fm_active_id(feature, c.values[feature]);
+        }
+    }
+    return cases;
+}
+
 inline int score_linear_only_from_case(const EdaxOfficialFmSpeedCase &c) {
 #if USE_SIMD
     const int raw = edax_official_calc_raw(c.phase, 0, c.values);
@@ -118,12 +135,14 @@ void run_benchmark(
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cerr << "usage: edax_official_fm_score_speed_check <eval.dat[@fm.egev4]> [iterations] [case_count]" << std::endl;
+        std::cerr << "usage: edax_official_fm_score_speed_check <eval.dat[@fm.egev4]> [iterations] [case_count] [phase_min] [phase_max]" << std::endl;
         return 1;
     }
     const std::string eval_spec = argv[1];
     const uint64_t iterations = argc >= 3 ? std::strtoull(argv[2], nullptr, 10) : 5000000ULL;
     const size_t case_count = argc >= 4 ? (size_t)std::strtoull(argv[3], nullptr, 10) : 65536ULL;
+    const int phase_min = argc >= 5 ? std::atoi(argv[4]) : 0;
+    const int phase_max = argc >= 6 ? std::atoi(argv[5]) : N_PHASES - 1;
 
     bit_init();
     mobility_init();
@@ -132,7 +151,7 @@ int main(int argc, char **argv) {
     if (!evaluate_init(eval_spec, "", true)) {
         return 1;
     }
-    const std::vector<EdaxOfficialFmSpeedCase> cases = make_cases(case_count);
+    const std::vector<EdaxOfficialFmSpeedCase> cases = make_cases(case_count, phase_min, phase_max);
     run_benchmark("official_linear_only", cases, iterations, score_linear_only_from_case);
     run_benchmark("official_fm_scalar", cases, iterations, score_fm_scalar_from_case);
     run_benchmark("official_fm_selected", cases, iterations, score_fm_from_case);
