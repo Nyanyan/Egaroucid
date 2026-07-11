@@ -320,16 +320,28 @@ inline double eval77_fm_interaction_from_ids_simd_padded16(const int phase_idx, 
 
     Eval77FmSimdAccum accum;
     eval77_fm_clear_simd_accum(accum);
-    for (int i = 0; i < n_active; ++i) {
-        const int id = active_ids[i];
-        if (id < 0 || EVAL77_FM_N_PARAMS_PER_PHASE <= id) {
-            continue;
-        }
-        if (eval77_fm_dim == 16) {
+    if (eval77_fm_dim == 16) {
+        for (int i = 0; i < n_active; ++i) {
+            const int id = active_ids[i];
+            if (id < 0 || EVAL77_FM_N_PARAMS_PER_PHASE <= id) {
+                continue;
+            }
             eval77_fm_add_vector_simd16(phase_vectors, id, accum);
-        } else if (eval77_fm_dim == 12) {
+        }
+    } else if (eval77_fm_dim == 12) {
+        for (int i = 0; i < n_active; ++i) {
+            const int id = active_ids[i];
+            if (id < 0 || EVAL77_FM_N_PARAMS_PER_PHASE <= id) {
+                continue;
+            }
             eval77_fm_add_vector_simd12(phase_vectors, id, accum);
-        } else {
+        }
+    } else {
+        for (int i = 0; i < n_active; ++i) {
+            const int id = active_ids[i];
+            if (id < 0 || EVAL77_FM_N_PARAMS_PER_PHASE <= id) {
+                continue;
+            }
             eval77_fm_add_vector_simd8(phase_vectors, id, accum);
         }
     }

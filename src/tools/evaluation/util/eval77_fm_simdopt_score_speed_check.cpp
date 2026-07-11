@@ -79,7 +79,11 @@ inline int eval77_score_linear_only_from_case(const Eval77FmSpeedCase &c) {
 }
 
 inline int eval77_score_fm_from_case(const Eval77FmSpeedCase &c) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
     return eval77_fm_score_from_linear_and_fm_ids(c.phase, c.ids, N_PATTERN_FEATURES + 1, c.fm_ids, c.n_fm);
+#else
+    return eval77_fm_score_from_ids(c.phase, c.ids, N_PATTERN_FEATURES + 1);
+#endif
 }
 
 inline int eval77_score_fm_scalar_from_case(const Eval77FmSpeedCase &c) {
