@@ -221,8 +221,37 @@ inline void eval77_fm_add_vector_simd16(
     accum.sum_sq_pair32 = _mm256_add_epi32(accum.sum_sq_pair32, _mm256_madd_epi16(q16, q16));
 }
 
-inline double eval77_fm_interaction_from_ids_simd16(const int phase_idx, const int active_ids[], const int n_active) {
-    if (!eval77_fm_loaded || phase_idx < 0 || N_PHASES <= phase_idx || eval77_fm_dim != 16) {
+inline void eval77_fm_add_vector_simd8(
+    const std::vector<int8_t> &phase_vectors,
+    const int id,
+    Eval77FmSimdAccum &accum
+) {
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 8;
+    const __m128i q8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    const __m256i q16 = _mm256_cvtepi8_epi16(q8);
+    accum.sum16 = _mm256_add_epi16(accum.sum16, q16);
+    accum.sum_sq_pair32 = _mm256_add_epi32(accum.sum_sq_pair32, _mm256_madd_epi16(q16, q16));
+}
+
+inline void eval77_fm_add_vector_simd12(
+    const std::vector<int8_t> &phase_vectors,
+    const int id,
+    Eval77FmSimdAccum &accum
+) {
+    const int8_t *src_ptr = phase_vectors.data() + (size_t)id * 12;
+    const __m128i low8 = _mm_loadl_epi64((const __m128i*)src_ptr);
+    int32_t tail4 = 0;
+    std::memcpy(&tail4, src_ptr + 8, sizeof(tail4));
+    const __m128i high4 = _mm_slli_si128(_mm_cvtsi32_si128(tail4), 8);
+    const __m128i q8 = _mm_or_si128(low8, high4);
+    const __m256i q16 = _mm256_cvtepi8_epi16(q8);
+    accum.sum16 = _mm256_add_epi16(accum.sum16, q16);
+    accum.sum_sq_pair32 = _mm256_add_epi32(accum.sum_sq_pair32, _mm256_madd_epi16(q16, q16));
+}
+
+inline double eval77_fm_interaction_from_ids_simd_padded16(const int phase_idx, const int active_ids[], const int n_active) {
+    if (!eval77_fm_loaded || phase_idx < 0 || N_PHASES <= phase_idx ||
+        (eval77_fm_dim != 8 && eval77_fm_dim != 12 && eval77_fm_dim != 16)) {
         return 0.0;
     }
     const std::vector<int8_t> &phase_vectors = eval77_fm_vector_quant_by_phase[phase_idx];
@@ -237,7 +266,13 @@ inline double eval77_fm_interaction_from_ids_simd16(const int phase_idx, const i
         if (id < 0 || EVAL77_FM_N_PARAMS_PER_PHASE <= id) {
             continue;
         }
-        eval77_fm_add_vector_simd16(phase_vectors, id, accum);
+        if (eval77_fm_dim == 16) {
+            eval77_fm_add_vector_simd16(phase_vectors, id, accum);
+        } else if (eval77_fm_dim == 12) {
+            eval77_fm_add_vector_simd12(phase_vectors, id, accum);
+        } else {
+            eval77_fm_add_vector_simd8(phase_vectors, id, accum);
+        }
     }
 
     const __m256i sum_sq_pair32 = _mm256_madd_epi16(accum.sum16, accum.sum16);
@@ -250,8 +285,8 @@ inline double eval77_fm_interaction_from_ids_simd16(const int phase_idx, const i
 
 inline double eval77_fm_interaction_from_ids(const int phase_idx, const int active_ids[], const int n_active) {
 #if USE_SIMD
-    if (eval77_fm_dim == 16) {
-        return eval77_fm_interaction_from_ids_simd16(phase_idx, active_ids, n_active);
+    if (eval77_fm_dim == 8 || eval77_fm_dim == 12 || eval77_fm_dim == 16) {
+        return eval77_fm_interaction_from_ids_simd_padded16(phase_idx, active_ids, n_active);
     }
 #endif
     return eval77_fm_interaction_from_ids_quant(phase_idx, active_ids, n_active);
