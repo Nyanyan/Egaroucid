@@ -415,6 +415,10 @@ bool evaluate_init(bool show_log) {
 inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) {
     int active_ids[N_PATTERN_FEATURES + 1];
     int n_active = 0;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+    int fm_ids[N_PATTERN_FEATURES + 1];
+    int n_fm = 0;
+#endif
     const bool reversed = eval->reversed[eval->feature_idx];
     for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
         const int pattern_idx = feature_to_pattern[i];
@@ -422,10 +426,24 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) 
         if (reversed) {
             local_idx = swap_player_idx(local_idx, pattern_sizes[pattern_idx]);
         }
-        active_ids[n_active++] = eval77_fm_pattern_offsets[pattern_idx] + local_idx;
+        const int id = eval77_fm_pattern_offsets[pattern_idx] + local_idx;
+        active_ids[n_active++] = id;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+        if (eval77_fm_subset_pattern_type_enabled(pattern_idx)) {
+            fm_ids[n_fm++] = id;
+        }
+#endif
     }
-    active_ids[n_active++] = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
-    return eval77_fm_score_from_ids(phase_idx, active_ids, n_active);
+    const int count_id = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
+    active_ids[n_active++] = count_id;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+    if (eval77_fm_subset_use_count) {
+        fm_ids[n_fm++] = count_id;
+    }
+    return eval77_fm_score_from_linear_and_fm_ids(phase_idx, active_ids, n_active, fm_ids, n_fm);
+#else
+    return eval77_fm_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
+#endif
 }
 
 /*

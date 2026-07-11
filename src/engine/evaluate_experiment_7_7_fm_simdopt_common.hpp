@@ -14,7 +14,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <iostream>
+#include <string>
 #include <vector>
 
 constexpr int EVAL77_FM_N_PATTERN_PARAMS_RAW = 944784;
@@ -34,6 +36,55 @@ std::array<float, N_PHASES> eval77_fm_linear_scale;
 std::array<float, N_PHASES> eval77_fm_vector_scale;
 int eval77_fm_dim = 0;
 bool eval77_fm_loaded = false;
+uint32_t eval77_fm_subset_pattern_mask = 0xFFFFu;
+bool eval77_fm_subset_use_count = true;
+
+inline bool eval77_fm_parse_subset_file_spec(const char *file, std::string &data_file) {
+    data_file = file;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+    eval77_fm_subset_pattern_mask = 0xFFFFu;
+    eval77_fm_subset_use_count = true;
+    const size_t count_sep = data_file.rfind('@');
+    if (count_sep == std::string::npos || count_sep == 0) {
+        return true;
+    }
+    const size_t mask_sep = data_file.rfind('@', count_sep - 1);
+    if (mask_sep == std::string::npos) {
+        return true;
+    }
+
+    const std::string path = data_file.substr(0, mask_sep);
+    const std::string mask_text = data_file.substr(mask_sep + 1, count_sep - mask_sep - 1);
+    const std::string count_text = data_file.substr(count_sep + 1);
+    if (path.empty() || mask_text.empty() || count_text.empty()) {
+        std::cerr << "[ERROR] [FATAL] subset eval spec must be <eval.egev4>@<pattern_mask>@<use_count>" << std::endl;
+        return false;
+    }
+
+    try {
+        size_t pos = 0;
+        const unsigned long mask = std::stoul(mask_text, &pos, 0);
+        if (pos != mask_text.size() || (mask & ~0xFFFFul) != 0) {
+            std::cerr << "[ERROR] [FATAL] subset pattern mask must be a 16-bit integer" << std::endl;
+            return false;
+        }
+        pos = 0;
+        const unsigned long use_count = std::stoul(count_text, &pos, 0);
+        if (pos != count_text.size() || use_count > 1) {
+            std::cerr << "[ERROR] [FATAL] subset count flag must be 0 or 1" << std::endl;
+            return false;
+        }
+        eval77_fm_subset_pattern_mask = (uint32_t)mask;
+        eval77_fm_subset_use_count = use_count != 0;
+        data_file = path;
+    } catch (const std::exception&) {
+        std::cerr << "[ERROR] [FATAL] failed to parse subset eval spec "
+                  << file << std::endl;
+        return false;
+    }
+#endif
+    return true;
+}
 
 inline bool eval77_fm_read_exact(FILE *fp, void *dst, size_t elem_size, size_t elem_count, const char *what) {
     if (fread(dst, elem_size, elem_count, fp) < elem_count) {
@@ -50,12 +101,20 @@ inline int32_t eval77_fm_read_i32_le(const unsigned char *p) {
 }
 
 inline bool eval77_fm_load_egev4(const char *file, bool show_log) {
+    std::string data_file;
+    if (!eval77_fm_parse_subset_file_spec(file, data_file)) {
+        return false;
+    }
     if (show_log) {
-        std::cerr << "7.7 beta + FM experiment evaluation file " << file << std::endl;
+        std::cerr << "7.7 beta + FM experiment evaluation file " << data_file << std::endl;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+        std::cerr << "7.7-FM subset pattern_mask=0x" << std::hex << eval77_fm_subset_pattern_mask
+                  << std::dec << " use_count=" << (eval77_fm_subset_use_count ? 1 : 0) << std::endl;
+#endif
     }
     FILE *fp;
-    if (!file_open(&fp, file, "rb")) {
-        std::cerr << "[ERROR] [FATAL] can't open eval " << file << std::endl;
+    if (!file_open(&fp, data_file.c_str(), "rb")) {
+        std::cerr << "[ERROR] [FATAL] can't open eval " << data_file << std::endl;
         return false;
     }
 
@@ -296,4 +355,63 @@ inline int eval77_fm_score_from_ids(const int phase_idx, const int active_ids[],
     const double score = eval77_fm_linear_from_ids(phase_idx, active_ids, n_active) +
         eval77_fm_interaction_from_ids(phase_idx, active_ids, n_active);
     return std::clamp((int)std::llround(score), -SCORE_MAX, SCORE_MAX);
+}
+
+inline bool eval77_fm_subset_pattern_type_enabled(const int pattern_type) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+    if (pattern_type < 0 || N_PATTERNS <= pattern_type) {
+        return false;
+    }
+    return ((eval77_fm_subset_pattern_mask >> pattern_type) & 1u) != 0;
+#else
+    (void)pattern_type;
+    return true;
+#endif
+}
+
+inline bool eval77_fm_subset_feature_enabled(const int id) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+    if (id >= EVAL77_FM_N_PATTERN_PARAMS_RAW) {
+        return eval77_fm_subset_use_count;
+    }
+    if (id < 0) {
+        return false;
+    }
+    return eval77_fm_subset_pattern_type_enabled(id / 59049);
+#else
+    (void)id;
+    return true;
+#endif
+}
+
+inline int eval77_fm_filter_subset_ids(const int active_ids[], const int n_active, int subset_ids[]) {
+    int n_subset = 0;
+    for (int i = 0; i < n_active; ++i) {
+        if (eval77_fm_subset_feature_enabled(active_ids[i])) {
+            subset_ids[n_subset++] = active_ids[i];
+        }
+    }
+    return n_subset;
+}
+
+inline int eval77_fm_score_from_linear_and_fm_ids(
+    const int phase_idx,
+    const int linear_ids[],
+    const int n_linear,
+    const int fm_ids[],
+    const int n_fm
+) {
+    const double score = eval77_fm_linear_from_ids(phase_idx, linear_ids, n_linear) +
+        eval77_fm_interaction_from_ids(phase_idx, fm_ids, n_fm);
+    return std::clamp((int)std::llround(score), -SCORE_MAX, SCORE_MAX);
+}
+
+inline int eval77_fm_score_from_ids_subset_filter(const int phase_idx, const int active_ids[], const int n_active) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+    int subset_ids[N_PATTERN_FEATURES + 1];
+    const int n_subset = eval77_fm_filter_subset_ids(active_ids, n_active, subset_ids);
+    return eval77_fm_score_from_linear_and_fm_ids(phase_idx, active_ids, n_active, subset_ids, n_subset);
+#else
+    return eval77_fm_score_from_ids(phase_idx, active_ids, n_active);
+#endif
 }

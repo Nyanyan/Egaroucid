@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#ifndef EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT
+#if !defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT) && !defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
     #define EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT
 #endif
 
@@ -33,6 +33,8 @@
 struct Eval77FmSpeedCase {
     int phase;
     int ids[N_PATTERN_FEATURES + 1];
+    int fm_ids[N_PATTERN_FEATURES + 1];
+    int n_fm;
 };
 
 inline uint64_t eval77_now_ms() {
@@ -54,6 +56,16 @@ std::vector<Eval77FmSpeedCase> eval77_make_cases(const size_t n_cases, const int
             c.ids[feature] = eval77_fm_pattern_offsets[pattern_idx] + local;
         }
         c.ids[N_PATTERN_FEATURES] = EVAL77_FM_N_PATTERN_PARAMS_RAW + (int)(rng() % MAX_STONE_NUM);
+        c.n_fm = 0;
+        for (int feature = 0; feature < N_PATTERN_FEATURES; ++feature) {
+            const int pattern_idx = feature / 4;
+            if (eval77_fm_subset_pattern_type_enabled(pattern_idx)) {
+                c.fm_ids[c.n_fm++] = c.ids[feature];
+            }
+        }
+        if (eval77_fm_subset_feature_enabled(c.ids[N_PATTERN_FEATURES])) {
+            c.fm_ids[c.n_fm++] = c.ids[N_PATTERN_FEATURES];
+        }
     }
     return cases;
 }
@@ -67,12 +79,12 @@ inline int eval77_score_linear_only_from_case(const Eval77FmSpeedCase &c) {
 }
 
 inline int eval77_score_fm_from_case(const Eval77FmSpeedCase &c) {
-    return eval77_fm_score_from_ids(c.phase, c.ids, N_PATTERN_FEATURES + 1);
+    return eval77_fm_score_from_linear_and_fm_ids(c.phase, c.ids, N_PATTERN_FEATURES + 1, c.fm_ids, c.n_fm);
 }
 
 inline int eval77_score_fm_scalar_from_case(const Eval77FmSpeedCase &c) {
     const double score = eval77_fm_linear_from_ids(c.phase, c.ids, N_PATTERN_FEATURES + 1) +
-        eval77_fm_interaction_from_ids_quant(c.phase, c.ids, N_PATTERN_FEATURES + 1);
+        eval77_fm_interaction_from_ids_quant(c.phase, c.fm_ids, c.n_fm);
     return std::clamp((int)std::llround(score), -SCORE_MAX, SCORE_MAX);
 }
 

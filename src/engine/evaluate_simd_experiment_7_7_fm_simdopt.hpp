@@ -428,9 +428,58 @@ inline void append_eval77_fm_simd_ids(__m256i idx8, int active_ids[], int &n_act
     }
 }
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+inline void append_eval77_fm_simd_ids_subset(
+    __m256i idx8,
+    const int type_lanes_0_to_3,
+    const int type_lanes_4_to_7,
+    int active_ids[],
+    int &n_active,
+    int fm_ids[],
+    int &n_fm
+) {
+    int values[8];
+    _mm256_storeu_si256((__m256i*)values, idx8);
+    const bool use_lo = eval77_fm_subset_pattern_type_enabled(type_lanes_0_to_3);
+    const bool use_hi = eval77_fm_subset_pattern_type_enabled(type_lanes_4_to_7);
+    for (int i = 0; i < 4; ++i) {
+        const int id = values[i] - 1;
+        active_ids[n_active++] = id;
+        if (use_lo) {
+            fm_ids[n_fm++] = id;
+        }
+    }
+    for (int i = 4; i < 8; ++i) {
+        const int id = values[i] - 1;
+        active_ids[n_active++] = id;
+        if (use_hi) {
+            fm_ids[n_fm++] = id;
+        }
+    }
+}
+#endif
+
 inline int calc_pattern(const int phase_idx, Eval_features *features, const int num0) {
     int active_ids[N_PATTERN_FEATURES + 1];
     int n_active = 0;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+    int fm_ids[N_PATTERN_FEATURES + 1];
+    int n_fm = 0;
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[0], 0), 3, 2, active_ids, n_active, fm_ids, n_fm);
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[1], 1), 1, 0, active_ids, n_active, fm_ids, n_fm);
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[2], 2), 7, 6, active_ids, n_active, fm_ids, n_fm);
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[3], 3), 5, 4, active_ids, n_active, fm_ids, n_fm);
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[4], 4), 11, 10, active_ids, n_active, fm_ids, n_fm);
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[5], 5), 9, 8, active_ids, n_active, fm_ids, n_fm);
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[6], 6), 15, 14, active_ids, n_active, fm_ids, n_fm);
+    append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[7], 7), 13, 12, active_ids, n_active, fm_ids, n_fm);
+    const int count_id = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
+    active_ids[n_active++] = count_id;
+    if (eval77_fm_subset_use_count) {
+        fm_ids[n_fm++] = count_id;
+    }
+    return eval77_fm_score_from_linear_and_fm_ids(phase_idx, active_ids, n_active, fm_ids, n_fm);
+#else
     append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[0], 0), active_ids, n_active);
     append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[1], 1), active_ids, n_active);
     append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[2], 2), active_ids, n_active);
@@ -440,7 +489,8 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
     append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[6], 6), active_ids, n_active);
     append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[7], 7), active_ids, n_active);
     active_ids[n_active++] = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
-    return eval77_fm_score_from_ids(phase_idx, active_ids, n_active);
+    return eval77_fm_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
+#endif
 }
 
 inline int calc_pattern_move_ordering_end(Eval_features *features) {
