@@ -81,6 +81,8 @@ def make_shard_command(args: argparse.Namespace, shard_dir: Path, range_start: i
     ]
     if args.max_positions is not None:
         cmd.extend(["--max-positions", str(args.max_positions)])
+    if args.hint_cache_db is not None:
+        cmd.extend(["--hint-cache-db", str(args.hint_cache_db)])
     return cmd
 
 
@@ -114,6 +116,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--jobs-per-shard", type=int, default=4)
     parser.add_argument("--raw-hint-samples", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "blend_wthor_full_sharded")
+    parser.add_argument("--hint-cache-db", type=Path, default=None, help="Shared SQLite cache for Egaroucid hint scores.")
+    parser.add_argument("--no-hint-cache", action="store_true", help="Disable the default shared hint cache.")
     parser.add_argument("--max-shards-to-run", type=int, default=None, help="Optional smoke/benchmark cap.")
     parser.add_argument("--merge-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -126,6 +130,8 @@ def main() -> None:
         raise ValueError("--num-shards must be positive")
     if args.jobs_per_shard <= 0:
         raise ValueError("--jobs-per-shard must be positive")
+    if args.hint_cache_db is None and not args.no_hint_cache:
+        args.hint_cache_db = args.output_dir / "hint_score_cache.sqlite3"
 
     dat_files = discover_dat_files(args.board_data_dir)
     total_positions = count_position_samples(dat_files, args.max_positions)
@@ -141,6 +147,7 @@ def main() -> None:
         "max_positions": args.max_positions,
         "num_shards": args.num_shards,
         "jobs_per_shard": args.jobs_per_shard,
+        "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
         "shards": [
             {"index": idx, "range_start": start, "range_end": end, "output_dir": str(shard_dirs[idx])}
             for idx, (start, end) in enumerate(ranges)

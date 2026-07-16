@@ -98,6 +98,27 @@ def merge_buckets(results: Sequence[dict]) -> List[dict]:
     return rows
 
 
+def merge_hint_cache_stats(results: Sequence[dict]) -> dict:
+    merged = {
+        "path": None,
+        "lookups": 0,
+        "hits": 0,
+        "misses": 0,
+        "writes": 0,
+        "rows": None,
+    }
+    for result in results:
+        stats = result.get("hint_cache_stats", {})
+        if not stats:
+            continue
+        merged["path"] = stats.get("path") or result.get("hint_cache_db") or merged["path"]
+        for key in ("lookups", "hits", "misses", "writes"):
+            merged[key] += int(stats.get(key) or 0)
+        if stats.get("rows") is not None:
+            merged["rows"] = max(int(stats["rows"]), int(merged["rows"] or 0))
+    return merged
+
+
 def merge_results(results: Sequence[dict]) -> dict:
     first = results[0]
     topn = merge_topn(results)
@@ -119,6 +140,8 @@ def merge_results(results: Sequence[dict]) -> dict:
         "sample_positions": None,
         "sample_seed": None,
         "jobs": sum(int(result.get("jobs", 1)) for result in results),
+        "hint_cache_db": first.get("hint_cache_db"),
+        "hint_cache_stats": merge_hint_cache_stats(results),
         "invalid_policy_samples": sum(int(result.get("invalid_policy_samples", 0)) for result in results),
         "illegal_label_samples": sum(int(result.get("illegal_label_samples", 0)) for result in results),
         "topn": topn,

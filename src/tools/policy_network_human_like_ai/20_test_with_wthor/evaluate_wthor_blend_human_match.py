@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import sqlite3
 import time
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -151,6 +152,90 @@ def popcount(x: int) -> int:
     return bin(int(x)).count("1")
 
 
+def hint_cache_key(state: BoardState, side: int) -> str:
+    return f"{state.black:016x}:{state.white:016x}:{int(side)}"
+
+
+class HintScoreCache:
+    def __init__(self, path: Optional[Path]):
+        self.path = Path(path) if path is not None else None
+        self.conn: Optional[sqlite3.Connection] = None
+        self.lookups = 0
+        self.hits = 0
+        self.misses = 0
+        self.writes = 0
+        if self.path is not None:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.conn = sqlite3.connect(str(self.path), timeout=60.0, isolation_level=None)
+            self.conn.execute("PRAGMA busy_timeout = 60000")
+            self.conn.execute("PRAGMA journal_mode = WAL")
+            self.conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS hint_scores (
+                    key TEXT PRIMARY KEY,
+                    scores_json TEXT NOT NULL,
+                    raw_hint TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                )
+                """
+            )
+
+    def close(self) -> None:
+        if self.conn is not None:
+            self.conn.close()
+            self.conn = None
+
+    def get(self, key: str) -> Optional[Tuple[Dict[int, float], str]]:
+        if self.conn is None:
+            return None
+        self.lookups += 1
+        row = self.conn.execute("SELECT scores_json, raw_hint FROM hint_scores WHERE key = ?", (key,)).fetchone()
+        if row is None:
+            self.misses += 1
+            return None
+        self.hits += 1
+        scores = {int(k): float(v) for k, v in json.loads(row[0]).items()}
+        return scores, str(row[1])
+
+    def put(self, key: str, scores: Dict[int, float], raw_hint: str) -> None:
+        if self.conn is None:
+            return
+        scores_json = json.dumps({str(k): float(v) for k, v in scores.items()}, sort_keys=True)
+        cursor = self.conn.execute(
+            "INSERT OR IGNORE INTO hint_scores(key, scores_json, raw_hint, created_at) VALUES (?, ?, ?, ?)",
+            (key, scores_json, raw_hint, time.time()),
+        )
+        self.writes += int(cursor.rowcount > 0)
+
+    def row_count(self) -> Optional[int]:
+        if self.conn is None:
+            return None
+        row = self.conn.execute("SELECT COUNT(*) FROM hint_scores").fetchone()
+        return int(row[0])
+
+    def summary(self) -> dict:
+        return {
+            "path": str(self.path) if self.path is not None else None,
+            "lookups": self.lookups,
+            "hits": self.hits,
+            "misses": self.misses,
+            "writes": self.writes,
+            "rows": self.row_count(),
+        }
+
+
+def hint_scores_with_cache(blender: BlendedPolicy, state: BoardState, side: int, hint_cache: Optional[HintScoreCache]) -> Tuple[Dict[int, float], str]:
+    if hint_cache is None:
+        return blender.hint_runner.hint_scores(state, side)
+    key = hint_cache_key(state, side)
+    cached = hint_cache.get(key)
+    if cached is not None:
+        return cached
+    scores, raw_hint = blender.hint_runner.hint_scores(state, side)
+    hint_cache.put(key, scores, raw_hint)
+    return scores, raw_hint
+
+
 def position_sample_to_state(position_sample) -> Tuple[BoardState, int, int, int, int, int]:
     player = int(position_sample["player"])
     opponent = int(position_sample["opponent"])
@@ -224,6 +309,7 @@ def update_metrics_for_position_sample(
     raw_hint_samples: List[dict],
     raw_hint_limit: int,
     sample_index: int,
+    hint_cache: Optional[HintScoreCache],
 ) -> Tuple[int, int, int]:
     state, side, policy, player, opponent, move_number = position_sample_to_state(position_sample)
     legal_policies = state.legal_policies(side)
@@ -237,7 +323,7 @@ def update_metrics_for_position_sample(
         raw_hint = ""
         egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
     else:
-        scores, raw_hint = blender.hint_runner.hint_scores(state, side)
+        scores, raw_hint = hint_scores_with_cache(blender, state, side, hint_cache)
         egaroucid_dist = blender.egaroucid_distribution(scores, legal_policies)
     if raw_hint_limit > 0 and len(raw_hint_samples) < raw_hint_limit:
         raw_hint_samples.append({"index": sample_index, "raw_hint": raw_hint})
@@ -279,6 +365,26 @@ def merge_worker_result(target: Dict[float, dict], worker_metrics: Dict[float, d
                 dst["bucket_hits"][bucket][n] += src["bucket_hits"][bucket][n]
 
 
+def merge_hint_cache_stats(stats_rows: Sequence[dict]) -> dict:
+    merged = {
+        "path": None,
+        "lookups": 0,
+        "hits": 0,
+        "misses": 0,
+        "writes": 0,
+        "rows": None,
+    }
+    for stats in stats_rows:
+        if not stats:
+            continue
+        merged["path"] = stats.get("path") or merged["path"]
+        for key in ("lookups", "hits", "misses", "writes"):
+            merged[key] += int(stats.get(key) or 0)
+        if stats.get("rows") is not None:
+            merged["rows"] = max(int(stats["rows"]), int(merged["rows"] or 0))
+    return merged
+
+
 def evaluate_worker(worker_args: dict) -> dict:
     start_time = time.time()
     blend_params = worker_args["blend_params"]
@@ -304,6 +410,7 @@ def evaluate_worker(worker_args: dict) -> dict:
     illegal_label = 0
     processed = 0
     file_global_start = 0
+    hint_cache = HintScoreCache(Path(worker_args["hint_cache_db"])) if worker_args["hint_cache_db"] else None
     try:
         for dat_file in dat_files:
             file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
@@ -337,12 +444,16 @@ def evaluate_worker(worker_args: dict) -> dict:
                         raw_hint_samples,
                         worker_args["raw_hint_limit"],
                         processed,
+                        hint_cache,
                     )
                     processed += ok
                     invalid_policy += bad_policy
                     illegal_label += bad_label
             file_global_start += file_positions
+        hint_cache_stats = hint_cache.summary() if hint_cache is not None else {}
     finally:
+        if hint_cache is not None:
+            hint_cache.close()
         blender.hint_runner.close()
     return {
         "worker_id": worker_args["worker_id"],
@@ -352,10 +463,11 @@ def evaluate_worker(worker_args: dict) -> dict:
         "illegal_label_samples": illegal_label,
         "metrics": metrics,
         "raw_hint_samples": raw_hint_samples,
+        "hint_cache_stats": hint_cache_stats,
     }
 
 
-def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_values: Sequence[int], bucket_names: Sequence[str], metrics: Dict[float, dict], invalid_policy: int, illegal_label: int, raw_hint_samples: Sequence[dict], available_positions: int, range_start: int, range_end: int, worker_summaries: Sequence[dict]) -> dict:
+def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_values: Sequence[int], bucket_names: Sequence[str], metrics: Dict[float, dict], invalid_policy: int, illegal_label: int, raw_hint_samples: Sequence[dict], available_positions: int, range_start: int, range_end: int, worker_summaries: Sequence[dict], hint_cache_stats: dict) -> dict:
     topn_rows = []
     bucket_rows = []
     for blend in blend_params:
@@ -400,6 +512,8 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "sample_positions": args.sample_positions,
         "sample_seed": args.sample_seed if args.sample_positions is not None else None,
         "jobs": args.jobs,
+        "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
+        "hint_cache_stats": hint_cache_stats,
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
         "topn": topn_rows,
@@ -443,6 +557,7 @@ def evaluate(args: argparse.Namespace) -> dict:
     invalid_policy = 0
     illegal_label = 0
     raw_hint_samples = []
+    hint_cache_stats_rows: List[dict] = []
     if args.jobs > 1:
         if selected_global_positions is None:
             work_ranges = split_absolute_ranges(range_start, range_end, args.jobs)
@@ -454,14 +569,14 @@ def evaluate(args: argparse.Namespace) -> dict:
         worker_summaries = []
         raw_hint_remaining = args.raw_hint_samples
         worker_args = []
-        for worker_id, ((range_start, range_end), selected_chunk) in enumerate(zip(work_ranges, selected_chunks)):
+        for worker_id, ((worker_range_start, worker_range_end), selected_chunk) in enumerate(zip(work_ranges, selected_chunks)):
             worker_args.append(
                 {
                     "worker_id": worker_id,
                     "dat_files": [str(path) for path in dat_files],
                     "available_positions": available_positions,
-                    "range_start": range_start,
-                    "range_end": range_end,
+                    "range_start": worker_range_start,
+                    "range_end": worker_range_end,
                     "selected_positions": selected_chunk,
                     "weights": str(args.weights),
                     "egaroucid_exe": str(args.egaroucid_exe),
@@ -475,6 +590,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                     "bucket_names": bucket_names,
                     "batch_size": args.batch_size,
                     "raw_hint_limit": max(0, raw_hint_remaining),
+                    "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
                 }
             )
             raw_hint_remaining = 0
@@ -486,6 +602,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                 invalid_policy += worker_result["invalid_policy_samples"]
                 illegal_label += worker_result["illegal_label_samples"]
                 raw_hint_samples.extend(worker_result["raw_hint_samples"])
+                hint_cache_stats_rows.append(worker_result.get("hint_cache_stats", {}))
                 worker_summaries.append(
                     {
                         "worker_id": worker_result["worker_id"],
@@ -493,6 +610,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                         "processed_positions": worker_result["processed_positions"],
                         "invalid_policy_samples": worker_result["invalid_policy_samples"],
                         "illegal_label_samples": worker_result["illegal_label_samples"],
+                        "hint_cache_stats": worker_result.get("hint_cache_stats", {}),
                     }
                 )
                 if args.verbose:
@@ -502,7 +620,8 @@ def evaluate(args: argparse.Namespace) -> dict:
                         flush=True,
                     )
         worker_summaries.sort(key=lambda row: row["worker_id"])
-        return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, worker_summaries)
+        hint_cache_stats = merge_hint_cache_stats(hint_cache_stats_rows)
+        return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, worker_summaries, hint_cache_stats)
 
     blender = BlendedPolicy(
         weights=args.weights,
@@ -516,6 +635,7 @@ def evaluate(args: argparse.Namespace) -> dict:
 
     total_seen = 0
     global_offset = 0
+    hint_cache = HintScoreCache(args.hint_cache_db) if args.hint_cache_db is not None else None
     for dat_file in dat_files:
         file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
         if global_offset >= available_positions:
@@ -537,6 +657,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                     raw_hint_samples,
                     args.raw_hint_samples,
                     total_seen,
+                    hint_cache,
                 )
                 total_seen += ok
                 invalid_policy += bad_policy
@@ -546,8 +667,11 @@ def evaluate(args: argparse.Namespace) -> dict:
                 print(f"seen {total_seen} position_samples")
         global_offset += file_positions
 
+    hint_cache_stats = hint_cache.summary() if hint_cache is not None else {}
+    if hint_cache is not None:
+        hint_cache.close()
     blender.hint_runner.close()
-    return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, [])
+    return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, [], hint_cache_stats)
 
 
 def make_argparser() -> argparse.ArgumentParser:
@@ -569,6 +693,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--sample-positions", type=int, default=None)
     parser.add_argument("--sample-seed", type=int, default=613)
     parser.add_argument("--jobs", type=int, default=1)
+    parser.add_argument("--hint-cache-db", type=Path, default=None)
     parser.add_argument("--raw-hint-samples", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "wthor_blend_human_match")
     parser.add_argument("--progress-interval", type=int, default=1000)
@@ -589,6 +714,9 @@ def main() -> None:
         print("sample_positions", result["sample_positions"])
         print("sample_seed", result["sample_seed"])
     print("jobs", result["jobs"])
+    if result["hint_cache_db"] is not None:
+        print("hint_cache_db", result["hint_cache_db"])
+        print("hint_cache_stats", json.dumps(result["hint_cache_stats"], sort_keys=True))
     print("invalid_policy_samples", result["invalid_policy_samples"])
     print("illegal_label_samples", result["illegal_label_samples"])
     for row in result["topn"]:
