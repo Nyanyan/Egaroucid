@@ -65,9 +65,11 @@ python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend
 The sharded blend runner creates a shared SQLite hint-score cache by default at
 `20_test_with_wthor/output/blend_wthor_full_sharded/hint_score_cache.sqlite3`.
 Use `--no-hint-cache` to disable it or `--hint-cache-db` to choose another path.
-Use `--positions-per-shard` and `--time-limit-sec` to advance the full WTHOR
-run in resumable chunks. Use `--merge-completed` to keep `partial_merged`
-updated even before the full WTHOR run is complete.
+Use `--positions-per-shard`, `--range-start` / `--range-end`, and
+`--time-limit-sec` to advance the full WTHOR run in resumable chunks. Use
+`--merge-completed` to keep `partial_merged` updated even before the full WTHOR
+run is complete. `manifest.json` stores only a first/last shard preview by
+default; tune it with `--manifest-shard-preview`.
 
 Strength-test helper:
 
@@ -144,8 +146,11 @@ shard 版のブレンド評価は、既定で
 `20_test_with_wthor/output/blend_wthor_full_sharded/hint_score_cache.sqlite3`
 に共有 SQLite hint-score cache を作ります。無効化する場合は `--no-hint-cache`、保存先を変える場合は
 `--hint-cache-db` を使います。
-`--positions-per-shard` と `--time-limit-sec` を使うと、全WTHOR実行を再開可能な小さい単位で進められます。
+`--positions-per-shard`、`--range-start` / `--range-end`、`--time-limit-sec` を使うと、
+全WTHOR実行を再開可能な小さい単位で進められます。
 `--merge-completed` を使うと、全WTHORが完走する前でも `partial_merged` を更新できます。
+`manifest.json` は既定で shard の先頭・末尾 preview だけを保存します。表示数は
+`--manifest-shard-preview` で調整できます。
 
 強さ評価の補助コマンド:
 

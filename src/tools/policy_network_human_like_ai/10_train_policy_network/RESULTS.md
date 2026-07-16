@@ -127,11 +127,17 @@ A two-shard smoke run also passed and the merged output preserved cache stats:
 
 ### Resumable Full-Run Controls
 
-The WTHOR sharded runner now supports `--positions-per-shard` and
-`--time-limit-sec`. This lets the full WTHOR blend run advance in smaller,
-resumable chunks instead of requiring one very large shard to finish.
-`--merge-completed` updates `partial_merged` from all finished shards even
-before the full WTHOR run is complete.
+The WTHOR sharded runner now supports `--positions-per-shard`,
+`--range-start` / `--range-end`, and `--time-limit-sec`. This lets the full
+WTHOR blend run advance in smaller, resumable chunks instead of requiring one
+very large shard to finish. `--merge-completed` updates `partial_merged` from
+all finished shards even before the full WTHOR run is complete.
+
+For very small shard sizes such as `--positions-per-shard 5`, the runner no
+longer expands every scheduled shard into `manifest.json`. It writes the total
+`shard_count` plus a first/last preview controlled by
+`--manifest-shard-preview`, so continuing from `--range-start 30` avoids a
+large manifest.
 
 Smoke test with 5 WTHOR position samples, `positions_per_shard=2`,
 `blend_param=1.0`, `top_n=1,3`:
@@ -155,25 +161,30 @@ Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
 - Chunk 001 completed 20 / 8,035,282 WTHOR position samples.
 - Chunk 002 reused the same output directory, skipped the first two finished
   shards, completed one more shard, and updated `partial_merged`.
-- Current completed total: 30 / 8,035,282 position samples.
+- Chunk 003 continued from `--range-start 30` with `--positions-per-shard 5`,
+  completed shard `30..35`, and updated `partial_merged`.
+- Current completed total: 35 / 8,035,282 position samples.
 - Chunk 002 resource: 94.232 sec, peak RSS 2061.105 MiB.
+- Chunk 003 resource: 91.211 sec, peak RSS 2803.953 MiB.
+- A merge-only refresh after the runner change rewrote `manifest.json` to
+  2,863 bytes and confirmed `all_completed_position_samples=35`.
 
-Current `partial_merged` top-1 symmetric accuracy on the first 30 position
+Current `partial_merged` top-1 symmetric accuracy on the first 35 position
 samples:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.500000 |
-| 0.1 | 0.433333 |
-| 0.2 | 0.433333 |
-| 0.3 | 0.433333 |
-| 0.4 | 0.433333 |
-| 0.5 | 0.433333 |
-| 0.6 | 0.400000 |
-| 0.7 | 0.500000 |
-| 0.8 | 0.333333 |
-| 0.9 | 0.333333 |
-| 1.0 | 0.266667 |
+| 0.0 | 0.542857 |
+| 0.1 | 0.457143 |
+| 0.2 | 0.457143 |
+| 0.3 | 0.457143 |
+| 0.4 | 0.457143 |
+| 0.5 | 0.457143 |
+| 0.6 | 0.428571 |
+| 0.7 | 0.514286 |
+| 0.8 | 0.371429 |
+| 0.9 | 0.314286 |
+| 1.0 | 0.257143 |
 
 ### Strength Benchmark
 
@@ -321,10 +332,16 @@ WTHOR 先頭2局面での cache smoke test:
 
 ### 再開可能な full 実行制御
 
-WTHOR shard runner は `--positions-per-shard` と `--time-limit-sec` に対応しました。
-これにより、全WTHORブレンド評価を巨大な shard 単位ではなく、再開可能な小さい単位で進められます。
+WTHOR shard runner は `--positions-per-shard`、`--range-start` / `--range-end`、
+`--time-limit-sec` に対応しました。これにより、全WTHORブレンド評価を巨大な shard 単位ではなく、
+再開可能な小さい単位で進められます。
 `--merge-completed` を使うと、全WTHORが完走する前でも完了済み shard だけから
 `partial_merged` を更新できます。
+
+`--positions-per-shard 5` のように shard 数が非常に多い場合でも、runner は全 shard を
+`manifest.json` に展開しません。`shard_count` と先頭・末尾 preview だけを書き、表示数は
+`--manifest-shard-preview` で調整します。そのため、`--range-start 30` から継続しても
+巨大な manifest は作られません。
 
 WTHOR 5局面、`positions_per_shard=2`、`blend_param=1.0`、`top_n=1,3` の smoke test:
 
@@ -347,24 +364,29 @@ merge 後の smoke 結果:
 - chunk 001 で WTHOR 20 / 8,035,282 局面サンプルまで完了。
 - chunk 002 では同じ出力先を使い、完了済みの最初の2 shard を skip して1 shard 追加し、
   `partial_merged` を更新しました。
-- 現在の完了数: 30 / 8,035,282 局面サンプル。
+- chunk 003 では `--range-start 30` と `--positions-per-shard 5` で shard `30..35` を完了し、
+  `partial_merged` を更新しました。
+- 現在の完了数: 35 / 8,035,282 局面サンプル。
 - chunk 002 resource: 94.232 秒、peak RSS 2061.105 MiB。
+- chunk 003 resource: 91.211 秒、peak RSS 2803.953 MiB。
+- runner 変更後の merge-only refresh で `manifest.json` は 2,863 bytes になり、
+  `all_completed_position_samples=35` を確認しました。
 
-現在の `partial_merged` における先頭30局面サンプルの top-1 symmetric accuracy:
+現在の `partial_merged` における先頭35局面サンプルの top-1 symmetric accuracy:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.500000 |
-| 0.1 | 0.433333 |
-| 0.2 | 0.433333 |
-| 0.3 | 0.433333 |
-| 0.4 | 0.433333 |
-| 0.5 | 0.433333 |
-| 0.6 | 0.400000 |
-| 0.7 | 0.500000 |
-| 0.8 | 0.333333 |
-| 0.9 | 0.333333 |
-| 1.0 | 0.266667 |
+| 0.0 | 0.542857 |
+| 0.1 | 0.457143 |
+| 0.2 | 0.457143 |
+| 0.3 | 0.457143 |
+| 0.4 | 0.457143 |
+| 0.5 | 0.457143 |
+| 0.6 | 0.428571 |
+| 0.7 | 0.514286 |
+| 0.8 | 0.371429 |
+| 0.9 | 0.314286 |
+| 1.0 | 0.257143 |
 
 ### 強さ評価ベンチマーク
 
