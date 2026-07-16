@@ -208,9 +208,9 @@ random.shuffle(openings)
 
 # name, cmd
 player_info = [
-    # ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
+    ['latest',  'Egaroucid_for_Console.exe -gtp -quiet -nobook'],
     # ['beta', 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe -gtp -quiet -nobook'],
-    ['new-r16', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260621_1_afterrand16/eval.egev2'],
+    # ['new-r16', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260621_1_afterrand16/eval.egev2'],
     # ['aft-r16', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260520_1_afterrand16/eval.egev2'],
     # ['aft-r10', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260519_1_afterrand10/eval.egev2'],
     # ['aft-r6', 'versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe -gtp -quiet -nobook -eval ./../model/20260518_1_afterrand6/eval.egev2'],
