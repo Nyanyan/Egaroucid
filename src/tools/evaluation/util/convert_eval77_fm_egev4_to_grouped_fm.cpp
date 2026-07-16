@@ -51,7 +51,8 @@ struct InputInfo {
 enum class VectorGroupMode {
     Average,
     CopyFirst,
-    CopyLast
+    CopyLast,
+    CopyCustom
 };
 
 struct GroupSpec {
@@ -150,6 +151,7 @@ bool parse_grouped_count(const std::string &mode, int *group_count) {
 VectorGroupMode parse_vector_group_mode(std::string *mode) {
     constexpr const char *copy_first_suffix = "copyfirst";
     constexpr const char *copy_last_suffix = "copylast";
+    constexpr const char *copy_custom_suffix = "copycustom";
     const auto strip_suffix = [&](const char *suffix) {
         const size_t suffix_len = std::strlen(suffix);
         if (mode->size() < suffix_len ||
@@ -165,11 +167,17 @@ VectorGroupMode parse_vector_group_mode(std::string *mode) {
     if (strip_suffix(copy_last_suffix)) {
         return VectorGroupMode::CopyLast;
     }
+    if (strip_suffix(copy_custom_suffix)) {
+        return VectorGroupMode::CopyCustom;
+    }
     return VectorGroupMode::Average;
 }
 
-void assign_group_representatives(GroupSpec *spec) {
+void assign_default_group_representatives(GroupSpec *spec) {
     spec->representative_phase.fill(0);
+    if (spec->vector_mode == VectorGroupMode::CopyCustom) {
+        throw std::runtime_error("copycustom requires a representative phase CSV");
+    }
     for (int group = 0; group < spec->group_count; ++group) {
         int first_phase = -1;
         int last_phase = -1;
@@ -187,6 +195,51 @@ void assign_group_representatives(GroupSpec *spec) {
         spec->representative_phase[(size_t)group] =
             spec->vector_mode == VectorGroupMode::CopyFirst ? first_phase : last_phase;
     }
+}
+
+void assign_custom_group_representatives(GroupSpec *spec, const std::string &representative_arg) {
+    spec->representative_phase.fill(0);
+    std::stringstream ss(representative_arg);
+    std::string token;
+    int group = 0;
+    while (std::getline(ss, token, ',')) {
+        if (group >= spec->group_count) {
+            throw std::runtime_error("too many representative phases for copycustom");
+        }
+        size_t parsed = 0;
+        const int phase = std::stoi(token, &parsed);
+        if (parsed != token.size()) {
+            throw std::runtime_error("invalid representative phase: " + token);
+        }
+        if (phase < 0 || N_PHASES <= phase) {
+            throw std::runtime_error("representative phase is out of range: " + token);
+        }
+        if (spec->phase_to_group[(size_t)phase] != group) {
+            throw std::runtime_error(
+                "representative phase " + std::to_string(phase) +
+                " does not belong to group " + std::to_string(group)
+            );
+        }
+        spec->representative_phase[(size_t)group] = phase;
+        ++group;
+    }
+    if (group != spec->group_count) {
+        throw std::runtime_error("copycustom representative CSV must have one phase per group");
+    }
+}
+
+void assign_group_representatives(GroupSpec *spec, const std::string &representative_arg) {
+    if (spec->vector_mode == VectorGroupMode::CopyCustom) {
+        if (representative_arg.empty()) {
+            throw std::runtime_error("copycustom requires a representative phase CSV");
+        }
+        assign_custom_group_representatives(spec, representative_arg);
+        return;
+    }
+    if (!representative_arg.empty()) {
+        throw std::runtime_error("representative phase CSV is only valid with copycustom");
+    }
+    assign_default_group_representatives(spec);
 }
 
 InputInfo read_input_info(const std::string &input_path) {
@@ -224,17 +277,17 @@ InputInfo read_input_info(const std::string &input_path) {
     return info;
 }
 
-GroupSpec make_group_spec(const std::string &mode) {
+GroupSpec make_group_spec(const std::string &mode, const std::string &representative_arg) {
     GroupSpec spec;
     std::string base_mode = mode;
     spec.vector_mode = parse_vector_group_mode(&base_mode);
     if (base_mode.empty()) {
-        throw std::runtime_error("mode is missing before copyfirst/copylast suffix");
+        throw std::runtime_error("mode is missing before copyfirst/copylast/copycustom suffix");
     }
     if (base_mode == "shared") {
         spec.group_count = 1;
         spec.phase_to_group.fill(0);
-        assign_group_representatives(&spec);
+        assign_group_representatives(&spec, representative_arg);
         return spec;
     }
     if (base_mode == "grouped7") {
@@ -245,7 +298,7 @@ GroupSpec make_group_spec(const std::string &mode) {
                 spec.phase_to_group[phase] = (uint8_t)group;
             }
         }
-        assign_group_representatives(&spec);
+        assign_group_representatives(&spec, representative_arg);
         return spec;
     }
     int group_count = 0;
@@ -261,10 +314,10 @@ GroupSpec make_group_spec(const std::string &mode) {
                 spec.phase_to_group[phase] = (uint8_t)group;
             }
         }
-        assign_group_representatives(&spec);
+        assign_group_representatives(&spec, representative_arg);
         return spec;
     }
-    throw std::runtime_error("mode must be grouped7, groupedN, or shared, optionally suffixed by copyfirst/copylast");
+    throw std::runtime_error("mode must be grouped7, groupedN, or shared, optionally suffixed by copyfirst/copylast/copycustom");
 }
 
 std::vector<std::vector<int>> phases_by_group(const GroupSpec &spec) {
@@ -468,10 +521,11 @@ void convert(
     const std::string &input_path,
     const std::string &output_path,
     const std::string &mode,
-    const std::string &timestamp_arg
+    const std::string &timestamp_arg,
+    const std::string &representative_arg
 ) {
     const InputInfo info = read_input_info(input_path);
-    const GroupSpec spec = make_group_spec(mode);
+    const GroupSpec spec = make_group_spec(mode, representative_arg);
     const std::vector<std::vector<int>> groups = phases_by_group(spec);
     const std::array<float, N_PHASES> group_vector_scales =
         compute_group_vector_scales(input_path, info, spec, groups);
@@ -542,13 +596,14 @@ void convert(
 } // namespace
 
 int main(int argc, char **argv) {
-    if (argc < 4 || argc > 5) {
-        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|shared>[copyfirst|copylast] [preserve|now|YYYYMMDDHHMMSS]" << std::endl;
+    if (argc < 4 || argc > 6) {
+        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|shared>[copyfirst|copylast|copycustom] [preserve|now|YYYYMMDDHHMMSS] [representative_phase_csv_for_copycustom]" << std::endl;
         return 1;
     }
     try {
-        const std::string timestamp = argc == 5 ? argv[4] : "preserve";
-        convert(argv[1], argv[2], argv[3], timestamp);
+        const std::string timestamp = argc >= 5 ? argv[4] : "preserve";
+        const std::string representative_arg = argc >= 6 ? argv[5] : "";
+        convert(argv[1], argv[2], argv[3], timestamp, representative_arg);
     } catch (const std::exception &e) {
         std::cerr << "[ERROR] " << e.what() << std::endl;
         return 1;
