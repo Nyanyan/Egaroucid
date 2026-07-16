@@ -312,6 +312,12 @@ Smoke results:
   232 / 120,000 games, elapsed 719.563 sec, and peaked at 117426.348 MiB RSS.
   The cache switch did not reduce memory, so the dominant cost is likely the
   number of simultaneously resident GTP/blended engine processes.
+- Full schedule chunk 004 kept 32 worker threads,
+  `--processes-per-player 8`, and `--no-blend-cache`, then added
+  `--close-processes-after-game`. It advanced the run to 302 / 120,000 games,
+  elapsed 735.136 sec, and peaked at 72669.684 MiB RSS. Closing engines after
+  each game reduced peak memory by about 38% versus chunk 003, confirming that
+  long-lived per-player process pools were the main memory pressure.
 
 The full requested schedule is 120,000 games. The short full-player benchmark
 suggests a multi-day run even with 32 parallel matches, and `hint 100` required
@@ -319,10 +325,10 @@ raising the strength-runner timeout from 60 sec to 300 sec. The first full
 schedule chunk also showed that `parallel_matches=32` with
 `processes_per_player=32` is very memory-heavy on this machine. Chunk 002
 showed that lowering only `processes_per_player` is not enough, and chunk 003
-showed that disabling the blended-engine hint cache is not enough either. A
-practical long run likely needs fewer simultaneously resident engine processes
-or a shared-service style blended engine while preserving the requested 32
-worker threads.
+showed that disabling the blended-engine hint cache is not enough either. Chunk
+004 showed that closing engines after each game is an effective memory-control
+knob while preserving the requested 32 worker threads, though the wall-clock
+time remains high because `hint 100` level-21 searches dominate the run.
 
 ## 日本語
 
@@ -619,11 +625,17 @@ smoke 結果:
   232 / 120,000 対局まで進み、elapsed は 719.563 秒、peak RSS は 117426.348 MiB でした。
   キャッシュ無効化でもメモリは下がらなかったため、主因は同時常駐している GTP / blended engine
   プロセス数そのものに近いと考えています。
+- full schedule chunk 004 では 32 worker threads、`--processes-per-player 8`、
+  `--no-blend-cache` は維持し、`--close-processes-after-game` を追加しました。
+  302 / 120,000 対局まで進み、elapsed は 735.136 秒、peak RSS は 72669.684 MiB でした。
+  chunk 003 比で peak memory は約38%下がり、長寿命の player 別 process pool が主なメモリ圧迫要因
+  だったことを確認できました。
 
 要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
 また `hint 100` が60秒で戻らない局面があったため、strength runner の timeout 既定値を300秒に上げました。
 最初の full schedule chunk では `parallel_matches=32` かつ `processes_per_player=32` がこの環境では
 非常に大きいメモリを使うことも分かりました。chunk 002 では `processes_per_player` だけを下げても
 不十分で、chunk 003 では blended engine の hint キャッシュを切っても不十分でした。
-32 worker threads を保ったまま長時間実行するには、同時常駐する engine プロセス数を減らすか、
-blended engine を shared service 化する方向が必要そうです。
+chunk 004 では game 終了ごとに engine を閉じることで、32 worker threads を保ったままメモリを
+大きく下げられました。ただし `hint 100` level-21 探索が支配的なので、wall-clock time は依然として
+大きいです。
