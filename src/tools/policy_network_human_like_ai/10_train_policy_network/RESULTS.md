@@ -301,14 +301,20 @@ Smoke results:
   with `stop_reason=time_limit`, elapsed 729.340 sec including already-started
   game completion, and peaked at 112208.027 MiB RSS. No Egaroucid or Python
   child processes remained afterward.
+- Full schedule chunk 002 kept 32 worker threads but used
+  `--processes-per-player 8 --resume --time-limit-sec 60`. It advanced the
+  run to 158 / 120,000 games, elapsed 771.611 sec, and peaked at 111064.254
+  MiB RSS. Lowering `processes_per_player` did not materially reduce peak RSS,
+  so the next optimization target is the per-process blended engine footprint.
 
 The full requested schedule is 120,000 games. The short full-player benchmark
 suggests a multi-day run even with 32 parallel matches, and `hint 100` required
 raising the strength-runner timeout from 60 sec to 300 sec. The first full
 schedule chunk also showed that `parallel_matches=32` with
-`processes_per_player=32` is very memory-heavy on this machine, so the next
-strength benchmark should keep 32 worker threads but test a lower
-`processes_per_player` cap before continuing long runs.
+`processes_per_player=32` is very memory-heavy on this machine. Chunk 002
+showed that lowering only `processes_per_player` is not enough, so continuing
+long runs efficiently likely requires reducing the blended GTP engine process
+footprint while preserving 32 worker threads.
 
 ## 日本語
 
@@ -595,9 +601,15 @@ smoke 結果:
   92 / 120,000 対局を完了し、`stop_reason=time_limit` で停止しました。
   起動済み対局の終了待ち込みで elapsed は 729.340 秒、peak RSS は 112208.027 MiB でした。
   実行後に Egaroucid や Python の子プロセスが残っていないことも確認しました。
+- full schedule chunk 002 では 32 worker threads は維持しつつ
+  `--processes-per-player 8 --resume --time-limit-sec 60` を試しました。
+  158 / 120,000 対局まで進み、elapsed は 771.611 秒、peak RSS は 111064.254 MiB でした。
+  `processes_per_player` を下げても peak RSS は大きくは下がらなかったため、次は blended engine
+  1プロセスあたりのメモリを下げる方向を確認します。
 
 要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
 また `hint 100` が60秒で戻らない局面があったため、strength runner の timeout 既定値を300秒に上げました。
 最初の full schedule chunk では `parallel_matches=32` かつ `processes_per_player=32` がこの環境では
-非常に大きいメモリを使うことも分かったため、次の強さ評価ベンチでは 32 worker threads は維持しつつ、
-`processes_per_player` の上限を下げて比較します。
+非常に大きいメモリを使うことも分かりました。chunk 002 では `processes_per_player` だけを下げても
+不十分だったため、32 worker threads を保ったまま長時間実行するには blended GTP engine の
+プロセスあたりメモリ削減が必要そうです。
