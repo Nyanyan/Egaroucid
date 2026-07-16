@@ -75,6 +75,8 @@ def make_command(args: argparse.Namespace) -> List[str]:
         str(args.engine_threads),
         "--status-every-games",
         str(args.status_every_games),
+        "--task-retries",
+        str(args.task_retries),
         "--weights",
         str(args.weights),
         "--egaroucid-exe",
@@ -115,6 +117,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--processes-per-player", type=int, default=32)
     parser.add_argument("--engine-threads", type=int, default=1)
     parser.add_argument("--status-every-games", type=int, default=200)
+    parser.add_argument("--task-retries", type=int, default=2)
     parser.add_argument("--time-limit-sec", type=float, default=None)
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())

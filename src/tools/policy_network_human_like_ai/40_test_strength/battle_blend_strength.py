@@ -29,6 +29,7 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -659,6 +660,26 @@ def append_task_results(output_dir: Path, task: Task, results: Sequence[dict]) -
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def failed_tasks_path(output_dir: Path) -> Path:
+    return output_dir / "strength_failed_tasks.jsonl"
+
+
+def append_task_failure(output_dir: Path, task: Task, attempt: int, exc: BaseException) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    row = {
+        "task_id": task.task_id,
+        "p0_idx": task.p0_idx,
+        "p1_idx": task.p1_idx,
+        "opening": task.opening,
+        "games_to_use": task.games_to_use,
+        "attempt": attempt,
+        "error": repr(exc),
+        "traceback": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+    }
+    with failed_tasks_path(output_dir).open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
 def load_completed_task_results(players: List[Player], output_dir: Path) -> Tuple[set, int]:
     path = game_results_path(output_dir)
     if not path.exists():
@@ -703,6 +724,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
     parser.add_argument("--close-processes-after-game", action="store_true", help="Close engines after each game instead of keeping them in per-player pools.")
+    parser.add_argument("--task-retries", type=int, default=2, help="Retry a failed task this many times before aborting.")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -718,6 +740,8 @@ def main() -> None:
         raise ValueError("--games-per-pair must be positive")
     if args.time_limit_sec is not None and args.time_limit_sec <= 0.0:
         raise ValueError("--time-limit-sec must be positive when set")
+    if args.task_retries < 0:
+        raise ValueError("--task-retries must be non-negative")
 
     openings = read_openings(args.openings)
     players = build_players(args)
@@ -742,6 +766,7 @@ def main() -> None:
     print("max_processes_per_player", args.processes_per_player)
     print("blend_cache_egaroucid", not args.no_blend_cache)
     print("close_processes_after_game", args.close_processes_after_game)
+    print("task_retries", args.task_retries)
     if args.time_limit_sec is not None:
         print("time_limit_sec", args.time_limit_sec)
     print("total_games", total_games)
@@ -763,6 +788,7 @@ def main() -> None:
                     "max_processes_per_player": args.processes_per_player,
                     "blend_cache_egaroucid": not args.no_blend_cache,
                     "close_processes_after_game": args.close_processes_after_game,
+                    "task_retries": args.task_retries,
                     "time_limit_sec": args.time_limit_sec,
                     "total_games": total_games,
                     "n_tasks": len(tasks),
@@ -782,6 +808,7 @@ def main() -> None:
     start_time = time.time()
     stop_reason = "finished"
     executor = ThreadPoolExecutor(max_workers=args.parallel_matches)
+    retry_counts: Dict[int, int] = {}
     try:
         iterator = iter(tasks)
         futures = {}
@@ -793,9 +820,17 @@ def main() -> None:
                 task = futures.pop(future)
                 try:
                     results = future.result()
-                except Exception:
-                    write_outputs(players, args.output_dir, completed_games, total_games)
-                    raise
+                except Exception as exc:
+                    attempt = retry_counts.get(task.task_id, 0) + 1
+                    append_task_failure(args.output_dir, task, attempt, exc)
+                    if attempt <= args.task_retries:
+                        retry_counts[task.task_id] = attempt
+                        print(f"retry_task {task.task_id} attempt {attempt}/{args.task_retries}", flush=True)
+                        futures[executor.submit(play_task, players, task)] = task
+                    else:
+                        write_outputs(players, args.output_dir, completed_games, total_games)
+                        raise
+                    break
                 append_task_results(args.output_dir, task, results)
                 completed_games += len(results)
                 if completed_games % args.status_every_games < len(results) or completed_games == total_games:
