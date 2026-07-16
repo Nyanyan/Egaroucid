@@ -185,6 +185,17 @@ def completed_shard_dirs_for_merge(output_dir: Path) -> List[Path]:
     return [path for _, _, path in items]
 
 
+def completed_prefix_end(output_dir: Path, range_start: int) -> int:
+    prefix_end = range_start
+    for start, end, _ in discover_completed_shards(output_dir):
+        if end <= prefix_end:
+            continue
+        if start > prefix_end:
+            break
+        prefix_end = end
+    return prefix_end
+
+
 def write_progress_summary(
     output_dir: Path,
     schedule: ShardSchedule,
@@ -299,6 +310,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--max-positions", type=int, default=None, help="Optional cap for smoke/benchmark sharded runs.")
     parser.add_argument("--range-start", type=int, default=0, help="First global WTHOR position_sample index to schedule.")
     parser.add_argument("--range-end", type=int, default=None, help="Exclusive global WTHOR position_sample index to schedule.")
+    parser.add_argument("--resume-from-completed-prefix", action="store_true", help="Start at the end of the completed contiguous shard prefix.")
     parser.add_argument("--num-shards", type=int, default=8)
     parser.add_argument("--positions-per-shard", type=int, default=None, help="Split by fixed position_samples per shard instead of --num-shards.")
     parser.add_argument("--jobs-per-shard", type=int, default=4)
@@ -329,6 +341,7 @@ def main() -> None:
     if args.hint_cache_db is None and not args.no_hint_cache:
         args.hint_cache_db = args.output_dir / "hint_score_cache.sqlite3"
 
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     dat_files = discover_dat_files(args.board_data_dir)
     available_position_samples = count_position_samples(dat_files, args.max_positions)
     range_start = int(args.range_start)
@@ -337,9 +350,13 @@ def main() -> None:
         raise ValueError(f"--range-start must be within 0..{available_position_samples}")
     if range_end < range_start or range_end > available_position_samples:
         raise ValueError(f"--range-end must be within {range_start}..{available_position_samples}")
+    requested_range_start = range_start
+    if args.resume_from_completed_prefix:
+        range_start = completed_prefix_end(args.output_dir, range_start)
+        if range_start > range_end:
+            range_start = range_end
     schedule = ShardSchedule(range_start, range_end, args.num_shards, args.positions_per_shard)
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     manifest = {
         "board_data_dir": str(args.board_data_dir),
         "weights": str(args.weights),
@@ -347,6 +364,8 @@ def main() -> None:
         "available_position_samples": available_position_samples,
         "range_start": range_start,
         "range_end": range_end,
+        "requested_range_start": requested_range_start,
+        "resume_from_completed_prefix": args.resume_from_completed_prefix,
         "scheduled_position_samples": schedule.scheduled_position_samples,
         "max_positions": args.max_positions,
         "num_shards": args.num_shards,

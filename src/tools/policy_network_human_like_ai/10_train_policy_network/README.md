@@ -69,7 +69,9 @@ Use `--positions-per-shard`, `--range-start` / `--range-end`, and
 `--time-limit-sec` to advance the full WTHOR run in resumable chunks. Use
 `--merge-completed` to keep `partial_merged` updated even before the full WTHOR
 run is complete. `manifest.json` stores only a first/last shard preview by
-default; tune it with `--manifest-shard-preview`.
+default; tune it with `--manifest-shard-preview`. Use
+`--resume-from-completed-prefix` to continue from the end of the completed
+contiguous shard prefix.
 
 Strength-test helper:
 
@@ -151,6 +153,7 @@ shard 版のブレンド評価は、既定で
 `--merge-completed` を使うと、全WTHORが完走する前でも `partial_merged` を更新できます。
 `manifest.json` は既定で shard の先頭・末尾 preview だけを保存します。表示数は
 `--manifest-shard-preview` で調整できます。
+`--resume-from-completed-prefix` を使うと、完了済みの連続 shard prefix の末尾から自動で再開できます。
 
 強さ評価の補助コマンド:
 
