@@ -65,6 +65,24 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_grouped.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_grouped.hpp"
+    #endif
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_shared.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_shared.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_edax_linear.hpp"

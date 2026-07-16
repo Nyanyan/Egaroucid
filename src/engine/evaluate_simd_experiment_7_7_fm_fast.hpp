@@ -23,7 +23,10 @@
 #include "search.hpp"
 #include "util.hpp"
 #include "evaluate_common.hpp"
-#include "evaluate_experiment_7_7_fm_fast_common.hpp"
+#ifndef EVALUATE_EXPERIMENT_7_7_FM_FAST_COMMON_HEADER
+    #define EVALUATE_EXPERIMENT_7_7_FM_FAST_COMMON_HEADER "evaluate_experiment_7_7_fm_fast_common.hpp"
+#endif
+#include EVALUATE_EXPERIMENT_7_7_FM_FAST_COMMON_HEADER
 
 /*
     @brief evaluation pattern definition for SIMD
@@ -233,7 +236,7 @@ __m256i eval_simd_offsets[N_EVAL_VECTORS * 2]; // 32bit * 8 * N
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 
 inline bool load_eval_file(const char* file, bool show_log) {
-    return eval77_fm_load_egev4(file, show_log);
+    return eval77_fm_fast_load_file(file, show_log);
 }
 
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
@@ -525,7 +528,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
     append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[6], 6), active_ids, n_active);
     append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[7], 7), active_ids, n_active);
     active_ids[n_active++] = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
-    return eval77_fm_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
+    return eval77_fm_fast_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
 #endif
 }
 

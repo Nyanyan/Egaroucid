@@ -18,7 +18,10 @@
 #include "search.hpp"
 #include "util.hpp"
 #include "evaluate_common.hpp"
-#include "evaluate_experiment_7_7_fm_fast_common.hpp"
+#ifndef EVALUATE_EXPERIMENT_7_7_FM_FAST_COMMON_HEADER
+    #define EVALUATE_EXPERIMENT_7_7_FM_FAST_COMMON_HEADER "evaluate_experiment_7_7_fm_fast_common.hpp"
+#endif
+#include EVALUATE_EXPERIMENT_7_7_FM_FAST_COMMON_HEADER
 
 constexpr int EVAL_IDX_START_MOVE_ORDERING_END = 32;
 constexpr int EVAL_IDX_END_MOVE_ORDERING_END = 48;
@@ -333,7 +336,7 @@ void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz) {
     @return evaluation function conpletely initialized?
 */
 inline bool load_eval_file(const char* file, bool show_log) {
-    return eval77_fm_load_egev4(file, show_log);
+    return eval77_fm_fast_load_file(file, show_log);
 }
 
 inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
@@ -451,7 +454,7 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) 
         }
         return eval77_fm_fast_finish_scalar(phase_idx, accum);
     }
-    return eval77_fm_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
+    return eval77_fm_fast_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
 #endif
 }
 

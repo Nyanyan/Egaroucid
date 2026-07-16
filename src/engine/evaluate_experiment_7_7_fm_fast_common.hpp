@@ -11,6 +11,10 @@
 #pragma once
 #include "evaluate_experiment_7_7_fm_simdopt_mmap_common.hpp"
 
+inline bool eval77_fm_fast_load_file(const char *file, const bool show_log) {
+    return eval77_fm_load_egev4(file, show_log);
+}
+
 inline bool eval77_fm_fast_can_use_phase(const int phase_idx) {
     return eval77_fm_loaded && 0 <= phase_idx && phase_idx < N_PHASES;
 }
@@ -92,6 +96,14 @@ inline int eval77_fm_fast_finish_scalar(
         (double)interaction_quant * eval77_fm_interaction_scale[phase_idx];
     const int rounded = score >= 0.0 ? (int)(score + 0.5) : (int)(score - 0.5);
     return std::clamp(rounded, -SCORE_MAX, SCORE_MAX);
+}
+
+inline int eval77_fm_fast_score_from_ids_subset_filter(
+    const int phase_idx,
+    const int active_ids[],
+    const int n_active
+) {
+    return eval77_fm_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
 }
 
 #if USE_SIMD
