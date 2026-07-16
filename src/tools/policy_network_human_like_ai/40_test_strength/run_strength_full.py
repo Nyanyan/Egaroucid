@@ -98,6 +98,8 @@ def make_command(args: argparse.Namespace) -> List[str]:
         cmd.append("--resume")
     if args.dry_run:
         cmd.append("--dry-run")
+    if args.no_blend_cache:
+        cmd.append("--no-blend-cache")
     return cmd
 
 
@@ -119,6 +121,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--openings", type=Path, default=SCRIPT_DIR.parents[3] / "bin" / "problem" / "xot" / "openingslarge.txt")
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "strength_full")
+    parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser

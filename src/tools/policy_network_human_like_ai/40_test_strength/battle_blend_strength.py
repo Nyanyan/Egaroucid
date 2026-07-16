@@ -555,28 +555,30 @@ def build_players(args: argparse.Namespace) -> List[Player]:
 
     blend_script = (HUMAN_LIKE_DIR / "30_blend_with_egaroucid" / "blend_gtp_engine.py").resolve()
     for blend in parse_float_list(args.blend_params):
+        command = [
+            sys.executable,
+            str(blend_script),
+            "--weights",
+            str(Path(args.weights).resolve()),
+            "--blend-param",
+            f"{blend:.1f}",
+            "--egaroucid-exe",
+            str(egaroucid_exe),
+            "--egaroucid-level",
+            str(args.blend_egaroucid_level),
+            "--egaroucid-threads",
+            str(args.engine_threads),
+            "--egaroucid-timeout-sec",
+            str(args.egaroucid_timeout_sec),
+            "--score-temperature",
+            str(args.score_temperature),
+        ]
+        if not args.no_blend_cache:
+            command.append("--cache-egaroucid")
         players.append(
             Player(
                 f"blend_{blend:.1f}",
-                [
-                    sys.executable,
-                    str(blend_script),
-                    "--weights",
-                    str(Path(args.weights).resolve()),
-                    "--blend-param",
-                    f"{blend:.1f}",
-                    "--egaroucid-exe",
-                    str(egaroucid_exe),
-                    "--egaroucid-level",
-                    str(args.blend_egaroucid_level),
-                    "--egaroucid-threads",
-                    str(args.engine_threads),
-                    "--egaroucid-timeout-sec",
-                    str(args.egaroucid_timeout_sec),
-                    "--cache-egaroucid",
-                    "--score-temperature",
-                    str(args.score_temperature),
-                ],
+                command,
                 args.processes_per_player,
             )
         )
@@ -681,6 +683,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--openings", type=Path, default=BIN_DIR / "problem" / "xot" / "openingslarge.txt")
     parser.add_argument("--output-dir", type=Path, default=default_output_dir())
     parser.add_argument("--seed", type=int, default=613)
+    parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -718,6 +721,7 @@ def main() -> None:
         print("max_games", args.max_games)
     print("parallel_matches", args.parallel_matches)
     print("max_processes_per_player", args.processes_per_player)
+    print("blend_cache_egaroucid", not args.no_blend_cache)
     if args.time_limit_sec is not None:
         print("time_limit_sec", args.time_limit_sec)
     print("total_games", total_games)
@@ -737,6 +741,7 @@ def main() -> None:
                     "max_games": args.max_games,
                     "parallel_matches": args.parallel_matches,
                     "max_processes_per_player": args.processes_per_player,
+                    "blend_cache_egaroucid": not args.no_blend_cache,
                     "time_limit_sec": args.time_limit_sec,
                     "total_games": total_games,
                     "n_tasks": len(tasks),
