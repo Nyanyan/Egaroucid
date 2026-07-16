@@ -345,6 +345,9 @@ Smoke results:
 - Full schedule chunk 007 used the same retry/timeout-600 close-after-game
   setting. It advanced the run to 490 / 120,000 games, elapsed 786.249 sec,
   peaked at 70102.605 MiB RSS, and completed without failed-task log entries.
+- Full schedule chunk 008 again used the retry/timeout-600 close-after-game
+  setting. It advanced the run to 558 / 120,000 games, elapsed 972.386 sec,
+  peaked at 71333.969 MiB RSS, and completed without failed-task log entries.
 
 The full requested schedule is 120,000 games. The short full-player benchmark
 suggests a multi-day run even with 32 parallel matches, and `hint 100` required
@@ -684,6 +687,9 @@ smoke 結果:
   failed-task log は生成されず、正常終了しました。
 - full schedule chunk 007 では同じ retry / timeout 600 / close-after-game 設定を使いました。
   490 / 120,000 対局まで進み、elapsed は 786.249 秒、peak RSS は 70102.605 MiB でした。
+  failed-task log は生成されず、正常終了しました。
+- full schedule chunk 008 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
+  558 / 120,000 対局まで進み、elapsed は 972.386 秒、peak RSS は 71333.969 MiB でした。
   failed-task log は生成されず、正常終了しました。
 
 要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
