@@ -90,6 +90,10 @@ enc_temp_folder
 # test
 src/tools/evaluation/dl_test
 
+# policy network human-like AI research local artifacts
+src/tools/policy_network_human_like_ai/report
+src/tools/policy_network_human_like_ai/10_train_policy_network/train_log
+
 # .github
 # .github
 
