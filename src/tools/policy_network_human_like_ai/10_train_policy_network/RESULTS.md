@@ -179,7 +179,9 @@ Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
   completed three shards (`165..225`) with 5205.410 MiB peak RSS.
 - Chunk 011 kept `jobs_per_shard=4`, used a 120-second limit, and completed
   six shards (`225..345`) with 5203.469 MiB peak RSS.
-- Current completed total: 345 / 8,035,282 position samples.
+- Chunk 012 kept `jobs_per_shard=4`, used a 180-second limit, and completed
+  nine shards (`345..525`) with 5207.145 MiB peak RSS.
+- Current completed total: 525 / 8,035,282 position samples.
 - Chunk 002 resource: 94.232 sec, peak RSS 2061.105 MiB.
 - Chunk 003 resource: 91.211 sec, peak RSS 2803.953 MiB.
 - A merge-only refresh after the runner change rewrote `manifest.json` to
@@ -192,28 +194,29 @@ Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
 - Chunk 009 resource: 75.021 sec, peak RSS 2634.234 MiB.
 - Chunk 010 resource: 75.996 sec, peak RSS 5205.410 MiB.
 - Chunk 011 resource: 140.770 sec, peak RSS 5203.469 MiB.
+- Chunk 012 resource: 203.605 sec, peak RSS 5207.145 MiB.
 
 `jobs_per_shard=4` is the current practical WTHOR continuation setting. It is
 more memory-hungry, but it advanced 120 position samples in 140.770 sec in
 chunk 011, while `jobs_per_shard=2` advanced 20 position samples in 75.021 sec
 in chunk 009.
 
-Current `partial_merged` top-1 symmetric accuracy on the first 345 position
+Current `partial_merged` top-1 symmetric accuracy on the first 525 position
 samples:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.544928 |
-| 0.1 | 0.495652 |
-| 0.2 | 0.495652 |
-| 0.3 | 0.495652 |
-| 0.4 | 0.498551 |
-| 0.5 | 0.495652 |
-| 0.6 | 0.501449 |
-| 0.7 | 0.501449 |
-| 0.8 | 0.481159 |
-| 0.9 | 0.443478 |
-| 1.0 | 0.388406 |
+| 0.0 | 0.514286 |
+| 0.1 | 0.460952 |
+| 0.2 | 0.460952 |
+| 0.3 | 0.460952 |
+| 0.4 | 0.462857 |
+| 0.5 | 0.460952 |
+| 0.6 | 0.462857 |
+| 0.7 | 0.462857 |
+| 0.8 | 0.447619 |
+| 0.9 | 0.417143 |
+| 1.0 | 0.358095 |
 
 ### Strength Benchmark
 
@@ -411,7 +414,9 @@ merge 後の smoke 結果:
   `165..225` まで3 shard 完了しました。peak RSS は 5205.410 MiB でした。
 - chunk 011 では `jobs_per_shard=4` のまま120秒制限にし、`225..345` まで6 shard 完了しました。
   peak RSS は 5203.469 MiB でした。
-- 現在の完了数: 345 / 8,035,282 局面サンプル。
+- chunk 012 では `jobs_per_shard=4` のまま180秒制限にし、`345..525` まで9 shard 完了しました。
+  peak RSS は 5207.145 MiB でした。
+- 現在の完了数: 525 / 8,035,282 局面サンプル。
 - chunk 002 resource: 94.232 秒、peak RSS 2061.105 MiB。
 - chunk 003 resource: 91.211 秒、peak RSS 2803.953 MiB。
 - runner 変更後の merge-only refresh で `manifest.json` は 2,863 bytes になり、
@@ -424,26 +429,27 @@ merge 後の smoke 結果:
 - chunk 009 resource: 75.021 秒、peak RSS 2634.234 MiB。
 - chunk 010 resource: 75.996 秒、peak RSS 5205.410 MiB。
 - chunk 011 resource: 140.770 秒、peak RSS 5203.469 MiB。
+- chunk 012 resource: 203.605 秒、peak RSS 5207.145 MiB。
 
 現時点の実用的な WTHOR 継続設定は `jobs_per_shard=4` です。メモリは大きくなりますが、
 chunk 011 では 140.770 秒で 120 局面サンプル進みました。一方、`jobs_per_shard=2` の chunk 009 は
 75.021 秒で 20 局面サンプルでした。
 
-現在の `partial_merged` における先頭345局面サンプルの top-1 symmetric accuracy:
+現在の `partial_merged` における先頭525局面サンプルの top-1 symmetric accuracy:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.544928 |
-| 0.1 | 0.495652 |
-| 0.2 | 0.495652 |
-| 0.3 | 0.495652 |
-| 0.4 | 0.498551 |
-| 0.5 | 0.495652 |
-| 0.6 | 0.501449 |
-| 0.7 | 0.501449 |
-| 0.8 | 0.481159 |
-| 0.9 | 0.443478 |
-| 1.0 | 0.388406 |
+| 0.0 | 0.514286 |
+| 0.1 | 0.460952 |
+| 0.2 | 0.460952 |
+| 0.3 | 0.460952 |
+| 0.4 | 0.462857 |
+| 0.5 | 0.460952 |
+| 0.6 | 0.462857 |
+| 0.7 | 0.462857 |
+| 0.8 | 0.447619 |
+| 0.9 | 0.417143 |
+| 1.0 | 0.358095 |
 
 ### 強さ評価ベンチマーク
 
