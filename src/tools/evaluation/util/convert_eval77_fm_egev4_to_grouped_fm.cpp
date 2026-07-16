@@ -121,6 +121,24 @@ bool valid_timestamp(const std::string &timestamp) {
         });
 }
 
+bool parse_grouped_count(const std::string &mode, int *group_count) {
+    constexpr const char *prefix = "grouped";
+    constexpr size_t prefix_len = 7;
+    if (mode.size() <= prefix_len || mode.compare(0, prefix_len, prefix) != 0) {
+        return false;
+    }
+    int value = 0;
+    for (size_t i = prefix_len; i < mode.size(); ++i) {
+        const char c = mode[i];
+        if (c < '0' || '9' < c) {
+            return false;
+        }
+        value = value * 10 + (c - '0');
+    }
+    *group_count = value;
+    return true;
+}
+
 InputInfo read_input_info(const std::string &input_path) {
     std::ifstream in(input_path, std::ios::binary);
     if (!in) {
@@ -173,7 +191,22 @@ GroupSpec make_group_spec(const std::string &mode) {
         }
         return spec;
     }
-    throw std::runtime_error("mode must be grouped7 or shared");
+    int group_count = 0;
+    if (parse_grouped_count(mode, &group_count)) {
+        if (group_count < 2 || N_PHASES < group_count) {
+            throw std::runtime_error("groupedN requires 2 <= N <= 60");
+        }
+        spec.group_count = group_count;
+        for (int group = 0; group < spec.group_count; ++group) {
+            const int start = group * N_PHASES / spec.group_count;
+            const int end = (group + 1) * N_PHASES / spec.group_count;
+            for (int phase = start; phase < end; ++phase) {
+                spec.phase_to_group[phase] = (uint8_t)group;
+            }
+        }
+        return spec;
+    }
+    throw std::runtime_error("mode must be grouped7, groupedN, or shared");
 }
 
 std::vector<std::vector<int>> phases_by_group(const GroupSpec &spec) {
@@ -420,7 +453,7 @@ void convert(
 
 int main(int argc, char **argv) {
     if (argc < 4 || argc > 5) {
-        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|shared> [preserve|now|YYYYMMDDHHMMSS]" << std::endl;
+        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|shared> [preserve|now|YYYYMMDDHHMMSS]" << std::endl;
         return 1;
     }
     try {
