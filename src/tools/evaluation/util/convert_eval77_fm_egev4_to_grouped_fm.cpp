@@ -228,6 +228,52 @@ void assign_custom_group_representatives(GroupSpec *spec, const std::string &rep
     }
 }
 
+std::vector<int> parse_int_csv(const std::string &csv, const std::string &label) {
+    std::vector<int> values;
+    std::stringstream ss(csv);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+        if (token.empty()) {
+            throw std::runtime_error(label + " CSV contains an empty field");
+        }
+        size_t parsed = 0;
+        const int value = std::stoi(token, &parsed);
+        if (parsed != token.size()) {
+            throw std::runtime_error("invalid " + label + " value: " + token);
+        }
+        values.push_back(value);
+    }
+    if (values.empty()) {
+        throw std::runtime_error(label + " CSV is empty");
+    }
+    return values;
+}
+
+void assign_group_sizes(GroupSpec *spec, const std::string &group_size_arg) {
+    const std::vector<int> sizes = parse_int_csv(group_size_arg, "group size");
+    if (sizes.size() > N_PHASES) {
+        throw std::runtime_error("too many groups in group size CSV");
+    }
+    spec->group_count = (int)sizes.size();
+    int phase = 0;
+    for (int group = 0; group < spec->group_count; ++group) {
+        const int size = sizes[(size_t)group];
+        if (size <= 0) {
+            throw std::runtime_error("group size must be positive");
+        }
+        if (phase + size > N_PHASES) {
+            throw std::runtime_error("group size CSV covers more than 60 phases");
+        }
+        for (int i = 0; i < size; ++i) {
+            spec->phase_to_group[(size_t)(phase + i)] = (uint8_t)group;
+        }
+        phase += size;
+    }
+    if (phase != N_PHASES) {
+        throw std::runtime_error("group size CSV must cover exactly 60 phases");
+    }
+}
+
 void assign_group_representatives(GroupSpec *spec, const std::string &representative_arg) {
     if (spec->vector_mode == VectorGroupMode::CopyCustom) {
         if (representative_arg.empty()) {
@@ -277,17 +323,34 @@ InputInfo read_input_info(const std::string &input_path) {
     return info;
 }
 
-GroupSpec make_group_spec(const std::string &mode, const std::string &representative_arg) {
+GroupSpec make_group_spec(
+    const std::string &mode,
+    const std::string &layout_or_representative_arg,
+    const std::string &representative_arg
+) {
     GroupSpec spec;
     std::string base_mode = mode;
     spec.vector_mode = parse_vector_group_mode(&base_mode);
     if (base_mode.empty()) {
         throw std::runtime_error("mode is missing before copyfirst/copylast/copycustom suffix");
     }
+    std::string effective_representative_arg = layout_or_representative_arg;
+    if (base_mode == "groupsizes") {
+        if (layout_or_representative_arg.empty()) {
+            throw std::runtime_error("groupsizes mode requires a group size CSV");
+        }
+        assign_group_sizes(&spec, layout_or_representative_arg);
+        effective_representative_arg = representative_arg;
+        assign_group_representatives(&spec, effective_representative_arg);
+        return spec;
+    }
+    if (!representative_arg.empty()) {
+        throw std::runtime_error("extra representative CSV argument is only valid with groupsizescopycustom");
+    }
     if (base_mode == "shared") {
         spec.group_count = 1;
         spec.phase_to_group.fill(0);
-        assign_group_representatives(&spec, representative_arg);
+        assign_group_representatives(&spec, effective_representative_arg);
         return spec;
     }
     if (base_mode == "grouped7") {
@@ -298,7 +361,7 @@ GroupSpec make_group_spec(const std::string &mode, const std::string &representa
                 spec.phase_to_group[phase] = (uint8_t)group;
             }
         }
-        assign_group_representatives(&spec, representative_arg);
+        assign_group_representatives(&spec, effective_representative_arg);
         return spec;
     }
     int group_count = 0;
@@ -314,10 +377,10 @@ GroupSpec make_group_spec(const std::string &mode, const std::string &representa
                 spec.phase_to_group[phase] = (uint8_t)group;
             }
         }
-        assign_group_representatives(&spec, representative_arg);
+        assign_group_representatives(&spec, effective_representative_arg);
         return spec;
     }
-    throw std::runtime_error("mode must be grouped7, groupedN, or shared, optionally suffixed by copyfirst/copylast/copycustom");
+    throw std::runtime_error("mode must be grouped7, groupedN, groupsizes, or shared, optionally suffixed by copyfirst/copylast/copycustom");
 }
 
 std::vector<std::vector<int>> phases_by_group(const GroupSpec &spec) {
@@ -522,10 +585,11 @@ void convert(
     const std::string &output_path,
     const std::string &mode,
     const std::string &timestamp_arg,
+    const std::string &layout_or_representative_arg,
     const std::string &representative_arg
 ) {
     const InputInfo info = read_input_info(input_path);
-    const GroupSpec spec = make_group_spec(mode, representative_arg);
+    const GroupSpec spec = make_group_spec(mode, layout_or_representative_arg, representative_arg);
     const std::vector<std::vector<int>> groups = phases_by_group(spec);
     const std::array<float, N_PHASES> group_vector_scales =
         compute_group_vector_scales(input_path, info, spec, groups);
@@ -596,14 +660,15 @@ void convert(
 } // namespace
 
 int main(int argc, char **argv) {
-    if (argc < 4 || argc > 6) {
-        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|shared>[copyfirst|copylast|copycustom] [preserve|now|YYYYMMDDHHMMSS] [representative_phase_csv_for_copycustom]" << std::endl;
+    if (argc < 4 || argc > 7) {
+        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|groupsizes|shared>[copyfirst|copylast|copycustom] [preserve|now|YYYYMMDDHHMMSS] [group_size_csv_for_groupsizes_or_representative_phase_csv_for_copycustom] [representative_phase_csv_for_groupsizescopycustom]" << std::endl;
         return 1;
     }
     try {
         const std::string timestamp = argc >= 5 ? argv[4] : "preserve";
-        const std::string representative_arg = argc >= 6 ? argv[5] : "";
-        convert(argv[1], argv[2], argv[3], timestamp, representative_arg);
+        const std::string layout_or_representative_arg = argc >= 6 ? argv[5] : "";
+        const std::string representative_arg = argc >= 7 ? argv[6] : "";
+        convert(argv[1], argv[2], argv[3], timestamp, layout_or_representative_arg, representative_arg);
     } catch (const std::exception &e) {
         std::cerr << "[ERROR] " << e.what() << std::endl;
         return 1;
