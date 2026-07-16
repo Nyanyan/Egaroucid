@@ -55,6 +55,7 @@ WTHOR and blend helpers:
 ```powershell
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\analyze_wthor_position_duplicates.py
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend_shards.py `
+  --output-dir src\tools\policy_network_human_like_ai\20_test_with_wthor\output\blend_wthor_full_chunked `
   --resume-from-completed-prefix `
   --positions-per-shard 20 `
   --jobs-per-shard 4 `
@@ -66,7 +67,8 @@ python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend
 ```
 
 The sharded blend runner creates a shared SQLite hint-score cache by default at
-`20_test_with_wthor/output/blend_wthor_full_sharded/hint_score_cache.sqlite3`.
+`20_test_with_wthor/output/blend_wthor_full_chunked/hint_score_cache.sqlite3`
+when the command above is used.
 Use `--no-hint-cache` to disable it or `--hint-cache-db` to choose another path.
 Use `--positions-per-shard`, `--range-start` / `--range-end`, and
 `--time-limit-sec` to advance the full WTHOR run in resumable chunks. Use
@@ -140,6 +142,7 @@ WTHOR・ブレンド評価の補助コマンド:
 ```powershell
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\analyze_wthor_position_duplicates.py
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend_shards.py `
+  --output-dir src\tools\policy_network_human_like_ai\20_test_with_wthor\output\blend_wthor_full_chunked `
   --resume-from-completed-prefix `
   --positions-per-shard 20 `
   --jobs-per-shard 4 `
@@ -151,7 +154,8 @@ python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend
 ```
 
 shard 版のブレンド評価は、既定で
-`20_test_with_wthor/output/blend_wthor_full_sharded/hint_score_cache.sqlite3`
+上のコマンドでは
+`20_test_with_wthor/output/blend_wthor_full_chunked/hint_score_cache.sqlite3`
 に共有 SQLite hint-score cache を作ります。無効化する場合は `--no-hint-cache`、保存先を変える場合は
 `--hint-cache-db` を使います。
 `--positions-per-shard`、`--range-start` / `--range-end`、`--time-limit-sec` を使うと、

@@ -201,7 +201,11 @@ Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
   36 shards (`3205..3925`) with 5272.352 MiB peak RSS.
 - Chunk 021 used the same setting with the resource monitor, and completed
   36 shards (`3925..4645`) with 5216.648 MiB peak RSS.
-- Current completed total: 4,645 / 8,035,282 position samples.
+- Chunk 022 tested `jobs_per_shard=8, egaroucid_threads=4`, completed
+  12 shards (`4645..4885`) with 10349.910 MiB peak RSS.
+- Chunk 023 returned to `jobs_per_shard=4, egaroucid_threads=8`, and completed
+  33 shards (`4885..5545`) with 5265.848 MiB peak RSS.
+- Current completed total: 5,545 / 8,035,282 position samples.
 - Chunk 002 resource: 94.232 sec, peak RSS 2061.105 MiB.
 - Chunk 003 resource: 91.211 sec, peak RSS 2803.953 MiB.
 - A merge-only refresh after the runner change rewrote `manifest.json` to
@@ -225,6 +229,8 @@ Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
   a direct run.
 - Chunk 020 resource: 306.519 sec, peak RSS 5272.352 MiB.
 - Chunk 021 resource: 310.645 sec, peak RSS 5216.648 MiB.
+- Chunk 022 resource: 126.995 sec, peak RSS 10349.910 MiB.
+- Chunk 023 resource: 307.399 sec, peak RSS 5265.848 MiB.
 
 `jobs_per_shard=4` is the current practical WTHOR continuation setting. It is
 more memory-hungry, but it advanced 120 position samples in 140.770 sec in
@@ -232,24 +238,29 @@ chunk 011, while `jobs_per_shard=2` advanced 20 position samples in 75.021 sec
 in chunk 009.
 With `jobs_per_shard=4`, `egaroucid_threads=8` was the best short benchmark:
 180 position samples in 64.938 sec. `egaroucid_threads=16` did not improve the
-60-second chunk and used slightly more memory.
+60-second chunk and used slightly more memory. Chunk 022 showed that
+`jobs_per_shard=8, egaroucid_threads=4` was worse for this machine: it advanced
+240 position samples in 126.995 sec, about 1.890 position samples/sec, while
+chunk 023 with `jobs_per_shard=4, egaroucid_threads=8` advanced 660 position
+samples in 307.399 sec, about 2.147 position samples/sec, and used about half
+the peak RSS.
 
-Current `partial_merged` top-1 symmetric accuracy on the first 4,645 position
+Current `partial_merged` top-1 symmetric accuracy on the first 5,545 position
 samples:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.566416 |
-| 0.1 | 0.498385 |
-| 0.2 | 0.498385 |
-| 0.3 | 0.498385 |
-| 0.4 | 0.498170 |
-| 0.5 | 0.499462 |
-| 0.6 | 0.500323 |
-| 0.7 | 0.498385 |
-| 0.8 | 0.470183 |
-| 0.9 | 0.434230 |
-| 1.0 | 0.381916 |
+| 0.0 | 0.567899 |
+| 0.1 | 0.500090 |
+| 0.2 | 0.500090 |
+| 0.3 | 0.500090 |
+| 0.4 | 0.499729 |
+| 0.5 | 0.500992 |
+| 0.6 | 0.501172 |
+| 0.7 | 0.499008 |
+| 0.8 | 0.475023 |
+| 0.9 | 0.436429 |
+| 1.0 | 0.384130 |
 
 ### Strength Benchmark
 
@@ -468,7 +479,11 @@ merge 後の smoke 結果:
   完了しました。peak RSS は 5272.352 MiB でした。
 - chunk 021 では同じ設定を resource monitor 経由で実行し、`3925..4645` まで36 shard
   完了しました。peak RSS は 5216.648 MiB でした。
-- 現在の完了数: 4,645 / 8,035,282 局面サンプル。
+- chunk 022 では `jobs_per_shard=8, egaroucid_threads=4` を試し、`4645..4885` まで
+  12 shard 完了しました。peak RSS は 10349.910 MiB でした。
+- chunk 023 では `jobs_per_shard=4, egaroucid_threads=8` に戻し、`4885..5545` まで
+  33 shard 完了しました。peak RSS は 5265.848 MiB でした。
+- 現在の完了数: 5,545 / 8,035,282 局面サンプル。
 - chunk 002 resource: 94.232 秒、peak RSS 2061.105 MiB。
 - chunk 003 resource: 91.211 秒、peak RSS 2803.953 MiB。
 - runner 変更後の merge-only refresh で `manifest.json` は 2,863 bytes になり、
@@ -491,28 +506,34 @@ merge 後の smoke 結果:
 - chunk 019 elapsed: 303.996 秒。直接実行だったため peak RSS は未計測です。
 - chunk 020 resource: 306.519 秒、peak RSS 5272.352 MiB。
 - chunk 021 resource: 310.645 秒、peak RSS 5216.648 MiB。
+- chunk 022 resource: 126.995 秒、peak RSS 10349.910 MiB。
+- chunk 023 resource: 307.399 秒、peak RSS 5265.848 MiB。
 
 現時点の実用的な WTHOR 継続設定は `jobs_per_shard=4` です。メモリは大きくなりますが、
 chunk 011 では 140.770 秒で 120 局面サンプル進みました。一方、`jobs_per_shard=2` の chunk 009 は
 75.021 秒で 20 局面サンプルでした。
 `jobs_per_shard=4` の中では `egaroucid_threads=8` が短時間ベンチで最良でした:
 64.938 秒で 180 局面サンプル進みました。`egaroucid_threads=16` は改善せず、メモリも少し増えました。
+chunk 022 では `jobs_per_shard=8, egaroucid_threads=4` も試しましたが、126.995 秒で
+240 局面サンプル、約 1.890 局面サンプル/秒でした。chunk 023 の
+`jobs_per_shard=4, egaroucid_threads=8` は 307.399 秒で 660 局面サンプル、
+約 2.147 局面サンプル/秒だったため、従来設定を継続します。
 
-現在の `partial_merged` における先頭4,645局面サンプルの top-1 symmetric accuracy:
+現在の `partial_merged` における先頭5,545局面サンプルの top-1 symmetric accuracy:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.566416 |
-| 0.1 | 0.498385 |
-| 0.2 | 0.498385 |
-| 0.3 | 0.498385 |
-| 0.4 | 0.498170 |
-| 0.5 | 0.499462 |
-| 0.6 | 0.500323 |
-| 0.7 | 0.498385 |
-| 0.8 | 0.470183 |
-| 0.9 | 0.434230 |
-| 1.0 | 0.381916 |
+| 0.0 | 0.567899 |
+| 0.1 | 0.500090 |
+| 0.2 | 0.500090 |
+| 0.3 | 0.500090 |
+| 0.4 | 0.499729 |
+| 0.5 | 0.500992 |
+| 0.6 | 0.501172 |
+| 0.7 | 0.499008 |
+| 0.8 | 0.475023 |
+| 0.9 | 0.436429 |
+| 1.0 | 0.384130 |
 
 ### 強さ評価ベンチマーク
 
