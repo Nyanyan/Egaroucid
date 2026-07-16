@@ -205,6 +205,8 @@ struct CompareModel {
 
 struct ErrorStats {
     uint64_t n = 0;
+    uint64_t exact_match = 0;
+    uint64_t sign_disagree = 0;
     int64_t sum_diff = 0;
     uint64_t sum_abs = 0;
     long double sum_sq = 0.0;
@@ -216,6 +218,9 @@ struct ErrorStats {
         const int diff = grouped_score - base_score;
         const int abs_diff = std::abs(diff);
         ++n;
+        exact_match += base_score == grouped_score;
+        sign_disagree += (base_score < 0 && grouped_score > 0) ||
+            (base_score > 0 && grouped_score < 0);
         sum_diff += diff;
         sum_abs += (uint64_t)abs_diff;
         sum_sq += (long double)diff * (long double)diff;
@@ -228,6 +233,14 @@ struct ErrorStats {
 
     double bias() const {
         return n == 0 ? 0.0 : (double)sum_diff / (double)n;
+    }
+
+    double exact_rate() const {
+        return n == 0 ? 0.0 : (double)exact_match / (double)n;
+    }
+
+    double sign_disagree_rate() const {
+        return n == 0 ? 0.0 : (double)sign_disagree / (double)n;
     }
 
     double mae() const {
@@ -252,6 +265,10 @@ int pick_nth_bit(uint64_t bits, int nth) {
 void print_stats_line(const std::string &label, const ErrorStats &stats) {
     std::cout << label
               << " n=" << stats.n
+              << " exact_match=" << stats.exact_match
+              << " exact_rate=" << std::fixed << std::setprecision(6) << stats.exact_rate()
+              << " sign_disagree=" << stats.sign_disagree
+              << " sign_disagree_rate=" << stats.sign_disagree_rate()
               << " bias=" << std::fixed << std::setprecision(4) << stats.bias()
               << " mae=" << stats.mae()
               << " rmse=" << stats.rmse()
@@ -299,8 +316,6 @@ int main(int argc, char **argv) {
     std::mt19937 rng(seed);
     ErrorStats overall;
     std::array<ErrorStats, N_PHASES> by_phase{};
-    uint64_t sign_disagree = 0;
-    uint64_t exact_match = 0;
     uint64_t engine_mismatches = 0;
     int active_ids[N_PATTERN_FEATURES + 1];
 
@@ -339,9 +354,6 @@ int main(int argc, char **argv) {
             }
             overall.add(base_score, grouped_score);
             by_phase[(size_t)phase_idx].add(base_score, grouped_score);
-            exact_match += base_score == grouped_score;
-            sign_disagree += (base_score < 0 && grouped_score > 0) ||
-                (base_score > 0 && grouped_score < 0);
 
             if (search.board.n_discs() >= HW2 - 1) {
                 break;
@@ -368,16 +380,16 @@ int main(int argc, char **argv) {
               << " games=" << n_games
               << " seed=" << seed
               << " positions=" << overall.n
-              << " exact_match=" << exact_match
+              << " exact_match=" << overall.exact_match
               << " exact_rate=" << std::fixed << std::setprecision(6)
-              << (overall.n == 0 ? 0.0 : (double)exact_match / (double)overall.n)
-              << " sign_disagree=" << sign_disagree
+              << overall.exact_rate()
+              << " sign_disagree=" << overall.sign_disagree
               << " sign_disagree_rate="
-              << (overall.n == 0 ? 0.0 : (double)sign_disagree / (double)overall.n)
+              << overall.sign_disagree_rate()
               << " engine_mismatches=" << engine_mismatches
               << std::endl;
     print_stats_line("overall", overall);
-    std::cout << "phase_stats phase n bias mae rmse max_abs max_pair" << std::endl;
+    std::cout << "phase_stats phase n exact_match exact_rate sign_disagree sign_disagree_rate bias mae rmse max_abs max_pair" << std::endl;
     for (int phase = 0; phase < N_PHASES; ++phase) {
         const ErrorStats &stats = by_phase[(size_t)phase];
         if (stats.n == 0) {
@@ -385,6 +397,10 @@ int main(int argc, char **argv) {
         }
         std::cout << "phase " << phase
                   << " n=" << stats.n
+                  << " exact_match=" << stats.exact_match
+                  << " exact_rate=" << std::fixed << std::setprecision(6) << stats.exact_rate()
+                  << " sign_disagree=" << stats.sign_disagree
+                  << " sign_disagree_rate=" << stats.sign_disagree_rate()
                   << " bias=" << std::fixed << std::setprecision(4) << stats.bias()
                   << " mae=" << stats.mae()
                   << " rmse=" << stats.rmse()

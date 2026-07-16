@@ -5,23 +5,65 @@ import sys
 
 
 N_PHASES = 60
-PHASE_RE = re.compile(r"^phase\s+(\d+)\s+n=(\d+).*?\srmse=([0-9.]+)")
 MODE_RE = re.compile(r"^grouped(\d+)(copyfirst|copylast)$")
+SIGN_COST_WEIGHT = 1.0e9
 
 
-def read_phase_sse(path):
+def parse_phase_line(line):
+    parts = line.strip().split()
+    if len(parts) < 3 or parts[0] != "phase":
+        return None
+    try:
+        phase = int(parts[1])
+    except ValueError:
+        return None
+    fields = {}
+    for part in parts[2:]:
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        fields[key] = value
+    fields["phase"] = phase
+    return fields
+
+
+def get_required_float(fields, key, path, phase):
+    if key not in fields:
+        raise ValueError("missing {} in {} phase {}".format(key, path, phase))
+    return float(fields[key])
+
+
+def get_required_int(fields, key, path, phase):
+    if key not in fields:
+        raise ValueError("missing {} in {} phase {}".format(key, path, phase))
+    return int(fields[key])
+
+
+def compute_phase_cost(fields, metric, path):
+    phase = fields["phase"]
+    n = get_required_int(fields, "n", path, phase)
+    rmse = get_required_float(fields, "rmse", path, phase)
+    if metric == "rmse":
+        return n * rmse * rmse
+    if metric == "mae":
+        mae = get_required_float(fields, "mae", path, phase)
+        return n * mae
+    if metric == "sign":
+        sign_disagree = get_required_int(fields, "sign_disagree", path, phase)
+        return sign_disagree * SIGN_COST_WEIGHT + n * rmse * rmse
+    raise ValueError("unsupported metric: {}".format(metric))
+
+
+def read_phase_costs(path, metric):
     stats = {}
     for encoding in ("utf-8-sig", "utf-16"):
         try:
             with open(path, "r", encoding=encoding) as f:
                 for line in f:
-                    match = PHASE_RE.search(line)
-                    if match is None:
+                    fields = parse_phase_line(line)
+                    if fields is None:
                         continue
-                    phase = int(match.group(1))
-                    n = int(match.group(2))
-                    rmse = float(match.group(3))
-                    stats[phase] = n * rmse * rmse
+                    stats[fields["phase"]] = compute_phase_cost(fields, metric, path)
             break
         except UnicodeDecodeError:
             stats.clear()
@@ -51,11 +93,11 @@ def add_cost(costs, start, sse, source, representative):
         }
 
 
-def collect_pair_costs(candidate_args):
+def collect_pair_costs(candidate_args, metric):
     costs = {}
     for arg in candidate_args:
         mode, group_count, copy_mode, path = parse_candidate_arg(arg)
-        phase_sse = read_phase_sse(path)
+        phase_costs = read_phase_costs(path, metric)
         for group in range(group_count):
             start = group * N_PHASES // group_count
             end = (group + 1) * N_PHASES // group_count
@@ -67,9 +109,9 @@ def collect_pair_costs(candidate_args):
             else:
                 error_phase = start
                 representative = end - 1
-            if error_phase not in phase_sse:
+            if error_phase not in phase_costs:
                 continue
-            add_cost(costs, start, phase_sse[error_phase], mode, representative)
+            add_cost(costs, start, phase_costs[error_phase], mode, representative)
     return costs
 
 
@@ -138,23 +180,30 @@ def main():
         metavar="MODE=PATH",
         help="phase-error log from a groupedNcopyfirst/copylast model; repeatable",
     )
+    parser.add_argument(
+        "--metric",
+        choices=("rmse", "mae", "sign"),
+        default="rmse",
+        help="pair cost metric; sign minimizes sign disagreements first and breaks ties by RMSE",
+    )
     args = parser.parse_args()
 
     try:
-        pair_costs = collect_pair_costs(args.candidate)
-        total_sse, pairs, sizes, representatives = solve_layout(args.target_groups, pair_costs)
+        pair_costs = collect_pair_costs(args.candidate, args.metric)
+        total_cost, pairs, sizes, representatives = solve_layout(args.target_groups, pair_costs)
     except ValueError as e:
         print("[ERROR] {}".format(e), file=sys.stderr)
         return 1
 
     print("target_groups={}".format(args.target_groups))
+    print("metric={}".format(args.metric))
     print("pairs_needed={}".format(N_PHASES - args.target_groups))
-    print("total_sse={:.0f}".format(total_sse))
+    print("total_cost={:.0f}".format(total_cost))
     print("pairs")
     for pair_start in pairs:
         info = pair_costs[pair_start]
         print(
-            "{}-{} source={} representative={} sse={:.0f}".format(
+            "{}-{} source={} representative={} cost={:.0f}".format(
                 pair_start,
                 pair_start + 1,
                 info["source"],
