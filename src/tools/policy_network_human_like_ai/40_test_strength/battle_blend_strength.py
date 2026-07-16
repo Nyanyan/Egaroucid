@@ -110,10 +110,10 @@ def display_path(path: Path) -> str:
 
 
 class Player:
-    def __init__(self, name: str, command: List[str], processes_per_player: int):
+    def __init__(self, name: str, command: List[str], processes_per_player: int, close_after_game: bool):
         self.name = name
         self.command = command
-        self.processes: List[subprocess.Popen] = []
+        self.processes: List[Optional[subprocess.Popen]] = []
         self.proc_pool = [queue.Queue(), queue.Queue()]
         self.proc_color_started = [0, 0]
         self.lock = threading.Lock()
@@ -121,6 +121,7 @@ class Player:
         self.disc_diff: List[float] = []
         self.n_played: List[int] = []
         self.processes_per_player = processes_per_player
+        self.close_after_game = close_after_game
 
     def start_processes(self) -> None:
         # Processes are started lazily by acquire_process_idx(). Prestarting one
@@ -231,7 +232,8 @@ atexit.register(shutdown_all_processes)
 
 def restart_process(players: List[Player], player_idx: int, proc_idx: int) -> subprocess.Popen:
     old_proc = players[player_idx].processes[proc_idx]
-    close_process(old_proc, send_quit=False)
+    if old_proc is not None:
+        close_process(old_proc, send_quit=False)
     new_proc = start_engine(players[player_idx].command)
     players[player_idx].processes[proc_idx] = new_proc
     print("restart", players[player_idx].name, "proc", proc_idx, flush=True)
@@ -240,6 +242,8 @@ def restart_process(players: List[Player], player_idx: int, proc_idx: int) -> su
 
 def send_command(players: List[Player], player_idx: int, proc_idx: int, command: str) -> str:
     proc = players[player_idx].processes[proc_idx]
+    if proc is None:
+        proc = restart_process(players, player_idx, proc_idx)
     for _ in range(2):
         if proc.poll() is not None:
             proc = restart_process(players, player_idx, proc_idx)
@@ -274,6 +278,18 @@ def acquire_process_idx(player: Player, color_pool: int) -> int:
             return player.proc_pool[color_pool].get(timeout=PROCESS_POOL_GET_TIMEOUT_SEC)
         except queue.Empty:
             pass
+
+
+def release_process_idx(player: Player, color_pool: int, proc_idx: int) -> None:
+    if not player.close_after_game:
+        player.proc_pool[color_pool].put(proc_idx)
+        return
+    with player.lock:
+        proc = player.processes[proc_idx]
+        player.processes[proc_idx] = None
+        player.proc_color_started[color_pool] = max(0, player.proc_color_started[color_pool] - 1)
+    if proc is not None:
+        close_process(proc)
 
 
 def parse_gtp_move(line: str) -> str:
@@ -370,9 +386,9 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
         }
     finally:
         if p0_proc is not None:
-            players[p0_idx].proc_pool[p0_color_pool].put(p0_proc)
+            release_process_idx(players[p0_idx], p0_color_pool, p0_proc)
         if p1_proc is not None:
-            players[p1_idx].proc_pool[p1_color_pool].put(p1_proc)
+            release_process_idx(players[p1_idx], p1_color_pool, p1_proc)
 
 
 def update_result(players: List[Player], result: dict) -> None:
@@ -550,6 +566,7 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                     str(args.engine_threads),
                 ],
                 args.processes_per_player,
+                args.close_processes_after_game,
             )
         )
 
@@ -580,6 +597,7 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                 f"blend_{blend:.1f}",
                 command,
                 args.processes_per_player,
+                args.close_processes_after_game,
             )
         )
     n = len(players)
@@ -684,6 +702,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=default_output_dir())
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
+    parser.add_argument("--close-processes-after-game", action="store_true", help="Close engines after each game instead of keeping them in per-player pools.")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -722,6 +741,7 @@ def main() -> None:
     print("parallel_matches", args.parallel_matches)
     print("max_processes_per_player", args.processes_per_player)
     print("blend_cache_egaroucid", not args.no_blend_cache)
+    print("close_processes_after_game", args.close_processes_after_game)
     if args.time_limit_sec is not None:
         print("time_limit_sec", args.time_limit_sec)
     print("total_games", total_games)
@@ -742,6 +762,7 @@ def main() -> None:
                     "parallel_matches": args.parallel_matches,
                     "max_processes_per_player": args.processes_per_player,
                     "blend_cache_egaroucid": not args.no_blend_cache,
+                    "close_processes_after_game": args.close_processes_after_game,
                     "time_limit_sec": args.time_limit_sec,
                     "total_games": total_games,
                     "n_tasks": len(tasks),
