@@ -48,9 +48,17 @@ struct InputInfo {
     size_t phase_stride = 0;
 };
 
+enum class VectorGroupMode {
+    Average,
+    CopyFirst,
+    CopyLast
+};
+
 struct GroupSpec {
     std::array<uint8_t, N_PHASES> phase_to_group{};
+    std::array<int, N_PHASES> representative_phase{};
     int group_count = 0;
+    VectorGroupMode vector_mode = VectorGroupMode::Average;
 };
 
 int32_t read_i32_le(const unsigned char *p) {
@@ -139,6 +147,48 @@ bool parse_grouped_count(const std::string &mode, int *group_count) {
     return true;
 }
 
+VectorGroupMode parse_vector_group_mode(std::string *mode) {
+    constexpr const char *copy_first_suffix = "copyfirst";
+    constexpr const char *copy_last_suffix = "copylast";
+    const auto strip_suffix = [&](const char *suffix) {
+        const size_t suffix_len = std::strlen(suffix);
+        if (mode->size() < suffix_len ||
+            mode->compare(mode->size() - suffix_len, suffix_len, suffix) != 0) {
+            return false;
+        }
+        mode->resize(mode->size() - suffix_len);
+        return true;
+    };
+    if (strip_suffix(copy_first_suffix)) {
+        return VectorGroupMode::CopyFirst;
+    }
+    if (strip_suffix(copy_last_suffix)) {
+        return VectorGroupMode::CopyLast;
+    }
+    return VectorGroupMode::Average;
+}
+
+void assign_group_representatives(GroupSpec *spec) {
+    spec->representative_phase.fill(0);
+    for (int group = 0; group < spec->group_count; ++group) {
+        int first_phase = -1;
+        int last_phase = -1;
+        for (int phase = 0; phase < N_PHASES; ++phase) {
+            if (spec->phase_to_group[phase] == group) {
+                if (first_phase < 0) {
+                    first_phase = phase;
+                }
+                last_phase = phase;
+            }
+        }
+        if (first_phase < 0) {
+            throw std::runtime_error("group " + std::to_string(group) + " has no phases");
+        }
+        spec->representative_phase[(size_t)group] =
+            spec->vector_mode == VectorGroupMode::CopyFirst ? first_phase : last_phase;
+    }
+}
+
 InputInfo read_input_info(const std::string &input_path) {
     std::ifstream in(input_path, std::ios::binary);
     if (!in) {
@@ -176,12 +226,18 @@ InputInfo read_input_info(const std::string &input_path) {
 
 GroupSpec make_group_spec(const std::string &mode) {
     GroupSpec spec;
-    if (mode == "shared") {
+    std::string base_mode = mode;
+    spec.vector_mode = parse_vector_group_mode(&base_mode);
+    if (base_mode.empty()) {
+        throw std::runtime_error("mode is missing before copyfirst/copylast suffix");
+    }
+    if (base_mode == "shared") {
         spec.group_count = 1;
         spec.phase_to_group.fill(0);
+        assign_group_representatives(&spec);
         return spec;
     }
-    if (mode == "grouped7") {
+    if (base_mode == "grouped7") {
         constexpr std::array<int, 8> starts = {0, 6, 14, 22, 31, 41, 50, 60};
         spec.group_count = 7;
         for (int group = 0; group < spec.group_count; ++group) {
@@ -189,10 +245,11 @@ GroupSpec make_group_spec(const std::string &mode) {
                 spec.phase_to_group[phase] = (uint8_t)group;
             }
         }
+        assign_group_representatives(&spec);
         return spec;
     }
     int group_count = 0;
-    if (parse_grouped_count(mode, &group_count)) {
+    if (parse_grouped_count(base_mode, &group_count)) {
         if (group_count < 2 || N_PHASES < group_count) {
             throw std::runtime_error("groupedN requires 2 <= N <= 60");
         }
@@ -204,9 +261,10 @@ GroupSpec make_group_spec(const std::string &mode) {
                 spec.phase_to_group[phase] = (uint8_t)group;
             }
         }
+        assign_group_representatives(&spec);
         return spec;
     }
-    throw std::runtime_error("mode must be grouped7, groupedN, or shared");
+    throw std::runtime_error("mode must be grouped7, groupedN, or shared, optionally suffixed by copyfirst/copylast");
 }
 
 std::vector<std::vector<int>> phases_by_group(const GroupSpec &spec) {
@@ -260,13 +318,21 @@ void accumulate_group_chunk(
 std::array<float, N_PHASES> compute_group_vector_scales(
     const std::string &input_path,
     const InputInfo &info,
+    const GroupSpec &spec,
     const std::vector<std::vector<int>> &groups
 ) {
+    std::array<float, N_PHASES> group_scales{};
+    if (spec.vector_mode != VectorGroupMode::Average) {
+        for (int group = 0; group < spec.group_count; ++group) {
+            group_scales[(size_t)group] = info.vector_scales[(size_t)spec.representative_phase[(size_t)group]];
+        }
+        return group_scales;
+    }
+
     std::ifstream in(input_path, std::ios::binary);
     if (!in) {
         throw std::runtime_error("cannot reopen input: " + input_path);
     }
-    std::array<float, N_PHASES> group_scales{};
     std::vector<unsigned char> phase_buffer;
     std::vector<float> accum;
 
@@ -347,6 +413,7 @@ void write_vector_table(
     std::ifstream &in,
     std::ofstream &out,
     const InputInfo &info,
+    const GroupSpec &spec,
     const std::vector<std::vector<int>> &groups,
     const std::array<float, N_PHASES> &group_vector_scales
 ) {
@@ -359,6 +426,25 @@ void write_vector_table(
         const float group_scale = group_vector_scales[group];
         if (!(group_scale > 0.0f)) {
             throw std::runtime_error("group vector scale must be positive");
+        }
+        if (spec.vector_mode != VectorGroupMode::Average) {
+            const int phase = spec.representative_phase[group];
+            for (size_t start = 0; start < (size_t)N_PARAMS_PER_PHASE; start += CHUNK_PARAMS) {
+                const size_t n_param = std::min(CHUNK_PARAMS, (size_t)N_PARAMS_PER_PHASE - start);
+                phase_buffer.resize(n_param * info.record_stride);
+                output_buffer.assign(n_param * vector_param_stride, 0);
+                const size_t offset = EGEV4_PAYLOAD_OFFSET + (size_t)phase * info.phase_stride +
+                    start * info.record_stride;
+                read_exact_at(in, offset, phase_buffer.data(), phase_buffer.size(),
+                              "representative phase vector chunk");
+                for (size_t param = 0; param < n_param; ++param) {
+                    std::memcpy(output_buffer.data() + param * vector_param_stride,
+                                phase_buffer.data() + param * info.record_stride + sizeof(int16_t),
+                                (size_t)info.dim);
+                }
+                out.write((const char*)output_buffer.data(), (std::streamsize)output_buffer.size());
+            }
+            continue;
         }
         for (size_t start = 0; start < (size_t)N_PARAMS_PER_PHASE; start += CHUNK_PARAMS) {
             const size_t n_param = std::min(CHUNK_PARAMS, (size_t)N_PARAMS_PER_PHASE - start);
@@ -388,7 +474,7 @@ void convert(
     const GroupSpec spec = make_group_spec(mode);
     const std::vector<std::vector<int>> groups = phases_by_group(spec);
     const std::array<float, N_PHASES> group_vector_scales =
-        compute_group_vector_scales(input_path, info, groups);
+        compute_group_vector_scales(input_path, info, spec, groups);
 
     std::string timestamp = info.timestamp;
     if (!timestamp_arg.empty() && timestamp_arg != "preserve") {
@@ -424,7 +510,7 @@ void convert(
     write_padding(out, linear_offset);
     write_linear_table(in, out, info);
     write_padding(out, vector_offset);
-    write_vector_table(in, out, info, groups, group_vector_scales);
+    write_vector_table(in, out, info, spec, groups, group_vector_scales);
     if (!out) {
         throw std::runtime_error("failed while writing output");
     }
@@ -445,7 +531,11 @@ void convert(
         for (const int phase : groups[(size_t)group]) {
             std::cerr << ' ' << phase;
         }
-        std::cerr << " vector_scale " << group_vector_scales[(size_t)group] << std::endl;
+        std::cerr << " vector_scale " << group_vector_scales[(size_t)group];
+        if (spec.vector_mode != VectorGroupMode::Average) {
+            std::cerr << " representative_phase " << spec.representative_phase[(size_t)group];
+        }
+        std::cerr << std::endl;
     }
 }
 
@@ -453,7 +543,7 @@ void convert(
 
 int main(int argc, char **argv) {
     if (argc < 4 || argc > 5) {
-        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|shared> [preserve|now|YYYYMMDDHHMMSS]" << std::endl;
+        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|shared>[copyfirst|copylast] [preserve|now|YYYYMMDDHHMMSS]" << std::endl;
         return 1;
     }
     try {
