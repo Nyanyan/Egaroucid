@@ -463,7 +463,7 @@ inline void collect_eval77_fm_fast_simd_active_ids(
     active_ids[n_active++] = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
 }
 
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
 inline int eval77_fm_grouped_phase_from_disc_count(const int n_discs) {
     return (n_discs - 4) / PHASE_N_DISCS;
 }
@@ -521,6 +521,63 @@ inline void eval77_fm_grouped_cache_refresh_simd(
     eval->eval77_fm_cache_ready[slot] = true;
 }
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
+inline int eval77_fm_grouped_lazy_score_from_cache_simd(
+    Eval_search *eval,
+    const int phase_idx,
+    Eval_features *features,
+    const int num0
+) {
+    const int slot = eval->feature_idx;
+    const int fm_group = eval77_fm_grouped_cache_group_from_phase(phase_idx);
+    int active_ids[N_PATTERN_FEATURES + 1];
+    int n_active = 0;
+    collect_eval77_fm_fast_simd_active_ids(features, num0, active_ids, n_active);
+
+    if (!eval->eval77_fm_cache_ready[slot] || eval->eval77_fm_cache_group[slot] != fm_group) {
+        eval->eval77_fm_cache_group[slot] = (uint8_t)fm_group;
+        for (int dim = 0; dim < 16; ++dim) {
+            eval->eval77_fm_cache_sum[slot][dim] = 0;
+            eval->eval77_fm_cache_sum_sq[slot][dim] = 0;
+        }
+        for (int i = 0; i < n_active; ++i) {
+            eval->eval77_fm_cache_active_ids[slot][i] = active_ids[i];
+            eval77_fm_grouped_cache_add_vector(eval, slot, fm_group, active_ids[i], 1);
+        }
+        eval->eval77_fm_cache_ready[slot] = true;
+    } else {
+        for (int i = 0; i < n_active; ++i) {
+            const int old_id = eval->eval77_fm_cache_active_ids[slot][i];
+            const int new_id = active_ids[i];
+            if (old_id != new_id) {
+                eval77_fm_grouped_cache_add_vector(eval, slot, fm_group, old_id, -1);
+                eval77_fm_grouped_cache_add_vector(eval, slot, fm_group, new_id, 1);
+                eval->eval77_fm_cache_active_ids[slot][i] = new_id;
+            }
+        }
+    }
+
+    const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(phase_idx);
+    int32_t linear_quant = 0;
+    for (int i = 0; i < n_active; ++i) {
+        int16_t q;
+        std::memcpy(&q, eval77_fm_fast_linear_ptr(phase_ptrs, active_ids[i]), sizeof(q));
+        linear_quant += q;
+    }
+
+    int64_t interaction_quant = 0;
+    for (int dim = 0; dim < eval77_fm_dim; ++dim) {
+        const int64_t s = eval->eval77_fm_cache_sum[slot][dim];
+        interaction_quant += s * s - eval->eval77_fm_cache_sum_sq[slot][dim];
+    }
+    const double score = (double)linear_quant * eval77_fm_linear_scale_double[phase_idx] +
+        (double)interaction_quant * eval77_fm_interaction_scale[phase_idx];
+    const int rounded = score >= 0.0 ? (int)(score + 0.5) : (int)(score - 0.5);
+    return std::clamp(rounded, -SCORE_MAX, SCORE_MAX);
+}
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
 inline void eval77_fm_grouped_cache_update_move_simd(
     Eval_search *eval,
     const int prev_slot,
@@ -597,6 +654,7 @@ inline int eval77_fm_grouped_score_from_cache_simd(
     const int rounded = score >= 0.0 ? (int)(score + 0.5) : (int)(score - 0.5);
     return std::clamp(rounded, -SCORE_MAX, SCORE_MAX);
 }
+#endif
 #endif
 
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
@@ -719,6 +777,13 @@ inline int mid_evaluate_diff(Search *search) {
         &search->eval.features[search->eval.feature_idx],
         num0
     );
+#elif defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
+    return eval77_fm_grouped_lazy_score_from_cache_simd(
+        &search->eval,
+        phase_idx,
+        &search->eval.features[search->eval.feature_idx],
+        num0
+    );
 #else
     return calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx], num0);
 #endif
@@ -762,6 +827,11 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, MAX_PATTERN_CELLS - 1);
     calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, MAX_PATTERN_CELLS - 1);
     eval->feature_idx = 0;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
+    for (int i = 0; i < HW2 - 4; ++i) {
+        eval->eval77_fm_cache_ready[i] = false;
+    }
+#endif
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
     const int phase_idx = eval77_fm_grouped_phase_from_disc_count(board->n_discs());
     const int num0 = pop_count_ull(board->player);

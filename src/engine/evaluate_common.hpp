@@ -208,7 +208,7 @@ union Eval_features {
 
 struct Eval_search {
     Eval_features features[HW2 - 4];
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
     int eval77_fm_cache_active_ids[HW2 - 4][N_PATTERN_FEATURES + 1];
     int32_t eval77_fm_cache_sum[HW2 - 4][16];
     int32_t eval77_fm_cache_sum_sq[HW2 - 4][16];

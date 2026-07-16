@@ -11,6 +11,15 @@
 #pragma once
 #include "setting.hpp"
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZED)
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_7_7_BETA)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_beta.hpp"

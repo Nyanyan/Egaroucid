@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <vector>
 #include "evaluate_experiment_7_7_fm_simdopt_mmap_common.hpp"
 
 constexpr int EVAL77_FM_GROUPED_VERSION = 10;
@@ -18,6 +19,10 @@ constexpr size_t EVAL77_FM_GROUPED_ALIGNMENT = 64;
 int eval77_fm_group_count = 0;
 std::array<uint8_t, N_PHASES> eval77_fm_phase_to_fm_group{};
 std::array<float, EVAL77_FM_GROUPED_MAX_GROUPS> eval77_fm_group_vector_scale{};
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE)
+std::vector<unsigned char> eval77_fm_grouped_materialized_payload;
+bool eval77_fm_grouped_materialized_layout = false;
+#endif
 
 inline bool eval77_fm_grouped_load_file(const char *file, const bool show_log) {
     if (show_log) {
@@ -40,6 +45,10 @@ inline bool eval77_fm_grouped_load_file(const char *file, const bool show_log) {
     eval77_fm_group_count = 0;
     eval77_fm_phase_to_fm_group.fill(0);
     eval77_fm_group_vector_scale.fill(0.0f);
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE)
+    eval77_fm_grouped_materialized_payload.clear();
+    eval77_fm_grouped_materialized_layout = false;
+#endif
 
     if (!eval77_fm_mapped_file.open_readonly(file)) {
         std::cerr << "[ERROR] [FATAL] can't memory-map grouped eval " << file << std::endl;
@@ -138,6 +147,44 @@ inline bool eval77_fm_grouped_load_file(const char *file, const bool show_log) {
         eval77_fm_interaction_scale[phase] = 0.5 * vector_scale * vector_scale;
     }
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE)
+    {
+        const unsigned char *src_linear_payload = eval77_fm_linear_payload;
+        const unsigned char *src_vector_payload = eval77_fm_vector_payload;
+        const size_t src_linear_phase_stride = eval77_fm_linear_phase_stride;
+        const size_t src_vector_phase_stride = eval77_fm_vector_phase_stride;
+        const size_t src_vector_param_stride = eval77_fm_vector_param_stride;
+        const size_t materialized_param_stride = sizeof(int16_t) + (size_t)eval77_fm_dim;
+        const size_t materialized_phase_stride = (size_t)EVAL77_FM_N_PARAMS_PER_PHASE * materialized_param_stride;
+        eval77_fm_grouped_materialized_payload.assign((size_t)N_PHASES * materialized_phase_stride, 0);
+        for (int phase = 0; phase < N_PHASES; ++phase) {
+            const int group = eval77_fm_phase_to_fm_group[phase];
+            unsigned char *dst_phase = eval77_fm_grouped_materialized_payload.data() +
+                (size_t)phase * materialized_phase_stride;
+            const unsigned char *src_linear_phase = src_linear_payload + (size_t)phase * src_linear_phase_stride;
+            const unsigned char *src_vector_group = src_vector_payload + (size_t)group * src_vector_phase_stride;
+            for (int id = 0; id < EVAL77_FM_N_PARAMS_PER_PHASE; ++id) {
+                unsigned char *dst = dst_phase + (size_t)id * materialized_param_stride;
+                std::memcpy(dst, src_linear_phase + (size_t)id * sizeof(int16_t), sizeof(int16_t));
+                std::memcpy(dst + sizeof(int16_t),
+                            src_vector_group + (size_t)id * src_vector_param_stride,
+                            (size_t)eval77_fm_dim);
+            }
+        }
+        eval77_fm_payload = eval77_fm_grouped_materialized_payload.data();
+        eval77_fm_linear_payload = eval77_fm_payload;
+        eval77_fm_vector_payload = eval77_fm_payload + sizeof(int16_t);
+        eval77_fm_param_stride = materialized_param_stride;
+        eval77_fm_phase_stride = materialized_phase_stride;
+        eval77_fm_linear_param_stride = materialized_param_stride;
+        eval77_fm_linear_phase_stride = materialized_phase_stride;
+        eval77_fm_vector_param_stride = materialized_param_stride;
+        eval77_fm_vector_phase_stride = materialized_phase_stride;
+        eval77_fm_split_layout = false;
+        eval77_fm_grouped_materialized_layout = true;
+    }
+#endif
+
     eval77_fm_loaded = true;
     if (show_log) {
         std::cerr << "7.7-FM grouped evaluation loaded: version " << version
@@ -145,7 +192,12 @@ inline bool eval77_fm_grouped_load_file(const char *file, const bool show_log) {
                   << " params/phase " << n_param
                   << " dim " << eval77_fm_dim
                   << " fm_groups " << eval77_fm_group_count
-                  << " layout grouped-split-aligned"
+                  << " layout "
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE)
+                  << (eval77_fm_grouped_materialized_layout ? "grouped-materialized-interleaved" : "grouped-split-aligned")
+#else
+                  << "grouped-split-aligned"
+#endif
                   << " mapped_bytes " << eval77_fm_mapped_file.size << std::endl;
     }
     return true;
@@ -177,7 +229,11 @@ struct Eval77FmFastScalarAccum {
 };
 
 inline Eval77FmFastPhasePtrs eval77_fm_fast_phase_ptrs(const int phase_idx) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE)
+    const int fm_group = eval77_fm_grouped_materialized_layout ? phase_idx : eval77_fm_phase_to_fm_group[phase_idx];
+#else
     const int fm_group = eval77_fm_phase_to_fm_group[phase_idx];
+#endif
     return {
         eval77_fm_linear_payload + (size_t)phase_idx * eval77_fm_linear_phase_stride,
         eval77_fm_vector_payload + (size_t)fm_group * eval77_fm_vector_phase_stride,
@@ -322,6 +378,18 @@ inline int eval77_fm_grouped_score_ids_simd_dim16(
     const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(phase_idx);
     Eval77FmFastSimdAccum accum;
     eval77_fm_fast_clear_simd_dim16(accum);
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE)
+    if (eval77_fm_grouped_materialized_layout) {
+        for (int i = 0; i < n_active; ++i) {
+            eval77_fm_fast_prefetch_id_simd_dim16(phase_ptrs, active_ids[i]);
+        }
+        for (int i = 0; i < n_active; ++i) {
+            eval77_fm_fast_add_id_simd_dim16(accum, phase_ptrs, active_ids[i]);
+        }
+        return eval77_fm_fast_finish_simd_dim16(phase_idx, accum);
+    }
+#endif
 
     for (int i = 0; i < n_active; ++i) {
         int16_t linear_quant;
