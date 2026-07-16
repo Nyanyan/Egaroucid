@@ -14,16 +14,41 @@ from typing import List, Sequence
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parents[3]
 BLEND_DIR = SCRIPT_DIR.parents[0] / "30_blend_with_egaroucid"
 sys.path.insert(0, str(BLEND_DIR))
 
 from blend_policy_with_egaroucid import default_egaroucid_exe, default_weights_file  # noqa: E402
 
 
+def repo_relative(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT.resolve()))
+    except ValueError:
+        return str(path)
+
+
+def display_command(command: Sequence[str]) -> List[str]:
+    result = []
+    for part in command:
+        try:
+            if Path(part).resolve() == Path(sys.executable).resolve():
+                result.append("python")
+                continue
+        except (OSError, RuntimeError):
+            pass
+        path = Path(part)
+        if path.is_absolute() or path.exists():
+            result.append(repo_relative(path))
+        else:
+            result.append(part)
+    return result
+
+
 def run_command(cmd: Sequence[str], log_path: Path) -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("a", encoding="utf-8") as log:
-        log.write("\n$ " + " ".join(str(part) for part in cmd) + "\n")
+        log.write("\n$ " + " ".join(str(part) for part in display_command(cmd)) + "\n")
         log.write("start_time " + time.strftime("%Y-%m-%dT%H:%M:%S") + "\n\n")
         log.flush()
         proc = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT, text=True)
@@ -65,6 +90,8 @@ def make_command(args: argparse.Namespace) -> List[str]:
         "--output-dir",
         str(args.output_dir),
     ]
+    if args.time_limit_sec is not None:
+        cmd.extend(["--time-limit-sec", str(args.time_limit_sec)])
     if args.max_games is not None:
         cmd.extend(["--max-games", str(args.max_games)])
     if args.resume:
@@ -84,6 +111,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--processes-per-player", type=int, default=32)
     parser.add_argument("--engine-threads", type=int, default=1)
     parser.add_argument("--status-every-games", type=int, default=200)
+    parser.add_argument("--time-limit-sec", type=float, default=None)
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
     parser.add_argument("--blend-egaroucid-level", type=int, default=21)
@@ -99,7 +127,7 @@ def make_argparser() -> argparse.ArgumentParser:
 def main() -> None:
     args = make_argparser().parse_args()
     cmd = make_command(args)
-    print(" ".join(str(part) for part in cmd))
+    print(" ".join(str(part) for part in display_command(cmd)))
     returncode = run_command(cmd, args.output_dir / "run_strength_full.log")
     if returncode != 0:
         raise SystemExit(returncode)

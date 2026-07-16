@@ -18,6 +18,31 @@ from blend_policy_with_egaroucid import default_egaroucid_exe, default_weights_f
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parents[3]
+
+
+def repo_relative(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT.resolve()))
+    except ValueError:
+        return str(path)
+
+
+def display_command(command: Sequence[str]) -> List[str]:
+    result = []
+    for part in command:
+        try:
+            if Path(part).resolve() == Path(sys.executable).resolve():
+                result.append("python")
+                continue
+        except (OSError, RuntimeError):
+            pass
+        path = Path(part)
+        if path.is_absolute() or path.exists():
+            result.append(repo_relative(path))
+        else:
+            result.append(part)
+    return result
 
 
 def shard_done(output_dir: Path) -> bool:
@@ -32,10 +57,43 @@ def shard_done(output_dir: Path) -> bool:
         return False
 
 
+def make_ranges(total_positions: int, num_shards: int, positions_per_shard: Optional[int]) -> List[Tuple[int, int]]:
+    if positions_per_shard is not None:
+        if positions_per_shard <= 0:
+            raise ValueError("--positions-per-shard must be positive when set")
+        return [(start, min(total_positions, start + positions_per_shard)) for start in range(0, total_positions, positions_per_shard)]
+    return split_absolute_ranges(0, total_positions, num_shards)
+
+
+def write_progress_summary(
+    output_dir: Path,
+    shard_dirs: Sequence[Path],
+    ranges: Sequence[Tuple[int, int]],
+    start_time: float,
+    stop_reason: str,
+) -> dict:
+    done = [idx for idx, path in enumerate(shard_dirs) if shard_done(path)]
+    completed_positions = sum(ranges[idx][1] - ranges[idx][0] for idx in done)
+    total_positions = sum(end - start for start, end in ranges)
+    summary = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "elapsed_sec": time.time() - start_time,
+        "stop_reason": stop_reason,
+        "completed_shards": len(done),
+        "total_shards": len(shard_dirs),
+        "completed_positions": completed_positions,
+        "total_positions": total_positions,
+        "done_shards": done,
+    }
+    with (output_dir / "progress_summary.json").open("w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+    return summary
+
+
 def run_command(cmd: Sequence[str], log_path: Path) -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("w", encoding="utf-8") as log:
-        log.write("$ " + " ".join(str(part) for part in cmd) + "\n")
+        log.write("$ " + " ".join(str(part) for part in display_command(cmd)) + "\n")
         log.write("start_time " + time.strftime("%Y-%m-%dT%H:%M:%S") + "\n\n")
         log.flush()
         proc = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT, text=True)
@@ -113,29 +171,34 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--max-positions", type=int, default=None, help="Optional cap for smoke/benchmark sharded runs.")
     parser.add_argument("--num-shards", type=int, default=8)
+    parser.add_argument("--positions-per-shard", type=int, default=None, help="Split by fixed position_samples per shard instead of --num-shards.")
     parser.add_argument("--jobs-per-shard", type=int, default=4)
     parser.add_argument("--raw-hint-samples", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "blend_wthor_full_sharded")
     parser.add_argument("--hint-cache-db", type=Path, default=None, help="Shared SQLite cache for Egaroucid hint scores.")
     parser.add_argument("--no-hint-cache", action="store_true", help="Disable the default shared hint cache.")
     parser.add_argument("--max-shards-to-run", type=int, default=None, help="Optional smoke/benchmark cap.")
+    parser.add_argument("--time-limit-sec", type=float, default=None, help="Stop launching new shards after this many seconds.")
     parser.add_argument("--merge-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
 
 def main() -> None:
+    start_time = time.time()
     args = make_argparser().parse_args()
     if args.num_shards <= 0:
         raise ValueError("--num-shards must be positive")
     if args.jobs_per_shard <= 0:
         raise ValueError("--jobs-per-shard must be positive")
+    if args.time_limit_sec is not None and args.time_limit_sec <= 0.0:
+        raise ValueError("--time-limit-sec must be positive when set")
     if args.hint_cache_db is None and not args.no_hint_cache:
         args.hint_cache_db = args.output_dir / "hint_score_cache.sqlite3"
 
     dat_files = discover_dat_files(args.board_data_dir)
     total_positions = count_position_samples(dat_files, args.max_positions)
-    ranges = split_absolute_ranges(0, total_positions, args.num_shards)
+    ranges = make_ranges(total_positions, args.num_shards, args.positions_per_shard)
     shard_dirs = [args.output_dir / f"shard_{idx:03d}_{start}_{end}" for idx, (start, end) in enumerate(ranges)]
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -146,7 +209,9 @@ def main() -> None:
         "total_positions": total_positions,
         "max_positions": args.max_positions,
         "num_shards": args.num_shards,
+        "positions_per_shard": args.positions_per_shard,
         "jobs_per_shard": args.jobs_per_shard,
+        "time_limit_sec": args.time_limit_sec,
         "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
         "shards": [
             {"index": idx, "range_start": start, "range_end": end, "output_dir": str(shard_dirs[idx])}
@@ -158,16 +223,22 @@ def main() -> None:
 
     if args.dry_run:
         print(json.dumps(manifest, indent=2))
+        write_progress_summary(args.output_dir, shard_dirs, ranges, start_time, "dry_run")
         return
 
+    stop_reason = "finished"
     if not args.merge_only:
         ran = 0
         for idx, (range_start, range_end) in enumerate(ranges):
+            if args.time_limit_sec is not None and ran > 0 and time.time() - start_time >= args.time_limit_sec:
+                stop_reason = "time_limit"
+                break
             shard_dir = shard_dirs[idx]
             if shard_done(shard_dir):
                 print(f"skip shard {idx}: already done")
                 continue
             if args.max_shards_to_run is not None and ran >= args.max_shards_to_run:
+                stop_reason = "max_shards_to_run"
                 break
             cmd = make_shard_command(args, shard_dir, range_start, range_end)
             print(f"run shard {idx}: {range_start}..{range_end}")
@@ -181,6 +252,14 @@ def main() -> None:
     if len(done_dirs) == len(shard_dirs):
         merge_shards(args.output_dir, shard_dirs)
         print("merged", args.output_dir / "merged")
+    else:
+        if args.merge_only:
+            stop_reason = "merge_only_incomplete"
+        elif stop_reason == "finished":
+            stop_reason = "incomplete"
+    progress = write_progress_summary(args.output_dir, shard_dirs, ranges, start_time, stop_reason)
+    print("completed_positions", progress["completed_positions"], "/", progress["total_positions"])
+    print("stop_reason", progress["stop_reason"])
 
 
 if __name__ == "__main__":

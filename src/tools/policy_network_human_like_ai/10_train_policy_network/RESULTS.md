@@ -125,6 +125,29 @@ Cache smoke test on the first two WTHOR position samples:
 A two-shard smoke run also passed and the merged output preserved cache stats:
 2 lookups, 0 hits, 2 misses, 2 writes, 2 rows.
 
+### Resumable Full-Run Controls
+
+The WTHOR sharded runner now supports `--positions-per-shard` and
+`--time-limit-sec`. This lets the full WTHOR blend run advance in smaller,
+resumable chunks instead of requiring one very large shard to finish.
+
+Smoke test with 5 WTHOR position samples, `positions_per_shard=2`,
+`blend_param=1.0`, `top_n=1,3`:
+
+- First invocation used `--time-limit-sec 0.001`: completed shard `0..2`, then
+  stopped with `stop_reason=time_limit`.
+- Second invocation reused the same output directory, skipped shard 0, ran
+  shard `2..4`, then stopped with `stop_reason=max_shards_to_run`.
+- Third invocation skipped shards 0 and 1, ran shard `4..5`, and merged all
+  outputs with `stop_reason=finished`.
+
+Merged smoke result:
+
+| Blend param | Top-N | Exact accuracy | Symmetric accuracy | Positions |
+| ---: | ---: | ---: | ---: | ---: |
+| 1.0 | 1 | 0.200000 | 0.400000 | 5 |
+| 1.0 | 3 | 0.800000 | 0.800000 | 5 |
+
 ### Strength Benchmark
 
 The strength runner starts engine processes lazily instead of prestarting all
@@ -132,13 +155,18 @@ player slots. `blend_param=1.0` skips Egaroucid `hint 100`, and blended GTP
 engines can cache hint output. Completed tasks are appended to
 `strength_games.jsonl`; `--resume` reloads that file and runs only unfinished
 tasks. `40_test_strength/run_strength_full.py` wraps the full schedule and
-appends a raw run log to `run_strength_full.log`.
+appends a raw run log to `run_strength_full.log`. The strength runner now also
+supports `--time-limit-sec`, so the 120,000-game full schedule can be advanced
+in bounded resumable chunks.
 
 Smoke results:
 
 - `egaroucid_l1` vs `blend_1.0`, 2 games: 2.034 sec after the policy-only skip.
 - `egaroucid_l1` vs `blend_0.0`, 1 game: 37.499 sec, peak RSS 2567.539 MiB.
 - Full-player short benchmark, `--max-games 2`: 152.064 sec, peak RSS 5109.445 MiB.
+- Time-limit smoke, `egaroucid_l1` vs `blend_1.0`, target 4 games,
+  `--time-limit-sec 1`: completed 2/4 games, stopped with
+  `stop_reason=time_limit`, wrapper elapsed 3.039 sec, peak RSS 2608.930 MiB.
 
 The full requested schedule is 120,000 games. The short full-player benchmark
 suggests a multi-day run even with 32 parallel matches, and `hint 100` required
@@ -264,19 +292,44 @@ WTHOR 先頭2局面での cache smoke test:
 2 shard の smoke run も通り、merge 後の出力にも cache stats が残ることを確認しました:
 2 lookups、0 hits、2 misses、2 writes、2 rows。
 
+### 再開可能な full 実行制御
+
+WTHOR shard runner は `--positions-per-shard` と `--time-limit-sec` に対応しました。
+これにより、全WTHORブレンド評価を巨大な shard 単位ではなく、再開可能な小さい単位で進められます。
+
+WTHOR 5局面、`positions_per_shard=2`、`blend_param=1.0`、`top_n=1,3` の smoke test:
+
+- 1回目は `--time-limit-sec 0.001` で shard `0..2` だけ完了し、
+  `stop_reason=time_limit` で停止しました。
+- 2回目は同じ出力先を使い、shard 0 を skip して shard `2..4` を実行し、
+  `stop_reason=max_shards_to_run` で停止しました。
+- 3回目は shard 0 と 1 を skip して shard `4..5` を実行し、全 shard を merge して
+  `stop_reason=finished` になりました。
+
+merge 後の smoke 結果:
+
+| Blend param | Top-N | Exact accuracy | Symmetric accuracy | Positions |
+| ---: | ---: | ---: | ---: | ---: |
+| 1.0 | 1 | 0.200000 | 0.400000 | 5 |
+| 1.0 | 3 | 0.800000 | 0.800000 | 5 |
+
 ### 強さ評価ベンチマーク
 
 強さ評価 runner は、全 player slot を事前起動する方式から lazy start に変更しました。
 `blend_param=1.0` では Egaroucid `hint 100` を呼ばず、ブレンド GTP engine では hint output を
 cache できます。完了済み task は `strength_games.jsonl` に追記され、`--resume` で未完了 task だけを
 実行できます。`40_test_strength/run_strength_full.py` は full schedule 用の wrapper で、raw run log を
-`run_strength_full.log` に追記します。
+`run_strength_full.log` に追記します。`--time-limit-sec` にも対応したため、120,000対局の full schedule を
+時間で区切って再開可能に進められます。
 
 smoke 結果:
 
 - `egaroucid_l1` vs `blend_1.0`、2対局: policy-only skip 後 2.034 秒。
 - `egaroucid_l1` vs `blend_0.0`、1対局: 37.499 秒、peak RSS 2567.539 MiB。
 - 全プレイヤー構成の短縮ベンチ `--max-games 2`: 152.064 秒、peak RSS 5109.445 MiB。
+- time-limit smoke、`egaroucid_l1` vs `blend_1.0`、目標4対局、
+  `--time-limit-sec 1`: 2/4 対局を完了し、`stop_reason=time_limit` で停止。
+  wrapper elapsed 3.039 秒、peak RSS 2608.930 MiB。
 
 要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
 また `hint 100` が60秒で戻らない局面があったため、strength runner の timeout 既定値を300秒に上げました。

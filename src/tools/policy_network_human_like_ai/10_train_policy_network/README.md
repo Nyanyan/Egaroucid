@@ -55,8 +55,9 @@ WTHOR and blend helpers:
 ```powershell
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\analyze_wthor_position_duplicates.py
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend_shards.py `
-  --num-shards 8 `
+  --positions-per-shard 1000 `
   --jobs-per-shard 4 `
+  --time-limit-sec 3600 `
   --blend-params '0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0' `
   --top-n '1,2,3,4,5,8,10,16'
 ```
@@ -64,6 +65,19 @@ python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend
 The sharded blend runner creates a shared SQLite hint-score cache by default at
 `20_test_with_wthor/output/blend_wthor_full_sharded/hint_score_cache.sqlite3`.
 Use `--no-hint-cache` to disable it or `--hint-cache-db` to choose another path.
+Use `--positions-per-shard` and `--time-limit-sec` to advance the full WTHOR
+run in resumable chunks.
+
+Strength-test helper:
+
+```powershell
+python src\tools\policy_network_human_like_ai\40_test_strength\run_strength_full.py `
+  --resume `
+  --time-limit-sec 3600
+```
+
+The strength runner writes completed games to `strength_games.jsonl` and can
+resume the full 120,000-game schedule.
 
 Generated model artifacts, raw logs, and evaluation outputs are intentionally
 ignored by git.
@@ -118,8 +132,9 @@ WTHOR・ブレンド評価の補助コマンド:
 ```powershell
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\analyze_wthor_position_duplicates.py
 python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend_shards.py `
-  --num-shards 8 `
+  --positions-per-shard 1000 `
   --jobs-per-shard 4 `
+  --time-limit-sec 3600 `
   --blend-params '0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0' `
   --top-n '1,2,3,4,5,8,10,16'
 ```
@@ -128,5 +143,16 @@ shard 版のブレンド評価は、既定で
 `20_test_with_wthor/output/blend_wthor_full_sharded/hint_score_cache.sqlite3`
 に共有 SQLite hint-score cache を作ります。無効化する場合は `--no-hint-cache`、保存先を変える場合は
 `--hint-cache-db` を使います。
+`--positions-per-shard` と `--time-limit-sec` を使うと、全WTHOR実行を再開可能な小さい単位で進められます。
+
+強さ評価の補助コマンド:
+
+```powershell
+python src\tools\policy_network_human_like_ai\40_test_strength\run_strength_full.py `
+  --resume `
+  --time-limit-sec 3600
+```
+
+強さ評価 runner は完了済み対局を `strength_games.jsonl` に保存し、120,000対局の full schedule を再開できます。
 
 生成されたモデル、raw log、評価出力は git 管理外です。

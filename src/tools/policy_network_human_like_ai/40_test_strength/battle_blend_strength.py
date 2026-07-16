@@ -672,6 +672,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--processes-per-player", type=int, default=32)
     parser.add_argument("--engine-threads", type=int, default=1)
     parser.add_argument("--status-every-games", type=int, default=200)
+    parser.add_argument("--time-limit-sec", type=float, default=None, help="Stop launching new tasks after this many seconds.")
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
     parser.add_argument("--blend-egaroucid-level", type=int, default=21)
@@ -693,6 +694,8 @@ def main() -> None:
         raise ValueError("--parallel-matches must be positive")
     if args.games_per_pair < 1:
         raise ValueError("--games-per-pair must be positive")
+    if args.time_limit_sec is not None and args.time_limit_sec <= 0.0:
+        raise ValueError("--time-limit-sec must be positive when set")
 
     openings = read_openings(args.openings)
     players = build_players(args)
@@ -715,6 +718,8 @@ def main() -> None:
         print("max_games", args.max_games)
     print("parallel_matches", args.parallel_matches)
     print("max_processes_per_player", args.processes_per_player)
+    if args.time_limit_sec is not None:
+        print("time_limit_sec", args.time_limit_sec)
     print("total_games", total_games)
     if args.resume:
         print("resume_completed_tasks", len(completed_task_ids))
@@ -732,6 +737,7 @@ def main() -> None:
                     "max_games": args.max_games,
                     "parallel_matches": args.parallel_matches,
                     "max_processes_per_player": args.processes_per_player,
+                    "time_limit_sec": args.time_limit_sec,
                     "total_games": total_games,
                     "n_tasks": len(tasks),
                     "output_dir": display_path(args.output_dir),
@@ -748,6 +754,7 @@ def main() -> None:
         player.start_processes()
 
     start_time = time.time()
+    stop_reason = "finished"
     executor = ThreadPoolExecutor(max_workers=args.parallel_matches)
     try:
         iterator = iter(tasks)
@@ -767,18 +774,37 @@ def main() -> None:
                 completed_games += len(results)
                 if completed_games % args.status_every_games < len(results) or completed_games == total_games:
                     print_status(players, args.output_dir, start_time, completed_games, total_games)
-                try:
-                    next_task = next(iterator)
-                except StopIteration:
-                    pass
-                else:
-                    futures[executor.submit(play_task, players, next_task)] = next_task
+                if args.time_limit_sec is not None and time.time() - start_time >= args.time_limit_sec:
+                    stop_reason = "time_limit"
+                if stop_reason == "finished":
+                    try:
+                        next_task = next(iterator)
+                    except StopIteration:
+                        pass
+                    else:
+                        futures[executor.submit(play_task, players, next_task)] = next_task
                 break
     finally:
         shutdown_all_processes()
         executor.shutdown(wait=True, cancel_futures=True)
-    print("\nAll games finished.")
+    if completed_games >= total_games:
+        stop_reason = "finished"
+        print("\nAll games finished.")
+    else:
+        print(f"\nStopped before full schedule: {stop_reason}.")
     print_status(players, args.output_dir, start_time, completed_games, total_games)
+    with (args.output_dir / "strength_progress.json").open("w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "completed_games": completed_games,
+                "total_games": total_games,
+                "stop_reason": stop_reason,
+                "elapsed_sec": time.time() - start_time,
+                "remaining_games": max(0, total_games - completed_games),
+            },
+            f,
+            indent=2,
+        )
 
 
 if __name__ == "__main__":
