@@ -2,11 +2,19 @@ import argparse
 import math
 import re
 import sys
+from dataclasses import dataclass
 
 
 N_PHASES = 60
 MODE_RE = re.compile(r"^grouped(\d+)(copyfirst|copylast)$")
 SIGN_COST_WEIGHT = 1.0e9
+
+
+@dataclass(frozen=True)
+class FixedRun:
+    start: int
+    end: int
+    representative: int
 
 
 def parse_phase_line(line):
@@ -126,6 +134,34 @@ def parse_pair_start(value):
     return int(value)
 
 
+def parse_fixed_run(value):
+    range_part, sep, rep_part = value.partition(":")
+    if "-" not in range_part:
+        raise argparse.ArgumentTypeError("fixed run must be START-END or START-END:REP: {}".format(value))
+    left, right = range_part.split("-", 1)
+    try:
+        start = int(left)
+        end = int(right)
+        representative = int(rep_part) if sep else start
+    except ValueError:
+        raise argparse.ArgumentTypeError("invalid fixed run: {}".format(value))
+    if start < 0 or N_PHASES <= start or end < 0 or N_PHASES <= end or end <= start:
+        raise argparse.ArgumentTypeError("fixed run must satisfy 0 <= START < END < {}: {}".format(N_PHASES, value))
+    if representative < start or end < representative:
+        raise argparse.ArgumentTypeError("fixed run representative must be inside the run: {}".format(value))
+    return FixedRun(start, end, representative)
+
+
+def validate_fixed_runs(fixed_runs):
+    fixed_runs = sorted(fixed_runs, key=lambda run: run.start)
+    previous_end = -1
+    for run in fixed_runs:
+        if run.start <= previous_end:
+            raise ValueError("fixed runs must not overlap")
+        previous_end = run.end
+    return fixed_runs
+
+
 def apply_excluded_pairs(pair_costs, excluded_pairs):
     if not excluded_pairs:
         return pair_costs
@@ -135,11 +171,32 @@ def apply_excluded_pairs(pair_costs, excluded_pairs):
     return filtered
 
 
-def solve_layout(target_groups, pair_costs, excluded_pairs):
-    pairs_needed = N_PHASES - target_groups
+def fixed_run_phase_set(fixed_runs):
+    phases = set()
+    for run in fixed_runs:
+        phases.update(range(run.start, run.end + 1))
+    return phases
+
+
+def remove_pairs_overlapping_fixed_runs(pair_costs, fixed_runs):
+    if not fixed_runs:
+        return pair_costs
+    fixed_phases = fixed_run_phase_set(fixed_runs)
+    return {
+        start: info
+        for start, info in pair_costs.items()
+        if start not in fixed_phases and start + 1 not in fixed_phases
+    }
+
+
+def solve_layout(target_groups, pair_costs, excluded_pairs, fixed_runs):
+    fixed_runs = validate_fixed_runs(fixed_runs)
+    fixed_merges = sum(run.end - run.start for run in fixed_runs)
+    pairs_needed = N_PHASES - target_groups - fixed_merges
     if pairs_needed < 0 or N_PHASES // 2 < pairs_needed:
         raise ValueError("target_groups must be in [{}, {}]".format(N_PHASES // 2, N_PHASES))
     pair_costs = apply_excluded_pairs(pair_costs, excluded_pairs)
+    pair_costs = remove_pairs_overlapping_fixed_runs(pair_costs, fixed_runs)
 
     inf = math.inf
     dp = [[inf] * (pairs_needed + 1) for _ in range(N_PHASES + 2)]
@@ -172,23 +229,35 @@ def solve_layout(target_groups, pair_costs, excluded_pairs):
         else:
             i += 1
 
+    fixed_by_start = {run.start: run for run in fixed_runs}
+    fixed_phases = fixed_run_phase_set(fixed_runs)
+    pairs_by_start = set(pairs)
     sizes = []
     representatives = []
     phase = 0
-    for pair_start in pairs:
-        while phase < pair_start:
-            sizes.append(1)
-            representatives.append(phase)
-            phase += 1
-        sizes.append(2)
-        representatives.append(pair_costs[pair_start]["representative"])
-        phase += 2
     while phase < N_PHASES:
+        fixed_run = fixed_by_start.get(phase)
+        if fixed_run is not None:
+            sizes.append(fixed_run.end - fixed_run.start + 1)
+            representatives.append(fixed_run.representative)
+            phase = fixed_run.end + 1
+            continue
+        if phase in fixed_phases:
+            raise ValueError("internal fixed-run layout error at phase {}".format(phase))
+        if phase in pairs_by_start:
+            sizes.append(2)
+            representatives.append(pair_costs[phase]["representative"])
+            phase += 2
+            continue
         sizes.append(1)
         representatives.append(phase)
         phase += 1
+    if len(sizes) != target_groups:
+        raise ValueError(
+            "internal layout error: generated {} groups for target {}".format(len(sizes), target_groups)
+        )
 
-    return dp[0][pairs_needed], pairs, sizes, representatives
+    return dp[0][pairs_needed], pairs, sizes, representatives, fixed_merges
 
 
 def main():
@@ -215,14 +284,23 @@ def main():
         metavar="START|START-END",
         help="exclude an adjacent phase pair from selection; repeatable",
     )
+    parser.add_argument(
+        "--fixed-run",
+        action="append",
+        type=parse_fixed_run,
+        default=[],
+        metavar="START-END[:REP]",
+        help="force a contiguous phase run into one group before selecting extra pairs; repeatable",
+    )
     args = parser.parse_args()
 
     try:
         pair_costs = collect_pair_costs(args.candidate, args.metric)
-        total_cost, pairs, sizes, representatives = solve_layout(
+        total_cost, pairs, sizes, representatives, fixed_merges = solve_layout(
             args.target_groups,
             pair_costs,
             args.exclude_pair,
+            args.fixed_run,
         )
     except ValueError as e:
         print("[ERROR] {}".format(e), file=sys.stderr)
@@ -232,7 +310,13 @@ def main():
     print("metric={}".format(args.metric))
     if args.exclude_pair:
         print("excluded_pairs={}".format(",".join("{}-{}".format(v, v + 1) for v in args.exclude_pair)))
-    print("pairs_needed={}".format(N_PHASES - args.target_groups))
+    if args.fixed_run:
+        fixed_runs = validate_fixed_runs(args.fixed_run)
+        print("fixed_runs={}".format(",".join(
+            "{}-{}:{}".format(run.start, run.end, run.representative) for run in fixed_runs
+        )))
+        print("fixed_merges={}".format(fixed_merges))
+    print("pairs_needed={}".format(N_PHASES - args.target_groups - fixed_merges))
     print("total_cost={:.0f}".format(total_cost))
     print("pairs")
     for pair_start in pairs:
