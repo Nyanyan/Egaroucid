@@ -300,6 +300,43 @@ inline void eval77_fm_fast_prefetch_id_simd_dim16(
 inline int eval77_fm_fast_finish_simd_dim16(
     const int phase_idx,
     const Eval77FmFastSimdAccum &accum
+);
+
+inline void eval77_fm_grouped_add_vector_id_simd_dim16(
+    Eval77FmFastSimdAccum &accum,
+    const Eval77FmFastPhasePtrs &phase_ptrs,
+    const int id
+) {
+    const int8_t *vector_ptr = eval77_fm_fast_vector_ptr(phase_ptrs, id);
+    const __m128i q8 = _mm_load_si128((const __m128i*)vector_ptr);
+    const __m256i q16 = _mm256_cvtepi8_epi16(q8);
+    accum.sum16 = _mm256_add_epi16(accum.sum16, q16);
+    accum.sum_sq_pair32 = _mm256_add_epi32(accum.sum_sq_pair32, _mm256_madd_epi16(q16, q16));
+}
+
+inline int eval77_fm_grouped_score_ids_simd_dim16(
+    const int phase_idx,
+    const int active_ids[],
+    const int n_active
+) {
+    const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(phase_idx);
+    Eval77FmFastSimdAccum accum;
+    eval77_fm_fast_clear_simd_dim16(accum);
+
+    for (int i = 0; i < n_active; ++i) {
+        int16_t linear_quant;
+        std::memcpy(&linear_quant, eval77_fm_fast_linear_ptr(phase_ptrs, active_ids[i]), sizeof(linear_quant));
+        accum.linear_quant += linear_quant;
+    }
+    for (int i = 0; i < n_active; ++i) {
+        eval77_fm_grouped_add_vector_id_simd_dim16(accum, phase_ptrs, active_ids[i]);
+    }
+    return eval77_fm_fast_finish_simd_dim16(phase_idx, accum);
+}
+
+inline int eval77_fm_fast_finish_simd_dim16(
+    const int phase_idx,
+    const Eval77FmFastSimdAccum &accum
 ) {
     const __m256i sum_sq_pair32 = _mm256_madd_epi16(accum.sum16, accum.sum16);
     const __m256i pair_term = _mm256_sub_epi32(sum_sq_pair32, accum.sum_sq_pair32);

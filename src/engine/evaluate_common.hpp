@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <cstdint>
 #include "board.hpp"
 
 /*
@@ -207,6 +208,13 @@ union Eval_features {
 
 struct Eval_search {
     Eval_features features[HW2 - 4];
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
+    int eval77_fm_cache_active_ids[HW2 - 4][N_PATTERN_FEATURES + 1];
+    int32_t eval77_fm_cache_sum[HW2 - 4][16];
+    int32_t eval77_fm_cache_sum_sq[HW2 - 4][16];
+    uint8_t eval77_fm_cache_group[HW2 - 4];
+    bool eval77_fm_cache_ready[HW2 - 4];
+#endif
     uint_fast8_t feature_idx;
 };
 #else
