@@ -33,6 +33,17 @@ def load_results(inputs: Sequence[Path]) -> List[dict]:
     return results
 
 
+def read_input_list(path: Path) -> List[Path]:
+    inputs: List[Path] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            inputs.append(Path(stripped))
+    return inputs
+
+
 def write_csv(path: Path, rows: Sequence[dict], fields: Sequence[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -154,14 +165,18 @@ def merge_results(results: Sequence[dict]) -> dict:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Merge WTHOR blend agreement shard outputs.")
-    parser.add_argument("inputs", nargs="+", type=Path, help="Shard output directories or wthor_blend_human_match.json files.")
+    parser.add_argument("inputs", nargs="*", type=Path, help="Shard output directories or wthor_blend_human_match.json files.")
+    parser.add_argument("--input-list", action="append", type=Path, default=[], help="Text file with one shard output path per line.")
     parser.add_argument("--output-dir", type=Path, required=True)
     return parser
 
 
 def main() -> None:
     args = make_argparser().parse_args()
-    results = load_results(args.inputs)
+    inputs = list(args.inputs)
+    for input_list in args.input_list:
+        inputs.extend(read_input_list(input_list))
+    results = load_results(inputs)
     merged = merge_results(results)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with (args.output_dir / "wthor_blend_human_match.json").open("w", encoding="utf-8") as f:

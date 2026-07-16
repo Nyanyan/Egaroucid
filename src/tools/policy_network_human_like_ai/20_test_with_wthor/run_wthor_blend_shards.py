@@ -211,6 +211,7 @@ def write_progress_summary(
     scheduled_done.sort()
     completed_position_samples = sum(end - start for _, start, end in scheduled_done)
     all_completed_position_samples = sum(end - start for start, end, _ in all_done)
+    contiguous_completed_prefix_end = completed_prefix_end(output_dir, 0)
     summary = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "elapsed_sec": time.time() - start_time,
@@ -222,6 +223,7 @@ def write_progress_summary(
         "done_shards": [idx for idx, _, _ in scheduled_done],
         "all_completed_shards": len(all_done),
         "all_completed_position_samples": all_completed_position_samples,
+        "contiguous_completed_prefix_end": contiguous_completed_prefix_end,
     }
     with (output_dir / "progress_summary.json").open("w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
@@ -283,10 +285,15 @@ def make_shard_command(args: argparse.Namespace, shard_dir: Path, range_start: i
 
 
 def merge_shards(output_dir: Path, shard_dirs: Sequence[Path], merge_dir_name: str = "merged", log_name: str = "merge.log") -> None:
+    input_list_path = output_dir / f"{merge_dir_name}_inputs.txt"
+    with input_list_path.open("w", encoding="utf-8") as f:
+        for path in shard_dirs:
+            f.write(str(path) + "\n")
     cmd = [
         sys.executable,
         str(SCRIPT_DIR / "merge_wthor_blend_results.py"),
-        *[str(path) for path in shard_dirs],
+        "--input-list",
+        str(input_list_path),
         "--output-dir",
         str(output_dir / merge_dir_name),
     ]
