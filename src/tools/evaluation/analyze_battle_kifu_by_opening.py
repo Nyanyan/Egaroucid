@@ -1,6 +1,7 @@
 import argparse
 import csv
 import os
+import random
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -102,7 +103,26 @@ def wdl_and_rate_from_summaries(items):
     return wins, draws, losses, winrate, avg_disc
 
 
-def print_run_summary(run, top):
+def load_opening_labels(path, shuffle_seed):
+    if path is None:
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        openings = [line.rstrip("\n") for line in f]
+    if shuffle_seed is not None:
+        rng = random.Random(shuffle_seed)
+        rng.shuffle(openings)
+    return openings
+
+
+def opening_label(openings, opening_idx):
+    if openings is None:
+        return None
+    if opening_idx < 0 or len(openings) <= opening_idx:
+        return None
+    return openings[opening_idx]
+
+
+def print_run_summary(run, top, openings):
     battle_w, battle_d, battle_l, battle_wr, battle_avg = wdl_and_rate_from_summaries(run.battles)
     open_w, open_d, open_l, open_wr, open_avg = wdl_and_rate_from_summaries(run.openings)
     print("run\t{}\t{}".format(run.name, run.path))
@@ -131,7 +151,7 @@ def print_run_summary(run, top):
     print("nonzero_openings\t{}".format(len([opening for opening in run.openings if opening.disc_sum != 0])))
     for opening in nonzero:
         print(
-            "opening\t{}\tn={}\twdl={}/{}/{}\tdisc_sum={}\tavg={:+.2f}".format(
+            "opening\t{}\tn={}\twdl={}/{}/{}\tdisc_sum={}\tavg={:+.2f}{}".format(
                 opening.opening_idx,
                 opening.n_battles,
                 opening.wins,
@@ -139,11 +159,14 @@ def print_run_summary(run, top):
                 opening.losses,
                 opening.disc_sum,
                 opening.avg_disc,
+                "\tline={}".format(opening_label(openings, opening.opening_idx))
+                if opening_label(openings, opening.opening_idx) is not None
+                else "",
             )
         )
 
 
-def print_comparison(runs, top):
+def print_comparison(runs, top, openings):
     if len(runs) < 2:
         return
     by_name = {
@@ -171,13 +194,19 @@ def print_comparison(runs, top):
         rows = rows[:top]
 
     print("comparison\tbase={}\truns={}".format(base_name, ",".join(run.name for run in runs)))
-    header = ["opening_idx"] + [run.name for run in runs] + [
+    header = ["opening_idx"]
+    if openings is not None:
+        header.append("line")
+    header.extend(run.name for run in runs)
+    header.extend([
         "{}_delta".format(run.name) for run in runs[1:]
-    ]
+    ])
     print("\t".join(header))
     for opening_idx, _spread, values in rows:
         base = values[0]
         fields = [str(opening_idx)]
+        if openings is not None:
+            fields.append(opening_label(openings, opening_idx) or "")
         fields.extend("{:+.2f}".format(value) for value in values)
         fields.extend("{:+.2f}".format(value - base) for value in values[1:])
         print("\t".join(fields))
@@ -199,10 +228,22 @@ def main():
         default=20,
         help="maximum nonzero openings/comparison rows to print; use 0 for no limit",
     )
+    parser.add_argument(
+        "--problem-file",
+        default=None,
+        help="optional opening/problem file used by battle_parallel_nonstop_gtp.py",
+    )
+    parser.add_argument(
+        "--shuffle-seed",
+        type=int,
+        default=None,
+        help="optional opening shuffle seed; use with --problem-file to show shuffled opening lines",
+    )
     args = parser.parse_args()
 
     try:
         runs = [summarize_run(name, path) for name, path in args.run]
+        openings = load_opening_labels(args.problem_file, args.shuffle_seed)
     except (OSError, ValueError) as e:
         print("[ERROR] {}".format(e), file=sys.stderr)
         return 1
@@ -210,11 +251,11 @@ def main():
     for idx, run in enumerate(runs):
         if idx:
             print()
-        print_run_summary(run, args.top)
+        print_run_summary(run, args.top, openings)
 
     if len(runs) >= 2:
         print()
-        print_comparison(runs, args.top)
+        print_comparison(runs, args.top, openings)
 
     return 0
 
