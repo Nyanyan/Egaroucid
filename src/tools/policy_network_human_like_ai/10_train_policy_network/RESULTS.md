@@ -171,7 +171,9 @@ Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
   and showed that larger shards make time-limit control coarser.
 - Chunk 007 used `--resume-from-completed-prefix`, automatically started from
   `100`, and completed seven 5-position-sample shards (`100..135`).
-- Current completed total: 135 / 8,035,282 position samples.
+- Chunk 008 used the same auto-resume p5 setup with a 60-second limit and
+  completed two 5-position-sample shards (`135..145`).
+- Current completed total: 145 / 8,035,282 position samples.
 - Chunk 002 resource: 94.232 sec, peak RSS 2061.105 MiB.
 - Chunk 003 resource: 91.211 sec, peak RSS 2803.953 MiB.
 - A merge-only refresh after the runner change rewrote `manifest.json` to
@@ -180,23 +182,24 @@ Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
 - Chunk 005 resource: 25.359 sec, peak RSS 1320.488 MiB.
 - Chunk 006 resource: 97.261 sec, peak RSS 1319.250 MiB.
 - Chunk 007 resource: 40.542 sec, peak RSS 1321.125 MiB.
+- Chunk 008 resource: 65.883 sec, peak RSS 1318.891 MiB.
 
-Current `partial_merged` top-1 symmetric accuracy on the first 135 position
+Current `partial_merged` top-1 symmetric accuracy on the first 145 position
 samples:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.503704 |
-| 0.1 | 0.437037 |
-| 0.2 | 0.437037 |
-| 0.3 | 0.437037 |
-| 0.4 | 0.437037 |
-| 0.5 | 0.437037 |
-| 0.6 | 0.429630 |
-| 0.7 | 0.466667 |
-| 0.8 | 0.400000 |
-| 0.9 | 0.370370 |
-| 1.0 | 0.318519 |
+| 0.0 | 0.503448 |
+| 0.1 | 0.434483 |
+| 0.2 | 0.434483 |
+| 0.3 | 0.434483 |
+| 0.4 | 0.434483 |
+| 0.5 | 0.427586 |
+| 0.6 | 0.420690 |
+| 0.7 | 0.455172 |
+| 0.8 | 0.393103 |
+| 0.9 | 0.365517 |
+| 1.0 | 0.310345 |
 
 ### Strength Benchmark
 
@@ -386,7 +389,9 @@ merge 後の smoke 結果:
   shard を大きくすると time-limit の粒度が粗くなることが分かりました。
 - chunk 007 では `--resume-from-completed-prefix` を使い、自動で `100` から開始して、
   5局面サンプル shard を7つ進め、`100..135` まで完了しました。
-- 現在の完了数: 135 / 8,035,282 局面サンプル。
+- chunk 008 では同じ自動再開 p5 設定を60秒制限で使い、5局面サンプル shard を2つ進め、
+  `135..145` まで完了しました。
+- 現在の完了数: 145 / 8,035,282 局面サンプル。
 - chunk 002 resource: 94.232 秒、peak RSS 2061.105 MiB。
 - chunk 003 resource: 91.211 秒、peak RSS 2803.953 MiB。
 - runner 変更後の merge-only refresh で `manifest.json` は 2,863 bytes になり、
@@ -395,22 +400,23 @@ merge 後の smoke 結果:
 - chunk 005 resource: 25.359 秒、peak RSS 1320.488 MiB。
 - chunk 006 resource: 97.261 秒、peak RSS 1319.250 MiB。
 - chunk 007 resource: 40.542 秒、peak RSS 1321.125 MiB。
+- chunk 008 resource: 65.883 秒、peak RSS 1318.891 MiB。
 
-現在の `partial_merged` における先頭135局面サンプルの top-1 symmetric accuracy:
+現在の `partial_merged` における先頭145局面サンプルの top-1 symmetric accuracy:
 
 | Blend param | Top-1 symmetric |
 | ---: | ---: |
-| 0.0 | 0.503704 |
-| 0.1 | 0.437037 |
-| 0.2 | 0.437037 |
-| 0.3 | 0.437037 |
-| 0.4 | 0.437037 |
-| 0.5 | 0.437037 |
-| 0.6 | 0.429630 |
-| 0.7 | 0.466667 |
-| 0.8 | 0.400000 |
-| 0.9 | 0.370370 |
-| 1.0 | 0.318519 |
+| 0.0 | 0.503448 |
+| 0.1 | 0.434483 |
+| 0.2 | 0.434483 |
+| 0.3 | 0.434483 |
+| 0.4 | 0.434483 |
+| 0.5 | 0.427586 |
+| 0.6 | 0.420690 |
+| 0.7 | 0.455172 |
+| 0.8 | 0.393103 |
+| 0.9 | 0.365517 |
+| 1.0 | 0.310345 |
 
 ### 強さ評価ベンチマーク
 
