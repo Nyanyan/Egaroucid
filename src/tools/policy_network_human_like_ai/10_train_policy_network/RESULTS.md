@@ -130,6 +130,8 @@ A two-shard smoke run also passed and the merged output preserved cache stats:
 The WTHOR sharded runner now supports `--positions-per-shard` and
 `--time-limit-sec`. This lets the full WTHOR blend run advance in smaller,
 resumable chunks instead of requiring one very large shard to finish.
+`--merge-completed` updates `partial_merged` from all finished shards even
+before the full WTHOR run is complete.
 
 Smoke test with 5 WTHOR position samples, `positions_per_shard=2`,
 `blend_param=1.0`, `top_n=1,3`:
@@ -147,6 +149,31 @@ Merged smoke result:
 | ---: | ---: | ---: | ---: | ---: |
 | 1.0 | 1 | 0.200000 | 0.400000 | 5 |
 | 1.0 | 3 | 0.800000 | 0.800000 | 5 |
+
+Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
+
+- Chunk 001 completed 20 / 8,035,282 WTHOR position samples.
+- Chunk 002 reused the same output directory, skipped the first two finished
+  shards, completed one more shard, and updated `partial_merged`.
+- Current completed total: 30 / 8,035,282 position samples.
+- Chunk 002 resource: 94.232 sec, peak RSS 2061.105 MiB.
+
+Current `partial_merged` top-1 symmetric accuracy on the first 30 position
+samples:
+
+| Blend param | Top-1 symmetric |
+| ---: | ---: |
+| 0.0 | 0.500000 |
+| 0.1 | 0.433333 |
+| 0.2 | 0.433333 |
+| 0.3 | 0.433333 |
+| 0.4 | 0.433333 |
+| 0.5 | 0.433333 |
+| 0.6 | 0.400000 |
+| 0.7 | 0.500000 |
+| 0.8 | 0.333333 |
+| 0.9 | 0.333333 |
+| 1.0 | 0.266667 |
 
 ### Strength Benchmark
 
@@ -296,6 +323,8 @@ WTHOR 先頭2局面での cache smoke test:
 
 WTHOR shard runner は `--positions-per-shard` と `--time-limit-sec` に対応しました。
 これにより、全WTHORブレンド評価を巨大な shard 単位ではなく、再開可能な小さい単位で進められます。
+`--merge-completed` を使うと、全WTHORが完走する前でも完了済み shard だけから
+`partial_merged` を更新できます。
 
 WTHOR 5局面、`positions_per_shard=2`、`blend_param=1.0`、`top_n=1,3` の smoke test:
 
@@ -312,6 +341,30 @@ merge 後の smoke 結果:
 | ---: | ---: | ---: | ---: | ---: |
 | 1.0 | 1 | 0.200000 | 0.400000 | 5 |
 | 1.0 | 3 | 0.800000 | 0.800000 | 5 |
+
+`20_test_with_wthor/output/blend_wthor_full_chunked` での full-run 進捗:
+
+- chunk 001 で WTHOR 20 / 8,035,282 局面サンプルまで完了。
+- chunk 002 では同じ出力先を使い、完了済みの最初の2 shard を skip して1 shard 追加し、
+  `partial_merged` を更新しました。
+- 現在の完了数: 30 / 8,035,282 局面サンプル。
+- chunk 002 resource: 94.232 秒、peak RSS 2061.105 MiB。
+
+現在の `partial_merged` における先頭30局面サンプルの top-1 symmetric accuracy:
+
+| Blend param | Top-1 symmetric |
+| ---: | ---: |
+| 0.0 | 0.500000 |
+| 0.1 | 0.433333 |
+| 0.2 | 0.433333 |
+| 0.3 | 0.433333 |
+| 0.4 | 0.433333 |
+| 0.5 | 0.433333 |
+| 0.6 | 0.400000 |
+| 0.7 | 0.500000 |
+| 0.8 | 0.333333 |
+| 0.9 | 0.333333 |
+| 1.0 | 0.266667 |
 
 ### 強さ評価ベンチマーク
 

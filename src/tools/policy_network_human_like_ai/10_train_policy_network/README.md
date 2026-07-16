@@ -66,7 +66,8 @@ The sharded blend runner creates a shared SQLite hint-score cache by default at
 `20_test_with_wthor/output/blend_wthor_full_sharded/hint_score_cache.sqlite3`.
 Use `--no-hint-cache` to disable it or `--hint-cache-db` to choose another path.
 Use `--positions-per-shard` and `--time-limit-sec` to advance the full WTHOR
-run in resumable chunks.
+run in resumable chunks. Use `--merge-completed` to keep `partial_merged`
+updated even before the full WTHOR run is complete.
 
 Strength-test helper:
 
@@ -144,6 +145,7 @@ shard 版のブレンド評価は、既定で
 に共有 SQLite hint-score cache を作ります。無効化する場合は `--no-hint-cache`、保存先を変える場合は
 `--hint-cache-db` を使います。
 `--positions-per-shard` と `--time-limit-sec` を使うと、全WTHOR実行を再開可能な小さい単位で進められます。
+`--merge-completed` を使うと、全WTHORが完走する前でも `partial_merged` を更新できます。
 
 強さ評価の補助コマンド:
 

@@ -144,15 +144,15 @@ def make_shard_command(args: argparse.Namespace, shard_dir: Path, range_start: i
     return cmd
 
 
-def merge_shards(output_dir: Path, shard_dirs: Sequence[Path]) -> None:
+def merge_shards(output_dir: Path, shard_dirs: Sequence[Path], merge_dir_name: str = "merged", log_name: str = "merge.log") -> None:
     cmd = [
         sys.executable,
         str(SCRIPT_DIR / "merge_wthor_blend_results.py"),
         *[str(path) for path in shard_dirs],
         "--output-dir",
-        str(output_dir / "merged"),
+        str(output_dir / merge_dir_name),
     ]
-    returncode = run_command(cmd, output_dir / "merge.log")
+    returncode = run_command(cmd, output_dir / log_name)
     if returncode != 0:
         raise SystemExit(returncode)
 
@@ -179,6 +179,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--no-hint-cache", action="store_true", help="Disable the default shared hint cache.")
     parser.add_argument("--max-shards-to-run", type=int, default=None, help="Optional smoke/benchmark cap.")
     parser.add_argument("--time-limit-sec", type=float, default=None, help="Stop launching new shards after this many seconds.")
+    parser.add_argument("--merge-completed", action="store_true", help="Merge all completed shards even if the full run is incomplete.")
     parser.add_argument("--merge-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -212,6 +213,7 @@ def main() -> None:
         "positions_per_shard": args.positions_per_shard,
         "jobs_per_shard": args.jobs_per_shard,
         "time_limit_sec": args.time_limit_sec,
+        "merge_completed": args.merge_completed,
         "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
         "shards": [
             {"index": idx, "range_start": start, "range_end": end, "output_dir": str(shard_dirs[idx])}
@@ -257,6 +259,9 @@ def main() -> None:
             stop_reason = "merge_only_incomplete"
         elif stop_reason == "finished":
             stop_reason = "incomplete"
+        if args.merge_completed and done_dirs:
+            merge_shards(args.output_dir, done_dirs, "partial_merged", "partial_merge.log")
+            print("partial_merged", args.output_dir / "partial_merged")
     progress = write_progress_summary(args.output_dir, shard_dirs, ranges, start_time, stop_reason)
     print("completed_positions", progress["completed_positions"], "/", progress["total_positions"])
     print("stop_reason", progress["stop_reason"])
