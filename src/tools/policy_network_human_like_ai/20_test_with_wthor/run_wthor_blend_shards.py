@@ -386,7 +386,8 @@ def main() -> None:
                 skipped = 0
             cmd = make_shard_command(args, shard_dir, shard_range_start, shard_range_end)
             print(f"run shard {idx}: {shard_range_start}..{shard_range_end}")
-            returncode = run_command(cmd, args.output_dir / f"shard_{idx:03d}.log")
+            shard_log = args.output_dir / f"shard_{idx:03d}_{shard_range_start}_{shard_range_end}.log"
+            returncode = run_command(cmd, shard_log)
             if returncode != 0:
                 raise SystemExit(returncode)
             if shard_done(shard_dir):
