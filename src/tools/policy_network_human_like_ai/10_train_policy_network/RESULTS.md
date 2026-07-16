@@ -306,15 +306,23 @@ Smoke results:
   run to 158 / 120,000 games, elapsed 771.611 sec, and peaked at 111064.254
   MiB RSS. Lowering `processes_per_player` did not materially reduce peak RSS,
   so the next optimization target is the per-process blended engine footprint.
+- Full schedule chunk 003 kept 32 worker threads and
+  `--processes-per-player 8`, but added `--no-blend-cache` to disable the
+  per-process Egaroucid hint cache in blended engines. It advanced the run to
+  232 / 120,000 games, elapsed 719.563 sec, and peaked at 117426.348 MiB RSS.
+  The cache switch did not reduce memory, so the dominant cost is likely the
+  number of simultaneously resident GTP/blended engine processes.
 
 The full requested schedule is 120,000 games. The short full-player benchmark
 suggests a multi-day run even with 32 parallel matches, and `hint 100` required
 raising the strength-runner timeout from 60 sec to 300 sec. The first full
 schedule chunk also showed that `parallel_matches=32` with
 `processes_per_player=32` is very memory-heavy on this machine. Chunk 002
-showed that lowering only `processes_per_player` is not enough, so continuing
-long runs efficiently likely requires reducing the blended GTP engine process
-footprint while preserving 32 worker threads.
+showed that lowering only `processes_per_player` is not enough, and chunk 003
+showed that disabling the blended-engine hint cache is not enough either. A
+practical long run likely needs fewer simultaneously resident engine processes
+or a shared-service style blended engine while preserving the requested 32
+worker threads.
 
 ## 日本語
 
@@ -606,10 +614,16 @@ smoke 結果:
   158 / 120,000 対局まで進み、elapsed は 771.611 秒、peak RSS は 111064.254 MiB でした。
   `processes_per_player` を下げても peak RSS は大きくは下がらなかったため、次は blended engine
   1プロセスあたりのメモリを下げる方向を確認します。
+- full schedule chunk 003 では 32 worker threads と `--processes-per-player 8`
+  は維持し、`--no-blend-cache` で blended engine 内の Egaroucid hint キャッシュを無効化しました。
+  232 / 120,000 対局まで進み、elapsed は 719.563 秒、peak RSS は 117426.348 MiB でした。
+  キャッシュ無効化でもメモリは下がらなかったため、主因は同時常駐している GTP / blended engine
+  プロセス数そのものに近いと考えています。
 
 要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
 また `hint 100` が60秒で戻らない局面があったため、strength runner の timeout 既定値を300秒に上げました。
 最初の full schedule chunk では `parallel_matches=32` かつ `processes_per_player=32` がこの環境では
 非常に大きいメモリを使うことも分かりました。chunk 002 では `processes_per_player` だけを下げても
-不十分だったため、32 worker threads を保ったまま長時間実行するには blended GTP engine の
-プロセスあたりメモリ削減が必要そうです。
+不十分で、chunk 003 では blended engine の hint キャッシュを切っても不十分でした。
+32 worker threads を保ったまま長時間実行するには、同時常駐する engine プロセス数を減らすか、
+blended engine を shared service 化する方向が必要そうです。
