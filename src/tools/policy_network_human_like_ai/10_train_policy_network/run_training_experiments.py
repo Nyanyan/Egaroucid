@@ -11,9 +11,9 @@ import argparse
 import csv
 import json
 from pathlib import Path
-import subprocess
 import sys
-import time
+
+from resource_monitor import run_monitored_command
 
 
 def script_dir() -> Path:
@@ -77,28 +77,25 @@ def main() -> None:
         if args.data_root is not None:
             cmd.extend(["--data-root", str(args.data_root)])
 
-        start = time.time()
-        with log_path.open("w", encoding="utf-8", errors="replace") as log:
-            log.write("$ " + " ".join(cmd) + "\n\n")
-            log.flush()
-            proc = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT)
-        elapsed = time.time() - start
+        resource = run_monitored_command(cmd, log_path)
         row = {
             "config": config,
-            "returncode": proc.returncode,
-            "elapsed_sec": elapsed,
+            "returncode": resource["returncode"],
+            "elapsed_sec": resource["elapsed_sec"],
+            "peak_rss_mib": resource["peak_rss_mib"],
+            "resource_samples": resource["resource_samples"],
             "log": str(log_path),
             "output_dir": str(run_output_dir),
         }
         rows.append(row)
         print(json.dumps(row, ensure_ascii=False))
-        if proc.returncode != 0:
+        if resource["returncode"] != 0:
             break
 
     with (args.log_dir / "training_runs.json").open("w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2, ensure_ascii=False)
     with (args.log_dir / "training_runs.csv").open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["config", "returncode", "elapsed_sec", "log", "output_dir"])
+        writer = csv.DictWriter(f, fieldnames=["config", "returncode", "elapsed_sec", "peak_rss_mib", "resource_samples", "log", "output_dir"])
         writer.writeheader()
         writer.writerows(rows)
     if rows and rows[-1]["returncode"] != 0:
