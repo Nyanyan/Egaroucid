@@ -296,10 +296,19 @@ Smoke results:
 - Time-limit smoke, `egaroucid_l1` vs `blend_1.0`, target 4 games,
   `--time-limit-sec 1`: completed 2/4 games, stopped with
   `stop_reason=time_limit`, wrapper elapsed 3.039 sec, peak RSS 2608.930 MiB.
+- Full schedule chunk 001 used the requested 32 parallel matches with
+  `--resume --time-limit-sec 120`. It completed 92 / 120,000 games, stopped
+  with `stop_reason=time_limit`, elapsed 729.340 sec including already-started
+  game completion, and peaked at 112208.027 MiB RSS. No Egaroucid or Python
+  child processes remained afterward.
 
 The full requested schedule is 120,000 games. The short full-player benchmark
 suggests a multi-day run even with 32 parallel matches, and `hint 100` required
-raising the strength-runner timeout from 60 sec to 300 sec.
+raising the strength-runner timeout from 60 sec to 300 sec. The first full
+schedule chunk also showed that `parallel_matches=32` with
+`processes_per_player=32` is very memory-heavy on this machine, so the next
+strength benchmark should keep 32 worker threads but test a lower
+`processes_per_player` cap before continuing long runs.
 
 ## 日本語
 
@@ -582,6 +591,13 @@ smoke 結果:
 - time-limit smoke、`egaroucid_l1` vs `blend_1.0`、目標4対局、
   `--time-limit-sec 1`: 2/4 対局を完了し、`stop_reason=time_limit` で停止。
   wrapper elapsed 3.039 秒、peak RSS 2608.930 MiB。
+- full schedule chunk 001 では、要求通り 32 並列で `--resume --time-limit-sec 120` を実行しました。
+  92 / 120,000 対局を完了し、`stop_reason=time_limit` で停止しました。
+  起動済み対局の終了待ち込みで elapsed は 729.340 秒、peak RSS は 112208.027 MiB でした。
+  実行後に Egaroucid や Python の子プロセスが残っていないことも確認しました。
 
 要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
 また `hint 100` が60秒で戻らない局面があったため、strength runner の timeout 既定値を300秒に上げました。
+最初の full schedule chunk では `parallel_matches=32` かつ `processes_per_player=32` がこの環境では
+非常に大きいメモリを使うことも分かったため、次の強さ評価ベンチでは 32 worker threads は維持しつつ、
+`processes_per_player` の上限を下げて比較します。
