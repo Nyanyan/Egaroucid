@@ -115,10 +115,31 @@ def collect_pair_costs(candidate_args, metric):
     return costs
 
 
-def solve_layout(target_groups, pair_costs):
+def parse_pair_start(value):
+    if "-" in value:
+        left, right = value.split("-", 1)
+        start = int(left)
+        end = int(right)
+        if end != start + 1:
+            raise argparse.ArgumentTypeError("pair must be adjacent: {}".format(value))
+        return start
+    return int(value)
+
+
+def apply_excluded_pairs(pair_costs, excluded_pairs):
+    if not excluded_pairs:
+        return pair_costs
+    filtered = dict(pair_costs)
+    for start in excluded_pairs:
+        filtered.pop(start, None)
+    return filtered
+
+
+def solve_layout(target_groups, pair_costs, excluded_pairs):
     pairs_needed = N_PHASES - target_groups
     if pairs_needed < 0 or N_PHASES // 2 < pairs_needed:
         raise ValueError("target_groups must be in [{}, {}]".format(N_PHASES // 2, N_PHASES))
+    pair_costs = apply_excluded_pairs(pair_costs, excluded_pairs)
 
     inf = math.inf
     dp = [[inf] * (pairs_needed + 1) for _ in range(N_PHASES + 2)]
@@ -186,17 +207,31 @@ def main():
         default="rmse",
         help="pair cost metric; sign minimizes sign disagreements first and breaks ties by RMSE",
     )
+    parser.add_argument(
+        "--exclude-pair",
+        action="append",
+        type=parse_pair_start,
+        default=[],
+        metavar="START|START-END",
+        help="exclude an adjacent phase pair from selection; repeatable",
+    )
     args = parser.parse_args()
 
     try:
         pair_costs = collect_pair_costs(args.candidate, args.metric)
-        total_cost, pairs, sizes, representatives = solve_layout(args.target_groups, pair_costs)
+        total_cost, pairs, sizes, representatives = solve_layout(
+            args.target_groups,
+            pair_costs,
+            args.exclude_pair,
+        )
     except ValueError as e:
         print("[ERROR] {}".format(e), file=sys.stderr)
         return 1
 
     print("target_groups={}".format(args.target_groups))
     print("metric={}".format(args.metric))
+    if args.exclude_pair:
+        print("excluded_pairs={}".format(",".join("{}-{}".format(v, v + 1) for v in args.exclude_pair)))
     print("pairs_needed={}".format(N_PHASES - args.target_groups))
     print("total_cost={:.0f}".format(total_cost))
     print("pairs")
