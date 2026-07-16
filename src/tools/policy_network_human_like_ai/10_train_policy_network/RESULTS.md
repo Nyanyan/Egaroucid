@@ -339,6 +339,9 @@ Smoke results:
   `--close-processes-after-game`. It advanced the run to 422 / 120,000 games,
   elapsed 1078.991 sec, peaked at 74207.070 MiB RSS, and completed without
   failed-task log entries.
+- Full schedule chunk 007 used the same retry/timeout-600 close-after-game
+  setting. It advanced the run to 490 / 120,000 games, elapsed 786.249 sec,
+  peaked at 70102.605 MiB RSS, and completed without failed-task log entries.
 
 The full requested schedule is 120,000 games. The short full-player benchmark
 suggests a multi-day run even with 32 parallel matches, and `hint 100` required
@@ -672,6 +675,9 @@ smoke 結果:
 - full schedule chunk 006 では 32 worker threads と `--close-processes-after-game` を維持し、
   `--task-retries 2` を有効化し、`--egaroucid-timeout-sec 600` に上げました。
   422 / 120,000 対局まで進み、elapsed は 1078.991 秒、peak RSS は 74207.070 MiB でした。
+  failed-task log は生成されず、正常終了しました。
+- full schedule chunk 007 では同じ retry / timeout 600 / close-after-game 設定を使いました。
+  490 / 120,000 対局まで進み、elapsed は 786.249 秒、peak RSS は 70102.605 MiB でした。
   failed-task log は生成されず、正常終了しました。
 
 要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
