@@ -77,6 +77,12 @@ def repo_relative(path: Path) -> str:
 def display_command(command: Sequence[str]) -> List[str]:
     result = []
     for part in command:
+        try:
+            if Path(part).resolve() == Path(sys.executable).resolve():
+                result.append("python")
+                continue
+        except (OSError, RuntimeError):
+            pass
         path = Path(part)
         if path.is_absolute() or path.exists():
             result.append(repo_relative(path))
@@ -87,6 +93,10 @@ def display_command(command: Sequence[str]) -> List[str]:
 
 def default_output_dir() -> Path:
     return SCRIPT_DIR / "output" / time.strftime("strength_%Y%m%d_%H%M%S")
+
+
+def display_path(path: Path) -> str:
+    return repo_relative(Path(path))
 
 
 class Player:
@@ -611,20 +621,20 @@ def main() -> None:
     print("parallel_matches", args.parallel_matches)
     print("processes_per_player", args.processes_per_player)
     print("total_games", total_games)
-    print("output_dir", args.output_dir)
+    print("output_dir", display_path(args.output_dir))
 
     if args.dry_run:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         with (args.output_dir / "strength_dry_run.json").open("w") as f:
             json.dump(
                 {
-                    "players": [{"name": p.name, "command": p.command} for p in players],
-                    "players_for_log": [{"name": p.name, "command": display_command(p.command)} for p in players],
+                    "players": [{"name": p.name, "command": display_command(p.command)} for p in players],
                     "games_per_pair": args.games_per_pair,
                     "parallel_matches": args.parallel_matches,
                     "processes_per_player": args.processes_per_player,
                     "total_games": total_games,
                     "n_tasks": len(tasks),
+                    "output_dir": display_path(args.output_dir),
                 },
                 f,
                 indent=2,
