@@ -323,6 +323,76 @@ InputInfo read_input_info(const std::string &input_path) {
     return info;
 }
 
+bool phase_vectors_equal(
+    std::ifstream &in,
+    const InputInfo &info,
+    const int phase_a,
+    const int phase_b
+) {
+    if (info.vector_scales[(size_t)phase_a] != info.vector_scales[(size_t)phase_b]) {
+        return false;
+    }
+
+    std::vector<unsigned char> buffer_a;
+    std::vector<unsigned char> buffer_b;
+    for (size_t start = 0; start < (size_t)N_PARAMS_PER_PHASE; start += CHUNK_PARAMS) {
+        const size_t n_param = std::min(CHUNK_PARAMS, (size_t)N_PARAMS_PER_PHASE - start);
+        buffer_a.resize(n_param * info.record_stride);
+        buffer_b.resize(n_param * info.record_stride);
+        read_exact_at(
+            in,
+            EGEV4_PAYLOAD_OFFSET + (size_t)phase_a * info.phase_stride + start * info.record_stride,
+            buffer_a.data(),
+            buffer_a.size(),
+            "lossless phase A chunk"
+        );
+        read_exact_at(
+            in,
+            EGEV4_PAYLOAD_OFFSET + (size_t)phase_b * info.phase_stride + start * info.record_stride,
+            buffer_b.data(),
+            buffer_b.size(),
+            "lossless phase B chunk"
+        );
+        for (size_t param = 0; param < n_param; ++param) {
+            const size_t offset = param * info.record_stride + sizeof(int16_t);
+            if (std::memcmp(buffer_a.data() + offset, buffer_b.data() + offset, (size_t)info.dim) != 0) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+GroupSpec make_lossless_group_spec(
+    const std::string &input_path,
+    const InputInfo &info,
+    const std::string &layout_or_representative_arg,
+    const std::string &representative_arg
+) {
+    if (!layout_or_representative_arg.empty() || !representative_arg.empty()) {
+        throw std::runtime_error("lossless mode does not take layout or representative CSV arguments");
+    }
+
+    std::ifstream in(input_path, std::ios::binary);
+    if (!in) {
+        throw std::runtime_error("cannot reopen input: " + input_path);
+    }
+
+    GroupSpec spec;
+    spec.vector_mode = VectorGroupMode::CopyFirst;
+    int group = 0;
+    spec.phase_to_group[0] = 0;
+    for (int phase = 1; phase < N_PHASES; ++phase) {
+        if (!phase_vectors_equal(in, info, phase - 1, phase)) {
+            ++group;
+        }
+        spec.phase_to_group[(size_t)phase] = (uint8_t)group;
+    }
+    spec.group_count = group + 1;
+    assign_default_group_representatives(&spec);
+    return spec;
+}
+
 GroupSpec make_group_spec(
     const std::string &mode,
     const std::string &layout_or_representative_arg,
@@ -380,7 +450,7 @@ GroupSpec make_group_spec(
         assign_group_representatives(&spec, effective_representative_arg);
         return spec;
     }
-    throw std::runtime_error("mode must be grouped7, groupedN, groupsizes, or shared, optionally suffixed by copyfirst/copylast/copycustom");
+    throw std::runtime_error("mode must be lossless, grouped7, groupedN, groupsizes, or shared; non-lossless modes may be suffixed by copyfirst/copylast/copycustom");
 }
 
 std::vector<std::vector<int>> phases_by_group(const GroupSpec &spec) {
@@ -589,7 +659,9 @@ void convert(
     const std::string &representative_arg
 ) {
     const InputInfo info = read_input_info(input_path);
-    const GroupSpec spec = make_group_spec(mode, layout_or_representative_arg, representative_arg);
+    const GroupSpec spec = mode == "lossless" ?
+        make_lossless_group_spec(input_path, info, layout_or_representative_arg, representative_arg) :
+        make_group_spec(mode, layout_or_representative_arg, representative_arg);
     const std::vector<std::vector<int>> groups = phases_by_group(spec);
     const std::array<float, N_PHASES> group_vector_scales =
         compute_group_vector_scales(input_path, info, spec, groups);
@@ -661,7 +733,7 @@ void convert(
 
 int main(int argc, char **argv) {
     if (argc < 4 || argc > 7) {
-        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <grouped7|groupedN|groupsizes|shared>[copyfirst|copylast|copycustom] [preserve|now|YYYYMMDDHHMMSS] [group_size_csv_for_groupsizes_or_representative_phase_csv_for_copycustom] [representative_phase_csv_for_groupsizescopycustom]" << std::endl;
+        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <lossless|grouped7|groupedN|groupsizes|shared>[copyfirst|copylast|copycustom] [preserve|now|YYYYMMDDHHMMSS] [group_size_csv_for_groupsizes_or_representative_phase_csv_for_copycustom] [representative_phase_csv_for_groupsizescopycustom]" << std::endl;
         return 1;
     }
     try {
