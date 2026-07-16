@@ -56,6 +56,15 @@
     #endif
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_FAST)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_fast.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_fast.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_EDAX_LINEAR)
     #ifndef EVALUATE_SIMD_HEADER
         #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_edax_linear.hpp"
@@ -219,9 +228,9 @@
 #endif
 
 #if !defined(EVALUATE_SIMD_HEADER) && !defined(EVALUATE_GENERIC_HEADER)
-    #define EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP
-    #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_simdopt_mmap.hpp"
-    #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_simdopt_mmap.hpp"
+    #define EVALUATE_EXPERIMENT_7_7_FM_FAST
+    #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_fast.hpp"
+    #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_fast.hpp"
 #endif
 
 #if USE_SIMD_EVALUATION
