@@ -58,6 +58,7 @@ python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend
   --resume-from-completed-prefix `
   --positions-per-shard 20 `
   --jobs-per-shard 4 `
+  --egaroucid-threads 8 `
   --time-limit-sec 3600 `
   --merge-completed `
   --blend-params '0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0' `
@@ -142,6 +143,7 @@ python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend
   --resume-from-completed-prefix `
   --positions-per-shard 20 `
   --jobs-per-shard 4 `
+  --egaroucid-threads 8 `
   --time-limit-sec 3600 `
   --merge-completed `
   --blend-params '0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0' `
