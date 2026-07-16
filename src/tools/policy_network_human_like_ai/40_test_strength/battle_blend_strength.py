@@ -105,17 +105,28 @@ class Player:
         self.command = command
         self.processes: List[subprocess.Popen] = []
         self.proc_pool = [queue.Queue(), queue.Queue()]
+        self.proc_color_started = [0, 0]
+        self.lock = threading.Lock()
         self.results: List[List[int]] = []
         self.disc_diff: List[float] = []
         self.n_played: List[int] = []
         self.processes_per_player = processes_per_player
 
     def start_processes(self) -> None:
+        # Processes are started lazily by acquire_process_idx(). Prestarting one
+        # process per player slot would be too memory-heavy for 32 parallel
+        # matches with blended engines.
+        return
+
+    def try_start_process_for_color(self, color_pool: int) -> Optional[int]:
         half = self.processes_per_player // 2
-        self.processes = [start_engine(self.command) for _ in range(self.processes_per_player)]
-        for i in range(half):
-            self.proc_pool[0].put(i)
-            self.proc_pool[1].put(i + half)
+        with self.lock:
+            if self.proc_color_started[color_pool] >= half:
+                return None
+            proc_idx = len(self.processes)
+            self.processes.append(start_engine(self.command))
+            self.proc_color_started[color_pool] += 1
+            return proc_idx
 
 
 def format_elapsed(seconds: float) -> str:
@@ -243,6 +254,12 @@ def acquire_process_idx(player: Player, color_pool: int) -> int:
     while True:
         if shutdown_event.is_set():
             raise RuntimeError("shutdown in progress")
+        try:
+            return player.proc_pool[color_pool].get_nowait()
+        except queue.Empty:
+            proc_idx = player.try_start_process_for_color(color_pool)
+            if proc_idx is not None:
+                return proc_idx
         try:
             return player.proc_pool[color_pool].get(timeout=PROCESS_POOL_GET_TIMEOUT_SEC)
         except queue.Empty:
@@ -546,6 +563,7 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                     str(args.engine_threads),
                     "--egaroucid-timeout-sec",
                     str(args.egaroucid_timeout_sec),
+                    "--cache-egaroucid",
                     "--score-temperature",
                     str(args.score_temperature),
                 ],
@@ -577,11 +595,28 @@ def make_tasks(players: List[Player], openings: Sequence[str], games_per_pair: i
     return tasks
 
 
+def limit_tasks(tasks: Sequence[Tuple[int, int, str, int]], max_games: Optional[int]) -> List[Tuple[int, int, str, int]]:
+    if max_games is None:
+        return list(tasks)
+    if max_games <= 0:
+        raise ValueError("--max-games must be positive when set")
+    limited = []
+    remaining = max_games
+    for p0, p1, opening, games_to_use in tasks:
+        if remaining <= 0:
+            break
+        use = min(games_to_use, remaining)
+        limited.append((p0, p1, opening, use))
+        remaining -= use
+    return limited
+
+
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run round-robin strength tests for blended policy engines.")
     parser.add_argument("--baseline-levels", default="1,5,10,15,21")
     parser.add_argument("--blend-params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
     parser.add_argument("--games-per-pair", type=int, default=1000)
+    parser.add_argument("--max-games", type=int, default=None, help="Optional benchmark cap; default runs the full requested schedule.")
     parser.add_argument("--parallel-matches", type=int, default=32)
     parser.add_argument("--processes-per-player", type=int, default=32)
     parser.add_argument("--engine-threads", type=int, default=1)
@@ -589,7 +624,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
     parser.add_argument("--blend-egaroucid-level", type=int, default=21)
-    parser.add_argument("--egaroucid-timeout-sec", type=float, default=60.0)
+    parser.add_argument("--egaroucid-timeout-sec", type=float, default=300.0)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--openings", type=Path, default=BIN_DIR / "problem" / "xot" / "openingslarge.txt")
     parser.add_argument("--output-dir", type=Path, default=default_output_dir())
@@ -611,15 +646,18 @@ def main() -> None:
     players = build_players(args)
     if len(players) < 2:
         raise ValueError("at least two players are required")
-    tasks = make_tasks(players, openings, args.games_per_pair, args.seed)
+    full_tasks = make_tasks(players, openings, args.games_per_pair, args.seed)
+    tasks = limit_tasks(full_tasks, args.max_games)
     total_games = sum(task[3] for task in tasks)
 
     print("players")
     for player in players:
         print(player.name, " ".join(display_command(player.command)))
     print("games_per_pair", args.games_per_pair)
+    if args.max_games is not None:
+        print("max_games", args.max_games)
     print("parallel_matches", args.parallel_matches)
-    print("processes_per_player", args.processes_per_player)
+    print("max_processes_per_player", args.processes_per_player)
     print("total_games", total_games)
     print("output_dir", display_path(args.output_dir))
 
@@ -630,8 +668,9 @@ def main() -> None:
                 {
                     "players": [{"name": p.name, "command": display_command(p.command)} for p in players],
                     "games_per_pair": args.games_per_pair,
+                    "max_games": args.max_games,
                     "parallel_matches": args.parallel_matches,
-                    "processes_per_player": args.processes_per_player,
+                    "max_processes_per_player": args.processes_per_player,
                     "total_games": total_games,
                     "n_tasks": len(tasks),
                     "output_dir": display_path(args.output_dir),

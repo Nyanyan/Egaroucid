@@ -40,6 +40,7 @@ class BlendGtpEngine:
             egaroucid_level=args.egaroucid_level,
             egaroucid_threads=args.egaroucid_threads,
             egaroucid_timeout_sec=args.egaroucid_timeout_sec,
+            cache_egaroucid=args.cache_egaroucid,
             score_temperature=args.score_temperature,
             legal_mask_policy=not args.no_legal_mask_policy,
         )
@@ -160,6 +161,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-level", type=int, default=21)
     parser.add_argument("--egaroucid-threads", type=int, default=1)
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
+    parser.add_argument("--cache-egaroucid", action="store_true")
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--no-legal-mask-policy", action="store_true")
     parser.add_argument("--debug", action="store_true")

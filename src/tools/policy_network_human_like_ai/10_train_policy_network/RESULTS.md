@@ -73,6 +73,10 @@ Best WTHOR config: `192x3`.
 That extrapolates to roughly 267 days for all 8,035,282 WTHOR positions on one
 process, so full WTHOR blend evaluation is not practical in this session.
 
+The WTHOR blend evaluator now supports `--jobs`. The same 30-position sample
+with `--jobs 4` took 32.452 sec and peak RSS 5167.441 MiB, with the same
+accuracy output.
+
 Small random sample, seed `613`, 30 positions:
 
 | Blend param | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
@@ -84,6 +88,22 @@ Small random sample, seed `613`, 30 positions:
 | 1.00 | 0.300000 | 0.666667 | 0.900000 |
 
 This sample is only for timing and a rough blend sanity check.
+
+### Strength Benchmark
+
+The strength runner now starts engine processes lazily instead of prestarting
+all player slots. `blend_param=1.0` skips Egaroucid `hint 100`, and blended GTP
+engines can cache hint output.
+
+Smoke results:
+
+- `egaroucid_l1` vs `blend_1.0`, 2 games: 2.034 sec after the policy-only skip.
+- `egaroucid_l1` vs `blend_0.0`, 1 game: 37.499 sec, peak RSS 2567.539 MiB.
+- Full-player short benchmark, `--max-games 2`: 152.064 sec, peak RSS 5109.445 MiB.
+
+The full requested schedule is 120,000 games. The short full-player benchmark
+suggests a multi-day run even with 32 parallel matches, and `hint 100` required
+raising the strength-runner timeout from 60 sec to 300 sec.
 
 ## 日本語
 
@@ -157,6 +177,9 @@ WTHOR からランダムに30局面を選んだ評価では 86.157 秒、peak RS
 でした。単純換算では WTHOR 全 8,035,282 局面に対して1プロセスで約267日かかるため、
 このセッション内で全局面のブレンド評価を完走するのは現実的ではありません。
 
+WTHOR ブレンド評価スクリプトには `--jobs` を追加しました。同じ30局面を `--jobs 4`
+で評価すると 32.452 秒、peak RSS 5167.441 MiB で、出力される一致率は同じでした。
+
 seed `613`、30局面の小サンプル:
 
 | Blend param | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
@@ -169,3 +192,19 @@ seed `613`、30局面の小サンプル:
 
 この表は時間見積もりとブレンド処理の確認用で、最終的な係数決定にはより大きな
 サンプルまたは並列化した評価が必要です。
+
+### 強さ評価ベンチマーク
+
+強さ評価 runner は、全 player slot を事前起動する方式から lazy start へ変更しました。
+また、`blend_param=1.0` では Egaroucid `hint 100` を呼ばず、ブレンド GTP engine では
+hint cache を使えるようにしました。
+
+smoke 結果:
+
+- `egaroucid_l1` vs `blend_1.0`、2対局: policy-only skip 後 2.034 秒。
+- `egaroucid_l1` vs `blend_0.0`、1対局: 37.499 秒、peak RSS 2567.539 MiB。
+- 全プレイヤー構成の短縮ベンチ `--max-games 2`: 152.064 秒、peak RSS 5109.445 MiB。
+
+要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも
+数日規模の実行になる見込みです。また `hint 100` が60秒で戻らない局面があったため、
+strength runner の timeout 既定値を 300 秒に上げました。

@@ -442,6 +442,7 @@ class BlendedPolicy:
         egaroucid_threads: int = 1,
         egaroucid_timeout_sec: float = 30.0,
         persistent_egaroucid: bool = True,
+        cache_egaroucid: bool = False,
         score_temperature: float = 1.0,
         legal_mask_policy: bool = True,
     ):
@@ -457,6 +458,8 @@ class BlendedPolicy:
         if self.score_temperature <= 0.0:
             raise ValueError("score_temperature must be positive")
         self.legal_mask_policy = bool(legal_mask_policy)
+        self.cache_egaroucid = bool(cache_egaroucid)
+        self.egaroucid_cache: Dict[Tuple[int, int, int], Tuple[Dict[int, float], str]] = {}
 
     def policy_distribution(self, state: BoardState, side: int, legal_policies: Sequence[int]) -> np.ndarray:
         policy = self.policy_network.predict(board_to_features(state, side))[0]
@@ -475,12 +478,26 @@ class BlendedPolicy:
         result[np.array(scored_legal, dtype=np.int64)] = softmax_values(values)
         return result
 
+    def cached_hint_scores(self, state: BoardState, side: int) -> Tuple[Dict[int, float], str]:
+        if not self.cache_egaroucid:
+            return self.hint_runner.hint_scores(state, side)
+        key = (state.black, state.white, int(side))
+        cached = self.egaroucid_cache.get(key)
+        if cached is not None:
+            return cached
+        scores, raw_hint = self.hint_runner.hint_scores(state, side)
+        self.egaroucid_cache[key] = (scores, raw_hint)
+        return scores, raw_hint
+
     def blended_distribution(self, state: BoardState, side: int, blend_param: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Dict[int, float], str]:
         legal_policies = state.legal_policies(side)
-        policy_dist = self.policy_distribution(state, side, legal_policies)
-        scores, raw_hint = self.hint_runner.hint_scores(state, side)
-        egaroucid_dist = self.egaroucid_distribution(scores, legal_policies)
         blend_param = float(blend_param)
+        policy_dist = self.policy_distribution(state, side, legal_policies)
+        if blend_param >= 1.0:
+            egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
+            return normalize_policy_on_legal(policy_dist, legal_policies), policy_dist, egaroucid_dist, {}, ""
+        scores, raw_hint = self.cached_hint_scores(state, side)
+        egaroucid_dist = self.egaroucid_distribution(scores, legal_policies)
         blended = policy_dist * blend_param + egaroucid_dist * (1.0 - blend_param)
         blended = normalize_policy_on_legal(blended, legal_policies)
         return blended, policy_dist, egaroucid_dist, scores, raw_hint
@@ -522,6 +539,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-threads", type=int, default=1)
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
     parser.add_argument("--no-persistent-egaroucid", action="store_true")
+    parser.add_argument("--cache-egaroucid", action="store_true")
     parser.add_argument("--blend-param", type=float, default=0.5)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--no-legal-mask-policy", action="store_true")
@@ -547,6 +565,7 @@ def main() -> None:
         egaroucid_threads=args.egaroucid_threads,
         egaroucid_timeout_sec=args.egaroucid_timeout_sec,
         persistent_egaroucid=not args.no_persistent_egaroucid,
+        cache_egaroucid=args.cache_egaroucid,
         score_temperature=args.score_temperature,
         legal_mask_policy=not args.no_legal_mask_policy,
     )
