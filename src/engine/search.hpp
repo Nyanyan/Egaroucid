@@ -17,8 +17,8 @@
 #include "common.hpp"
 #include "board.hpp"
 #include "thread_pool.hpp"
-#include "evaluate_common.hpp"
 #include "evaluate.hpp"
+#include "evaluate_common.hpp"
 #include "flip.hpp"
 
 /*

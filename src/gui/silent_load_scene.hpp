@@ -496,7 +496,7 @@ void init_directories(Directories* directories) {
     std::cerr << "document_dir " << directories->document_dir << " appdata_dir " << directories->appdata_dir << std::endl;
 
     // file directories
-    directories->eval_file = EXE_DIRECTORY_PATH + "resources/eval.egev2";
+    directories->eval_file = EXE_DIRECTORY_PATH + "resources/eval.egev4";
     directories->eval_mo_end_file = EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev";
 }
 

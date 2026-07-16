@@ -69,7 +69,7 @@ int main(int argc, char *argv[]){
     mpc_init();
     move_ordering_init();
     stability_init();
-    evaluate_init("./../../../bin/resources/eval.egev2", "./../../../bin/resources/eval_move_ordering_end.egev", false);
+    evaluate_init("./../../../bin/resources/eval.egev4", "./../../../bin/resources/eval_move_ordering_end.egev", false);
 
     int n_discs = atoi(argv[1]);
     int n_problems = atoi(argv[2]);

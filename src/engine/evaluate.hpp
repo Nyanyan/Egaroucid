@@ -218,12 +218,10 @@
     #endif
 #endif
 
-#ifndef EVALUATE_SIMD_HEADER
-    #define EVALUATE_SIMD_HEADER "evaluate_simd.hpp"
-#endif
-
-#ifndef EVALUATE_GENERIC_HEADER
-    #define EVALUATE_GENERIC_HEADER "evaluate_generic.hpp"
+#if !defined(EVALUATE_SIMD_HEADER) && !defined(EVALUATE_GENERIC_HEADER)
+    #define EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP
+    #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_simdopt_mmap.hpp"
+    #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_simdopt_mmap.hpp"
 #endif
 
 #if USE_SIMD_EVALUATION

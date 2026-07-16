@@ -113,7 +113,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] hash argument out of range" << std::endl;
         }
     }
-    res.eval_file = binary_path + "resources/eval.egev2";
+    res.eval_file = binary_path + "resources/eval.egev4";
     if (find_commandline_option(commandline_options, ID_EVAL_FILE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_EVAL_FILE);
         try {
