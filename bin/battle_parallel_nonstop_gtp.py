@@ -76,6 +76,12 @@ def parse_args():
         default=PROBLEM_FILE,
         help='opening/problem file to use instead of the default XOT set.'
     )
+    parser.add_argument(
+        '--shuffle-seed',
+        type=int,
+        default=57,
+        help='seed used when shuffling openings and match order'
+    )
     return parser.parse_args()
 
 
@@ -184,7 +190,7 @@ def save_kifu_results(battle_no, opening_idx, game_results):
             ))
 
 
-random.seed(57)
+random.seed(args.shuffle_seed)
 
 
 def parse_player_spec(spec):
@@ -857,6 +863,7 @@ def print_collect_progress(completed, total):
 
 print('n_players', len(players))
 print('level', LEVEL)
+print('shuffle seed:', args.shuffle_seed)
 if DEPTH is not None:
     print('depthprobrange:', 0, 60, DEPTH, 100)
 print('parallel matches:', N_PARALLEL_MATCHES)
