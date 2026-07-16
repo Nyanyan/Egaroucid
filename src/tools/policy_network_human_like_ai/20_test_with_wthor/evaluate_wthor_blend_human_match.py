@@ -76,11 +76,16 @@ def choose_global_positions(total_positions: int, sample_positions: Optional[int
 
 
 def split_ranges(total_positions: int, jobs: int) -> List[Tuple[int, int]]:
+    return split_absolute_ranges(0, total_positions, jobs)
+
+
+def split_absolute_ranges(range_start: int, range_end: int, jobs: int) -> List[Tuple[int, int]]:
     jobs = max(1, int(jobs))
     ranges = []
+    total_positions = max(0, range_end - range_start)
     for job in range(jobs):
-        start = (total_positions * job) // jobs
-        end = (total_positions * (job + 1)) // jobs
+        start = range_start + (total_positions * job) // jobs
+        end = range_start + (total_positions * (job + 1)) // jobs
         if start < end:
             ranges.append((start, end))
     return ranges
@@ -228,8 +233,12 @@ def update_metrics_for_position_sample(
         return 0, 0, 1
 
     policy_dist = blender.policy_distribution(state, side, legal_policies)
-    scores, raw_hint = blender.hint_runner.hint_scores(state, side)
-    egaroucid_dist = blender.egaroucid_distribution(scores, legal_policies)
+    if all(float(blend) >= 1.0 for blend in blend_params):
+        raw_hint = ""
+        egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
+    else:
+        scores, raw_hint = blender.hint_runner.hint_scores(state, side)
+        egaroucid_dist = blender.egaroucid_distribution(scores, legal_policies)
     if raw_hint_limit > 0 and len(raw_hint_samples) < raw_hint_limit:
         raw_hint_samples.append({"index": sample_index, "raw_hint": raw_hint})
 
@@ -346,7 +355,7 @@ def evaluate_worker(worker_args: dict) -> dict:
     }
 
 
-def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_values: Sequence[int], bucket_names: Sequence[str], metrics: Dict[float, dict], invalid_policy: int, illegal_label: int, raw_hint_samples: Sequence[dict], available_positions: int, worker_summaries: Sequence[dict]) -> dict:
+def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_values: Sequence[int], bucket_names: Sequence[str], metrics: Dict[float, dict], invalid_policy: int, illegal_label: int, raw_hint_samples: Sequence[dict], available_positions: int, range_start: int, range_end: int, worker_summaries: Sequence[dict]) -> dict:
     topn_rows = []
     bucket_rows = []
     for blend in blend_params:
@@ -386,6 +395,8 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "egaroucid_level": args.egaroucid_level,
         "blend_params": list(blend_params),
         "available_positions": available_positions,
+        "range_start": range_start,
+        "range_end": range_end,
         "sample_positions": args.sample_positions,
         "sample_seed": args.sample_seed if args.sample_positions is not None else None,
         "jobs": args.jobs,
@@ -417,6 +428,14 @@ def evaluate(args: argparse.Namespace) -> dict:
     n_values = sorted(set(parse_int_list(args.top_n)))
     dat_files = discover_dat_files(args.board_data_dir)
     available_positions = count_position_samples(dat_files, args.max_positions)
+    range_start = int(args.range_start)
+    range_end = available_positions if args.range_end is None else int(args.range_end)
+    if range_start < 0 or range_start > available_positions:
+        raise ValueError(f"--range-start must be within 0..{available_positions}")
+    if range_end < range_start or range_end > available_positions:
+        raise ValueError(f"--range-end must be within {range_start}..{available_positions}")
+    if args.sample_positions is not None and (range_start != 0 or range_end != available_positions):
+        raise ValueError("--sample-positions cannot be combined with --range-start/--range-end")
     selected_global_positions = choose_global_positions(available_positions, args.sample_positions, args.sample_seed)
     bucket_names = [move_bucket(i) for i in range(1, 61, 10)]
     metrics = make_metrics(blend_params, n_values, bucket_names)
@@ -426,7 +445,7 @@ def evaluate(args: argparse.Namespace) -> dict:
     raw_hint_samples = []
     if args.jobs > 1:
         if selected_global_positions is None:
-            work_ranges = split_ranges(available_positions, args.jobs)
+            work_ranges = split_absolute_ranges(range_start, range_end, args.jobs)
             selected_chunks = [None for _ in work_ranges]
         else:
             selected_chunks_np = [chunk for chunk in np.array_split(selected_global_positions, min(args.jobs, len(selected_global_positions))) if len(chunk)]
@@ -483,7 +502,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                         flush=True,
                     )
         worker_summaries.sort(key=lambda row: row["worker_id"])
-        return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, worker_summaries)
+        return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, worker_summaries)
 
     blender = BlendedPolicy(
         weights=args.weights,
@@ -495,27 +514,19 @@ def evaluate(args: argparse.Namespace) -> dict:
         legal_mask_policy=not args.no_legal_mask_policy,
     )
 
-    remaining = args.max_positions
     total_seen = 0
     global_offset = 0
     for dat_file in dat_files:
-        if remaining is not None and remaining <= 0:
+        file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
+        if global_offset >= available_positions:
             break
-        for position_samples in iter_position_batches(dat_file, args.batch_size, remaining):
+        if selected_global_positions is None:
+            batches = iter_position_batches_for_global_range(dat_file, global_offset, available_positions, range_start, range_end, args.batch_size)
+        else:
+            batches = iter_position_batches_for_selected_globals(dat_file, global_offset, available_positions, selected_global_positions, args.batch_size)
+        for position_samples in batches:
             if len(position_samples) == 0:
                 continue
-            if remaining is not None:
-                remaining -= len(position_samples)
-            batch_start = global_offset
-            batch_end = batch_start + len(position_samples)
-            global_offset = batch_end
-            if selected_global_positions is not None:
-                left = int(np.searchsorted(selected_global_positions, batch_start, side="left"))
-                right = int(np.searchsorted(selected_global_positions, batch_end, side="left"))
-                if left == right:
-                    continue
-                local_indices = selected_global_positions[left:right] - batch_start
-                position_samples = position_samples[local_indices]
             for position_sample in position_samples:
                 ok, bad_policy, bad_label = update_metrics_for_position_sample(
                     position_sample,
@@ -533,9 +544,10 @@ def evaluate(args: argparse.Namespace) -> dict:
 
             if args.verbose and total_seen and total_seen % args.progress_interval < len(position_samples):
                 print(f"seen {total_seen} position_samples")
+        global_offset += file_positions
 
     blender.hint_runner.close()
-    return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, [])
+    return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, [])
 
 
 def make_argparser() -> argparse.ArgumentParser:
@@ -552,6 +564,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--top-n", default="1,2,3,4,5,8,10,16")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--max-positions", type=int, default=None)
+    parser.add_argument("--range-start", type=int, default=0)
+    parser.add_argument("--range-end", type=int, default=None)
     parser.add_argument("--sample-positions", type=int, default=None)
     parser.add_argument("--sample-seed", type=int, default=613)
     parser.add_argument("--jobs", type=int, default=1)
@@ -569,6 +583,8 @@ def main() -> None:
     print("board_data_dir", result["board_data_dir"])
     print("egaroucid_level", result["egaroucid_level"])
     print("available_positions", result["available_positions"])
+    print("range_start", result["range_start"])
+    print("range_end", result["range_end"])
     if result["sample_positions"] is not None:
         print("sample_positions", result["sample_positions"])
         print("sample_seed", result["sample_seed"])

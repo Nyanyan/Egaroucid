@@ -76,6 +76,8 @@ process, so full WTHOR blend evaluation is not practical in this session.
 The WTHOR blend evaluator now supports `--jobs`. The same 30-position sample
 with `--jobs 4` took 32.452 sec and peak RSS 5167.441 MiB, with the same
 accuracy output.
+It also supports `--range-start` / `--range-end`, and
+`20_test_with_wthor/merge_wthor_blend_results.py` can merge finished shards.
 
 Small random sample, seed `613`, 30 positions:
 
@@ -94,6 +96,8 @@ This sample is only for timing and a rough blend sanity check.
 The strength runner now starts engine processes lazily instead of prestarting
 all player slots. `blend_param=1.0` skips Egaroucid `hint 100`, and blended GTP
 engines can cache hint output.
+Completed tasks are appended to `strength_games.jsonl`; `--resume` reloads
+that file and runs only unfinished tasks.
 
 Smoke results:
 
@@ -179,6 +183,8 @@ WTHOR からランダムに30局面を選んだ評価では 86.157 秒、peak RS
 
 WTHOR ブレンド評価スクリプトには `--jobs` を追加しました。同じ30局面を `--jobs 4`
 で評価すると 32.452 秒、peak RSS 5167.441 MiB で、出力される一致率は同じでした。
+さらに `--range-start` / `--range-end` を追加し、
+`20_test_with_wthor/merge_wthor_blend_results.py` で完走済み shard を結合できるようにしました。
 
 seed `613`、30局面の小サンプル:
 
@@ -198,6 +204,8 @@ seed `613`、30局面の小サンプル:
 強さ評価 runner は、全 player slot を事前起動する方式から lazy start へ変更しました。
 また、`blend_param=1.0` では Egaroucid `hint 100` を呼ばず、ブレンド GTP engine では
 hint cache を使えるようにしました。
+完了 task は `strength_games.jsonl` に追記し、`--resume` で読み戻して未完了 task だけを
+実行できるようにしました。
 
 smoke 結果:
 

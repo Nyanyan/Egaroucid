@@ -18,6 +18,7 @@ import argparse
 import atexit
 import csv
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
@@ -53,6 +54,15 @@ process_registry = set()
 process_registry_lock = threading.Lock()
 shutdown_event = threading.Event()
 results_lock = threading.Lock()
+
+
+@dataclass(frozen=True)
+class Task:
+    task_id: int
+    p0_idx: int
+    p1_idx: int
+    opening: str
+    games_to_use: int
 
 
 def parse_int_list(text: str) -> List[int]:
@@ -385,12 +395,12 @@ def update_result(players: List[Player], result: dict) -> None:
         players[p1_idx].n_played[p0_idx] += 1
 
 
-def play_task(players: List[Player], p0_idx: int, p1_idx: int, opening: str, games_to_use: int) -> List[dict]:
+def play_task(players: List[Player], task: Task) -> List[dict]:
     results = []
-    if games_to_use >= 1:
-        results.append(play_single_game(players, p0_idx, p1_idx, opening, True))
-    if games_to_use >= 2:
-        results.append(play_single_game(players, p0_idx, p1_idx, opening, False))
+    if task.games_to_use >= 1:
+        results.append(play_single_game(players, task.p0_idx, task.p1_idx, task.opening, True))
+    if task.games_to_use >= 2:
+        results.append(play_single_game(players, task.p0_idx, task.p1_idx, task.opening, False))
     for result in results:
         update_result(players, result)
     return results
@@ -578,37 +588,78 @@ def build_players(args: argparse.Namespace) -> List[Player]:
     return players
 
 
-def make_tasks(players: List[Player], openings: Sequence[str], games_per_pair: int, seed: int) -> List[Tuple[int, int, str, int]]:
+def make_tasks(players: List[Player], openings: Sequence[str], games_per_pair: int, seed: int) -> List[Task]:
     rng = random.Random(seed)
     pairs = [(i, j) for i in range(len(players)) for j in range(i + 1, len(players))]
-    tasks = []
+    raw_tasks = []
     opening_idx = 0
     n_sets = (games_per_pair + 1) // 2
     for p0, p1 in pairs:
         games_left = games_per_pair
         for _ in range(n_sets):
             games_to_use = min(2, games_left)
-            tasks.append((p0, p1, openings[opening_idx], games_to_use))
+            raw_tasks.append((p0, p1, openings[opening_idx], games_to_use))
             games_left -= games_to_use
             opening_idx = (opening_idx + 1) % len(openings)
-    rng.shuffle(tasks)
-    return tasks
+    rng.shuffle(raw_tasks)
+    return [Task(task_id, p0, p1, opening, games_to_use) for task_id, (p0, p1, opening, games_to_use) in enumerate(raw_tasks)]
 
 
-def limit_tasks(tasks: Sequence[Tuple[int, int, str, int]], max_games: Optional[int]) -> List[Tuple[int, int, str, int]]:
+def limit_tasks(tasks: Sequence[Task], max_games: Optional[int]) -> List[Task]:
     if max_games is None:
         return list(tasks)
     if max_games <= 0:
         raise ValueError("--max-games must be positive when set")
     limited = []
     remaining = max_games
-    for p0, p1, opening, games_to_use in tasks:
+    for task in tasks:
         if remaining <= 0:
             break
-        use = min(games_to_use, remaining)
-        limited.append((p0, p1, opening, use))
+        use = min(task.games_to_use, remaining)
+        limited.append(Task(task.task_id, task.p0_idx, task.p1_idx, task.opening, use))
         remaining -= use
     return limited
+
+
+def game_results_path(output_dir: Path) -> Path:
+    return output_dir / "strength_games.jsonl"
+
+
+def append_task_results(output_dir: Path, task: Task, results: Sequence[dict]) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    row = {
+        "task_id": task.task_id,
+        "p0_idx": task.p0_idx,
+        "p1_idx": task.p1_idx,
+        "opening": task.opening,
+        "games_to_use": task.games_to_use,
+        "results": list(results),
+    }
+    with game_results_path(output_dir).open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def load_completed_task_results(players: List[Player], output_dir: Path) -> Tuple[set, int]:
+    path = game_results_path(output_dir)
+    if not path.exists():
+        return set(), 0
+    completed_task_ids = set()
+    completed_games = 0
+    with path.open("r", encoding="utf-8") as f:
+        for line_idx, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            task_id = int(row["task_id"])
+            if task_id in completed_task_ids:
+                continue
+            completed_task_ids.add(task_id)
+            results = row.get("results", [])
+            for result in results:
+                update_result(players, result)
+            completed_games += len(results)
+    return completed_task_ids, completed_games
 
 
 def make_argparser() -> argparse.ArgumentParser:
@@ -629,6 +680,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--openings", type=Path, default=BIN_DIR / "problem" / "xot" / "openingslarge.txt")
     parser.add_argument("--output-dir", type=Path, default=default_output_dir())
     parser.add_argument("--seed", type=int, default=613)
+    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
@@ -648,7 +700,12 @@ def main() -> None:
         raise ValueError("at least two players are required")
     full_tasks = make_tasks(players, openings, args.games_per_pair, args.seed)
     tasks = limit_tasks(full_tasks, args.max_games)
-    total_games = sum(task[3] for task in tasks)
+    total_games = sum(task.games_to_use for task in tasks)
+    completed_task_ids = set()
+    completed_games = 0
+    if args.resume:
+        completed_task_ids, completed_games = load_completed_task_results(players, args.output_dir)
+        tasks = [task for task in tasks if task.task_id not in completed_task_ids]
 
     print("players")
     for player in players:
@@ -659,6 +716,10 @@ def main() -> None:
     print("parallel_matches", args.parallel_matches)
     print("max_processes_per_player", args.processes_per_player)
     print("total_games", total_games)
+    if args.resume:
+        print("resume_completed_tasks", len(completed_task_ids))
+        print("resume_completed_games", completed_games)
+        print("remaining_games", sum(task.games_to_use for task in tasks))
     print("output_dir", display_path(args.output_dir))
 
     if args.dry_run:
@@ -674,6 +735,9 @@ def main() -> None:
                     "total_games": total_games,
                     "n_tasks": len(tasks),
                     "output_dir": display_path(args.output_dir),
+                    "resume": args.resume,
+                    "resume_completed_tasks": len(completed_task_ids),
+                    "resume_completed_games": completed_games,
                 },
                 f,
                 indent=2,
@@ -684,18 +748,22 @@ def main() -> None:
         player.start_processes()
 
     start_time = time.time()
-    completed_games = 0
     executor = ThreadPoolExecutor(max_workers=args.parallel_matches)
     try:
         iterator = iter(tasks)
         futures = {}
         for _ in range(min(args.parallel_matches, len(tasks))):
             task = next(iterator)
-            futures[executor.submit(play_task, players, *task)] = task
+            futures[executor.submit(play_task, players, task)] = task
         while futures:
             for future in as_completed(list(futures.keys())):
                 task = futures.pop(future)
-                results = future.result()
+                try:
+                    results = future.result()
+                except Exception:
+                    write_outputs(players, args.output_dir, completed_games, total_games)
+                    raise
+                append_task_results(args.output_dir, task, results)
                 completed_games += len(results)
                 if completed_games % args.status_every_games < len(results) or completed_games == total_games:
                     print_status(players, args.output_dir, start_time, completed_games, total_games)
@@ -704,7 +772,7 @@ def main() -> None:
                 except StopIteration:
                     pass
                 else:
-                    futures[executor.submit(play_task, players, *next_task)] = next_task
+                    futures[executor.submit(play_task, players, next_task)] = next_task
                 break
     finally:
         shutdown_all_processes()
