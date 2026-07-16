@@ -144,19 +144,19 @@ def convert_transcript(transcript: str, random_depth: int) -> Tuple[List[Tuple[i
     pending: List[Tuple[int, int, int, int]] = []
     move_count = len(transcript) // 2
     for move_idx in range(move_count):
-        side, can_move = pass_if_needed(black, white, side)
-        if not can_move:
-            return [], "game ended before transcript ended"
         policy = policy_from_coord(transcript[move_idx * 2], transcript[move_idx * 2 + 1])
         if policy < 0:
             return [], f"invalid coordinate at move {move_idx}"
+        moved = apply_move(black, white, side, policy)
+        if moved is None:
+            side ^= 1
+            moved = apply_move(black, white, side, policy)
+            if moved is None:
+                return [], f"illegal move at move {move_idx}"
         if move_idx >= random_depth:
             player = black if side == BLACK else white
             opponent = white if side == BLACK else black
             pending.append((player, opponent, side, policy))
-        moved = apply_move(black, white, side, policy)
-        if moved is None:
-            return [], f"illegal move at move {move_idx}"
         black, white, side = moved
 
     side, can_move = pass_if_needed(black, white, side)
