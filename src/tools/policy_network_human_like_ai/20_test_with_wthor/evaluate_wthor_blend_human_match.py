@@ -34,7 +34,7 @@ from blend_policy_with_egaroucid import (  # noqa: E402
 )
 from evaluate_wthor_human_match import (  # noqa: E402
     BOARD_DTYPE,
-    BOARD_RECORD_SIZE,
+    BOARD_SAMPLE_SIZE,
     equivalent_policy_mask,
     move_bucket,
 )
@@ -51,16 +51,38 @@ def discover_dat_files(board_data_dir: Path) -> List[Path]:
     return files
 
 
-def iter_record_batches(path: Path, batch_size: int, max_positions: Optional[int]) -> Iterable[np.ndarray]:
+def count_position_samples(dat_files: Sequence[Path], max_positions: Optional[int]) -> int:
+    total = 0
+    for path in dat_files:
+        n = path.stat().st_size // BOARD_SAMPLE_SIZE
+        if max_positions is not None:
+            n = min(n, max_positions - total)
+        if n <= 0:
+            break
+        total += n
+    return total
+
+
+def choose_global_positions(total_positions: int, sample_positions: Optional[int], seed: int) -> Optional[np.ndarray]:
+    if sample_positions is None:
+        return None
+    if total_positions <= 0:
+        return np.empty(0, dtype=np.int64)
+    n = min(sample_positions, total_positions)
+    rng = np.random.default_rng(seed)
+    return np.sort(rng.choice(total_positions, size=n, replace=False).astype(np.int64, copy=False))
+
+
+def iter_position_batches(path: Path, batch_size: int, max_positions: Optional[int]) -> Iterable[np.ndarray]:
     size = path.stat().st_size
-    n_records = size // BOARD_RECORD_SIZE
-    if size % BOARD_RECORD_SIZE != 0:
+    n_position_samples = size // BOARD_SAMPLE_SIZE
+    if size % BOARD_SAMPLE_SIZE != 0:
         print(f"warning: {path} has trailing bytes and will be truncated")
     if max_positions is not None:
-        n_records = min(n_records, max_positions)
-    mmap = np.memmap(path, dtype=BOARD_DTYPE, mode="r", shape=(size // BOARD_RECORD_SIZE,))
-    for start in range(0, n_records, batch_size):
-        end = min(n_records, start + batch_size)
+        n_position_samples = min(n_position_samples, max_positions)
+    mmap = np.memmap(path, dtype=BOARD_DTYPE, mode="r", shape=(size // BOARD_SAMPLE_SIZE,))
+    for start in range(0, n_position_samples, batch_size):
+        end = min(n_position_samples, start + batch_size)
         yield np.asarray(mmap[start:end])
 
 
@@ -68,11 +90,11 @@ def popcount(x: int) -> int:
     return bin(int(x)).count("1")
 
 
-def record_to_state(record) -> Tuple[BoardState, int, int, int, int, int]:
-    player = int(record["player"])
-    opponent = int(record["opponent"])
-    side = int(record["color"])
-    policy = int(record["policy"])
+def position_sample_to_state(position_sample) -> Tuple[BoardState, int, int, int, int, int]:
+    player = int(position_sample["player"])
+    opponent = int(position_sample["opponent"])
+    side = int(position_sample["color"])
+    policy = int(position_sample["policy"])
     if side == BLACK:
         black, white = player, opponent
     elif side == WHITE:
@@ -122,6 +144,9 @@ def parse_int_list(text: str) -> List[int]:
 def evaluate(args: argparse.Namespace) -> dict:
     blend_params = parse_float_list(args.blend_params)
     n_values = sorted(set(parse_int_list(args.top_n)))
+    dat_files = discover_dat_files(args.board_data_dir)
+    available_positions = count_position_samples(dat_files, args.max_positions)
+    selected_global_positions = choose_global_positions(available_positions, args.sample_positions, args.sample_seed)
     bucket_names = [move_bucket(i) for i in range(1, 61, 10)]
     metrics = {
         blend: {
@@ -149,17 +174,28 @@ def evaluate(args: argparse.Namespace) -> dict:
 
     remaining = args.max_positions
     total_seen = 0
-    for dat_file in discover_dat_files(args.board_data_dir):
+    global_offset = 0
+    for dat_file in dat_files:
         if remaining is not None and remaining <= 0:
             break
-        for records in iter_record_batches(dat_file, args.batch_size, remaining):
-            if len(records) == 0:
+        for position_samples in iter_position_batches(dat_file, args.batch_size, remaining):
+            if len(position_samples) == 0:
                 continue
             if remaining is not None:
-                remaining -= len(records)
-            for record in records:
+                remaining -= len(position_samples)
+            batch_start = global_offset
+            batch_end = batch_start + len(position_samples)
+            global_offset = batch_end
+            if selected_global_positions is not None:
+                left = int(np.searchsorted(selected_global_positions, batch_start, side="left"))
+                right = int(np.searchsorted(selected_global_positions, batch_end, side="left"))
+                if left == right:
+                    continue
+                local_indices = selected_global_positions[left:right] - batch_start
+                position_samples = position_samples[local_indices]
+            for position_sample in position_samples:
                 total_seen += 1
-                state, side, policy, player, opponent, move_number = record_to_state(record)
+                state, side, policy, player, opponent, move_number = position_sample_to_state(position_sample)
                 legal_policies = state.legal_policies(side)
                 if policy < 0 or policy >= POLICY_SIZE:
                     invalid_policy += 1
@@ -195,8 +231,8 @@ def evaluate(args: argparse.Namespace) -> dict:
                             m["symmetric_hits"][n] += 1
                             m["bucket_hits"][bucket][n] += 1
 
-            if args.verbose and total_seen and total_seen % args.progress_interval < len(records):
-                print(f"seen {total_seen} records")
+            if args.verbose and total_seen and total_seen % args.progress_interval < len(position_samples):
+                print(f"seen {total_seen} position_samples")
 
     topn_rows = []
     bucket_rows = []
@@ -236,8 +272,11 @@ def evaluate(args: argparse.Namespace) -> dict:
         "egaroucid_exe": str(args.egaroucid_exe),
         "egaroucid_level": args.egaroucid_level,
         "blend_params": blend_params,
-        "invalid_policy_records": invalid_policy,
-        "illegal_label_records": illegal_label,
+        "available_positions": available_positions,
+        "sample_positions": args.sample_positions,
+        "sample_seed": args.sample_seed if args.sample_positions is not None else None,
+        "invalid_policy_samples": invalid_policy,
+        "illegal_label_samples": illegal_label,
         "topn": topn_rows,
         "move_bucket_topn": bucket_rows,
         "raw_hint_samples": raw_hint_samples,
@@ -272,6 +311,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--top-n", default="1,2,3,4,5,8,10,16")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--max-positions", type=int, default=None)
+    parser.add_argument("--sample-positions", type=int, default=None)
+    parser.add_argument("--sample-seed", type=int, default=613)
     parser.add_argument("--raw-hint-samples", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "wthor_blend_human_match")
     parser.add_argument("--progress-interval", type=int, default=1000)
@@ -285,12 +326,16 @@ def main() -> None:
     print("weights", result["weights"])
     print("board_data_dir", result["board_data_dir"])
     print("egaroucid_level", result["egaroucid_level"])
-    print("invalid_policy_records", result["invalid_policy_records"])
-    print("illegal_label_records", result["illegal_label_records"])
+    print("available_positions", result["available_positions"])
+    if result["sample_positions"] is not None:
+        print("sample_positions", result["sample_positions"])
+        print("sample_seed", result["sample_seed"])
+    print("invalid_policy_samples", result["invalid_policy_samples"])
+    print("illegal_label_samples", result["illegal_label_samples"])
     for row in result["topn"]:
         if row["top_n"] == 1:
             print(
-                f"blend {row['blend_param']:.1f} top-1 exact {row['exact_accuracy'] * 100.0:.3f}% "
+                f"blend {row['blend_param']:g} top-1 exact {row['exact_accuracy'] * 100.0:.3f}% "
                 f"symmetric {row['symmetric_accuracy'] * 100.0:.3f}% ({row['positions']})"
             )
     print("output_dir", args.output_dir)

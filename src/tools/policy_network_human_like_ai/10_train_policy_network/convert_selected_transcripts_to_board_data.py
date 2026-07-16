@@ -8,7 +8,7 @@ Input:
 Output:
   train_data/board_data/Egaroucid_Train_Data_v2_selected/records0/*.dat
 
-Records before each file's random_depth are played but not written, following
+Moves before each file's random_depth are played but not written, following
 the dataset recommendation to exclude the random opening segment from training.
 """
 
@@ -163,11 +163,11 @@ def convert_transcript(transcript: str, random_depth: int) -> Tuple[List[Tuple[i
     if can_move:
         return [], "transcript ended before both sides had no legal move"
 
-    records = []
-    for player, opponent, record_side, policy in pending:
-        score = score_for_side(black, white, record_side)
-        records.append((player, opponent, record_side, policy, score))
-    return records, None
+    position_samples = []
+    for player, opponent, sample_side, policy in pending:
+        score = score_for_side(black, white, sample_side)
+        position_samples.append((player, opponent, sample_side, policy, score))
+    return position_samples, None
 
 
 def iter_transcript_files(input_root: Path) -> Iterable[Tuple[int, Path]]:
@@ -176,8 +176,8 @@ def iter_transcript_files(input_root: Path) -> Iterable[Tuple[int, Path]]:
             yield int(path.parent.name), path
 
 
-def pack_record(record: Tuple[int, int, int, int, int]) -> bytes:
-    player, opponent, side, policy, score = record
+def pack_position_sample(position_sample: Tuple[int, int, int, int, int]) -> bytes:
+    player, opponent, side, policy, score = position_sample
     return struct.pack("<QQbbb", player, opponent, side, policy, score)
 
 
@@ -194,7 +194,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Convert selected transcripts to policy board data.")
     parser.add_argument("--input-root", type=Path, default=default_input_root())
     parser.add_argument("--output-root", type=Path, default=default_output_root())
-    parser.add_argument("--records-per-file", type=int, default=5_000_000)
+    parser.add_argument("--position-samples-per-file", type=int, default=5_000_000)
     return parser
 
 
@@ -205,11 +205,11 @@ def main() -> None:
     args.output_root.mkdir(parents=True, exist_ok=True)
 
     out_idx = 0
-    records_in_file = 0
+    position_samples_in_file = 0
     out = (args.output_root / f"{out_idx}.dat").open("wb")
     total_games = 0
     valid_games = 0
-    total_records = 0
+    total_position_samples = 0
     invalid_rows: List[dict] = []
     depth_counts = {}
 
@@ -218,7 +218,7 @@ def main() -> None:
             with path.open("r", encoding="utf-8") as f:
                 for line_idx, transcript in enumerate(f):
                     total_games += 1
-                    records, error = convert_transcript(transcript, random_depth)
+                    position_samples, error = convert_transcript(transcript, random_depth)
                     if error is not None:
                         invalid_rows.append(
                             {
@@ -231,15 +231,15 @@ def main() -> None:
                         continue
                     valid_games += 1
                     depth_counts[str(random_depth)] = depth_counts.get(str(random_depth), 0) + 1
-                    for record in records:
-                        if records_in_file >= args.records_per_file:
+                    for position_sample in position_samples:
+                        if position_samples_in_file >= args.position_samples_per_file:
                             out.close()
                             out_idx += 1
-                            records_in_file = 0
+                            position_samples_in_file = 0
                             out = (args.output_root / f"{out_idx}.dat").open("wb")
-                        out.write(pack_record(record))
-                        records_in_file += 1
-                        total_records += 1
+                        out.write(pack_position_sample(position_sample))
+                        position_samples_in_file += 1
+                        total_position_samples += 1
     finally:
         out.close()
 
@@ -250,9 +250,9 @@ def main() -> None:
         "total_games": total_games,
         "valid_games": valid_games,
         "invalid_games": len(invalid_rows),
-        "total_records": total_records,
-        "records_per_file": args.records_per_file,
-        "output_files": out_idx + 1 if total_records else 0,
+        "total_position_samples": total_position_samples,
+        "position_samples_per_file": args.position_samples_per_file,
+        "output_files": out_idx + 1 if total_position_samples else 0,
         "random_depth_valid_game_counts": dict(sorted(depth_counts.items(), key=lambda kv: int(kv[0]))),
     }
     with (args.output_root / "conversion_summary.json").open("w", encoding="utf-8") as f:

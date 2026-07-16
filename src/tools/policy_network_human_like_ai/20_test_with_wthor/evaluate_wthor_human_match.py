@@ -2,7 +2,7 @@
 """
 Evaluate policy-network agreement with WTHOR human moves.
 
-This evaluator uses all WTHOR board-data records by default. It reports exact
+This evaluator uses all WTHOR board-data position samples by default. It reports exact
 top-N accuracy and symmetry-aware top-N accuracy. Symmetry-aware accuracy treats
 moves as equivalent when a board symmetry leaves both player/opponent bitboards
 unchanged and maps the human move to the predicted move.
@@ -21,7 +21,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import numpy as np
 
 
-BOARD_RECORD_SIZE = 19
+BOARD_SAMPLE_SIZE = 19
 HW = 8
 HW2 = 64
 HW2_M1 = 63
@@ -38,9 +38,10 @@ BOARD_DTYPE = np.dtype(
     ],
     align=False,
 )
-assert BOARD_DTYPE.itemsize == BOARD_RECORD_SIZE
+assert BOARD_DTYPE.itemsize == BOARD_SAMPLE_SIZE
 
 BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, HW2)
+POLICY_BIT_MASKS = (np.uint64(1) << np.arange(0, HW2, dtype=np.uint64)).reshape(1, HW2)
 FULL = np.uint64(0xFFFFFFFFFFFFFFFF)
 NOT_FILE_A = np.uint64(0x7F7F7F7F7F7F7F7F)
 NOT_FILE_H = np.uint64(0xFEFEFEFEFEFEFEFE)
@@ -203,11 +204,11 @@ def calc_legal_batch(player: np.ndarray, opponent: np.ndarray) -> np.ndarray:
     return legal
 
 
-def records_to_features(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    player = records["player"].astype(np.uint64, copy=False)
-    opponent = records["opponent"].astype(np.uint64, copy=False)
-    policies = records["policy"].astype(np.int64, copy=False)
-    x = np.empty((len(records), INPUT_SIZE), dtype=np.float32)
+def position_samples_to_features(position_samples: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    player = position_samples["player"].astype(np.uint64, copy=False)
+    opponent = position_samples["opponent"].astype(np.uint64, copy=False)
+    policies = position_samples["policy"].astype(np.int64, copy=False)
+    x = np.empty((len(position_samples), INPUT_SIZE), dtype=np.float32)
     x[:, :HW2] = ((player.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     x[:, HW2:] = ((opponent.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     legal = calc_legal_batch(player, opponent)
@@ -232,7 +233,7 @@ def valid_policy_mask(policies: np.ndarray, legal: np.ndarray) -> Tuple[np.ndarr
 
 
 def legal_bitboard_to_mask(legal: np.ndarray) -> np.ndarray:
-    return (legal.reshape(-1, 1) & BIT_MASKS) != 0
+    return (legal.reshape(-1, 1) & POLICY_BIT_MASKS) != 0
 
 
 def equivalent_policy_mask(player: np.ndarray, opponent: np.ndarray, policies: np.ndarray) -> np.ndarray:
@@ -253,16 +254,16 @@ def move_bucket(move_number: int) -> str:
     return f"{start:02d}_{start + 9:02d}"
 
 
-def iter_record_batches(path: Path, batch_size: int, max_positions: Optional[int]) -> Iterable[np.ndarray]:
+def iter_position_batches(path: Path, batch_size: int, max_positions: Optional[int]) -> Iterable[np.ndarray]:
     size = path.stat().st_size
-    n_records = size // BOARD_RECORD_SIZE
-    if size % BOARD_RECORD_SIZE != 0:
+    n_position_samples = size // BOARD_SAMPLE_SIZE
+    if size % BOARD_SAMPLE_SIZE != 0:
         print(f"warning: {path} has trailing bytes and will be truncated")
     if max_positions is not None:
-        n_records = min(n_records, max_positions)
-    mmap = np.memmap(path, dtype=BOARD_DTYPE, mode="r", shape=(size // BOARD_RECORD_SIZE,))
-    for start in range(0, n_records, batch_size):
-        end = min(n_records, start + batch_size)
+        n_position_samples = min(n_position_samples, max_positions)
+    mmap = np.memmap(path, dtype=BOARD_DTYPE, mode="r", shape=(size // BOARD_SAMPLE_SIZE,))
+    for start in range(0, n_position_samples, batch_size):
+        end = min(n_position_samples, start + batch_size)
         yield np.asarray(mmap[start:end])
 
 
@@ -292,12 +293,12 @@ def evaluate(args: argparse.Namespace) -> dict:
     for dat_file in discover_dat_files(args.board_data_dir):
         if remaining is not None and remaining <= 0:
             break
-        for records in iter_record_batches(dat_file, args.batch_size, remaining):
-            if len(records) == 0:
+        for position_samples in iter_position_batches(dat_file, args.batch_size, remaining):
+            if len(position_samples) == 0:
                 continue
             if remaining is not None:
-                remaining -= len(records)
-            x, policies, legal, player, opponent, move_numbers = records_to_features(records)
+                remaining -= len(position_samples)
+            x, policies, legal, player, opponent, move_numbers = position_samples_to_features(position_samples)
             probabilities = predict_batch(model, binary_network, x, args.predict_batch_size)
             valid, n_invalid_policy, n_illegal_label = valid_policy_mask(policies, legal)
             invalid_policy += n_invalid_policy
@@ -330,7 +331,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                         bucket_hits[bucket][n] += int(np.count_nonzero(symmetric_rank[mask] <= n))
 
             total_valid += len(policies)
-            if args.verbose and total_valid and total_valid % args.progress_interval < len(records):
+            if args.verbose and total_valid and total_valid % args.progress_interval < len(position_samples):
                 print(f"evaluated {total_valid} valid positions")
 
     topn_rows = []
@@ -363,8 +364,8 @@ def evaluate(args: argparse.Namespace) -> dict:
         "board_data_dir": str(args.board_data_dir),
         "model_source": model_source,
         "positions": total_valid,
-        "invalid_policy_records": invalid_policy,
-        "illegal_label_records": illegal_label,
+        "invalid_policy_samples": invalid_policy,
+        "illegal_label_samples": illegal_label,
         "topn": topn_rows,
         "move_bucket_topn": bucket_rows,
     }
@@ -401,8 +402,8 @@ def main() -> None:
     print("model_source", result["model_source"])
     print("board_data_dir", result["board_data_dir"])
     print("positions", result["positions"])
-    print("invalid_policy_records", result["invalid_policy_records"])
-    print("illegal_label_records", result["illegal_label_records"])
+    print("invalid_policy_samples", result["invalid_policy_samples"])
+    print("illegal_label_samples", result["illegal_label_samples"])
     for row in result["topn"]:
         print(
             f"top-{row['top_n']:>2}: exact {row['exact_accuracy'] * 100.0:.3f}% "

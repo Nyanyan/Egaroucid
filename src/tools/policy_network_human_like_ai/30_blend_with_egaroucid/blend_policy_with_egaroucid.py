@@ -17,6 +17,7 @@ from pathlib import Path
 import re
 import struct
 import subprocess
+import time
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -333,11 +334,13 @@ def parse_hint_output(output: str) -> Dict[int, float]:
 
 
 class EgaroucidHintRunner:
-    def __init__(self, exe: Path, level: int = 21, threads: int = 1, timeout_sec: float = 30.0):
+    def __init__(self, exe: Path, level: int = 21, threads: int = 1, timeout_sec: float = 30.0, persistent: bool = True):
         self.exe = Path(exe)
         self.level = int(level)
         self.threads = int(threads)
         self.timeout_sec = float(timeout_sec)
+        self.persistent = bool(persistent)
+        self.proc: Optional[subprocess.Popen] = None
 
     def command(self) -> List[str]:
         return [
@@ -350,7 +353,65 @@ class EgaroucidHintRunner:
             str(self.threads),
         ]
 
+    def _ensure_process(self) -> subprocess.Popen:
+        if self.proc is not None and self.proc.poll() is None:
+            return self.proc
+        self.proc = subprocess.Popen(
+            self.command(),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=0,
+        )
+        self._read_until_prompt()
+        return self.proc
+
+    def _read_until_prompt(self) -> str:
+        if self.proc is None or self.proc.stdout is None:
+            raise RuntimeError("Egaroucid process is not running")
+        out = ""
+        deadline = time.time() + self.timeout_sec
+        while True:
+            if time.time() > deadline:
+                raise TimeoutError(f"Egaroucid prompt timeout after {self.timeout_sec} sec. partial output: {out[-500:]}")
+            ch = self.proc.stdout.read(1)
+            if ch == "":
+                raise RuntimeError(f"Egaroucid process ended. partial output: {out[-500:]}")
+            out += ch
+            if out.endswith("> "):
+                return out
+
+    def close(self) -> None:
+        proc = self.proc
+        self.proc = None
+        if proc is None:
+            return
+        try:
+            if proc.poll() is None and proc.stdin is not None:
+                proc.stdin.write("quit\n")
+                proc.stdin.flush()
+        except Exception:
+            pass
+        try:
+            proc.wait(timeout=2.0)
+        except Exception:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
     def raw_hint(self, state: BoardState, side: int) -> str:
+        if self.persistent:
+            proc = self._ensure_process()
+            if proc.stdin is None:
+                raise RuntimeError("Egaroucid stdin is not available")
+            proc.stdin.write(f"setboard {state.to_egaroucid_board(side)}\n")
+            proc.stdin.flush()
+            self._read_until_prompt()
+            proc.stdin.write("hint 100\n")
+            proc.stdin.flush()
+            return self._read_until_prompt()
         input_text = f"setboard {state.to_egaroucid_board(side)}\nhint 100\nquit\n"
         proc = subprocess.run(
             self.command(),
@@ -368,6 +429,9 @@ class EgaroucidHintRunner:
         raw = self.raw_hint(state, side)
         return parse_hint_output(raw), raw
 
+    def __del__(self):
+        self.close()
+
 
 class BlendedPolicy:
     def __init__(
@@ -377,6 +441,7 @@ class BlendedPolicy:
         egaroucid_level: int = 21,
         egaroucid_threads: int = 1,
         egaroucid_timeout_sec: float = 30.0,
+        persistent_egaroucid: bool = True,
         score_temperature: float = 1.0,
         legal_mask_policy: bool = True,
     ):
@@ -386,6 +451,7 @@ class BlendedPolicy:
             level=egaroucid_level,
             threads=egaroucid_threads,
             timeout_sec=egaroucid_timeout_sec,
+            persistent=persistent_egaroucid,
         )
         self.score_temperature = float(score_temperature)
         if self.score_temperature <= 0.0:
@@ -455,6 +521,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-level", type=int, default=21)
     parser.add_argument("--egaroucid-threads", type=int, default=1)
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
+    parser.add_argument("--no-persistent-egaroucid", action="store_true")
     parser.add_argument("--blend-param", type=float, default=0.5)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--no-legal-mask-policy", action="store_true")
@@ -479,6 +546,7 @@ def main() -> None:
         egaroucid_level=args.egaroucid_level,
         egaroucid_threads=args.egaroucid_threads,
         egaroucid_timeout_sec=args.egaroucid_timeout_sec,
+        persistent_egaroucid=not args.no_persistent_egaroucid,
         score_temperature=args.score_temperature,
         legal_mask_policy=not args.no_legal_mask_policy,
     )

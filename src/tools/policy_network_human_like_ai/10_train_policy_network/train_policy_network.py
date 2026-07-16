@@ -10,7 +10,7 @@ Input features are side-to-move bitboards:
 Training data is read from selected transcript_release/0002 games converted to:
   train_data/board_data/Egaroucid_Train_Data_v2_selected/records0
 
-Board data record layout, 19 bytes:
+Board-data binary sample layout, 19 bytes:
   uint64 player_to_move_bits
   uint64 opponent_bits
   int8   player_color
@@ -40,7 +40,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2 as keras_l2
 
 
-BOARD_RECORD_SIZE = 19
+BOARD_SAMPLE_SIZE = 19
 INPUT_SIZE = 128
 POLICY_SIZE = 64
 
@@ -54,7 +54,7 @@ BOARD_DTYPE = np.dtype(
     ],
     align=False,
 )
-assert BOARD_DTYPE.itemsize == BOARD_RECORD_SIZE
+assert BOARD_DTYPE.itemsize == BOARD_SAMPLE_SIZE
 
 BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, 64)
 
@@ -62,7 +62,7 @@ BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, 
 @dataclass(frozen=True)
 class BoardFile:
     path: Path
-    n_records: int
+    n_position_samples: int
 
 
 @dataclass(frozen=True)
@@ -90,22 +90,22 @@ def enable_memory_growth() -> None:
             pass
 
 
-def discover_board_files(data_root: Path, record_start: int, record_end: int) -> List[BoardFile]:
+def discover_board_files(data_root: Path, board_data_index_start: int, board_data_index_end: int) -> List[BoardFile]:
     files: List[BoardFile] = []
-    for record in range(record_start, record_end + 1):
-        record_dir = data_root / f"records{record}"
-        if not record_dir.exists():
-            raise FileNotFoundError(f"missing board data directory: {record_dir}")
-        dat_files = sorted(record_dir.glob("*.dat"), key=lambda p: (int(p.stem), p.name) if p.stem.isdigit() else (10**9, p.name))
+    for board_data_index in range(board_data_index_start, board_data_index_end + 1):
+        board_data_dir = data_root / f"records{board_data_index}"
+        if not board_data_dir.exists():
+            raise FileNotFoundError(f"missing board data directory: {board_data_dir}")
+        dat_files = sorted(board_data_dir.glob("*.dat"), key=lambda p: (int(p.stem), p.name) if p.stem.isdigit() else (10**9, p.name))
         if not dat_files:
-            raise FileNotFoundError(f"no .dat files in {record_dir}")
+            raise FileNotFoundError(f"no .dat files in {board_data_dir}")
         for path in dat_files:
             size = path.stat().st_size
-            if size < BOARD_RECORD_SIZE:
+            if size < BOARD_SAMPLE_SIZE:
                 continue
-            if size % BOARD_RECORD_SIZE != 0:
-                print(f"warning: {path} size is not divisible by {BOARD_RECORD_SIZE}; trailing bytes are ignored")
-            files.append(BoardFile(path=path, n_records=size // BOARD_RECORD_SIZE))
+            if size % BOARD_SAMPLE_SIZE != 0:
+                print(f"warning: {path} size is not divisible by {BOARD_SAMPLE_SIZE}; trailing bytes are ignored")
+            files.append(BoardFile(path=path, n_position_samples=size // BOARD_SAMPLE_SIZE))
     if not files:
         raise FileNotFoundError(f"no board data found under {data_root}")
     return files
@@ -123,18 +123,18 @@ def allocate_counts(total: int, weights: Sequence[int]) -> List[int]:
     return [int(v) for v in counts]
 
 
-def records_to_targets(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    player_bits = records["player"].astype(np.uint64, copy=False)
-    opponent_bits = records["opponent"].astype(np.uint64, copy=False)
-    n = len(records)
+def position_samples_to_targets(position_samples: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    player_bits = position_samples["player"].astype(np.uint64, copy=False)
+    opponent_bits = position_samples["opponent"].astype(np.uint64, copy=False)
+    n = len(position_samples)
     x = np.empty((n, INPUT_SIZE), dtype=np.float32)
     x[:, :64] = ((player_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     x[:, 64:] = ((opponent_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
-    y_policy = records["policy"].astype(np.int64, copy=False)
+    y_policy = position_samples["policy"].astype(np.int64, copy=False)
     return x, y_policy
 
 
-def append_sampled_records(
+def append_sampled_positions(
     dest_x: np.ndarray,
     dest_policy: np.ndarray,
     offset: int,
@@ -143,9 +143,9 @@ def append_sampled_records(
 ) -> int:
     if len(indices) == 0:
         return offset
-    mmap = np.memmap(board_file.path, dtype=BOARD_DTYPE, mode="r", shape=(board_file.n_records,))
-    records = np.asarray(mmap[indices])
-    x, y_policy = records_to_targets(records)
+    mmap = np.memmap(board_file.path, dtype=BOARD_DTYPE, mode="r", shape=(board_file.n_position_samples,))
+    position_samples = np.asarray(mmap[indices])
+    x, y_policy = position_samples_to_targets(position_samples)
     valid = (0 <= y_policy) & (y_policy < POLICY_SIZE)
     if not np.all(valid):
         x = x[valid]
@@ -172,7 +172,7 @@ def load_sampled_split(
     seed: int,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
-    weights = [f.n_records for f in files]
+    weights = [f.n_position_samples for f in files]
     train_alloc = allocate_counts(max_train_samples, weights)
     val_alloc = allocate_counts(max_val_samples, weights)
 
@@ -188,9 +188,9 @@ def load_sampled_split(
         n_val = val_alloc[i]
         if n_train + n_val == 0:
             continue
-        indices = rng.integers(0, board_file.n_records, size=n_train + n_val, dtype=np.int64)
-        train_offset = append_sampled_records(x_train, p_train, train_offset, board_file, np.sort(indices[:n_train]))
-        val_offset = append_sampled_records(x_val, p_val, val_offset, board_file, np.sort(indices[n_train:]))
+        indices = rng.integers(0, board_file.n_position_samples, size=n_train + n_val, dtype=np.int64)
+        train_offset = append_sampled_positions(x_train, p_train, train_offset, board_file, np.sort(indices[:n_train]))
+        val_offset = append_sampled_positions(x_val, p_val, val_offset, board_file, np.sort(indices[n_train:]))
 
     x_train, p_train = x_train[:train_offset], p_train[:train_offset]
     x_val, p_val = x_val[:val_offset], p_val[:val_offset]
@@ -399,8 +399,8 @@ def default_data_root() -> Path:
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train compact Othello policy networks with tensorflow.keras for the human-like AI study.")
     parser.add_argument("--data-root", type=Path, default=default_data_root(), help="default: train_data/board_data/Egaroucid_Train_Data_v2_selected")
-    parser.add_argument("--record-start", type=int, default=0)
-    parser.add_argument("--record-end", type=int, default=0)
+    parser.add_argument("--board-data-index-start", type=int, default=0)
+    parser.add_argument("--board-data-index-end", type=int, default=0)
     parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
     parser.add_argument("--alpha", type=float, default=0.03)
     parser.add_argument("--dropout", type=float, default=0.0)
@@ -431,9 +431,9 @@ def main() -> None:
     print("output_dir", output_dir)
     print("issue", "#613")
 
-    files = discover_board_files(data_root, args.record_start, args.record_end)
+    files = discover_board_files(data_root, args.board_data_index_start, args.board_data_index_end)
     print(f"board files {len(files)}")
-    print(f"total records {sum(f.n_records for f in files)}")
+    print(f"total_position_samples {sum(f.n_position_samples for f in files)}")
     print(f"sampling train={args.max_train_samples} val={args.max_val_samples}")
 
     x_train, p_train, x_val, p_val = load_sampled_split(files, args.max_train_samples, args.max_val_samples, args.seed)

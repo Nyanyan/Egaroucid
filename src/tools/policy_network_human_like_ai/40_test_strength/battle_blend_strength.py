@@ -290,7 +290,7 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
     p0_proc = None
     p1_proc = None
     state = BoardState.initial()
-    record = ""
+    transcript = ""
     try:
         p0_proc = acquire_process_idx(players[p0_idx], p0_color_pool)
         p1_proc = acquire_process_idx(players[p1_idx], p1_color_pool)
@@ -306,7 +306,7 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
             move = opening[i : i + 2].lower()
             play_command_to_all(players, p0_idx, p0_proc, p1_idx, p1_proc, state.side, move)
             state.apply_move(state.side, coord_to_policy(move))
-            record += move
+            transcript += move
 
         while True:
             if not state.legal_policies(state.side):
@@ -327,7 +327,7 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
                 send_command(players, watcher, watcher_proc, f"play {side_to_gtp_color(side)} pass\n")
                 continue
             state.apply_move(side, coord_to_policy(move))
-            record += move
+            transcript += move
             send_command(players, watcher, watcher_proc, f"play {side_to_gtp_color(side)} {move}\n")
 
         diff = disc_diff_for_p0(state, p0_is_black)
@@ -339,7 +339,7 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
             "p0_disc_diff": diff,
             "black_stones": count_bits(state.black),
             "white_stones": count_bits(state.white),
-            "record": record,
+            "transcript": transcript,
         }
     finally:
         if p0_proc is not None:

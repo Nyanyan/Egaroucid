@@ -34,8 +34,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--max-val-samples", type=int, default=200_000)
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--data-root", type=Path, default=None)
-    parser.add_argument("--record-start", type=int, default=0)
-    parser.add_argument("--record-end", type=int, default=0)
+    parser.add_argument("--board-data-index-start", type=int, default=0)
+    parser.add_argument("--board-data-index-end", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=script_dir() / "trained" / "selected_v2")
     parser.add_argument("--log-dir", type=Path, default=script_dir() / "train_log")
     return parser
@@ -67,10 +67,10 @@ def main() -> None:
             str(args.max_val_samples),
             "--seed",
             str(args.seed),
-            "--record-start",
-            str(args.record_start),
-            "--record-end",
-            str(args.record_end),
+            "--board-data-index-start",
+            str(args.board_data_index_start),
+            "--board-data-index-end",
+            str(args.board_data_index_end),
             "--output-dir",
             str(run_output_dir),
         ]

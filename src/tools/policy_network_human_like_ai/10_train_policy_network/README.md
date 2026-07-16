@@ -2,119 +2,83 @@
 
 Related issue: #613
 
-This directory trains a compact Othello/Reversi policy network from selected
-Egaroucid Train Data v2 games. It was copied from `src/tools/policy_network`
-and adapted for the human-like AI experiment.
+## English
 
-関連 issue: #613
+This directory trains compact Othello/Reversi policy networks for the
+human-like AI experiment. It is based on `src/tools/policy_network`, with
+dataset selection, resource logging, and WTHOR agreement evaluation added for
+the experiment.
 
-このディレクトリは、Egaroucid Train Data v2 から選択した棋譜を使って、
-軽量な Othello/Reversi policy network を学習するためのものです。
-`src/tools/policy_network` をコピーし、人間らしい AI 実験向けに調整しています。
+Terminology:
 
-## Input Format / 入力形式
+- `games`: complete game transcripts.
+- `position_samples`: board positions written to the binary board-data files.
+- Existing board-data directory names such as `records0` and `records1` are
+  kept only because they are part of the current data layout.
 
-The network input is side-relative:
+Input features are side-relative:
 
-- 64 player-to-move disc bits
-- 64 opponent disc bits
-- total 128 float inputs
+- 64 player-to-move disc bits.
+- 64 opponent disc bits.
+- 128 float inputs in total.
 
-ネットワーク入力は手番相対です。
+The board-data binary samples store those bitboards as `player` and
+`opponent`; the trainer uses them directly. The input is not fixed black/white.
 
-- 手番側の石 64 bit
-- 相手側の石 64 bit
-- 合計 128 個の float 入力
-
-The board-data records store these fields as `player` and `opponent`, and the
-training code uses them directly. The input is not fixed black/white.
-
-board data には `player` と `opponent` として保存されており、学習コードは
-それをそのまま使います。入力は固定の黒白ではありません。
-
-## Pipeline / 手順
+Pipeline:
 
 1. Select random games from `train_data/transcript_release/0002`.
-2. Write the selected games to
-   `train_data/transcript/Egaroucid_Train_Data_v2_selected`.
-3. Convert them to board data under
-   `train_data/board_data/Egaroucid_Train_Data_v2_selected/records0`.
+2. Write selected games to `train_data/transcript/Egaroucid_Train_Data_v2_selected`.
+3. Convert them to board data under `train_data/board_data/Egaroucid_Train_Data_v2_selected/records0`.
 4. Train several compact TensorFlow/Keras policy networks.
-5. Save raw training logs under `train_log`.
+5. Save raw logs and resource summaries under `train_log`.
 
-1. `train_data/transcript_release/0002` からランダムに棋譜を選びます。
-2. 選んだ棋譜を
-   `train_data/transcript/Egaroucid_Train_Data_v2_selected` に保存します。
-3. それを
-   `train_data/board_data/Egaroucid_Train_Data_v2_selected/records0` に変換します。
-4. TensorFlow/Keras で複数の軽量 policy network を学習します。
-5. 生の学習ログは `train_log` に保存します。
-
-## Select Games / 棋譜選択
-
-`--num-games` is required. The source files are assumed to contain 10,000 games
-per `.txt`, following the dataset README.
-
-`--num-games` は必須です。データセット README に従い、各 `.txt` には
-10,000 局が入っている前提でサンプリングします。
+Example:
 
 ```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\select_transcripts.py --num-games 100000 --seed 613
-```
-
-## Convert To Board Data / board data への変換
-
-Directory names in `transcript_release/0002` are random-opening depths. The
-converter plays those random moves but does not write training records before
-that depth.
-
-`transcript_release/0002` のディレクトリ名はランダム初期手数です。変換時は
-その手数までは盤面だけ進め、学習レコードとしては出力しません。
-
-```powershell
+python src\tools\policy_network_human_like_ai\10_train_policy_network\select_transcripts.py --num-games 1000000 --seed 613
 python src\tools\policy_network_human_like_ai\10_train_policy_network\convert_selected_transcripts_to_board_data.py
-```
-
-## Training / 学習
-
-Run several candidate model sizes and capture raw logs:
-
-複数の候補モデルを学習し、生ログを保存します。
-
-```powershell
 python src\tools\policy_network_human_like_ai\10_train_policy_network\run_training_experiments.py `
-  --configs 64x3,96x3,128x3,96x4 `
-  --epochs 24 `
-  --patience 6 `
-  --max-train-samples 2000000 `
-  --max-val-samples 200000 `
+  --configs 64x3,96x3,128x3,96x4,160x3,192x3,128x4 `
+  --epochs 20 `
+  --patience 5 `
+  --max-train-samples 5000000 `
+  --max-val-samples 500000 `
   --batch-size 8192
 ```
 
-The trainer writes Keras `.h5` models and C++-loadable binary weights. Generated
-model artifacts are ignored by git.
+The trainer writes Keras `.h5` models and C++-loadable binary weights.
+Generated model artifacts and raw logs are intentionally ignored by git.
+
+## 日本語
+
+このディレクトリは、人間らしい AI 実験用の軽量な Othello/Reversi policy
+network を学習するためのものです。`src/tools/policy_network` をもとに、
+実験用データ選択、リソースログ、WTHOR 一致率評価を追加しています。
+
+用語:
+
+- `games`: 完全な棋譜の対局数です。
+- `position_samples`: binary board-data に書き出した局面サンプル数です。
+- `records0` や `records1` という既存ディレクトリ名は、現在のデータ配置名
+  としてのみ残しています。
+
+入力特徴は手番相対です。
+
+- 手番側の石 64 bit。
+- 相手側の石 64 bit。
+- 合計 128 float 入力。
+
+board-data の binary sample には `player` と `opponent` として保存されており、
+学習コードはそれをそのまま使います。入力は固定の黒白ではありません。
+
+流れ:
+
+1. `train_data/transcript_release/0002` からランダムに対局を選びます。
+2. 選んだ棋譜を `train_data/transcript/Egaroucid_Train_Data_v2_selected` に書きます。
+3. `train_data/board_data/Egaroucid_Train_Data_v2_selected/records0` に変換します。
+4. TensorFlow/Keras で複数の軽量 policy network を学習します。
+5. 生ログとリソースサマリを `train_log` に保存します。
 
 学習スクリプトは Keras `.h5` と C++ から読める binary weights を出力します。
-生成されたモデル成果物は git 管理外です。
-
-## Smoke Test / 煙突テスト
-
-Use tiny sample sizes to check the whole pipeline:
-
-全体の流れだけ確認する小規模テストです。
-
-```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\select_transcripts.py --num-games 20 --seed 613
-python src\tools\policy_network_human_like_ai\10_train_policy_network\convert_selected_transcripts_to_board_data.py
-python src\tools\policy_network_human_like_ai\10_train_policy_network\run_training_experiments.py --configs 16x1 --epochs 1 --patience 1 --max-train-samples 128 --max-val-samples 32 --batch-size 32 --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\log_smoke
-```
-
-## C++ Sample / C++ サンプル
-
-`policy_network_sample.cpp` loads the exported binary weights and prints a
-policy distribution from a board or transcript. It is kept compatible with the
-original `src/tools/policy_network` weight format.
-
-`policy_network_sample.cpp` は出力された binary weights を読み、盤面または棋譜
-から policy 分布を表示します。重み形式は元の `src/tools/policy_network` と
-互換です。
+生成物と生ログは git 管理外です。
