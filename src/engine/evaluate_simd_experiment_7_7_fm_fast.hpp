@@ -430,13 +430,13 @@ inline void append_eval77_fm_simd_ids(__m256i idx8, int active_ids[], int &n_act
 
 inline void add_eval77_fm_fast_simd_ids(
     const __m256i idx8,
-    const unsigned char *phase_base,
+    const Eval77FmFastPhasePtrs &phase_ptrs,
     Eval77FmFastSimdAccum &accum
 ) {
     int values[8];
     _mm256_storeu_si256((__m256i*)values, idx8);
     for (int i = 0; i < 8; ++i) {
-        eval77_fm_fast_add_id_simd_dim16(accum, phase_base, values[i] - 1);
+        eval77_fm_fast_add_id_simd_dim16(accum, phase_ptrs, values[i] - 1);
     }
 }
 
@@ -493,7 +493,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
     return eval77_fm_score_from_linear_and_fm_ids(phase_idx, active_ids, n_active, fm_ids, n_fm);
 #else
     if (eval77_fm_fast_can_use_dim16(phase_idx)) {
-        const unsigned char *phase_base = eval77_fm_phase_base(phase_idx);
+        const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(phase_idx);
         n_active = 0;
         append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[0], 0), active_ids, n_active);
         append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[1], 1), active_ids, n_active);
@@ -505,13 +505,13 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
         append_eval77_fm_simd_ids(calc_idx8_comp(features->f128[7], 7), active_ids, n_active);
         active_ids[n_active++] = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
         for (int i = 0; i < n_active; ++i) {
-            _mm_prefetch((const char*)(phase_base + (size_t)active_ids[i] * eval77_fm_param_stride), _MM_HINT_T0);
+            eval77_fm_fast_prefetch_id_simd_dim16(phase_ptrs, active_ids[i]);
         }
 
         Eval77FmFastSimdAccum accum;
         eval77_fm_fast_clear_simd_dim16(accum);
         for (int i = 0; i < n_active; ++i) {
-            eval77_fm_fast_add_id_simd_dim16(accum, phase_base, active_ids[i]);
+            eval77_fm_fast_add_id_simd_dim16(accum, phase_ptrs, active_ids[i]);
         }
         return eval77_fm_fast_finish_simd_dim16(phase_idx, accum);
     }

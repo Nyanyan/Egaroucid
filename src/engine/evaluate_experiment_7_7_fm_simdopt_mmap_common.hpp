@@ -34,6 +34,8 @@
 constexpr int EVAL77_FM_N_PATTERN_PARAMS_RAW = 944784;
 constexpr int EVAL77_FM_N_PARAMS_PER_PHASE = EVAL77_FM_N_PATTERN_PARAMS_RAW + MAX_STONE_NUM;
 constexpr int EVAL77_FM_MAX_DIM = 16;
+constexpr int EVAL77_FM_EGEV5_VERSION = 9;
+constexpr size_t EVAL77_FM_EGEV5_ALIGNMENT = 64;
 
 constexpr int eval77_fm_pattern_offsets[N_PATTERNS] = {
     0, 59049, 118098, 177147,
@@ -135,12 +137,22 @@ struct Eval77FmMappedFile {
 
 Eval77FmMappedFile eval77_fm_mapped_file;
 const unsigned char *eval77_fm_payload = nullptr;
+const unsigned char *eval77_fm_linear_payload = nullptr;
+const unsigned char *eval77_fm_vector_payload = nullptr;
 size_t eval77_fm_param_stride = 0;
 size_t eval77_fm_phase_stride = 0;
+size_t eval77_fm_linear_param_stride = 0;
+size_t eval77_fm_linear_phase_stride = 0;
+size_t eval77_fm_vector_param_stride = 0;
+size_t eval77_fm_vector_phase_stride = 0;
 std::array<float, N_PHASES> eval77_fm_linear_scale;
 std::array<float, N_PHASES> eval77_fm_vector_scale;
+std::array<double, N_PHASES> eval77_fm_linear_scale_double;
+std::array<double, N_PHASES> eval77_fm_interaction_scale;
 int eval77_fm_dim = 0;
+int eval77_fm_file_version = 0;
 bool eval77_fm_loaded = false;
+bool eval77_fm_split_layout = false;
 uint32_t eval77_fm_subset_pattern_mask = 0xFFFFu;
 bool eval77_fm_subset_use_count = true;
 
@@ -197,6 +209,10 @@ inline int32_t eval77_fm_read_i32_le(const unsigned char *p) {
     return v;
 }
 
+inline size_t eval77_fm_align_up_size(const size_t value, const size_t alignment) {
+    return (value + alignment - 1) / alignment * alignment;
+}
+
 inline bool eval77_fm_load_egev4(const char *file, bool show_log) {
     std::string data_file;
     if (!eval77_fm_parse_subset_file_spec(file, data_file)) {
@@ -210,6 +226,18 @@ inline bool eval77_fm_load_egev4(const char *file, bool show_log) {
 #endif
     }
     eval77_fm_loaded = false;
+    eval77_fm_payload = nullptr;
+    eval77_fm_linear_payload = nullptr;
+    eval77_fm_vector_payload = nullptr;
+    eval77_fm_param_stride = 0;
+    eval77_fm_phase_stride = 0;
+    eval77_fm_linear_param_stride = 0;
+    eval77_fm_linear_phase_stride = 0;
+    eval77_fm_vector_param_stride = 0;
+    eval77_fm_vector_phase_stride = 0;
+    eval77_fm_dim = 0;
+    eval77_fm_file_version = 0;
+    eval77_fm_split_layout = false;
     if (!eval77_fm_mapped_file.open_readonly(data_file)) {
         std::cerr << "[ERROR] [FATAL] can't memory-map eval " << data_file << std::endl;
         return false;
@@ -234,8 +262,8 @@ inline bool eval77_fm_load_egev4(const char *file, bool show_log) {
     const int32_t n_phase = eval77_fm_read_i32_le(fixed_header + 22);
     const int32_t n_param = eval77_fm_read_i32_le(fixed_header + 26);
     const int32_t dim = eval77_fm_read_i32_le(fixed_header + 30);
-    if (version != 7 && version != 8) {
-        std::cerr << "[ERROR] [FATAL] 7.7-FM experiment supports linear+FM egev4 versions 7 and 8, found version "
+    if (version != 7 && version != 8 && version != EVAL77_FM_EGEV5_VERSION) {
+        std::cerr << "[ERROR] [FATAL] 7.7-FM experiment supports linear+FM egev4 versions 7/8 and egev5 version 9, found version "
                   << version << std::endl;
         eval77_fm_mapped_file.reset();
         return false;
@@ -248,33 +276,64 @@ inline bool eval77_fm_load_egev4(const char *file, bool show_log) {
     }
 
     eval77_fm_dim = dim;
+    eval77_fm_file_version = version;
     eval77_fm_param_stride = sizeof(int16_t) + (size_t)eval77_fm_dim;
     eval77_fm_phase_stride = (size_t)EVAL77_FM_N_PARAMS_PER_PHASE * eval77_fm_param_stride;
-    const size_t expected_size = payload_offset + (size_t)N_PHASES * eval77_fm_phase_stride;
+    eval77_fm_split_layout = version == EVAL77_FM_EGEV5_VERSION;
+
+    size_t expected_size;
+    if (eval77_fm_split_layout) {
+        const size_t linear_offset = eval77_fm_align_up_size(payload_offset, EVAL77_FM_EGEV5_ALIGNMENT);
+        eval77_fm_linear_param_stride = sizeof(int16_t);
+        eval77_fm_linear_phase_stride = (size_t)EVAL77_FM_N_PARAMS_PER_PHASE * eval77_fm_linear_param_stride;
+        eval77_fm_vector_param_stride = eval77_fm_align_up_size((size_t)eval77_fm_dim, 16);
+        eval77_fm_vector_phase_stride = (size_t)EVAL77_FM_N_PARAMS_PER_PHASE * eval77_fm_vector_param_stride;
+        const size_t vector_offset = eval77_fm_align_up_size(
+            linear_offset + (size_t)N_PHASES * eval77_fm_linear_phase_stride,
+            EVAL77_FM_EGEV5_ALIGNMENT
+        );
+        expected_size = vector_offset + (size_t)N_PHASES * eval77_fm_vector_phase_stride;
+        eval77_fm_linear_payload = fixed_header + linear_offset;
+        eval77_fm_vector_payload = fixed_header + vector_offset;
+    } else {
+        expected_size = payload_offset + (size_t)N_PHASES * eval77_fm_phase_stride;
+        eval77_fm_payload = fixed_header + payload_offset;
+        eval77_fm_linear_payload = eval77_fm_payload;
+        eval77_fm_vector_payload = eval77_fm_payload + sizeof(int16_t);
+        eval77_fm_linear_param_stride = eval77_fm_param_stride;
+        eval77_fm_linear_phase_stride = eval77_fm_phase_stride;
+        eval77_fm_vector_param_stride = eval77_fm_param_stride;
+        eval77_fm_vector_phase_stride = eval77_fm_phase_stride;
+    }
     if (eval77_fm_mapped_file.size < expected_size) {
-        std::cerr << "[ERROR] [FATAL] 7.7-FM egev4 payload is truncated" << std::endl;
+        std::cerr << "[ERROR] [FATAL] 7.7-FM evaluation payload is truncated" << std::endl;
         eval77_fm_mapped_file.reset();
         return false;
     }
     std::memcpy(eval77_fm_linear_scale.data(), fixed_header + fixed_header_size, sizeof(float) * N_PHASES);
     std::memcpy(eval77_fm_vector_scale.data(), fixed_header + fixed_header_size + sizeof(float) * N_PHASES,
                 sizeof(float) * N_PHASES);
-    eval77_fm_payload = fixed_header + payload_offset;
+    for (int phase = 0; phase < N_PHASES; ++phase) {
+        eval77_fm_linear_scale_double[phase] = (double)eval77_fm_linear_scale[phase];
+        const double vector_scale = (double)eval77_fm_vector_scale[phase];
+        eval77_fm_interaction_scale[phase] = 0.5 * vector_scale * vector_scale;
+    }
 
     eval77_fm_loaded = true;
     if (show_log) {
-        std::cerr << "7.7-FM egev4 loaded: version " << version
+        std::cerr << "7.7-FM evaluation loaded: version " << version
                   << " phases " << n_phase
                   << " params/phase " << n_param
                   << " dim " << eval77_fm_dim
+                  << " layout " << (eval77_fm_split_layout ? "split-aligned" : "interleaved")
                   << " mapped_bytes " << eval77_fm_mapped_file.size << std::endl;
     }
     return true;
 }
 
 inline const unsigned char *eval77_fm_param_ptr(const int phase_idx, const int id) {
-    return eval77_fm_payload + (size_t)phase_idx * eval77_fm_phase_stride +
-        (size_t)id * eval77_fm_param_stride;
+    return eval77_fm_linear_payload + (size_t)phase_idx * eval77_fm_linear_phase_stride +
+        (size_t)id * eval77_fm_linear_param_stride;
 }
 
 inline int16_t eval77_fm_linear_quant_at(const int phase_idx, const int id) {
@@ -284,7 +343,8 @@ inline int16_t eval77_fm_linear_quant_at(const int phase_idx, const int id) {
 }
 
 inline const int8_t *eval77_fm_vector_quant_ptr(const int phase_idx, const int id) {
-    return (const int8_t*)(eval77_fm_param_ptr(phase_idx, id) + sizeof(int16_t));
+    return (const int8_t*)(eval77_fm_vector_payload + (size_t)phase_idx * eval77_fm_vector_phase_stride +
+        (size_t)id * eval77_fm_vector_param_stride);
 }
 
 inline double eval77_fm_linear_from_ids(const int phase_idx, const int active_ids[], const int n_active) {

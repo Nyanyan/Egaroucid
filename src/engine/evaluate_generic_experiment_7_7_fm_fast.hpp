@@ -443,11 +443,11 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) 
     return eval77_fm_score_from_linear_and_fm_ids(phase_idx, active_ids, n_active, fm_ids, n_fm);
 #else
     if (eval77_fm_fast_can_use_phase(phase_idx)) {
-        const unsigned char *phase_base = eval77_fm_phase_base(phase_idx);
+        const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(phase_idx);
         Eval77FmFastScalarAccum accum;
         eval77_fm_fast_clear_scalar(accum);
         for (int i = 0; i < n_active; ++i) {
-            eval77_fm_fast_add_id_scalar(accum, phase_base, active_ids[i]);
+            eval77_fm_fast_add_id_scalar(accum, phase_ptrs, active_ids[i]);
         }
         return eval77_fm_fast_finish_scalar(phase_idx, accum);
     }
