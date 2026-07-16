@@ -198,6 +198,12 @@ def parse_args():
         default=PROBLEM_FILE,
         help='opening/problem file to use instead of the default XOT set.'
     )
+    parser.add_argument(
+        '--shuffle-seed',
+        type=int,
+        default=57,
+        help='seed used when shuffling openings and match order'
+    )
     return parser.parse_args()
 
 
@@ -327,7 +333,7 @@ def parse_player_spec(spec):
     exit(1)
 
 
-random.seed(57)
+random.seed(args.shuffle_seed)
 
 with open(args.problem_file, 'r') as f:
     openings = [elem for elem in f.read().splitlines()]
@@ -1208,6 +1214,7 @@ print('n_players', len(players))
 print('level', LEVEL)
 if DEPTH is not None:
     print('depthprobrange:', 0, 60, DEPTH, 100)
+print('shuffle seed:', args.shuffle_seed)
 print('parallel matches:', N_PARALLEL_MATCHES)
 print('total processes per player:', N_TOTAL_PROCESSES)
 print('status interval (battles):', STATUS_EVERY)
