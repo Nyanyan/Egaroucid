@@ -34,6 +34,7 @@ from blend_policy_with_egaroucid import (  # noqa: E402
     BoardState,
     default_egaroucid_exe,
     default_weights_file,
+    geometric_blend_distribution,
 )
 from evaluate_wthor_human_match import (  # noqa: E402
     BOARD_DTYPE,
@@ -333,10 +334,7 @@ def update_metrics_for_position_sample(
     bucket = move_bucket(move_number)
 
     for blend in blend_params:
-        distribution = policy_dist * blend + egaroucid_dist * (1.0 - blend)
-        total = float(np.sum(distribution[np.array(legal_policies, dtype=np.int64)]))
-        if total > 0.0:
-            distribution = distribution / total
+        distribution = geometric_blend_distribution(policy_dist, egaroucid_dist, legal_policies, blend)
         exact_rank = rank_for_distribution(distribution, legal_policies, exact_targets)
         symmetric_rank = rank_for_distribution(distribution, legal_policies, symmetric_targets)
         m = metrics[blend]
@@ -684,7 +682,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--no-legal-mask-policy", action="store_true")
-    parser.add_argument("--blend-params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
+    parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
     parser.add_argument("--top-n", default="1,2,3,4,5,8,10,16")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--max-positions", type=int, default=None)

@@ -3,7 +3,7 @@
 Blend a policy-network distribution with Egaroucid for Console hint scores.
 
 Formula:
-  blended = policy * blend_param + softmax(egaroucid_scores) * (1 - blend_param)
+  blended = policy^alpha * softmax(egaroucid_scores)^(1 - alpha)
 
 The policy input is side-relative:
   [player-to-move bits, opponent bits]
@@ -45,8 +45,8 @@ def default_weights_file() -> Path:
         / "policy_network_human_like_ai"
         / "10_train_policy_network"
         / "trained"
-        / "selected_v2"
-        / "best_policy_network_weights.bin"
+        / "wthor_final_arch_512x4_e50"
+        / "selected_policy_network_weights.bin"
     )
 
 
@@ -303,6 +303,34 @@ def normalize_policy_on_legal(policy: np.ndarray, legal_policies: Sequence[int])
     return result
 
 
+def geometric_blend_distribution(
+    policy_dist: np.ndarray,
+    egaroucid_dist: np.ndarray,
+    legal_policies: Sequence[int],
+    alpha: float,
+) -> np.ndarray:
+    alpha = float(alpha)
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError("alpha must be in [0, 1]")
+    if not legal_policies:
+        return np.zeros(POLICY_SIZE, dtype=np.float32)
+    if alpha <= 0.0:
+        return normalize_policy_on_legal(egaroucid_dist, legal_policies)
+    if alpha >= 1.0:
+        return normalize_policy_on_legal(policy_dist, legal_policies)
+
+    legal = np.array(legal_policies, dtype=np.int64)
+    policy_values = np.maximum(policy_dist[legal], 0.0)
+    egaroucid_values = np.maximum(egaroucid_dist[legal], 0.0)
+    blended_values = (
+        np.power(policy_values, alpha).astype(np.float32, copy=False)
+        * np.power(egaroucid_values, 1.0 - alpha).astype(np.float32, copy=False)
+    )
+    result = np.zeros(POLICY_SIZE, dtype=np.float32)
+    result[legal] = blended_values
+    return normalize_policy_on_legal(result, legal_policies)
+
+
 def parse_score(text: str) -> float:
     text = text.strip()
     if text.lower() in ("inf", "+inf", "win"):
@@ -491,15 +519,16 @@ class BlendedPolicy:
 
     def blended_distribution(self, state: BoardState, side: int, blend_param: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Dict[int, float], str]:
         legal_policies = state.legal_policies(side)
-        blend_param = float(blend_param)
+        alpha = float(blend_param)
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError("alpha must be in [0, 1]")
         policy_dist = self.policy_distribution(state, side, legal_policies)
-        if blend_param >= 1.0:
+        if alpha >= 1.0:
             egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
             return normalize_policy_on_legal(policy_dist, legal_policies), policy_dist, egaroucid_dist, {}, ""
         scores, raw_hint = self.cached_hint_scores(state, side)
         egaroucid_dist = self.egaroucid_distribution(scores, legal_policies)
-        blended = policy_dist * blend_param + egaroucid_dist * (1.0 - blend_param)
-        blended = normalize_policy_on_legal(blended, legal_policies)
+        blended = geometric_blend_distribution(policy_dist, egaroucid_dist, legal_policies, alpha)
         return blended, policy_dist, egaroucid_dist, scores, raw_hint
 
 
@@ -540,7 +569,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
     parser.add_argument("--no-persistent-egaroucid", action="store_true")
     parser.add_argument("--cache-egaroucid", action="store_true")
-    parser.add_argument("--blend-param", type=float, default=0.5)
+    parser.add_argument("--blend-param", "--alpha", dest="blend_param", type=float, default=0.5)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--no-legal-mask-policy", action="store_true")
     parser.add_argument("--top", type=int, default=10)
@@ -573,6 +602,7 @@ def main() -> None:
     legal_policies = state.legal_policies(side)
     rows = distribution_rows(blended, policy_dist, egaroucid_dist, scores, legal_policies, args.top)
     result = {
+        "alpha": args.blend_param,
         "blend_param": args.blend_param,
         "side": side_to_gtp_color(side),
         "legal_moves": [policy_to_coord(policy) for policy in legal_policies],
@@ -584,7 +614,7 @@ def main() -> None:
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
-        print(f"blend_param {args.blend_param}")
+        print(f"alpha {args.blend_param}")
         print(f"side {side_to_gtp_color(side)}")
         print("rank move blended policy egaroucid score")
         for row in rows:

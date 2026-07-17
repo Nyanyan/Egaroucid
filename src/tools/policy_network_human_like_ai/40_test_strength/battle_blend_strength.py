@@ -4,7 +4,7 @@ Round-robin strength test for Egaroucid 7.8.1 levels and blended policy engines.
 
 Default settings follow the research request:
   - Egaroucid levels: 1, 5, 10, 15, 21
-  - blend_param: 0.0, 0.1, ..., 1.0
+  - alpha: 0.0, 0.1, ..., 1.0
   - games per pair: 1000
   - parallel matches: 32
 
@@ -572,14 +572,14 @@ def build_players(args: argparse.Namespace) -> List[Player]:
         )
 
     blend_script = (HUMAN_LIKE_DIR / "30_blend_with_egaroucid" / "blend_gtp_engine.py").resolve()
-    for blend in parse_float_list(args.blend_params):
+    for alpha in parse_float_list(args.blend_params):
         command = [
             sys.executable,
             str(blend_script),
             "--weights",
             str(Path(args.weights).resolve()),
-            "--blend-param",
-            f"{blend:.1f}",
+            "--alpha",
+            f"{alpha:.1f}",
             "--egaroucid-exe",
             str(egaroucid_exe),
             "--egaroucid-level",
@@ -595,7 +595,7 @@ def build_players(args: argparse.Namespace) -> List[Player]:
             command.append("--cache-egaroucid")
         players.append(
             Player(
-                f"blend_{blend:.1f}",
+                f"alpha_{alpha:.1f}",
                 command,
                 args.processes_per_player,
                 args.close_processes_after_game,
@@ -706,7 +706,7 @@ def load_completed_task_results(players: List[Player], output_dir: Path) -> Tupl
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run round-robin strength tests for blended policy engines.")
     parser.add_argument("--baseline-levels", default="1,5,10,15,21")
-    parser.add_argument("--blend-params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
+    parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
     parser.add_argument("--games-per-pair", type=int, default=1000)
     parser.add_argument("--max-games", type=int, default=None, help="Optional benchmark cap; default runs the full requested schedule.")
     parser.add_argument("--parallel-matches", type=int, default=32)

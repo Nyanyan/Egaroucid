@@ -144,11 +144,11 @@ def default_board_data_dir() -> Path:
 
 
 def default_model_file() -> Path:
-    return Path(__file__).resolve().parents[1] / "10_train_policy_network" / "trained" / "selected_v2" / "best_model.h5"
+    return Path(__file__).resolve().parents[1] / "10_train_policy_network" / "trained" / "wthor_final_arch_512x4_e50" / "selected_model.h5"
 
 
 def default_weights_file() -> Path:
-    return Path(__file__).resolve().parents[1] / "10_train_policy_network" / "trained" / "selected_v2" / "best_policy_network_weights.bin"
+    return Path(__file__).resolve().parents[1] / "10_train_policy_network" / "trained" / "wthor_final_arch_512x4_e50" / "selected_policy_network_weights.bin"
 
 
 def discover_dat_files(board_data_dir: Path) -> List[Path]:

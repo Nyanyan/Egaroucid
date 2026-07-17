@@ -110,7 +110,7 @@ def make_command(args: argparse.Namespace) -> List[str]:
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run or resume the full human-like policy strength study.")
     parser.add_argument("--baseline-levels", default="1,5,10,15,21")
-    parser.add_argument("--blend-params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
+    parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
     parser.add_argument("--games-per-pair", type=int, default=1000)
     parser.add_argument("--max-games", type=int, default=None)
     parser.add_argument("--parallel-matches", type=int, default=32)

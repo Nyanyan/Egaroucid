@@ -311,7 +311,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-threads", type=int, default=1)
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=300.0)
     parser.add_argument("--score-temperature", type=float, default=1.0)
-    parser.add_argument("--blend-params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
+    parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
     parser.add_argument("--top-n", default="1,2,3,4,5,8,10,16")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--max-positions", type=int, default=None, help="Optional cap for smoke/benchmark sharded runs.")

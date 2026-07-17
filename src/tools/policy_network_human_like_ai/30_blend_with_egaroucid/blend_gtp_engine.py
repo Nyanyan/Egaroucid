@@ -156,7 +156,7 @@ class BlendGtpEngine:
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="GTP wrapper for blended policy/Egaroucid move selection.")
     parser.add_argument("--weights", type=Path, default=default_weights_file())
-    parser.add_argument("--blend-param", type=float, required=True)
+    parser.add_argument("--blend-param", "--alpha", dest="blend_param", type=float, required=True)
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
     parser.add_argument("--egaroucid-level", type=int, default=21)
     parser.add_argument("--egaroucid-threads", type=int, default=1)
