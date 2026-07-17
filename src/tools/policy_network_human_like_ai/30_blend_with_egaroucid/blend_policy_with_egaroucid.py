@@ -15,6 +15,8 @@ import argparse
 import json
 from pathlib import Path
 import re
+import socket
+import sqlite3
 import struct
 import subprocess
 import time
@@ -274,6 +276,62 @@ class BinaryPolicyNetwork:
         return softmax_rows(y)
 
 
+class PolicyBatchClient:
+    REQUEST_STRUCT = struct.Struct("<QQB")
+    RESPONSE_SIZE = POLICY_SIZE * 4
+
+    def __init__(self, host: str, port: int, timeout_sec: float = 30.0):
+        self.host = str(host)
+        self.port = int(port)
+        self.timeout_sec = float(timeout_sec)
+        self.sock: Optional[socket.socket] = None
+
+    def _connect(self) -> socket.socket:
+        self.close()
+        self.sock = socket.create_connection((self.host, self.port), timeout=self.timeout_sec)
+        return self.sock
+
+    @staticmethod
+    def _recv_exact(sock: socket.socket, size: int) -> bytes:
+        chunks = []
+        remaining = size
+        while remaining:
+            chunk = sock.recv(remaining)
+            if not chunk:
+                raise EOFError("policy inference server closed the connection")
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        return b"".join(chunks)
+
+    def predict(self, state: BoardState, side: int) -> np.ndarray:
+        payload = self.REQUEST_STRUCT.pack(int(state.black), int(state.white), int(side))
+        for attempt in range(2):
+            sock = self.sock
+            if sock is None:
+                sock = self._connect()
+            try:
+                sock.sendall(payload)
+                response = self._recv_exact(sock, self.RESPONSE_SIZE)
+                return np.frombuffer(response, dtype="<f4").copy().reshape(1, POLICY_SIZE)
+            except (EOFError, OSError):
+                self.close()
+                if attempt:
+                    raise
+        raise RuntimeError("policy inference request failed")
+
+    def close(self) -> None:
+        sock = self.sock
+        self.sock = None
+        if sock is not None:
+            try:
+                sock.close()
+            except OSError:
+                pass
+
+    def __del__(self):
+        self.close()
+
+
 def softmax_rows(logits: np.ndarray) -> np.ndarray:
     logits = logits - np.max(logits, axis=1, keepdims=True)
     exp_logits = np.exp(logits, dtype=np.float32)
@@ -461,6 +519,94 @@ class EgaroucidHintRunner:
         self.close()
 
 
+def hint_cache_key(level: int, black: int, white: int, side: int) -> str:
+    return f"level={int(level)}:{int(black):016x}:{int(white):016x}:{int(side)}"
+
+
+class SharedHintCache:
+    def __init__(self, path: Path):
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.conn = sqlite3.connect(str(self.path), timeout=60.0, isolation_level=None)
+        self.conn.execute("PRAGMA busy_timeout = 60000")
+        self.conn.execute("PRAGMA journal_mode = WAL")
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hint_scores (
+                key TEXT PRIMARY KEY,
+                scores_json TEXT NOT NULL,
+                raw_hint TEXT NOT NULL,
+                created_at REAL NOT NULL
+            )
+            """
+        )
+        self.conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS hint_claims (
+                key TEXT PRIMARY KEY,
+                claimed_at REAL NOT NULL
+            )
+            """
+        )
+
+    def get(self, key: str) -> Optional[Tuple[Dict[int, float], str]]:
+        row = self.conn.execute("SELECT scores_json, raw_hint FROM hint_scores WHERE key = ?", (key,)).fetchone()
+        if row is None:
+            return None
+        scores = {int(k): float(v) for k, v in json.loads(row[0]).items()}
+        return scores, str(row[1])
+
+    def put(self, key: str, scores: Dict[int, float], raw_hint: str) -> None:
+        scores_json = json.dumps({str(k): float(v) for k, v in scores.items()}, sort_keys=True)
+        self.conn.execute("BEGIN IMMEDIATE")
+        try:
+            self.conn.execute(
+                "INSERT OR IGNORE INTO hint_scores(key, scores_json, raw_hint, created_at) VALUES (?, ?, ?, ?)",
+                (key, scores_json, raw_hint, time.time()),
+            )
+            self.conn.execute("DELETE FROM hint_claims WHERE key = ?", (key,))
+            self.conn.execute("COMMIT")
+        except BaseException:
+            self.conn.execute("ROLLBACK")
+            raise
+
+    def try_claim(self, key: str, stale_after_sec: float) -> bool:
+        stale_before = time.time() - stale_after_sec
+        self.conn.execute("DELETE FROM hint_claims WHERE key = ? AND claimed_at < ?", (key, stale_before))
+        cursor = self.conn.execute(
+            "INSERT OR IGNORE INTO hint_claims(key, claimed_at) VALUES (?, ?)",
+            (key, time.time()),
+        )
+        return cursor.rowcount == 1
+
+    def wait_for(self, key: str, timeout_sec: float) -> Optional[Tuple[Dict[int, float], str]]:
+        deadline = time.time() + timeout_sec
+        while time.time() < deadline:
+            cached = self.get(key)
+            if cached is not None:
+                return cached
+            claim = self.conn.execute("SELECT 1 FROM hint_claims WHERE key = ?", (key,)).fetchone()
+            if claim is None:
+                return None
+            time.sleep(0.01)
+        return None
+
+    def release_claim(self, key: str) -> None:
+        self.conn.execute("DELETE FROM hint_claims WHERE key = ?", (key,))
+
+    def close(self) -> None:
+        conn = self.conn
+        self.conn = None
+        if conn is not None:
+            conn.close()
+
+    def __del__(self):
+        try:
+            self.close()
+        except Exception:
+            pass
+
+
 class BlendedPolicy:
     def __init__(
         self,
@@ -471,10 +617,23 @@ class BlendedPolicy:
         egaroucid_timeout_sec: float = 30.0,
         persistent_egaroucid: bool = True,
         cache_egaroucid: bool = False,
+        hint_cache_db: Optional[Path] = None,
+        policy_server_host: Optional[str] = None,
+        policy_server_port: Optional[int] = None,
+        policy_server_timeout_sec: float = 30.0,
         score_temperature: float = 1.0,
         legal_mask_policy: bool = True,
     ):
-        self.policy_network = BinaryPolicyNetwork(Path(weights))
+        self.policy_client = None
+        if policy_server_port is not None:
+            self.policy_network = None
+            self.policy_client = PolicyBatchClient(
+                policy_server_host or "127.0.0.1",
+                policy_server_port,
+                timeout_sec=policy_server_timeout_sec,
+            )
+        else:
+            self.policy_network = BinaryPolicyNetwork(Path(weights))
         self.hint_runner = EgaroucidHintRunner(
             egaroucid_exe,
             level=egaroucid_level,
@@ -488,9 +647,13 @@ class BlendedPolicy:
         self.legal_mask_policy = bool(legal_mask_policy)
         self.cache_egaroucid = bool(cache_egaroucid)
         self.egaroucid_cache: Dict[Tuple[int, int, int], Tuple[Dict[int, float], str]] = {}
+        self.shared_hint_cache = SharedHintCache(Path(hint_cache_db)) if hint_cache_db is not None else None
 
     def policy_distribution(self, state: BoardState, side: int, legal_policies: Sequence[int]) -> np.ndarray:
-        policy = self.policy_network.predict(board_to_features(state, side))[0]
+        if self.policy_client is not None:
+            policy = self.policy_client.predict(state, side)[0]
+        else:
+            policy = self.policy_network.predict(board_to_features(state, side))[0]
         if self.legal_mask_policy:
             return normalize_policy_on_legal(policy, legal_policies)
         return policy.astype(np.float32)
@@ -507,15 +670,46 @@ class BlendedPolicy:
         return result
 
     def cached_hint_scores(self, state: BoardState, side: int) -> Tuple[Dict[int, float], str]:
-        if not self.cache_egaroucid:
-            return self.hint_runner.hint_scores(state, side)
-        key = (state.black, state.white, int(side))
-        cached = self.egaroucid_cache.get(key)
-        if cached is not None:
-            return cached
-        scores, raw_hint = self.hint_runner.hint_scores(state, side)
-        self.egaroucid_cache[key] = (scores, raw_hint)
+        memory_key = (state.black, state.white, int(side))
+        if self.cache_egaroucid:
+            cached = self.egaroucid_cache.get(memory_key)
+            if cached is not None:
+                return cached
+        shared_key = hint_cache_key(self.hint_runner.level, state.black, state.white, int(side))
+        if self.shared_hint_cache is not None:
+            while True:
+                cached = self.shared_hint_cache.get(shared_key)
+                if cached is not None:
+                    if self.cache_egaroucid:
+                        self.egaroucid_cache[memory_key] = cached
+                    return cached
+                stale_after_sec = max(60.0, self.hint_runner.timeout_sec * 2.0)
+                if self.shared_hint_cache.try_claim(shared_key, stale_after_sec):
+                    break
+                cached = self.shared_hint_cache.wait_for(shared_key, self.hint_runner.timeout_sec)
+                if cached is not None:
+                    if self.cache_egaroucid:
+                        self.egaroucid_cache[memory_key] = cached
+                    return cached
+        try:
+            scores, raw_hint = self.hint_runner.hint_scores(state, side)
+            if self.shared_hint_cache is not None:
+                self.shared_hint_cache.put(shared_key, scores, raw_hint)
+        except BaseException:
+            if self.shared_hint_cache is not None:
+                self.shared_hint_cache.release_claim(shared_key)
+            raise
+        if self.cache_egaroucid:
+            self.egaroucid_cache[memory_key] = (scores, raw_hint)
         return scores, raw_hint
+
+    def close(self) -> None:
+        self.hint_runner.close()
+        if self.policy_client is not None:
+            self.policy_client.close()
+        if self.shared_hint_cache is not None:
+            self.shared_hint_cache.close()
+            self.shared_hint_cache = None
 
     def blended_distribution(self, state: BoardState, side: int, blend_param: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Dict[int, float], str]:
         legal_policies = state.legal_policies(side)
@@ -569,6 +763,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
     parser.add_argument("--no-persistent-egaroucid", action="store_true")
     parser.add_argument("--cache-egaroucid", action="store_true")
+    parser.add_argument("--hint-cache-db", type=Path, default=None)
     parser.add_argument("--blend-param", "--alpha", dest="blend_param", type=float, default=0.5)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--no-legal-mask-policy", action="store_true")
@@ -595,10 +790,14 @@ def main() -> None:
         egaroucid_timeout_sec=args.egaroucid_timeout_sec,
         persistent_egaroucid=not args.no_persistent_egaroucid,
         cache_egaroucid=args.cache_egaroucid,
+        hint_cache_db=args.hint_cache_db,
         score_temperature=args.score_temperature,
         legal_mask_policy=not args.no_legal_mask_policy,
     )
-    blended, policy_dist, egaroucid_dist, scores, raw_hint = blender.blended_distribution(state, side, args.blend_param)
+    try:
+        blended, policy_dist, egaroucid_dist, scores, raw_hint = blender.blended_distribution(state, side, args.blend_param)
+    finally:
+        blender.close()
     legal_policies = state.legal_policies(side)
     rows = distribution_rows(blended, policy_dist, egaroucid_dist, scores, legal_policies, args.top)
     result = {

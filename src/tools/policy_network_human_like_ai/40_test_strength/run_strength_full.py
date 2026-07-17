@@ -73,8 +73,8 @@ def make_command(args: argparse.Namespace) -> List[str]:
         str(args.processes_per_player),
         "--engine-threads",
         str(args.engine_threads),
-        "--status-every-games",
-        str(args.status_every_games),
+        "--status-every-match-sets",
+        str(args.status_every_match_sets),
         "--task-retries",
         str(args.task_retries),
         "--weights",
@@ -91,17 +91,51 @@ def make_command(args: argparse.Namespace) -> List[str]:
         str(args.openings),
         "--output-dir",
         str(args.output_dir),
+        "--seed",
+        str(args.seed),
+        "--policy-backend",
+        args.policy_backend,
+        "--policy-server-host",
+        args.policy_server_host,
+        "--policy-server-timeout-sec",
+        str(args.policy_server_timeout_sec),
+        "--policy-server-startup-timeout-sec",
+        str(args.policy_server_startup_timeout_sec),
+        "--policy-max-batch-size",
+        str(args.policy_max_batch_size),
+        "--policy-batch-wait-ms",
+        str(args.policy_batch_wait_ms),
+        "--policy-inference-threads",
+        str(args.policy_inference_threads),
+        "--performance-sample-interval-sec",
+        str(args.performance_sample_interval_sec),
     ]
+    if args.policy_model is not None:
+        cmd.extend(["--policy-model", str(args.policy_model)])
+    if args.policy_server_port is not None:
+        cmd.extend(["--policy-server-port", str(args.policy_server_port)])
+    if args.hint_cache_db is not None:
+        cmd.extend(["--hint-cache-db", str(args.hint_cache_db)])
     if args.time_limit_sec is not None:
         cmd.extend(["--time-limit-sec", str(args.time_limit_sec)])
-    if args.max_games is not None:
-        cmd.extend(["--max-games", str(args.max_games)])
+    if args.max_match_sets is not None:
+        cmd.extend(["--max-match-sets", str(args.max_match_sets)])
+    if args.no_shuffle_openings:
+        cmd.append("--no-shuffle-openings")
     if args.resume:
         cmd.append("--resume")
     if args.dry_run:
         cmd.append("--dry-run")
     if args.no_blend_cache:
         cmd.append("--no-blend-cache")
+    if args.no_native_alpha_zero:
+        cmd.append("--no-native-alpha-zero")
+    if args.no_policy_batch_server:
+        cmd.append("--no-policy-batch-server")
+    if args.no_performance_monitor:
+        cmd.append("--no-performance-monitor")
+    if args.same_openings_for_all_pairs:
+        cmd.append("--same-openings-for-all-pairs")
     if args.close_processes_after_game:
         cmd.append("--close-processes-after-game")
     return cmd
@@ -109,14 +143,14 @@ def make_command(args: argparse.Namespace) -> List[str]:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run or resume the full human-like policy strength study.")
-    parser.add_argument("--baseline-levels", default="1,5,10,15,21")
-    parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
-    parser.add_argument("--games-per-pair", type=int, default=1000)
-    parser.add_argument("--max-games", type=int, default=None)
+    parser.add_argument("--baseline-levels", default="1,3,5,10")
+    parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
+    parser.add_argument("--games-per-pair", type=int, default=100)
+    parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None)
     parser.add_argument("--parallel-matches", type=int, default=32)
     parser.add_argument("--processes-per-player", type=int, default=32)
     parser.add_argument("--engine-threads", type=int, default=1)
-    parser.add_argument("--status-every-games", type=int, default=200)
+    parser.add_argument("--status-every-match-sets", "--status-every-games", dest="status_every_match_sets", type=int, default=200)
     parser.add_argument("--task-retries", type=int, default=2)
     parser.add_argument("--time-limit-sec", type=float, default=None)
     parser.add_argument("--weights", type=Path, default=default_weights_file())
@@ -126,7 +160,24 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--openings", type=Path, default=SCRIPT_DIR.parents[3] / "bin" / "problem" / "xot" / "openingslarge.txt")
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "strength_full")
+    parser.add_argument("--seed", type=int, default=57)
+    parser.add_argument("--no-shuffle-openings", action="store_true")
     parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
+    parser.add_argument("--hint-cache-db", type=Path, default=None, help="Shared SQLite cache for Egaroucid hint scores.")
+    parser.add_argument("--no-native-alpha-zero", action="store_true", help="Use the Python blend engine even for alpha=0.0.")
+    parser.add_argument("--no-policy-batch-server", action="store_true")
+    parser.add_argument("--policy-model", type=Path, default=None)
+    parser.add_argument("--policy-backend", choices=("auto", "tensorflow", "numpy"), default="auto")
+    parser.add_argument("--policy-server-host", default="127.0.0.1")
+    parser.add_argument("--policy-server-port", type=int, default=None)
+    parser.add_argument("--policy-server-timeout-sec", type=float, default=30.0)
+    parser.add_argument("--policy-server-startup-timeout-sec", type=float, default=120.0)
+    parser.add_argument("--policy-max-batch-size", type=int, default=128)
+    parser.add_argument("--policy-batch-wait-ms", type=float, default=2.0)
+    parser.add_argument("--policy-inference-threads", type=int, default=4)
+    parser.add_argument("--no-performance-monitor", action="store_true")
+    parser.add_argument("--performance-sample-interval-sec", type=float, default=2.0)
+    parser.add_argument("--same-openings-for-all-pairs", action="store_true", help="Use the same opening sequence for every pair.")
     parser.add_argument("--close-processes-after-game", action="store_true", help="Close engines after each game instead of keeping them in per-player pools.")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")

@@ -41,6 +41,10 @@ class BlendGtpEngine:
             egaroucid_threads=args.egaroucid_threads,
             egaroucid_timeout_sec=args.egaroucid_timeout_sec,
             cache_egaroucid=args.cache_egaroucid,
+            hint_cache_db=args.hint_cache_db,
+            policy_server_host=args.policy_server_host,
+            policy_server_port=args.policy_server_port,
+            policy_server_timeout_sec=args.policy_server_timeout_sec,
             score_temperature=args.score_temperature,
             legal_mask_policy=not args.no_legal_mask_policy,
         )
@@ -135,22 +139,25 @@ class BlendGtpEngine:
         sys.stdout.flush()
 
     def loop(self) -> None:
-        for raw_line in sys.stdin:
-            line = raw_line.strip()
-            if not line:
-                continue
-            parts = line.split()
-            command = parts[0]
-            args = parts[1:]
-            try:
-                keep_running, payload = self.dispatch(command, args)
-                self.write_response(True, payload)
-                if not keep_running:
-                    break
-            except Exception as exc:
-                if self.args.debug:
-                    traceback.print_exc(file=sys.stderr)
-                self.write_response(False, str(exc))
+        try:
+            for raw_line in sys.stdin:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                command = parts[0]
+                args = parts[1:]
+                try:
+                    keep_running, payload = self.dispatch(command, args)
+                    self.write_response(True, payload)
+                    if not keep_running:
+                        break
+                except Exception as exc:
+                    if self.args.debug:
+                        traceback.print_exc(file=sys.stderr)
+                    self.write_response(False, str(exc))
+        finally:
+            self.blender.close()
 
 
 def make_argparser() -> argparse.ArgumentParser:
@@ -162,6 +169,10 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-threads", type=int, default=1)
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
     parser.add_argument("--cache-egaroucid", action="store_true")
+    parser.add_argument("--hint-cache-db", type=Path, default=None)
+    parser.add_argument("--policy-server-host", default=None)
+    parser.add_argument("--policy-server-port", type=int, default=None)
+    parser.add_argument("--policy-server-timeout-sec", type=float, default=30.0)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--no-legal-mask-policy", action="store_true")
     parser.add_argument("--debug", action="store_true")
