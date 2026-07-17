@@ -1455,6 +1455,7 @@ def main() -> None:
                 completed_match_sets += len(results)
                 if completed_match_sets % args.status_every_match_sets < len(results) or completed_match_sets == total_match_sets:
                     print_status(players, args.output_dir, start_time, completed_match_sets, total_match_sets, args.games_per_pair)
+                    write_outputs(players, args.output_dir, completed_match_sets, total_match_sets, args.games_per_pair)
                 if args.time_limit_sec is not None and time.time() - start_time >= args.time_limit_sec:
                     stop_reason = "time_limit"
                 if stop_reason == "finished":
