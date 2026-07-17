@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one command and save stdout/stderr plus elapsed time and peak RSS."""
+"""Run one command and save stdout/stderr plus elapsed time and maximum resident memory."""
 
 from __future__ import annotations
 
