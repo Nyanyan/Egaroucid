@@ -77,6 +77,49 @@ def choose_global_positions(total_positions: int, sample_positions: Optional[int
     return np.sort(rng.choice(total_positions, size=n, replace=False).astype(np.int64, copy=False))
 
 
+def split_counts(total: int, train_ratio: float, val_ratio: float, test_ratio: float) -> Tuple[int, int, int]:
+    ratio_sum = train_ratio + val_ratio + test_ratio
+    if total <= 0:
+        raise ValueError("total split size must be positive")
+    if ratio_sum <= 0.0:
+        raise ValueError("train/validation/test ratios must have a positive sum")
+    n_train = int(np.floor(total * (train_ratio / ratio_sum)))
+    n_val = int(np.floor(total * (val_ratio / ratio_sum)))
+    n_test = total - n_train - n_val
+    if n_train <= 0 or n_val <= 0 or n_test <= 0:
+        raise ValueError(f"split produced an empty part: train={n_train} val={n_val} test={n_test}")
+    return n_train, n_val, n_test
+
+
+def choose_data_split_positions(
+    total_positions: int,
+    data_split: str,
+    train_ratio: float,
+    val_ratio: float,
+    test_ratio: float,
+    split_seed: int,
+    sample_positions: Optional[int],
+    sample_seed: int,
+) -> Tuple[Optional[np.ndarray], int]:
+    if data_split == "all":
+        return choose_global_positions(total_positions, sample_positions, sample_seed), total_positions
+
+    n_train, n_val, n_test = split_counts(total_positions, train_ratio, val_ratio, test_ratio)
+    order = np.random.default_rng(split_seed).permutation(total_positions)
+    split_ranges = {
+        "train": (0, n_train),
+        "val": (n_train, n_train + n_val),
+        "test": (n_train + n_val, n_train + n_val + n_test),
+    }
+    start, end = split_ranges[data_split]
+    selected = order[start:end]
+    split_positions = len(selected)
+    if sample_positions is not None and sample_positions < split_positions:
+        sample_rng = np.random.default_rng(sample_seed)
+        selected = selected[sample_rng.choice(split_positions, size=sample_positions, replace=False)]
+    return np.sort(selected.astype(np.int64, copy=False)), split_positions
+
+
 def split_ranges(total_positions: int, jobs: int) -> List[Tuple[int, int]]:
     return split_absolute_ranges(0, total_positions, jobs)
 
@@ -504,6 +547,14 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "egaroucid_exe": str(args.egaroucid_exe),
         "egaroucid_level": args.egaroucid_level,
         "blend_params": list(blend_params),
+        "data_split": args.data_split,
+        "split_seed": args.split_seed if args.data_split != "all" else None,
+        "split_ratios": {
+            "train": args.train_ratio,
+            "validation": args.val_ratio,
+            "test": args.test_ratio,
+        },
+        "split_positions": args.split_positions,
         "available_positions": available_positions,
         "range_start": range_start,
         "range_end": range_end,
@@ -512,6 +563,12 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "jobs": args.jobs,
         "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
         "hint_cache_stats": hint_cache_stats,
+        "shared_computation": {
+            "policy_inferences_per_position": 1,
+            "hint_score_lookups_per_position": 1,
+            "blend_params_evaluated_from_shared_distributions": len(blend_params),
+            "note": "Each position's policy and hint distributions are computed once, then reused for every blend parameter.",
+        },
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
         "topn": topn_rows,
@@ -538,6 +595,8 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
 def evaluate(args: argparse.Namespace) -> dict:
     blend_params = parse_float_list(args.blend_params)
     n_values = sorted(set(parse_int_list(args.top_n)))
+    if args.sample_positions is not None and args.sample_positions <= 0:
+        raise ValueError("--sample-positions must be positive when set")
     dat_files = discover_dat_files(args.board_data_dir)
     available_positions = count_position_samples(dat_files, args.max_positions)
     range_start = int(args.range_start)
@@ -546,9 +605,20 @@ def evaluate(args: argparse.Namespace) -> dict:
         raise ValueError(f"--range-start must be within 0..{available_positions}")
     if range_end < range_start or range_end > available_positions:
         raise ValueError(f"--range-end must be within {range_start}..{available_positions}")
+    if args.data_split != "all" and (range_start != 0 or range_end != available_positions):
+        raise ValueError("--data-split cannot be combined with --range-start/--range-end")
     if args.sample_positions is not None and (range_start != 0 or range_end != available_positions):
         raise ValueError("--sample-positions cannot be combined with --range-start/--range-end")
-    selected_global_positions = choose_global_positions(available_positions, args.sample_positions, args.sample_seed)
+    selected_global_positions, args.split_positions = choose_data_split_positions(
+        available_positions,
+        args.data_split,
+        args.train_ratio,
+        args.val_ratio,
+        args.test_ratio,
+        args.split_seed,
+        args.sample_positions,
+        args.sample_seed,
+    )
     bucket_names = [move_bucket(i) for i in range(1, 61, 10)]
     metrics = make_metrics(blend_params, n_values, bucket_names)
 
@@ -684,11 +754,16 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--no-legal-mask-policy", action="store_true")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0")
     parser.add_argument("--top-n", default="1,2,3,4,5,8,10,16")
+    parser.add_argument("--data-split", choices=("all", "train", "val", "test"), default="all")
+    parser.add_argument("--split-seed", type=int, default=613)
+    parser.add_argument("--train-ratio", type=float, default=0.8)
+    parser.add_argument("--val-ratio", type=float, default=0.1)
+    parser.add_argument("--test-ratio", type=float, default=0.1)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--max-positions", type=int, default=None)
     parser.add_argument("--range-start", type=int, default=0)
     parser.add_argument("--range-end", type=int, default=None)
-    parser.add_argument("--sample-positions", type=int, default=None)
+    parser.add_argument("--sample-positions", type=int, default=None, help="Randomly sample this many positions from the selected data split.")
     parser.add_argument("--sample-seed", type=int, default=613)
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--hint-cache-db", type=Path, default=None)
@@ -705,6 +780,8 @@ def main() -> None:
     print("weights", result["weights"])
     print("board_data_dir", result["board_data_dir"])
     print("egaroucid_level", result["egaroucid_level"])
+    print("data_split", result["data_split"])
+    print("split_positions", result["split_positions"])
     print("available_positions", result["available_positions"])
     print("range_start", result["range_start"])
     print("range_end", result["range_end"])
