@@ -1113,7 +1113,7 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                     "-t",
                     str(args.engine_threads),
                 ],
-                args.processes_per_player,
+                args.baseline_processes_per_player,
                 args.close_processes_after_game,
                 False,
             )
@@ -1172,7 +1172,7 @@ def build_players(args: argparse.Namespace) -> List[Player]:
             Player(
                 f"alpha_{alpha:.1f}",
                 command,
-                args.processes_per_player,
+                args.blend_processes_per_player,
                 args.close_processes_after_game,
                 not native_alpha_zero,
                 alpha=alpha,
@@ -1297,6 +1297,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None, help="Optional benchmark cap in XOT match sets; default runs the full requested schedule.")
     parser.add_argument("--parallel-matches", type=int, default=16)
     parser.add_argument("--processes-per-player", type=int, default=2)
+    parser.add_argument("--baseline-processes-per-player", type=int, default=None)
+    parser.add_argument("--blend-processes-per-player", type=int, default=None)
     parser.add_argument("--engine-threads", type=int, default=1)
     parser.add_argument("--status-every-match-sets", "--status-every-games", dest="status_every_match_sets", type=int, default=200)
     parser.add_argument("--time-limit-sec", type=float, default=None, help="Stop launching new tasks after this many seconds.")
@@ -1356,6 +1358,14 @@ def main() -> None:
     args = make_argparser().parse_args()
     if args.processes_per_player < 2 or args.processes_per_player % 2 != 0:
         raise ValueError("--processes-per-player must be an even number >= 2")
+    if args.baseline_processes_per_player is None:
+        args.baseline_processes_per_player = args.processes_per_player
+    if args.blend_processes_per_player is None:
+        args.blend_processes_per_player = args.processes_per_player
+    if args.baseline_processes_per_player < 2 or args.baseline_processes_per_player % 2 != 0:
+        raise ValueError("--baseline-processes-per-player must be an even number >= 2")
+    if args.blend_processes_per_player < 2 or args.blend_processes_per_player % 2 != 0:
+        raise ValueError("--blend-processes-per-player must be an even number >= 2")
     if args.parallel_matches < 1:
         raise ValueError("--parallel-matches must be positive")
     if args.games_per_pair < 1:
@@ -1382,8 +1392,12 @@ def main() -> None:
     if args.hint_cache_db is None:
         args.hint_cache_db = args.output_dir / "egaroucid_hint_cache.sqlite3"
 
-    engine_player_count = len(parse_int_list(args.baseline_levels)) + len(parse_float_list(args.blend_params))
-    estimated_max_engine_processes = engine_player_count * args.processes_per_player
+    baseline_player_count = len(parse_int_list(args.baseline_levels))
+    blend_player_count = len(parse_float_list(args.blend_params))
+    estimated_max_engine_processes = (
+        baseline_player_count * args.baseline_processes_per_player
+        + blend_player_count * args.blend_processes_per_player
+    )
     estimated_max_engine_memory_mib = estimated_max_engine_processes * args.estimated_engine_memory_mib
     startup_available_memory_mib = available_memory_mib()
     if startup_available_memory_mib is None:
@@ -1438,7 +1452,10 @@ def main() -> None:
         print("max_match_sets", args.max_match_sets)
     print("parallel_matches", args.parallel_matches)
     print("max_processes_per_player", args.processes_per_player)
-    print("max_concurrent_match_sets_per_engine_player", args.processes_per_player // 2)
+    print("baseline_processes_per_player", args.baseline_processes_per_player)
+    print("blend_processes_per_player", args.blend_processes_per_player)
+    print("max_concurrent_match_sets_per_baseline_player", args.baseline_processes_per_player // 2)
+    print("max_concurrent_match_sets_per_blend_player", args.blend_processes_per_player // 2)
     print("xot_openings", display_path(args.openings))
     print("shuffle_xot_openings", not args.no_shuffle_openings)
     print("seed", args.seed)
@@ -1485,7 +1502,10 @@ def main() -> None:
                     "max_match_sets": args.max_match_sets,
                     "parallel_matches": args.parallel_matches,
                     "max_processes_per_player": args.processes_per_player,
-                    "max_concurrent_match_sets_per_engine_player": args.processes_per_player // 2,
+                    "baseline_processes_per_player": args.baseline_processes_per_player,
+                    "blend_processes_per_player": args.blend_processes_per_player,
+                    "max_concurrent_match_sets_per_baseline_player": args.baseline_processes_per_player // 2,
+                    "max_concurrent_match_sets_per_blend_player": args.blend_processes_per_player // 2,
                     "xot_openings": display_path(args.openings),
                     "shuffle_xot_openings": not args.no_shuffle_openings,
                     "seed": args.seed,
@@ -1542,7 +1562,7 @@ def main() -> None:
     pending_tasks = deque(tasks)
     active_task_counts = [0] * len(players)
     task_capacities = [
-        args.parallel_matches if player.random_seed is not None else args.processes_per_player // 2
+        args.parallel_matches if player.random_seed is not None else player.processes_per_player // 2
         for player in players
     ]
     futures = {}

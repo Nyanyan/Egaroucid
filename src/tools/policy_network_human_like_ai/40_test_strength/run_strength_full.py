@@ -73,6 +73,10 @@ def make_command(args: argparse.Namespace) -> List[str]:
         str(args.parallel_matches),
         "--processes-per-player",
         str(args.processes_per_player),
+        "--baseline-processes-per-player",
+        str(args.baseline_processes_per_player),
+        "--blend-processes-per-player",
+        str(args.blend_processes_per_player),
         "--engine-threads",
         str(args.engine_threads),
         "--status-every-match-sets",
@@ -159,6 +163,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None)
     parser.add_argument("--parallel-matches", type=int, default=16)
     parser.add_argument("--processes-per-player", type=int, default=2)
+    parser.add_argument("--baseline-processes-per-player", type=int, default=None)
+    parser.add_argument("--blend-processes-per-player", type=int, default=None)
     parser.add_argument("--engine-threads", type=int, default=1)
     parser.add_argument("--status-every-match-sets", "--status-every-games", dest="status_every_match_sets", type=int, default=200)
     parser.add_argument("--task-retries", type=int, default=2)
@@ -198,6 +204,10 @@ def make_argparser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = make_argparser().parse_args()
+    if args.baseline_processes_per_player is None:
+        args.baseline_processes_per_player = args.processes_per_player
+    if args.blend_processes_per_player is None:
+        args.blend_processes_per_player = args.processes_per_player
     cmd = make_command(args)
     print(" ".join(str(part) for part in display_command(cmd)))
     returncode = run_command(cmd, args.output_dir / "run_strength_full.log")
