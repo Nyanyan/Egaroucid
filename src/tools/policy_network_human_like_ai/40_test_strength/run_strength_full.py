@@ -111,6 +111,10 @@ def make_command(args: argparse.Namespace) -> List[str]:
         str(args.policy_inference_threads),
         "--performance-sample-interval-sec",
         str(args.performance_sample_interval_sec),
+        "--minimum-available-memory-mib",
+        str(args.minimum_available_memory_mib),
+        "--estimated-engine-memory-mib",
+        str(args.estimated_engine_memory_mib),
     ]
     if args.policy_model is not None:
         cmd.extend(["--policy-model", str(args.policy_model)])
@@ -149,12 +153,12 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run or resume the full human-like policy strength study.")
     parser.add_argument("--no-random-player", action="store_true")
     parser.add_argument("--random-seed", type=int, default=613)
-    parser.add_argument("--baseline-levels", default="1,3,5,10")
+    parser.add_argument("--baseline-levels", default="1,3,5,7,9,11,13,15,17,19")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
     parser.add_argument("--games-per-pair", type=int, default=100)
     parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None)
-    parser.add_argument("--parallel-matches", type=int, default=32)
-    parser.add_argument("--processes-per-player", type=int, default=32)
+    parser.add_argument("--parallel-matches", type=int, default=16)
+    parser.add_argument("--processes-per-player", type=int, default=2)
     parser.add_argument("--engine-threads", type=int, default=1)
     parser.add_argument("--status-every-match-sets", "--status-every-games", dest="status_every_match_sets", type=int, default=200)
     parser.add_argument("--task-retries", type=int, default=2)
@@ -183,6 +187,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--policy-inference-threads", type=int, default=4)
     parser.add_argument("--no-performance-monitor", action="store_true")
     parser.add_argument("--performance-sample-interval-sec", type=float, default=2.0)
+    parser.add_argument("--minimum-available-memory-mib", type=float, default=24576.0)
+    parser.add_argument("--estimated-engine-memory-mib", type=float, default=1400.0)
     parser.add_argument("--same-openings-for-all-pairs", action="store_true", help="Use the same opening sequence for every pair.")
     parser.add_argument("--close-processes-after-game", action="store_true", help="Close engines after each game instead of keeping them in per-player pools.")
     parser.add_argument("--resume", action="store_true")

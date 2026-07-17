@@ -4,10 +4,11 @@ Round-robin strength test for Egaroucid 7.8.1 levels and blended policy engines.
 
 Default settings follow the research request:
   - uniformly random legal-move player
-  - Egaroucid levels: 1, 3, 5, 10
+  - Egaroucid levels: 1, 3, 5, ..., 19
   - alpha: 0.0, 0.2, ..., 1.0
   - XOT color-swapped match sets per pair: 100
-  - parallel matches: 32
+  - parallel matches: 16
+  - at most two engine processes per player
 
 Each task plays two color-swapped games from the same XOT opening. The requested
 games-per-pair value is counted as paired match sets. One paired match set
@@ -23,7 +24,7 @@ from __future__ import annotations
 import argparse
 import atexit
 import csv
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 import json
 import os
@@ -61,12 +62,27 @@ process_registry = set()
 process_registry_lock = threading.Lock()
 shutdown_event = threading.Event()
 results_lock = threading.Lock()
+low_memory_event = threading.Event()
+minimum_available_memory_mib = 0.0
+
+
+class AvailableMemoryLimitError(RuntimeError):
+    pass
+
+
+def available_memory_mib() -> Optional[float]:
+    try:
+        import psutil
+    except ImportError:
+        return None
+    return float(psutil.virtual_memory().available / (1024.0 * 1024.0))
 
 
 class PerformanceMonitor:
-    def __init__(self, output_dir: Path, interval_sec: float):
+    def __init__(self, output_dir: Path, interval_sec: float, minimum_available_mib: float):
         self.output_dir = output_dir
         self.interval_sec = float(interval_sec)
+        self.minimum_available_mib = float(minimum_available_mib)
         self.stop_event = threading.Event()
         self.thread: Optional[threading.Thread] = None
         self.samples: List[dict] = []
@@ -122,12 +138,28 @@ class PerformanceMonitor:
                     "elapsed_sec": time.time() - self.started_at,
                     "cpu_percent": float(psutil.cpu_percent(interval=None)),
                     "system_memory_used_mib": float(memory.used / (1024.0 * 1024.0)),
+                    "available_memory_mib": float(memory.available / (1024.0 * 1024.0)),
                     "system_memory_percent": float(memory.percent),
                     "gpu_percent": last_gpu[0],
                     "gpu_memory_used_mib": last_gpu[1],
                     "child_processes": len(children),
                 }
             )
+            sample = self.samples[-1]
+            if sample["available_memory_mib"] < self.minimum_available_mib:
+                low_memory_event.set()
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            with (self.output_dir / "performance_live.json").open("w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        **sample,
+                        "minimum_available_memory_mib": self.minimum_available_mib,
+                        "low_memory_limit_reached": low_memory_event.is_set(),
+                    },
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
+                )
             sample_idx += 1
 
     @staticmethod
@@ -140,6 +172,11 @@ class PerformanceMonitor:
         values = [float(sample[key]) for sample in samples if sample.get(key) is not None]
         return max(values) if values else None
 
+    @staticmethod
+    def _minimum(samples: Sequence[dict], key: str) -> Optional[float]:
+        values = [float(sample[key]) for sample in samples if sample.get(key) is not None]
+        return min(values) if values else None
+
     def stop(self) -> None:
         if self.thread is None:
             return
@@ -150,6 +187,7 @@ class PerformanceMonitor:
             "elapsed_sec",
             "cpu_percent",
             "system_memory_used_mib",
+            "available_memory_mib",
             "system_memory_percent",
             "gpu_percent",
             "gpu_memory_used_mib",
@@ -166,6 +204,9 @@ class PerformanceMonitor:
             "maximum_cpu_percent": self._maximum(self.samples, "cpu_percent"),
             "average_system_memory_used_mib": self._average(self.samples, "system_memory_used_mib"),
             "maximum_system_memory_used_mib": self._maximum(self.samples, "system_memory_used_mib"),
+            "minimum_available_memory_mib": self._minimum(self.samples, "available_memory_mib"),
+            "configured_minimum_available_memory_mib": self.minimum_available_mib,
+            "low_memory_limit_reached": low_memory_event.is_set(),
             "average_gpu_percent": self._average(self.samples, "gpu_percent"),
             "maximum_gpu_percent": self._maximum(self.samples, "gpu_percent"),
             "maximum_gpu_memory_used_mib": self._maximum(self.samples, "gpu_memory_used_mib"),
@@ -304,6 +345,13 @@ def start_engine(command: List[str], env: Optional[dict] = None) -> subprocess.P
     with process_registry_lock:
         if shutdown_event.is_set():
             raise RuntimeError("shutdown in progress")
+        available_mib = available_memory_mib()
+        if available_mib is not None and available_mib < minimum_available_memory_mib:
+            low_memory_event.set()
+            raise AvailableMemoryLimitError(
+                f"available memory {available_mib:.0f} MiB is below "
+                f"the configured minimum {minimum_available_memory_mib:.0f} MiB"
+            )
         proc = subprocess.Popen(command, **popen_kwargs)
         process_registry.add(proc)
         return proc
@@ -1236,12 +1284,12 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run round-robin strength tests for blended policy engines.")
     parser.add_argument("--no-random-player", action="store_true", help="Exclude the uniformly random legal-move player.")
     parser.add_argument("--random-seed", type=int, default=613, help="Seed for the uniformly random legal-move player.")
-    parser.add_argument("--baseline-levels", default="1,3,5,10")
+    parser.add_argument("--baseline-levels", default="1,3,5,7,9,11,13,15,17,19")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
     parser.add_argument("--games-per-pair", type=int, default=100, help="Number of XOT color-swapped match sets per pair. One set contains two actual games.")
     parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None, help="Optional benchmark cap in XOT match sets; default runs the full requested schedule.")
-    parser.add_argument("--parallel-matches", type=int, default=32)
-    parser.add_argument("--processes-per-player", type=int, default=32)
+    parser.add_argument("--parallel-matches", type=int, default=16)
+    parser.add_argument("--processes-per-player", type=int, default=2)
     parser.add_argument("--engine-threads", type=int, default=1)
     parser.add_argument("--status-every-match-sets", "--status-every-games", dest="status_every_match_sets", type=int, default=200)
     parser.add_argument("--time-limit-sec", type=float, default=None, help="Stop launching new tasks after this many seconds.")
@@ -1273,6 +1321,18 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--policy-inference-threads", type=int, default=4)
     parser.add_argument("--no-performance-monitor", action="store_true")
     parser.add_argument("--performance-sample-interval-sec", type=float, default=2.0)
+    parser.add_argument(
+        "--minimum-available-memory-mib",
+        type=float,
+        default=24576.0,
+        help="Stop before available system memory falls below this many MiB.",
+    )
+    parser.add_argument(
+        "--estimated-engine-memory-mib",
+        type=float,
+        default=1400.0,
+        help="Conservative per-engine memory estimate used by the startup capacity check.",
+    )
     parser.add_argument("--no-native-alpha-zero", dest="native_alpha_zero", action="store_false", help="Use the Python blend engine even for alpha=0.0.")
     parser.set_defaults(native_alpha_zero=True)
     parser.add_argument("--same-openings-for-all-pairs", action="store_true", help="Use the same opening sequence for every pair.")
@@ -1284,6 +1344,8 @@ def make_argparser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    global minimum_available_memory_mib
+
     args = make_argparser().parse_args()
     if args.processes_per_player < 2 or args.processes_per_player % 2 != 0:
         raise ValueError("--processes-per-player must be an even number >= 2")
@@ -1303,9 +1365,34 @@ def main() -> None:
         raise ValueError("--policy-inference-threads must be positive")
     if args.performance_sample_interval_sec <= 0.0:
         raise ValueError("--performance-sample-interval-sec must be positive")
+    if args.minimum_available_memory_mib <= 0.0:
+        raise ValueError("--minimum-available-memory-mib must be positive")
+    if args.estimated_engine_memory_mib <= 0.0:
+        raise ValueError("--estimated-engine-memory-mib must be positive")
+    minimum_available_memory_mib = args.minimum_available_memory_mib
+    low_memory_event.clear()
 
     if args.hint_cache_db is None:
         args.hint_cache_db = args.output_dir / "egaroucid_hint_cache.sqlite3"
+
+    engine_player_count = len(parse_int_list(args.baseline_levels)) + len(parse_float_list(args.blend_params))
+    estimated_max_engine_processes = engine_player_count * args.processes_per_player
+    estimated_max_engine_memory_mib = estimated_max_engine_processes * args.estimated_engine_memory_mib
+    startup_available_memory_mib = available_memory_mib()
+    if startup_available_memory_mib is None:
+        raise RuntimeError("psutil is required for the available-memory safety check")
+    if (
+        estimated_max_engine_memory_mib + args.minimum_available_memory_mib
+        > startup_available_memory_mib
+    ):
+        raise MemoryError(
+            "memory capacity check failed: "
+            f"up to {estimated_max_engine_processes} engine processes are estimated to use "
+            f"{estimated_max_engine_memory_mib:.0f} MiB, while only "
+            f"{startup_available_memory_mib:.0f} MiB is available and "
+            f"{args.minimum_available_memory_mib:.0f} MiB must remain free; "
+            "reduce --processes-per-player"
+        )
 
     openings = read_openings(args.openings)
     if not args.no_shuffle_openings:
@@ -1359,6 +1446,11 @@ def main() -> None:
     print("policy_batch_wait_ms", args.policy_batch_wait_ms)
     print("performance_monitor", not args.no_performance_monitor)
     print("performance_sample_interval_sec", args.performance_sample_interval_sec)
+    print("startup_available_memory_mib", f"{startup_available_memory_mib:.0f}" if startup_available_memory_mib is not None else "-")
+    print("minimum_available_memory_mib", args.minimum_available_memory_mib)
+    print("estimated_max_engine_processes", estimated_max_engine_processes)
+    print("estimated_engine_memory_mib", args.estimated_engine_memory_mib)
+    print("estimated_max_engine_memory_mib", estimated_max_engine_memory_mib)
     print("same_openings_for_all_pairs", args.same_openings_for_all_pairs)
     print("close_processes_after_game", args.close_processes_after_game)
     print("task_retries", args.task_retries)
@@ -1400,6 +1492,11 @@ def main() -> None:
                     "policy_batch_wait_ms": args.policy_batch_wait_ms,
                     "performance_monitor": not args.no_performance_monitor,
                     "performance_sample_interval_sec": args.performance_sample_interval_sec,
+                    "startup_available_memory_mib": startup_available_memory_mib,
+                    "minimum_available_memory_mib": args.minimum_available_memory_mib,
+                    "estimated_max_engine_processes": estimated_max_engine_processes,
+                    "estimated_engine_memory_mib": args.estimated_engine_memory_mib,
+                    "estimated_max_engine_memory_mib": estimated_max_engine_memory_mib,
                     "same_openings_for_all_pairs": args.same_openings_for_all_pairs,
                     "close_processes_after_game": args.close_processes_after_game,
                     "task_retries": args.task_retries,
@@ -1424,7 +1521,11 @@ def main() -> None:
     start_time = time.time()
     performance_monitor = None
     if not args.no_performance_monitor:
-        performance_monitor = PerformanceMonitor(args.output_dir, args.performance_sample_interval_sec)
+        performance_monitor = PerformanceMonitor(
+            args.output_dir,
+            args.performance_sample_interval_sec,
+            args.minimum_available_memory_mib,
+        )
         performance_monitor.start()
     stop_reason = "finished"
     executor = ThreadPoolExecutor(max_workers=args.parallel_matches)
@@ -1436,10 +1537,21 @@ def main() -> None:
             task = next(iterator)
             futures[executor.submit(play_task, players, task)] = task
         while futures:
-            for future in as_completed(list(futures.keys())):
+            if low_memory_event.is_set():
+                stop_reason = "low_available_memory"
+                print("Stopping: available memory reached the configured lower limit.", flush=True)
+                break
+            done, _ = wait(tuple(futures), timeout=1.0, return_when=FIRST_COMPLETED)
+            if not done:
+                continue
+            for future in done:
                 task = futures.pop(future)
                 try:
                     results = future.result()
+                except AvailableMemoryLimitError as exc:
+                    stop_reason = "low_available_memory"
+                    print(f"Stopping: {exc}", flush=True)
+                    break
                 except Exception as exc:
                     attempt = retry_counts.get(task.task_id, 0) + 1
                     append_task_failure(args.output_dir, task, attempt, exc)
@@ -1465,6 +1577,8 @@ def main() -> None:
                         pass
                     else:
                         futures[executor.submit(play_task, players, next_task)] = next_task
+                break
+            if stop_reason != "finished":
                 break
     finally:
         shutdown_all_processes()
