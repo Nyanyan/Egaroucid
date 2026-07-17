@@ -34,6 +34,7 @@ class BlendGtpEngine:
     def __init__(self, args: argparse.Namespace):
         self.args = args
         self.state = BoardState.initial()
+        self.last_move_stone_loss = None
         self.blender = BlendedPolicy(
             weights=args.weights,
             egaroucid_exe=args.egaroucid_exe,
@@ -51,9 +52,11 @@ class BlendGtpEngine:
 
     def clear_board(self) -> str:
         self.state = BoardState.initial()
+        self.last_move_stone_loss = None
         return ""
 
     def play(self, color: str, move: str) -> str:
+        self.last_move_stone_loss = None
         side = parse_color(color)
         move = move.strip().lower()
         if move == "pass":
@@ -63,13 +66,21 @@ class BlendGtpEngine:
         return ""
 
     def genmove(self, color: str) -> str:
+        self.last_move_stone_loss = None
         side = parse_color(color)
         legal = self.state.legal_policies(side)
         if not legal:
             self.state.side = side ^ 1
             return "pass"
-        blended, _, _, _, _ = self.blender.blended_distribution(self.state, side, self.args.blend_param)
+        blended, _, _, hint_scores, _ = self.blender.blended_distribution(self.state, side, self.args.blend_param)
         best_policy = max(legal, key=lambda policy: float(blended[policy]))
+        if self.args.measure_move_stone_loss:
+            if not hint_scores:
+                hint_scores, _ = self.blender.cached_hint_scores(self.state, side)
+            scored_legal = [policy for policy in legal if policy in hint_scores]
+            if best_policy not in hint_scores or not scored_legal:
+                raise RuntimeError("Egaroucid level evaluation did not include the selected legal move")
+            self.last_move_stone_loss = max(hint_scores[policy] for policy in scored_legal) - hint_scores[best_policy]
         self.state.apply_move(side, best_policy)
         return policy_to_coord(best_policy)
 
@@ -79,7 +90,13 @@ class BlendGtpEngine:
         board = args[0]
         side = parse_color(args[1])
         self.state = BoardState.from_board_string(board, side)
+        self.last_move_stone_loss = None
         return ""
+
+    def get_last_move_stone_loss(self) -> str:
+        if self.last_move_stone_loss is None:
+            raise RuntimeError("no measured move is available")
+        return f"{self.last_move_stone_loss:.10g}"
 
     def dispatch(self, command: str, args: list[str]) -> tuple[bool, str]:
         command = command.lower()
@@ -103,6 +120,7 @@ class BlendGtpEngine:
                     "time_left",
                     "play",
                     "genmove",
+                    "last_move_stone_loss",
                     "setboard",
                     "quit",
                 ]
@@ -123,6 +141,8 @@ class BlendGtpEngine:
             if len(args) != 1:
                 raise ValueError("genmove requires '<color>'")
             return True, self.genmove(args[0])
+        if command == "last_move_stone_loss":
+            return True, self.get_last_move_stone_loss()
         if command == "setboard":
             return True, self.setboard(args)
         if command == "quit":
@@ -174,6 +194,11 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--policy-server-port", type=int, default=None)
     parser.add_argument("--policy-server-timeout-sec", type=float, default=30.0)
     parser.add_argument("--score-temperature", type=float, default=1.0)
+    parser.add_argument(
+        "--measure-move-stone-loss",
+        action="store_true",
+        help="Measure the selected move against the best Egaroucid move in estimated disc-difference units.",
+    )
     parser.add_argument("--no-legal-mask-policy", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("-l", "--level", default=None, help="Accepted for compatibility; ignored.")

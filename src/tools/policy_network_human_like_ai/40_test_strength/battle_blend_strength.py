@@ -3,6 +3,7 @@
 Round-robin strength test for Egaroucid 7.8.1 levels and blended policy engines.
 
 Default settings follow the research request:
+  - uniformly random legal-move player
   - Egaroucid levels: 1, 3, 5, 10
   - alpha: 0.0, 0.2, ..., 1.0
   - XOT color-swapped match sets per pair: 100
@@ -11,6 +12,10 @@ Default settings follow the research request:
 Each task plays two color-swapped games from the same XOT opening. The requested
 games-per-pair value is counted as paired match sets. One paired match set
 contains two actual games and is scored by the average disc difference.
+
+For alpha-series players, generated moves after the XOT opening are also
+measured against alpha=0.0. The per-move loss is the best legal Egaroucid level
+21 score minus the level 21 score of the selected move.
 """
 
 from __future__ import annotations
@@ -231,6 +236,9 @@ class Player:
         processes_per_player: int,
         close_after_game: bool,
         setboard_before_genmove: bool,
+        alpha: Optional[float] = None,
+        random_seed: Optional[int] = None,
+        reports_move_stone_loss: bool = False,
     ):
         self.name = name
         self.command = command
@@ -241,9 +249,14 @@ class Player:
         self.results: List[List[int]] = []
         self.disc_diff: List[float] = []
         self.n_played: List[int] = []
+        self.move_stone_loss: List[float] = []
+        self.move_stone_loss_count: List[int] = []
         self.processes_per_player = processes_per_player
         self.close_after_game = close_after_game
         self.setboard_before_genmove = setboard_before_genmove
+        self.alpha = alpha
+        self.random_seed = random_seed
+        self.reports_move_stone_loss = reports_move_stone_loss
 
     def start_processes(self) -> None:
         # Processes are started lazily by acquire_process_idx(). Prestarting one
@@ -252,6 +265,8 @@ class Player:
         return
 
     def try_start_process_for_color(self, color_pool: int) -> Optional[int]:
+        if self.random_seed is not None:
+            raise RuntimeError("the internal random player does not use an engine process")
         half = self.processes_per_player // 2
         with self.lock:
             if self.proc_color_started[color_pool] >= half:
@@ -485,6 +500,15 @@ def parse_gtp_move(line: str) -> str:
     return line.split()[-1].lower()
 
 
+def parse_gtp_float(line: str) -> float:
+    line = line.strip()
+    if line.startswith("?"):
+        raise RuntimeError(f"engine error: {line}")
+    if line.startswith("="):
+        line = line[1:].strip()
+    return float(line)
+
+
 def count_bits(x: int) -> int:
     return bin(int(x)).count("1")
 
@@ -524,8 +548,18 @@ def generate_move(
     color_pool: int,
     state: BoardState,
     side: int,
-) -> str:
+    random_generator: Optional[random.Random] = None,
+) -> Tuple[str, Optional[float]]:
     player = players[player_idx]
+    if player.random_seed is not None:
+        if random_generator is None:
+            raise RuntimeError("the internal random player requires a game-local random generator")
+        legal = state.legal_policies(side)
+        if not legal:
+            return "pass", None
+        policy = random_generator.choice(legal)
+        return policy_to_coord(policy), None
+
     proc_idx = held_proc
     borrowed_for_move = False
     if player.setboard_before_genmove:
@@ -537,13 +571,28 @@ def generate_move(
         if player.setboard_before_genmove:
             send_command(players, player_idx, proc_idx, f"setboard {state.to_egaroucid_board(side)}\n")
         line = send_command(players, player_idx, proc_idx, f"genmove {side_to_gtp_color(side)}\n")
-        return parse_gtp_move(line)
+        move = parse_gtp_move(line)
+        move_stone_loss = None
+        if move != "pass":
+            if player.reports_move_stone_loss:
+                loss_line = send_command(players, player_idx, proc_idx, "last_move_stone_loss\n")
+                move_stone_loss = parse_gtp_float(loss_line)
+            elif player.alpha is not None and abs(player.alpha) < 1.0e-12:
+                move_stone_loss = 0.0
+        return move, move_stone_loss
     finally:
         if borrowed_for_move:
             release_process_idx(player, color_pool, proc_idx)
 
 
-def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: str, p0_is_black: bool) -> dict:
+def play_single_game(
+    players: List[Player],
+    p0_idx: int,
+    p1_idx: int,
+    opening: str,
+    p0_is_black: bool,
+    task_id: int,
+) -> dict:
     black_idx = p0_idx if p0_is_black else p1_idx
     white_idx = p1_idx if p0_is_black else p0_idx
     p0_color_pool = 0 if p0_is_black else 1
@@ -552,11 +601,30 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
     p1_proc = None
     state = BoardState.initial()
     transcript = ""
+    alpha_move_stone_loss = {}
+    random_generators = {
+        player_idx: random.Random(f"{players[player_idx].random_seed}:{task_id}:{int(p0_is_black)}:{player_idx}")
+        for player_idx in (p0_idx, p1_idx)
+        if players[player_idx].random_seed is not None
+    }
+
+    def record_move_stone_loss(player_idx: int, loss: Optional[float]) -> None:
+        if players[player_idx].alpha is None:
+            return
+        if loss is None:
+            raise RuntimeError(f"missing move stone loss for {players[player_idx].name}")
+        row = alpha_move_stone_loss.setdefault(
+            str(player_idx),
+            {"moves": 0, "total_stone_loss": 0.0},
+        )
+        row["moves"] += 1
+        row["total_stone_loss"] += float(loss)
+
     try:
-        if not players[p0_idx].setboard_before_genmove:
+        if not players[p0_idx].setboard_before_genmove and players[p0_idx].random_seed is None:
             p0_proc = acquire_process_idx(players[p0_idx], p0_color_pool)
             send_command(players, p0_idx, p0_proc, "clear_board\n")
-        if not players[p1_idx].setboard_before_genmove:
+        if not players[p1_idx].setboard_before_genmove and players[p1_idx].random_seed is None:
             p1_proc = acquire_process_idx(players[p1_idx], p1_color_pool)
             send_command(players, p1_idx, p1_proc, "clear_board\n")
 
@@ -584,12 +652,21 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
             watcher_proc = p0_proc if watcher == p0_idx else p1_proc
             mover_color_pool = p0_color_pool if mover == p0_idx else p1_color_pool
             side = state.side
-            move = generate_move(players, mover, mover_proc, mover_color_pool, state, side)
+            move, move_stone_loss = generate_move(
+                players,
+                mover,
+                mover_proc,
+                mover_color_pool,
+                state,
+                side,
+                random_generator=random_generators.get(mover),
+            )
             if move == "pass":
                 state.side ^= 1
                 if watcher_proc is not None:
                     send_command(players, watcher, watcher_proc, f"play {side_to_gtp_color(side)} pass\n")
                 continue
+            record_move_stone_loss(mover, move_stone_loss)
             state.apply_move(side, coord_to_policy(move))
             transcript += move
             if watcher_proc is not None:
@@ -605,6 +682,7 @@ def play_single_game(players: List[Player], p0_idx: int, p1_idx: int, opening: s
             "black_stones": count_bits(state.black),
             "white_stones": count_bits(state.white),
             "transcript": transcript,
+            "alpha_move_stone_loss": alpha_move_stone_loss,
         }
     finally:
         if p0_proc is not None:
@@ -631,14 +709,20 @@ def update_result(players: List[Player], result: dict) -> None:
         players[p1_idx].disc_diff[p0_idx] -= diff
         players[p0_idx].n_played[p1_idx] += 1
         players[p1_idx].n_played[p0_idx] += 1
+        for game in result.get("color_games", []):
+            for player_idx_text, metric in game.get("alpha_move_stone_loss", {}).items():
+                player_idx = int(player_idx_text)
+                opponent_idx = p1_idx if player_idx == p0_idx else p0_idx
+                players[player_idx].move_stone_loss[opponent_idx] += float(metric["total_stone_loss"])
+                players[player_idx].move_stone_loss_count[opponent_idx] += int(metric["moves"])
 
 
 def play_task(players: List[Player], task: Task) -> List[dict]:
     if task.actual_games != 2:
         raise ValueError("each XOT match set must contain exactly two color-swapped games")
     with ThreadPoolExecutor(max_workers=2) as executor:
-        black_future = executor.submit(play_single_game, players, task.p0_idx, task.p1_idx, task.opening, True)
-        white_future = executor.submit(play_single_game, players, task.p0_idx, task.p1_idx, task.opening, False)
+        black_future = executor.submit(play_single_game, players, task.p0_idx, task.p1_idx, task.opening, True, task.task_id)
+        white_future = executor.submit(play_single_game, players, task.p0_idx, task.p1_idx, task.opening, False, task.task_id)
         black_result = black_future.result()
         white_result = white_future.result()
     average_disc_diff = (float(black_result["p0_disc_diff"]) + float(white_result["p0_disc_diff"])) / 2.0
@@ -720,6 +804,20 @@ def build_matrix_report(players: List[Player], target_per_pair: int) -> str:
         cells.append("-" if estimated is None else f"{estimated[0]:.1f}+-{estimated[1]:.1f}")
         lines.append("\t".join(cells))
 
+    lines.append("Average Estimated Stone Loss per Move vs alpha=0.0 (Egaroucid level 21)")
+    lines.append("\t".join(["vs >"] + names + ["all"]))
+    for i, player in enumerate(players):
+        cells = [player.name]
+        for j in range(len(players)):
+            if i == j or player.alpha is None:
+                cells.append("-")
+                continue
+            count = player.move_stone_loss_count[j]
+            cells.append(f"{player.move_stone_loss[j] / count:.4f}" if count else "-")
+        total_count = sum(player.move_stone_loss_count)
+        cells.append(f"{sum(player.move_stone_loss) / total_count:.4f}" if total_count else "-")
+        lines.append("\t".join(cells))
+
     lines.append("Games Progress (played/target)")
     lines.append("\t".join(["vs >"] + names + ["all"]))
     target_per_player = target_per_pair * (len(players) - 1)
@@ -778,6 +876,21 @@ def write_matrix_tables(players: List[Player], output_dir: Path, target_per_pair
             row.extend([elo, ci])
             writer.writerow(row)
 
+    with (output_dir / "strength_move_stone_loss_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(["player"] + names + ["all"])
+        for i, player in enumerate(players):
+            row = [player.name]
+            for j in range(len(players)):
+                if i == j or player.alpha is None:
+                    row.append("-")
+                    continue
+                count = player.move_stone_loss_count[j]
+                row.append(player.move_stone_loss[j] / count if count else "-")
+            total_count = sum(player.move_stone_loss_count)
+            row.append(sum(player.move_stone_loss) / total_count if total_count else "-")
+            writer.writerow(row)
+
     with (output_dir / "strength_progress_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(["player"] + names + ["all"])
@@ -816,6 +929,7 @@ def write_outputs(
             total_n += n
             total_disc += player.disc_diff[j]
         elo, ci = ratings.get(player.name, (None, None))
+        total_move_stone_loss_count = sum(player.move_stone_loss_count)
         summary_rows.append(
             {
                 "name": player.name,
@@ -826,6 +940,12 @@ def write_outputs(
                 "loss": total_l,
                 "win_rate": (total_w + 0.5 * total_d) / total_n if total_n else 0.0,
                 "avg_disc_diff": total_disc / total_n if total_n else 0.0,
+                "measured_moves": total_move_stone_loss_count if player.alpha is not None else None,
+                "avg_stone_loss_per_move_vs_alpha0": (
+                    sum(player.move_stone_loss) / total_move_stone_loss_count
+                    if player.alpha is not None and total_move_stone_loss_count
+                    else None
+                ),
                 "elo": elo,
                 "elo_ci95": ci,
             }
@@ -842,6 +962,7 @@ def write_outputs(
                 continue
             w, d, l = player.results[j]
             n = player.n_played[j]
+            measured_moves = player.move_stone_loss_count[j]
             pair_rows.append(
                 {
                     "player": player.name,
@@ -853,6 +974,12 @@ def write_outputs(
                     "loss": l,
                     "win_rate": (w + 0.5 * d) / n if n else 0.0,
                     "avg_disc_diff": player.disc_diff[j] / n if n else 0.0,
+                    "measured_moves": measured_moves if player.alpha is not None else None,
+                    "avg_stone_loss_per_move_vs_alpha0": (
+                        player.move_stone_loss[j] / measured_moves
+                        if player.alpha is not None and measured_moves
+                        else None
+                    ),
                 }
             )
     with (output_dir / "strength_pair_results.csv").open("w", newline="") as f:
@@ -867,6 +994,13 @@ def write_outputs(
         "completed_actual_games": completed_match_sets * 2,
         "total_actual_games": total_match_sets * 2,
         "target_match_sets_per_pair": target_per_pair,
+        "move_stone_loss_metric": {
+            "players": "alpha series only",
+            "reference": "alpha=0.0 (Egaroucid level 21)",
+            "formula": "best legal move score at level 21 minus selected move score at level 21",
+            "unit": "estimated final disc difference",
+            "xot_opening_moves_included": False,
+        },
         "players": [
             {
                 "name": player.name,
@@ -932,7 +1066,8 @@ def build_players(args: argparse.Namespace) -> List[Player]:
 
     blend_script = (HUMAN_LIKE_DIR / "30_blend_with_egaroucid" / "blend_gtp_engine.py").resolve()
     for alpha in parse_float_list(args.blend_params):
-        if args.native_alpha_zero and abs(alpha) < 1.0e-12:
+        native_alpha_zero = args.native_alpha_zero and abs(alpha) < 1.0e-12
+        if native_alpha_zero:
             command = [
                 str(egaroucid_exe),
                 "-gtp",
@@ -961,10 +1096,11 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                 str(args.egaroucid_timeout_sec),
                 "--score-temperature",
                 str(args.score_temperature),
+                "--measure-move-stone-loss",
             ]
             if not args.no_blend_cache:
                 command.append("--cache-egaroucid")
-            if args.hint_cache_db is not None and alpha < 1.0:
+            if args.hint_cache_db is not None:
                 command.extend(["--hint-cache-db", str(Path(args.hint_cache_db).resolve())])
             if args.policy_server_port is not None:
                 command.extend(
@@ -983,7 +1119,20 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                 command,
                 args.processes_per_player,
                 args.close_processes_after_game,
-                not (args.native_alpha_zero and abs(alpha) < 1.0e-12),
+                not native_alpha_zero,
+                alpha=alpha,
+                reports_move_stone_loss=not native_alpha_zero,
+            )
+        )
+    if not args.no_random_player:
+        players.append(
+            Player(
+                "random_legal",
+                ["internal:uniform_random_legal", "--seed", str(args.random_seed)],
+                args.processes_per_player,
+                args.close_processes_after_game,
+                False,
+                random_seed=args.random_seed,
             )
         )
     n = len(players)
@@ -991,6 +1140,8 @@ def build_players(args: argparse.Namespace) -> List[Player]:
         player.results = [[0, 0, 0] for _ in range(n)]
         player.disc_diff = [0.0 for _ in range(n)]
         player.n_played = [0 for _ in range(n)]
+        player.move_stone_loss = [0.0 for _ in range(n)]
+        player.move_stone_loss_count = [0 for _ in range(n)]
     return players
 
 
@@ -1083,6 +1234,8 @@ def load_completed_task_results(players: List[Player], output_dir: Path) -> Tupl
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run round-robin strength tests for blended policy engines.")
+    parser.add_argument("--no-random-player", action="store_true", help="Exclude the uniformly random legal-move player.")
+    parser.add_argument("--random-seed", type=int, default=613, help="Seed for the uniformly random legal-move player.")
     parser.add_argument("--baseline-levels", default="1,3,5,10")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
     parser.add_argument("--games-per-pair", type=int, default=100, help="Number of XOT color-swapped match sets per pair. One set contains two actual games.")
@@ -1102,7 +1255,12 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=57, help="Seed used to shuffle XOT openings and pair order.")
     parser.add_argument("--no-shuffle-openings", action="store_true", help="Keep the XOT opening file order instead of shuffling it.")
     parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
-    parser.add_argument("--hint-cache-db", type=Path, default=None, help="Shared SQLite cache for Egaroucid hint scores. Defaults to output_dir/egaroucid_hint_cache.sqlite3 when blend cache is enabled.")
+    parser.add_argument(
+        "--hint-cache-db",
+        type=Path,
+        default=None,
+        help="Shared SQLite cache for Egaroucid hint scores and alpha-series move-loss measurements. Defaults to output_dir/egaroucid_hint_cache.sqlite3.",
+    )
     parser.add_argument("--no-policy-batch-server", action="store_true", help="Run one local policy model in each blended GTP process.")
     parser.add_argument("--policy-model", type=Path, default=None, help="Keras model used by the shared policy inference server.")
     parser.add_argument("--policy-backend", choices=("auto", "tensorflow", "numpy"), default="auto")
@@ -1146,7 +1304,7 @@ def main() -> None:
     if args.performance_sample_interval_sec <= 0.0:
         raise ValueError("--performance-sample-interval-sec must be positive")
 
-    if args.hint_cache_db is None and not args.no_blend_cache:
+    if args.hint_cache_db is None:
         args.hint_cache_db = args.output_dir / "egaroucid_hint_cache.sqlite3"
 
     openings = read_openings(args.openings)
@@ -1189,6 +1347,8 @@ def main() -> None:
     print("xot_openings", display_path(args.openings))
     print("shuffle_xot_openings", not args.no_shuffle_openings)
     print("seed", args.seed)
+    print("random_legal_player", not args.no_random_player)
+    print("random_legal_seed", args.random_seed if not args.no_random_player else "-")
     print("blend_cache_egaroucid", not args.no_blend_cache)
     print("shared_hint_cache_db", display_path(args.hint_cache_db) if args.hint_cache_db is not None else "-")
     print("native_alpha_zero", args.native_alpha_zero)
@@ -1228,6 +1388,8 @@ def main() -> None:
                     "xot_openings": display_path(args.openings),
                     "shuffle_xot_openings": not args.no_shuffle_openings,
                     "seed": args.seed,
+                    "random_legal_player": not args.no_random_player,
+                    "random_legal_seed": args.random_seed if not args.no_random_player else None,
                     "blend_cache_egaroucid": not args.no_blend_cache,
                     "shared_hint_cache_db": display_path(args.hint_cache_db) if args.hint_cache_db is not None else None,
                     "native_alpha_zero": args.native_alpha_zero,

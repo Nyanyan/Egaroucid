@@ -61,6 +61,8 @@ def make_command(args: argparse.Namespace) -> List[str]:
     cmd = [
         sys.executable,
         str(SCRIPT_DIR / "battle_blend_strength.py"),
+        "--random-seed",
+        str(args.random_seed),
         "--baseline-levels",
         args.baseline_levels,
         "--blend-params",
@@ -122,6 +124,8 @@ def make_command(args: argparse.Namespace) -> List[str]:
         cmd.extend(["--max-match-sets", str(args.max_match_sets)])
     if args.no_shuffle_openings:
         cmd.append("--no-shuffle-openings")
+    if args.no_random_player:
+        cmd.append("--no-random-player")
     if args.resume:
         cmd.append("--resume")
     if args.dry_run:
@@ -143,6 +147,8 @@ def make_command(args: argparse.Namespace) -> List[str]:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run or resume the full human-like policy strength study.")
+    parser.add_argument("--no-random-player", action="store_true")
+    parser.add_argument("--random-seed", type=int, default=613)
     parser.add_argument("--baseline-levels", default="1,3,5,10")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
     parser.add_argument("--games-per-pair", type=int, default=100)
