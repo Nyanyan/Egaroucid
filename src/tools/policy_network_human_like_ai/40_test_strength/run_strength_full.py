@@ -159,7 +159,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--random-seed", type=int, default=613)
     parser.add_argument("--baseline-levels", default="1,3,5,7,9,11,13,15,17,19")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
-    parser.add_argument("--games-per-pair", type=int, default=100)
+    parser.add_argument("--games-per-pair", type=int, default=50)
     parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None)
     parser.add_argument("--parallel-matches", type=int, default=16)
     parser.add_argument("--processes-per-player", type=int, default=2)

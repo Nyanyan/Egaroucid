@@ -78,9 +78,8 @@ class BlendGtpEngine:
             if not hint_scores:
                 hint_scores, _ = self.blender.cached_hint_scores(self.state, side)
             scored_legal = [policy for policy in legal if policy in hint_scores]
-            if best_policy not in hint_scores or not scored_legal:
-                raise RuntimeError("Egaroucid level evaluation did not include the selected legal move")
-            self.last_move_stone_loss = max(hint_scores[policy] for policy in scored_legal) - hint_scores[best_policy]
+            if best_policy in hint_scores and scored_legal:
+                self.last_move_stone_loss = max(hint_scores[policy] for policy in scored_legal) - hint_scores[best_policy]
         self.state.apply_move(side, best_policy)
         return policy_to_coord(best_policy)
 
@@ -95,7 +94,7 @@ class BlendGtpEngine:
 
     def get_last_move_stone_loss(self) -> str:
         if self.last_move_stone_loss is None:
-            raise RuntimeError("no measured move is available")
+            return "unavailable"
         return f"{self.last_move_stone_loss:.10g}"
 
     def dispatch(self, command: str, args: list[str]) -> tuple[bool, str]:

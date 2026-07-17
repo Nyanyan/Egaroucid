@@ -293,6 +293,7 @@ class Player:
         self.n_played: List[int] = []
         self.move_stone_loss: List[float] = []
         self.move_stone_loss_count: List[int] = []
+        self.move_stone_loss_missing_count: List[int] = []
         self.processes_per_player = processes_per_player
         self.close_after_game = close_after_game
         self.setboard_before_genmove = setboard_before_genmove
@@ -558,6 +559,17 @@ def parse_gtp_float(line: str) -> float:
     return float(line)
 
 
+def parse_gtp_optional_float(line: str) -> Optional[float]:
+    line = line.strip()
+    if line.startswith("?"):
+        raise RuntimeError(f"engine error: {line}")
+    if line.startswith("="):
+        line = line[1:].strip()
+    if line.lower() == "unavailable":
+        return None
+    return float(line)
+
+
 def count_bits(x: int) -> int:
     return bin(int(x)).count("1")
 
@@ -625,7 +637,7 @@ def generate_move(
         if move != "pass":
             if player.reports_move_stone_loss:
                 loss_line = send_command(players, player_idx, proc_idx, "last_move_stone_loss\n")
-                move_stone_loss = parse_gtp_float(loss_line)
+                move_stone_loss = parse_gtp_optional_float(loss_line)
             elif player.alpha is not None and abs(player.alpha) < 1.0e-12:
                 move_stone_loss = 0.0
         return move, move_stone_loss
@@ -660,12 +672,13 @@ def play_single_game(
     def record_move_stone_loss(player_idx: int, loss: Optional[float]) -> None:
         if players[player_idx].alpha is None:
             return
-        if loss is None:
-            raise RuntimeError(f"missing move stone loss for {players[player_idx].name}")
         row = alpha_move_stone_loss.setdefault(
             str(player_idx),
-            {"moves": 0, "total_stone_loss": 0.0},
+            {"moves": 0, "missing_moves": 0, "total_stone_loss": 0.0},
         )
+        if loss is None:
+            row["missing_moves"] += 1
+            return
         row["moves"] += 1
         row["total_stone_loss"] += float(loss)
 
@@ -770,6 +783,7 @@ def update_result(players: List[Player], result: dict) -> None:
                 opponent_idx = p1_idx if player_idx == p0_idx else p0_idx
                 players[player_idx].move_stone_loss[opponent_idx] += float(metric["total_stone_loss"])
                 players[player_idx].move_stone_loss_count[opponent_idx] += int(metric["moves"])
+                players[player_idx].move_stone_loss_missing_count[opponent_idx] += int(metric.get("missing_moves", 0))
 
 
 def play_task(players: List[Player], task: Task) -> List[dict]:
@@ -873,6 +887,18 @@ def build_matrix_report(players: List[Player], target_per_pair: int) -> str:
         cells.append(f"{sum(player.move_stone_loss) / total_count:.4f}" if total_count else "-")
         lines.append("\t".join(cells))
 
+    lines.append("Unmeasured Stone-Loss Moves")
+    lines.append("\t".join(["vs >"] + names + ["all"]))
+    for i, player in enumerate(players):
+        cells = [player.name]
+        for j in range(len(players)):
+            if i == j or player.alpha is None:
+                cells.append("-")
+            else:
+                cells.append(str(player.move_stone_loss_missing_count[j]))
+        cells.append(str(sum(player.move_stone_loss_missing_count)) if player.alpha is not None else "-")
+        lines.append("\t".join(cells))
+
     lines.append("Games Progress (played/target)")
     lines.append("\t".join(["vs >"] + names + ["all"]))
     target_per_player = target_per_pair * (len(players) - 1)
@@ -946,6 +972,19 @@ def write_matrix_tables(players: List[Player], output_dir: Path, target_per_pair
             row.append(sum(player.move_stone_loss) / total_count if total_count else "-")
             writer.writerow(row)
 
+    with (output_dir / "strength_move_stone_loss_missing_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter="\t")
+        writer.writerow(["player"] + names + ["all"])
+        for i, player in enumerate(players):
+            row = [player.name]
+            for j in range(len(players)):
+                if i == j or player.alpha is None:
+                    row.append("-")
+                else:
+                    row.append(player.move_stone_loss_missing_count[j])
+            row.append(sum(player.move_stone_loss_missing_count) if player.alpha is not None else "-")
+            writer.writerow(row)
+
     with (output_dir / "strength_progress_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(["player"] + names + ["all"])
@@ -985,6 +1024,7 @@ def write_outputs(
             total_disc += player.disc_diff[j]
         elo, ci = ratings.get(player.name, (None, None))
         total_move_stone_loss_count = sum(player.move_stone_loss_count)
+        total_move_stone_loss_missing_count = sum(player.move_stone_loss_missing_count)
         summary_rows.append(
             {
                 "name": player.name,
@@ -996,6 +1036,7 @@ def write_outputs(
                 "win_rate": (total_w + 0.5 * total_d) / total_n if total_n else 0.0,
                 "avg_disc_diff": total_disc / total_n if total_n else 0.0,
                 "measured_moves": total_move_stone_loss_count if player.alpha is not None else None,
+                "unmeasured_moves": total_move_stone_loss_missing_count if player.alpha is not None else None,
                 "avg_stone_loss_per_move_vs_alpha0": (
                     sum(player.move_stone_loss) / total_move_stone_loss_count
                     if player.alpha is not None and total_move_stone_loss_count
@@ -1018,6 +1059,7 @@ def write_outputs(
             w, d, l = player.results[j]
             n = player.n_played[j]
             measured_moves = player.move_stone_loss_count[j]
+            unmeasured_moves = player.move_stone_loss_missing_count[j]
             pair_rows.append(
                 {
                     "player": player.name,
@@ -1030,6 +1072,7 @@ def write_outputs(
                     "win_rate": (w + 0.5 * d) / n if n else 0.0,
                     "avg_disc_diff": player.disc_diff[j] / n if n else 0.0,
                     "measured_moves": measured_moves if player.alpha is not None else None,
+                    "unmeasured_moves": unmeasured_moves if player.alpha is not None else None,
                     "avg_stone_loss_per_move_vs_alpha0": (
                         player.move_stone_loss[j] / measured_moves
                         if player.alpha is not None and measured_moves
@@ -1055,6 +1098,7 @@ def write_outputs(
             "formula": "best legal move score at level 21 minus selected move score at level 21",
             "unit": "estimated final disc difference",
             "xot_opening_moves_included": False,
+            "unmeasured_move_handling": "Counted separately when the level-21 hint output omits the selected legal move.",
         },
         "players": [
             {
@@ -1197,6 +1241,7 @@ def build_players(args: argparse.Namespace) -> List[Player]:
         player.n_played = [0 for _ in range(n)]
         player.move_stone_loss = [0.0 for _ in range(n)]
         player.move_stone_loss_count = [0 for _ in range(n)]
+        player.move_stone_loss_missing_count = [0 for _ in range(n)]
     return players
 
 
@@ -1293,7 +1338,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--random-seed", type=int, default=613, help="Seed for the uniformly random legal-move player.")
     parser.add_argument("--baseline-levels", default="1,3,5,7,9,11,13,15,17,19")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
-    parser.add_argument("--games-per-pair", type=int, default=100, help="Number of XOT color-swapped match sets per pair. One set contains two actual games.")
+    parser.add_argument("--games-per-pair", type=int, default=50, help="Number of XOT color-swapped match sets per pair. One set contains two actual games.")
     parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None, help="Optional benchmark cap in XOT match sets; default runs the full requested schedule.")
     parser.add_argument("--parallel-matches", type=int, default=16)
     parser.add_argument("--processes-per-player", type=int, default=2)
