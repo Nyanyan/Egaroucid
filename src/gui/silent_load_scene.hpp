@@ -773,7 +773,8 @@ public:
                 load_code = silent_load_future.get();
                 loaded = load_code == ERR_OK;
                 if (loaded) {
-                    apply_saved_window_settings(getData().settings, &getData().window_state);
+                    // Temporarily ignore saved window size and position at startup.
+                    apply_default_window_settings(&getData().window_state);
                 }
                 loading = false;
             }
