@@ -669,12 +669,18 @@ def play_single_game(
         row["total_stone_loss"] += float(loss)
 
     try:
+        process_requests = []
         if not players[p0_idx].setboard_before_genmove and players[p0_idx].random_seed is None:
-            p0_proc = acquire_process_idx(players[p0_idx], p0_color_pool)
-            send_command(players, p0_idx, p0_proc, "clear_board\n")
+            process_requests.append((p0_idx, p0_color_pool, 0))
         if not players[p1_idx].setboard_before_genmove and players[p1_idx].random_seed is None:
-            p1_proc = acquire_process_idx(players[p1_idx], p1_color_pool)
-            send_command(players, p1_idx, p1_proc, "clear_board\n")
+            process_requests.append((p1_idx, p1_color_pool, 1))
+        for player_idx, color_pool, owner in sorted(process_requests):
+            proc_idx = acquire_process_idx(players[player_idx], color_pool)
+            if owner == 0:
+                p0_proc = proc_idx
+            else:
+                p1_proc = proc_idx
+            send_command(players, player_idx, proc_idx, "clear_board\n")
 
         for i in range(0, len(opening), 2):
             if not state.legal_policies(state.side):
