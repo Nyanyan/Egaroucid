@@ -887,3 +887,86 @@ chunk 004 では game 終了ごとに engine を閉じることで、32 worker t
 大きく下げられました。ただし `hint 100` level-21 探索が支配的なので、wall-clock time は依然として
 大きいです。chunk 005 で 300秒 timeout でも足りない局面が出たため、chunk 006 以降の継続では
 600秒 timeout を使います。
+
+## WTHOR Direct Training With Shuffled Splits / WTHOR 直接学習と shuffle split
+
+English:
+
+The previous selected-data policy network was not trained directly on WTHOR.
+To measure the direct human-move agreement ceiling for this compact MLP family,
+the trainer was extended with `--wthor --split-mode shuffled`. This mode reads
+all WTHOR board-data position samples from
+`$EGAROUCID_DATA/train_data/board_data/records1`, shuffles them with seed `613`,
+and makes disjoint train / validation / test splits.
+
+The trainer also now reloads the checkpointed best Keras model before exporting
+the C++ binary weights and before writing split top-N agreement. This avoids
+exporting the final epoch when the best checkpoint is earlier.
+
+日本語:
+
+以前の selected-data policy network は WTHOR そのものを直接学習していませんでした。
+この軽量 MLP 系で人間着手一致率がどこまで出るかを見るため、
+`--wthor --split-mode shuffled` を追加しました。この mode は
+`$EGAROUCID_DATA/train_data/board_data/records1` の WTHOR board-data 局面
+サンプルを全て読み、seed `613` で shuffle して、train / validation / test に
+重複なしで分割します。
+
+また、C++ 用 binary weight の export と split top-N 評価の前に、checkpoint された
+best Keras model を読み戻すようにしました。これにより、best checkpoint が最終 epoch
+より前にある場合でも、誤って最終 epoch の重みを export しません。
+
+Split:
+
+分割:
+
+| split | position samples |
+| --- | ---: |
+| train | 6,428,225 |
+| validation | 803,528 |
+| test | 803,529 |
+| total | 8,035,282 |
+
+Commands:
+
+コマンド:
+
+```powershell
+python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_192x3.log --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_192x3_resource.json -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py --wthor --split-mode shuffled --configs 192x3 --epochs 20 --patience 5 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_192x3
+
+python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_256x4_e50_best.log --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_256x4_e50_best_resource.json -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py --wthor --split-mode shuffled --configs 256x4 --epochs 50 --patience 8 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_256x4_e50_best
+
+python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_384x4_e50.log --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_384x4_e50_resource.json -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py --wthor --split-mode shuffled --configs 384x4 --epochs 50 --patience 8 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_384x4_e50
+```
+
+Results:
+
+結果:
+
+| config | params | epochs | best epoch | val exact top-1 | test legal top-1 | test legal top-2 | test legal top-3 | test legal top-5 | elapsed sec | peak RSS MiB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 192x3 | 111,232 | 20 | 20 | 46.865% | 48.819% | 68.897% | 80.188% | 91.912% | 61.829 | 10,391.102 |
+| 256x4 | 246,848 | 50 | 48 | 52.771% | 53.649% | 74.009% | 84.653% | 94.477% | 134.777 | 10,415.266 |
+| 384x4 | 517,696 | 50 | 47 | 56.178% | 56.661% | 77.070% | 87.163% | 95.752% | 171.243 | 10,408.930 |
+
+For the best run here, `384x4`, the full test split top-N was:
+
+今回の最良 run である `384x4` の test split top-N:
+
+| top N | hits | position samples | accuracy |
+| ---: | ---: | ---: | ---: |
+| 1 | 455,287 | 803,529 | 56.661% |
+| 2 | 619,281 | 803,529 | 77.070% |
+| 3 | 700,377 | 803,529 | 87.163% |
+| 5 | 769,393 | 803,529 | 95.752% |
+| 10 | 802,314 | 803,529 | 99.849% |
+
+Generated artifacts:
+
+生成された成果物:
+
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_full_split_384x4_e50/best_model.h5`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_full_split_384x4_e50/best_policy_network_weights.bin`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_full_split_384x4_e50/w384_d4_a0.03/split_topn_accuracy.csv`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_full_split_384x4_e50.log`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_full_split_384x4_e50_resource.json`

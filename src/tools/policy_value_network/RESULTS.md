@@ -232,3 +232,63 @@ Top legal moves:
 | f3 | 0.275595 |
 | g5 | 0.188193 |
 | f4 | 0.160180 |
+
+## WTHOR Policy-Mask Correction / WTHOR policy mask 訂正
+
+English:
+
+The legacy WTHOR policy top-N evaluation used the input feature bit order
+`1 << 63..0` for the legal-move ranking mask. That is correct for the 128 input
+features, but policy output indices and board-data `policy` labels use
+`1 << policy`. The evaluator now uses a separate `POLICY_BIT_MASKS = 1 << 0..63`
+for policy ranking.
+
+日本語:
+
+旧 WTHOR policy top-N 評価では、合法手順位付け mask に入力特徴量用の
+`1 << 63..0` のビット順を使っていました。この順序は 128 入力特徴量には正しいですが、
+policy 出力 index と board-data の `policy` ラベルは `1 << policy` を使います。
+そのため、評価器では policy 順位付け用に `POLICY_BIT_MASKS = 1 << 0..63` を分けて
+使うように修正しました。
+
+Command:
+
+コマンド:
+
+```powershell
+python src\tools\policy_value_network\evaluate_wthor_policy_value.py --model src\tools\policy_value_network\trained\final_issue613_pv128w01\best_model.h5 --weights src\tools\policy_value_network\trained\final_issue613_pv128w01\best_policy_value_network_weights.bin --batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_value_network\trained\wthor_policy_value_eval_fixed_mask --verbose
+```
+
+Corrected summary:
+
+修正後サマリ:
+
+- Position samples / 局面サンプル数: 8,035,282
+- Invalid policy samples / 不正 policy サンプル: 0
+- Illegal-label samples / 非合法ラベルサンプル: 0
+- Value MAE / value MAE: 0.283610
+- Disc MAE / 石差 MAE: 18.151
+- Sign accuracy / 勝敗符号一致率: 59.387%
+
+Corrected policy top-N accuracy:
+
+修正後 policy top-N 一致率:
+
+| top N | hits | position samples | accuracy |
+| ---: | ---: | ---: | ---: |
+| 1 | 2,006,100 | 8,035,282 | 24.966% |
+| 2 | 3,326,711 | 8,035,282 | 41.401% |
+| 3 | 4,406,685 | 8,035,282 | 54.842% |
+| 4 | 5,429,844 | 8,035,282 | 67.575% |
+| 5 | 6,072,619 | 8,035,282 | 75.574% |
+| 8 | 7,385,708 | 8,035,282 | 91.916% |
+| 10 | 7,797,831 | 8,035,282 | 97.045% |
+| 16 | 8,032,503 | 8,035,282 | 99.965% |
+
+Generated corrected artifacts:
+
+生成された修正後成果物:
+
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval_fixed_mask/wthor_policy_value_evaluation.json`
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval_fixed_mask/wthor_policy_value_topn_accuracy.csv`
+- `src/tools/policy_value_network/trained/wthor_policy_value_eval_fixed_mask/wthor_policy_value_metrics.csv`

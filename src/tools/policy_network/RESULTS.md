@@ -89,7 +89,7 @@ The `trained/` directory is ignored by git.
 
 `trained/` ディレクトリは git 管理外です。
 
-## WTHOR Human-Game Evaluation / WTHOR 人間棋譜評価
+## WTHOR Human-Game Evaluation (Legacy Mask Order) / WTHOR 人間棋譜評価（旧マスク順）
 
 The evaluation used WTHOR human-game board data, stored in the current
 training-data tree under the `records1` directory. The network output was
@@ -150,6 +150,74 @@ Generated evaluation artifacts:
 - `src/tools/policy_network/trained/playerop_wthor_eval/wthor_topn_accuracy.csv`
 - `src/tools/policy_network/trained/playerop_wthor_eval/wthor_topn_accuracy_by_phase.csv`
 - `src/tools/policy_network/trained/playerop_wthor_eval/wthor_topn_accuracy.json`
+
+## WTHOR Human-Game Evaluation Correction / WTHOR 人間棋譜評価の訂正
+
+The legacy WTHOR evaluation above used the feature bit order, `1 << 63..0`, for
+the legal-move ranking mask. That order is correct for the 128 input features,
+but it is not correct for policy output indices. The policy label legality check
+uses `1 << policy`, so the legal-move ranking mask must use `1 << 0..63`.
+
+上の旧 WTHOR 評価では、合法手の順位付け mask に入力特徴量用の `1 << 63..0` の
+ビット順を使っていました。この順序は 128 入力特徴量には正しいですが、policy 出力
+index には正しくありません。policy ラベルの合法性確認は `1 << policy` を使うため、
+合法手順位付け mask は `1 << 0..63` を使う必要があります。
+
+After fixing only that mask order, the same model was re-evaluated on the
+current WTHOR board-data position samples.
+
+その mask 順序だけを修正し、同じモデルを現在の WTHOR board-data 局面サンプルで
+再評価しました。
+
+Command:
+
+コマンド:
+
+```powershell
+python src\tools\policy_network\evaluate_policy_topn.py --model src\tools\policy_network\trained\playerop_final_issue613_128x3\best_model.h5 --weights src\tools\policy_network\trained\playerop_final_issue613_128x3\best_policy_network_weights.bin --batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network\trained\playerop_wthor_eval_fixed_mask --verbose
+```
+
+Evaluation summary:
+
+評価サマリ:
+
+- Positions / 評価局面サンプル数: 8,035,282
+- Invalid policy samples / 不正 policy サンプル: 0
+- Illegal-label samples / 非合法ラベルサンプル: 0
+- Model / モデル: `src/tools/policy_network/trained/playerop_final_issue613_128x3/best_model.h5`
+
+Corrected overall top-N accuracy:
+
+修正後の全体 top-N 一致率:
+
+| top N | hits | positions | accuracy |
+| ---: | ---: | ---: | ---: |
+| 1 | 2,025,188 | 8,035,282 | 25.204% |
+| 2 | 3,368,466 | 8,035,282 | 41.921% |
+| 3 | 4,400,474 | 8,035,282 | 54.764% |
+| 4 | 5,469,388 | 8,035,282 | 68.067% |
+| 5 | 6,130,317 | 8,035,282 | 76.292% |
+| 8 | 7,385,063 | 8,035,282 | 91.908% |
+| 10 | 7,806,040 | 8,035,282 | 97.147% |
+| 16 | 8,033,542 | 8,035,282 | 99.978% |
+
+Corrected by phase:
+
+修正後の phase 別:
+
+| phase | positions | top-1 | top-3 | top-5 | top-10 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| opening 4-20 discs / 序盤 4-20 石 | 2,281,029 | 20.105% | 47.840% | 76.371% | 97.570% |
+| midgame 21-44 discs / 中盤 21-44 石 | 3,219,753 | 16.839% | 43.833% | 65.362% | 94.847% |
+| endgame 45-64 discs / 終盤 45-64 石 | 2,534,500 | 40.419% | 74.883% | 90.107% | 99.688% |
+
+Generated corrected evaluation artifacts:
+
+生成された修正後評価成果物:
+
+- `src/tools/policy_network/trained/playerop_wthor_eval_fixed_mask/wthor_topn_accuracy.csv`
+- `src/tools/policy_network/trained/playerop_wthor_eval_fixed_mask/wthor_topn_accuracy_by_phase.csv`
+- `src/tools/policy_network/trained/playerop_wthor_eval_fixed_mask/wthor_topn_accuracy.json`
 
 ## C++ Sample Checks / C++ サンプル確認
 

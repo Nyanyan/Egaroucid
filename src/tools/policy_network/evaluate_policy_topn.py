@@ -40,6 +40,7 @@ BOARD_DTYPE = np.dtype(
 assert BOARD_DTYPE.itemsize == BOARD_RECORD_SIZE
 
 BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, HW2)
+POLICY_BIT_MASKS = (np.uint64(1) << np.arange(0, HW2, dtype=np.uint64)).reshape(1, HW2)
 FULL = np.uint64(0xFFFFFFFFFFFFFFFF)
 NOT_FILE_A = np.uint64(0x7F7F7F7F7F7F7F7F)
 NOT_FILE_H = np.uint64(0xFEFEFEFEFEFEFEFE)
@@ -182,7 +183,7 @@ def records_to_features(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np
 
 
 def legal_bitboard_to_mask(legal: np.ndarray) -> np.ndarray:
-    return (legal.reshape(-1, 1) & BIT_MASKS) != 0
+    return (legal.reshape(-1, 1) & POLICY_BIT_MASKS) != 0
 
 
 def predict_batch(model, binary_network: Optional[BinaryPolicyNetwork], x: np.ndarray, batch_size: int) -> np.ndarray:

@@ -92,6 +92,44 @@ resume the full 120,000-game schedule.
 Generated model artifacts, raw logs, and evaluation outputs are intentionally
 ignored by git.
 
+## WTHOR Direct Training / WTHOR 直接学習
+
+English:
+
+Use `--wthor --split-mode shuffled` to train directly from the WTHOR board-data
+position samples under `$EGAROUCID_DATA/train_data/board_data/records1`. The
+trainer shuffles the full WTHOR position-sample set with `--seed`, makes
+disjoint train/validation/test splits, and writes legal-masked top-N agreement
+for each split.
+
+```powershell
+python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py `
+  --wthor `
+  --split-mode shuffled `
+  --configs 384x4 `
+  --epochs 50 `
+  --patience 8 `
+  --batch-size 8192 `
+  --eval-batch-size 65536 `
+  --predict-batch-size 8192 `
+  --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_384x4_e50
+```
+
+The default shuffled split ratios are 80% train, 10% validation, and 10% test.
+The binary weights exported for C++ are loaded from the checkpointed best Keras
+model before export.
+
+日本語:
+
+`--wthor --split-mode shuffled` を使うと、
+`$EGAROUCID_DATA/train_data/board_data/records1` の WTHOR board-data 局面
+サンプルを直接学習に使います。全 WTHOR 局面サンプルを `--seed` で shuffle し、
+train / validation / test を重複なしに分割して、各 split の合法手 mask 後 top-N
+一致率を保存します。
+
+既定の分割比は train 80%、validation 10%、test 10% です。C++ 用 binary weight は、
+checkpoint された best Keras model を読み戻してから export します。
+
 ## 日本語
 
 このディレクトリは、人間らしいAI実験用の軽量な Othello/Reversi policy network を学習します。

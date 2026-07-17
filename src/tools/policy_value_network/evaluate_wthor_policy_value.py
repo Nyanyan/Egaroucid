@@ -41,6 +41,7 @@ BOARD_DTYPE = np.dtype(
 assert BOARD_DTYPE.itemsize == BOARD_RECORD_SIZE
 
 BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, HW2)
+POLICY_BIT_MASKS = (np.uint64(1) << np.arange(0, HW2, dtype=np.uint64)).reshape(1, HW2)
 FULL = np.uint64(0xFFFFFFFFFFFFFFFF)
 FILE_A = np.uint64(0x8080808080808080)
 FILE_H = np.uint64(0x0101010101010101)
@@ -191,7 +192,7 @@ def records_to_features(records: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np
 
 
 def legal_bitboard_to_mask(legal: np.ndarray) -> np.ndarray:
-    return (legal.reshape(-1, 1) & BIT_MASKS) != 0
+    return (legal.reshape(-1, 1) & POLICY_BIT_MASKS) != 0
 
 
 def predict_batch(model, binary_network: Optional[BinaryPolicyValueNetwork], x: np.ndarray, batch_size: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -401,8 +402,8 @@ def evaluate(args: argparse.Namespace) -> dict:
         "dat_files": [str(p) for p in dat_files],
         "model_source": model_source,
         "positions": total_positions,
-        "invalid_policy_records": invalid_policy,
-        "illegal_label_records": illegal_label,
+        "invalid_policy_samples": invalid_policy,
+        "illegal_label_samples": illegal_label,
         "policy_topn": topn_rows,
         "policy_phase_topn": phase_rows,
         "value": value_summary,
@@ -446,8 +447,8 @@ def main() -> None:
     print("model_source", result["model_source"])
     print("board_data_dir", result["board_data_dir"])
     print("positions", result["positions"])
-    print("invalid_policy_records", result["invalid_policy_records"])
-    print("illegal_label_records", result["illegal_label_records"])
+    print("invalid_policy_samples", result["invalid_policy_samples"])
+    print("illegal_label_samples", result["illegal_label_samples"])
     for row in result["policy_topn"]:
         print(f"top-{row['top_n']:>2}: {row['accuracy'] * 100.0:.3f}% ({row['hits']}/{row['positions']})")
     value = result["value"]
