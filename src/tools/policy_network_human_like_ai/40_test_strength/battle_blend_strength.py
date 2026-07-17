@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import atexit
+from collections import deque
 import csv
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
@@ -1437,6 +1438,7 @@ def main() -> None:
         print("max_match_sets", args.max_match_sets)
     print("parallel_matches", args.parallel_matches)
     print("max_processes_per_player", args.processes_per_player)
+    print("max_concurrent_match_sets_per_engine_player", args.processes_per_player // 2)
     print("xot_openings", display_path(args.openings))
     print("shuffle_xot_openings", not args.no_shuffle_openings)
     print("seed", args.seed)
@@ -1483,6 +1485,7 @@ def main() -> None:
                     "max_match_sets": args.max_match_sets,
                     "parallel_matches": args.parallel_matches,
                     "max_processes_per_player": args.processes_per_player,
+                    "max_concurrent_match_sets_per_engine_player": args.processes_per_player // 2,
                     "xot_openings": display_path(args.openings),
                     "shuffle_xot_openings": not args.no_shuffle_openings,
                     "seed": args.seed,
@@ -1536,22 +1539,46 @@ def main() -> None:
     stop_reason = "finished"
     executor = ThreadPoolExecutor(max_workers=args.parallel_matches)
     retry_counts: Dict[int, int] = {}
-    try:
-        iterator = iter(tasks)
-        futures = {}
-        for _ in range(min(args.parallel_matches, len(tasks))):
-            task = next(iterator)
+    pending_tasks = deque(tasks)
+    active_task_counts = [0] * len(players)
+    task_capacities = [
+        args.parallel_matches if player.random_seed is not None else args.processes_per_player // 2
+        for player in players
+    ]
+    futures = {}
+
+    def submit_available_tasks() -> None:
+        scan_count = len(pending_tasks)
+        for _ in range(scan_count):
+            if len(futures) >= args.parallel_matches:
+                return
+            task = pending_tasks.popleft()
+            if (
+                active_task_counts[task.p0_idx] >= task_capacities[task.p0_idx]
+                or active_task_counts[task.p1_idx] >= task_capacities[task.p1_idx]
+            ):
+                pending_tasks.append(task)
+                continue
+            active_task_counts[task.p0_idx] += 1
+            active_task_counts[task.p1_idx] += 1
             futures[executor.submit(play_task, players, task)] = task
-        while futures:
+
+    try:
+        submit_available_tasks()
+        while futures or pending_tasks:
             if low_memory_event.is_set():
                 stop_reason = "low_available_memory"
                 print("Stopping: available memory reached the configured lower limit.", flush=True)
                 break
+            if not futures:
+                raise RuntimeError("no schedulable task remains despite pending work")
             done, _ = wait(tuple(futures), timeout=1.0, return_when=FIRST_COMPLETED)
             if not done:
                 continue
             for future in done:
                 task = futures.pop(future)
+                active_task_counts[task.p0_idx] -= 1
+                active_task_counts[task.p1_idx] -= 1
                 try:
                     results = future.result()
                 except AvailableMemoryLimitError as exc:
@@ -1564,7 +1591,7 @@ def main() -> None:
                     if attempt <= args.task_retries:
                         retry_counts[task.task_id] = attempt
                         print(f"retry_task {task.task_id} attempt {attempt}/{args.task_retries}", flush=True)
-                        futures[executor.submit(play_task, players, task)] = task
+                        pending_tasks.appendleft(task)
                     else:
                         write_outputs(players, args.output_dir, completed_match_sets, total_match_sets, args.games_per_pair)
                         raise
@@ -1576,16 +1603,10 @@ def main() -> None:
                     write_outputs(players, args.output_dir, completed_match_sets, total_match_sets, args.games_per_pair)
                 if args.time_limit_sec is not None and time.time() - start_time >= args.time_limit_sec:
                     stop_reason = "time_limit"
-                if stop_reason == "finished":
-                    try:
-                        next_task = next(iterator)
-                    except StopIteration:
-                        pass
-                    else:
-                        futures[executor.submit(play_task, players, next_task)] = next_task
                 break
             if stop_reason != "finished":
                 break
+            submit_available_tasks()
     finally:
         shutdown_all_processes()
         executor.shutdown(wait=True, cancel_futures=True)
