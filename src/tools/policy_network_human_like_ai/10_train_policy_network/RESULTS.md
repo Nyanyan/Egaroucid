@@ -1,924 +1,21 @@
-# Training Results
+# WTHOR Policy Network Training Results
 
 Related issue: #613
 
+Date: 2026-07-17
+
 ## English
-
-### Terminology
-
-In this experiment, `games` means complete game transcripts. The generated
-training positions are called `position_samples`. Existing directory names such
-as `records0` and `records1` are kept only as dataset paths.
 
 ### Dataset
 
-- Source: `train_data/transcript_release/0002`
-- Selection: 1,000,000 games, seed `613`
-- Converted games: 1,000,000 valid, 0 invalid
-- Generated `position_samples`: 26,384,206
-- Conversion resource: 179.371 sec, peak RSS 14.238 MiB
+The source data was the expanded WTHOR board data at:
 
-The number of `position_samples` is larger than the number of games because one
-game contributes many move positions after the random opening segment.
+```text
+$EGAROUCID_DATA/train_data/board_data/records1
+```
 
-### Training Search
-
-All runs used 5,000,000 train `position_samples`, 500,000 validation
-`position_samples`, batch size 8192, 20 epochs, patience 5, TensorFlow/Keras.
-
-| Config | Params | Val top-1 | Val top-3 | Val top-5 | Time sec | Peak RSS MiB |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 64x3 | 20,736 | 0.297304 | 0.584340 | 0.742064 | 33.480 | 7751.410 |
-| 96x3 | 37,216 | 0.308512 | 0.604394 | 0.763330 | 33.417 | 7787.094 |
-| 128x3 | 57,792 | 0.326106 | 0.626642 | 0.783058 | 33.446 | 7782.047 |
-| 96x4 | 46,528 | 0.313866 | 0.610754 | 0.767646 | 34.501 | 7784.199 |
-| 160x3 | 82,464 | 0.341052 | 0.649038 | 0.804222 | 34.443 | 7794.395 |
-| 192x3 | 111,232 | 0.353422 | 0.664336 | 0.816872 | 35.499 | 7738.395 |
-| 128x4 | 74,304 | 0.329930 | 0.632604 | 0.787496 | 35.519 | 7652.391 |
-
-Best validation config: `192x3`.
-
-### Correct WTHOR Agreement
-
-The WTHOR evaluator now uses a policy-output-order legal mask. Earlier
-intermediate outputs used the feature-order bit mask and should be ignored.
-
-| Config | Positions | Top-1 exact | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 192x3 | 8,035,282 | 0.338097 | 0.360323 | 0.707869 | 0.870466 |
-| 160x3 | 8,035,282 | 0.328847 | 0.351074 | 0.683399 | 0.852199 |
-| 128x4 | 8,035,282 | 0.313147 | 0.335372 | 0.661174 | 0.841202 |
-| 128x3 | 8,035,282 | 0.307269 | 0.329494 | 0.663007 | 0.839235 |
-| 96x3 | 8,035,282 | 0.298108 | 0.314827 | 0.648127 | 0.824891 |
-| 96x4 | 8,035,282 | 0.292177 | 0.308892 | 0.652110 | 0.829590 |
-| 64x3 | 8,035,282 | 0.289575 | 0.306292 | 0.631556 | 0.810074 |
-
-Best WTHOR config: `192x3`.
-
-`192x3` by 10-move bucket:
-
-| Moves | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
-| --- | ---: | ---: | ---: |
-| 01-10 | 0.377334 | 0.812311 | 0.964305 |
-| 11-20 | 0.292862 | 0.612274 | 0.799897 |
-| 21-30 | 0.262999 | 0.577686 | 0.775109 |
-| 31-40 | 0.280449 | 0.614852 | 0.811226 |
-| 41-50 | 0.354634 | 0.715394 | 0.887165 |
-| 51-60 | 0.595946 | 0.916727 | 0.986230 |
-
-### Blend Benchmark
-
-`hint 100` at Egaroucid Console 7.8.1 level 21 is expensive per position. A
-30-position random WTHOR sample took 86.157 sec and peak RSS 1283.957 MiB.
-That extrapolates to roughly 267 days for all 8,035,282 WTHOR positions on one
-process before caching, so full WTHOR blend evaluation is not practical in this
-session as a direct run.
-
-The WTHOR blend evaluator supports `--jobs`, `--range-start` / `--range-end`,
-and `--hint-cache-db`. The sharded runner
-`20_test_with_wthor/run_wthor_blend_shards.py` wraps those pieces for resumable
-full runs, skips already-finished shards, and creates a shared SQLite
-hint-score cache by default.
-
-Small random sample, seed `613`, 30 positions:
-
-| Blend param | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
-| ---: | ---: | ---: | ---: |
-| 0.00 | 0.566667 | 0.866667 | 1.000000 |
-| 0.25 | 0.466667 | 0.733333 | 0.900000 |
-| 0.50 | 0.466667 | 0.733333 | 0.866667 |
-| 0.75 | 0.400000 | 0.700000 | 0.900000 |
-| 1.00 | 0.300000 | 0.666667 | 0.900000 |
-
-This sample is only for timing and a rough blend sanity check.
-
-### WTHOR Hint-Cache Planning
-
-`20_test_with_wthor/analyze_wthor_position_duplicates.py` counts exact
-Egaroucid hint inputs `(black, white, side)`.
-
-| Metric | Value |
-| --- | ---: |
-| WTHOR `position_samples` | 8,035,282 |
-| Unique hint positions | 5,574,955 |
-| Duplicate hint positions | 2,460,327 |
-| Duplicate fraction | 0.306190 |
-| Invalid side samples | 0 |
-| Analysis elapsed | 6.745 sec |
-| Analysis in-process peak RSS | 440.371 MiB |
-| Resource-monitor elapsed | 7.104 sec |
-| Resource-monitor peak RSS | 293.832 MiB |
-
-The cache can remove about 30.6% of repeated hint calls within WTHOR and also
-protects interrupted/resumed shard runs from recomputing finished hint scores.
-However, the unique hint-position count is still 5.57 million, so a full blend
-evaluation remains very large unless the Egaroucid hint cost is reduced or the
-evaluation set is sampled.
-
-Cache smoke test on the first two WTHOR position samples:
-
-| Run | Elapsed sec | Peak RSS MiB | Lookups | Hits | Misses | Writes | Rows |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| First run | 2.032 | 1325.613 | 2 | 0 | 2 | 2 | 2 |
-| Second run, same DB | 1.030 | 8.523 | 2 | 2 | 0 | 0 | 2 |
-
-A two-shard smoke run also passed and the merged output preserved cache stats:
-2 lookups, 0 hits, 2 misses, 2 writes, 2 rows.
-
-### Resumable Full-Run Controls
-
-The WTHOR sharded runner now supports `--positions-per-shard`,
-`--range-start` / `--range-end`, and `--time-limit-sec`. This lets the full
-WTHOR blend run advance in smaller, resumable chunks instead of requiring one
-very large shard to finish. `--merge-completed` updates `partial_merged` from
-all finished shards even before the full WTHOR run is complete.
-
-For very small shard sizes such as `--positions-per-shard 5`, the runner no
-longer expands every scheduled shard into `manifest.json`. It writes the total
-`shard_count` plus a first/last preview controlled by
-`--manifest-shard-preview`, so continuing from `--range-start 30` avoids a
-large manifest.
-
-Smoke test with 5 WTHOR position samples, `positions_per_shard=2`,
-`blend_param=1.0`, `top_n=1,3`:
-
-- First invocation used `--time-limit-sec 0.001`: completed shard `0..2`, then
-  stopped with `stop_reason=time_limit`.
-- Second invocation reused the same output directory, skipped shard 0, ran
-  shard `2..4`, then stopped with `stop_reason=max_shards_to_run`.
-- Third invocation skipped shards 0 and 1, ran shard `4..5`, and merged all
-  outputs with `stop_reason=finished`.
-
-Merged smoke result:
-
-| Blend param | Top-N | Exact accuracy | Symmetric accuracy | Positions |
-| ---: | ---: | ---: | ---: | ---: |
-| 1.0 | 1 | 0.200000 | 0.400000 | 5 |
-| 1.0 | 3 | 0.800000 | 0.800000 | 5 |
-
-Real full-run progress in `20_test_with_wthor/output/blend_wthor_full_chunked`:
-
-- Chunk 001 completed 20 / 8,035,282 WTHOR position samples.
-- Chunk 002 reused the same output directory, skipped the first two finished
-  shards, completed one more shard, and updated `partial_merged`.
-- Chunk 003 continued from `--range-start 30` with `--positions-per-shard 5`,
-  completed shard `30..35`, and updated `partial_merged`.
-- After the manifest/schedule fix, chunk 004 continued from `--range-start 35`
-  and completed six 5-position-sample shards (`35..65`).
-- Chunk 005 continued from `--range-start 65` and completed two more
-  5-position-sample shards (`65..75`).
-- Chunk 006 tested `--positions-per-shard 25`, completed shard `75..100`,
-  and showed that larger shards make time-limit control coarser.
-- Chunk 007 used `--resume-from-completed-prefix`, automatically started from
-  `100`, and completed seven 5-position-sample shards (`100..135`).
-- Chunk 008 used the same auto-resume p5 setup with a 60-second limit and
-  completed two 5-position-sample shards (`135..145`).
-- Chunk 009 tested `--jobs-per-shard 2` with `--positions-per-shard 20`,
-  completed shard `145..165`, and used 2634.234 MiB peak RSS.
-- Chunk 010 tested `--jobs-per-shard 4` with `--positions-per-shard 20`,
-  completed three shards (`165..225`) with 5205.410 MiB peak RSS.
-- Chunk 011 kept `jobs_per_shard=4`, used a 120-second limit, and completed
-  six shards (`225..345`) with 5203.469 MiB peak RSS.
-- Chunk 012 kept `jobs_per_shard=4`, used a 180-second limit, and completed
-  nine shards (`345..525`) with 5207.145 MiB peak RSS.
-- Chunk 013 tested `egaroucid_threads=2`, completed four shards (`525..605`)
-  with 5204.996 MiB peak RSS.
-- Chunk 014 tested `egaroucid_threads=4`, completed five shards (`605..705`)
-  with 5208.156 MiB peak RSS.
-- Chunk 015 tested `egaroucid_threads=8`, completed nine shards (`705..885`)
-  with 5212.191 MiB peak RSS.
-- Chunk 016 tested `egaroucid_threads=16`, completed nine shards (`885..1065`)
-  with 5221.848 MiB peak RSS.
-- Chunk 017 used the current best short-benchmark setting
-  `jobs_per_shard=4, egaroucid_threads=8`, used a 300-second limit, and
-  completed 39 shards (`1065..1845`) with 5226.602 MiB peak RSS.
-- Chunk 018 used the same setting and a 300-second limit, and completed
-  35 shards (`1845..2545`) with 5213.312 MiB peak RSS.
-- Chunk 019 used the same setting and a 300-second limit, and completed
-  33 shards (`2545..3205`). This was a direct run; `progress_summary.json`
-  reports 303.996 sec elapsed, but peak RSS was not sampled.
-- Chunk 020 used the same setting with the resource monitor, and completed
-  36 shards (`3205..3925`) with 5272.352 MiB peak RSS.
-- Chunk 021 used the same setting with the resource monitor, and completed
-  36 shards (`3925..4645`) with 5216.648 MiB peak RSS.
-- Chunk 022 tested `jobs_per_shard=8, egaroucid_threads=4`, completed
-  12 shards (`4645..4885`) with 10349.910 MiB peak RSS.
-- Chunk 023 returned to `jobs_per_shard=4, egaroucid_threads=8`, and completed
-  33 shards (`4885..5545`) with 5265.848 MiB peak RSS.
-- Chunk 024 completed 40 shards (`5545..6345`) with 5322.113 MiB peak RSS.
-  The evaluation shards succeeded, but the old merge command hit Windows
-  argument-length error 206 after passing too many shard paths. The runner now
-  writes merge inputs to a text file and calls `merge_wthor_blend_results.py`
-  with `--input-list`. A merge-only recovery then merged 332 completed shards.
-- Chunk 025 validated the input-list merge path in a normal continuation run,
-  completed 37 shards (`6345..7085`) with 5254.488 MiB peak RSS, and merged
-  369 completed shards successfully.
-- Chunk 026 completed 39 shards (`7085..7865`) with 5214.230 MiB peak RSS,
-  and merged 408 completed shards successfully.
-- Chunk 027 completed 33 shards (`7865..8525`) with 5209.961 MiB peak RSS,
-  and merged 441 completed shards successfully.
-- Chunk 028 completed 30 shards (`8525..9125`) with 5290.145 MiB peak RSS,
-  and merged 471 completed shards successfully.
-- Chunk 029 completed 38 shards (`9125..9885`) with 5211.504 MiB peak RSS,
-  and merged 509 completed shards successfully.
-- Chunk 030 completed 39 shards (`9885..10665`) with 5250.785 MiB peak RSS,
-  and merged 548 completed shards successfully.
-- Chunk 031 completed 45 shards (`10665..11565`) with 5282.750 MiB peak RSS,
-  and merged 593 completed shards successfully.
-- Chunk 032 completed 42 shards (`11565..12405`) with 5210.551 MiB peak RSS,
-  and merged 635 completed shards successfully.
-- Chunk 033 completed 42 shards (`12405..13245`) with 5278.707 MiB peak RSS,
-  and merged 677 completed shards successfully.
-- Chunk 034 completed 30 shards (`13245..13845`) with 5210.477 MiB peak RSS,
-  and merged 707 completed shards successfully.
-- Chunk 035 completed 36 shards (`13845..14565`) with 5287.984 MiB peak RSS,
-  and merged 743 completed shards successfully.
-- Chunk 036 completed 43 shards (`14565..15425`) with 5319.938 MiB peak RSS,
-  and merged 786 completed shards successfully.
-- Chunk 037 completed 34 shards (`15425..16105`) with 5221.473 MiB peak RSS,
-  and merged 820 completed shards successfully.
-- Chunk 038 completed 38 shards (`16105..16865`) with 5303.219 MiB peak RSS,
-  and merged 858 completed shards successfully.
-- Chunk 039 completed 43 shards (`16865..17725`) with 5233.559 MiB peak RSS,
-  and merged 901 completed shards successfully.
-- Chunk 040 completed 36 shards (`17725..18445`) with 5241.723 MiB peak RSS,
-  and merged 937 completed shards successfully.
-- Chunk 041 completed 39 shards (`18445..19225`) with 5319.551 MiB peak RSS,
-  and merged 976 completed shards successfully.
-- Chunk 042 completed 45 shards (`19225..20125`) with 5211.258 MiB peak RSS,
-  and merged 1021 completed shards successfully.
-- Chunk 043 completed 36 shards (`20125..20845`) with 5321.512 MiB peak RSS,
-  and merged 1057 completed shards successfully.
-- Chunk 044 completed 39 shards (`20845..21625`) with 5345.379 MiB peak RSS,
-  and merged 1096 completed shards successfully.
-- Chunk 045 completed 38 shards (`21625..22385`) with 5263.617 MiB peak RSS,
-  and merged 1134 completed shards successfully.
-- Chunk 046 completed 46 shards (`22385..23305`) with 5321.902 MiB peak RSS,
-  and merged 1180 completed shards successfully.
-- Current completed total: 23,305 / 8,035,282 position samples.
-- Chunk 002 resource: 94.232 sec, peak RSS 2061.105 MiB.
-- Chunk 003 resource: 91.211 sec, peak RSS 2803.953 MiB.
-- A merge-only refresh after the runner change rewrote `manifest.json` to
-  2,863 bytes and confirmed `all_completed_position_samples=35`.
-- Chunk 004 resource: 21.289 sec, peak RSS 1325.035 MiB.
-- Chunk 005 resource: 25.359 sec, peak RSS 1320.488 MiB.
-- Chunk 006 resource: 97.261 sec, peak RSS 1319.250 MiB.
-- Chunk 007 resource: 40.542 sec, peak RSS 1321.125 MiB.
-- Chunk 008 resource: 65.883 sec, peak RSS 1318.891 MiB.
-- Chunk 009 resource: 75.021 sec, peak RSS 2634.234 MiB.
-- Chunk 010 resource: 75.996 sec, peak RSS 5205.410 MiB.
-- Chunk 011 resource: 140.770 sec, peak RSS 5203.469 MiB.
-- Chunk 012 resource: 203.605 sec, peak RSS 5207.145 MiB.
-- Chunk 013 resource: 61.803 sec, peak RSS 5204.996 MiB.
-- Chunk 014 resource: 60.910 sec, peak RSS 5208.156 MiB.
-- Chunk 015 resource: 64.938 sec, peak RSS 5212.191 MiB.
-- Chunk 016 resource: 71.052 sec, peak RSS 5221.848 MiB.
-- Chunk 017 resource: 304.566 sec, peak RSS 5226.602 MiB.
-- Chunk 018 resource: 303.506 sec, peak RSS 5213.312 MiB.
-- Chunk 019 elapsed: 303.996 sec. Peak RSS was not sampled because this was
-  a direct run.
-- Chunk 020 resource: 306.519 sec, peak RSS 5272.352 MiB.
-- Chunk 021 resource: 310.645 sec, peak RSS 5216.648 MiB.
-- Chunk 022 resource: 126.995 sec, peak RSS 10349.910 MiB.
-- Chunk 023 resource: 307.399 sec, peak RSS 5265.848 MiB.
-- Chunk 024 resource: 309.350 sec, peak RSS 5322.113 MiB. Return code was
-  1 because of the merge command-line length error after the shards completed.
-- Chunk 024 merge-only recovery: 2.034 sec, peak RSS 33.066 MiB.
-- Chunk 025 resource: 324.865 sec, peak RSS 5254.488 MiB.
-- Chunk 026 resource: 304.312 sec, peak RSS 5214.230 MiB.
-- Chunk 027 resource: 304.473 sec, peak RSS 5209.961 MiB.
-- Chunk 028 resource: 318.616 sec, peak RSS 5290.145 MiB.
-- Chunk 029 resource: 327.859 sec, peak RSS 5211.504 MiB.
-- Chunk 030 resource: 303.320 sec, peak RSS 5250.785 MiB.
-- Chunk 031 resource: 305.466 sec, peak RSS 5282.750 MiB.
-- Chunk 032 resource: 303.380 sec, peak RSS 5210.551 MiB.
-- Chunk 033 resource: 309.481 sec, peak RSS 5278.707 MiB.
-- Chunk 034 resource: 308.420 sec, peak RSS 5210.477 MiB.
-- Chunk 035 resource: 313.599 sec, peak RSS 5287.984 MiB.
-- Chunk 036 resource: 315.664 sec, peak RSS 5319.938 MiB.
-- Chunk 037 resource: 310.446 sec, peak RSS 5221.473 MiB.
-- Chunk 038 resource: 311.636 sec, peak RSS 5303.219 MiB.
-- Chunk 039 resource: 308.519 sec, peak RSS 5233.559 MiB.
-- Chunk 040 resource: 307.474 sec, peak RSS 5241.723 MiB.
-- Chunk 041 resource: 312.424 sec, peak RSS 5319.551 MiB.
-- Chunk 042 resource: 307.316 sec, peak RSS 5211.258 MiB.
-- Chunk 043 resource: 307.628 sec, peak RSS 5321.512 MiB.
-- Chunk 044 resource: 307.516 sec, peak RSS 5345.379 MiB.
-- Chunk 045 resource: 306.545 sec, peak RSS 5263.617 MiB.
-- Chunk 046 resource: 316.691 sec, peak RSS 5321.902 MiB.
-
-`jobs_per_shard=4` is the current practical WTHOR continuation setting. It is
-more memory-hungry, but it advanced 120 position samples in 140.770 sec in
-chunk 011, while `jobs_per_shard=2` advanced 20 position samples in 75.021 sec
-in chunk 009.
-With `jobs_per_shard=4`, `egaroucid_threads=8` was the best short benchmark:
-180 position samples in 64.938 sec. `egaroucid_threads=16` did not improve the
-60-second chunk and used slightly more memory. Chunk 022 showed that
-`jobs_per_shard=8, egaroucid_threads=4` was worse for this machine: it advanced
-240 position samples in 126.995 sec, about 1.890 position samples/sec, while
-chunk 023 with `jobs_per_shard=4, egaroucid_threads=8` advanced 660 position
-samples in 307.399 sec, about 2.147 position samples/sec, and used about half
-the peak RSS.
-
-Current `partial_merged` top-1 symmetric accuracy on the first 23,305 position
-samples:
-
-| Blend param | Top-1 symmetric |
-| ---: | ---: |
-| 0.0 | 0.589058 |
-| 0.1 | 0.512465 |
-| 0.2 | 0.512465 |
-| 0.3 | 0.512422 |
-| 0.4 | 0.512079 |
-| 0.5 | 0.512251 |
-| 0.6 | 0.508088 |
-| 0.7 | 0.499249 |
-| 0.8 | 0.472345 |
-| 0.9 | 0.424630 |
-| 1.0 | 0.371594 |
-
-### Strength Benchmark
-
-The strength runner starts engine processes lazily instead of prestarting all
-player slots. `blend_param=1.0` skips Egaroucid `hint 100`, and blended GTP
-engines can cache hint output. Completed tasks are appended to
-`strength_games.jsonl`; `--resume` reloads that file and runs only unfinished
-tasks. `40_test_strength/run_strength_full.py` wraps the full schedule and
-appends a raw run log to `run_strength_full.log`. The strength runner now also
-supports `--time-limit-sec`, so the 120,000-game full schedule can be advanced
-in bounded resumable chunks. It also supports `--task-retries` and writes
-failed task details to `strength_failed_tasks.jsonl` so single engine timeouts
-do not have to invalidate already saved games.
-
-Smoke results:
-
-- `egaroucid_l1` vs `blend_1.0`, 2 games: 2.034 sec after the policy-only skip.
-- `egaroucid_l1` vs `blend_0.0`, 1 game: 37.499 sec, peak RSS 2567.539 MiB.
-- Full-player short benchmark, `--max-games 2`: 152.064 sec, peak RSS 5109.445 MiB.
-- Time-limit smoke, `egaroucid_l1` vs `blend_1.0`, target 4 games,
-  `--time-limit-sec 1`: completed 2/4 games, stopped with
-  `stop_reason=time_limit`, wrapper elapsed 3.039 sec, peak RSS 2608.930 MiB.
-- Full schedule chunk 001 used the requested 32 parallel matches with
-  `--resume --time-limit-sec 120`. It completed 92 / 120,000 games, stopped
-  with `stop_reason=time_limit`, elapsed 729.340 sec including already-started
-  game completion, and peaked at 112208.027 MiB RSS. No Egaroucid or Python
-  child processes remained afterward.
-- Full schedule chunk 002 kept 32 worker threads but used
-  `--processes-per-player 8 --resume --time-limit-sec 60`. It advanced the
-  run to 158 / 120,000 games, elapsed 771.611 sec, and peaked at 111064.254
-  MiB RSS. Lowering `processes_per_player` did not materially reduce peak RSS,
-  so the next optimization target is the per-process blended engine footprint.
-- Full schedule chunk 003 kept 32 worker threads and
-  `--processes-per-player 8`, but added `--no-blend-cache` to disable the
-  per-process Egaroucid hint cache in blended engines. It advanced the run to
-  232 / 120,000 games, elapsed 719.563 sec, and peaked at 117426.348 MiB RSS.
-  The cache switch did not reduce memory, so the dominant cost is likely the
-  number of simultaneously resident GTP/blended engine processes.
-- Full schedule chunk 004 kept 32 worker threads,
-  `--processes-per-player 8`, and `--no-blend-cache`, then added
-  `--close-processes-after-game`. It advanced the run to 302 / 120,000 games,
-  elapsed 735.136 sec, and peaked at 72669.684 MiB RSS. Closing engines after
-  each game reduced peak memory by about 38% versus chunk 003, confirming that
-  long-lived per-player process pools were the main memory pressure.
-- Full schedule chunk 005 used the same close-after-game setting but still used
-  a 300 sec Egaroucid hint timeout. It saved 50 additional games before one
-  blended engine returned an Egaroucid prompt timeout and the pre-retry runner
-  aborted with return code 1. Resource monitor elapsed 579.076 sec and peaked
-  at 70188.805 MiB RSS. The next resume confirmed 352 saved games.
-- Full schedule chunk 006 enabled `--task-retries 2` and raised
-  `--egaroucid-timeout-sec` to 600 while keeping 32 worker threads and
-  `--close-processes-after-game`. It advanced the run to 422 / 120,000 games,
-  elapsed 1078.991 sec, peaked at 74207.070 MiB RSS, and completed without
-  failed-task log entries.
-- Full schedule chunk 007 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 490 / 120,000 games, elapsed 786.249 sec,
-  peaked at 70102.605 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 008 again used the retry/timeout-600 close-after-game
-  setting. It advanced the run to 558 / 120,000 games, elapsed 972.386 sec,
-  peaked at 71333.969 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 009 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 622 / 120,000 games, elapsed 731.654 sec,
-  peaked at 67624.945 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 010 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 690 / 120,000 games, elapsed 927.042 sec,
-  peaked at 77386.398 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 011 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 760 / 120,000 games, elapsed 680.738 sec,
-  peaked at 68654.098 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 012 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 830 / 120,000 games, elapsed 698.577 sec,
-  peaked at 70221.414 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 013 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 900 / 120,000 games, elapsed 692.783 sec,
-  peaked at 64971.609 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 014 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 966 / 120,000 games, elapsed 697.004 sec,
-  peaked at 76514.977 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 015 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,042 / 120,000 games, elapsed 1148.293 sec,
-  peaked at 72843.500 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 016 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,108 / 120,000 games, elapsed 810.833 sec,
-  peaked at 77762.371 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 017 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,174 / 120,000 games, elapsed 874.266 sec,
-  peaked at 71355.570 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 018 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,242 / 120,000 games, elapsed 700.202 sec,
-  peaked at 70337.547 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 019 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,316 / 120,000 games, elapsed 1356.032 sec,
-  peaked at 72845.578 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 020 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,390 / 120,000 games, elapsed 846.100 sec,
-  peaked at 71546.449 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 021 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,460 / 120,000 games, elapsed 907.375 sec,
-  peaked at 71826.973 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 022 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,528 / 120,000 games, elapsed 707.287 sec,
-  peaked at 65124.984 MiB RSS, and completed without failed-task log entries.
-- Full schedule chunk 023 used the same retry/timeout-600 close-after-game
-  setting. It advanced the run to 1,594 / 120,000 games, elapsed 1011.212 sec,
-  peaked at 70306.598 MiB RSS, and completed without failed-task log entries.
-
-The full requested schedule is 120,000 games. The short full-player benchmark
-suggests a multi-day run even with 32 parallel matches, and `hint 100` required
-raising the strength-runner timeout from 60 sec to 300 sec. The first full
-schedule chunk also showed that `parallel_matches=32` with
-`processes_per_player=32` is very memory-heavy on this machine. Chunk 002
-showed that lowering only `processes_per_player` is not enough, and chunk 003
-showed that disabling the blended-engine hint cache is not enough either. Chunk
-004 showed that closing engines after each game is an effective memory-control
-knob while preserving the requested 32 worker threads, though the wall-clock
-time remains high because `hint 100` level-21 searches dominate the run. Chunk
-005 showed that a 300 sec hint timeout is still too tight for some strength
-positions; chunk 006 therefore uses 600 sec for continuation.
-
-## 日本語
-
-### 用語
-
-この実験では、`games` は完全な棋譜、つまり対局数を意味します。学習用に生成された局面は
-`position_samples` と呼びます。`records0` や `records1` という既存ディレクトリ名は、
-データセットのパス名としてだけ残しています。
-
-### データセット
-
-- 入力元: `train_data/transcript_release/0002`
-- 選択: 1,000,000 対局、seed `613`
-- 変換成功: 1,000,000 対局
-- 変換失敗: 0 対局
-- 生成された `position_samples`: 26,384,206
-- 変換リソース: 179.371 秒、peak RSS 14.238 MiB
-
-1対局から、ランダム序盤後の複数の着手局面を書き出すため、1,000,000 対局から
-26,384,206 局面サンプルが生成されています。
-
-### 学習探索
-
-すべての実行で、学習 5,000,000 `position_samples`、検証 500,000 `position_samples`、
-batch size 8192、20 epochs、patience 5、TensorFlow/Keras を使いました。
-
-| Config | Params | Val top-1 | Val top-3 | Val top-5 | Time sec | Peak RSS MiB |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 64x3 | 20,736 | 0.297304 | 0.584340 | 0.742064 | 33.480 | 7751.410 |
-| 96x3 | 37,216 | 0.308512 | 0.604394 | 0.763330 | 33.417 | 7787.094 |
-| 128x3 | 57,792 | 0.326106 | 0.626642 | 0.783058 | 33.446 | 7782.047 |
-| 96x4 | 46,528 | 0.313866 | 0.610754 | 0.767646 | 34.501 | 7784.199 |
-| 160x3 | 82,464 | 0.341052 | 0.649038 | 0.804222 | 34.443 | 7794.395 |
-| 192x3 | 111,232 | 0.353422 | 0.664336 | 0.816872 | 35.499 | 7738.395 |
-| 128x4 | 74,304 | 0.329930 | 0.632604 | 0.787496 | 35.519 | 7652.391 |
-
-検証で最も良かった設定は `192x3` です。
-
-### 修正後の WTHOR 一致率
-
-WTHOR 評価では、policy 出力 index と同じ向きの合法手マスクを使うように修正しました。
-途中で出力していた feature-order bit mask の値は破棄してください。
-
-| Config | Positions | Top-1 exact | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 192x3 | 8,035,282 | 0.338097 | 0.360323 | 0.707869 | 0.870466 |
-| 160x3 | 8,035,282 | 0.328847 | 0.351074 | 0.683399 | 0.852199 |
-| 128x4 | 8,035,282 | 0.313147 | 0.335372 | 0.661174 | 0.841202 |
-| 128x3 | 8,035,282 | 0.307269 | 0.329494 | 0.663007 | 0.839235 |
-| 96x3 | 8,035,282 | 0.298108 | 0.314827 | 0.648127 | 0.824891 |
-| 96x4 | 8,035,282 | 0.292177 | 0.308892 | 0.652110 | 0.829590 |
-| 64x3 | 8,035,282 | 0.289575 | 0.306292 | 0.631556 | 0.810074 |
-
-WTHOR 一致率でも最良は `192x3` でした。
-
-`192x3` の10手刻み:
-
-| Moves | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
-| --- | ---: | ---: | ---: |
-| 01-10 | 0.377334 | 0.812311 | 0.964305 |
-| 11-20 | 0.292862 | 0.612274 | 0.799897 |
-| 21-30 | 0.262999 | 0.577686 | 0.775109 |
-| 31-40 | 0.280449 | 0.614852 | 0.811226 |
-| 41-50 | 0.354634 | 0.715394 | 0.887165 |
-| 51-60 | 0.595946 | 0.916727 | 0.986230 |
-
-### ブレンド評価ベンチマーク
-
-Egaroucid Console 7.8.1 level 21 の `hint 100` は1局面あたりかなり重いです。
-WTHOR からランダムに30局面を選んだ評価では 86.157 秒、peak RSS 1283.957 MiB でした。
-キャッシュなしで単純外挿すると、WTHOR 全 8,035,282 局面に対して1プロセスで約267日かかるため、
-このセッション内で全局面のブレンド評価を直接実行するのは現実的ではありません。
-
-WTHOR ブレンド評価は `--jobs`、`--range-start` / `--range-end`、`--hint-cache-db` に対応しています。
-`20_test_with_wthor/run_wthor_blend_shards.py` はそれらをまとめ、完了済み shard を skip しながら
-再開可能に実行し、既定で共有 SQLite hint-score cache を作成します。
-
-seed `613`、30局面の小サンプル:
-
-| Blend param | Top-1 symmetric | Top-3 symmetric | Top-5 symmetric |
-| ---: | ---: | ---: | ---: |
-| 0.00 | 0.566667 | 0.866667 | 1.000000 |
-| 0.25 | 0.466667 | 0.733333 | 0.900000 |
-| 0.50 | 0.466667 | 0.733333 | 0.866667 |
-| 0.75 | 0.400000 | 0.700000 | 0.900000 |
-| 1.00 | 0.300000 | 0.666667 | 0.900000 |
-
-この表は時間見積もりとブレンド処理の確認用で、最終的な係数決定にはもっと大きなサンプルか並列評価が必要です。
-
-### WTHOR hint-cache 計画
-
-`20_test_with_wthor/analyze_wthor_position_duplicates.py` で、Egaroucid の `hint 100` に渡す
-実盤面キー `(black, white, side)` の重複を数えました。
-
-| Metric | Value |
-| --- | ---: |
-| WTHOR `position_samples` | 8,035,282 |
-| Unique hint positions | 5,574,955 |
-| Duplicate hint positions | 2,460,327 |
-| Duplicate fraction | 0.306190 |
-| Invalid side samples | 0 |
-| Analysis elapsed | 6.745 秒 |
-| Analysis in-process peak RSS | 440.371 MiB |
-| Resource-monitor elapsed | 7.104 秒 |
-| Resource-monitor peak RSS | 293.832 MiB |
-
-cache により、WTHOR 内で重複している約30.6%の `hint 100` 呼び出しを省けます。
-また、中断・再開した shard 実行でも完了済みの hint score を再計算しなくて済みます。
-ただし、unique hint positions はまだ 5.57 million あるため、Egaroucid 側の hint cost を下げるか、
-評価対象をサンプリングしない限り、全局面ブレンド評価は依然としてかなり大きい実行になります。
-
-WTHOR 先頭2局面での cache smoke test:
-
-| Run | Elapsed sec | Peak RSS MiB | Lookups | Hits | Misses | Writes | Rows |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| First run | 2.032 | 1325.613 | 2 | 0 | 2 | 2 | 2 |
-| Second run, same DB | 1.030 | 8.523 | 2 | 2 | 0 | 0 | 2 |
-
-2 shard の smoke run も通り、merge 後の出力にも cache stats が残ることを確認しました:
-2 lookups、0 hits、2 misses、2 writes、2 rows。
-
-### 再開可能な full 実行制御
-
-WTHOR shard runner は `--positions-per-shard`、`--range-start` / `--range-end`、
-`--time-limit-sec` に対応しました。これにより、全WTHORブレンド評価を巨大な shard 単位ではなく、
-再開可能な小さい単位で進められます。
-`--merge-completed` を使うと、全WTHORが完走する前でも完了済み shard だけから
-`partial_merged` を更新できます。
-
-`--positions-per-shard 5` のように shard 数が非常に多い場合でも、runner は全 shard を
-`manifest.json` に展開しません。`shard_count` と先頭・末尾 preview だけを書き、表示数は
-`--manifest-shard-preview` で調整します。そのため、`--range-start 30` から継続しても
-巨大な manifest は作られません。
-
-WTHOR 5局面、`positions_per_shard=2`、`blend_param=1.0`、`top_n=1,3` の smoke test:
-
-- 1回目は `--time-limit-sec 0.001` で shard `0..2` だけ完了し、
-  `stop_reason=time_limit` で停止しました。
-- 2回目は同じ出力先を使い、shard 0 を skip して shard `2..4` を実行し、
-  `stop_reason=max_shards_to_run` で停止しました。
-- 3回目は shard 0 と 1 を skip して shard `4..5` を実行し、全 shard を merge して
-  `stop_reason=finished` になりました。
-
-merge 後の smoke 結果:
-
-| Blend param | Top-N | Exact accuracy | Symmetric accuracy | Positions |
-| ---: | ---: | ---: | ---: | ---: |
-| 1.0 | 1 | 0.200000 | 0.400000 | 5 |
-| 1.0 | 3 | 0.800000 | 0.800000 | 5 |
-
-`20_test_with_wthor/output/blend_wthor_full_chunked` での full-run 進捗:
-
-- chunk 001 で WTHOR 20 / 8,035,282 局面サンプルまで完了。
-- chunk 002 では同じ出力先を使い、完了済みの最初の2 shard を skip して1 shard 追加し、
-  `partial_merged` を更新しました。
-- chunk 003 では `--range-start 30` と `--positions-per-shard 5` で shard `30..35` を完了し、
-  `partial_merged` を更新しました。
-- manifest/schedule 修正後、chunk 004 では `--range-start 35` から 5局面サンプル shard を6つ進め、
-  `35..65` まで完了しました。
-- chunk 005 では `--range-start 65` から 5局面サンプル shard を2つ進め、
-  `65..75` まで完了しました。
-- chunk 006 では `--positions-per-shard 25` を試し、shard `75..100` を完了しました。
-  shard を大きくすると time-limit の粒度が粗くなることが分かりました。
-- chunk 007 では `--resume-from-completed-prefix` を使い、自動で `100` から開始して、
-  5局面サンプル shard を7つ進め、`100..135` まで完了しました。
-- chunk 008 では同じ自動再開 p5 設定を60秒制限で使い、5局面サンプル shard を2つ進め、
-  `135..145` まで完了しました。
-- chunk 009 では `--jobs-per-shard 2` と `--positions-per-shard 20` を試し、
-  shard `145..165` を完了しました。peak RSS は 2634.234 MiB でした。
-- chunk 010 では `--jobs-per-shard 4` と `--positions-per-shard 20` を試し、
-  `165..225` まで3 shard 完了しました。peak RSS は 5205.410 MiB でした。
-- chunk 011 では `jobs_per_shard=4` のまま120秒制限にし、`225..345` まで6 shard 完了しました。
-  peak RSS は 5203.469 MiB でした。
-- chunk 012 では `jobs_per_shard=4` のまま180秒制限にし、`345..525` まで9 shard 完了しました。
-  peak RSS は 5207.145 MiB でした。
-- chunk 013 では `egaroucid_threads=2` を試し、`525..605` まで4 shard 完了しました。
-  peak RSS は 5204.996 MiB でした。
-- chunk 014 では `egaroucid_threads=4` を試し、`605..705` まで5 shard 完了しました。
-  peak RSS は 5208.156 MiB でした。
-- chunk 015 では `egaroucid_threads=8` を試し、`705..885` まで9 shard 完了しました。
-  peak RSS は 5212.191 MiB でした。
-- chunk 016 では `egaroucid_threads=16` を試し、`885..1065` まで9 shard 完了しました。
-  peak RSS は 5221.848 MiB でした。
-- chunk 017 では現時点の短時間ベンチ最良設定 `jobs_per_shard=4, egaroucid_threads=8` を使い、
-  300秒制限で `1065..1845` まで39 shard 完了しました。peak RSS は 5226.602 MiB でした。
-- chunk 018 では同じ設定を使い、300秒制限で `1845..2545` まで35 shard 完了しました。
-  peak RSS は 5213.312 MiB でした。
-- chunk 019 では同じ設定を使い、300秒制限で `2545..3205` まで33 shard 完了しました。
-  直接実行だったため peak RSS は未計測です。`progress_summary.json` 上の elapsed は
-  303.996 秒でした。
-- chunk 020 では同じ設定を resource monitor 経由で実行し、`3205..3925` まで36 shard
-  完了しました。peak RSS は 5272.352 MiB でした。
-- chunk 021 では同じ設定を resource monitor 経由で実行し、`3925..4645` まで36 shard
-  完了しました。peak RSS は 5216.648 MiB でした。
-- chunk 022 では `jobs_per_shard=8, egaroucid_threads=4` を試し、`4645..4885` まで
-  12 shard 完了しました。peak RSS は 10349.910 MiB でした。
-- chunk 023 では `jobs_per_shard=4, egaroucid_threads=8` に戻し、`4885..5545` まで
-  33 shard 完了しました。peak RSS は 5265.848 MiB でした。
-- chunk 024 では `5545..6345` まで40 shard 完了しました。peak RSS は 5322.113 MiB でした。
-  評価 shard は成功しましたが、旧 merge コマンドは shard パスを全部コマンドラインに並べたため、
-  Windows の引数長制限 error 206 に当たりました。runner は merge 入力をテキストファイルに
-  書き出し、`merge_wthor_blend_results.py --input-list` で読む方式に修正しました。その後の
-  merge-only recovery で完了済み332 shard を回収しました。
-- chunk 025 では通常の継続実行で input-list merge 経路を確認し、`6345..7085` まで
-  37 shard 完了しました。peak RSS は 5254.488 MiB で、完了済み369 shard を正常に
-  merge できました。
-- chunk 026 では `7085..7865` まで39 shard 完了しました。peak RSS は 5214.230 MiB で、
-  完了済み408 shard を正常に merge できました。
-- chunk 027 では `7865..8525` まで33 shard 完了しました。peak RSS は 5209.961 MiB で、
-  完了済み441 shard を正常に merge できました。
-- chunk 028 では `8525..9125` まで30 shard 完了しました。peak RSS は 5290.145 MiB で、
-  完了済み471 shard を正常に merge できました。
-- chunk 029 では `9125..9885` まで38 shard 完了しました。peak RSS は 5211.504 MiB で、
-  完了済み509 shard を正常に merge できました。
-- chunk 030 では `9885..10665` まで39 shard 完了しました。peak RSS は 5250.785 MiB で、
-  完了済み548 shard を正常に merge できました。
-- chunk 031 では `10665..11565` まで45 shard 完了しました。peak RSS は 5282.750 MiB で、
-  完了済み593 shard を正常に merge できました。
-- chunk 032 では `11565..12405` まで42 shard 完了しました。peak RSS は 5210.551 MiB で、
-  完了済み635 shard を正常に merge できました。
-- chunk 033 では `12405..13245` まで42 shard 完了しました。peak RSS は 5278.707 MiB で、
-  完了済み677 shard を正常に merge できました。
-- chunk 034 では `13245..13845` まで30 shard 完了しました。peak RSS は 5210.477 MiB で、
-  完了済み707 shard を正常に merge できました。
-- chunk 035 では `13845..14565` まで36 shard 完了しました。peak RSS は 5287.984 MiB で、
-  完了済み743 shard を正常に merge できました。
-- chunk 036 では `14565..15425` まで43 shard 完了しました。peak RSS は 5319.938 MiB で、
-  完了済み786 shard を正常に merge できました。
-- chunk 037 では `15425..16105` まで34 shard 完了しました。peak RSS は 5221.473 MiB で、
-  完了済み820 shard を正常に merge できました。
-- chunk 038 では `16105..16865` まで38 shard 完了しました。peak RSS は 5303.219 MiB で、
-  完了済み858 shard を正常に merge できました。
-- chunk 039 では `16865..17725` まで43 shard 完了しました。peak RSS は 5233.559 MiB で、
-  完了済み901 shard を正常に merge できました。
-- chunk 040 では `17725..18445` まで36 shard 完了しました。peak RSS は 5241.723 MiB で、
-  完了済み937 shard を正常に merge できました。
-- chunk 041 では `18445..19225` まで39 shard 完了しました。peak RSS は 5319.551 MiB で、
-  完了済み976 shard を正常に merge できました。
-- chunk 042 では `19225..20125` まで45 shard 完了しました。peak RSS は 5211.258 MiB で、
-  完了済み1021 shard を正常に merge できました。
-- chunk 043 では `20125..20845` まで36 shard 完了しました。peak RSS は 5321.512 MiB で、
-  完了済み1057 shard を正常に merge できました。
-- chunk 044 では `20845..21625` まで39 shard 完了しました。peak RSS は 5345.379 MiB で、
-  完了済み1096 shard を正常に merge できました。
-- chunk 045 では `21625..22385` まで38 shard 完了しました。peak RSS は 5263.617 MiB で、
-  完了済み1134 shard を正常に merge できました。
-- chunk 046 では `22385..23305` まで46 shard 完了しました。peak RSS は 5321.902 MiB で、
-  完了済み1180 shard を正常に merge できました。
-- 現在の完了数: 23,305 / 8,035,282 局面サンプル。
-- chunk 002 resource: 94.232 秒、peak RSS 2061.105 MiB。
-- chunk 003 resource: 91.211 秒、peak RSS 2803.953 MiB。
-- runner 変更後の merge-only refresh で `manifest.json` は 2,863 bytes になり、
-  `all_completed_position_samples=35` を確認しました。
-- chunk 004 resource: 21.289 秒、peak RSS 1325.035 MiB。
-- chunk 005 resource: 25.359 秒、peak RSS 1320.488 MiB。
-- chunk 006 resource: 97.261 秒、peak RSS 1319.250 MiB。
-- chunk 007 resource: 40.542 秒、peak RSS 1321.125 MiB。
-- chunk 008 resource: 65.883 秒、peak RSS 1318.891 MiB。
-- chunk 009 resource: 75.021 秒、peak RSS 2634.234 MiB。
-- chunk 010 resource: 75.996 秒、peak RSS 5205.410 MiB。
-- chunk 011 resource: 140.770 秒、peak RSS 5203.469 MiB。
-- chunk 012 resource: 203.605 秒、peak RSS 5207.145 MiB。
-- chunk 013 resource: 61.803 秒、peak RSS 5204.996 MiB。
-- chunk 014 resource: 60.910 秒、peak RSS 5208.156 MiB。
-- chunk 015 resource: 64.938 秒、peak RSS 5212.191 MiB。
-- chunk 016 resource: 71.052 秒、peak RSS 5221.848 MiB。
-- chunk 017 resource: 304.566 秒、peak RSS 5226.602 MiB。
-- chunk 018 resource: 303.506 秒、peak RSS 5213.312 MiB。
-- chunk 019 elapsed: 303.996 秒。直接実行だったため peak RSS は未計測です。
-- chunk 020 resource: 306.519 秒、peak RSS 5272.352 MiB。
-- chunk 021 resource: 310.645 秒、peak RSS 5216.648 MiB。
-- chunk 022 resource: 126.995 秒、peak RSS 10349.910 MiB。
-- chunk 023 resource: 307.399 秒、peak RSS 5265.848 MiB。
-- chunk 024 resource: 309.350 秒、peak RSS 5322.113 MiB。評価後の merge 引数長エラーで
-  return code は 1 でした。
-- chunk 024 merge-only recovery: 2.034 秒、peak RSS 33.066 MiB。
-- chunk 025 resource: 324.865 秒、peak RSS 5254.488 MiB。
-- chunk 026 resource: 304.312 秒、peak RSS 5214.230 MiB。
-- chunk 027 resource: 304.473 秒、peak RSS 5209.961 MiB。
-- chunk 028 resource: 318.616 秒、peak RSS 5290.145 MiB。
-- chunk 029 resource: 327.859 秒、peak RSS 5211.504 MiB。
-- chunk 030 resource: 303.320 秒、peak RSS 5250.785 MiB。
-- chunk 031 resource: 305.466 秒、peak RSS 5282.750 MiB。
-- chunk 032 resource: 303.380 秒、peak RSS 5210.551 MiB。
-- chunk 033 resource: 309.481 秒、peak RSS 5278.707 MiB。
-- chunk 034 resource: 308.420 秒、peak RSS 5210.477 MiB。
-- chunk 035 resource: 313.599 秒、peak RSS 5287.984 MiB。
-- chunk 036 resource: 315.664 秒、peak RSS 5319.938 MiB。
-- chunk 037 resource: 310.446 秒、peak RSS 5221.473 MiB。
-- chunk 038 resource: 311.636 秒、peak RSS 5303.219 MiB。
-- chunk 039 resource: 308.519 秒、peak RSS 5233.559 MiB。
-- chunk 040 resource: 307.474 秒、peak RSS 5241.723 MiB。
-- chunk 041 resource: 312.424 秒、peak RSS 5319.551 MiB。
-- chunk 042 resource: 307.316 秒、peak RSS 5211.258 MiB。
-- chunk 043 resource: 307.628 秒、peak RSS 5321.512 MiB。
-- chunk 044 resource: 307.516 秒、peak RSS 5345.379 MiB。
-- chunk 045 resource: 306.545 秒、peak RSS 5263.617 MiB。
-- chunk 046 resource: 316.691 秒、peak RSS 5321.902 MiB。
-
-現時点の実用的な WTHOR 継続設定は `jobs_per_shard=4` です。メモリは大きくなりますが、
-chunk 011 では 140.770 秒で 120 局面サンプル進みました。一方、`jobs_per_shard=2` の chunk 009 は
-75.021 秒で 20 局面サンプルでした。
-`jobs_per_shard=4` の中では `egaroucid_threads=8` が短時間ベンチで最良でした:
-64.938 秒で 180 局面サンプル進みました。`egaroucid_threads=16` は改善せず、メモリも少し増えました。
-chunk 022 では `jobs_per_shard=8, egaroucid_threads=4` も試しましたが、126.995 秒で
-240 局面サンプル、約 1.890 局面サンプル/秒でした。chunk 023 の
-`jobs_per_shard=4, egaroucid_threads=8` は 307.399 秒で 660 局面サンプル、
-約 2.147 局面サンプル/秒だったため、従来設定を継続します。
-
-現在の `partial_merged` における先頭23,305局面サンプルの top-1 symmetric accuracy:
-
-| Blend param | Top-1 symmetric |
-| ---: | ---: |
-| 0.0 | 0.589058 |
-| 0.1 | 0.512465 |
-| 0.2 | 0.512465 |
-| 0.3 | 0.512422 |
-| 0.4 | 0.512079 |
-| 0.5 | 0.512251 |
-| 0.6 | 0.508088 |
-| 0.7 | 0.499249 |
-| 0.8 | 0.472345 |
-| 0.9 | 0.424630 |
-| 1.0 | 0.371594 |
-
-### 強さ評価ベンチマーク
-
-強さ評価 runner は、全 player slot を事前起動する方式から lazy start に変更しました。
-`blend_param=1.0` では Egaroucid `hint 100` を呼ばず、ブレンド GTP engine では hint output を
-cache できます。完了済み task は `strength_games.jsonl` に追記され、`--resume` で未完了 task だけを
-実行できます。`40_test_strength/run_strength_full.py` は full schedule 用の wrapper で、raw run log を
-`run_strength_full.log` に追記します。`--time-limit-sec` にも対応したため、120,000対局の full schedule を
-時間で区切って再開可能に進められます。また `--task-retries` にも対応し、失敗した task の詳細を
-`strength_failed_tasks.jsonl` に保存するため、単発の engine timeout で保存済み対局まで無駄にしなくて
-済むようにしました。
-
-smoke 結果:
-
-- `egaroucid_l1` vs `blend_1.0`、2対局: policy-only skip 後 2.034 秒。
-- `egaroucid_l1` vs `blend_0.0`、1対局: 37.499 秒、peak RSS 2567.539 MiB。
-- 全プレイヤー構成の短縮ベンチ `--max-games 2`: 152.064 秒、peak RSS 5109.445 MiB。
-- time-limit smoke、`egaroucid_l1` vs `blend_1.0`、目標4対局、
-  `--time-limit-sec 1`: 2/4 対局を完了し、`stop_reason=time_limit` で停止。
-  wrapper elapsed 3.039 秒、peak RSS 2608.930 MiB。
-- full schedule chunk 001 では、要求通り 32 並列で `--resume --time-limit-sec 120` を実行しました。
-  92 / 120,000 対局を完了し、`stop_reason=time_limit` で停止しました。
-  起動済み対局の終了待ち込みで elapsed は 729.340 秒、peak RSS は 112208.027 MiB でした。
-  実行後に Egaroucid や Python の子プロセスが残っていないことも確認しました。
-- full schedule chunk 002 では 32 worker threads は維持しつつ
-  `--processes-per-player 8 --resume --time-limit-sec 60` を試しました。
-  158 / 120,000 対局まで進み、elapsed は 771.611 秒、peak RSS は 111064.254 MiB でした。
-  `processes_per_player` を下げても peak RSS は大きくは下がらなかったため、次は blended engine
-  1プロセスあたりのメモリを下げる方向を確認します。
-- full schedule chunk 003 では 32 worker threads と `--processes-per-player 8`
-  は維持し、`--no-blend-cache` で blended engine 内の Egaroucid hint キャッシュを無効化しました。
-  232 / 120,000 対局まで進み、elapsed は 719.563 秒、peak RSS は 117426.348 MiB でした。
-  キャッシュ無効化でもメモリは下がらなかったため、主因は同時常駐している GTP / blended engine
-  プロセス数そのものに近いと考えています。
-- full schedule chunk 004 では 32 worker threads、`--processes-per-player 8`、
-  `--no-blend-cache` は維持し、`--close-processes-after-game` を追加しました。
-  302 / 120,000 対局まで進み、elapsed は 735.136 秒、peak RSS は 72669.684 MiB でした。
-  chunk 003 比で peak memory は約38%下がり、長寿命の player 別 process pool が主なメモリ圧迫要因
-  だったことを確認できました。
-- full schedule chunk 005 では同じ close-after-game 設定を使いましたが、Egaroucid hint timeout は
-  300秒のままでした。失敗前に50対局を保存し、その後 blended engine が
-  Egaroucid prompt timeout を返したため、retry 実装前の runner は return code 1 で停止しました。
-  resource monitor の elapsed は 579.076 秒、peak RSS は 70188.805 MiB でした。
-  次の resume で 352 対局が保存済みであることを確認しました。
-- full schedule chunk 006 では 32 worker threads と `--close-processes-after-game` を維持し、
-  `--task-retries 2` を有効化し、`--egaroucid-timeout-sec 600` に上げました。
-  422 / 120,000 対局まで進み、elapsed は 1078.991 秒、peak RSS は 74207.070 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 007 では同じ retry / timeout 600 / close-after-game 設定を使いました。
-  490 / 120,000 対局まで進み、elapsed は 786.249 秒、peak RSS は 70102.605 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 008 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  558 / 120,000 対局まで進み、elapsed は 972.386 秒、peak RSS は 71333.969 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 009 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  622 / 120,000 対局まで進み、elapsed は 731.654 秒、peak RSS は 67624.945 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 010 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  690 / 120,000 対局まで進み、elapsed は 927.042 秒、peak RSS は 77386.398 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 011 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  760 / 120,000 対局まで進み、elapsed は 680.738 秒、peak RSS は 68654.098 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 012 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  830 / 120,000 対局まで進み、elapsed は 698.577 秒、peak RSS は 70221.414 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 013 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  900 / 120,000 対局まで進み、elapsed は 692.783 秒、peak RSS は 64971.609 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 014 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  966 / 120,000 対局まで進み、elapsed は 697.004 秒、peak RSS は 76514.977 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 015 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,042 / 120,000 対局まで進み、elapsed は 1148.293 秒、peak RSS は 72843.500 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 016 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,108 / 120,000 対局まで進み、elapsed は 810.833 秒、peak RSS は 77762.371 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 017 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,174 / 120,000 対局まで進み、elapsed は 874.266 秒、peak RSS は 71355.570 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 018 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,242 / 120,000 対局まで進み、elapsed は 700.202 秒、peak RSS は 70337.547 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 019 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,316 / 120,000 対局まで進み、elapsed は 1356.032 秒、peak RSS は 72845.578 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 020 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,390 / 120,000 対局まで進み、elapsed は 846.100 秒、peak RSS は 71546.449 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 021 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,460 / 120,000 対局まで進み、elapsed は 907.375 秒、peak RSS は 71826.973 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 022 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,528 / 120,000 対局まで進み、elapsed は 707.287 秒、peak RSS は 65124.984 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-- full schedule chunk 023 でも同じ retry / timeout 600 / close-after-game 設定を使いました。
-  1,594 / 120,000 対局まで進み、elapsed は 1011.212 秒、peak RSS は 70306.598 MiB でした。
-  failed-task log は生成されず、正常終了しました。
-
-要求された full schedule は 120,000 対局です。短縮ベンチから見ても、32並列でも数日規模の実行になる見込みです。
-また `hint 100` が60秒で戻らない局面があったため、strength runner の timeout 既定値を300秒に上げました。
-最初の full schedule chunk では `parallel_matches=32` かつ `processes_per_player=32` がこの環境では
-非常に大きいメモリを使うことも分かりました。chunk 002 では `processes_per_player` だけを下げても
-不十分で、chunk 003 では blended engine の hint キャッシュを切っても不十分でした。
-chunk 004 では game 終了ごとに engine を閉じることで、32 worker threads を保ったままメモリを
-大きく下げられました。ただし `hint 100` level-21 探索が支配的なので、wall-clock time は依然として
-大きいです。chunk 005 で 300秒 timeout でも足りない局面が出たため、chunk 006 以降の継続では
-600秒 timeout を使います。
-
-## WTHOR Direct Training With Shuffled Splits / WTHOR 直接学習と shuffle split
-
-English:
-
-The previous selected-data policy network was not trained directly on WTHOR.
-To measure the direct human-move agreement ceiling for this compact MLP family,
-the trainer was extended with `--wthor --split-mode shuffled`. This mode reads
-all WTHOR board-data position samples from
-`$EGAROUCID_DATA/train_data/board_data/records1`, shuffles them with seed `613`,
-and makes disjoint train / validation / test splits.
-
-The trainer also now reloads the checkpointed best Keras model before exporting
-the C++ binary weights and before writing split top-N agreement. This avoids
-exporting the final epoch when the best checkpoint is earlier.
-
-日本語:
-
-以前の selected-data policy network は WTHOR そのものを直接学習していませんでした。
-この軽量 MLP 系で人間着手一致率がどこまで出るかを見るため、
-`--wthor --split-mode shuffled` を追加しました。この mode は
-`$EGAROUCID_DATA/train_data/board_data/records1` の WTHOR board-data 局面
-サンプルを全て読み、seed `613` で shuffle して、train / validation / test に
-重複なしで分割します。
-
-また、C++ 用 binary weight の export と split top-N 評価の前に、checkpoint された
-best Keras model を読み戻すようにしました。これにより、best checkpoint が最終 epoch
-より前にある場合でも、誤って最終 epoch の重みを export しません。
-
-Split:
-
-分割:
+The trainer shuffled all WTHOR position samples with seed `613` and split them
+at the position-sample level.
 
 | split | position samples |
 | --- | ---: |
@@ -927,46 +24,151 @@ Split:
 | test | 803,529 |
 | total | 8,035,282 |
 
-Commands:
+### Evaluation Definition
 
-コマンド:
+Human-move agreement is computed after masking illegal moves. For each position
+sample, the 64 network outputs are ranked only among legal moves in
+policy-output square order. Top-N agreement is the fraction of position samples
+where the WTHOR move is included in the highest-ranked N legal moves.
 
-```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_192x3.log --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_192x3_resource.json -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py --wthor --split-mode shuffled --configs 192x3 --epochs 20 --patience 5 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_192x3
+The validation split is used for model selection. The test split is used only
+for final reporting after selection.
 
-python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_256x4_e50_best.log --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_256x4_e50_best_resource.json -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py --wthor --split-mode shuffled --configs 256x4 --epochs 50 --patience 8 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_256x4_e50_best
+### Model Selection Rule
 
-python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_384x4_e50.log --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_full_split_384x4_e50_resource.json -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py --wthor --split-mode shuffled --configs 384x4 --epochs 50 --patience 8 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_384x4_e50
+The adopted model is the run with the highest validation legal-masked top-1
+agreement. If validation legal-masked top-1 is equal, the tie-breakers are
+validation legal-masked top-3 agreement, fewer parameters, and shorter elapsed
+training time, in that order.
+
+Within a single Keras run, `best_model.h5` is the checkpoint with the best
+unmasked validation `val_accuracy`. The split agreement table below is computed
+after reloading that checkpoint.
+
+### Sweep Results
+
+All runs used TensorFlow/Keras, batch size 8192, evaluation batch size 65536,
+prediction batch size 8192, and seed `613`.
+
+| config | params | requested epochs | epochs ran | best epoch | val exact top-1 | val legal top-1 | val legal top-3 | val legal top-5 | test legal top-1 | test legal top-3 | test legal top-5 | test legal top-10 | elapsed sec | peak RSS MiB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 128x3 | 57,792 | 20 | 20 | 18 | 42.914% | 45.541% | 76.758% | 89.795% | 45.590% | 76.834% | 89.749% | 99.407% | 58.7 | 10,396.0 |
+| 192x3 | 111,232 | 20 | 20 | 20 | 46.927% | 48.852% | 80.082% | 91.888% | 48.901% | 80.109% | 91.858% | 99.563% | 61.8 | 10,337.6 |
+| 256x4 | 246,848 | 20 | 20 | 20 | 50.432% | 51.606% | 82.701% | 93.476% | 51.658% | 82.786% | 93.490% | 99.701% | 69.0 | 10,399.7 |
+| 384x4 | 517,696 | 20 | 20 | 20 | 53.941% | 54.665% | 85.363% | 94.921% | 54.776% | 85.426% | 94.920% | 99.801% | 84.2 | 10,384.1 |
+| 512x4 | 886,848 | 20 | 20 | 20 | 55.686% | 56.167% | 86.699% | 95.621% | 56.136% | 86.817% | 95.610% | 99.836% | 91.3 | 10,406.5 |
+| 256x4 | 246,848 | 50 | 50 | 50 | 53.273% | 54.128% | 84.997% | 94.703% | 54.159% | 85.013% | 94.694% | 99.796% | 125.6 | 10,437.7 |
+| 384x4 | 517,696 | 50 | 50 | 50 | 56.344% | 56.839% | 87.315% | 95.934% | 56.871% | 87.330% | 95.913% | 99.860% | 160.2 | 10,424.0 |
+| 512x4 | 886,848 | 50 | 50 | 50 | 58.173% | 58.389% | 88.093% | 96.255% | 58.486% | 88.170% | 96.243% | 99.851% | 186.5 | 10,417.5 |
+
+### Adopted Model
+
+The adopted model is `512x4` trained for 50 epochs, because it has the highest
+validation legal-masked top-1 agreement in this sweep: 58.389%.
+
+Its held-out test agreement is:
+
+| top N | test legal-masked agreement |
+| ---: | ---: |
+| 1 | 58.486% |
+| 3 | 88.170% |
+| 5 | 96.243% |
+| 10 | 99.851% |
+
+Artifacts:
+
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/best_model.h5`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/best_policy_network_weights.bin`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/best_summary.json`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/w512_d4_a0.03/split_topn_accuracy.csv`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_sweep_512x4_e50.log`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_sweep_512x4_e50_resource.json`
+
+Earlier report snapshots were moved to:
+
+```text
+src/tools/policy_network_human_like_ai/report/legacy
 ```
 
-Results:
+## 日本語
 
-結果:
+### データセット
 
-| config | params | epochs | best epoch | val exact top-1 | test legal top-1 | test legal top-2 | test legal top-3 | test legal top-5 | elapsed sec | peak RSS MiB |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 192x3 | 111,232 | 20 | 20 | 46.865% | 48.819% | 68.897% | 80.188% | 91.912% | 61.829 | 10,391.102 |
-| 256x4 | 246,848 | 50 | 48 | 52.771% | 53.649% | 74.009% | 84.653% | 94.477% | 134.777 | 10,415.266 |
-| 384x4 | 517,696 | 50 | 47 | 56.178% | 56.661% | 77.070% | 87.163% | 95.752% | 171.243 | 10,408.930 |
+入力データは、WTHORから展開した次のboard dataです。
 
-For the best run here, `384x4`, the full test split top-N was:
+```text
+$EGAROUCID_DATA/train_data/board_data/records1
+```
 
-今回の最良 run である `384x4` の test split top-N:
+seed `613` でWTHOR全局面サンプルをshuffleし、局面サンプル単位でtrain、
+validation、testに分割しました。
 
-| top N | hits | position samples | accuracy |
-| ---: | ---: | ---: | ---: |
-| 1 | 455,287 | 803,529 | 56.661% |
-| 2 | 619,281 | 803,529 | 77.070% |
-| 3 | 700,377 | 803,529 | 87.163% |
-| 5 | 769,393 | 803,529 | 95.752% |
-| 10 | 802,314 | 803,529 | 99.849% |
+| split | 局面サンプル数 |
+| --- | ---: |
+| train | 6,428,225 |
+| validation | 803,528 |
+| test | 803,529 |
+| total | 8,035,282 |
 
-Generated artifacts:
+### 評価方法
 
-生成された成果物:
+人間着手一致率は、合法手mask後のpolicy network出力で計算しました。各局面サンプルで、
+64個のnetwork出力のうち合法手だけをpolicy出力のマス順で残して順位付けします。
+top-N一致率は、WTHORで実際に打たれた手が上位N手に含まれた局面サンプルの割合です。
 
-- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_full_split_384x4_e50/best_model.h5`
-- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_full_split_384x4_e50/best_policy_network_weights.bin`
-- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_full_split_384x4_e50/w384_d4_a0.03/split_topn_accuracy.csv`
-- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_full_split_384x4_e50.log`
-- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_full_split_384x4_e50_resource.json`
+validation splitはモデル採用に使います。test splitは、採用後の最終確認だけに使います。
+
+### モデル採用基準
+
+採用モデルは、validation splitの合法手mask後top-1一致率が最も高いrunです。
+同率の場合は、validation合法手mask後top-3一致率、パラメータ数の少なさ、
+学習時間の短さの順で比較します。
+
+1回のKeras学習内では、`best_model.h5` は合法手maskなしのvalidation
+`val_accuracy` が最良だったcheckpointです。下のsplit一致率は、そのcheckpointを
+読み戻してから計算しています。
+
+### 実験結果
+
+全runでTensorFlow/Keras、batch size 8192、evaluation batch size 65536、
+prediction batch size 8192、seed `613` を使いました。
+
+| config | params | 指定epoch | 実行epoch | best epoch | val exact top-1 | val legal top-1 | val legal top-3 | val legal top-5 | test legal top-1 | test legal top-3 | test legal top-5 | test legal top-10 | elapsed sec | peak RSS MiB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 128x3 | 57,792 | 20 | 20 | 18 | 42.914% | 45.541% | 76.758% | 89.795% | 45.590% | 76.834% | 89.749% | 99.407% | 58.7 | 10,396.0 |
+| 192x3 | 111,232 | 20 | 20 | 20 | 46.927% | 48.852% | 80.082% | 91.888% | 48.901% | 80.109% | 91.858% | 99.563% | 61.8 | 10,337.6 |
+| 256x4 | 246,848 | 20 | 20 | 20 | 50.432% | 51.606% | 82.701% | 93.476% | 51.658% | 82.786% | 93.490% | 99.701% | 69.0 | 10,399.7 |
+| 384x4 | 517,696 | 20 | 20 | 20 | 53.941% | 54.665% | 85.363% | 94.921% | 54.776% | 85.426% | 94.920% | 99.801% | 84.2 | 10,384.1 |
+| 512x4 | 886,848 | 20 | 20 | 20 | 55.686% | 56.167% | 86.699% | 95.621% | 56.136% | 86.817% | 95.610% | 99.836% | 91.3 | 10,406.5 |
+| 256x4 | 246,848 | 50 | 50 | 50 | 53.273% | 54.128% | 84.997% | 94.703% | 54.159% | 85.013% | 94.694% | 99.796% | 125.6 | 10,437.7 |
+| 384x4 | 517,696 | 50 | 50 | 50 | 56.344% | 56.839% | 87.315% | 95.934% | 56.871% | 87.330% | 95.913% | 99.860% | 160.2 | 10,424.0 |
+| 512x4 | 886,848 | 50 | 50 | 50 | 58.173% | 58.389% | 88.093% | 96.255% | 58.486% | 88.170% | 96.243% | 99.851% | 186.5 | 10,417.5 |
+
+### 採用モデル
+
+採用モデルは、50epoch学習した `512x4` です。このsweepで最も高い
+validation合法手mask後top-1一致率 58.389% を示したためです。
+
+採用モデルのheld-out test splitでの一致率は次の通りです。
+
+| top N | test合法手mask後一致率 |
+| ---: | ---: |
+| 1 | 58.486% |
+| 3 | 88.170% |
+| 5 | 96.243% |
+| 10 | 99.851% |
+
+生成物:
+
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/best_model.h5`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/best_policy_network_weights.bin`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/best_summary.json`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_sweep_512x4_e50/w512_d4_a0.03/split_topn_accuracy.csv`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_sweep_512x4_e50.log`
+- `src/tools/policy_network_human_like_ai/10_train_policy_network/train_log/wthor_sweep_512x4_e50_resource.json`
+
+以前のreport snapshotは次のローカルアーカイブに移動済みです。
+
+```text
+src/tools/policy_network_human_like_ai/report/legacy
+```

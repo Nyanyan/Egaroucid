@@ -7,7 +7,10 @@ Related issue: #613
 Input features are side-to-move bitboards:
   [player-to-move exists on 64 squares, opponent exists on 64 squares]
 
-Training data is read from selected transcript_release/0002 games converted to:
+Current WTHOR direct training reads expanded position samples from:
+  $EGAROUCID_DATA/train_data/board_data/records1
+
+The legacy selected-data path is still available for comparison runs:
   train_data/board_data/Egaroucid_Train_Data_v2_selected/records0
 
 Board-data binary sample layout, 19 bytes:

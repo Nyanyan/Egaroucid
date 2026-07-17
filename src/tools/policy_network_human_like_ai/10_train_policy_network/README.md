@@ -4,213 +4,172 @@ Related issue: #613
 
 ## English
 
-This directory trains compact Othello/Reversi policy networks for the
-human-like AI experiment. It is based on `src/tools/policy_network`, with
-dataset selection, resource logging, WTHOR agreement evaluation, blending with
-Egaroucid Console, and strength-test utilities added for the experiment.
+This directory trains compact Othello/Reversi policy networks for predicting
+human moves from WTHOR games.
 
-Terminology:
+The current report and commands are for direct WTHOR training. Earlier report
+snapshots were moved to the local archive
+`src/tools/policy_network_human_like_ai/report/legacy`.
 
-- `games`: complete game transcripts.
-- `position_samples`: board positions written to the binary board-data files.
-- Existing board-data directory names such as `records0` and `records1` are
-  kept only because they are part of the current data layout.
+### Terminology
 
-Input features are side-relative:
+- `games` means complete game transcripts.
+- `position samples` means the expanded board positions stored in the binary
+  board-data files. This is the unit used by the trainer.
+- Existing dataset directory names such as `records1` are kept only because
+  they are part of the current file layout.
+
+### Input
+
+The input is side-relative, not fixed black/white:
 
 - 64 player-to-move disc bits.
 - 64 opponent disc bits.
 - 128 float inputs in total.
 
-The board-data binary samples store those bitboards as `player` and
-`opponent`; the trainer uses them directly. The input is not fixed black/white.
+The board-data binary samples already store the two bitboards as `player` and
+`opponent`, and the trainer uses them directly.
 
-Pipeline:
+### Dataset And Split
 
-1. Select random games from `train_data/transcript_release/0002`.
-2. Write selected games to `train_data/transcript/Egaroucid_Train_Data_v2_selected`.
-3. Convert them to board data under `train_data/board_data/Egaroucid_Train_Data_v2_selected/records0`.
-4. Train several compact TensorFlow/Keras policy networks.
-5. Evaluate pure policy agreement on WTHOR position samples.
-6. Evaluate blended policy/Egaroucid agreement with resumable shards and an
-   optional SQLite hint-score cache.
-7. Run strength tests with resumable JSONL output.
+Source:
 
-Training example:
-
-```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\select_transcripts.py --num-games 1000000 --seed 613
-python src\tools\policy_network_human_like_ai\10_train_policy_network\convert_selected_transcripts_to_board_data.py
-python src\tools\policy_network_human_like_ai\10_train_policy_network\run_training_experiments.py `
-  --configs 64x3,96x3,128x3,96x4,160x3,192x3,128x4 `
-  --epochs 20 `
-  --patience 5 `
-  --max-train-samples 5000000 `
-  --max-val-samples 500000 `
-  --batch-size 8192
+```text
+$EGAROUCID_DATA/train_data/board_data/records1
 ```
 
-WTHOR and blend helpers:
+Use `--wthor --split-mode shuffled` to train from all WTHOR board-data position
+samples. The trainer shuffles the expanded WTHOR position-sample set with seed
+`613`, then splits it into train, validation, and test subsets at the position
+sample level.
+
+| split | position samples |
+| --- | ---: |
+| train | 6,428,225 |
+| validation | 803,528 |
+| test | 803,529 |
+| total | 8,035,282 |
+
+### Model Selection Rule
+
+Inside one Keras run, the checkpoint named `best_model.h5` is selected by
+validation `val_accuracy`, which is the unmasked exact top-1 accuracy over the
+64 policy outputs.
+
+Across different training runs, the adopted model is selected by validation
+legal-masked top-1 human-move agreement. The test split is not used for model
+selection; it is used only after the model is selected. If two runs have the
+same validation legal-masked top-1 agreement, the tie-breakers are validation
+legal-masked top-3 agreement, then fewer parameters, then shorter elapsed
+training time.
+
+Legal-masked top-N agreement means this: after the network predicts the 64-way
+policy distribution, only legal moves in policy-output square order are ranked.
+A position sample is a top-N hit when the WTHOR move is among the first N ranked
+legal moves.
+
+### Training Command
+
+Example:
 
 ```powershell
-python src\tools\policy_network_human_like_ai\20_test_with_wthor\analyze_wthor_position_duplicates.py
-python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend_shards.py `
-  --output-dir src\tools\policy_network_human_like_ai\20_test_with_wthor\output\blend_wthor_full_chunked `
-  --resume-from-completed-prefix `
-  --positions-per-shard 20 `
-  --jobs-per-shard 4 `
-  --egaroucid-threads 8 `
-  --time-limit-sec 3600 `
-  --merge-completed `
-  --blend-params '0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0' `
-  --top-n '1,2,3,4,5,8,10,16'
+python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py `
+  --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_sweep_512x4_e50.log `
+  --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_sweep_512x4_e50_resource.json `
+  -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py `
+    --wthor `
+    --split-mode shuffled `
+    --configs 512x4 `
+    --epochs 50 `
+    --patience 8 `
+    --batch-size 8192 `
+    --eval-batch-size 65536 `
+    --predict-batch-size 8192 `
+    --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_sweep_512x4_e50
 ```
 
-The sharded blend runner creates a shared SQLite hint-score cache by default at
-`20_test_with_wthor/output/blend_wthor_full_chunked/hint_score_cache.sqlite3`
-when the command above is used.
-Use `--no-hint-cache` to disable it or `--hint-cache-db` to choose another path.
-Use `--positions-per-shard`, `--range-start` / `--range-end`, and
-`--time-limit-sec` to advance the full WTHOR run in resumable chunks. Use
-`--merge-completed` to keep `partial_merged` updated even before the full WTHOR
-run is complete. `manifest.json` stores only a first/last shard preview by
-default; tune it with `--manifest-shard-preview`. Use
-`--resume-from-completed-prefix` to continue from the end of the completed
-contiguous shard prefix.
-
-Strength-test helper:
-
-```powershell
-python src\tools\policy_network_human_like_ai\40_test_strength\run_strength_full.py `
-  --resume `
-  --time-limit-sec 3600
-```
-
-The strength runner writes completed games to `strength_games.jsonl` and can
-resume the full 120,000-game schedule.
-
-Generated model artifacts, raw logs, and evaluation outputs are intentionally
-ignored by git.
-
-## WTHOR Direct Training / WTHOR 直接学習
-
-English:
-
-Use `--wthor --split-mode shuffled` to train directly from the WTHOR board-data
-position samples under `$EGAROUCID_DATA/train_data/board_data/records1`. The
-trainer shuffles the full WTHOR position-sample set with `--seed`, makes
-disjoint train/validation/test splits, and writes legal-masked top-N agreement
-for each split.
-
-```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py `
-  --wthor `
-  --split-mode shuffled `
-  --configs 384x4 `
-  --epochs 50 `
-  --patience 8 `
-  --batch-size 8192 `
-  --eval-batch-size 65536 `
-  --predict-batch-size 8192 `
-  --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_full_split_384x4_e50
-```
-
-The default shuffled split ratios are 80% train, 10% validation, and 10% test.
-The binary weights exported for C++ are loaded from the checkpointed best Keras
-model before export.
-
-日本語:
-
-`--wthor --split-mode shuffled` を使うと、
-`$EGAROUCID_DATA/train_data/board_data/records1` の WTHOR board-data 局面
-サンプルを直接学習に使います。全 WTHOR 局面サンプルを `--seed` で shuffle し、
-train / validation / test を重複なしに分割して、各 split の合法手 mask 後 top-N
-一致率を保存します。
-
-既定の分割比は train 80%、validation 10%、test 10% です。C++ 用 binary weight は、
-checkpoint された best Keras model を読み戻してから export します。
+Generated models, raw logs, and resource summaries are intentionally ignored by
+git.
 
 ## 日本語
 
-このディレクトリは、人間らしいAI実験用の軽量な Othello/Reversi policy network を学習します。
-`src/tools/policy_network` を土台にして、実験用のデータ選択、リソースログ、WTHOR一致率評価、
-Egaroucid Console とのブレンド評価、強さ評価用のユーティリティを追加しています。
+このディレクトリでは、WTHOR棋譜から展開した局面を使い、人間の着手を予測する軽量な
+Othello/Reversi policy networkを学習します。
 
-用語:
+現在のREADMEとRESULTSは、WTHORを直接学習データにした実験だけを対象にしています。
+以前のreport snapshotは、ローカルアーカイブ
+`src/tools/policy_network_human_like_ai/report/legacy` に移動しました。
 
-- `games`: 完全な棋譜、つまり対局数です。
-- `position_samples`: binary board-data に書き出された局面サンプルです。
-- `records0` や `records1` という既存ディレクトリ名は、現在のデータ配置の一部なのでパス名としてだけ残しています。
+### 用語
 
-入力特徴は手番相対です。
+- `games` は、1局分の完全な棋譜を意味します。
+- `局面サンプル` は、binary board-dataに保存された展開済み局面を意味します。
+  学習器はこの局面サンプルを単位として扱います。
+- `records1` などの既存ディレクトリ名は、現在のデータ配置の一部であるため
+  パス名としてのみ使います。
 
-- 手番側の石 64 bit。
-- 相手側の石 64 bit。
-- 合計 128 float 入力。
+### 入力
 
-board-data の binary sample には `player` と `opponent` として保存されており、
-学習コードはそれをそのまま使います。入力は固定の黒白ではありません。
+入力は固定の黒白ではなく、手番相対です。
 
-流れ:
+- 手番側の石がある64マス。
+- 相手側の石がある64マス。
+- 合計128個のfloat入力。
 
-1. `train_data/transcript_release/0002` からランダムに対局を選びます。
-2. 選んだ棋譜を `train_data/transcript/Egaroucid_Train_Data_v2_selected` に書き出します。
-3. `train_data/board_data/Egaroucid_Train_Data_v2_selected/records0` に board-data を作ります。
-4. TensorFlow/Keras で複数の軽量 policy network を学習します。
-5. WTHOR 局面サンプルで policy 単体の一致率を評価します。
-6. resumable shard と SQLite の hint-score cache を使って、policy と Egaroucid のブレンド一致率を評価します。
-7. JSONL に途中結果を残しながら強さ評価を行います。
+board-dataのbinary sampleには `player` と `opponent` として保存されているため、
+学習コードはそれをそのまま使います。
 
-学習例:
+### データセットと分割
 
-```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\select_transcripts.py --num-games 1000000 --seed 613
-python src\tools\policy_network_human_like_ai\10_train_policy_network\convert_selected_transcripts_to_board_data.py
-python src\tools\policy_network_human_like_ai\10_train_policy_network\run_training_experiments.py `
-  --configs 64x3,96x3,128x3,96x4,160x3,192x3,128x4 `
-  --epochs 20 `
-  --patience 5 `
-  --max-train-samples 5000000 `
-  --max-val-samples 500000 `
-  --batch-size 8192
+入力データ:
+
+```text
+$EGAROUCID_DATA/train_data/board_data/records1
 ```
 
-WTHOR・ブレンド評価の補助コマンド:
+`--wthor --split-mode shuffled` を使うと、WTHOR由来の全局面サンプルを読み込みます。
+seed `613` で局面サンプル全体をshuffleし、train、validation、testに分割します。
+この分割の単位は局面サンプルです。
+
+| split | 局面サンプル数 |
+| --- | ---: |
+| train | 6,428,225 |
+| validation | 803,528 |
+| test | 803,529 |
+| total | 8,035,282 |
+
+### 採用基準
+
+1回のKeras学習の中では、`best_model.h5` は validation `val_accuracy` で選びます。
+この `val_accuracy` は、合法手maskを使わない64出力全体の厳密なtop-1 accuracyです。
+
+複数の学習条件を比較するときは、validation splitにおける合法手mask後top-1
+人間着手一致率が最も高いモデルを採用します。test splitはモデル採用には使わず、
+採用後の最終確認だけに使います。同率の場合は、validation合法手mask後top-3一致率、
+パラメータ数の少なさ、学習時間の短さの順で比較します。
+
+合法手mask後top-N一致率とは、networkが出した64出力のpolicy分布に対して、
+policy出力のマス順で合法手だけを残して順位付けし、WTHORで実際に打たれた手が
+上位N手に含まれる局面サンプルの割合です。
+
+### 学習コマンド
+
+例:
 
 ```powershell
-python src\tools\policy_network_human_like_ai\20_test_with_wthor\analyze_wthor_position_duplicates.py
-python src\tools\policy_network_human_like_ai\20_test_with_wthor\run_wthor_blend_shards.py `
-  --output-dir src\tools\policy_network_human_like_ai\20_test_with_wthor\output\blend_wthor_full_chunked `
-  --resume-from-completed-prefix `
-  --positions-per-shard 20 `
-  --jobs-per-shard 4 `
-  --egaroucid-threads 8 `
-  --time-limit-sec 3600 `
-  --merge-completed `
-  --blend-params '0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0' `
-  --top-n '1,2,3,4,5,8,10,16'
+python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py `
+  --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_sweep_512x4_e50.log `
+  --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_sweep_512x4_e50_resource.json `
+  -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py `
+    --wthor `
+    --split-mode shuffled `
+    --configs 512x4 `
+    --epochs 50 `
+    --patience 8 `
+    --batch-size 8192 `
+    --eval-batch-size 65536 `
+    --predict-batch-size 8192 `
+    --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_sweep_512x4_e50
 ```
 
-shard 版のブレンド評価は、既定で
-上のコマンドでは
-`20_test_with_wthor/output/blend_wthor_full_chunked/hint_score_cache.sqlite3`
-に共有 SQLite hint-score cache を作ります。無効化する場合は `--no-hint-cache`、保存先を変える場合は
-`--hint-cache-db` を使います。
-`--positions-per-shard`、`--range-start` / `--range-end`、`--time-limit-sec` を使うと、
-全WTHOR実行を再開可能な小さい単位で進められます。
-`--merge-completed` を使うと、全WTHORが完走する前でも `partial_merged` を更新できます。
-`manifest.json` は既定で shard の先頭・末尾 preview だけを保存します。表示数は
-`--manifest-shard-preview` で調整できます。
-`--resume-from-completed-prefix` を使うと、完了済みの連続 shard prefix の末尾から自動で再開できます。
-
-強さ評価の補助コマンド:
-
-```powershell
-python src\tools\policy_network_human_like_ai\40_test_strength\run_strength_full.py `
-  --resume `
-  --time-limit-sec 3600
-```
-
-強さ評価 runner は完了済み対局を `strength_games.jsonl` に保存し、120,000対局の full schedule を再開できます。
-
-生成されたモデル、raw log、評価出力は git 管理外です。
+生成されたモデル、raw log、resource summaryはgit管理外です。
