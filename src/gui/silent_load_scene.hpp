@@ -772,10 +772,6 @@ public:
             if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 load_code = silent_load_future.get();
                 loaded = load_code == ERR_OK;
-                if (loaded) {
-                    // Temporarily ignore saved window size and position at startup.
-                    apply_default_window_settings(&getData().window_state);
-                }
                 loading = false;
             }
         } else {
