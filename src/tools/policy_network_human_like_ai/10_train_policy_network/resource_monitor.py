@@ -94,7 +94,7 @@ def run_monitored_command(
     log_path.parent.mkdir(parents=True, exist_ok=True)
     start = time.time()
     start_iso = now_iso()
-    peak_rss: Optional[int] = None
+    max_main_memory: Optional[int] = None
     n_samples = 0
     with log_path.open("w", encoding="utf-8", errors="replace") as log:
         log.write("$ " + command_text(command) + "\n")
@@ -104,7 +104,7 @@ def run_monitored_command(
         while True:
             current = rss_bytes(proc.pid)
             if current is not None:
-                peak_rss = current if peak_rss is None else max(peak_rss, current)
+                max_main_memory = current if max_main_memory is None else max(max_main_memory, current)
                 n_samples += 1
             if proc.poll() is not None:
                 break
@@ -115,10 +115,10 @@ def run_monitored_command(
         log.write("\n")
         log.write(f"resource_monitor_end {end_iso}\n")
         log.write(f"resource_elapsed_sec {elapsed:.3f}\n")
-        if peak_rss is None:
-            log.write("resource_peak_rss_mib unknown\n")
+        if max_main_memory is None:
+            log.write("resource_max_main_memory_mib unknown\n")
         else:
-            log.write(f"resource_peak_rss_mib {mib(peak_rss):.3f}\n")
+            log.write(f"resource_max_main_memory_mib {mib(max_main_memory):.3f}\n")
         log.write(f"resource_samples {n_samples}\n")
         log.write(f"resource_returncode {returncode}\n")
     return {
@@ -127,8 +127,8 @@ def run_monitored_command(
         "start_time": start_iso,
         "end_time": end_iso,
         "elapsed_sec": elapsed,
-        "peak_rss_bytes": peak_rss,
-        "peak_rss_mib": mib(peak_rss),
+        "max_main_memory_bytes": max_main_memory,
+        "max_main_memory_mib": mib(max_main_memory),
         "resource_samples": n_samples,
         "log": str(log_path),
     }

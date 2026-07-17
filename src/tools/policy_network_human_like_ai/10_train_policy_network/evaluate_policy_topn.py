@@ -144,11 +144,11 @@ def default_board_data_dir() -> Path:
 
 
 def default_model_file() -> Path:
-    return Path(__file__).resolve().parent / "trained" / "selected_v2" / "best_model.h5"
+    return Path(__file__).resolve().parent / "trained" / "wthor_final_arch_512x4_e50" / "selected_model.h5"
 
 
 def default_weights_file() -> Path:
-    return Path(__file__).resolve().parent / "trained" / "selected_v2" / "best_policy_network_weights.bin"
+    return Path(__file__).resolve().parent / "trained" / "wthor_final_arch_512x4_e50" / "selected_policy_network_weights.bin"
 
 
 def discover_dat_files(board_data_dir: Path) -> List[Path]:
@@ -357,7 +357,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=65536, help="Board-data read batch size.")
     parser.add_argument("--predict-batch-size", type=int, default=8192, help="Keras predict batch size.")
     parser.add_argument("--max-positions", type=int, default=None)
-    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "trained" / "selected_v2_wthor_eval")
+    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "trained" / "wthor_final_arch_512x4_e50_eval")
     parser.add_argument("--progress-interval", type=int, default=1000000)
     parser.add_argument("--verbose", action="store_true")
     return parser

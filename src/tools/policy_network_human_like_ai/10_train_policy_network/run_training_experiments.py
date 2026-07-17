@@ -28,7 +28,6 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run policy network training experiments with raw log capture.")
     parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
     parser.add_argument("--epochs", type=int, default=24)
-    parser.add_argument("--patience", type=int, default=6)
     parser.add_argument("--batch-size", type=int, default=8192)
     parser.add_argument("--max-train-samples", type=int, default=2_000_000)
     parser.add_argument("--max-val-samples", type=int, default=200_000)
@@ -36,7 +35,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--data-root", type=Path, default=None)
     parser.add_argument("--board-data-index-start", type=int, default=0)
     parser.add_argument("--board-data-index-end", type=int, default=0)
-    parser.add_argument("--output-dir", type=Path, default=script_dir() / "trained" / "selected_v2")
+    parser.add_argument("--output-dir", type=Path, default=script_dir() / "trained" / "training_runs")
     parser.add_argument("--log-dir", type=Path, default=script_dir() / "train_log")
     return parser
 
@@ -57,8 +56,6 @@ def main() -> None:
             config,
             "--epochs",
             str(args.epochs),
-            "--patience",
-            str(args.patience),
             "--batch-size",
             str(args.batch_size),
             "--max-train-samples",
@@ -82,7 +79,7 @@ def main() -> None:
             "config": config,
             "returncode": resource["returncode"],
             "elapsed_sec": resource["elapsed_sec"],
-            "peak_rss_mib": resource["peak_rss_mib"],
+            "max_main_memory_mib": resource["max_main_memory_mib"],
             "resource_samples": resource["resource_samples"],
             "log": str(log_path),
             "output_dir": str(run_output_dir),
@@ -95,7 +92,7 @@ def main() -> None:
     with (args.log_dir / "training_runs.json").open("w", encoding="utf-8") as f:
         json.dump(rows, f, indent=2, ensure_ascii=False)
     with (args.log_dir / "training_runs.csv").open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["config", "returncode", "elapsed_sec", "peak_rss_mib", "resource_samples", "log", "output_dir"])
+        writer = csv.DictWriter(f, fieldnames=["config", "returncode", "elapsed_sec", "max_main_memory_mib", "resource_samples", "log", "output_dir"])
         writer.writeheader()
         writer.writerows(rows)
     if rows and rows[-1]["returncode"] != 0:

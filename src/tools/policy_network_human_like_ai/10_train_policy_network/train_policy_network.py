@@ -38,7 +38,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import tensorflow as tf
 from tensorflow import __version__ as tf_version
-from tensorflow.keras.callbacks import CSVLogger, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras.callbacks import CSVLogger
 from tensorflow.keras.layers import Dense, Dropout, Input, LeakyReLU, Softmax
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2 as keras_l2
@@ -405,52 +405,6 @@ def write_topn_rows(path: Path, rows: Sequence[dict]) -> None:
         writer.writerows(rows)
 
 
-class LegalMaskedValidationCallback(tf.keras.callbacks.Callback):
-    def __init__(
-        self,
-        split: SplitArrays,
-        n_values: Sequence[int],
-        batch_size: int,
-        predict_batch_size: int,
-        csv_path: Path,
-    ) -> None:
-        super().__init__()
-        self.split = split
-        self.n_values = sorted(set(n_values))
-        self.batch_size = batch_size
-        self.predict_batch_size = predict_batch_size
-        self.csv_path = csv_path
-        self.rows: List[dict] = []
-
-    def on_epoch_end(self, epoch: int, logs: Optional[dict] = None) -> None:
-        if logs is None:
-            logs = {}
-        result = evaluate_policy_topn_arrays(
-            self.model,
-            "val",
-            self.split,
-            self.n_values,
-            self.batch_size,
-            self.predict_batch_size,
-        )
-        row = {"epoch": epoch + 1}
-        for item in result["topn"]:
-            metric_name = f"val_legal_top{item['top_n']}"
-            accuracy = float(item["accuracy"])
-            logs[metric_name] = accuracy
-            row[metric_name] = accuracy
-        self.rows.append(row)
-        self.csv_path.parent.mkdir(parents=True, exist_ok=True)
-        fieldnames = ["epoch"] + [f"val_legal_top{n}" for n in self.n_values]
-        with self.csv_path.open("w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(self.rows)
-        top1 = row.get("val_legal_top1")
-        if top1 is not None:
-            print(f"val legal-masked top-1 {top1 * 100.0:.3f}%")
-
-
 def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
     specs: List[ModelSpec] = []
     for raw_token in text.split(","):
@@ -566,31 +520,7 @@ def train_one_model(
     print(f"params {model.count_params()}")
     model.summary()
 
-    checkpoint_monitor = "val_accuracy"
-    checkpoint_description = "unmasked validation exact top-1 accuracy over all 64 policy outputs"
-    legal_callback = None
-    if split_eval_data is not None and not args.no_legal_checkpoint:
-        checkpoint_monitor = "val_legal_top1"
-        checkpoint_description = "validation legal-masked top-1 human-move agreement"
-        legal_callback = LegalMaskedValidationCallback(
-            split_eval_data["val"],
-            sorted(set([1, 3, 5] + list(args.top_n))),
-            args.eval_batch_size,
-            args.predict_batch_size,
-            run_dir / "validation_legal_masked_metrics.csv",
-        )
-
-    callbacks = []
-    if legal_callback is not None:
-        callbacks.append(legal_callback)
-    callbacks.extend(
-        [
-            EarlyStopping(monitor=checkpoint_monitor, mode="max", patience=args.patience, restore_best_weights=True),
-            ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=max(1, args.patience // 2), min_lr=args.min_learning_rate),
-            CSVLogger(str(run_dir / "keras_log.csv")),
-            ModelCheckpoint(str(run_dir / "best_model.h5"), monitor=checkpoint_monitor, mode="max", save_best_only=True),
-        ]
-    )
+    callbacks = [CSVLogger(str(run_dir / "keras_log.csv"))]
     history = model.fit(
         x_train,
         p_train,
@@ -602,46 +532,28 @@ def train_one_model(
     )
 
     save_history_csv(history, run_dir / "history.csv")
-    best_model_path = run_dir / "best_model.h5"
-    if best_model_path.exists():
-        model = tf.keras.models.load_model(best_model_path)
+    adopted_epoch = len(history.epoch)
+    adopted_idx = adopted_epoch - 1
     model.save(run_dir / "model.h5")
     export_binary_weights(model, spec, run_dir / "policy_network_weights.bin")
 
-    checkpoint_values: List[float] = []
-    if legal_callback is not None:
-        checkpoint_values = [float(row[checkpoint_monitor]) for row in legal_callback.rows if checkpoint_monitor in row]
-    if not checkpoint_values:
-        checkpoint_values = [float(v) for v in history.history.get(checkpoint_monitor, [])]
-    if not checkpoint_values:
-        checkpoint_values = [float(v) for v in history.history.get("val_accuracy", [])]
-    best_epoch = int(np.argmax(checkpoint_values)) + 1 if checkpoint_values else len(history.epoch)
-    best_idx = best_epoch - 1
-    best_legal_metrics = {}
-    if legal_callback is not None and legal_callback.rows:
-        legal_row = legal_callback.rows[best_idx]
-        best_legal_metrics = {key: float(value) for key, value in legal_row.items() if key.startswith("val_legal_top")}
     result = {
         "name": spec.name,
         "spec": asdict(spec),
         "params": int(model.count_params()),
         "epochs_ran": len(history.epoch),
-        "best_epoch": best_epoch,
-        "checkpoint_monitor": checkpoint_monitor,
-        "checkpoint_mode": "max",
-        "checkpoint_description": checkpoint_description,
-        "best_checkpoint_value": float(checkpoint_values[best_idx]) if checkpoint_values else None,
-        "best_val_loss": float(history.history["val_loss"][best_idx]),
-        "best_val_accuracy": float(history.history["val_accuracy"][best_idx]),
-        "best_val_top3": float(history.history["val_top3"][best_idx]),
-        "best_val_top5": float(history.history["val_top5"][best_idx]),
+        "adopted_epoch": adopted_epoch,
+        "adoption_rule": "use_model_after_requested_epoch_count",
+        "validation_loss": float(history.history["val_loss"][adopted_idx]),
+        "validation_accuracy": float(history.history["val_accuracy"][adopted_idx]),
+        "validation_top3": float(history.history["val_top3"][adopted_idx]),
+        "validation_top5": float(history.history["val_top5"][adopted_idx]),
         "final_loss": float(history.history["loss"][-1]),
         "final_accuracy": float(history.history["accuracy"][-1]),
         "final_top3": float(history.history["top3"][-1]),
         "final_top5": float(history.history["top5"][-1]),
         "output_dir": str(run_dir),
     }
-    result.update({f"best_{key}": value for key, value in best_legal_metrics.items()})
     if split_eval_data is not None and not args.no_split_topn:
         n_values = sorted(set(args.top_n))
         split_results = {}
@@ -663,6 +575,11 @@ def train_one_model(
                 f"{top1['accuracy'] * 100.0:.3f}% ({top1['hits']}/{top1['positions']})"
             )
         result["split_topn"] = split_results
+        val_topn = {int(row["top_n"]): float(row["accuracy"]) for row in split_results["val"]["topn"]}
+        result["validation_legal_masked_top1"] = val_topn.get(1)
+        result["validation_legal_masked_top3"] = val_topn.get(3)
+        result["validation_legal_masked_top5"] = val_topn.get(5)
+        result["validation_legal_masked_top10"] = val_topn.get(10)
         with (run_dir / "split_topn_accuracy.json").open("w", encoding="utf-8") as f:
             json.dump(split_results, f, indent=2)
         write_topn_rows(run_dir / "split_topn_accuracy.csv", all_rows)
@@ -679,17 +596,15 @@ def write_results(results: Sequence[dict], output_dir: Path) -> None:
         "name",
         "params",
         "epochs_ran",
-        "best_epoch",
-        "checkpoint_monitor",
-        "checkpoint_mode",
-        "best_checkpoint_value",
-        "best_val_loss",
-        "best_val_accuracy",
-        "best_val_top3",
-        "best_val_top5",
-        "best_val_legal_top1",
-        "best_val_legal_top3",
-        "best_val_legal_top5",
+        "adopted_epoch",
+        "adoption_rule",
+        "validation_loss",
+        "validation_accuracy",
+        "validation_top3",
+        "validation_top5",
+        "validation_legal_masked_top1",
+        "validation_legal_masked_top3",
+        "validation_legal_masked_top5",
         "final_loss",
         "final_accuracy",
         "final_top3",
@@ -705,8 +620,8 @@ def write_results(results: Sequence[dict], output_dir: Path) -> None:
 
 def run_selection_key(result: dict) -> Tuple[float, float, int]:
     return (
-        float(result.get("best_val_legal_top1", result.get("best_val_accuracy", 0.0))),
-        float(result.get("best_val_legal_top3", result.get("best_val_top3", 0.0))),
+        float(result.get("validation_legal_masked_top1", result.get("validation_accuracy", 0.0))),
+        float(result.get("validation_legal_masked_top3", result.get("validation_top3", 0.0))),
         -int(result.get("params", 0)),
     )
 
@@ -744,9 +659,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--l2", type=float, default=0.0)
     parser.add_argument("--learning-rate", type=float, default=0.001)
-    parser.add_argument("--min-learning-rate", type=float, default=0.00005)
     parser.add_argument("--epochs", type=int, default=20)
-    parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=4096)
     parser.add_argument("--max-train-samples", type=int, default=1000000)
     parser.add_argument("--max-val-samples", type=int, default=100000)
@@ -755,7 +668,6 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-batch-size", type=int, default=65536)
     parser.add_argument("--predict-batch-size", type=int, default=8192)
     parser.add_argument("--no-split-topn", action="store_true")
-    parser.add_argument("--no-legal-checkpoint", action="store_true", help="Use unmasked val_accuracy for checkpointing even when shuffled legal masks are available.")
     parser.add_argument("--output-dir", type=Path, default=None)
     return parser
 
@@ -824,15 +736,15 @@ def main() -> None:
         results.append(train_one_model(spec, x_train, p_train, x_val, p_val, args, output_dir, split_eval_data))
         write_results(results, output_dir)
 
-    best = max(results, key=run_selection_key)
-    best_dir = Path(best["output_dir"])
-    shutil.copyfile(best_dir / "policy_network_weights.bin", output_dir / "best_policy_network_weights.bin")
-    shutil.copyfile(best_dir / "model.h5", output_dir / "best_model.h5")
-    with (output_dir / "best_summary.json").open("w") as f:
-        json.dump(best, f, indent=2)
-    print("\n=== best ===")
-    print(json.dumps(best, indent=2))
-    print("best weights", output_dir / "best_policy_network_weights.bin")
+    selected = max(results, key=run_selection_key)
+    selected_dir = Path(selected["output_dir"])
+    shutil.copyfile(selected_dir / "policy_network_weights.bin", output_dir / "selected_policy_network_weights.bin")
+    shutil.copyfile(selected_dir / "model.h5", output_dir / "selected_model.h5")
+    with (output_dir / "selected_summary.json").open("w") as f:
+        json.dump(selected, f, indent=2)
+    print("\n=== selected final-epoch model ===")
+    print(json.dumps(selected, indent=2))
+    print("selected weights", output_dir / "selected_policy_network_weights.bin")
 
 
 if __name__ == "__main__":
