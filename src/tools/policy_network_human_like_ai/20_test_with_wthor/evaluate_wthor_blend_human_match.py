@@ -199,8 +199,11 @@ def popcount(x: int) -> int:
     return bin(int(x)).count("1")
 
 
-def hint_cache_key(state: BoardState, side: int) -> str:
-    return f"{state.black:016x}:{state.white:016x}:{int(side)}"
+def hint_cache_key(level: int, state: BoardState, side: int, hint_count: int) -> str:
+    return (
+        f"level={int(level)}:hint={int(hint_count)}:"
+        f"{state.black:016x}:{state.white:016x}:{int(side)}"
+    )
 
 
 class HintScoreCache:
@@ -271,14 +274,20 @@ class HintScoreCache:
         }
 
 
-def hint_scores_with_cache(blender: BlendedPolicy, state: BoardState, side: int, hint_cache: Optional[HintScoreCache]) -> Tuple[Dict[int, float], str]:
+def hint_scores_with_cache(
+    blender: BlendedPolicy,
+    state: BoardState,
+    side: int,
+    hint_count: int,
+    hint_cache: Optional[HintScoreCache],
+) -> Tuple[Dict[int, float], str]:
     if hint_cache is None:
-        return blender.hint_runner.hint_scores(state, side)
-    key = hint_cache_key(state, side)
+        return blender.hint_runner.hint_scores(state, side, hint_count)
+    key = hint_cache_key(blender.hint_runner.level, state, side, hint_count)
     cached = hint_cache.get(key)
     if cached is not None:
         return cached
-    scores, raw_hint = blender.hint_runner.hint_scores(state, side)
+    scores, raw_hint = blender.hint_runner.hint_scores(state, side, hint_count)
     hint_cache.put(key, scores, raw_hint)
     return scores, raw_hint
 
@@ -370,7 +379,14 @@ def update_metrics_for_position_sample(
         raw_hint = ""
         egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
     else:
-        scores, raw_hint = hint_scores_with_cache(blender, state, side, hint_cache)
+        hint_count = max(n_values)
+        scores, raw_hint = hint_scores_with_cache(
+            blender,
+            state,
+            side,
+            hint_count,
+            hint_cache,
+        )
         egaroucid_dist = blender.egaroucid_distribution(scores, legal_policies)
     if raw_hint_limit > 0 and len(raw_hint_samples) < raw_hint_limit:
         raw_hint_samples.append({"index": sample_index, "raw_hint": raw_hint})
@@ -641,6 +657,7 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "weights": str(args.weights),
         "egaroucid_exe": str(args.egaroucid_exe),
         "egaroucid_level": args.egaroucid_level,
+        "console_hint_count": max(n_values),
         "blend_params": list(blend_params),
         "data_split": args.data_split,
         "split_seed": args.split_seed if args.data_split != "all" else None,
@@ -662,7 +679,7 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
             "policy_inferences_per_position": 1,
             "hint_score_lookups_per_position": 1,
             "blend_params_evaluated_from_shared_distributions": len(blend_params),
-            "note": "Each position's policy and hint distributions are computed once, then reused for every blend parameter.",
+            "note": "各局面のPolicy Network出力とhint出力を1回だけ計算し、すべてのalphaで共用する。",
         },
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
@@ -694,6 +711,8 @@ def evaluate(
 ) -> dict:
     blend_params = parse_float_list(args.blend_params)
     n_values = sorted(set(parse_int_list(args.top_n)))
+    if not n_values or any(n <= 0 for n in n_values):
+        raise ValueError("--top-nには1以上の整数を1つ以上指定してください")
     if args.sample_positions is not None and args.sample_positions <= 0:
         raise ValueError("--sample-positions must be positive when set")
     if progress_callback is not None and progress_interval_sec <= 0.0:

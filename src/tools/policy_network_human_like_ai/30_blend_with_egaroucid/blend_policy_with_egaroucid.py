@@ -487,7 +487,10 @@ class EgaroucidHintRunner:
             except Exception:
                 pass
 
-    def raw_hint(self, state: BoardState, side: int) -> str:
+    def raw_hint(self, state: BoardState, side: int, hint_count: int = 100) -> str:
+        hint_count = int(hint_count)
+        if hint_count <= 0:
+            raise ValueError("hint_count must be positive")
         if self.persistent:
             proc = self._ensure_process()
             if proc.stdin is None:
@@ -495,10 +498,10 @@ class EgaroucidHintRunner:
             proc.stdin.write(f"setboard {state.to_egaroucid_board(side)}\n")
             proc.stdin.flush()
             self._read_until_prompt()
-            proc.stdin.write("hint 100\n")
+            proc.stdin.write(f"hint {hint_count}\n")
             proc.stdin.flush()
             return self._read_until_prompt()
-        input_text = f"setboard {state.to_egaroucid_board(side)}\nhint 100\nquit\n"
+        input_text = f"setboard {state.to_egaroucid_board(side)}\nhint {hint_count}\nquit\n"
         proc = subprocess.run(
             self.command(),
             input=input_text,
@@ -511,8 +514,13 @@ class EgaroucidHintRunner:
             raise RuntimeError(f"Egaroucid exited with code {proc.returncode}: {proc.stdout}")
         return proc.stdout
 
-    def hint_scores(self, state: BoardState, side: int) -> Tuple[Dict[int, float], str]:
-        raw = self.raw_hint(state, side)
+    def hint_scores(
+        self,
+        state: BoardState,
+        side: int,
+        hint_count: int = 100,
+    ) -> Tuple[Dict[int, float], str]:
+        raw = self.raw_hint(state, side, hint_count)
         return parse_hint_output(raw), raw
 
     def __del__(self):

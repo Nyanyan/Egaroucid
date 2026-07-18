@@ -23,6 +23,7 @@ import evaluate_wthor_blend_human_match as evaluator
 SCRIPT_DIR = Path(__file__).resolve().parent
 BLEND_PARAMS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
 CONSOLE_LEVELS = (1, 3, 5, 7, 9, 11, 13, 15, 17, 19)
+TOP_N_VALUES = (1, 3)
 TRAIN_RATIO = 0.8
 VAL_RATIO = 0.1
 TEST_RATIO = 0.1
@@ -325,7 +326,7 @@ def make_evaluator_args(
         score_temperature=args.score_temperature,
         no_legal_mask_policy=False,
         blend_params=",".join(f"{alpha:.1f}" for alpha in blend_params),
-        top_n="1,3",
+        top_n=",".join(str(n) for n in TOP_N_VALUES),
         data_split=args.data_split,
         split_seed=args.split_seed,
         train_ratio=TRAIN_RATIO,
@@ -553,6 +554,7 @@ def write_summary(
         "blend_params": list(BLEND_PARAMS),
         "blend_egaroucid_level": args.egaroucid_level,
         "console_levels": list(CONSOLE_LEVELS),
+        "console_hint_count": max(TOP_N_VALUES),
         "console_level_process_isolation": {
             "separate_process_per_level": True,
             "concurrent_level_evaluation": True,
@@ -605,6 +607,7 @@ def print_configuration(
     print("無作為抽出seed", args.sample_seed)
     print("alpha", ", ".join(f"{alpha:.1f}" for alpha in BLEND_PARAMS))
     print("単体で評価するEgaroucidレベル", ", ".join(str(level) for level in CONSOLE_LEVELS))
+    print("Consoleへ要求する候補手数", max(TOP_N_VALUES))
     print("Console起動方式", "level別の10プロセスを同時起動し、各プロセスを全N局面で常駐させる")
     print("ブレンド方策の同時評価処理数", args.jobs)
     print("Console level別の同時常駐プロセス数", len(CONSOLE_LEVELS))
