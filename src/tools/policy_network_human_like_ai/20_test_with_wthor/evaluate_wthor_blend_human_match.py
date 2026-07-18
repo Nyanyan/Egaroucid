@@ -530,6 +530,10 @@ def evaluate_worker(worker_args: dict) -> dict:
         egaroucid_timeout_sec=worker_args["egaroucid_timeout_sec"],
         score_temperature=worker_args["score_temperature"],
         legal_mask_policy=worker_args["legal_mask_policy"],
+        hint_command_stagger_sec=worker_args["hint_command_stagger_sec"],
+        hint_command_stagger_lock=worker_args["hint_command_stagger_lock"],
+        hint_command_stagger_state=worker_args["hint_command_stagger_state"],
+        hint_command_semaphore=worker_args["hint_command_semaphore"],
     )
     invalid_policy = 0
     illegal_label = 0
@@ -658,6 +662,14 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "egaroucid_exe": str(args.egaroucid_exe),
         "egaroucid_level": args.egaroucid_level,
         "console_hint_count": max(n_values),
+        "hint_command_stagger_sec": float(
+            getattr(args, "hint_command_stagger_sec", 0.0)
+        ),
+        "maximum_concurrent_hint_commands": getattr(
+            args,
+            "max_concurrent_hints",
+            None,
+        ),
         "blend_params": list(blend_params),
         "data_split": args.data_split,
         "split_seed": args.split_seed if args.data_split != "all" else None,
@@ -796,6 +808,24 @@ def evaluate(
                     "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
                     "progress_queue": progress_queue,
                     "progress_interval_sec": progress_interval_sec,
+                    "hint_command_stagger_sec": float(
+                        getattr(args, "hint_command_stagger_sec", 0.0)
+                    ),
+                    "hint_command_stagger_lock": getattr(
+                        args,
+                        "hint_command_stagger_lock",
+                        None,
+                    ),
+                    "hint_command_stagger_state": getattr(
+                        args,
+                        "hint_command_stagger_state",
+                        None,
+                    ),
+                    "hint_command_semaphore": getattr(
+                        args,
+                        "hint_command_semaphore",
+                        None,
+                    ),
                 }
             )
             raw_hint_remaining = 0
@@ -845,6 +875,12 @@ def evaluate(
         egaroucid_timeout_sec=args.egaroucid_timeout_sec,
         score_temperature=args.score_temperature,
         legal_mask_policy=not args.no_legal_mask_policy,
+        hint_command_stagger_sec=float(
+            getattr(args, "hint_command_stagger_sec", 0.0)
+        ),
+        hint_command_stagger_lock=getattr(args, "hint_command_stagger_lock", None),
+        hint_command_stagger_state=getattr(args, "hint_command_stagger_state", None),
+        hint_command_semaphore=getattr(args, "hint_command_semaphore", None),
     )
 
     total_seen = 0

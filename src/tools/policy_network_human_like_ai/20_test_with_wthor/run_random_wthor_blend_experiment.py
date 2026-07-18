@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import csv
 import json
 import math
@@ -78,6 +78,12 @@ class ProgressReporter:
         self.worker_states: Dict[int, dict] = {}
         self.final_reported = False
         self.lock = threading.Lock()
+
+    def start(self) -> None:
+        with self.lock:
+            now = time.perf_counter()
+            self._print_worker_states(now, 0)
+            self.last_report_time = now
 
     def update(self, event: dict) -> None:
         with self.lock:
@@ -155,13 +161,136 @@ class ProgressReporter:
             self.final_reported = True
 
 
+class ConsoleLevelsProgressReporter:
+    def __init__(
+        self,
+        total_positions: int,
+        report_interval_sec: float,
+        levels: Sequence[int],
+    ):
+        self.total_positions = total_positions
+        self.report_interval_sec = report_interval_sec
+        self.levels = tuple(levels)
+        self.start_time = time.perf_counter()
+        self.last_report_time = self.start_time
+        self.level_states: Dict[int, dict] = {}
+        self.completed_rows: Dict[int, dict] = {}
+        self.final_reported = False
+        self.lock = threading.Lock()
+
+    def start(self) -> None:
+        with self.lock:
+            now = time.perf_counter()
+            self._print(now)
+            self.last_report_time = now
+
+    def update(self, event: dict) -> None:
+        with self.lock:
+            if self.final_reported:
+                return
+            level = int(event["console_level"])
+            self.level_states[level] = event
+            now = time.perf_counter()
+            if now - self.last_report_time < self.report_interval_sec:
+                return
+            self._print(now)
+            self.last_report_time = now
+
+    def complete(self, level: int, row: dict) -> None:
+        with self.lock:
+            self.completed_rows[level] = row
+            print(
+                f"[完了][Console単体] level {level}: "
+                f"1位一致率 {row['top1_accuracy'] * 100.0:.3f}% "
+                f"上位3手一致率 {row['top3_accuracy'] * 100.0:.3f}% "
+                f"({row['positions']:,}局面、{row['elapsed_sec']:.3f}秒)",
+                file=sys.stderr,
+            )
+            now = time.perf_counter()
+            if len(self.completed_rows) == len(self.levels):
+                self._print(now)
+                self.last_report_time = now
+                self.final_reported = True
+            elif now - self.last_report_time >= self.report_interval_sec:
+                self._print(now)
+                self.last_report_time = now
+            sys.stderr.flush()
+
+    def _print(self, now: float) -> None:
+        elapsed = max(0.0, now - self.start_time)
+        attempted_total = 0
+        for level in self.levels:
+            if level in self.completed_rows:
+                attempted_total += self.total_positions
+            elif level in self.level_states:
+                attempted_total += int(self.level_states[level]["attempted_positions"])
+        total_work = self.total_positions * len(self.levels)
+        if attempted_total > 0:
+            eta = elapsed * max(0, total_work - attempted_total) / attempted_total
+            eta_text = format_duration(eta)
+        else:
+            eta_text = "計算中"
+        percent = 100.0 * attempted_total / total_work
+        print(
+            f"[進捗][Console単体] {len(self.completed_rows)}/{len(self.levels)}レベル完了、"
+            f"{attempted_total:,}/{total_work:,}局面 ({percent:.2f}%) "
+            f"経過 {format_duration(elapsed)} 全体ETA {eta_text}",
+            file=sys.stderr,
+        )
+        for level in self.levels:
+            completed = self.completed_rows.get(level)
+            if completed is not None:
+                print(
+                    f"  level {level:>2}: 完了 "
+                    f"1位 {completed['top1_accuracy'] * 100.0:.3f}% "
+                    f"上位3手 {completed['top3_accuracy'] * 100.0:.3f}% "
+                    f"({completed['positions']:,}/{self.total_positions:,}局面)",
+                    file=sys.stderr,
+                )
+                continue
+            state = self.level_states.get(level)
+            if state is None:
+                print(
+                    f"  level {level:>2}: 初回進捗待ち "
+                    f"(0/{self.total_positions:,}局面、ETA 計算中)",
+                    file=sys.stderr,
+                )
+                continue
+            attempted = int(state["attempted_positions"])
+            state_elapsed = max(0.0, float(state["elapsed_sec"]))
+            level_eta = (
+                state_elapsed * max(0, self.total_positions - attempted) / attempted
+                if attempted > 0
+                else 0.0
+            )
+            result = next(
+                (
+                    row
+                    for row in state["results"]
+                    if round(float(row["blend_param"]), 10) == 0.0
+                ),
+                None,
+            )
+            positions = int(result["positions"]) if result is not None else 0
+            top1 = int(result.get("top1_hits", 0)) / positions if positions else 0.0
+            top3 = int(result.get("top3_hits", 0)) / positions if positions else 0.0
+            print(
+                f"  level {level:>2}: 暫定1位 {top1 * 100.0:.3f}% "
+                f"暫定上位3手 {top3 * 100.0:.3f}% "
+                f"({attempted:,}/{self.total_positions:,}局面、"
+                f"ETA {format_duration(level_eta) if attempted else '計算中'})",
+                file=sys.stderr,
+            )
+        sys.stderr.flush()
+
+
 def monitor_console_progress(
     progress_queue,
     stop_event: threading.Event,
-    reporters: Dict[int, ProgressReporter],
+    reporter: ConsoleLevelsProgressReporter,
 ) -> None:
     def dispatch(event: dict) -> None:
-        reporters[int(event["console_level"])].update(event)
+        reporter.update(event)
 
     while not stop_event.is_set():
         try:
@@ -186,6 +315,13 @@ def positive_float(text: str) -> float:
     value = float(text)
     if value <= 0.0:
         raise argparse.ArgumentTypeError("the value must be positive")
+    return value
+
+
+def nonnegative_float(text: str) -> float:
+    value = float(text)
+    if value < 0.0:
+        raise argparse.ArgumentTypeError("0以上の値を指定してください")
     return value
 
 
@@ -227,6 +363,17 @@ def available_memory_mib() -> Optional[float]:
     return float(psutil.virtual_memory().available / (1024.0 * 1024.0))
 
 
+def default_max_concurrent_hints(egaroucid_threads: int) -> int:
+    try:
+        import psutil  # type: ignore
+
+        physical_cpus = psutil.cpu_count(logical=False)
+    except ImportError:
+        physical_cpus = None
+    available_cpus = physical_cpus or os.cpu_count() or 1
+    return max(1, int(available_cpus) // egaroucid_threads)
+
+
 class ResourceMonitor:
     def __init__(self, interval_sec: float = 1.0):
         self.interval_sec = interval_sec
@@ -252,6 +399,7 @@ class ResourceMonitor:
         while not self.stop_event.wait(self.interval_sec):
             memory = psutil.virtual_memory()
             tree_rss = 0
+            egaroucid_processes = 0
             try:
                 processes = [root, *root.children(recursive=True)]
             except psutil.Error:
@@ -259,6 +407,8 @@ class ResourceMonitor:
             for process in processes:
                 try:
                     tree_rss += process.memory_info().rss
+                    if "egaroucid" in process.name().lower():
+                        egaroucid_processes += 1
                 except psutil.Error:
                     pass
             self.samples.append(
@@ -267,6 +417,7 @@ class ResourceMonitor:
                     "cpu_percent": float(psutil.cpu_percent(interval=None)),
                     "available_memory_mib": float(memory.available / (1024.0 * 1024.0)),
                     "process_tree_memory_mib": float(tree_rss / (1024.0 * 1024.0)),
+                    "egaroucid_processes": egaroucid_processes,
                 }
             )
 
@@ -281,6 +432,7 @@ class ResourceMonitor:
                 "minimum_available_memory_mib": None,
                 "maximum_process_tree_memory_mib": None,
                 "average_cpu_percent": None,
+                "maximum_egaroucid_processes": None,
             }
         return {
             "available": True,
@@ -288,6 +440,9 @@ class ResourceMonitor:
             "minimum_available_memory_mib": min(row["available_memory_mib"] for row in self.samples),
             "maximum_process_tree_memory_mib": max(row["process_tree_memory_mib"] for row in self.samples),
             "average_cpu_percent": sum(row["cpu_percent"] for row in self.samples) / len(self.samples),
+            "maximum_egaroucid_processes": max(
+                row["egaroucid_processes"] for row in self.samples
+            ),
         }
 
 
@@ -295,7 +450,8 @@ def check_startup_memory(args: argparse.Namespace) -> Optional[float]:
     available = available_memory_mib()
     if available is None:
         return None
-    engine_count = max(min(args.jobs, args.positions), len(CONSOLE_LEVELS))
+    blend_engine_count = min(args.jobs, args.positions)
+    engine_count = blend_engine_count + len(CONSOLE_LEVELS)
     required = args.minimum_remaining_memory_mib + engine_count * args.estimated_engine_memory_mib
     if available < required:
         raise RuntimeError(
@@ -344,6 +500,11 @@ def make_evaluator_args(
         output_dir=output_dir,
         progress_interval=1000,
         verbose=args.verbose,
+        hint_command_stagger_sec=args.hint_command_stagger_sec,
+        hint_command_stagger_lock=args.hint_command_stagger_lock,
+        hint_command_stagger_state=args.hint_command_stagger_state,
+        hint_command_semaphore=args.hint_command_semaphore,
+        max_concurrent_hints=args.max_concurrent_hints,
     )
 
 
@@ -420,24 +581,25 @@ def make_console_level_summary_row(level: int, result: dict, elapsed_sec: float)
     }
 
 
-def run_console_level_experiments(args: argparse.Namespace, output_dir: Path) -> List[dict]:
+def run_console_level_experiments(
+    args: argparse.Namespace,
+    output_dir: Path,
+) -> tuple[List[dict], dict]:
+    started_at_unix = time.time()
+    start_time = time.perf_counter()
     console_root = output_dir / "console_levels"
-    reporters = {
-        level: ProgressReporter(
-            args.positions,
-            args.progress_interval_sec,
-            f"Egaroucid level {level}",
-            (0.0,),
-            {0.0: f"Egaroucid level {level}"},
-        )
-        for level in CONSOLE_LEVELS
-    }
+    progress = ConsoleLevelsProgressReporter(
+        args.positions,
+        args.progress_interval_sec,
+        CONSOLE_LEVELS,
+    )
+    progress.start()
     manager = multiprocessing.Manager()
     progress_queue = manager.Queue()
     progress_stop_event = threading.Event()
     progress_thread = threading.Thread(
         target=monitor_console_progress,
-        args=(progress_queue, progress_stop_event, reporters),
+        args=(progress_queue, progress_stop_event, progress),
         name="console-level-progress-monitor",
         daemon=True,
     )
@@ -476,10 +638,7 @@ def run_console_level_experiments(args: argparse.Namespace, output_dir: Path) ->
                     worker_result["result"],
                     worker_result["elapsed_sec"],
                 )
-                reporters[level].finish(
-                    console_row_for_progress(level_summary),
-                    worker_result["elapsed_sec"],
-                )
+                progress.complete(level, level_summary)
                 console_runs.append(
                     {
                         "output_dir": Path(worker_result["output_dir"]),
@@ -493,7 +652,11 @@ def run_console_level_experiments(args: argparse.Namespace, output_dir: Path) ->
         manager.shutdown()
 
     console_runs.sort(key=lambda run: run["summary"]["level"])
-    return console_runs
+    return console_runs, {
+        "started_at_unix": started_at_unix,
+        "finished_at_unix": time.time(),
+        "elapsed_sec": time.perf_counter() - start_time,
+    }
 
 
 def blend_rows_for_progress(rows: Sequence[dict]) -> List[dict]:
@@ -508,15 +671,26 @@ def blend_rows_for_progress(rows: Sequence[dict]) -> List[dict]:
     ]
 
 
-def console_row_for_progress(row: dict) -> List[dict]:
-    return [
-        {
-            "blend_param": 0.0,
-            "positions": row["positions"],
-            "top1_accuracy": row["top1_accuracy"],
-            "top3_accuracy": row["top3_accuracy"],
-        }
-    ]
+def run_blend_experiment(
+    evaluator_args: argparse.Namespace,
+    progress: ProgressReporter,
+    progress_interval_sec: float,
+) -> tuple[dict, List[dict], dict]:
+    started_at_unix = time.time()
+    start_time = time.perf_counter()
+    result = evaluator.evaluate(
+        evaluator_args,
+        progress_callback=progress.update,
+        progress_interval_sec=min(10.0, progress_interval_sec),
+    )
+    elapsed_sec = time.perf_counter() - start_time
+    rows = make_blend_summary_rows(result)
+    progress.finish(blend_rows_for_progress(rows), elapsed_sec)
+    return result, rows, {
+        "started_at_unix": started_at_unix,
+        "finished_at_unix": time.time(),
+        "elapsed_sec": elapsed_sec,
+    }
 
 
 def write_summary(
@@ -530,6 +704,8 @@ def write_summary(
     elapsed_sec: float,
     startup_available_memory_mib: Optional[float],
     resources: dict,
+    command_stagger_stats: dict,
+    concurrent_phase_timing: dict,
 ) -> None:
     csv_path = output_dir / "random_wthor_blend_summary.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as f:
@@ -558,12 +734,18 @@ def write_summary(
         "console_level_process_isolation": {
             "separate_process_per_level": True,
             "concurrent_level_evaluation": True,
+            "concurrent_with_blend_evaluation": True,
             "persistent_process_for_all_sampled_positions": True,
             "separate_hint_cache_per_level": True,
-            "note": "各levelのConsoleプロセスを個別に同時起動し、担当levelの全局面が終わるまで常駐させる。",
+            "note": "ブレンド版とConsole単体版を同時実行し、各Consoleプロセスは担当する全局面の完了まで常駐させる。",
         },
+        "hint_command_stagger": command_stagger_stats,
+        "concurrent_phase_timing": concurrent_phase_timing,
         "blend_jobs": args.jobs,
         "console_level_processes": len(CONSOLE_LEVELS),
+        "maximum_concurrent_console_processes": (
+            min(args.jobs, args.positions) + len(CONSOLE_LEVELS)
+        ),
         "egaroucid_threads_per_process": args.egaroucid_threads,
         "progress_interval_sec": args.progress_interval_sec,
         "elapsed_sec": elapsed_sec,
@@ -606,11 +788,19 @@ def print_configuration(
     print("データ分割seed", args.split_seed)
     print("無作為抽出seed", args.sample_seed)
     print("alpha", ", ".join(f"{alpha:.1f}" for alpha in BLEND_PARAMS))
+    print("ブレンド方策で使うEgaroucidレベル", args.egaroucid_level)
     print("単体で評価するEgaroucidレベル", ", ".join(str(level) for level in CONSOLE_LEVELS))
     print("Consoleへ要求する候補手数", max(TOP_N_VALUES))
-    print("Console起動方式", "level別の10プロセスを同時起動し、各プロセスを全N局面で常駐させる")
+    print("評価の実行方式", "ブレンド版とConsole単体版を同時実行する")
+    print("Console起動方式", "全プロセスを常駐させ、hintコマンドの送信時刻を共通管理する")
+    print("hintコマンドの送信間隔", f"{args.hint_command_stagger_sec:g}秒")
+    print("同時にhint探索を行うConsoleプロセスの上限", args.max_concurrent_hints)
     print("ブレンド方策の同時評価処理数", args.jobs)
     print("Console level別の同時常駐プロセス数", len(CONSOLE_LEVELS))
+    print(
+        "同時に常駐する最大Consoleプロセス数",
+        min(args.jobs, args.positions) + len(CONSOLE_LEVELS),
+    )
     print("1 Consoleプロセス当たりのEgaroucidスレッド数", args.egaroucid_threads)
     print("進捗表示間隔", f"{args.progress_interval_sec:g}秒")
     if args.hint_cache_db is not None:
@@ -627,6 +817,8 @@ def print_results(
     console_levels_elapsed_sec: float,
     elapsed_sec: float,
     resources: dict,
+    command_stagger_stats: dict,
+    concurrent_phase_timing: dict,
     output_dir: Path,
 ) -> None:
     print()
@@ -652,11 +844,29 @@ def print_results(
             f"{row['elapsed_sec']:.3f}秒"
         )
     print("Console level別評価の並列実行時間", f"{console_levels_elapsed_sec:.3f}秒")
+    print(
+        "ブレンド版とConsole単体版の重複実行時間",
+        f"{concurrent_phase_timing['overlap_sec']:.3f}秒",
+    )
     print("総実行時間", f"{elapsed_sec:.3f}秒")
+    print("hintコマンド送信回数", f"{command_stagger_stats['command_count']:,}")
+    print(
+        "同時にhint探索を行ったConsoleプロセスの最大数",
+        command_stagger_stats["maximum_simultaneous_hints_observed"],
+    )
+    if command_stagger_stats["minimum_observed_spacing_sec"] is not None:
+        print(
+            "実測したhintコマンドの最小送信間隔",
+            f"{command_stagger_stats['minimum_observed_spacing_sec']:.6f}秒",
+        )
     if resources.get("available"):
         print("実行中の最小空き物理メモリ", f"{resources['minimum_available_memory_mib']:.0f} MiB")
         print("関連プロセスの最大使用メモリ", f"{resources['maximum_process_tree_memory_mib']:.0f} MiB")
         print("実行中の平均CPU使用率", f"{resources['average_cpu_percent']:.1f}%")
+        print(
+            "同時に存在したConsoleプロセスの最大数",
+            resources["maximum_egaroucid_processes"],
+        )
     print("集計CSV", output_dir / "random_wthor_blend_summary.csv")
     print("Console level別集計CSV", output_dir / "random_wthor_console_level_summary.csv")
     print("集計JSON", output_dir / "random_wthor_blend_summary.json")
@@ -683,6 +893,18 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-timeout-sec", type=positive_float, default=1800.0)
     parser.add_argument("--score-temperature", type=positive_float, default=1.0)
     parser.add_argument(
+        "--hint-command-stagger-sec",
+        type=nonnegative_float,
+        default=0.1,
+        help="全Consoleプロセスへhintコマンドを送る開始時刻の最小間隔（秒）",
+    )
+    parser.add_argument(
+        "--max-concurrent-hints",
+        type=positive_int,
+        default=None,
+        help="同時にhint探索を行うConsoleプロセス数。省略時は物理CPU数とスレッド数から決定する",
+    )
+    parser.add_argument(
         "--progress-interval-sec",
         type=positive_float,
         default=60.0,
@@ -704,6 +926,8 @@ def make_argparser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = make_argparser().parse_args()
+    if args.max_concurrent_hints is None:
+        args.max_concurrent_hints = default_max_concurrent_hints(args.egaroucid_threads)
     dat_files = evaluator.discover_dat_files(args.board_data_dir)
     available_positions = evaluator.count_position_samples(dat_files, None)
     selected_split_positions = split_position_count(available_positions, args.data_split)
@@ -727,6 +951,18 @@ def main() -> None:
 
     startup_available_memory_mib = check_startup_memory(args)
     output_dir.mkdir(parents=True, exist_ok=True)
+    command_manager = multiprocessing.Manager()
+    args.hint_command_stagger_lock = command_manager.Lock()
+    args.hint_command_semaphore = command_manager.BoundedSemaphore(
+        args.max_concurrent_hints
+    )
+    args.hint_command_stagger_state = command_manager.Namespace()
+    args.hint_command_stagger_state.next_time = time.time()
+    args.hint_command_stagger_state.last_time = 0.0
+    args.hint_command_stagger_state.minimum_spacing = float("inf")
+    args.hint_command_stagger_state.count = 0
+    args.hint_command_stagger_state.active_count = 0
+    args.hint_command_stagger_state.maximum_active_count = 0
     blend_hint_cache = args.hint_cache_db
     if blend_hint_cache is None:
         blend_hint_cache = output_dir / f"hint_score_cache_level{args.egaroucid_level}.sqlite3"
@@ -746,26 +982,68 @@ def main() -> None:
         blend_progress = ProgressReporter(
             args.positions,
             args.progress_interval_sec,
-            "ブレンド方策",
+            f"ブレンド方策（Egaroucid level {args.egaroucid_level}）",
             BLEND_PARAMS,
             {alpha: f"alpha={alpha:.1f}" for alpha in BLEND_PARAMS},
         )
-        blend_start_time = time.perf_counter()
-        blend_result = evaluator.evaluate(
-            blend_evaluator_args,
-            progress_callback=blend_progress.update,
-            progress_interval_sec=min(10.0, args.progress_interval_sec),
-        )
-        blend_elapsed_sec = time.perf_counter() - blend_start_time
-        blend_rows = make_blend_summary_rows(blend_result)
-        blend_progress.finish(blend_rows_for_progress(blend_rows), blend_elapsed_sec)
-
-        console_levels_start_time = time.perf_counter()
-        console_runs = run_console_level_experiments(args, output_dir)
-        console_levels_elapsed_sec = time.perf_counter() - console_levels_start_time
+        blend_progress.start()
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = {
+                executor.submit(
+                    run_blend_experiment,
+                    blend_evaluator_args,
+                    blend_progress,
+                    args.progress_interval_sec,
+                ): "blend",
+                executor.submit(
+                    run_console_level_experiments,
+                    args,
+                    output_dir,
+                ): "console",
+            }
+            concurrent_results = {}
+            for future in as_completed(futures):
+                concurrent_results[futures[future]] = future.result()
+        blend_result, blend_rows, blend_timing = concurrent_results["blend"]
+        console_runs, console_timing = concurrent_results["console"]
+        blend_elapsed_sec = float(blend_timing["elapsed_sec"])
+        console_levels_elapsed_sec = float(console_timing["elapsed_sec"])
+        concurrent_phase_timing = {
+            "blend": blend_timing,
+            "console_levels": console_timing,
+            "start_time_difference_sec": abs(
+                float(blend_timing["started_at_unix"])
+                - float(console_timing["started_at_unix"])
+            ),
+            "overlap_sec": max(
+                0.0,
+                min(
+                    float(blend_timing["finished_at_unix"]),
+                    float(console_timing["finished_at_unix"]),
+                )
+                - max(
+                    float(blend_timing["started_at_unix"]),
+                    float(console_timing["started_at_unix"]),
+                ),
+            ),
+        }
     finally:
         elapsed_sec = time.perf_counter() - experiment_start_time
         resources = monitor.stop()
+        command_count = int(args.hint_command_stagger_state.count)
+        minimum_spacing = float(args.hint_command_stagger_state.minimum_spacing)
+        command_stagger_stats = {
+            "configured_spacing_sec": args.hint_command_stagger_sec,
+            "configured_maximum_concurrent_hints": args.max_concurrent_hints,
+            "command_count": command_count,
+            "maximum_simultaneous_hints_observed": int(
+                args.hint_command_stagger_state.maximum_active_count
+            ),
+            "minimum_observed_spacing_sec": (
+                minimum_spacing if command_count >= 2 and math.isfinite(minimum_spacing) else None
+            ),
+        }
+        command_manager.shutdown()
 
     write_summary(
         output_dir,
@@ -778,6 +1056,8 @@ def main() -> None:
         elapsed_sec,
         startup_available_memory_mib,
         resources,
+        command_stagger_stats,
+        concurrent_phase_timing,
     )
     print_results(
         blend_rows,
@@ -785,6 +1065,8 @@ def main() -> None:
         console_levels_elapsed_sec,
         elapsed_sec,
         resources,
+        command_stagger_stats,
+        concurrent_phase_timing,
         output_dir,
     )
 

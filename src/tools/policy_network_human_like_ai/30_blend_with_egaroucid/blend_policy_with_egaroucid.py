@@ -19,6 +19,7 @@ import socket
 import sqlite3
 import struct
 import subprocess
+import threading
 import time
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -420,12 +421,31 @@ def parse_hint_output(output: str) -> Dict[int, float]:
 
 
 class EgaroucidHintRunner:
-    def __init__(self, exe: Path, level: int = 21, threads: int = 1, timeout_sec: float = 30.0, persistent: bool = True):
+    def __init__(
+        self,
+        exe: Path,
+        level: int = 21,
+        threads: int = 1,
+        timeout_sec: float = 30.0,
+        persistent: bool = True,
+        command_stagger_sec: float = 0.0,
+        command_stagger_lock=None,
+        command_stagger_state=None,
+        command_semaphore=None,
+    ):
         self.exe = Path(exe)
         self.level = int(level)
         self.threads = int(threads)
         self.timeout_sec = float(timeout_sec)
         self.persistent = bool(persistent)
+        self.command_stagger_sec = float(command_stagger_sec)
+        if self.command_stagger_sec < 0.0:
+            raise ValueError("command_stagger_sec must not be negative")
+        self.command_stagger_lock = command_stagger_lock
+        self.command_stagger_state = command_stagger_state
+        self.command_semaphore = command_semaphore
+        self.local_stagger_lock = threading.Lock()
+        self.local_next_command_time = time.monotonic()
         self.proc: Optional[subprocess.Popen] = None
 
     def command(self) -> List[str]:
@@ -487,6 +507,66 @@ class EgaroucidHintRunner:
             except Exception:
                 pass
 
+    def _wait_for_hint_command_slot(self) -> bool:
+        if self.command_stagger_lock is None or self.command_stagger_state is None:
+            if self.command_stagger_sec <= 0.0:
+                return False
+            with self.local_stagger_lock:
+                now = time.monotonic()
+                delay = max(0.0, self.local_next_command_time - now)
+                if delay > 0.0:
+                    time.sleep(delay)
+                self.local_next_command_time = time.monotonic() + self.command_stagger_sec
+            return False
+
+        with self.command_stagger_lock:
+            now = time.time()
+            delay = (
+                max(0.0, float(self.command_stagger_state.next_time) - now)
+                if self.command_stagger_sec > 0.0
+                else 0.0
+            )
+            if delay > 0.0:
+                time.sleep(delay)
+            dispatched_at = time.time()
+            count = int(self.command_stagger_state.count)
+            if count > 0:
+                spacing = dispatched_at - float(self.command_stagger_state.last_time)
+                self.command_stagger_state.minimum_spacing = min(
+                    float(self.command_stagger_state.minimum_spacing),
+                    spacing,
+                )
+            self.command_stagger_state.count = count + 1
+            self.command_stagger_state.last_time = dispatched_at
+            self.command_stagger_state.next_time = dispatched_at + self.command_stagger_sec
+            active_count = int(self.command_stagger_state.active_count) + 1
+            self.command_stagger_state.active_count = active_count
+            self.command_stagger_state.maximum_active_count = max(
+                int(self.command_stagger_state.maximum_active_count),
+                active_count,
+            )
+        return True
+
+    def _acquire_hint_execution_slot(self) -> None:
+        if self.command_semaphore is not None:
+            self.command_semaphore.acquire()
+
+    def _release_hint_execution_slot(self, active_recorded: bool) -> None:
+        try:
+            if (
+                active_recorded
+                and self.command_stagger_lock is not None
+                and self.command_stagger_state is not None
+            ):
+                with self.command_stagger_lock:
+                    self.command_stagger_state.active_count = max(
+                        0,
+                        int(self.command_stagger_state.active_count) - 1,
+                    )
+        finally:
+            if self.command_semaphore is not None:
+                self.command_semaphore.release()
+
     def raw_hint(self, state: BoardState, side: int, hint_count: int = 100) -> str:
         hint_count = int(hint_count)
         if hint_count <= 0:
@@ -498,18 +578,30 @@ class EgaroucidHintRunner:
             proc.stdin.write(f"setboard {state.to_egaroucid_board(side)}\n")
             proc.stdin.flush()
             self._read_until_prompt()
-            proc.stdin.write(f"hint {hint_count}\n")
-            proc.stdin.flush()
-            return self._read_until_prompt()
+            self._acquire_hint_execution_slot()
+            active_recorded = False
+            try:
+                active_recorded = self._wait_for_hint_command_slot()
+                proc.stdin.write(f"hint {hint_count}\n")
+                proc.stdin.flush()
+                return self._read_until_prompt()
+            finally:
+                self._release_hint_execution_slot(active_recorded)
         input_text = f"setboard {state.to_egaroucid_board(side)}\nhint {hint_count}\nquit\n"
-        proc = subprocess.run(
-            self.command(),
-            input=input_text,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            timeout=self.timeout_sec,
-        )
+        self._acquire_hint_execution_slot()
+        active_recorded = False
+        try:
+            active_recorded = self._wait_for_hint_command_slot()
+            proc = subprocess.run(
+                self.command(),
+                input=input_text,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=self.timeout_sec,
+            )
+        finally:
+            self._release_hint_execution_slot(active_recorded)
         if proc.returncode != 0:
             raise RuntimeError(f"Egaroucid exited with code {proc.returncode}: {proc.stdout}")
         return proc.stdout
@@ -631,6 +723,10 @@ class BlendedPolicy:
         policy_server_timeout_sec: float = 30.0,
         score_temperature: float = 1.0,
         legal_mask_policy: bool = True,
+        hint_command_stagger_sec: float = 0.0,
+        hint_command_stagger_lock=None,
+        hint_command_stagger_state=None,
+        hint_command_semaphore=None,
     ):
         self.policy_client = None
         if policy_server_port is not None:
@@ -648,6 +744,10 @@ class BlendedPolicy:
             threads=egaroucid_threads,
             timeout_sec=egaroucid_timeout_sec,
             persistent=persistent_egaroucid,
+            command_stagger_sec=hint_command_stagger_sec,
+            command_stagger_lock=hint_command_stagger_lock,
+            command_stagger_state=hint_command_stagger_state,
+            command_semaphore=hint_command_semaphore,
         )
         self.score_temperature = float(score_temperature)
         if self.score_temperature <= 0.0:
