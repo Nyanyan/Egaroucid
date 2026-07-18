@@ -172,7 +172,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
     parser.add_argument("--blend-egaroucid-level", type=int, default=21)
-    parser.add_argument("--egaroucid-timeout-sec", type=float, default=300.0)
+    parser.add_argument("--egaroucid-timeout-sec", type=float, default=1800.0)
     parser.add_argument("--score-temperature", type=float, default=1.0)
     parser.add_argument("--openings", type=Path, default=SCRIPT_DIR.parents[3] / "bin" / "problem" / "xot" / "openingslarge.txt")
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "strength_full")
