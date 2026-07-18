@@ -59,66 +59,89 @@ def format_duration(seconds: float) -> str:
     return f"{days}日 {text}" if days else text
 
 
-class ProgressReporter:
+class CombinedProgressReporter:
     def __init__(
         self,
         total_positions: int,
         report_interval_sec: float,
-        phase_name: str,
+        blend_level: int,
         blend_params: Sequence[float],
-        labels: Dict[float, str],
+        console_levels: Sequence[int],
     ):
         self.total_positions = total_positions
         self.report_interval_sec = report_interval_sec
-        self.phase_name = phase_name
+        self.blend_level = blend_level
         self.blend_params = tuple(blend_params)
-        self.labels = labels
+        self.console_levels = tuple(console_levels)
         self.start_time = time.perf_counter()
-        self.last_report_time = self.start_time
-        self.worker_states: Dict[int, dict] = {}
-        self.final_reported = False
+        self.blend_worker_states: Dict[int, dict] = {}
+        self.console_level_states: Dict[int, dict] = {}
+        self.blend_rows: Optional[List[dict]] = None
+        self.console_rows: Dict[int, dict] = {}
+        self.stop_event = threading.Event()
+        self.thread: Optional[threading.Thread] = None
         self.lock = threading.Lock()
 
     def start(self) -> None:
         with self.lock:
-            now = time.perf_counter()
-            self._print_worker_states(now, 0)
-            self.last_report_time = now
-
-    def update(self, event: dict) -> None:
-        with self.lock:
-            self.worker_states[int(event["worker_id"])] = event
-            now = time.perf_counter()
-            attempted = sum(int(state["attempted_positions"]) for state in self.worker_states.values())
-            completed = attempted >= self.total_positions
-            if completed and self.final_reported:
-                return
-            if not completed and now - self.last_report_time < self.report_interval_sec:
-                return
-            self._print_worker_states(now, attempted)
-            self.last_report_time = now
-            self.final_reported = completed
-
-    def _print_worker_states(self, now: float, attempted: int) -> None:
-        elapsed = max(0.0, now - self.start_time)
-        completed = attempted >= self.total_positions
-        if attempted > 0:
-            eta = elapsed * max(0, self.total_positions - attempted) / attempted
-            eta_text = format_duration(eta)
-        else:
-            eta_text = "計算中"
-        percent = 100.0 * attempted / self.total_positions
-        print(
-            f"[進捗][{self.phase_name}] {attempted:,}/{self.total_positions:,}局面 "
-            f"({percent:.2f}%) 経過 {format_duration(elapsed)} ETA {eta_text}",
-            file=sys.stderr,
+            self._print(time.perf_counter())
+        self.thread = threading.Thread(
+            target=self._run,
+            name="combined-progress-reporter",
+            daemon=True,
         )
+        self.thread.start()
 
+    def update_blend(self, event: dict) -> None:
+        with self.lock:
+            self.blend_worker_states[int(event["worker_id"])] = event
+
+    def update_console(self, event: dict) -> None:
+        with self.lock:
+            self.console_level_states[int(event["console_level"])] = event
+
+    def complete_blend(self, rows: Sequence[dict]) -> None:
+        with self.lock:
+            self.blend_rows = list(rows)
+
+    def complete_console_level(self, level: int, row: dict) -> None:
+        with self.lock:
+            self.console_rows[level] = row
+
+    def finish(self) -> None:
+        self.stop_event.set()
+        if self.thread is not None:
+            self.thread.join(timeout=max(2.0, self.report_interval_sec + 1.0))
+        with self.lock:
+            self._print(time.perf_counter())
+
+    def _run(self) -> None:
+        while not self.stop_event.wait(self.report_interval_sec):
+            with self.lock:
+                self._print(time.perf_counter())
+
+    @staticmethod
+    def _accuracy(hits: int, positions: int) -> float:
+        return hits / positions if positions else 0.0
+
+    def _blend_snapshot(self) -> tuple[int, Dict[float, dict], bool]:
+        if self.blend_rows is not None:
+            rows = {
+                round(float(row["alpha"]), 10): {
+                    "positions": int(row["positions"]),
+                    "top1_accuracy": float(row["top1_accuracy"]),
+                    "top3_accuracy": float(row["top3_accuracy"]),
+                }
+                for row in self.blend_rows
+            }
+            return self.total_positions, rows, True
         aggregate = {
             alpha: {"positions": 0, "top1_hits": 0, "top3_hits": 0}
             for alpha in self.blend_params
         }
-        for state in self.worker_states.values():
+        attempted = 0
+        for state in self.blend_worker_states.values():
+            attempted += int(state["attempted_positions"])
             for row in state["results"]:
                 alpha = round(float(row["blend_param"]), 10)
                 if alpha not in aggregate:
@@ -126,143 +149,43 @@ class ProgressReporter:
                 aggregate[alpha]["positions"] += int(row["positions"])
                 aggregate[alpha]["top1_hits"] += int(row.get("top1_hits", 0))
                 aggregate[alpha]["top3_hits"] += int(row.get("top3_hits", 0))
+        rows = {
+            alpha: {
+                "positions": row["positions"],
+                "top1_accuracy": self._accuracy(row["top1_hits"], row["positions"]),
+                "top3_accuracy": self._accuracy(row["top3_hits"], row["positions"]),
+            }
+            for alpha, row in aggregate.items()
+        }
+        return attempted, rows, False
 
-        for alpha in self.blend_params:
-            row = aggregate[alpha]
-            positions = row["positions"]
-            top1 = row["top1_hits"] / positions if positions else 0.0
-            top3 = row["top3_hits"] / positions if positions else 0.0
-            prefix = "" if completed else "暫定"
-            print(
-                f"  {self.labels[alpha]}: {prefix}1位一致率 {top1 * 100.0:.3f}% "
-                f"{prefix}上位3手一致率 {top3 * 100.0:.3f}% ({positions:,}局面)",
-                file=sys.stderr,
-            )
-        sys.stderr.flush()
-
-    def finish(self, rows: Sequence[dict], elapsed_sec: float) -> None:
-        with self.lock:
-            if self.final_reported:
-                return
-            print(
-                f"[進捗][{self.phase_name}] {self.total_positions:,}/{self.total_positions:,}局面 "
-                f"(100.00%) 経過 {format_duration(elapsed_sec)} ETA 00:00:00",
-                file=sys.stderr,
-            )
-            for row in rows:
-                blend_param = round(float(row["blend_param"]), 10)
-                print(
-                    f"  {self.labels[blend_param]}: 1位一致率 {row['top1_accuracy'] * 100.0:.3f}% "
-                    f"上位3手一致率 {row['top3_accuracy'] * 100.0:.3f}% "
-                    f"({row['positions']:,}局面)",
-                    file=sys.stderr,
-                )
-            sys.stderr.flush()
-            self.final_reported = True
-
-
-class ConsoleLevelsProgressReporter:
-    def __init__(
-        self,
-        total_positions: int,
-        report_interval_sec: float,
-        levels: Sequence[int],
-    ):
-        self.total_positions = total_positions
-        self.report_interval_sec = report_interval_sec
-        self.levels = tuple(levels)
-        self.start_time = time.perf_counter()
-        self.last_report_time = self.start_time
-        self.level_states: Dict[int, dict] = {}
-        self.completed_rows: Dict[int, dict] = {}
-        self.final_reported = False
-        self.lock = threading.Lock()
-
-    def start(self) -> None:
-        with self.lock:
-            now = time.perf_counter()
-            self._print(now)
-            self.last_report_time = now
-
-    def update(self, event: dict) -> None:
-        with self.lock:
-            if self.final_reported:
-                return
-            level = int(event["console_level"])
-            self.level_states[level] = event
-            now = time.perf_counter()
-            if now - self.last_report_time < self.report_interval_sec:
-                return
-            self._print(now)
-            self.last_report_time = now
-
-    def complete(self, level: int, row: dict) -> None:
-        with self.lock:
-            self.completed_rows[level] = row
-            print(
-                f"[完了][Console単体] level {level}: "
-                f"1位一致率 {row['top1_accuracy'] * 100.0:.3f}% "
-                f"上位3手一致率 {row['top3_accuracy'] * 100.0:.3f}% "
-                f"({row['positions']:,}局面、{row['elapsed_sec']:.3f}秒)",
-                file=sys.stderr,
-            )
-            now = time.perf_counter()
-            if len(self.completed_rows) == len(self.levels):
-                self._print(now)
-                self.last_report_time = now
-                self.final_reported = True
-            elif now - self.last_report_time >= self.report_interval_sec:
-                self._print(now)
-                self.last_report_time = now
-            sys.stderr.flush()
-
-    def _print(self, now: float) -> None:
-        elapsed = max(0.0, now - self.start_time)
+    def _console_snapshot(self) -> tuple[int, Dict[int, dict]]:
         attempted_total = 0
-        for level in self.levels:
-            if level in self.completed_rows:
-                attempted_total += self.total_positions
-            elif level in self.level_states:
-                attempted_total += int(self.level_states[level]["attempted_positions"])
-        total_work = self.total_positions * len(self.levels)
-        if attempted_total > 0:
-            eta = elapsed * max(0, total_work - attempted_total) / attempted_total
-            eta_text = format_duration(eta)
-        else:
-            eta_text = "計算中"
-        percent = 100.0 * attempted_total / total_work
-        print(
-            f"[進捗][Console単体] {len(self.completed_rows)}/{len(self.levels)}レベル完了、"
-            f"{attempted_total:,}/{total_work:,}局面 ({percent:.2f}%) "
-            f"経過 {format_duration(elapsed)} 全体ETA {eta_text}",
-            file=sys.stderr,
-        )
-        for level in self.levels:
-            completed = self.completed_rows.get(level)
+        rows = {}
+        for level in self.console_levels:
+            completed = self.console_rows.get(level)
             if completed is not None:
-                print(
-                    f"  level {level:>2}: 完了 "
-                    f"1位 {completed['top1_accuracy'] * 100.0:.3f}% "
-                    f"上位3手 {completed['top3_accuracy'] * 100.0:.3f}% "
-                    f"({completed['positions']:,}/{self.total_positions:,}局面)",
-                    file=sys.stderr,
-                )
+                attempted_total += self.total_positions
+                rows[level] = {
+                    "status": "完了",
+                    "positions": int(completed["positions"]),
+                    "attempted": self.total_positions,
+                    "top1_accuracy": float(completed["top1_accuracy"]),
+                    "top3_accuracy": float(completed["top3_accuracy"]),
+                }
                 continue
-            state = self.level_states.get(level)
+            state = self.console_level_states.get(level)
             if state is None:
-                print(
-                    f"  level {level:>2}: 初回進捗待ち "
-                    f"(0/{self.total_positions:,}局面、ETA 計算中)",
-                    file=sys.stderr,
-                )
+                rows[level] = {
+                    "status": "待機",
+                    "positions": 0,
+                    "attempted": 0,
+                    "top1_accuracy": 0.0,
+                    "top3_accuracy": 0.0,
+                }
                 continue
             attempted = int(state["attempted_positions"])
-            state_elapsed = max(0.0, float(state["elapsed_sec"]))
-            level_eta = (
-                state_elapsed * max(0, self.total_positions - attempted) / attempted
-                if attempted > 0
-                else 0.0
-            )
+            attempted_total += attempted
             result = next(
                 (
                     row
@@ -272,13 +195,79 @@ class ConsoleLevelsProgressReporter:
                 None,
             )
             positions = int(result["positions"]) if result is not None else 0
-            top1 = int(result.get("top1_hits", 0)) / positions if positions else 0.0
-            top3 = int(result.get("top3_hits", 0)) / positions if positions else 0.0
+            rows[level] = {
+                "status": "暫定",
+                "positions": positions,
+                "attempted": attempted,
+                "top1_accuracy": self._accuracy(
+                    int(result.get("top1_hits", 0)) if result is not None else 0,
+                    positions,
+                ),
+                "top3_accuracy": self._accuracy(
+                    int(result.get("top3_hits", 0)) if result is not None else 0,
+                    positions,
+                ),
+            }
+        return attempted_total, rows
+
+    def _eta_text(self, elapsed: float, attempted: int, total: int) -> str:
+        if attempted <= 0:
+            return "計算中"
+        eta = elapsed * max(0, total - attempted) / attempted
+        return format_duration(eta)
+
+    def _print(self, now: float) -> None:
+        elapsed = max(0.0, now - self.start_time)
+        blend_attempted, blend_rows, blend_completed = self._blend_snapshot()
+        console_attempted, console_rows = self._console_snapshot()
+        overall_attempted = blend_attempted + console_attempted
+        overall_total = self.total_positions * (1 + len(self.console_levels))
+        print(
+            f"[進捗][ブレンド・Console統合] "
+            f"{overall_attempted:,}/{overall_total:,}件の局面評価 "
+            f"({overall_attempted * 100.0 / overall_total:.2f}%) "
+            f"経過 {format_duration(elapsed)} "
+            f"全体ETA {self._eta_text(elapsed, overall_attempted, overall_total)}",
+            file=sys.stderr,
+        )
+        blend_status = "完了" if blend_completed else "暫定"
+        print(
+            f"  ブレンド方策 (Egaroucid level {self.blend_level}): "
+            f"{blend_attempted:,}/{self.total_positions:,}局面 "
+            f"ETA {self._eta_text(elapsed, blend_attempted, self.total_positions)}",
+            file=sys.stderr,
+        )
+        for alpha in self.blend_params:
+            row = blend_rows[alpha]
             print(
-                f"  level {level:>2}: 暫定1位 {top1 * 100.0:.3f}% "
-                f"暫定上位3手 {top3 * 100.0:.3f}% "
-                f"({attempted:,}/{self.total_positions:,}局面、"
-                f"ETA {format_duration(level_eta) if attempted else '計算中'})",
+                f"    alpha={alpha:.1f}: 1位 "
+                f"{row['top1_accuracy'] * 100.0:.3f}% "
+                f"上位3手 {row['top3_accuracy'] * 100.0:.3f}% "
+                f"({row['positions']:,}局面、状態: {blend_status})",
+                file=sys.stderr,
+            )
+        console_total = self.total_positions * len(self.console_levels)
+        print(
+            f"  Console単体: {len(self.console_rows)}/{len(self.console_levels)}レベル完了、"
+            f"{console_attempted:,}/{console_total:,}件の局面評価 "
+            f"ETA {self._eta_text(elapsed, console_attempted, console_total)}",
+            file=sys.stderr,
+        )
+        for level in self.console_levels:
+            row = console_rows[level]
+            if row["status"] == "待機":
+                print(
+                    f"    level {level:>2}: 初回結果待ち "
+                    f"(0/{self.total_positions:,}局面)",
+                    file=sys.stderr,
+                )
+                continue
+            print(
+                f"    level {level:>2}: 1位 "
+                f"{row['top1_accuracy'] * 100.0:.3f}% "
+                f"上位3手 {row['top3_accuracy'] * 100.0:.3f}% "
+                f"({row['attempted']:,}/{self.total_positions:,}局面、"
+                f"状態: {row['status']})",
                 file=sys.stderr,
             )
         sys.stderr.flush()
@@ -287,10 +276,10 @@ class ConsoleLevelsProgressReporter:
 def monitor_console_progress(
     progress_queue,
     stop_event: threading.Event,
-    reporter: ConsoleLevelsProgressReporter,
+    reporter: CombinedProgressReporter,
 ) -> None:
     def dispatch(event: dict) -> None:
-        reporter.update(event)
+        reporter.update_console(event)
 
     while not stop_event.is_set():
         try:
@@ -364,14 +353,8 @@ def available_memory_mib() -> Optional[float]:
 
 
 def default_max_concurrent_hints(egaroucid_threads: int) -> int:
-    try:
-        import psutil  # type: ignore
-
-        physical_cpus = psutil.cpu_count(logical=False)
-    except ImportError:
-        physical_cpus = None
-    available_cpus = physical_cpus or os.cpu_count() or 1
-    return max(1, int(available_cpus) // egaroucid_threads)
+    logical_cpus = os.cpu_count() or 1
+    return max(1, logical_cpus // egaroucid_threads)
 
 
 class ResourceMonitor:
@@ -584,16 +567,11 @@ def make_console_level_summary_row(level: int, result: dict, elapsed_sec: float)
 def run_console_level_experiments(
     args: argparse.Namespace,
     output_dir: Path,
+    progress: CombinedProgressReporter,
 ) -> tuple[List[dict], dict]:
     started_at_unix = time.time()
     start_time = time.perf_counter()
     console_root = output_dir / "console_levels"
-    progress = ConsoleLevelsProgressReporter(
-        args.positions,
-        args.progress_interval_sec,
-        CONSOLE_LEVELS,
-    )
-    progress.start()
     manager = multiprocessing.Manager()
     progress_queue = manager.Queue()
     progress_stop_event = threading.Event()
@@ -638,7 +616,7 @@ def run_console_level_experiments(
                     worker_result["result"],
                     worker_result["elapsed_sec"],
                 )
-                progress.complete(level, level_summary)
+                progress.complete_console_level(level, level_summary)
                 console_runs.append(
                     {
                         "output_dir": Path(worker_result["output_dir"]),
@@ -659,33 +637,21 @@ def run_console_level_experiments(
     }
 
 
-def blend_rows_for_progress(rows: Sequence[dict]) -> List[dict]:
-    return [
-        {
-            "blend_param": row["alpha"],
-            "positions": row["positions"],
-            "top1_accuracy": row["top1_accuracy"],
-            "top3_accuracy": row["top3_accuracy"],
-        }
-        for row in rows
-    ]
-
-
 def run_blend_experiment(
     evaluator_args: argparse.Namespace,
-    progress: ProgressReporter,
+    progress: CombinedProgressReporter,
     progress_interval_sec: float,
 ) -> tuple[dict, List[dict], dict]:
     started_at_unix = time.time()
     start_time = time.perf_counter()
     result = evaluator.evaluate(
         evaluator_args,
-        progress_callback=progress.update,
+        progress_callback=progress.update_blend,
         progress_interval_sec=min(10.0, progress_interval_sec),
     )
     elapsed_sec = time.perf_counter() - start_time
     rows = make_blend_summary_rows(result)
-    progress.finish(blend_rows_for_progress(rows), elapsed_sec)
+    progress.complete_blend(rows)
     return result, rows, {
         "started_at_unix": started_at_unix,
         "finished_at_unix": time.time(),
@@ -743,6 +709,7 @@ def write_summary(
         "concurrent_phase_timing": concurrent_phase_timing,
         "blend_jobs": args.jobs,
         "console_level_processes": len(CONSOLE_LEVELS),
+        "logical_cpu_threads": os.cpu_count(),
         "maximum_concurrent_console_processes": (
             min(args.jobs, args.positions) + len(CONSOLE_LEVELS)
         ),
@@ -794,6 +761,7 @@ def print_configuration(
     print("評価の実行方式", "ブレンド版とConsole単体版を同時実行する")
     print("Console起動方式", "全プロセスを常駐させ、hintコマンドの送信時刻を共通管理する")
     print("hintコマンドの送信間隔", f"{args.hint_command_stagger_sec:g}秒")
+    print("論理CPUスレッド数", os.cpu_count() or 1)
     print("同時にhint探索を行うConsoleプロセスの上限", args.max_concurrent_hints)
     print("ブレンド方策の同時評価処理数", args.jobs)
     print("Console level別の同時常駐プロセス数", len(CONSOLE_LEVELS))
@@ -902,7 +870,7 @@ def make_argparser() -> argparse.ArgumentParser:
         "--max-concurrent-hints",
         type=positive_int,
         default=None,
-        help="同時にhint探索を行うConsoleプロセス数。省略時は物理CPU数とスレッド数から決定する",
+        help="同時にhint探索を行うConsoleプロセス数。省略時は論理CPUスレッド数から決定する",
     )
     parser.add_argument(
         "--progress-interval-sec",
@@ -979,31 +947,35 @@ def main() -> None:
     monitor.start()
     experiment_start_time = time.perf_counter()
     try:
-        blend_progress = ProgressReporter(
+        progress = CombinedProgressReporter(
             args.positions,
             args.progress_interval_sec,
-            f"ブレンド方策（Egaroucid level {args.egaroucid_level}）",
+            args.egaroucid_level,
             BLEND_PARAMS,
-            {alpha: f"alpha={alpha:.1f}" for alpha in BLEND_PARAMS},
+            CONSOLE_LEVELS,
         )
-        blend_progress.start()
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = {
-                executor.submit(
-                    run_blend_experiment,
-                    blend_evaluator_args,
-                    blend_progress,
-                    args.progress_interval_sec,
-                ): "blend",
-                executor.submit(
-                    run_console_level_experiments,
-                    args,
-                    output_dir,
-                ): "console",
-            }
-            concurrent_results = {}
-            for future in as_completed(futures):
-                concurrent_results[futures[future]] = future.result()
+        progress.start()
+        try:
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                futures = {
+                    executor.submit(
+                        run_blend_experiment,
+                        blend_evaluator_args,
+                        progress,
+                        args.progress_interval_sec,
+                    ): "blend",
+                    executor.submit(
+                        run_console_level_experiments,
+                        args,
+                        output_dir,
+                        progress,
+                    ): "console",
+                }
+                concurrent_results = {}
+                for future in as_completed(futures):
+                    concurrent_results[futures[future]] = future.result()
+        finally:
+            progress.finish()
         blend_result, blend_rows, blend_timing = concurrent_results["blend"]
         console_runs, console_timing = concurrent_results["console"]
         blend_elapsed_sec = float(blend_timing["elapsed_sec"])
