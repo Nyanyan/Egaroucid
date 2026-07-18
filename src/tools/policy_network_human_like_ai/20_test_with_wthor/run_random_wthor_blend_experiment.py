@@ -9,6 +9,7 @@ import json
 import math
 import os
 from pathlib import Path
+import sys
 import threading
 import time
 from typing import Dict, List, Optional, Sequence
@@ -31,6 +32,98 @@ SUMMARY_FIELDS = (
     "top3_hits",
     "top3_accuracy",
 )
+
+
+def format_duration(seconds: float) -> str:
+    seconds = max(0, int(round(seconds)))
+    days, seconds = divmod(seconds, 24 * 60 * 60)
+    hours, seconds = divmod(seconds, 60 * 60)
+    minutes, seconds = divmod(seconds, 60)
+    text = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return f"{days}日 {text}" if days else text
+
+
+class ProgressReporter:
+    def __init__(self, total_positions: int, report_interval_sec: float):
+        self.total_positions = total_positions
+        self.report_interval_sec = report_interval_sec
+        self.start_time = time.perf_counter()
+        self.last_report_time = self.start_time
+        self.worker_states: Dict[int, dict] = {}
+        self.final_reported = False
+        self.lock = threading.Lock()
+
+    def update(self, event: dict) -> None:
+        with self.lock:
+            self.worker_states[int(event["worker_id"])] = event
+            now = time.perf_counter()
+            attempted = sum(int(state["attempted_positions"]) for state in self.worker_states.values())
+            completed = attempted >= self.total_positions
+            if not completed and now - self.last_report_time < self.report_interval_sec:
+                return
+            self._print_worker_states(now, attempted)
+            self.last_report_time = now
+            self.final_reported = completed
+
+    def _print_worker_states(self, now: float, attempted: int) -> None:
+        elapsed = max(0.0, now - self.start_time)
+        completed = attempted >= self.total_positions
+        if attempted > 0:
+            eta = elapsed * max(0, self.total_positions - attempted) / attempted
+            eta_text = format_duration(eta)
+        else:
+            eta_text = "計算中"
+        percent = 100.0 * attempted / self.total_positions
+        print(
+            f"[進捗] {attempted:,}/{self.total_positions:,}局面 "
+            f"({percent:.2f}%) 経過 {format_duration(elapsed)} ETA {eta_text}",
+            file=sys.stderr,
+        )
+
+        aggregate = {
+            alpha: {"positions": 0, "top1_hits": 0, "top3_hits": 0}
+            for alpha in BLEND_PARAMS
+        }
+        for state in self.worker_states.values():
+            for row in state["results"]:
+                alpha = round(float(row["blend_param"]), 10)
+                if alpha not in aggregate:
+                    continue
+                aggregate[alpha]["positions"] += int(row["positions"])
+                aggregate[alpha]["top1_hits"] += int(row.get("top1_hits", 0))
+                aggregate[alpha]["top3_hits"] += int(row.get("top3_hits", 0))
+
+        for alpha in BLEND_PARAMS:
+            row = aggregate[alpha]
+            positions = row["positions"]
+            top1 = row["top1_hits"] / positions if positions else 0.0
+            top3 = row["top3_hits"] / positions if positions else 0.0
+            prefix = "" if completed else "暫定"
+            print(
+                f"  alpha={alpha:.1f}: {prefix}1位一致率 {top1 * 100.0:.3f}% "
+                f"{prefix}上位3手一致率 {top3 * 100.0:.3f}% ({positions:,}局面)",
+                file=sys.stderr,
+            )
+        sys.stderr.flush()
+
+    def finish(self, rows: Sequence[dict], elapsed_sec: float) -> None:
+        with self.lock:
+            if self.final_reported:
+                return
+            print(
+                f"[進捗] {self.total_positions:,}/{self.total_positions:,}局面 "
+                f"(100.00%) 経過 {format_duration(elapsed_sec)} ETA 00:00:00",
+                file=sys.stderr,
+            )
+            for row in rows:
+                print(
+                    f"  alpha={row['alpha']:.1f}: 1位一致率 {row['top1_accuracy'] * 100.0:.3f}% "
+                    f"上位3手一致率 {row['top3_accuracy'] * 100.0:.3f}% "
+                    f"({row['positions']:,}局面)",
+                    file=sys.stderr,
+                )
+            sys.stderr.flush()
+            self.final_reported = True
 
 
 def positive_int(text: str) -> int:
@@ -251,6 +344,7 @@ def write_summary(
         "egaroucid_level": args.egaroucid_level,
         "jobs": args.jobs,
         "egaroucid_threads_per_job": args.egaroucid_threads,
+        "progress_interval_sec": args.progress_interval_sec,
         "elapsed_sec": elapsed_sec,
         "startup_available_memory_mib": startup_available_memory_mib,
         "resources": resources,
@@ -280,6 +374,7 @@ def print_configuration(
     print("alpha", ", ".join(f"{alpha:.1f}" for alpha in BLEND_PARAMS))
     print("同時評価処理数", args.jobs)
     print("1処理当たりのEgaroucidスレッド数", args.egaroucid_threads)
+    print("進捗表示間隔", f"{args.progress_interval_sec:g}秒")
     if args.hint_cache_db is not None:
         print("共有hintキャッシュ", args.hint_cache_db)
     print("WTHOR全局面数", f"{available_positions:,}")
@@ -327,6 +422,12 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-threads", type=positive_int, default=8)
     parser.add_argument("--egaroucid-timeout-sec", type=positive_float, default=1800.0)
     parser.add_argument("--score-temperature", type=positive_float, default=1.0)
+    parser.add_argument(
+        "--progress-interval-sec",
+        type=positive_float,
+        default=60.0,
+        help="暫定一致率とETAを標準エラーへ表示する間隔（秒）",
+    )
     parser.add_argument("--minimum-remaining-memory-mib", type=positive_float, default=16384.0)
     parser.add_argument("--estimated-engine-memory-mib", type=positive_float, default=1400.0)
     parser.add_argument(
@@ -370,14 +471,20 @@ def main() -> None:
 
     monitor = ResourceMonitor()
     monitor.start()
+    progress = ProgressReporter(args.positions, args.progress_interval_sec)
     start_time = time.perf_counter()
     try:
-        result = evaluator.evaluate(evaluator_args)
+        result = evaluator.evaluate(
+            evaluator_args,
+            progress_callback=progress.update,
+            progress_interval_sec=min(10.0, args.progress_interval_sec),
+        )
     finally:
         elapsed_sec = time.perf_counter() - start_time
         resources = monitor.stop()
 
     rows = make_summary_rows(result)
+    progress.finish(rows, elapsed_sec)
     write_summary(
         output_dir,
         args,

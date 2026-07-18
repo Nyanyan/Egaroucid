@@ -12,12 +12,15 @@ import argparse
 import csv
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import json
+import multiprocessing
 import os
 from pathlib import Path
+import queue
 import sys
 import sqlite3
+import threading
 import time
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -426,6 +429,71 @@ def merge_hint_cache_stats(stats_rows: Sequence[dict]) -> dict:
     return merged
 
 
+def make_worker_progress_event(
+    worker_id: int,
+    attempted_positions: int,
+    metrics: Dict[float, dict],
+    blend_params: Sequence[float],
+    n_values: Sequence[int],
+    start_time: float,
+) -> dict:
+    rows = []
+    for blend in blend_params:
+        metric = metrics[blend]
+        row = {
+            "blend_param": blend,
+            "positions": metric["positions"],
+        }
+        for n in n_values:
+            row[f"top{n}_hits"] = metric["exact_hits"][n]
+        rows.append(row)
+    return {
+        "worker_id": worker_id,
+        "attempted_positions": attempted_positions,
+        "elapsed_sec": time.time() - start_time,
+        "results": rows,
+    }
+
+
+def emit_worker_progress(
+    progress_queue,
+    worker_id: int,
+    attempted_positions: int,
+    metrics: Dict[float, dict],
+    blend_params: Sequence[float],
+    n_values: Sequence[int],
+    start_time: float,
+) -> None:
+    if progress_queue is None:
+        return
+    try:
+        progress_queue.put(
+            make_worker_progress_event(
+                worker_id,
+                attempted_positions,
+                metrics,
+                blend_params,
+                n_values,
+                start_time,
+            )
+        )
+    except (BrokenPipeError, EOFError, OSError):
+        pass
+
+
+def monitor_worker_progress(progress_queue, stop_event: threading.Event, callback: Callable[[dict], None]) -> None:
+    while not stop_event.is_set():
+        try:
+            callback(progress_queue.get(timeout=0.2))
+        except queue.Empty:
+            pass
+    while True:
+        try:
+            callback(progress_queue.get_nowait())
+        except queue.Empty:
+            return
+
+
 def evaluate_worker(worker_args: dict) -> dict:
     start_time = time.time()
     blend_params = worker_args["blend_params"]
@@ -450,8 +518,12 @@ def evaluate_worker(worker_args: dict) -> dict:
     invalid_policy = 0
     illegal_label = 0
     processed = 0
+    attempted = 0
     file_global_start = 0
     hint_cache = HintScoreCache(Path(worker_args["hint_cache_db"])) if worker_args["hint_cache_db"] else None
+    progress_queue = worker_args.get("progress_queue")
+    progress_interval_sec = float(worker_args.get("progress_interval_sec") or 0.0)
+    last_progress_time = time.monotonic()
     try:
         for dat_file in dat_files:
             file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
@@ -487,18 +559,41 @@ def evaluate_worker(worker_args: dict) -> dict:
                         processed,
                         hint_cache,
                     )
+                    attempted += 1
                     processed += ok
                     invalid_policy += bad_policy
                     illegal_label += bad_label
+                    now = time.monotonic()
+                    if progress_queue is not None and now - last_progress_time >= progress_interval_sec:
+                        emit_worker_progress(
+                            progress_queue,
+                            worker_args["worker_id"],
+                            attempted,
+                            metrics,
+                            blend_params,
+                            n_values,
+                            start_time,
+                        )
+                        last_progress_time = now
             file_global_start += file_positions
         hint_cache_stats = hint_cache.summary() if hint_cache is not None else {}
     finally:
+        emit_worker_progress(
+            progress_queue,
+            worker_args["worker_id"],
+            attempted,
+            metrics,
+            blend_params,
+            n_values,
+            start_time,
+        )
         if hint_cache is not None:
             hint_cache.close()
         blender.hint_runner.close()
     return {
         "worker_id": worker_args["worker_id"],
         "elapsed_sec": time.time() - start_time,
+        "attempted_positions": attempted,
         "processed_positions": processed,
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
@@ -592,11 +687,17 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
     return result
 
 
-def evaluate(args: argparse.Namespace) -> dict:
+def evaluate(
+    args: argparse.Namespace,
+    progress_callback: Optional[Callable[[dict], None]] = None,
+    progress_interval_sec: float = 30.0,
+) -> dict:
     blend_params = parse_float_list(args.blend_params)
     n_values = sorted(set(parse_int_list(args.top_n)))
     if args.sample_positions is not None and args.sample_positions <= 0:
         raise ValueError("--sample-positions must be positive when set")
+    if progress_callback is not None and progress_interval_sec <= 0.0:
+        raise ValueError("progress_interval_sec must be positive")
     dat_files = discover_dat_files(args.board_data_dir)
     available_positions = count_position_samples(dat_files, args.max_positions)
     range_start = int(args.range_start)
@@ -627,6 +728,21 @@ def evaluate(args: argparse.Namespace) -> dict:
     raw_hint_samples = []
     hint_cache_stats_rows: List[dict] = []
     if args.jobs > 1:
+        progress_manager = None
+        progress_queue = None
+        progress_stop_event = None
+        progress_thread = None
+        if progress_callback is not None:
+            progress_manager = multiprocessing.Manager()
+            progress_queue = progress_manager.Queue()
+            progress_stop_event = threading.Event()
+            progress_thread = threading.Thread(
+                target=monitor_worker_progress,
+                args=(progress_queue, progress_stop_event, progress_callback),
+                name="wthor-progress-monitor",
+                daemon=True,
+            )
+            progress_thread.start()
         if selected_global_positions is None:
             work_ranges = split_absolute_ranges(range_start, range_end, args.jobs)
             selected_chunks = [None for _ in work_ranges]
@@ -659,34 +775,45 @@ def evaluate(args: argparse.Namespace) -> dict:
                     "batch_size": args.batch_size,
                     "raw_hint_limit": max(0, raw_hint_remaining),
                     "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
+                    "progress_queue": progress_queue,
+                    "progress_interval_sec": progress_interval_sec,
                 }
             )
             raw_hint_remaining = 0
-        with ProcessPoolExecutor(max_workers=args.jobs) as executor:
-            futures = [executor.submit(evaluate_worker, item) for item in worker_args]
-            for future in as_completed(futures):
-                worker_result = future.result()
-                merge_worker_result(metrics, worker_result["metrics"], blend_params, n_values, bucket_names)
-                invalid_policy += worker_result["invalid_policy_samples"]
-                illegal_label += worker_result["illegal_label_samples"]
-                raw_hint_samples.extend(worker_result["raw_hint_samples"])
-                hint_cache_stats_rows.append(worker_result.get("hint_cache_stats", {}))
-                worker_summaries.append(
-                    {
-                        "worker_id": worker_result["worker_id"],
-                        "elapsed_sec": worker_result["elapsed_sec"],
-                        "processed_positions": worker_result["processed_positions"],
-                        "invalid_policy_samples": worker_result["invalid_policy_samples"],
-                        "illegal_label_samples": worker_result["illegal_label_samples"],
-                        "hint_cache_stats": worker_result.get("hint_cache_stats", {}),
-                    }
-                )
-                if args.verbose:
-                    print(
-                        f"worker {worker_result['worker_id']} finished "
-                        f"{worker_result['processed_positions']} positions in {worker_result['elapsed_sec']:.3f} sec",
-                        flush=True,
+        try:
+            with ProcessPoolExecutor(max_workers=args.jobs) as executor:
+                futures = [executor.submit(evaluate_worker, item) for item in worker_args]
+                for future in as_completed(futures):
+                    worker_result = future.result()
+                    merge_worker_result(metrics, worker_result["metrics"], blend_params, n_values, bucket_names)
+                    invalid_policy += worker_result["invalid_policy_samples"]
+                    illegal_label += worker_result["illegal_label_samples"]
+                    raw_hint_samples.extend(worker_result["raw_hint_samples"])
+                    hint_cache_stats_rows.append(worker_result.get("hint_cache_stats", {}))
+                    worker_summaries.append(
+                        {
+                            "worker_id": worker_result["worker_id"],
+                            "elapsed_sec": worker_result["elapsed_sec"],
+                            "attempted_positions": worker_result["attempted_positions"],
+                            "processed_positions": worker_result["processed_positions"],
+                            "invalid_policy_samples": worker_result["invalid_policy_samples"],
+                            "illegal_label_samples": worker_result["illegal_label_samples"],
+                            "hint_cache_stats": worker_result.get("hint_cache_stats", {}),
+                        }
                     )
+                    if args.verbose:
+                        print(
+                            f"worker {worker_result['worker_id']} finished "
+                            f"{worker_result['processed_positions']} positions in {worker_result['elapsed_sec']:.3f} sec",
+                            flush=True,
+                        )
+        finally:
+            if progress_stop_event is not None:
+                progress_stop_event.set()
+            if progress_thread is not None:
+                progress_thread.join()
+            if progress_manager is not None:
+                progress_manager.shutdown()
         worker_summaries.sort(key=lambda row: row["worker_id"])
         hint_cache_stats = merge_hint_cache_stats(hint_cache_stats_rows)
         return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, worker_summaries, hint_cache_stats)
@@ -702,8 +829,11 @@ def evaluate(args: argparse.Namespace) -> dict:
     )
 
     total_seen = 0
+    total_attempted = 0
     global_offset = 0
     hint_cache = HintScoreCache(args.hint_cache_db) if args.hint_cache_db is not None else None
+    single_start_time = time.time()
+    last_progress_time = time.monotonic()
     for dat_file in dat_files:
         file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
         if global_offset >= available_positions:
@@ -727,9 +857,23 @@ def evaluate(args: argparse.Namespace) -> dict:
                     total_seen,
                     hint_cache,
                 )
+                total_attempted += 1
                 total_seen += ok
                 invalid_policy += bad_policy
                 illegal_label += bad_label
+                now = time.monotonic()
+                if progress_callback is not None and now - last_progress_time >= progress_interval_sec:
+                    progress_callback(
+                        make_worker_progress_event(
+                            0,
+                            total_attempted,
+                            metrics,
+                            blend_params,
+                            n_values,
+                            single_start_time,
+                        )
+                    )
+                    last_progress_time = now
 
             if args.verbose and total_seen and total_seen % args.progress_interval < len(position_samples):
                 print(f"seen {total_seen} position_samples")
@@ -739,6 +883,17 @@ def evaluate(args: argparse.Namespace) -> dict:
     if hint_cache is not None:
         hint_cache.close()
     blender.hint_runner.close()
+    if progress_callback is not None:
+        progress_callback(
+            make_worker_progress_event(
+                0,
+                total_attempted,
+                metrics,
+                blend_params,
+                n_values,
+                single_start_time,
+            )
+        )
     return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, [], hint_cache_stats)
 
 
