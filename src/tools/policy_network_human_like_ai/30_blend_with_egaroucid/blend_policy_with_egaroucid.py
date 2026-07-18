@@ -402,8 +402,8 @@ def parse_score(text: str) -> float:
     return float(match.group(0))
 
 
-def parse_hint_output(output: str) -> Dict[int, float]:
-    scores: Dict[int, float] = {}
+def parse_hint_rows(output: str) -> List[Tuple[int, float]]:
+    rows: List[Tuple[int, float]] = []
     for line in output.splitlines():
         if "|" not in line or "Move" in line or "Score" in line:
             continue
@@ -414,10 +414,18 @@ def parse_hint_output(output: str) -> Dict[int, float]:
         if not re.fullmatch(r"[a-h][1-8]", move):
             continue
         try:
-            scores[coord_to_policy(move)] = parse_score(parts[4])
+            rows.append((coord_to_policy(move), parse_score(parts[4])))
         except ValueError:
             continue
-    return scores
+    return rows
+
+
+def parse_hint_output(output: str) -> Dict[int, float]:
+    return dict(parse_hint_rows(output))
+
+
+def parse_hint_move_order(output: str) -> List[int]:
+    return [policy for policy, _ in parse_hint_rows(output)]
 
 
 class EgaroucidHintRunner:

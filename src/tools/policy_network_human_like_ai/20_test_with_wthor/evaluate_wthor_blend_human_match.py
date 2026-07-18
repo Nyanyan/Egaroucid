@@ -38,6 +38,7 @@ from blend_policy_with_egaroucid import (  # noqa: E402
     default_egaroucid_exe,
     default_weights_file,
     geometric_blend_distribution,
+    parse_hint_move_order,
 )
 from evaluate_wthor_human_match import (  # noqa: E402
     BOARD_DTYPE,
@@ -307,15 +308,35 @@ def position_sample_to_state(position_sample) -> Tuple[BoardState, int, int, int
     return BoardState(black, white, side), side, policy, player, opponent, move_number
 
 
-def rank_for_distribution(distribution: np.ndarray, legal_policies: Sequence[int], target_policies: Sequence[int]) -> int:
+def rank_for_distribution(
+    distribution: np.ndarray,
+    legal_policies: Sequence[int],
+    target_policies: Sequence[int],
+    tie_break_order: Optional[Sequence[int]] = None,
+) -> int:
     if not legal_policies:
         return POLICY_SIZE + 1
-    legal = np.array(legal_policies, dtype=np.int64)
-    targets = [policy for policy in target_policies if policy in legal_policies]
+    legal_set = set(legal_policies)
+    targets = set(policy for policy in target_policies if policy in legal_set)
     if not targets:
         return POLICY_SIZE + 1
-    target_prob = float(np.max(distribution[np.array(targets, dtype=np.int64)]))
-    return 1 + int(np.count_nonzero(distribution[legal] > target_prob))
+
+    ordered_ties: List[int] = []
+    seen = set()
+    for policy in tie_break_order or ():
+        if policy in legal_set and policy not in seen:
+            ordered_ties.append(policy)
+            seen.add(policy)
+    for policy in legal_policies:
+        if policy not in seen:
+            ordered_ties.append(policy)
+            seen.add(policy)
+    tie_rank = {policy: rank for rank, policy in enumerate(ordered_ties)}
+    ranked = sorted(
+        legal_policies,
+        key=lambda policy: (-float(distribution[policy]), tie_rank[policy]),
+    )
+    return min(rank for rank, policy in enumerate(ranked, start=1) if policy in targets)
 
 
 def equivalent_targets(player: int, opponent: int, policy: int) -> List[int]:
@@ -377,6 +398,7 @@ def update_metrics_for_position_sample(
     policy_dist = blender.policy_distribution(state, side, legal_policies)
     if all(float(blend) >= 1.0 for blend in blend_params):
         raw_hint = ""
+        hint_move_order: List[int] = []
         egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
     else:
         hint_count = max(n_values)
@@ -387,6 +409,7 @@ def update_metrics_for_position_sample(
             hint_count,
             hint_cache,
         )
+        hint_move_order = parse_hint_move_order(raw_hint)
         egaroucid_dist = blender.egaroucid_distribution(scores, legal_policies)
     if raw_hint_limit > 0 and len(raw_hint_samples) < raw_hint_limit:
         raw_hint_samples.append({"index": sample_index, "raw_hint": raw_hint})
@@ -397,8 +420,19 @@ def update_metrics_for_position_sample(
 
     for blend in blend_params:
         distribution = geometric_blend_distribution(policy_dist, egaroucid_dist, legal_policies, blend)
-        exact_rank = rank_for_distribution(distribution, legal_policies, exact_targets)
-        symmetric_rank = rank_for_distribution(distribution, legal_policies, symmetric_targets)
+        tie_break_order = hint_move_order if float(blend) == 0.0 else None
+        exact_rank = rank_for_distribution(
+            distribution,
+            legal_policies,
+            exact_targets,
+            tie_break_order,
+        )
+        symmetric_rank = rank_for_distribution(
+            distribution,
+            legal_policies,
+            symmetric_targets,
+            tie_break_order,
+        )
         m = metrics[blend]
         m["positions"] += 1
         m["bucket_positions"][bucket] += 1
@@ -692,6 +726,11 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
             "hint_score_lookups_per_position": 1,
             "blend_params_evaluated_from_shared_distributions": len(blend_params),
             "note": "各局面のPolicy Network出力とhint出力を1回だけ計算し、すべてのalphaで共用する。",
+        },
+        "ranking_definition": {
+            "top_n": "確率の降順で手を一意に並べ、WTHORの実着手が先頭N手に含まれるかを数える。",
+            "alpha_zero_tie_break": "Egaroucid for Consoleのhint出力順を使う。",
+            "other_tie_break": "確率が同じ場合は合法手の固定順を使う。",
         },
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,

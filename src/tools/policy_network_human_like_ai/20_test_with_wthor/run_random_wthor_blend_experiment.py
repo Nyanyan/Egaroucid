@@ -270,6 +270,12 @@ class CombinedProgressReporter:
                 f"状態: {row['status']})",
                 file=sys.stderr,
             )
+        if not blend_completed or len(self.console_rows) < len(self.console_levels):
+            print(
+                "  注意: 暫定行ごとに評価済みの局面集合が異なるため、"
+                "完了前の一致率同士からlevel間の優劣は判断できません。",
+                file=sys.stderr,
+            )
         sys.stderr.flush()
 
 
@@ -705,6 +711,15 @@ def write_summary(
             "separate_hint_cache_per_level": True,
             "note": "ブレンド版とConsole単体版を同時実行し、各Consoleプロセスは担当する全局面の完了まで常駐させる。",
         },
+        "level_comparison_condition": {
+            "same_process_count_per_level": args.jobs == 1,
+            "blend_level_processes": args.jobs,
+            "standalone_processes_per_level": 1,
+            "note": (
+                "jobs=1ではブレンド側のEgaroucid levelもConsole単体の各levelも"
+                "1常駐プロセスで全局面を処理する。"
+            ),
+        },
         "hint_command_stagger": command_stagger_stats,
         "concurrent_phase_timing": concurrent_phase_timing,
         "blend_jobs": args.jobs,
@@ -856,7 +871,15 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--weights", type=Path, default=evaluator.default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=evaluator.default_egaroucid_exe())
     parser.add_argument("--egaroucid-level", type=int, default=21)
-    parser.add_argument("--jobs", type=positive_int, default=4)
+    parser.add_argument(
+        "--jobs",
+        type=positive_int,
+        default=1,
+        help=(
+            "ブレンド側の同時評価処理数。level間の比較条件を揃えるため既定値は1。"
+            "2以上ではlevel 21だけ複数のConsoleプロセスに分割される"
+        ),
+    )
     parser.add_argument("--egaroucid-threads", type=positive_int, default=8)
     parser.add_argument("--egaroucid-timeout-sec", type=positive_float, default=1800.0)
     parser.add_argument("--score-temperature", type=positive_float, default=1.0)
@@ -894,6 +917,13 @@ def make_argparser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = make_argparser().parse_args()
+    if args.jobs != 1:
+        print(
+            "注意: --jobsが1ではないため、ブレンド側のlevel 21だけ"
+            "複数のConsoleプロセスに分割されます。"
+            "Console単体の各levelとの厳密な条件比較には--jobs 1を使ってください。",
+            file=sys.stderr,
+        )
     if args.max_concurrent_hints is None:
         args.max_concurrent_hints = default_max_concurrent_hints(args.egaroucid_threads)
     dat_files = evaluator.discover_dat_files(args.board_data_dir)
