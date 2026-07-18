@@ -12,6 +12,7 @@ import multiprocessing
 import os
 from pathlib import Path
 import queue
+import sqlite3
 import sys
 import threading
 import time
@@ -22,7 +23,8 @@ import evaluate_wthor_blend_human_match as evaluator
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 BLEND_PARAMS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
-CONSOLE_LEVELS = (1, 3, 5, 7, 9, 11, 13, 15, 17, 19)
+CONSOLE_REFERENCE_LEVEL = 21
+CONSOLE_LEVELS = (1, 3, 5, 7, 9, 11, 13, 15, 17, 19, CONSOLE_REFERENCE_LEVEL)
 TOP_N_VALUES = (1, 3)
 TRAIN_RATIO = 0.8
 VAL_RATIO = 0.1
@@ -335,7 +337,12 @@ def default_output_dir(args: argparse.Namespace) -> Path:
     return (
         SCRIPT_DIR
         / "output"
-        / f"random_wthor_{args.data_split}_n{args.positions}_seed{args.sample_seed}_level{args.egaroucid_level}"
+        / (
+            f"random_wthor_{args.data_split}_n{args.positions}"
+            f"_seed{args.sample_seed}_level{args.egaroucid_level}"
+            f"_jobs{args.jobs}_threads{args.egaroucid_threads}"
+            f"_hint{max(TOP_N_VALUES)}"
+        )
     )
 
 
@@ -665,6 +672,153 @@ def run_blend_experiment(
     }
 
 
+def load_cached_hint_orders(
+    cache_path: Path,
+    level: int,
+    hint_count: int,
+) -> Dict[tuple[int, int, int], tuple[int, ...]]:
+    result: Dict[tuple[int, int, int], tuple[int, ...]] = {}
+    if not cache_path.exists():
+        return result
+    conn = sqlite3.connect(str(cache_path))
+    try:
+        rows = conn.execute("SELECT key, raw_hint FROM hint_scores").fetchall()
+    finally:
+        conn.close()
+    expected_prefix = (f"level={level}", f"hint={hint_count}")
+    for key, raw_hint in rows:
+        parts = str(key).split(":")
+        if len(parts) != 5 or tuple(parts[:2]) != expected_prefix:
+            continue
+        state_key = (int(parts[2], 16), int(parts[3], 16), int(parts[4]))
+        order = evaluator.parse_hint_move_order(str(raw_hint))
+        result[state_key] = tuple(order[:hint_count])
+    return result
+
+
+def make_console_reference_validation(
+    args: argparse.Namespace,
+    blend_result: dict,
+    blend_rows: Sequence[dict],
+    console_runs: Sequence[dict],
+) -> dict:
+    validation = {
+        "reference_console_level": CONSOLE_REFERENCE_LEVEL,
+        "expected_matching_alpha": 0.0,
+        "comparison_available": False,
+        "note": (
+            "式の定義上、Egaroucid for Console level 21単体と一致すべきなのは"
+            "alpha=0.0であり、alpha=1.0ではない。"
+        ),
+    }
+    if args.egaroucid_level != CONSOLE_REFERENCE_LEVEL:
+        validation["unavailable_reason"] = (
+            f"ブレンド側のEgaroucid levelが{args.egaroucid_level}であり、"
+            f"{CONSOLE_REFERENCE_LEVEL}ではない。"
+        )
+        return validation
+
+    alpha_zero = next(
+        (row for row in blend_rows if round(float(row["alpha"]), 10) == 0.0),
+        None,
+    )
+    console_run = next(
+        (
+            run
+            for run in console_runs
+            if int(run["summary"]["level"]) == CONSOLE_REFERENCE_LEVEL
+        ),
+        None,
+    )
+    if alpha_zero is None or console_run is None:
+        validation["unavailable_reason"] = "比較対象の集計結果が見つからない。"
+        return validation
+
+    console_row = console_run["summary"]
+    aggregate = {
+        "positions_equal": int(alpha_zero["positions"]) == int(console_row["positions"]),
+        "top1_hits_equal": int(alpha_zero["top1_hits"]) == int(console_row["top1_hits"]),
+        "top3_hits_equal": int(alpha_zero["top3_hits"]) == int(console_row["top3_hits"]),
+        "alpha_zero": {
+            "positions": int(alpha_zero["positions"]),
+            "top1_hits": int(alpha_zero["top1_hits"]),
+            "top3_hits": int(alpha_zero["top3_hits"]),
+        },
+        "console_level_21": {
+            "positions": int(console_row["positions"]),
+            "top1_hits": int(console_row["top1_hits"]),
+            "top3_hits": int(console_row["top3_hits"]),
+        },
+    }
+    aggregate["all_equal"] = all(
+        aggregate[key]
+        for key in ("positions_equal", "top1_hits_equal", "top3_hits_equal")
+    )
+
+    hint_count = max(TOP_N_VALUES)
+    blend_cache = load_cached_hint_orders(
+        Path(blend_result["hint_cache_db"]),
+        CONSOLE_REFERENCE_LEVEL,
+        hint_count,
+    )
+    console_cache = load_cached_hint_orders(
+        Path(console_run["result"]["hint_cache_db"]),
+        CONSOLE_REFERENCE_LEVEL,
+        hint_count,
+    )
+    common_keys = sorted(set(blend_cache) & set(console_cache))
+    top1_equal = sum(
+        bool(blend_cache[key])
+        and bool(console_cache[key])
+        and blend_cache[key][0] == console_cache[key][0]
+        for key in common_keys
+    )
+    top3_order_equal = sum(
+        blend_cache[key] == console_cache[key]
+        for key in common_keys
+    )
+    top3_set_equal = sum(
+        set(blend_cache[key]) == set(console_cache[key])
+        for key in common_keys
+    )
+    output_comparison = {
+        "blend_cached_states": len(blend_cache),
+        "console_cached_states": len(console_cache),
+        "common_states": len(common_keys),
+        "states_only_in_blend_cache": len(set(blend_cache) - set(console_cache)),
+        "states_only_in_console_cache": len(set(console_cache) - set(blend_cache)),
+        "top1_move_equal_states": top1_equal,
+        "top3_order_equal_states": top3_order_equal,
+        "top3_set_equal_states": top3_set_equal,
+        "all_top1_moves_equal": bool(common_keys) and top1_equal == len(common_keys),
+        "all_top3_sets_equal": bool(common_keys) and top3_set_equal == len(common_keys),
+        "all_top3_orders_equal": bool(common_keys) and top3_order_equal == len(common_keys),
+    }
+    cache_coverage_equal = (
+        output_comparison["states_only_in_blend_cache"] == 0
+        and output_comparison["states_only_in_console_cache"] == 0
+    )
+    evaluation_equivalent = (
+        aggregate["all_equal"]
+        and output_comparison["all_top1_moves_equal"]
+        and output_comparison["all_top3_sets_equal"]
+        and cache_coverage_equal
+    )
+    validation.update(
+        {
+            "comparison_available": True,
+            "aggregate_human_match": aggregate,
+            "cached_output_comparison": output_comparison,
+            "evaluation_equivalent": evaluation_equivalent,
+            "exact_hint_order_equal": (
+                evaluation_equivalent
+                and output_comparison["all_top3_orders_equal"]
+            ),
+        }
+    )
+    return validation
+
+
 def write_summary(
     output_dir: Path,
     args: argparse.Namespace,
@@ -678,6 +832,7 @@ def write_summary(
     resources: dict,
     command_stagger_stats: dict,
     concurrent_phase_timing: dict,
+    console_reference_validation: dict,
 ) -> None:
     csv_path = output_dir / "random_wthor_blend_summary.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as f:
@@ -703,6 +858,7 @@ def write_summary(
         "blend_egaroucid_level": args.egaroucid_level,
         "console_levels": list(CONSOLE_LEVELS),
         "console_hint_count": max(TOP_N_VALUES),
+        "console_reference_validation": console_reference_validation,
         "console_level_process_isolation": {
             "separate_process_per_level": True,
             "concurrent_level_evaluation": True,
@@ -802,6 +958,7 @@ def print_results(
     resources: dict,
     command_stagger_stats: dict,
     concurrent_phase_timing: dict,
+    console_reference_validation: dict,
     output_dir: Path,
 ) -> None:
     print()
@@ -825,6 +982,45 @@ def print_results(
             f"({row['top1_ci95_lower'] * 100.0:.3f}% - {row['top1_ci95_upper'] * 100.0:.3f}%)   "
             f"{row['top3_accuracy'] * 100.0:>7.3f}%   "
             f"{row['elapsed_sec']:.3f}秒"
+        )
+    print()
+    print("Console level 21単体とalpha=0.0の一致検証")
+    if not console_reference_validation["comparison_available"]:
+        print("検証不可", console_reference_validation["unavailable_reason"])
+    else:
+        aggregate = console_reference_validation["aggregate_human_match"]
+        output = console_reference_validation["cached_output_comparison"]
+        print(
+            "人間着手一致数",
+            (
+                "一致"
+                if aggregate["all_equal"]
+                else "不一致"
+            ),
+            f"(1位 {aggregate['alpha_zero']['top1_hits']}"
+            f"対{aggregate['console_level_21']['top1_hits']}、"
+            f"上位3手 {aggregate['alpha_zero']['top3_hits']}"
+            f"対{aggregate['console_level_21']['top3_hits']})",
+        )
+        print(
+            "先頭手が同じ盤面・手番状態",
+            f"{output['top1_move_equal_states']:,}/{output['common_states']:,}",
+        )
+        print(
+            "上位3手の集合が同じ盤面・手番状態",
+            f"{output['top3_set_equal_states']:,}/{output['common_states']:,}",
+        )
+        print(
+            "hint 3の完全な順序が同じ盤面・手番状態",
+            f"{output['top3_order_equal_states']:,}/{output['common_states']:,}",
+        )
+        print(
+            "今回の1位・上位3手一致率に関する出力",
+            "一致" if console_reference_validation["evaluation_equivalent"] else "不一致",
+        )
+        print(
+            "hint 3の完全な出力順序",
+            "一致" if console_reference_validation["exact_hint_order_equal"] else "不一致",
         )
     print("Console level別評価の並列実行時間", f"{console_levels_elapsed_sec:.3f}秒")
     print(
@@ -860,7 +1056,7 @@ def make_argparser() -> argparse.ArgumentParser:
         description=(
             "WTHORからN局面をseed付きで無作為抽出し、"
             "alpha=0.0から1.0まで0.2刻みのブレンド方策と、"
-            "Egaroucid level 1から19までの奇数levelの人間着手一致率をまとめて測定します。"
+            "Egaroucid level 1から21までの奇数levelの人間着手一致率をまとめて測定します。"
         )
     )
     parser.add_argument("positions", metavar="N", type=positive_int, help="無作為抽出する局面数")
@@ -1047,6 +1243,12 @@ def main() -> None:
         }
         command_manager.shutdown()
 
+    console_reference_validation = make_console_reference_validation(
+        args,
+        blend_result,
+        blend_rows,
+        console_runs,
+    )
     write_summary(
         output_dir,
         args,
@@ -1060,6 +1262,7 @@ def main() -> None:
         resources,
         command_stagger_stats,
         concurrent_phase_timing,
+        console_reference_validation,
     )
     print_results(
         blend_rows,
@@ -1069,6 +1272,7 @@ def main() -> None:
         resources,
         command_stagger_stats,
         concurrent_phase_timing,
+        console_reference_validation,
         output_dir,
     )
 

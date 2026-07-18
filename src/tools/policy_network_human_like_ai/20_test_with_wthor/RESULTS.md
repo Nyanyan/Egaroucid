@@ -19,7 +19,7 @@ WTHORの全8,035,282局面をseed `613`でシャッフルし、8:1:1に分割し
 | テストデータ内の抽出seed | 613 |
 | Egaroucid | Egaroucid for Console 7.8.1、bookなし |
 | ブレンド側のEgaroucid level | 21 |
-| Console単体のlevel | 1、3、5、7、9、11、13、15、17、19 |
+| Console単体のlevel | 1、3、5、7、9、11、13、15、17、19、21 |
 | 各Consoleプロセスのスレッド数 | 8 |
 | Consoleへ要求した候補手数 | 3 |
 
@@ -65,6 +65,7 @@ WTHORの全8,035,282局面をseed `613`でシャッフルし、8:1:1に分割し
 | 15 | 580 | 58.0% | 54.9%から61.0% | 90.3% |
 | 17 | 604 | 60.4% | 57.3%から63.4% | 90.2% |
 | 19 | 604 | 60.4% | 57.3%から63.4% | 90.5% |
+| 21 | 603 | 60.3% | 57.2%から63.3% | 90.6% |
 
 人間着手一致率は棋力を測る指標ではないため、levelが高いほど単調に上昇するとは限らない。
 
@@ -102,7 +103,34 @@ python src/tools/policy_network_human_like_ai/20_test_with_wthor/run_random_wtho
 集計結果は次のファイルへ保存する。
 
 ```text
-output/random_wthor_test_n1000_seed613_level21/random_wthor_blend_summary.csv
-output/random_wthor_test_n1000_seed613_level21/random_wthor_console_level_summary.csv
-output/random_wthor_test_n1000_seed613_level21/random_wthor_blend_summary.json
+output/random_wthor_test_n1000_seed613_level21_jobs1_threads8_hint3/random_wthor_blend_summary.csv
+output/random_wthor_test_n1000_seed613_level21_jobs1_threads8_hint3/random_wthor_console_level_summary.csv
+output/random_wthor_test_n1000_seed613_level21_jobs1_threads8_hint3/random_wthor_blend_summary.json
 ```
+
+## Console level 21の追加
+
+2026-07-19に、Console単体の評価対象へlevel 21を追加した。
+式の定義上、Console level 21単体と一致すべきブレンド条件は`α=0.0`である。
+`α=1.0`はPolicy Network単体なので、この検証の比較対象ではない。
+
+実験スクリプトは、Console level 21単体と`α=0.0`について次を自動照合し、標準出力と集計JSONへ保存する。
+
+- 人間着手との1位一致数と上位3手一致数
+- 同じ盤面・手番状態に対する先頭手
+- 上位3手の集合
+- `hint 3`が出力した3手の完全な順序
+
+新しい出力先を使って5局面をゼロから計算した実装検証では、先頭手は5局面すべて、上位3手の集合も5局面すべてで一致した。
+一方、2位と3位を含む完全な順序は4局面で一致し、1局面で異なった。
+両者とも1位一致数は5、上位3手一致数も5だった。
+
+8スレッド探索では、同じlevel、同じ盤面順でも探索の並行実行によって2位以下の順序が変わる場合がある。
+この5局面は実装確認用であり、性能評価には使用しない。
+
+固定した1,000局面にConsole level 21単体を追加した結果は、1位一致603局面、1位一致率60.3%、上位3手一致906局面、上位3手一致率90.6%だった。
+level 21の新規`hint`探索には265.1秒かかった。
+この追加測定で比較対象となった既存の`α=0.0`キャッシュは、以前の4プロセス分割実行で作成されたものである。
+したがって、この既存キャッシュとの出力差は式の不一致を意味しない。
+
+異なる処理数やスレッド数で作成したキャッシュの誤再利用を避けるため、既定出力先の名前には`jobs`、1プロセス当たりのスレッド数、`hint`候補手数を含める。
