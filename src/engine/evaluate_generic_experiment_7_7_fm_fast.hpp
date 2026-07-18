@@ -418,7 +418,7 @@ bool evaluate_init(bool show_log) {
 inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) {
     int active_ids[N_PATTERN_FEATURES + 1];
     int n_active = 0;
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
     int fm_ids[N_PATTERN_FEATURES + 1];
     int n_fm = 0;
 #endif
@@ -431,7 +431,7 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) 
         }
         const int id = eval77_fm_pattern_offsets[pattern_idx] + local_idx;
         active_ids[n_active++] = id;
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
         if (eval77_fm_subset_pattern_type_enabled(pattern_idx)) {
             fm_ids[n_fm++] = id;
         }
@@ -439,10 +439,17 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval, const int num0) 
     }
     const int count_id = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
     active_ids[n_active++] = count_id;
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
     if (eval77_fm_subset_use_count) {
         fm_ids[n_fm++] = count_id;
     }
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
+    if (eval77_fm_fast_can_use_phase(phase_idx)) {
+        return eval77_fm_fast_score_from_linear_and_fm_ids_scalar(
+            phase_idx, active_ids, n_active, fm_ids, n_fm
+        );
+    }
+#endif
     return eval77_fm_score_from_linear_and_fm_ids(phase_idx, active_ids, n_active, fm_ids, n_fm);
 #else
     if (eval77_fm_fast_can_use_phase(phase_idx)) {

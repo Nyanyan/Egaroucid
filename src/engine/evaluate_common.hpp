@@ -21,7 +21,7 @@ constexpr int N_PATTERNS = 13;          // Edax linear model pattern groups
 #else
 constexpr int N_PATTERNS = 16;          // number of patterns used
 #endif
-#if defined(EVALUATE_EXPERIMENT_7_7_BETA) || defined(EVALUATE_EXPERIMENT_7_7_FM) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) || defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
+#if defined(EVALUATE_EXPERIMENT_7_7_BETA) || defined(EVALUATE_EXPERIMENT_7_7_FM) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET) || defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED) || defined(EVALUATE_EXPERIMENT_7_7_FM_HYBRID_78_RECOMPUTE)
 constexpr int MAX_CELL_PATTERNS = 17;   // 7.7 beta uses up to 17 patterns per cell
 #elif defined(EVALUATE_EXPERIMENT_EDAX_LINEAR) || defined(EVALUATE_EXPERIMENT_EDAX_LINEAR_CANONICAL) || defined(EVALUATE_EXPERIMENT_EDAX_FM) || defined(EVALUATE_EXPERIMENT_EDAX_OFFICIAL) || defined(EVALUATE_EXPERIMENT_EDAX_OFFICIAL_FM)
 constexpr int MAX_CELL_PATTERNS = 7;    // Edax linear uses up to 7 patterns per cell
@@ -61,7 +61,7 @@ constexpr int STEP_2 = 16; // STEP / 2
 
 // constexpr int STEP_MO_END = 32; // 1 disc = 64
 // constexpr int STEP_2_MO_END = 16; // STEP / 2
-#if defined(EVALUATE_EXPERIMENT_7_7_BETA) || defined(EVALUATE_EXPERIMENT_7_7_FM) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) || defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
+#if defined(EVALUATE_EXPERIMENT_7_7_BETA) || defined(EVALUATE_EXPERIMENT_7_7_FM) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET) || defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED) || defined(EVALUATE_EXPERIMENT_7_7_FM_HYBRID_78_RECOMPUTE)
 constexpr int STEP_MO_END = 32;
 constexpr int STEP_2_MO_END = 16;
 #endif
@@ -206,14 +206,30 @@ union Eval_features {
     __m128i f128[N_EVAL_VECTORS * 2];
 };
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_HYBRID_78_RECOMPUTE)
+struct Eval78HybridSearchState {
+    Eval_features features[2];
+    uint_fast8_t feature_idx;
+};
+#endif
+
 struct Eval_search {
     Eval_features features[HW2 - 4];
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_EGEV2_MOVE_ORDERING)
+    Eval_features eval77_egev2_move_ordering_features[HW2 - 4];
+#endif
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
     int eval77_fm_cache_active_ids[HW2 - 4][N_PATTERN_FEATURES + 1];
     int32_t eval77_fm_cache_sum[HW2 - 4][16];
     int32_t eval77_fm_cache_sum_sq[HW2 - 4][16];
     uint8_t eval77_fm_cache_group[HW2 - 4];
     bool eval77_fm_cache_ready[HW2 - 4];
+#endif
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+    int eval77_fm_reverse_cache_active_ids[HW2 - 4][N_PATTERN_FEATURES + 1];
+    int32_t eval77_fm_reverse_cache_sum[HW2 - 4][16];
+    int32_t eval77_fm_reverse_cache_sum_sq[HW2 - 4][16];
+    bool eval77_fm_reverse_cache_ready[HW2 - 4];
 #endif
     uint_fast8_t feature_idx;
 };

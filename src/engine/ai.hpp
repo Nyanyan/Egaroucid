@@ -274,7 +274,8 @@ inline Lazy_smp_worker_result lazy_smp_worker(
     bool *searching,
     bool show_log,
     bool use_tree_parallel,
-    bool preserve_main_presearch_importance
+    bool preserve_main_presearch_importance,
+    bool use_full_evaluation
 ) {
     Lazy_smp_worker_result worker_result;
     worker_result.worker_idx = worker_idx;
@@ -311,6 +312,11 @@ inline Lazy_smp_worker_result lazy_smp_worker(
         Search main_search(&board, worker_mpc_level, use_tree_parallel, !worker_is_target);
         main_search.thread_id = thread_id;
         main_search.lazy_smp_worker_idx = use_tree_parallel ? ((worker_idx == 0 && preserve_main_presearch_importance) ? -1 : worker_idx) : 0;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY)
+        main_search.eval77_fm_use_full_evaluation = use_full_evaluation;
+#else
+        (void)use_full_evaluation;
+#endif
         std::pair<int, int> id_result = first_nega_scout_legal(&main_search, alpha, beta, worker_depth, worker_is_end_search, clogs, use_legal, strt, searching);
         result->nodes += main_search.n_nodes;
 
@@ -405,7 +411,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         for (int worker_idx = 1; worker_idx < n_lazy_workers && global_searching && *searching; ++worker_idx) {
             bool pushed = false;
             helper_tasks.emplace_back(thread_pool.push(thread_id, &pushed, std::bind(
-                lazy_smp_worker, board, alpha, beta, depth, mpc_level, clogs, use_legal, worker_idx, thread_id, strt, &helper_searching, false, false, false
+                lazy_smp_worker, board, alpha, beta, depth, mpc_level, clogs, use_legal, worker_idx, thread_id, strt, &helper_searching, false, false, false, is_end_search
             )));
             if (!pushed) {
                 helper_tasks.pop_back();
@@ -414,7 +420,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
         }
     }
 
-    Lazy_smp_worker_result main_worker_result = lazy_smp_worker(board, alpha, beta, depth, mpc_level, clogs, use_legal, 0, thread_id, strt, searching, show_log, use_tree_parallel, use_root_lazy_smp && is_end_search);
+    Lazy_smp_worker_result main_worker_result = lazy_smp_worker(board, alpha, beta, depth, mpc_level, clogs, use_legal, 0, thread_id, strt, searching, show_log, use_tree_parallel, use_root_lazy_smp && is_end_search, is_end_search);
     helper_searching = false;
     std::vector<Lazy_smp_worker_result> worker_results;
     worker_results.emplace_back(main_worker_result);

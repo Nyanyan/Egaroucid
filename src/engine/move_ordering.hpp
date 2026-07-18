@@ -120,7 +120,63 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 inline int mid_evaluate_diff(Search *search);
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING) || defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH) || defined(EVALUATE_EXPERIMENT_7_7_FM_EGEV2_MOVE_ORDERING)
+inline int mid_evaluate_linear_move_ordering(Search *search);
+#endif
 inline int mid_evaluate_move_ordering_end(Search *search);
+
+inline int mid_evaluate_for_move_ordering(Search *search) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING) || defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH) || defined(EVALUATE_EXPERIMENT_7_7_FM_EGEV2_MOVE_ORDERING)
+    return mid_evaluate_linear_move_ordering(search);
+#else
+    return mid_evaluate_diff(search);
+#endif
+}
+
+inline int mid_evaluate_nws_value_weight(Search *search) {
+#if defined(EVAL77_FM_LINEAR_MOVE_ORDERING_NWS_VALUE)
+#if defined(EVAL77_FM_LINEAR_MOVE_ORDERING_NWS_MAX_PHASE)
+    if (search->phase() > EVAL77_FM_LINEAR_MOVE_ORDERING_NWS_MAX_PHASE) {
+        return W_NWS_VALUE;
+    }
+#else
+    (void)search;
+#endif
+    return EVAL77_FM_LINEAR_MOVE_ORDERING_NWS_VALUE;
+#else
+    (void)search;
+    return W_NWS_VALUE;
+#endif
+}
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+inline int eval77_fm_linear_move_ordering_eval1(
+    Search *search,
+    const int alpha,
+    const int beta
+) {
+    const bool previous = search->eval77_fm_use_linear_evaluation;
+    search->eval77_fm_use_linear_evaluation = true;
+    const int value = nega_alpha_eval1(search, alpha, beta, false);
+    search->eval77_fm_use_linear_evaluation = previous;
+    return value;
+}
+
+inline int eval77_fm_linear_move_ordering_search(
+    Search *search,
+    const int alpha,
+    const int beta,
+    const int depth,
+    const uint64_t legal,
+    bool *searching
+) {
+    const bool previous = search->eval77_fm_use_linear_evaluation;
+    search->eval77_fm_use_linear_evaluation = true;
+    const int value = nega_scout(search, alpha, beta, depth, false, legal, false, searching);
+    search->eval77_fm_use_linear_evaluation = previous;
+    return value;
+}
+#endif
 
 inline bool use_root_move_ordering_extension(const Search *search, int branch_count, bool is_end_search) {
     return !is_end_search &&
@@ -273,14 +329,18 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         const bool has_tt_value = depth >= MOVE_ORDERING_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
-                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
+                flip_value->value += (SCORE_MAX - mid_evaluate_for_move_ordering(search)) * W_VALUE;
                 break;
             case 1:
                 if (has_tt_value) {
                     flip_value->value += W_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 } else {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+                    flip_value->value += (SCORE_MAX - eval77_fm_linear_move_ordering_eval1(search, alpha, beta)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+#else
                     flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+#endif
                 }
                 break;
             default:
@@ -290,7 +350,11 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                 } else {
                     uint_fast8_t mpc_level = search->mpc_level;
                     search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+                        flip_value->value += (SCORE_MAX - eval77_fm_linear_move_ordering_search(search, alpha, beta, depth, flip_value->n_legal, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+#else
                         flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+#endif
                     search->mpc_level = mpc_level;
                 }
                 break;
@@ -326,14 +390,20 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         const bool has_tt_value = depth >= MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
-                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
+                flip_value->value +=
+                    (SCORE_MAX - mid_evaluate_for_move_ordering(search)) *
+                    mid_evaluate_nws_value_weight(search);
                 break;
             case 1:
                 if (has_tt_value) {
                     flip_value->value += W_NWS_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+                    flip_value->value += (SCORE_MAX - eval77_fm_linear_move_ordering_eval1(search, alpha, beta)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+#else
                     flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+#endif
                 }
                 break;
             default:
@@ -343,7 +413,11 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                 } else {
                     uint_fast8_t mpc_level = search->mpc_level;
                     search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+                        flip_value->value += (SCORE_MAX - eval77_fm_linear_move_ordering_search(search, alpha, beta, depth, flip_value->n_legal, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+#else
                         flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+#endif
                     search->mpc_level = mpc_level;
                 }
                 break;

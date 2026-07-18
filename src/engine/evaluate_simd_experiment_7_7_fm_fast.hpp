@@ -227,6 +227,9 @@ __m256i feature_to_coord_simd_cell[N_EVAL_VECTORS][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd[HW2][N_EVAL_VECTORS];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS];
 __m256i eval_simd_offsets[N_EVAL_VECTORS * 2]; // 32bit * 8 * N
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+uint16_t eval77_fm_swap_player_idx10[MAX_EVALUATE_IDX];
+#endif
 
 
 /*
@@ -361,6 +364,20 @@ inline void pre_calculate_eval_constant() {
         }
         eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     }
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+    for (int idx = 0; idx < MAX_EVALUATE_IDX; ++idx) {
+        int reversed = idx;
+        for (int cell = 0; cell < 10; ++cell) {
+            const int state = (idx / pow3[cell]) % 3;
+            if (state == 0) {
+                reversed += pow3[cell];
+            } else if (state == 1) {
+                reversed -= pow3[cell];
+            }
+        }
+        eval77_fm_swap_player_idx10[idx] = (uint16_t)reversed;
+    }
+#endif
 }
 
 /*
@@ -432,6 +449,13 @@ inline void append_eval77_fm_simd_ids(__m256i idx8, int active_ids[], int &n_act
 }
 
 inline int calc_pattern(const int phase_idx, Eval_features *features, const int num0);
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_ONLY_DIRECT_SIMD) || defined(EVALUATE_EXPERIMENT_7_7_FM_SELECTIVE_PHASE_DIRECT_SIMD)
+inline int eval77_fm_calc_linear_score_direct_simd(
+    const int phase_idx,
+    Eval_features *features,
+    const int num0
+);
+#endif
 
 inline void add_eval77_fm_fast_simd_ids(
     const __m256i idx8,
@@ -440,8 +464,16 @@ inline void add_eval77_fm_fast_simd_ids(
 ) {
     int values[8];
     _mm256_storeu_si256((__m256i*)values, idx8);
-    for (int i = 0; i < 8; ++i) {
-        eval77_fm_fast_add_id_simd_dim16(accum, phase_ptrs, values[i] - 1);
+    if (eval77_fm_dim == 16) {
+        for (int i = 0; i < 8; ++i) {
+            eval77_fm_fast_add_id_simd_dim16(accum, phase_ptrs, values[i] - 1);
+        }
+    } else {
+        for (int i = 0; i < 8; ++i) {
+            eval77_fm_fast_add_id_simd_supported_dim(
+                accum, phase_ptrs, values[i] - 1
+            );
+        }
     }
 }
 
@@ -463,7 +495,134 @@ inline void collect_eval77_fm_fast_simd_active_ids(
     active_ids[n_active++] = EVAL77_FM_N_PATTERN_PARAMS_RAW + num0;
 }
 
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET)
+inline void append_eval77_fm_materialized_record_offsets(
+    const __m256i idx8,
+    int record_offsets[],
+    int &n_active
+) {
+    constexpr int record_stride = sizeof(int16_t) + 16;
+    const __m256i ids = _mm256_sub_epi32(idx8, _mm256_set1_epi32(1));
+    const __m256i offsets =
+        _mm256_mullo_epi32(ids, _mm256_set1_epi32(record_stride));
+    _mm256_storeu_si256(
+        reinterpret_cast<__m256i *>(record_offsets + n_active),
+        offsets
+    );
+    n_active += 8;
+}
+
+inline void collect_eval77_fm_materialized_record_offsets(
+    Eval_features *features,
+    const int num0,
+    int record_offsets[],
+    int &n_active
+) {
+    n_active = 0;
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[0], 0), record_offsets, n_active);
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[1], 1), record_offsets, n_active);
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[2], 2), record_offsets, n_active);
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[3], 3), record_offsets, n_active);
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[4], 4), record_offsets, n_active);
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[5], 5), record_offsets, n_active);
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[6], 6), record_offsets, n_active);
+    append_eval77_fm_materialized_record_offsets(calc_idx8_comp(features->f128[7], 7), record_offsets, n_active);
+    constexpr int record_stride = sizeof(int16_t) + 16;
+    record_offsets[n_active++] =
+        (EVAL77_FM_N_PATTERN_PARAMS_RAW + num0) * record_stride;
+}
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY)
+inline int eval77_fm_calc_full_materialized_score(
+    const int phase_idx,
+    Eval_features *features,
+    const int num0
+) {
+    int record_offsets[N_PATTERN_FEATURES + 1];
+    int n_active = 0;
+    collect_eval77_fm_materialized_record_offsets(
+        features,
+        num0,
+        record_offsets,
+        n_active
+    );
+    return eval77_fm_grouped_score_offsets_simd_dim16(
+        phase_idx,
+        record_offsets,
+        n_active
+    );
+}
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_PATTERN_SUBSET)
+inline void append_eval77_fm_materialized_record_offsets_subset(
+    const __m256i idx8,
+    const int type_lanes_0_to_3,
+    const int type_lanes_4_to_7,
+    int fm_offsets[],
+    int &n_fm,
+    int linear_only_offsets[],
+    int &n_linear_only
+) {
+    constexpr int record_stride = sizeof(int16_t) + 16;
+    int ids_plus_one[8];
+    _mm256_storeu_si256(
+        reinterpret_cast<__m256i *>(ids_plus_one),
+        idx8
+    );
+    const bool use_lo =
+        eval77_fm_subset_pattern_type_enabled(type_lanes_0_to_3);
+    const bool use_hi =
+        eval77_fm_subset_pattern_type_enabled(type_lanes_4_to_7);
+    for (int i = 0; i < 4; ++i) {
+        const int offset = (ids_plus_one[i] - 1) * record_stride;
+        if (use_lo) {
+            fm_offsets[n_fm++] = offset;
+        } else {
+            linear_only_offsets[n_linear_only++] = offset;
+        }
+    }
+    for (int i = 4; i < 8; ++i) {
+        const int offset = (ids_plus_one[i] - 1) * record_stride;
+        if (use_hi) {
+            fm_offsets[n_fm++] = offset;
+        } else {
+            linear_only_offsets[n_linear_only++] = offset;
+        }
+    }
+}
+
+inline void collect_eval77_fm_materialized_record_offsets_subset(
+    Eval_features *features,
+    const int num0,
+    int fm_offsets[],
+    int &n_fm,
+    int linear_only_offsets[],
+    int &n_linear_only
+) {
+    n_fm = 0;
+    n_linear_only = 0;
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[0], 0), 3, 2, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[1], 1), 1, 0, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[2], 2), 7, 6, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[3], 3), 5, 4, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[4], 4), 11, 10, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[5], 5), 9, 8, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[6], 6), 15, 14, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    append_eval77_fm_materialized_record_offsets_subset(calc_idx8_comp(features->f128[7], 7), 13, 12, fm_offsets, n_fm, linear_only_offsets, n_linear_only);
+    constexpr int record_stride = sizeof(int16_t) + 16;
+    const int count_offset =
+        (EVAL77_FM_N_PATTERN_PARAMS_RAW + num0) * record_stride;
+    if (eval77_fm_subset_use_count) {
+        fm_offsets[n_fm++] = count_offset;
+    } else {
+        linear_only_offsets[n_linear_only++] = count_offset;
+    }
+}
+#endif
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
 inline int eval77_fm_grouped_phase_from_disc_count(const int n_discs) {
     return (n_discs - 4) / PHASE_N_DISCS;
 }
@@ -577,6 +736,321 @@ inline int eval77_fm_grouped_lazy_score_from_cache_simd(
 }
 #endif
 
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+inline void eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+    int32_t *sum,
+    int32_t *sum_sq,
+    const int fm_group,
+    const int id,
+    const bool add
+) {
+    const __m128i packed = _mm_loadu_si128(
+        (const __m128i*)eval77_fm_grouped_cache_vector_ptr(fm_group, id)
+    );
+    const __m256i vector_lo = _mm256_cvtepi8_epi32(packed);
+    const __m256i vector_hi = _mm256_cvtepi8_epi32(_mm_srli_si128(packed, 8));
+    const __m256i square_lo = _mm256_mullo_epi32(vector_lo, vector_lo);
+    const __m256i square_hi = _mm256_mullo_epi32(vector_hi, vector_hi);
+    __m256i sum_lo = _mm256_loadu_si256((const __m256i*)(sum));
+    __m256i sum_hi = _mm256_loadu_si256((const __m256i*)(sum + 8));
+    __m256i sum_sq_lo = _mm256_loadu_si256((const __m256i*)(sum_sq));
+    __m256i sum_sq_hi = _mm256_loadu_si256((const __m256i*)(sum_sq + 8));
+    if (add) {
+        sum_lo = _mm256_add_epi32(sum_lo, vector_lo);
+        sum_hi = _mm256_add_epi32(sum_hi, vector_hi);
+        sum_sq_lo = _mm256_add_epi32(sum_sq_lo, square_lo);
+        sum_sq_hi = _mm256_add_epi32(sum_sq_hi, square_hi);
+    } else {
+        sum_lo = _mm256_sub_epi32(sum_lo, vector_lo);
+        sum_hi = _mm256_sub_epi32(sum_hi, vector_hi);
+        sum_sq_lo = _mm256_sub_epi32(sum_sq_lo, square_lo);
+        sum_sq_hi = _mm256_sub_epi32(sum_sq_hi, square_hi);
+    }
+    _mm256_storeu_si256((__m256i*)(sum), sum_lo);
+    _mm256_storeu_si256((__m256i*)(sum + 8), sum_hi);
+    _mm256_storeu_si256((__m256i*)(sum_sq), sum_sq_lo);
+    _mm256_storeu_si256((__m256i*)(sum_sq + 8), sum_sq_hi);
+}
+
+inline void eval77_fm_grouped_parent_cache_copy_dim16_simd(
+    int32_t *dst_sum,
+    int32_t *dst_sum_sq,
+    const int32_t *src_sum,
+    const int32_t *src_sum_sq
+) {
+    _mm256_storeu_si256(
+        (__m256i*)dst_sum,
+        _mm256_loadu_si256((const __m256i*)src_sum)
+    );
+    _mm256_storeu_si256(
+        (__m256i*)(dst_sum + 8),
+        _mm256_loadu_si256((const __m256i*)(src_sum + 8))
+    );
+    _mm256_storeu_si256(
+        (__m256i*)dst_sum_sq,
+        _mm256_loadu_si256((const __m256i*)src_sum_sq)
+    );
+    _mm256_storeu_si256(
+        (__m256i*)(dst_sum_sq + 8),
+        _mm256_loadu_si256((const __m256i*)(src_sum_sq + 8))
+    );
+}
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE)
+inline int eval77_fm_grouped_parent_cache_score_simd(
+    Eval_search *eval,
+    const int phase_idx,
+    Eval_features *features,
+    const int num0
+) {
+    const int slot = eval->feature_idx;
+    const int fm_group = eval77_fm_grouped_cache_group_from_phase(phase_idx);
+    int active_ids[N_PATTERN_FEATURES + 1];
+    int n_active = 0;
+    collect_eval77_fm_fast_simd_active_ids(features, num0, active_ids, n_active);
+
+    const bool use_parent =
+        slot > 0 &&
+        eval->eval77_fm_cache_ready[slot - 1] &&
+        eval->eval77_fm_cache_group[slot - 1] == fm_group;
+    eval->eval77_fm_cache_group[slot] = (uint8_t)fm_group;
+    if (use_parent) {
+        eval77_fm_grouped_parent_cache_copy_dim16_simd(
+            eval->eval77_fm_cache_sum[slot],
+            eval->eval77_fm_cache_sum_sq[slot],
+            eval->eval77_fm_cache_sum[slot - 1],
+            eval->eval77_fm_cache_sum_sq[slot - 1]
+        );
+        for (int i = 0; i < n_active; ++i) {
+            const int old_id = eval->eval77_fm_cache_active_ids[slot - 1][i];
+            const int new_id = active_ids[i];
+            if (old_id != new_id) {
+                eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+                    eval->eval77_fm_cache_sum[slot],
+                    eval->eval77_fm_cache_sum_sq[slot],
+                    fm_group,
+                    old_id,
+                    false
+                );
+                eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+                    eval->eval77_fm_cache_sum[slot],
+                    eval->eval77_fm_cache_sum_sq[slot],
+                    fm_group,
+                    new_id,
+                    true
+                );
+            }
+            eval->eval77_fm_cache_active_ids[slot][i] = new_id;
+        }
+    } else {
+        _mm256_storeu_si256(
+            (__m256i*)eval->eval77_fm_cache_sum[slot],
+            _mm256_setzero_si256()
+        );
+        _mm256_storeu_si256(
+            (__m256i*)(eval->eval77_fm_cache_sum[slot] + 8),
+            _mm256_setzero_si256()
+        );
+        _mm256_storeu_si256(
+            (__m256i*)eval->eval77_fm_cache_sum_sq[slot],
+            _mm256_setzero_si256()
+        );
+        _mm256_storeu_si256(
+            (__m256i*)(eval->eval77_fm_cache_sum_sq[slot] + 8),
+            _mm256_setzero_si256()
+        );
+        for (int i = 0; i < n_active; ++i) {
+            const int id = active_ids[i];
+            eval->eval77_fm_cache_active_ids[slot][i] = id;
+            eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+                eval->eval77_fm_cache_sum[slot],
+                eval->eval77_fm_cache_sum_sq[slot],
+                fm_group,
+                id,
+                true
+            );
+        }
+    }
+    eval->eval77_fm_cache_ready[slot] = true;
+
+    const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(phase_idx);
+    int32_t linear_quant = 0;
+    for (int i = 0; i < n_active; ++i) {
+        int16_t q;
+        std::memcpy(&q, eval77_fm_fast_linear_ptr(phase_ptrs, active_ids[i]), sizeof(q));
+        linear_quant += q;
+    }
+
+    int64_t interaction_quant = 0;
+    for (int dim = 0; dim < eval77_fm_dim; ++dim) {
+        const int64_t sum = eval->eval77_fm_cache_sum[slot][dim];
+        interaction_quant += sum * sum - eval->eval77_fm_cache_sum_sq[slot][dim];
+    }
+    const double score = (double)linear_quant * eval77_fm_linear_scale_double[phase_idx] +
+        (double)interaction_quant * eval77_fm_interaction_scale[phase_idx];
+    const int rounded = score >= 0.0 ? (int)(score + 0.5) : (int)(score - 0.5);
+    return std::clamp(rounded, -SCORE_MAX, SCORE_MAX);
+}
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+inline void eval77_fm_grouped_dual_cache_build_reverse_simd(
+    Eval_search *eval,
+    const int slot,
+    const int phase_idx
+) {
+    const int fm_group = eval->eval77_fm_cache_group[slot];
+    _mm256_storeu_si256(
+        (__m256i*)eval->eval77_fm_reverse_cache_sum[slot],
+        _mm256_setzero_si256()
+    );
+    _mm256_storeu_si256(
+        (__m256i*)(eval->eval77_fm_reverse_cache_sum[slot] + 8),
+        _mm256_setzero_si256()
+    );
+    _mm256_storeu_si256(
+        (__m256i*)eval->eval77_fm_reverse_cache_sum_sq[slot],
+        _mm256_setzero_si256()
+    );
+    _mm256_storeu_si256(
+        (__m256i*)(eval->eval77_fm_reverse_cache_sum_sq[slot] + 8),
+        _mm256_setzero_si256()
+    );
+    for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
+        constexpr int pattern_param_count = MAX_EVALUATE_IDX;
+        const int base = (i / 4) * pattern_param_count;
+        const int local_id = eval->eval77_fm_cache_active_ids[slot][i] - base;
+        const int reversed_id = base + eval77_fm_swap_player_idx10[local_id];
+        eval->eval77_fm_reverse_cache_active_ids[slot][i] = reversed_id;
+        eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+            eval->eval77_fm_reverse_cache_sum[slot],
+            eval->eval77_fm_reverse_cache_sum_sq[slot],
+            fm_group,
+            reversed_id,
+            true
+        );
+    }
+    const int player_count =
+        eval->eval77_fm_cache_active_ids[slot][N_PATTERN_FEATURES] -
+        EVAL77_FM_N_PATTERN_PARAMS_RAW;
+    const int opponent_count = phase_idx + 4 - player_count;
+    const int reversed_count_id = EVAL77_FM_N_PATTERN_PARAMS_RAW + opponent_count;
+    eval->eval77_fm_reverse_cache_active_ids[slot][N_PATTERN_FEATURES] = reversed_count_id;
+    eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+        eval->eval77_fm_reverse_cache_sum[slot],
+        eval->eval77_fm_reverse_cache_sum_sq[slot],
+        fm_group,
+        reversed_count_id,
+        true
+    );
+    eval->eval77_fm_reverse_cache_ready[slot] = true;
+}
+
+inline int eval77_fm_grouped_dual_cache_score_simd(
+    Eval_search *eval,
+    const int phase_idx,
+    Eval_features *features,
+    const int num0
+) {
+    const int slot = eval->feature_idx;
+    const int fm_group = eval77_fm_grouped_cache_group_from_phase(phase_idx);
+    int active_ids[N_PATTERN_FEATURES + 1];
+    int n_active = 0;
+    collect_eval77_fm_fast_simd_active_ids(features, num0, active_ids, n_active);
+
+    bool use_parent_reverse =
+        slot > 0 &&
+        eval->eval77_fm_cache_ready[slot - 1] &&
+        eval->eval77_fm_cache_group[slot - 1] == fm_group;
+    if (use_parent_reverse && !eval->eval77_fm_reverse_cache_ready[slot - 1]) {
+        eval77_fm_grouped_dual_cache_build_reverse_simd(eval, slot - 1, phase_idx - 1);
+    }
+    use_parent_reverse =
+        use_parent_reverse &&
+        eval->eval77_fm_reverse_cache_ready[slot - 1];
+
+    eval->eval77_fm_cache_group[slot] = (uint8_t)fm_group;
+    if (use_parent_reverse) {
+        eval77_fm_grouped_parent_cache_copy_dim16_simd(
+            eval->eval77_fm_cache_sum[slot],
+            eval->eval77_fm_cache_sum_sq[slot],
+            eval->eval77_fm_reverse_cache_sum[slot - 1],
+            eval->eval77_fm_reverse_cache_sum_sq[slot - 1]
+        );
+        for (int i = 0; i < n_active; ++i) {
+            const int old_id = eval->eval77_fm_reverse_cache_active_ids[slot - 1][i];
+            const int new_id = active_ids[i];
+            if (old_id != new_id) {
+                eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+                    eval->eval77_fm_cache_sum[slot],
+                    eval->eval77_fm_cache_sum_sq[slot],
+                    fm_group,
+                    old_id,
+                    false
+                );
+                eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+                    eval->eval77_fm_cache_sum[slot],
+                    eval->eval77_fm_cache_sum_sq[slot],
+                    fm_group,
+                    new_id,
+                    true
+                );
+            }
+            eval->eval77_fm_cache_active_ids[slot][i] = new_id;
+        }
+    } else {
+        _mm256_storeu_si256(
+            (__m256i*)eval->eval77_fm_cache_sum[slot],
+            _mm256_setzero_si256()
+        );
+        _mm256_storeu_si256(
+            (__m256i*)(eval->eval77_fm_cache_sum[slot] + 8),
+            _mm256_setzero_si256()
+        );
+        _mm256_storeu_si256(
+            (__m256i*)eval->eval77_fm_cache_sum_sq[slot],
+            _mm256_setzero_si256()
+        );
+        _mm256_storeu_si256(
+            (__m256i*)(eval->eval77_fm_cache_sum_sq[slot] + 8),
+            _mm256_setzero_si256()
+        );
+        for (int i = 0; i < n_active; ++i) {
+            const int id = active_ids[i];
+            eval->eval77_fm_cache_active_ids[slot][i] = id;
+            eval77_fm_grouped_parent_cache_add_vector_dim16_simd(
+                eval->eval77_fm_cache_sum[slot],
+                eval->eval77_fm_cache_sum_sq[slot],
+                fm_group,
+                id,
+                true
+            );
+        }
+    }
+    eval->eval77_fm_cache_ready[slot] = true;
+    eval->eval77_fm_reverse_cache_ready[slot] = false;
+
+    const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(phase_idx);
+    int32_t linear_quant = 0;
+    for (int i = 0; i < n_active; ++i) {
+        int16_t q;
+        std::memcpy(&q, eval77_fm_fast_linear_ptr(phase_ptrs, active_ids[i]), sizeof(q));
+        linear_quant += q;
+    }
+
+    int64_t interaction_quant = 0;
+    for (int dim = 0; dim < eval77_fm_dim; ++dim) {
+        const int64_t sum = eval->eval77_fm_cache_sum[slot][dim];
+        interaction_quant += sum * sum - eval->eval77_fm_cache_sum_sq[slot][dim];
+    }
+    const double score = (double)linear_quant * eval77_fm_linear_scale_double[phase_idx] +
+        (double)interaction_quant * eval77_fm_interaction_scale[phase_idx];
+    const int rounded = score >= 0.0 ? (int)(score + 0.5) : (int)(score - 0.5);
+    return std::clamp(rounded, -SCORE_MAX, SCORE_MAX);
+}
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
 inline void eval77_fm_grouped_cache_update_move_simd(
     Eval_search *eval,
@@ -657,7 +1131,7 @@ inline int eval77_fm_grouped_score_from_cache_simd(
 #endif
 #endif
 
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_PATTERN_SUBSET)
 inline void append_eval77_fm_simd_ids_subset(
     __m256i idx8,
     const int type_lanes_0_to_3,
@@ -689,9 +1163,90 @@ inline void append_eval77_fm_simd_ids_subset(
 #endif
 
 inline int calc_pattern(const int phase_idx, Eval_features *features, const int num0) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_ONLY_DIRECT_SIMD)
+    return eval77_fm_calc_linear_score_direct_simd(phase_idx, features, num0);
+#else
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SELECTIVE_PHASE_DIRECT_SIMD)
+    static_assert(EVAL77_FM_FULL_MIN_PHASE >= 0);
+    static_assert(EVAL77_FM_FULL_MAX_PHASE < N_PHASES);
+    static_assert(EVAL77_FM_FULL_MIN_PHASE <= EVAL77_FM_FULL_MAX_PHASE);
+    bool use_full_fm =
+        EVAL77_FM_FULL_MIN_PHASE <= phase_idx &&
+        phase_idx <= EVAL77_FM_FULL_MAX_PHASE;
+#if defined(EVAL77_FM_FULL_SECOND_MIN_PHASE) && defined(EVAL77_FM_FULL_SECOND_MAX_PHASE)
+    static_assert(EVAL77_FM_FULL_SECOND_MIN_PHASE >= 0);
+    static_assert(EVAL77_FM_FULL_SECOND_MAX_PHASE < N_PHASES);
+    static_assert(
+        EVAL77_FM_FULL_SECOND_MIN_PHASE <=
+        EVAL77_FM_FULL_SECOND_MAX_PHASE
+    );
+    use_full_fm =
+        use_full_fm ||
+        (
+            EVAL77_FM_FULL_SECOND_MIN_PHASE <= phase_idx &&
+            phase_idx <= EVAL77_FM_FULL_SECOND_MAX_PHASE
+        );
+#endif
+    if (!use_full_fm) {
+        return eval77_fm_calc_linear_score_direct_simd(
+            phase_idx,
+            features,
+            num0
+        );
+    }
+#endif
     int active_ids[N_PATTERN_FEATURES + 1];
     int n_active = 0;
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_PATTERN_SUBSET)
+    #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET)
+    if (eval77_fm_grouped_materialized_layout) {
+#if defined(EVAL77_FM_COMPILED_SUBSET_PATTERN_MASK)
+        collect_eval77_fm_materialized_record_offsets(
+            features,
+            num0,
+            active_ids,
+            n_active
+        );
+#if defined(EVAL77_FM_COMPILED_SUBSET_MAX_PHASE)
+        static_assert(
+            0 <= EVAL77_FM_COMPILED_SUBSET_MAX_PHASE &&
+            EVAL77_FM_COMPILED_SUBSET_MAX_PHASE < N_PHASES
+        );
+        if (phase_idx > EVAL77_FM_COMPILED_SUBSET_MAX_PHASE) {
+            return eval77_fm_grouped_score_offsets_simd_dim16(
+                phase_idx,
+                active_ids,
+                n_active
+            );
+        }
+#endif
+        return eval77_fm_grouped_score_compiled_subset_offsets_simd_dim16(
+            phase_idx,
+            active_ids
+        );
+#else
+        int fm_offsets[N_PATTERN_FEATURES + 1];
+        int linear_only_offsets[N_PATTERN_FEATURES + 1];
+        int n_fm = 0;
+        int n_linear_only = 0;
+        collect_eval77_fm_materialized_record_offsets_subset(
+            features,
+            num0,
+            fm_offsets,
+            n_fm,
+            linear_only_offsets,
+            n_linear_only
+        );
+        return eval77_fm_grouped_score_subset_offsets_simd_dim16(
+            phase_idx,
+            fm_offsets,
+            n_fm,
+            linear_only_offsets,
+            n_linear_only
+        );
+#endif
+    }
+    #endif
     int fm_ids[N_PATTERN_FEATURES + 1];
     int n_fm = 0;
     append_eval77_fm_simd_ids_subset(calc_idx8_comp(features->f128[0], 0), 3, 2, active_ids, n_active, fm_ids, n_fm);
@@ -707,9 +1262,31 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
     if (eval77_fm_subset_use_count) {
         fm_ids[n_fm++] = count_id;
     }
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
+    if (eval77_fm_fast_can_use_supported_simd_dim(phase_idx)) {
+        return eval77_fm_fast_score_from_linear_and_fm_ids_simd_dim16(
+            phase_idx, active_ids, n_active, fm_ids, n_fm
+        );
+    }
+#endif
     return eval77_fm_score_from_linear_and_fm_ids(phase_idx, active_ids, n_active, fm_ids, n_fm);
 #else
-    if (eval77_fm_fast_can_use_dim16(phase_idx)) {
+    if (eval77_fm_fast_can_use_supported_simd_dim(phase_idx)) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET)
+        if (eval77_fm_grouped_materialized_layout) {
+            collect_eval77_fm_materialized_record_offsets(
+                features,
+                num0,
+                active_ids,
+                n_active
+            );
+            return eval77_fm_grouped_score_offsets_simd_dim16(
+                phase_idx,
+                active_ids,
+                n_active
+            );
+        }
+#endif
         collect_eval77_fm_fast_simd_active_ids(features, num0, active_ids, n_active);
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
         return eval77_fm_grouped_score_ids_simd_dim16(phase_idx, active_ids, n_active);
@@ -721,8 +1298,18 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
 
         Eval77FmFastSimdAccum accum;
         eval77_fm_fast_clear_simd_dim16(accum);
-        for (int i = 0; i < n_active; ++i) {
-            eval77_fm_fast_add_id_simd_dim16(accum, phase_ptrs, active_ids[i]);
+        if (eval77_fm_dim == 16) {
+            for (int i = 0; i < n_active; ++i) {
+                eval77_fm_fast_add_id_simd_dim16(
+                    accum, phase_ptrs, active_ids[i]
+                );
+            }
+        } else {
+            for (int i = 0; i < n_active; ++i) {
+                eval77_fm_fast_add_id_simd_supported_dim(
+                    accum, phase_ptrs, active_ids[i]
+                );
+            }
         }
         return eval77_fm_fast_finish_simd_dim16(phase_idx, accum);
 #endif
@@ -730,6 +1317,7 @@ inline int calc_pattern(const int phase_idx, Eval_features *features, const int 
 
     collect_eval77_fm_fast_simd_active_ids(features, num0, active_ids, n_active);
     return eval77_fm_fast_score_from_ids_subset_filter(phase_idx, active_ids, n_active);
+#endif
 #endif
 }
 
@@ -766,11 +1354,188 @@ inline int mid_evaluate(Board *board) {
     @param search               search information
     @return evaluation value
 */
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+inline int mid_evaluate_linear_move_ordering(Search *search);
+#endif
+
+#if defined(EVAL77_FM_MOVE_ORDERING_PATTERN_MASK)
+#if !defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET)
+#error "FM move-ordering subsets require the materialized offset layout"
+#endif
+#if defined(EVAL77_FM_MOVE_ORDERING_RUNTIME_PHASE_REMAP)
+inline int eval77_fm_read_phase_remap_environment(
+    const char *name
+) {
+    const char *text = std::getenv(name);
+    if (text == nullptr || *text == '\0') {
+        return -1;
+    }
+    char *end = nullptr;
+    const long value = std::strtol(text, &end, 10);
+    if (*end != '\0' || value < 0 || N_PHASES <= value) {
+        return -1;
+    }
+    return (int)value;
+}
+
+const int eval77_fm_move_ordering_runtime_remap_from =
+    eval77_fm_read_phase_remap_environment(
+        "EGAROUCID_FM_MOVE_ORDERING_REMAP_FROM"
+    );
+const int eval77_fm_move_ordering_runtime_remap_to =
+    eval77_fm_read_phase_remap_environment(
+        "EGAROUCID_FM_MOVE_ORDERING_REMAP_TO"
+    );
+#endif
+
+inline int mid_evaluate_fm_move_ordering(Search *search) {
+    int record_offsets[N_PATTERN_FEATURES + 1];
+    int n_active = 0;
+    collect_eval77_fm_materialized_record_offsets(
+        &search->eval.features[search->eval.feature_idx],
+        pop_count_ull(search->board.player),
+        record_offsets,
+        n_active
+    );
+    const int phase_idx = search->phase();
+    int move_ordering_phase_idx = phase_idx;
+#if defined(EVAL77_FM_MOVE_ORDERING_RUNTIME_PHASE_REMAP)
+    if (phase_idx == eval77_fm_move_ordering_runtime_remap_from &&
+        eval77_fm_move_ordering_runtime_remap_to >= 0) {
+        move_ordering_phase_idx =
+            eval77_fm_move_ordering_runtime_remap_to;
+    }
+#elif defined(EVAL77_FM_MOVE_ORDERING_REMAP_FROM_PHASE) && \
+    defined(EVAL77_FM_MOVE_ORDERING_REMAP_TO_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_REMAP_FROM_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_REMAP_FROM_PHASE < N_PHASES
+    );
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_REMAP_TO_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_REMAP_TO_PHASE < N_PHASES
+    );
+    if (phase_idx == EVAL77_FM_MOVE_ORDERING_REMAP_FROM_PHASE) {
+        move_ordering_phase_idx =
+            EVAL77_FM_MOVE_ORDERING_REMAP_TO_PHASE;
+    }
+#elif defined(EVAL77_FM_MOVE_ORDERING_REMAP_FROM_PHASE) || \
+      defined(EVAL77_FM_MOVE_ORDERING_REMAP_TO_PHASE)
+#error "Both move-ordering phase-remap macros must be defined"
+#endif
+#if defined(EVAL77_FM_MOVE_ORDERING_REMAP2_FROM_PHASE) && \
+    defined(EVAL77_FM_MOVE_ORDERING_REMAP2_TO_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_REMAP2_FROM_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_REMAP2_FROM_PHASE < N_PHASES
+    );
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_REMAP2_TO_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_REMAP2_TO_PHASE < N_PHASES
+    );
+    if (phase_idx == EVAL77_FM_MOVE_ORDERING_REMAP2_FROM_PHASE) {
+        move_ordering_phase_idx =
+            EVAL77_FM_MOVE_ORDERING_REMAP2_TO_PHASE;
+    }
+#elif defined(EVAL77_FM_MOVE_ORDERING_REMAP2_FROM_PHASE) || \
+      defined(EVAL77_FM_MOVE_ORDERING_REMAP2_TO_PHASE)
+#error "Both second move-ordering phase-remap macros must be defined"
+#endif
+#if defined(EVAL77_FM_MOVE_ORDERING_REMAP3_FROM_PHASE) && \
+    defined(EVAL77_FM_MOVE_ORDERING_REMAP3_TO_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_REMAP3_FROM_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_REMAP3_FROM_PHASE < N_PHASES
+    );
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_REMAP3_TO_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_REMAP3_TO_PHASE < N_PHASES
+    );
+    if (phase_idx == EVAL77_FM_MOVE_ORDERING_REMAP3_FROM_PHASE) {
+        move_ordering_phase_idx =
+            EVAL77_FM_MOVE_ORDERING_REMAP3_TO_PHASE;
+    }
+#elif defined(EVAL77_FM_MOVE_ORDERING_REMAP3_FROM_PHASE) || \
+      defined(EVAL77_FM_MOVE_ORDERING_REMAP3_TO_PHASE)
+#error "Both third move-ordering phase-remap macros must be defined"
+#endif
+#if defined(EVAL77_FM_MOVE_ORDERING_SUBSET_MIN_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_SUBSET_MIN_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_SUBSET_MIN_PHASE < N_PHASES
+    );
+    if (phase_idx < EVAL77_FM_MOVE_ORDERING_SUBSET_MIN_PHASE) {
+        return eval77_fm_grouped_score_offsets_simd_dim16(
+            move_ordering_phase_idx,
+            record_offsets,
+            n_active
+        );
+    }
+#endif
+#if defined(EVAL77_FM_MOVE_ORDERING_SUBSET_MAX_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_MOVE_ORDERING_SUBSET_MAX_PHASE &&
+        EVAL77_FM_MOVE_ORDERING_SUBSET_MAX_PHASE < N_PHASES
+    );
+    if (phase_idx > EVAL77_FM_MOVE_ORDERING_SUBSET_MAX_PHASE) {
+        return eval77_fm_grouped_score_offsets_simd_dim16(
+            move_ordering_phase_idx,
+            record_offsets,
+            n_active
+        );
+    }
+#endif
+    return eval77_fm_grouped_score_move_ordering_subset_offsets_simd_dim16(
+        move_ordering_phase_idx,
+        record_offsets
+    );
+}
+#endif
+
 inline int mid_evaluate_diff(Search *search) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+    if (search->eval77_fm_use_linear_evaluation
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY)
+        && !search->eval77_fm_use_full_evaluation
+#endif
+    ) {
+#if defined(EVAL77_FM_MOVE_ORDERING_PATTERN_MASK)
+        if (eval77_fm_grouped_materialized_layout) {
+            return mid_evaluate_fm_move_ordering(search);
+        }
+#endif
+        return mid_evaluate_linear_move_ordering(search);
+    }
+#endif
     int phase_idx, num0;
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY) && \
+    defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET)
+    if (search->eval77_fm_use_full_evaluation &&
+        eval77_fm_grouped_materialized_layout) {
+        return eval77_fm_calc_full_materialized_score(
+            phase_idx,
+            &search->eval.features[search->eval.feature_idx],
+            num0
+        );
+    }
+#endif
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+    return eval77_fm_grouped_dual_cache_score_simd(
+        &search->eval,
+        phase_idx,
+        &search->eval.features[search->eval.feature_idx],
+        num0
+    );
+#elif defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE)
+    return eval77_fm_grouped_parent_cache_score_simd(
+        &search->eval,
+        phase_idx,
+        &search->eval.features[search->eval.feature_idx],
+        num0
+    );
+#elif defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
     return eval77_fm_grouped_score_from_cache_simd(
         &search->eval,
         phase_idx,
@@ -788,6 +1553,339 @@ inline int mid_evaluate_diff(Search *search) {
     return calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx], num0);
 #endif
 }
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING) || defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH) || defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_ONLY_DIRECT_SIMD) || defined(EVALUATE_EXPERIMENT_7_7_FM_SELECTIVE_PHASE_DIRECT_SIMD)
+inline __m256i eval77_fm_gather_signed_linear_weights(
+    const int *linear_base,
+    const __m256i ids_plus_one,
+    const int stride_in_int16
+) {
+    __m256i ids = _mm256_sub_epi32(
+        ids_plus_one,
+        _mm256_set1_epi32(1)
+    );
+    if (stride_in_int16 != 1) {
+        ids = _mm256_mullo_epi32(
+            ids,
+            _mm256_set1_epi32(stride_in_int16)
+        );
+    }
+    const __m256i packed = _mm256_i32gather_epi32(
+        linear_base,
+        ids,
+        sizeof(int16_t)
+    );
+    return _mm256_srai_epi32(_mm256_slli_epi32(packed, 16), 16);
+}
+
+inline int32_t eval77_fm_horizontal_sum_i32x8(const __m256i values) {
+    __m128i sum = _mm_add_epi32(
+        _mm256_castsi256_si128(values),
+        _mm256_extracti128_si256(values, 1)
+    );
+    sum = _mm_hadd_epi32(sum, sum);
+    sum = _mm_hadd_epi32(sum, sum);
+    return _mm_cvtsi128_si32(sum);
+}
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_ONLY_DIRECT_SIMD) || defined(EVALUATE_EXPERIMENT_7_7_FM_SELECTIVE_PHASE_DIRECT_SIMD)
+inline int eval77_fm_calc_linear_score_direct_simd(
+    const int phase_idx,
+    Eval_features *features,
+    const int num0
+) {
+    const Eval77FmFastPhasePtrs phase_ptrs =
+        eval77_fm_fast_phase_ptrs(phase_idx);
+    if (phase_ptrs.linear_stride % sizeof(int16_t) == 0) {
+        const int stride_in_int16 = static_cast<int>(
+            phase_ptrs.linear_stride / sizeof(int16_t)
+        );
+        const int *linear_base =
+            reinterpret_cast<const int *>(phase_ptrs.linear_base);
+        __m256i sum = eval77_fm_gather_signed_linear_weights(
+            linear_base,
+            calc_idx8_comp(features->f128[0], 0),
+            stride_in_int16
+        );
+        constexpr int n_feature_groups = N_PATTERN_FEATURES / 8;
+        static_assert(N_PATTERN_FEATURES % 8 == 0);
+        for (int group = 1; group < n_feature_groups; ++group) {
+            sum = _mm256_add_epi32(
+                sum,
+                eval77_fm_gather_signed_linear_weights(
+                    linear_base,
+                    calc_idx8_comp(features->f128[group], group),
+                    stride_in_int16
+                )
+            );
+        }
+        int32_t linear_quant = eval77_fm_horizontal_sum_i32x8(sum);
+        int16_t count_quant;
+        std::memcpy(
+            &count_quant,
+            eval77_fm_fast_linear_ptr(
+                phase_ptrs,
+                EVAL77_FM_N_PATTERN_PARAMS_RAW + num0
+            ),
+            sizeof(count_quant)
+        );
+        linear_quant += count_quant;
+        return eval77_fm_fast_finish_linear_quant(phase_idx, linear_quant);
+    }
+
+    int active_ids[N_PATTERN_FEATURES + 1];
+    int n_active = 0;
+    collect_eval77_fm_fast_simd_active_ids(
+        features,
+        num0,
+        active_ids,
+        n_active
+    );
+    int32_t linear_quant = 0;
+    for (int i = 0; i < n_active; ++i) {
+        int16_t q;
+        std::memcpy(
+            &q,
+            eval77_fm_fast_linear_ptr(phase_ptrs, active_ids[i]),
+            sizeof(q)
+        );
+        linear_quant += q;
+    }
+    return eval77_fm_fast_finish_linear_quant(phase_idx, linear_quant);
+}
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING) || defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+inline int eval77_fm_scale_linear_move_ordering_score(const int score) {
+#if defined(EVAL77_FM_LINEAR_MOVE_ORDERING_SCALE_NUM) && defined(EVAL77_FM_LINEAR_MOVE_ORDERING_SCALE_DEN)
+    static_assert(EVAL77_FM_LINEAR_MOVE_ORDERING_SCALE_NUM > 0);
+    static_assert(EVAL77_FM_LINEAR_MOVE_ORDERING_SCALE_DEN > 0);
+    const int magnitude = std::abs(score);
+    const int scaled = (
+        magnitude * EVAL77_FM_LINEAR_MOVE_ORDERING_SCALE_NUM +
+        EVAL77_FM_LINEAR_MOVE_ORDERING_SCALE_DEN / 2
+    ) / EVAL77_FM_LINEAR_MOVE_ORDERING_SCALE_DEN;
+    return std::clamp(
+        score < 0 ? -scaled : scaled,
+        -SCORE_MAX,
+        SCORE_MAX
+    );
+#else
+    return score;
+#endif
+}
+
+#if defined(EVAL77_FM_LINEAR_MOVE_ORDERING_RUNTIME_PHASE_REMAP)
+inline int eval77_fm_read_linear_phase_remap_environment(
+    const char *name
+) {
+    const char *text = std::getenv(name);
+    if (text == nullptr || *text == '\0') {
+        return -1;
+    }
+    char *end = nullptr;
+    const long value = std::strtol(text, &end, 10);
+    if (*end != '\0' || value < 0 || N_PHASES <= value) {
+        return -1;
+    }
+    return (int)value;
+}
+
+const int eval77_fm_linear_move_ordering_runtime_remap_from =
+    eval77_fm_read_linear_phase_remap_environment(
+        "EGAROUCID_FM_MOVE_ORDERING_REMAP_FROM"
+    );
+const int eval77_fm_linear_move_ordering_runtime_remap_to =
+    eval77_fm_read_linear_phase_remap_environment(
+        "EGAROUCID_FM_MOVE_ORDERING_REMAP_TO"
+    );
+#endif
+
+inline int mid_evaluate_linear_move_ordering(Search *search) {
+    const int phase_idx = search->phase();
+    int move_ordering_phase_idx = phase_idx;
+#if defined(EVAL77_FM_LINEAR_MOVE_ORDERING_RUNTIME_PHASE_REMAP)
+    if (phase_idx ==
+            eval77_fm_linear_move_ordering_runtime_remap_from &&
+        eval77_fm_linear_move_ordering_runtime_remap_to >= 0) {
+        move_ordering_phase_idx =
+            eval77_fm_linear_move_ordering_runtime_remap_to;
+    }
+#elif defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_FROM_PHASE) && \
+      defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_TO_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_FROM_PHASE &&
+        EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_FROM_PHASE < N_PHASES
+    );
+    static_assert(
+        0 <= EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_TO_PHASE &&
+        EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_TO_PHASE < N_PHASES
+    );
+    if (phase_idx ==
+            EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_FROM_PHASE) {
+        move_ordering_phase_idx =
+            EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_TO_PHASE;
+    }
+#elif defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_FROM_PHASE) || \
+      defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP_TO_PHASE)
+#error "Both linear move-ordering phase-remap macros must be defined"
+#endif
+#if defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_FROM_PHASE) && \
+    defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_TO_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_FROM_PHASE &&
+        EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_FROM_PHASE < N_PHASES
+    );
+    static_assert(
+        0 <= EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_TO_PHASE &&
+        EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_TO_PHASE < N_PHASES
+    );
+    if (phase_idx ==
+            EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_FROM_PHASE) {
+        move_ordering_phase_idx =
+            EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_TO_PHASE;
+    }
+#elif defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_FROM_PHASE) || \
+      defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP2_TO_PHASE)
+#error "Both second linear move-ordering phase-remap macros must be defined"
+#endif
+#if defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_FROM_PHASE) && \
+    defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_TO_PHASE)
+    static_assert(
+        0 <= EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_FROM_PHASE &&
+        EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_FROM_PHASE < N_PHASES
+    );
+    static_assert(
+        0 <= EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_TO_PHASE &&
+        EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_TO_PHASE < N_PHASES
+    );
+    if (phase_idx ==
+            EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_FROM_PHASE) {
+        move_ordering_phase_idx =
+            EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_TO_PHASE;
+    }
+#elif defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_FROM_PHASE) || \
+      defined(EVAL77_FM_LINEAR_MOVE_ORDERING_REMAP3_TO_PHASE)
+#error "Both third linear move-ordering phase-remap macros must be defined"
+#endif
+    const int num0 = pop_count_ull(search->board.player);
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SIMD)
+    const Eval77FmFastPhasePtrs simd_phase_ptrs =
+        eval77_fm_fast_phase_ptrs(move_ordering_phase_idx);
+    if (simd_phase_ptrs.linear_stride % sizeof(int16_t) == 0) {
+        const int stride_in_int16 = static_cast<int>(
+            simd_phase_ptrs.linear_stride / sizeof(int16_t)
+        );
+        const int *linear_base =
+            reinterpret_cast<const int *>(simd_phase_ptrs.linear_base);
+        Eval_features *features =
+            &search->eval.features[search->eval.feature_idx];
+        __m256i sum = eval77_fm_gather_signed_linear_weights(
+            linear_base,
+            calc_idx8_comp(features->f128[0], 0),
+            stride_in_int16
+        );
+        sum = _mm256_add_epi32(
+            sum,
+            eval77_fm_gather_signed_linear_weights(
+                linear_base,
+                calc_idx8_comp(features->f128[1], 1),
+                stride_in_int16
+            )
+        );
+        sum = _mm256_add_epi32(
+            sum,
+            eval77_fm_gather_signed_linear_weights(
+                linear_base,
+                calc_idx8_comp(features->f128[2], 2),
+                stride_in_int16
+            )
+        );
+        sum = _mm256_add_epi32(
+            sum,
+            eval77_fm_gather_signed_linear_weights(
+                linear_base,
+                calc_idx8_comp(features->f128[3], 3),
+                stride_in_int16
+            )
+        );
+        sum = _mm256_add_epi32(
+            sum,
+            eval77_fm_gather_signed_linear_weights(
+                linear_base,
+                calc_idx8_comp(features->f128[4], 4),
+                stride_in_int16
+            )
+        );
+        sum = _mm256_add_epi32(
+            sum,
+            eval77_fm_gather_signed_linear_weights(
+                linear_base,
+                calc_idx8_comp(features->f128[5], 5),
+                stride_in_int16
+            )
+        );
+        sum = _mm256_add_epi32(
+            sum,
+            eval77_fm_gather_signed_linear_weights(
+                linear_base,
+                calc_idx8_comp(features->f128[6], 6),
+                stride_in_int16
+            )
+        );
+        sum = _mm256_add_epi32(
+            sum,
+            eval77_fm_gather_signed_linear_weights(
+                linear_base,
+                calc_idx8_comp(features->f128[7], 7),
+                stride_in_int16
+            )
+        );
+        int32_t linear_quant = eval77_fm_horizontal_sum_i32x8(sum);
+        int16_t count_quant;
+        std::memcpy(
+            &count_quant,
+            eval77_fm_fast_linear_ptr(
+                simd_phase_ptrs,
+                EVAL77_FM_N_PATTERN_PARAMS_RAW + num0
+            ),
+            sizeof(count_quant)
+        );
+        linear_quant += count_quant;
+        return eval77_fm_scale_linear_move_ordering_score(
+            eval77_fm_fast_finish_linear_quant(
+                move_ordering_phase_idx,
+                linear_quant
+            )
+        );
+    }
+#endif
+    int active_ids[N_PATTERN_FEATURES + 1];
+    int n_active = 0;
+    collect_eval77_fm_fast_simd_active_ids(
+        &search->eval.features[search->eval.feature_idx],
+        num0,
+        active_ids,
+        n_active
+    );
+    const Eval77FmFastPhasePtrs phase_ptrs =
+        eval77_fm_fast_phase_ptrs(move_ordering_phase_idx);
+    int32_t linear_quant = 0;
+    for (int i = 0; i < n_active; ++i) {
+        int16_t q;
+        std::memcpy(&q, eval77_fm_fast_linear_ptr(phase_ptrs, active_ids[i]), sizeof(q));
+        linear_quant += q;
+    }
+    const double score =
+        (double)linear_quant *
+        eval77_fm_linear_scale_double[move_ordering_phase_idx];
+    const int rounded = score >= 0.0 ? (int)(score + 0.5) : (int)(score - 0.5);
+    return eval77_fm_scale_linear_move_ordering_score(
+        std::clamp(rounded, -SCORE_MAX, SCORE_MAX)
+    );
+}
+#endif
+#endif
 
 /*
     @brief midgame evaluation function
@@ -827,12 +1925,15 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, MAX_PATTERN_CELLS - 1);
     calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, MAX_PATTERN_CELLS - 1);
     eval->feature_idx = 0;
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LAZY_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
     for (int i = 0; i < HW2 - 4; ++i) {
         eval->eval77_fm_cache_ready[i] = false;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+        eval->eval77_fm_reverse_cache_ready[i] = false;
+#endif
     }
 #endif
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
     const int phase_idx = eval77_fm_grouped_phase_from_disc_count(board->n_discs());
     const int num0 = pop_count_ull(board->player);
     eval77_fm_grouped_cache_refresh_simd(eval, 0, phase_idx, &eval->features[0], num0);
@@ -885,6 +1986,12 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+    eval77_fm_grouped_cache_mark_not_ready(eval, eval->feature_idx);
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+    eval->eval77_fm_reverse_cache_ready[eval->feature_idx] = false;
+#endif
+#endif
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
     const int next_phase_idx = eval77_fm_grouped_phase_from_disc_count(board->n_discs() + 1);
     const int next_num0 = pop_count_ull(board->opponent ^ flip->flip);
@@ -938,6 +2045,12 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_PARENT_CACHE) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+    eval77_fm_grouped_cache_mark_not_ready(eval, eval->feature_idx);
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DUAL_ORIENTATION_CACHE)
+    eval->eval77_fm_reverse_cache_ready[eval->feature_idx] = false;
+#endif
+#endif
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIFF_CACHE)
     const int phase_idx = eval77_fm_grouped_phase_from_disc_count(board->n_discs());
     const int num0 = pop_count_ull(board->opponent);

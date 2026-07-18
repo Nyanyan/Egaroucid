@@ -184,6 +184,12 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
     @return the value
 */
 int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY)
+    if (!skipped && search->n_discs == search->root_n_discs) {
+        search->eval77_fm_use_full_evaluation =
+            search->eval77_fm_use_full_evaluation || is_end_search;
+    }
+#endif
     if (!global_searching || !(*searching)) {
         return SCORE_UNDEFINED;
     }
@@ -555,6 +561,10 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @return pair of value and best move
 */
 std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY)
+    search->eval77_fm_use_full_evaluation =
+        search->eval77_fm_use_full_evaluation || is_end_search;
+#endif
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -680,6 +690,10 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, const 
 }
 
 Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching) {
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY)
+    search->eval77_fm_use_full_evaluation =
+        search->eval77_fm_use_full_evaluation || is_end_search;
+#endif
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];

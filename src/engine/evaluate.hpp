@@ -11,12 +11,54 @@
 #pragma once
 #include "setting.hpp"
 
+#if defined(EVALUATE_EXPERIMENT_EGEV2_BASELINE)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic.hpp"
+    #endif
+#endif
+
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZED)
     #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED
         #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED
     #endif
     #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE
         #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_RECORD
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_RECORD
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET
+    #endif
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZED_WHOLE_PHASE)
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE_GROUP_RECORDS
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZE_GROUP_RECORDS
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_RECORD
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_RECORD
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED_DIRECT_OFFSET
+    #endif
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_LINEAR_ONLY)
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_GROUPED
+        #define EVALUATE_EXPERIMENT_7_7_FM_GROUPED
+    #endif
+    #ifndef EVALUATE_EXPERIMENT_7_7_FM_LINEAR_ONLY
+        #define EVALUATE_EXPERIMENT_7_7_FM_LINEAR_ONLY
     #endif
 #endif
 
@@ -62,6 +104,24 @@
     #endif
     #ifndef EVALUATE_GENERIC_HEADER
         #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_simdopt_mmap.hpp"
+    #endif
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_HYBRID_78_RECOMPUTE)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_hybrid_78_recompute.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_fast.hpp"
+    #endif
+#endif
+
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
+    #ifndef EVALUATE_SIMD_HEADER
+        #define EVALUATE_SIMD_HEADER "evaluate_simd_experiment_7_7_fm_fast.hpp"
+    #endif
+    #ifndef EVALUATE_GENERIC_HEADER
+        #define EVALUATE_GENERIC_HEADER "evaluate_generic_experiment_7_7_fm_fast.hpp"
     #endif
 #endif
 

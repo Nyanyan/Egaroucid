@@ -250,6 +250,12 @@ class Search {
 #endif
         bool is_presearch;
         int lazy_smp_worker_idx = 0;
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_LINEAR_MOVE_ORDERING_SEARCH)
+        bool eval77_fm_use_linear_evaluation = false;
+#endif
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_MIDGAME_SEARCH_ONLY)
+        bool eval77_fm_use_full_evaluation = false;
+#endif
 
 #if USE_KILLER_MOVE_MO
         // Killer move support
