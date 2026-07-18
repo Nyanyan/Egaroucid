@@ -13,6 +13,12 @@
 #include <future>
 #include "./../engine/engine_all.hpp"
 #include "function/function_all.hpp"
+#if SIV3D_PLATFORM(WINDOWS)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#endif
 
 std::string get_default_language() {
     std::string default_language = System::DefaultLanguage().narrow();
@@ -705,6 +711,32 @@ bool is_window_bounds_in_work_area(const Rect& window_bounds) {
     return false;
 }
 
+bool is_windows_7_or_earlier() {
+#if SIV3D_PLATFORM(WINDOWS)
+    using RtlGetVersionFunc = LONG(WINAPI*)(OSVERSIONINFOW*);
+    const HMODULE ntdll = ::GetModuleHandleW(L"ntdll.dll");
+    if (!ntdll) {
+        return false;
+    }
+
+    const auto rtl_get_version = reinterpret_cast<RtlGetVersionFunc>(::GetProcAddress(ntdll, "RtlGetVersion"));
+    if (!rtl_get_version) {
+        return false;
+    }
+
+    OSVERSIONINFOW version_info{};
+    version_info.dwOSVersionInfoSize = sizeof(version_info);
+    if (rtl_get_version(&version_info) != 0) {
+        return false;
+    }
+
+    return version_info.dwMajorVersion < 6 ||
+        (version_info.dwMajorVersion == 6 && version_info.dwMinorVersion <= 1);
+#else
+    return false;
+#endif
+}
+
 void apply_default_window_settings(Window_state* window_state) {
     Window::Resize(Size{ WINDOW_SIZE_X, WINDOW_SIZE_Y }, Centering::Yes);
     window_state->window_scale = 1.0;
@@ -714,6 +746,10 @@ void apply_default_window_settings(Window_state* window_state) {
 }
 
 void apply_saved_window_settings(const Settings& settings, Window_state* window_state) {
+    if (is_windows_7_or_earlier()) {
+        return;
+    }
+
     const double window_scale = std::clamp(settings.window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
     const Size saved_window_size = get_scaled_window_size(window_scale);
     if (!Window::Resize(saved_window_size, settings.has_window_pos ? Centering::No : Centering::Yes)) {
@@ -772,6 +808,9 @@ public:
             if (silent_load_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 load_code = silent_load_future.get();
                 loaded = load_code == ERR_OK;
+                if (loaded) {
+                    apply_saved_window_settings(getData().settings, &getData().window_state);
+                }
                 loading = false;
             }
         } else {
