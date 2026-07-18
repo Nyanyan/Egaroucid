@@ -17,11 +17,11 @@
 #include <string>
 #include <vector>
 
-#if !defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT) && !defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP) && !defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) && !defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) && !defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) && !defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZED) && !defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
+#if !defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT) && !defined(EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT_MMAP) && !defined(EVALUATE_EXPERIMENT_7_7_FM_SUBSET_SIMDOPT) && !defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) && !defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET) && !defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) && !defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZED) && !defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
     #define EVALUATE_EXPERIMENT_7_7_FM_SIMDOPT
 #endif
 
-#if defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_FAST) || defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED_MATERIALIZED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
     #define EVAL77_SPEED_HAS_FAST_FUSED_SCORER
 #endif
 
@@ -85,9 +85,13 @@ inline int eval77_score_linear_only_from_case(const Eval77FmSpeedCase &c) {
 inline int eval77_score_fm_from_case(const Eval77FmSpeedCase &c) {
 #if defined(EVAL77_SPEED_HAS_FAST_FUSED_SCORER)
 #if USE_SIMD
-    if (eval77_fm_fast_can_use_dim16(c.phase)) {
+    if (eval77_fm_fast_can_use_supported_simd_dim(c.phase)) {
 #if defined(EVALUATE_EXPERIMENT_7_7_FM_GROUPED) || defined(EVALUATE_EXPERIMENT_7_7_FM_SHARED)
         return eval77_fm_grouped_score_ids_simd_dim16(c.phase, c.ids, N_PATTERN_FEATURES + 1);
+#elif defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
+        return eval77_fm_fast_score_from_linear_and_fm_ids_simd_dim16(
+            c.phase, c.ids, N_PATTERN_FEATURES + 1, c.fm_ids, c.n_fm
+        );
 #else
         const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(c.phase);
         for (int i = 0; i < N_PATTERN_FEATURES + 1; ++i) {
@@ -114,6 +118,11 @@ inline int eval77_score_fm_from_case(const Eval77FmSpeedCase &c) {
 
 inline int eval77_score_fm_scalar_from_case(const Eval77FmSpeedCase &c) {
 #if defined(EVAL77_SPEED_HAS_FAST_FUSED_SCORER)
+#if defined(EVALUATE_EXPERIMENT_7_7_FM_FAST_SUBSET)
+    return eval77_fm_fast_score_from_linear_and_fm_ids_scalar(
+        c.phase, c.ids, N_PATTERN_FEATURES + 1, c.fm_ids, c.n_fm
+    );
+#else
     Eval77FmFastScalarAccum accum;
     const Eval77FmFastPhasePtrs phase_ptrs = eval77_fm_fast_phase_ptrs(c.phase);
     eval77_fm_fast_clear_scalar(accum);
@@ -121,6 +130,7 @@ inline int eval77_score_fm_scalar_from_case(const Eval77FmSpeedCase &c) {
         eval77_fm_fast_add_id_scalar(accum, phase_ptrs, c.ids[i]);
     }
     return eval77_fm_fast_finish_scalar(c.phase, accum);
+#endif
 #else
     const double score = eval77_fm_linear_from_ids(c.phase, c.ids, N_PATTERN_FEATURES + 1) +
         eval77_fm_interaction_from_ids_quant(c.phase, c.fm_ids, c.n_fm);
@@ -174,6 +184,27 @@ int main(int argc, char **argv) {
     }
 
     const std::vector<Eval77FmSpeedCase> cases = eval77_make_cases(case_count, phase_min, phase_max);
+    uint64_t mismatches = 0;
+    for (size_t case_idx = 0; case_idx < cases.size(); ++case_idx) {
+        const int scalar_score = eval77_score_fm_scalar_from_case(cases[case_idx]);
+        const int selected_score = eval77_score_fm_from_case(cases[case_idx]);
+        if (scalar_score != selected_score) {
+            if (mismatches < 10) {
+                std::cerr << "mismatch case=" << case_idx
+                          << " phase=" << cases[case_idx].phase
+                          << " scalar=" << scalar_score
+                          << " selected=" << selected_score
+                          << std::endl;
+            }
+            ++mismatches;
+        }
+    }
+    std::cout << "checked_cases=" << cases.size()
+              << " mismatches=" << mismatches
+              << std::endl;
+    if (mismatches != 0) {
+        return 2;
+    }
     eval77_run_benchmark("eval77_linear_only", cases, iterations, eval77_score_linear_only_from_case);
     eval77_run_benchmark("eval77_fm_scalar", cases, iterations, eval77_score_fm_scalar_from_case);
     eval77_run_benchmark("eval77_fm_selected", cases, iterations, eval77_score_fm_from_case);

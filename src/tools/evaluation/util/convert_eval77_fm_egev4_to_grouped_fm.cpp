@@ -501,6 +501,119 @@ void accumulate_group_chunk(
     }
 }
 
+void accumulate_group_linear_chunk(
+    std::ifstream &in,
+    const InputInfo &info,
+    const std::vector<int> &phases,
+    const size_t start_param,
+    const size_t n_param,
+    std::vector<unsigned char> &phase_buffer,
+    std::vector<float> &accum
+) {
+    phase_buffer.resize(n_param * info.record_stride);
+    accum.assign(n_param, 0.0f);
+    for (const int phase : phases) {
+        const size_t offset =
+            EGEV4_PAYLOAD_OFFSET +
+            (size_t)phase * info.phase_stride +
+            start_param * info.record_stride;
+        read_exact_at(
+            in,
+            offset,
+            phase_buffer.data(),
+            phase_buffer.size(),
+            "input phase linear chunk"
+        );
+        const float scale = info.linear_scales[(size_t)phase];
+        for (size_t param = 0; param < n_param; ++param) {
+            int16_t quant;
+            std::memcpy(
+                &quant,
+                phase_buffer.data() + param * info.record_stride,
+                sizeof(quant)
+            );
+            accum[param] += (float)quant * scale;
+        }
+    }
+    const float inv_count = 1.0f / (float)phases.size();
+    for (float &value : accum) {
+        value *= inv_count;
+    }
+}
+
+std::array<float, N_PHASES> compute_shared_linear_scales(
+    const std::string &input_path,
+    const InputInfo &info,
+    const GroupSpec &spec,
+    const std::vector<std::vector<int>> &groups,
+    const bool share_linear
+) {
+    if (!share_linear) {
+        return info.linear_scales;
+    }
+
+    std::array<float, N_PHASES> group_scales{};
+    if (spec.vector_mode != VectorGroupMode::Average) {
+        for (int group = 0; group < spec.group_count; ++group) {
+            group_scales[(size_t)group] =
+                info.linear_scales[
+                    (size_t)spec.representative_phase[(size_t)group]
+                ];
+        }
+    } else {
+        std::ifstream in(input_path, std::ios::binary);
+        if (!in) {
+            throw std::runtime_error("cannot reopen input: " + input_path);
+        }
+        std::vector<unsigned char> phase_buffer;
+        std::vector<float> accum;
+        for (size_t group = 0; group < groups.size(); ++group) {
+            double max_abs = 0.0;
+            for (size_t start = 0;
+                 start < (size_t)N_PARAMS_PER_PHASE;
+                 start += CHUNK_PARAMS) {
+                const size_t n_param = std::min(
+                    CHUNK_PARAMS,
+                    (size_t)N_PARAMS_PER_PHASE - start
+                );
+                accumulate_group_linear_chunk(
+                    in,
+                    info,
+                    groups[group],
+                    start,
+                    n_param,
+                    phase_buffer,
+                    accum
+                );
+                for (const float value : accum) {
+                    max_abs = std::max(max_abs, std::abs((double)value));
+                }
+            }
+            if (max_abs > 0.0) {
+                group_scales[group] =
+                    (float)(max_abs / 32767.0);
+            } else {
+                double scale_sum = 0.0;
+                for (const int phase : groups[group]) {
+                    scale_sum +=
+                        (double)info.linear_scales[(size_t)phase];
+                }
+                group_scales[group] =
+                    (float)(scale_sum / (double)groups[group].size());
+            }
+        }
+    }
+
+    std::array<float, N_PHASES> phase_scales{};
+    for (int phase = 0; phase < N_PHASES; ++phase) {
+        phase_scales[(size_t)phase] =
+            group_scales[
+                (size_t)spec.phase_to_group[(size_t)phase]
+            ];
+    }
+    return phase_scales;
+}
+
 std::array<float, N_PHASES> compute_group_vector_scales(
     const std::string &input_path,
     const InputInfo &info,
@@ -550,6 +663,7 @@ void write_grouped_header(
     const std::string &timestamp,
     const InputInfo &info,
     const GroupSpec &spec,
+    const std::array<float, N_PHASES> &linear_scales,
     const std::array<float, N_PHASES> &group_vector_scales
 ) {
     const size_t header_base_size = TIMESTAMP_SIZE + 4 + sizeof(int32_t) * 5 + N_PHASES;
@@ -564,7 +678,7 @@ void write_grouped_header(
     write_i32_le(header.data() + 30, info.dim);
     write_i32_le(header.data() + 34, spec.group_count);
     std::memcpy(header.data() + 38, spec.phase_to_group.data(), N_PHASES);
-    std::memcpy(header.data() + header_base_size, info.linear_scales.data(), sizeof(float) * N_PHASES);
+    std::memcpy(header.data() + header_base_size, linear_scales.data(), sizeof(float) * N_PHASES);
     std::memcpy(header.data() + header_base_size + sizeof(float) * N_PHASES,
                 group_vector_scales.data(), sizeof(float) * (size_t)spec.group_count);
     out.write((const char*)header.data(), (std::streamsize)header.size());
@@ -573,16 +687,64 @@ void write_grouped_header(
 void write_linear_table(
     std::ifstream &in,
     std::ofstream &out,
-    const InputInfo &info
+    const InputInfo &info,
+    const GroupSpec &spec,
+    const std::vector<std::vector<int>> &groups,
+    const std::array<float, N_PHASES> &linear_scales,
+    const bool share_linear
 ) {
     std::vector<unsigned char> phase_buffer;
     std::vector<unsigned char> linear_buffer;
+    std::vector<float> accum;
     for (int phase = 0; phase < N_PHASES; ++phase) {
+        const int group = spec.phase_to_group[(size_t)phase];
+        const int source_phase = share_linear ?
+            spec.representative_phase[
+                (size_t)group
+            ] :
+            phase;
         for (size_t start = 0; start < (size_t)N_PARAMS_PER_PHASE; start += CHUNK_PARAMS) {
             const size_t n_param = std::min(CHUNK_PARAMS, (size_t)N_PARAMS_PER_PHASE - start);
-            phase_buffer.resize(n_param * info.record_stride);
             linear_buffer.resize(n_param * sizeof(int16_t));
-            const size_t offset = EGEV4_PAYLOAD_OFFSET + (size_t)phase * info.phase_stride +
+            if (share_linear &&
+                spec.vector_mode == VectorGroupMode::Average) {
+                accumulate_group_linear_chunk(
+                    in,
+                    info,
+                    groups[(size_t)group],
+                    start,
+                    n_param,
+                    phase_buffer,
+                    accum
+                );
+                const double scale =
+                    (double)linear_scales[(size_t)phase];
+                if (!(scale > 0.0)) {
+                    throw std::runtime_error(
+                        "group linear scale must be positive"
+                    );
+                }
+                for (size_t param = 0; param < n_param; ++param) {
+                    int quant =
+                        (int)std::lrint((double)accum[param] / scale);
+                    quant = std::clamp(quant, -32768, 32767);
+                    const int16_t quant16 = (int16_t)quant;
+                    std::memcpy(
+                        linear_buffer.data() +
+                            param * sizeof(int16_t),
+                        &quant16,
+                        sizeof(quant16)
+                    );
+                }
+                out.write(
+                    (const char*)linear_buffer.data(),
+                    (std::streamsize)linear_buffer.size()
+                );
+                continue;
+            }
+
+            phase_buffer.resize(n_param * info.record_stride);
+            const size_t offset = EGEV4_PAYLOAD_OFFSET + (size_t)source_phase * info.phase_stride +
                 start * info.record_stride;
             read_exact_at(in, offset, phase_buffer.data(), phase_buffer.size(), "input phase linear chunk");
             for (size_t param = 0; param < n_param; ++param) {
@@ -656,13 +818,22 @@ void convert(
     const std::string &mode,
     const std::string &timestamp_arg,
     const std::string &layout_or_representative_arg,
-    const std::string &representative_arg
+    const std::string &representative_arg,
+    const bool share_linear
 ) {
     const InputInfo info = read_input_info(input_path);
     const GroupSpec spec = mode == "lossless" ?
         make_lossless_group_spec(input_path, info, layout_or_representative_arg, representative_arg) :
         make_group_spec(mode, layout_or_representative_arg, representative_arg);
     const std::vector<std::vector<int>> groups = phases_by_group(spec);
+    const std::array<float, N_PHASES> linear_scales =
+        compute_shared_linear_scales(
+            input_path,
+            info,
+            spec,
+            groups,
+            share_linear
+        );
     const std::array<float, N_PHASES> group_vector_scales =
         compute_group_vector_scales(input_path, info, spec, groups);
 
@@ -696,9 +867,24 @@ void convert(
         throw std::runtime_error("cannot open output: " + output_path);
     }
 
-    write_grouped_header(out, timestamp, info, spec, group_vector_scales);
+    write_grouped_header(
+        out,
+        timestamp,
+        info,
+        spec,
+        linear_scales,
+        group_vector_scales
+    );
     write_padding(out, linear_offset);
-    write_linear_table(in, out, info);
+    write_linear_table(
+        in,
+        out,
+        info,
+        spec,
+        groups,
+        linear_scales,
+        share_linear
+    );
     write_padding(out, vector_offset);
     write_vector_table(in, out, info, spec, groups, group_vector_scales);
     if (!out) {
@@ -712,7 +898,8 @@ void convert(
               << " phases " << N_PHASES
               << " params/phase " << N_PARAMS_PER_PHASE
               << " dim " << info.dim
-              << " fm_groups " << spec.group_count << "\n"
+              << " fm_groups " << spec.group_count
+              << " share_linear " << (share_linear ? 1 : 0) << "\n"
               << "linear_offset " << linear_offset
               << " vector_offset " << vector_offset
               << " output_bytes " << output_size << std::endl;
@@ -732,15 +919,35 @@ void convert(
 } // namespace
 
 int main(int argc, char **argv) {
-    if (argc < 4 || argc > 7) {
-        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <lossless|grouped7|groupedN|groupsizes|shared>[copyfirst|copylast|copycustom] [preserve|now|YYYYMMDDHHMMSS] [group_size_csv_for_groupsizes_or_representative_phase_csv_for_copycustom] [representative_phase_csv_for_groupsizescopycustom]" << std::endl;
+    if (argc < 4 || argc > 8) {
+        std::cerr << "usage: convert_eval77_fm_egev4_to_grouped_fm <input.egev4> <output.egev10> <lossless|grouped7|groupedN|groupsizes|shared>[copyfirst|copylast|copycustom] [preserve|now|YYYYMMDDHHMMSS] [group_size_csv_for_groupsizes_or_representative_phase_csv_for_copycustom] [representative_phase_csv_for_groupsizescopycustom] [sharelinear]" << std::endl;
         return 1;
     }
     try {
-        const std::string timestamp = argc >= 5 ? argv[4] : "preserve";
-        const std::string layout_or_representative_arg = argc >= 6 ? argv[5] : "";
-        const std::string representative_arg = argc >= 7 ? argv[6] : "";
-        convert(argv[1], argv[2], argv[3], timestamp, layout_or_representative_arg, representative_arg);
+        const bool share_linear =
+            argc >= 5 &&
+            std::string(argv[argc - 1]) == "sharelinear";
+        const int option_argc = argc - (share_linear ? 1 : 0);
+        const std::string timestamp =
+            option_argc >= 5 ? argv[4] : "preserve";
+        const std::string layout_or_representative_arg =
+            option_argc >= 6 ? argv[5] : "";
+        const std::string representative_arg =
+            option_argc >= 7 ? argv[6] : "";
+        if (option_argc > 7) {
+            throw std::runtime_error(
+                "the final argument must be sharelinear when provided"
+            );
+        }
+        convert(
+            argv[1],
+            argv[2],
+            argv[3],
+            timestamp,
+            layout_or_representative_arg,
+            representative_arg,
+            share_linear
+        );
     } catch (const std::exception &e) {
         std::cerr << "[ERROR] " << e.what() << std::endl;
         return 1;

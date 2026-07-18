@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -203,6 +204,30 @@ struct CompareModel {
     }
 };
 
+bool load_candidate_model(CompareModel &model, const std::string &path) {
+    std::ifstream input(path, std::ios::binary);
+    std::array<unsigned char, EGEV4_FIXED_HEADER_SIZE> header{};
+    input.read(
+        reinterpret_cast<char *>(header.data()),
+        static_cast<std::streamsize>(header.size())
+    );
+    if (!input || std::memcmp(header.data() + 14, "EGEV", 4) != 0) {
+        std::cerr << "[ERROR] candidate is not a supported EGEV file: "
+                  << path << std::endl;
+        return false;
+    }
+    const int version = eval77_fm_read_i32_le(header.data() + 18);
+    if (version == 7 || version == 8) {
+        return model.load_egev4(path);
+    }
+    if (version == COMPARE_GROUPED_VERSION) {
+        return model.load_grouped_egev10(path);
+    }
+    std::cerr << "[ERROR] unsupported candidate EGEV version: "
+              << version << std::endl;
+    return false;
+}
+
 struct ErrorStats {
     uint64_t n = 0;
     uint64_t exact_match = 0;
@@ -281,7 +306,7 @@ void print_stats_line(const std::string &label, const ErrorStats &stats) {
 
 int main(int argc, char **argv) {
     if (argc < 3 || argc > 5) {
-        std::cerr << "usage: eval77_fm_grouped_error_check <baseline.egev4> <grouped.egev10> [games] [seed]" << std::endl;
+        std::cerr << "usage: eval77_fm_grouped_error_check <baseline.egev4> <candidate.egev4-or-egev10> [games] [seed]" << std::endl;
         return 1;
     }
 
@@ -296,7 +321,8 @@ int main(int argc, char **argv) {
 
     CompareModel baseline;
     CompareModel grouped;
-    if (!baseline.load_egev4(baseline_file) || !grouped.load_grouped_egev10(grouped_file)) {
+    if (!baseline.load_egev4(baseline_file) ||
+        !load_candidate_model(grouped, grouped_file)) {
         return 1;
     }
     if (baseline.dim != grouped.dim) {
@@ -376,7 +402,7 @@ int main(int argc, char **argv) {
     }
 
     std::cout << "baseline=" << baseline_file
-              << " grouped=" << grouped_file
+              << " candidate=" << grouped_file
               << " games=" << n_games
               << " seed=" << seed
               << " positions=" << overall.n

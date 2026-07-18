@@ -33,6 +33,7 @@ constexpr int N_PATTERN_PARAMS_RAW = 944784;
 constexpr int N_PARAMS_PER_PHASE = N_PATTERN_PARAMS_RAW + 65;
 constexpr int VERSION_LINEAR_FM_INT16_INT8 = 8;
 constexpr int MAX_DIM = 16;
+constexpr int MAX_RANKING_GROUP_SIZE = 33;
 constexpr int RECORD_BYTES = 136;
 
 const std::array<int, 16> PATTERN_OFFSETS = {
@@ -48,6 +49,7 @@ struct Config {
     std::string output_egev4;
     std::string summary;
     std::string timestamp;
+    std::string prediction_mode = "full";
     std::vector<int> phases;
     std::vector<int> train_ids;
     std::vector<int> holdout_ids;
@@ -65,6 +67,7 @@ struct Config {
     double weight_decay = 0.0;
     uint64_t seed = 20260713;
     bool shuffle_files = true;
+    bool summary_only = false;
 };
 
 struct Egev4Model {
@@ -79,13 +82,21 @@ struct Egev4Model {
 struct Record {
     std::array<uint32_t, N_FEATURES> active_ids{};
     float score = 0.0f;
+    int group_size = 0;
+};
+
+struct RecordGroup {
+    std::vector<Record> records;
 };
 
 struct Metrics {
     uint64_t n = 0;
+    uint64_t n_groups = 0;
+    uint64_t n_top1_matches = 0;
     double mse = 0.0;
     double mae = 0.0;
     double max_abs_error = 0.0;
+    double mean_teacher_regret = 0.0;
 };
 
 struct EpochRow {
@@ -114,7 +125,9 @@ struct PhaseResult {
         "usage: eval_optimizer_7_7_fm_linear_finetune_experiment "
         "--input-egev4 FILE --data-root DIR --phases 6-13 "
         "--train-ids 0,1,2 --holdout-ids 3 "
-        "--output-egev4 FILE --summary FILE [options]");
+        "--output-egev4 FILE --summary FILE "
+        "[--prediction-mode full|linear-only|linear-ranking] "
+        "[--summary-only] [options]");
 }
 
 std::string require_value(int &idx, int argc, char **argv) {
@@ -181,6 +194,8 @@ Config parse_args(int argc, char **argv) {
             cfg.output_egev4 = require_value(i, argc, argv);
         } else if (arg == "--summary") {
             cfg.summary = require_value(i, argc, argv);
+        } else if (arg == "--prediction-mode") {
+            cfg.prediction_mode = require_value(i, argc, argv);
         } else if (arg == "--epochs") {
             cfg.epochs = std::stoi(require_value(i, argc, argv));
         } else if (arg == "--lr") {
@@ -211,12 +226,17 @@ Config parse_args(int argc, char **argv) {
             cfg.timestamp = require_value(i, argc, argv);
         } else if (arg == "--no-shuffle-files") {
             cfg.shuffle_files = false;
+        } else if (arg == "--summary-only") {
+            cfg.summary_only = true;
         } else {
             usage_error("unknown argument: " + arg);
         }
     }
-    if (cfg.input_egev4.empty() || cfg.data_root.empty() || cfg.output_egev4.empty() || cfg.summary.empty()) {
-        usage_error("--input-egev4, --data-root, --output-egev4, and --summary are required");
+    if (cfg.input_egev4.empty() || cfg.data_root.empty() || cfg.summary.empty()) {
+        usage_error("--input-egev4, --data-root, and --summary are required");
+    }
+    if (!cfg.summary_only && cfg.output_egev4.empty()) {
+        usage_error("--output-egev4 is required unless --summary-only is set");
     }
     if (cfg.phases.empty() || cfg.train_ids.empty() || cfg.holdout_ids.empty()) {
         usage_error("--phases, --train-ids, and --holdout-ids are required");
@@ -226,6 +246,11 @@ Config parse_args(int argc, char **argv) {
     }
     if (cfg.loss != "clipped-residual" && cfg.loss != "pseudo-huber") {
         usage_error("--loss must be clipped-residual or pseudo-huber");
+    }
+    if (cfg.prediction_mode != "full" &&
+        cfg.prediction_mode != "linear-only" &&
+        cfg.prediction_mode != "linear-ranking") {
+        usage_error("--prediction-mode must be full, linear-only, or linear-ranking");
     }
     if (cfg.holdout_max_records_per_file < 0) {
         cfg.holdout_max_records_per_file = cfg.max_records_per_file;
@@ -363,6 +388,9 @@ bool read_record(std::ifstream &in, Record &record) {
         }
         throw std::runtime_error("partial record encountered");
     }
+    int16_t group_size = 0;
+    std::memcpy(&group_size, raw.data() + sizeof(int16_t), sizeof(group_size));
+    record.group_size = static_cast<int>(group_size);
     for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
         uint16_t feature = 0;
         std::memcpy(&feature, raw.data() + 4 + i * 2, sizeof(feature));
@@ -377,12 +405,39 @@ bool read_record(std::ifstream &in, Record &record) {
     return true;
 }
 
+bool read_record_group(std::ifstream &in, RecordGroup &group) {
+    group.records.clear();
+    Record first;
+    if (!read_record(in, first)) {
+        return false;
+    }
+    if (first.group_size <= 0 || first.group_size > MAX_RANKING_GROUP_SIZE) {
+        throw std::runtime_error(
+            "invalid ranking group size: " + std::to_string(first.group_size)
+        );
+    }
+    group.records.reserve(static_cast<size_t>(first.group_size));
+    group.records.push_back(first);
+    for (int i = 1; i < first.group_size; ++i) {
+        Record record;
+        if (!read_record(in, record)) {
+            throw std::runtime_error("partial ranking group encountered");
+        }
+        if (record.group_size != first.group_size) {
+            throw std::runtime_error("inconsistent ranking group size");
+        }
+        group.records.push_back(record);
+    }
+    return true;
+}
+
 double predict_record(
     const float *linear,
     const int8_t *vectors,
     float vector_scale,
     const Record &record,
     int dim,
+    bool include_fm_interaction,
     std::array<double, MAX_DIM> &sums,
     std::array<double, MAX_DIM> &sums_sq
 ) {
@@ -391,12 +446,18 @@ double predict_record(
     double value = 0.0;
     for (uint32_t param_id : record.active_ids) {
         value += linear[param_id];
+        if (!include_fm_interaction) {
+            continue;
+        }
         const size_t base = static_cast<size_t>(param_id) * dim;
         for (int d = 0; d < dim; ++d) {
             const double vec = static_cast<double>(vectors[base + d]) * static_cast<double>(vector_scale);
             sums[d] += vec;
             sums_sq[d] += vec * vec;
         }
+    }
+    if (!include_fm_interaction) {
+        return value;
     }
     double interaction = 0.0;
     for (int d = 0; d < dim; ++d) {
@@ -406,6 +467,51 @@ double predict_record(
 }
 
 Metrics compute_metrics(
+    const fs::path &root,
+    int phase,
+    const std::vector<int> &file_ids,
+    int max_records_per_file,
+    const float *linear,
+    const int8_t *vectors,
+    float vector_scale,
+    int dim,
+    bool include_fm_interaction
+) {
+    Metrics metrics;
+    std::array<double, MAX_DIM> sums{};
+    std::array<double, MAX_DIM> sums_sq{};
+    for (int file_id : file_ids) {
+        const fs::path path = data_path(root, phase, file_id);
+        std::ifstream in(path, std::ios::binary);
+        if (!in) {
+            throw std::runtime_error("cannot open " + path.string());
+        }
+        uint64_t n_file = 0;
+        while (max_records_per_file <= 0 || n_file < static_cast<uint64_t>(max_records_per_file)) {
+            Record record;
+            if (!read_record(in, record)) {
+                break;
+            }
+            const double pred = predict_record(
+                linear, vectors, vector_scale, record, dim, include_fm_interaction, sums, sums_sq
+            );
+            const double err = static_cast<double>(record.score) - pred;
+            const double abs_err = std::abs(err);
+            metrics.mse += err * err;
+            metrics.mae += abs_err;
+            metrics.max_abs_error = std::max(metrics.max_abs_error, abs_err);
+            ++metrics.n;
+            ++n_file;
+        }
+    }
+    if (metrics.n > 0) {
+        metrics.mse /= static_cast<double>(metrics.n);
+        metrics.mae /= static_cast<double>(metrics.n);
+    }
+    return metrics;
+}
+
+Metrics compute_ranking_metrics(
     const fs::path &root,
     int phase,
     const std::vector<int> &file_ids,
@@ -425,26 +531,111 @@ Metrics compute_metrics(
             throw std::runtime_error("cannot open " + path.string());
         }
         uint64_t n_file = 0;
-        while (max_records_per_file <= 0 || n_file < static_cast<uint64_t>(max_records_per_file)) {
-            Record record;
-            if (!read_record(in, record)) {
+        RecordGroup group;
+        while (read_record_group(in, group)) {
+            const uint64_t group_size =
+                static_cast<uint64_t>(group.records.size());
+            if (max_records_per_file > 0 &&
+                n_file + group_size >
+                    static_cast<uint64_t>(max_records_per_file)) {
                 break;
             }
-            const double pred = predict_record(linear, vectors, vector_scale, record, dim, sums, sums_sq);
-            const double err = static_cast<double>(record.score) - pred;
-            const double abs_err = std::abs(err);
-            metrics.mse += err * err;
-            metrics.mae += abs_err;
-            metrics.max_abs_error = std::max(metrics.max_abs_error, abs_err);
-            ++metrics.n;
-            ++n_file;
+
+            std::vector<double> predictions(group.records.size(), 0.0);
+            double mean_prediction = 0.0;
+            double mean_teacher = 0.0;
+            for (size_t i = 0; i < group.records.size(); ++i) {
+                predictions[i] = predict_record(
+                    linear,
+                    vectors,
+                    vector_scale,
+                    group.records[i],
+                    dim,
+                    false,
+                    sums,
+                    sums_sq
+                );
+                mean_prediction += predictions[i];
+                mean_teacher += static_cast<double>(group.records[i].score);
+            }
+            mean_prediction /= static_cast<double>(group.records.size());
+            mean_teacher /= static_cast<double>(group.records.size());
+
+            size_t candidate_best = 0;
+            double teacher_best = static_cast<double>(group.records[0].score);
+            for (size_t i = 0; i < group.records.size(); ++i) {
+                const double teacher_centered =
+                    static_cast<double>(group.records[i].score) - mean_teacher;
+                const double prediction_centered =
+                    predictions[i] - mean_prediction;
+                const double error = teacher_centered - prediction_centered;
+                const double abs_error = std::abs(error);
+                metrics.mse += error * error;
+                metrics.mae += abs_error;
+                metrics.max_abs_error =
+                    std::max(metrics.max_abs_error, abs_error);
+                if (predictions[i] < predictions[candidate_best]) {
+                    candidate_best = i;
+                }
+                teacher_best = std::min(
+                    teacher_best,
+                    static_cast<double>(group.records[i].score)
+                );
+            }
+            const double candidate_teacher =
+                static_cast<double>(group.records[candidate_best].score);
+            metrics.mean_teacher_regret += candidate_teacher - teacher_best;
+            metrics.n_top1_matches += candidate_teacher == teacher_best;
+            metrics.n += group_size;
+            ++metrics.n_groups;
+            n_file += group_size;
         }
     }
     if (metrics.n > 0) {
         metrics.mse /= static_cast<double>(metrics.n);
         metrics.mae /= static_cast<double>(metrics.n);
     }
+    if (metrics.n_groups > 0) {
+        metrics.mean_teacher_regret /=
+            static_cast<double>(metrics.n_groups);
+    }
     return metrics;
+}
+
+Metrics compute_configured_metrics(
+    const fs::path &root,
+    int phase,
+    const std::vector<int> &file_ids,
+    int max_records_per_file,
+    const float *linear,
+    const int8_t *vectors,
+    float vector_scale,
+    int dim,
+    const Config &cfg
+) {
+    if (cfg.prediction_mode == "linear-ranking") {
+        return compute_ranking_metrics(
+            root,
+            phase,
+            file_ids,
+            max_records_per_file,
+            linear,
+            vectors,
+            vector_scale,
+            dim
+        );
+    }
+    return compute_metrics(
+        root,
+        phase,
+        file_ids,
+        max_records_per_file,
+        linear,
+        vectors,
+        vector_scale,
+        dim,
+        cfg.prediction_mode == "full"
+    );
 }
 
 uint64_t count_initialized(const std::vector<uint8_t> &initialized) {
@@ -455,26 +646,19 @@ uint64_t count_initialized(const std::vector<uint8_t> &initialized) {
     return n;
 }
 
-void update_record(
+void apply_record_residual(
     const Record &record,
     const Config &cfg,
     const float *base_linear,
     std::vector<float> &linear,
-    const int8_t *vectors,
-    float vector_scale,
-    int dim,
+    double residual,
     std::vector<float> &m,
     std::vector<float> &v,
     std::vector<uint8_t> &initialized,
     uint64_t &step,
     double &beta1_power,
-    double &beta2_power,
-    std::array<double, MAX_DIM> &sums,
-    std::array<double, MAX_DIM> &sums_sq
+    double &beta2_power
 ) {
-    const double pred = predict_record(linear.data(), vectors, vector_scale, record, dim, sums, sums_sq);
-    const double residual = residual_for_loss(static_cast<double>(record.score) - pred, cfg);
-
     ++step;
     beta1_power *= 0.9;
     beta2_power *= 0.999;
@@ -496,6 +680,46 @@ void update_record(
         v[param_id] = static_cast<float>(next_v);
         linear[param_id] = static_cast<float>(next_value);
     }
+}
+
+void update_record(
+    const Record &record,
+    const Config &cfg,
+    const float *base_linear,
+    std::vector<float> &linear,
+    const int8_t *vectors,
+    float vector_scale,
+    int dim,
+    std::vector<float> &m,
+    std::vector<float> &v,
+    std::vector<uint8_t> &initialized,
+    uint64_t &step,
+    double &beta1_power,
+    double &beta2_power,
+    std::array<double, MAX_DIM> &sums,
+    std::array<double, MAX_DIM> &sums_sq
+) {
+    const double pred = predict_record(
+        linear.data(), vectors, vector_scale, record, dim,
+        cfg.prediction_mode == "full", sums, sums_sq
+    );
+    const double residual = residual_for_loss(
+        static_cast<double>(record.score) - pred,
+        cfg
+    );
+    apply_record_residual(
+        record,
+        cfg,
+        base_linear,
+        linear,
+        residual,
+        m,
+        v,
+        initialized,
+        step,
+        beta1_power,
+        beta2_power
+    );
 }
 
 uint64_t train_one_epoch(
@@ -568,6 +792,154 @@ uint64_t train_one_epoch(
     return updates;
 }
 
+uint64_t update_ranking_group(
+    const RecordGroup &group,
+    const Config &cfg,
+    const float *base_linear,
+    std::vector<float> &linear,
+    const int8_t *vectors,
+    float vector_scale,
+    int dim,
+    std::vector<float> &m,
+    std::vector<float> &v,
+    std::vector<uint8_t> &initialized,
+    uint64_t &step,
+    double &beta1_power,
+    double &beta2_power,
+    std::array<double, MAX_DIM> &sums,
+    std::array<double, MAX_DIM> &sums_sq
+) {
+    if (group.records.empty()) {
+        return 0;
+    }
+    std::vector<double> predictions(group.records.size(), 0.0);
+    double mean_prediction = 0.0;
+    double mean_teacher = 0.0;
+    for (size_t i = 0; i < group.records.size(); ++i) {
+        predictions[i] = predict_record(
+            linear.data(),
+            vectors,
+            vector_scale,
+            group.records[i],
+            dim,
+            false,
+            sums,
+            sums_sq
+        );
+        mean_prediction += predictions[i];
+        mean_teacher += static_cast<double>(group.records[i].score);
+    }
+    mean_prediction /= static_cast<double>(group.records.size());
+    mean_teacher /= static_cast<double>(group.records.size());
+
+    for (size_t i = 0; i < group.records.size(); ++i) {
+        const double teacher_centered =
+            static_cast<double>(group.records[i].score) - mean_teacher;
+        const double prediction_centered =
+            predictions[i] - mean_prediction;
+        const double residual = residual_for_loss(
+            teacher_centered - prediction_centered,
+            cfg
+        );
+        apply_record_residual(
+            group.records[i],
+            cfg,
+            base_linear,
+            linear,
+            residual,
+            m,
+            v,
+            initialized,
+            step,
+            beta1_power,
+            beta2_power
+        );
+    }
+    return static_cast<uint64_t>(group.records.size());
+}
+
+uint64_t train_one_ranking_epoch(
+    const fs::path &root,
+    int phase,
+    const std::vector<int> &train_ids,
+    int epoch,
+    const Config &cfg,
+    const float *base_linear,
+    std::vector<float> &linear,
+    const int8_t *vectors,
+    float vector_scale,
+    int dim,
+    std::vector<float> &m,
+    std::vector<float> &v,
+    std::vector<uint8_t> &initialized,
+    uint64_t &step,
+    double &beta1_power,
+    double &beta2_power
+) {
+    std::vector<int> file_order = train_ids;
+    if (cfg.shuffle_files) {
+        std::mt19937_64 file_rng(
+            cfg.seed ^
+            (static_cast<uint64_t>(phase + 1) << 32) ^
+            static_cast<uint64_t>(epoch)
+        );
+        std::shuffle(file_order.begin(), file_order.end(), file_rng);
+    }
+
+    std::array<double, MAX_DIM> sums{};
+    std::array<double, MAX_DIM> sums_sq{};
+    uint64_t updates = 0;
+    for (int file_id : file_order) {
+        const fs::path path = data_path(root, phase, file_id);
+        std::ifstream in(path, std::ios::binary);
+        if (!in) {
+            throw std::runtime_error("cannot open " + path.string());
+        }
+
+        std::vector<RecordGroup> groups;
+        uint64_t n_file = 0;
+        RecordGroup group;
+        while (read_record_group(in, group)) {
+            const uint64_t group_size =
+                static_cast<uint64_t>(group.records.size());
+            if (cfg.max_records_per_file > 0 &&
+                n_file + group_size >
+                    static_cast<uint64_t>(cfg.max_records_per_file)) {
+                break;
+            }
+            n_file += group_size;
+            groups.push_back(std::move(group));
+        }
+        std::mt19937_64 group_rng(
+            cfg.seed ^
+            (static_cast<uint64_t>(phase + 1) << 48) ^
+            (static_cast<uint64_t>(epoch + 1) << 32) ^
+            (static_cast<uint64_t>(file_id + 1) << 16)
+        );
+        std::shuffle(groups.begin(), groups.end(), group_rng);
+        for (const RecordGroup &record_group : groups) {
+            updates += update_ranking_group(
+                record_group,
+                cfg,
+                base_linear,
+                linear,
+                vectors,
+                vector_scale,
+                dim,
+                m,
+                v,
+                initialized,
+                step,
+                beta1_power,
+                beta2_power,
+                sums,
+                sums_sq
+            );
+        }
+    }
+    return updates;
+}
+
 void fill_phase_stats(
     PhaseResult &result,
     const float *base_linear,
@@ -619,37 +991,64 @@ PhaseResult train_phase(const Config &cfg, const fs::path &data_root, int phase,
 
     EpochRow initial;
     initial.epoch = 0;
-    initial.train = compute_metrics(data_root, phase, cfg.train_ids, cfg.train_metric_max_records_per_file,
-        linear.data(), vectors, vector_scale, model.dim);
-    initial.holdout = compute_metrics(data_root, phase, cfg.holdout_ids, cfg.holdout_max_records_per_file,
-        linear.data(), vectors, vector_scale, model.dim);
+    initial.train = compute_configured_metrics(
+        data_root, phase, cfg.train_ids,
+        cfg.train_metric_max_records_per_file,
+        linear.data(), vectors, vector_scale, model.dim, cfg
+    );
+    initial.holdout = compute_configured_metrics(
+        data_root, phase, cfg.holdout_ids,
+        cfg.holdout_max_records_per_file,
+        linear.data(), vectors, vector_scale, model.dim, cfg
+    );
     initial.elapsed_ms = now_ms() - start_ms;
     result.history.push_back(initial);
 
-    double best_holdout_mae = initial.holdout.mae;
+    const auto selection_metric = [&cfg](const Metrics &metrics) {
+        if (cfg.prediction_mode == "linear-ranking") {
+            return metrics.mean_teacher_regret + 1.0e-6 * metrics.mae;
+        }
+        return metrics.mae;
+    };
+    double best_holdout_metric = selection_metric(initial.holdout);
     best_linear_out = linear;
     result.best_epoch = 0;
 
     for (int epoch = 1; epoch <= cfg.epochs; ++epoch) {
-        const uint64_t updates = train_one_epoch(
-            data_root, phase, cfg.train_ids, epoch, cfg, base_linear, linear, vectors, vector_scale, model.dim,
-            m, v, initialized, step, beta1_power, beta2_power
-        );
+        const uint64_t updates =
+            cfg.prediction_mode == "linear-ranking" ?
+            train_one_ranking_epoch(
+                data_root, phase, cfg.train_ids, epoch, cfg,
+                base_linear, linear, vectors, vector_scale, model.dim,
+                m, v, initialized, step, beta1_power, beta2_power
+            ) :
+            train_one_epoch(
+                data_root, phase, cfg.train_ids, epoch, cfg,
+                base_linear, linear, vectors, vector_scale, model.dim,
+                m, v, initialized, step, beta1_power, beta2_power
+            );
         if (updates == 0) {
             throw std::runtime_error("no records trained for phase " + std::to_string(phase));
         }
         EpochRow row;
         row.epoch = epoch;
         row.n_initialized = count_initialized(initialized);
-        row.train = compute_metrics(data_root, phase, cfg.train_ids, cfg.train_metric_max_records_per_file,
-            linear.data(), vectors, vector_scale, model.dim);
-        row.holdout = compute_metrics(data_root, phase, cfg.holdout_ids, cfg.holdout_max_records_per_file,
-            linear.data(), vectors, vector_scale, model.dim);
+        row.train = compute_configured_metrics(
+            data_root, phase, cfg.train_ids,
+            cfg.train_metric_max_records_per_file,
+            linear.data(), vectors, vector_scale, model.dim, cfg
+        );
+        row.holdout = compute_configured_metrics(
+            data_root, phase, cfg.holdout_ids,
+            cfg.holdout_max_records_per_file,
+            linear.data(), vectors, vector_scale, model.dim, cfg
+        );
         row.elapsed_ms = now_ms() - start_ms;
         result.history.push_back(row);
 
-        if (row.holdout.mae < best_holdout_mae) {
-            best_holdout_mae = row.holdout.mae;
+        const double holdout_metric = selection_metric(row.holdout);
+        if (holdout_metric < best_holdout_metric) {
+            best_holdout_metric = holdout_metric;
             result.best_epoch = epoch;
             best_linear_out = linear;
             best_initialized = initialized;
@@ -743,6 +1142,8 @@ void write_summary(const Config &cfg, const Egev4Model &model, const std::map<in
     out << "chunk_records=" << cfg.chunk_records << "\n";
     out << "shuffle_files=" << (cfg.shuffle_files ? "true" : "false") << "\n";
     out << "dim=" << model.dim << "\n";
+    out << "prediction_mode=" << cfg.prediction_mode << "\n";
+    out << "summary_only=" << (cfg.summary_only ? "true" : "false") << "\n";
     out << "epochs=" << cfg.epochs << "\n";
     out << "lr=" << cfg.lr << "\n";
     out << "loss=" << cfg.loss << "\n";
@@ -775,8 +1176,22 @@ void write_summary(const Config &cfg, const Egev4Model &model, const std::map<in
         out << "mean_abs_delta_initialized=" << result.mean_abs_delta_initialized << "\n";
         out << "changed_linear_values=" << result.changed_linear_values << "\n";
         out << "clamped_linear_values=" << result.clamped_linear_values << "\n";
-        out << "epoch\ttrain_n\ttrain_mse\ttrain_mae\tholdout_n\tholdout_mse\tholdout_mae\tmax_abs_error\tn_initialized\telapsed_ms\n";
+        out << "epoch\ttrain_n\ttrain_mse\ttrain_mae"
+            << "\tholdout_n\tholdout_mse\tholdout_mae\tmax_abs_error"
+            << "\ttrain_groups\ttrain_top1_accuracy\ttrain_mean_teacher_regret"
+            << "\tholdout_groups\tholdout_top1_accuracy\tholdout_mean_teacher_regret"
+            << "\tn_initialized\telapsed_ms\n";
         for (const EpochRow &row : result.history) {
+            const double train_top1_accuracy =
+                row.train.n_groups > 0 ?
+                static_cast<double>(row.train.n_top1_matches) /
+                    static_cast<double>(row.train.n_groups) :
+                0.0;
+            const double holdout_top1_accuracy =
+                row.holdout.n_groups > 0 ?
+                static_cast<double>(row.holdout.n_top1_matches) /
+                    static_cast<double>(row.holdout.n_groups) :
+                0.0;
             out << row.epoch << '\t'
                 << row.train.n << '\t'
                 << row.train.mse << '\t'
@@ -785,6 +1200,12 @@ void write_summary(const Config &cfg, const Egev4Model &model, const std::map<in
                 << row.holdout.mse << '\t'
                 << row.holdout.mae << '\t'
                 << row.holdout.max_abs_error << '\t'
+                << row.train.n_groups << '\t'
+                << train_top1_accuracy << '\t'
+                << row.train.mean_teacher_regret << '\t'
+                << row.holdout.n_groups << '\t'
+                << holdout_top1_accuracy << '\t'
+                << row.holdout.mean_teacher_regret << '\t'
                 << row.n_initialized << '\t'
                 << row.elapsed_ms << "\n";
         }
@@ -807,17 +1228,39 @@ int main(int argc, char **argv) {
             std::cout << "phase " << phase
                       << " n_train " << result.n_train
                       << " n_holdout " << result.n_holdout
-                      << " best_epoch " << result.best_epoch
-                      << " best_holdout_MAE " << std::setprecision(8) << best_row.holdout.mae
+                      << " best_epoch " << result.best_epoch;
+            if (cfg.prediction_mode == "linear-ranking") {
+                const double top1_accuracy =
+                    best_row.holdout.n_groups > 0 ?
+                    static_cast<double>(best_row.holdout.n_top1_matches) /
+                        static_cast<double>(best_row.holdout.n_groups) :
+                    0.0;
+                std::cout
+                      << " best_holdout_mean_teacher_regret "
+                      << std::setprecision(8)
+                      << best_row.holdout.mean_teacher_regret
+                      << " best_holdout_top1_accuracy "
+                      << top1_accuracy;
+            } else {
+                std::cout
+                      << " best_holdout_MAE "
+                      << std::setprecision(8)
+                      << best_row.holdout.mae;
+            }
+            std::cout
                       << " changed_linear_values " << result.changed_linear_values
                       << " max_abs_delta " << result.max_abs_delta
                       << std::endl;
         }
-        write_egev4(cfg, model, phase_linears);
+        if (!cfg.summary_only) {
+            write_egev4(cfg, model, phase_linears);
+        }
         const uint64_t total_elapsed_ms = now_ms() - start_ms;
         write_summary(cfg, model, phase_results, total_elapsed_ms);
         std::cout << "elapsed_ms " << total_elapsed_ms << std::endl;
-        std::cout << "wrote " << cfg.output_egev4 << std::endl;
+        if (!cfg.summary_only) {
+            std::cout << "wrote " << cfg.output_egev4 << std::endl;
+        }
         std::cout << "summary " << cfg.summary << std::endl;
     } catch (const std::exception &e) {
         std::cerr << "ERROR: " << e.what() << std::endl;

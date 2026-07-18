@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
     std::mt19937 rng(seed);
     uint64_t checked = 0;
     uint64_t mismatches = 0;
+    uint64_t scalar_mismatches = 0;
     int max_abs_diff = 0;
     int min_score = SCORE_INF;
     int max_score = -SCORE_INF;
@@ -71,6 +72,29 @@ int main(int argc, char **argv) {
         while (search.board.n_discs() < HW2) {
             const int diff_score = mid_evaluate_diff(&search);
             const int fresh_score = mid_evaluate(&search.board);
+            const int phase_idx = search.phase();
+            const int num0 = pop_count_ull(search.board.player);
+            int active_ids[N_PATTERN_FEATURES + 1];
+            int n_active = 0;
+            collect_eval77_fm_fast_simd_active_ids(
+                &search.eval.features[search.eval.feature_idx],
+                num0,
+                active_ids,
+                n_active
+            );
+            const Eval77FmFastPhasePtrs phase_ptrs =
+                eval77_fm_fast_phase_ptrs(phase_idx);
+            Eval77FmFastScalarAccum scalar_accum;
+            eval77_fm_fast_clear_scalar(scalar_accum);
+            for (int active_idx = 0; active_idx < n_active; ++active_idx) {
+                eval77_fm_fast_add_id_scalar(
+                    scalar_accum,
+                    phase_ptrs,
+                    active_ids[active_idx]
+                );
+            }
+            const int scalar_score =
+                eval77_fm_fast_finish_scalar(phase_idx, scalar_accum);
             const int diff = std::abs(diff_score - fresh_score);
             if (diff != 0) {
                 if (mismatches < 10) {
@@ -83,6 +107,17 @@ int main(int argc, char **argv) {
                 }
                 ++mismatches;
                 max_abs_diff = std::max(max_abs_diff, diff);
+            }
+            if (diff_score != scalar_score) {
+                if (scalar_mismatches < 10) {
+                    std::cerr << "scalar_mismatch game=" << game
+                              << " discs=" << search.board.n_discs()
+                              << " selected_score=" << diff_score
+                              << " scalar_score=" << scalar_score
+                              << " board=" << search.board.to_str()
+                              << std::endl;
+                }
+                ++scalar_mismatches;
             }
             min_score = std::min(min_score, diff_score);
             max_score = std::max(max_score, diff_score);
@@ -115,10 +150,11 @@ int main(int argc, char **argv) {
               << " seed=" << seed
               << " checked_positions=" << checked
               << " mismatches=" << mismatches
+              << " scalar_mismatches=" << scalar_mismatches
               << " max_abs_diff=" << max_abs_diff
               << " min_score=" << min_score
               << " max_score=" << max_score
               << " checksum=" << checksum
               << std::endl;
-    return mismatches == 0 ? 0 : 2;
+    return mismatches == 0 && scalar_mismatches == 0 ? 0 : 2;
 }

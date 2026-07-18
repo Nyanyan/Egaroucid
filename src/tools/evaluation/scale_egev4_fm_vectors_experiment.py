@@ -1,5 +1,6 @@
 import argparse
 import datetime as _datetime
+import shutil
 import struct
 from pathlib import Path
 
@@ -7,7 +8,6 @@ from pathlib import Path
 TIMESTAMP_SIZE = 14
 MAGIC = b"EGEV"
 N_PHASES = 60
-N_PARAMS_PER_PHASE = 612425
 VERSION_LINEAR_FM_INT16_INT8 = 8
 
 
@@ -44,9 +44,11 @@ def parse_timestamp(text):
 
 
 def read_egev4(path):
-    data = Path(path).read_bytes()
     min_size = TIMESTAMP_SIZE + len(MAGIC) + 16 + N_PHASES * 4 * 2
-    if len(data) < min_size:
+    input_path = Path(path)
+    with input_path.open("rb") as f:
+        data = f.read(min_size)
+    if len(data) != min_size:
         raise ValueError(f"{path} is too short for an EGEV4 header")
 
     timestamp = data[:TIMESTAMP_SIZE].decode("ascii")
@@ -60,7 +62,7 @@ def read_egev4(path):
         raise ValueError(
             f"{path} has unsupported version {version}; expected {VERSION_LINEAR_FM_INT16_INT8}"
         )
-    if n_phases != N_PHASES or params_per_phase != N_PARAMS_PER_PHASE:
+    if n_phases != N_PHASES or params_per_phase <= 0:
         raise ValueError(
             f"{path} has unsupported shape: phases={n_phases}, params_per_phase={params_per_phase}"
         )
@@ -72,13 +74,14 @@ def read_egev4(path):
     vector_scales_offset = linear_scales_offset + N_PHASES * 4
     payload_offset = vector_scales_offset + N_PHASES * 4
     expected_size = payload_offset + n_phases * params_per_phase * (2 + dim)
-    if len(data) != expected_size:
-        raise ValueError(f"{path} has {len(data)} bytes; expected {expected_size}")
+    actual_size = input_path.stat().st_size
+    if actual_size != expected_size:
+        raise ValueError(f"{path} has {actual_size} bytes; expected {expected_size}")
 
     linear_scales = list(struct.unpack_from("<60f", data, linear_scales_offset))
     vector_scales = list(struct.unpack_from("<60f", data, vector_scales_offset))
     return {
-        "data": data,
+        "path": input_path,
         "timestamp": timestamp,
         "version": version,
         "n_phases": n_phases,
@@ -91,10 +94,6 @@ def read_egev4(path):
 
 
 def write_scaled_egev4(input_info, output_path, phases, vector_multiplier, timestamp):
-    output = bytearray(input_info["data"])
-    if timestamp is not None:
-        output[:TIMESTAMP_SIZE] = timestamp.encode("ascii")
-
     vector_scales = list(input_info["vector_scales"])
     before_after = []
     for phase in phases:
@@ -104,11 +103,16 @@ def write_scaled_egev4(input_info, output_path, phases, vector_multiplier, times
         before_after.append((phase, before, after))
 
     offset = input_info["vector_scales_offset"]
-    output[offset:offset + N_PHASES * 4] = struct.pack("<60f", *vector_scales)
-
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_bytes(output)
+    if output_path.resolve() == input_info["path"].resolve():
+        raise ValueError("input and output paths must differ")
+    shutil.copyfile(input_info["path"], output_path)
+    with output_path.open("r+b") as f:
+        if timestamp is not None:
+            f.write(timestamp.encode("ascii"))
+        f.seek(offset)
+        f.write(struct.pack("<60f", *vector_scales))
     return before_after
 
 
