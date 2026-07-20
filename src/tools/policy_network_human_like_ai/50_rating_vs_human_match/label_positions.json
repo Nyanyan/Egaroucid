@@ -2,98 +2,98 @@
   "version": 1,
   "positions": {
     "alpha=0.0": {
-      "dx": -15.24,
-      "dy": 43.2,
+      "dx": -28.2,
+      "dy": 40.32,
       "horizontal_alignment": "left",
       "vertical_alignment": "center"
     },
     "alpha=0.2": {
-      "dx": 83.52,
-      "dy": 65.64,
+      "dx": 59.04,
+      "dy": 67.56,
       "horizontal_alignment": "center",
       "vertical_alignment": "top"
     },
     "alpha=0.4": {
-      "dx": -33.96,
-      "dy": 27.36,
+      "dx": -76.2,
+      "dy": 37.44,
       "horizontal_alignment": "left",
       "vertical_alignment": "center"
     },
     "alpha=0.6": {
-      "dx": -15.0,
-      "dy": 0.0,
+      "dx": -9.24,
+      "dy": -32.16,
       "horizontal_alignment": "right",
       "vertical_alignment": "center"
     },
     "alpha=0.8": {
-      "dx": -15.0,
-      "dy": 0.0,
+      "dx": -17.88,
+      "dy": -34.08,
       "horizontal_alignment": "right",
       "vertical_alignment": "center"
     },
     "alpha=1.0": {
-      "dx": 15.0,
-      "dy": 0.0,
+      "dx": -100.68,
+      "dy": 31.68,
       "horizontal_alignment": "left",
       "vertical_alignment": "center"
     },
     "level 1": {
-      "dx": 15.0,
-      "dy": 0.0,
+      "dx": -91.56,
+      "dy": 37.44,
       "horizontal_alignment": "left",
       "vertical_alignment": "center"
     },
     "level 11": {
-      "dx": -26.52,
-      "dy": 11.52,
+      "dx": 41.16,
+      "dy": -67.68,
       "horizontal_alignment": "right",
       "vertical_alignment": "center"
     },
     "level 13": {
-      "dx": 0.96,
-      "dy": -14.04,
+      "dx": 36.0,
+      "dy": -60.6,
       "horizontal_alignment": "center",
       "vertical_alignment": "top"
     },
     "level 15": {
-      "dx": -139.68,
-      "dy": 50.28,
+      "dx": -117.12,
+      "dy": 35.88,
       "horizontal_alignment": "center",
       "vertical_alignment": "top"
     },
     "level 17": {
       "dx": 36.64,
-      "dy": 2.4,
+      "dy": -19.2,
       "horizontal_alignment": "left",
       "vertical_alignment": "center"
     },
     "level 19": {
-      "dx": 35.04,
-      "dy": -22.24,
+      "dx": 43.68,
+      "dy": -73.6,
       "horizontal_alignment": "center",
       "vertical_alignment": "top"
     },
     "level 3": {
-      "dx": 15.0,
-      "dy": 0.0,
+      "dx": 12.12,
+      "dy": -33.6,
       "horizontal_alignment": "left",
       "vertical_alignment": "center"
     },
     "level 5": {
-      "dx": -15.0,
-      "dy": 0.0,
+      "dx": -2.04,
+      "dy": -31.2,
       "horizontal_alignment": "right",
       "vertical_alignment": "center"
     },
     "level 7": {
-      "dx": -13.56,
-      "dy": 14.4,
+      "dx": -19.32,
+      "dy": 28.8,
       "horizontal_alignment": "right",
       "vertical_alignment": "center"
     },
     "level 9": {
-      "dx": 10.08,
-      "dy": -29.4,
+      "dx": -52.8,
+      "dy": -48.12,
       "horizontal_alignment": "center",
       "vertical_alignment": "top"
     }
