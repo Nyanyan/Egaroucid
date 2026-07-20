@@ -566,9 +566,10 @@ def main() -> None:
         },
         "ranking": {
             "blend": (
-                "合法手上で alpha * policy_logit + "
-                "(1-alpha) * (Egaroucid score / temperature) "
-                "を直接順位付けするlog空間計算"
+                "重み付き幾何平均で合成した方策と同じ着手順位を、"
+                "確率を直接乗算せず、alpha * Policy Networkの"
+                "変換前出力 + (1-alpha) * "
+                "(Egaroucid評価値 / temperature) で計算する"
             ),
             "standalone_levels_1_to_19": (
                 "Consoleへ直接要求したhint 3の出力順"
