@@ -15,12 +15,14 @@ from plot_rating_vs_human_match import (
     DEFAULT_INPUT,
     DEFAULT_LABEL_POSITIONS,
     LABEL_FONT_SIZE,
+    LEADER_LINE_THRESHOLD_POINTS,
     LabelEditor,
     LabelPosition,
     SERIES_STYLES,
     TITLE_FONT_SIZE,
     annotation_position,
     create_plot,
+    label_bbox,
     label_candidates,
     load_label_positions,
     plot_results,
@@ -97,7 +99,7 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         figure.canvas.draw()
         renderer = figure.canvas.get_renderer()
         boxes = {
-            label: annotation.get_window_extent(renderer)
+            label: label_bbox(annotation, renderer)
             for label, annotation in annotations.items()
         }
         overlaps = [
@@ -109,6 +111,21 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         plt.close(figure)
 
         self.assertEqual([], overlaps)
+
+    def test_leader_lines_are_shown_only_for_distant_labels(self) -> None:
+        results = read_results(DEFAULT_INPUT)
+        valid_labels = {result.label for result in results}
+        positions = load_label_positions(DEFAULT_LABEL_POSITIONS, valid_labels)
+        figure, annotations = create_plot(results, positions)
+
+        self.assertFalse(annotations["level 1"].arrow_patch.get_visible())
+        self.assertTrue(annotations["level 17"].arrow_patch.get_visible())
+        self.assertTrue(annotations["level 19"].arrow_patch.get_visible())
+        self.assertGreater(
+            abs(positions["level 17"].dx),
+            LEADER_LINE_THRESHOLD_POINTS,
+        )
+        plt.close(figure)
 
     def test_position_file_round_trip(self) -> None:
         positions = {
@@ -145,6 +162,7 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
                 start.dy,
             )
             editor.on_motion(SimpleNamespace(x=125.0, y=80.0))
+            self.assertTrue(annotation.arrow_patch.get_visible())
             editor.on_release(SimpleNamespace())
             editor.save()
             saved = load_label_positions(positions_path, valid_labels)

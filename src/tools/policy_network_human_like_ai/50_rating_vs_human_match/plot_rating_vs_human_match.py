@@ -13,7 +13,7 @@ import sys
 
 import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
-from matplotlib.text import Annotation
+from matplotlib.text import Annotation, Text
 from matplotlib.transforms import Bbox
 import numpy as np
 
@@ -27,6 +27,7 @@ TITLE_FONT_SIZE = 48
 AXIS_LABEL_FONT_SIZE = 38
 LABEL_FONT_SIZE = 30
 MARKER_DIAMETER_POINTS = 16.0
+LEADER_LINE_THRESHOLD_POINTS = 18.0
 
 
 @dataclass(frozen=True)
@@ -247,7 +248,7 @@ def add_label_annotation(
     position: LabelPosition,
 ) -> Annotation:
     style = SERIES_STYLES[result.series]
-    return axis.annotate(
+    annotation = axis.annotate(
         result.label.replace("alpha", "α"),
         (result.rating, result.top1),
         xytext=(position.dx, position.dy),
@@ -263,8 +264,31 @@ def add_label_annotation(
             "edgecolor": "none",
             "alpha": 1.0,
         },
+        arrowprops={
+            "arrowstyle": "-",
+            "color": style["color"],
+            "linewidth": 2.0,
+            "alpha": 0.8,
+            "shrinkA": 4.0,
+            "shrinkB": MARKER_DIAMETER_POINTS / 2.0,
+            "zorder": 2.5,
+        },
         zorder=5,
     )
+    update_leader_line(annotation)
+    return annotation
+
+
+def update_leader_line(annotation: Annotation) -> None:
+    if annotation.arrow_patch is None:
+        return
+    dx, dy = annotation.xyann
+    distance = math.hypot(float(dx), float(dy))
+    annotation.arrow_patch.set_visible(distance > LEADER_LINE_THRESHOLD_POINTS)
+
+
+def label_bbox(annotation: Annotation, renderer: object) -> Bbox:
+    return Text.get_window_extent(annotation, renderer)
 
 
 def annotation_position(annotation: Annotation) -> LabelPosition:
@@ -305,7 +329,7 @@ def place_labels_without_overlap(
         annotation = add_label_annotation(axis, result, position)
         annotation.update_positions(renderer)
         blocked_boxes.append(
-            padded_bbox(annotation.get_window_extent(renderer), 3.0, 2.0)
+            padded_bbox(label_bbox(annotation, renderer), 3.0, 2.0)
         )
         annotations[result.label] = annotation
 
@@ -335,7 +359,7 @@ def place_labels_without_overlap(
             )
             annotation.update_positions(renderer)
             label_box = padded_bbox(
-                annotation.get_window_extent(renderer), 3.0, 2.0
+                label_bbox(annotation, renderer), 3.0, 2.0
             )
             inside_axes = (
                 axes_box.x0 <= label_box.x0
@@ -542,6 +566,7 @@ class LabelEditor:
             start_dx + (float(event_x) - start_x) * pixels_to_points,
             start_dy + (float(event_y) - start_y) * pixels_to_points,
         )
+        update_leader_line(annotation)
         self.figure.canvas.draw_idle()
 
     def on_release(self, _event: object) -> None:
@@ -565,6 +590,7 @@ class LabelEditor:
             annotation.xyann = (position.dx, position.dy)
             annotation.set_ha(position.horizontal_alignment)
             annotation.set_va(position.vertical_alignment)
+            update_leader_line(annotation)
         self.figure.canvas.draw_idle()
         print("restored label positions used at startup", file=sys.stderr)
 
