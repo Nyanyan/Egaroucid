@@ -446,6 +446,8 @@ class EgaroucidHintRunner:
         command_stagger_state=None,
         command_semaphore=None,
         cancel_event=None,
+        minimum_available_memory_mib: Optional[float] = None,
+        estimated_process_memory_mib: float = 0.0,
     ):
         self.exe = Path(exe)
         self.level = int(level)
@@ -459,6 +461,25 @@ class EgaroucidHintRunner:
         self.command_stagger_state = command_stagger_state
         self.command_semaphore = command_semaphore
         self.cancel_event = cancel_event
+        self.minimum_available_memory_mib = (
+            None
+            if minimum_available_memory_mib is None
+            else float(minimum_available_memory_mib)
+        )
+        self.estimated_process_memory_mib = float(
+            estimated_process_memory_mib
+        )
+        if (
+            self.minimum_available_memory_mib is not None
+            and self.minimum_available_memory_mib <= 0.0
+        ):
+            raise ValueError(
+                "minimum_available_memory_mib must be positive"
+            )
+        if self.estimated_process_memory_mib < 0.0:
+            raise ValueError(
+                "estimated_process_memory_mib must not be negative"
+            )
         self.local_stagger_lock = threading.Lock()
         self.local_next_command_time = time.monotonic()
         self.proc: Optional[subprocess.Popen] = None
@@ -479,6 +500,26 @@ class EgaroucidHintRunner:
     def _ensure_process(self) -> subprocess.Popen:
         if self.proc is not None and self.proc.poll() is None:
             return self.proc
+        if self.minimum_available_memory_mib is not None:
+            try:
+                import psutil
+            except ImportError as error:
+                raise RuntimeError(
+                    "psutil is required for the Egaroucid memory guard"
+                ) from error
+            available_mib = (
+                psutil.virtual_memory().available / (1024.0 * 1024.0)
+            )
+            required_mib = (
+                self.minimum_available_memory_mib
+                + self.estimated_process_memory_mib
+            )
+            if available_mib < required_mib:
+                raise RuntimeError(
+                    "available memory is too low to start Egaroucid: "
+                    f"{available_mib:.0f} MiB available, "
+                    f"{required_mib:.0f} MiB required before spawn"
+                )
         self.proc = subprocess.Popen(
             self.command(),
             stdin=subprocess.PIPE,
@@ -842,6 +883,8 @@ class BlendedPolicy:
         hint_command_stagger_lock=None,
         hint_command_stagger_state=None,
         hint_command_semaphore=None,
+        minimum_available_memory_mib: Optional[float] = None,
+        estimated_egaroucid_memory_mib: float = 0.0,
     ):
         self.policy_client = None
         if policy_server_port is not None:
@@ -863,6 +906,8 @@ class BlendedPolicy:
             command_stagger_lock=hint_command_stagger_lock,
             command_stagger_state=hint_command_stagger_state,
             command_semaphore=hint_command_semaphore,
+            minimum_available_memory_mib=minimum_available_memory_mib,
+            estimated_process_memory_mib=estimated_egaroucid_memory_mib,
         )
         self.score_temperature = float(score_temperature)
         if self.score_temperature <= 0.0:

@@ -48,6 +48,12 @@ class BlendGtpEngine:
             policy_server_timeout_sec=args.policy_server_timeout_sec,
             score_temperature=args.score_temperature,
             legal_mask_policy=not args.no_legal_mask_policy,
+            minimum_available_memory_mib=(
+                args.minimum_available_memory_mib
+            ),
+            estimated_egaroucid_memory_mib=(
+                args.estimated_egaroucid_memory_mib
+            ),
         )
 
     def clear_board(self) -> str:
@@ -187,6 +193,16 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--egaroucid-level", type=int, default=21)
     parser.add_argument("--egaroucid-threads", type=int, default=1)
     parser.add_argument("--egaroucid-timeout-sec", type=float, default=30.0)
+    parser.add_argument(
+        "--minimum-available-memory-mib",
+        type=float,
+        default=None,
+    )
+    parser.add_argument(
+        "--estimated-egaroucid-memory-mib",
+        type=float,
+        default=0.0,
+    )
     parser.add_argument("--cache-egaroucid", action="store_true")
     parser.add_argument("--hint-cache-db", type=Path, default=None)
     parser.add_argument("--policy-server-host", default=None)

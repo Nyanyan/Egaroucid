@@ -1,243 +1,179 @@
 #!/usr/bin/env python3
-"""
-Round-robin strength test for Egaroucid 7.8.1 levels and blended policy engines.
+"""Fast round-robin strength test for native and blended Egaroucid policies.
 
-Default settings follow the research request:
-  - no uniformly random legal-move player
-  - Egaroucid levels: 1, 3, 5, ..., 19
-  - alpha: 0.0, 0.2, ..., 1.0
-  - XOT color-swapped match sets per pair: 100
-  - parallel matches: 16
-  - at most two engine processes per player
-  - move stone loss is not measured during the tournament
-
-Each task plays two color-swapped games from the same XOT opening. The requested
-match-sets-per-pair value is counted as paired match sets. One paired match set
-contains two actual games and is scored by the average disc difference.
-
-Every actual-game transcript is saved so that move stone loss can be measured
-later. Passing --measure-move-stone-loss enables the former in-tournament
-measurement against alpha=0.0.
+One match set consists of two games from the same XOT opening with colors
+swapped. The sign of the two-game mean disc difference determines the set
+result. The set, not either individual game, is the independent observation
+used for the reported score and its 95% confidence interval.
 """
 
 from __future__ import annotations
 
 import argparse
-import atexit
-from collections import deque
-import csv
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from dataclasses import dataclass
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+import hashlib
+import importlib.metadata
 import importlib.util
 import json
 import os
 from pathlib import Path
 import queue
 import random
-import signal
+import sqlite3
 import subprocess
 import sys
 import threading
 import time
 import traceback
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
-
-import numpy as np
+from typing import Dict, List, Optional, Sequence, Tuple
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-HUMAN_LIKE_DIR = SCRIPT_DIR.parents[0]
+HUMAN_LIKE_DIR = SCRIPT_DIR.parent
 REPO_ROOT = SCRIPT_DIR.parents[3]
 BIN_DIR = REPO_ROOT / "bin"
 BLEND_DIR = HUMAN_LIKE_DIR / "30_blend_with_egaroucid"
 sys.path.insert(0, str(BLEND_DIR))
-sys.path.insert(0, str(BIN_DIR))
 
-from blend_policy_with_egaroucid import BLACK, WHITE, BoardState, coord_to_policy, default_egaroucid_exe, default_weights_file, policy_to_coord, side_to_gtp_color  # noqa: E402
-from elo_rating_backcal import fit_elo_from_winrates_with_interval  # noqa: E402
+from blend_policy_with_egaroucid import (  # noqa: E402
+    default_egaroucid_exe,
+    default_weights_file,
+)
+from strength_engine import (  # noqa: E402
+    AvailableMemoryLimitError,
+    GameRunner,
+    ProcessManager,
+    available_memory_mib,
+    validate_xot_opening,
+)
+from strength_reporting import (  # noqa: E402
+    PerformanceMonitor,
+    build_text_report,
+    estimate_elos,
+    format_elapsed,
+    write_outputs,
+)
+from strength_tournament import (  # noqa: E402
+    GameResult,
+    MatchSetTask,
+    PendingTaskQueue,
+    PlayerSpec,
+    ResultStore,
+    TournamentStats,
+    atomic_write_json,
+    combine_color_games,
+    conservative_score_half_width,
+    ensure_manifest,
+    limit_tasks,
+    make_manifest,
+    make_match_set_tasks,
+    sha256_file,
+    target_match_sets_by_pair,
+)
 
 
-QUIT_TIMEOUT_SEC = 2.0
-KILL_TIMEOUT_SEC = 5.0
-PROCESS_POOL_GET_TIMEOUT_SEC = 0.2
-
-process_registry = set()
-process_registry_lock = threading.Lock()
-shutdown_event = threading.Event()
-results_lock = threading.Lock()
-low_memory_event = threading.Event()
-minimum_available_memory_mib = 0.0
+IMPLEMENTATION_REVISION = "clean-strength-tournament-v3"
 
 
-class AvailableMemoryLimitError(RuntimeError):
-    pass
+class OutputRunLock:
+    """Operating-system lock preventing two writers in one output directory."""
 
+    def __init__(self, output_dir: Path):
+        self.path = output_dir / "strength_run.lock"
+        self.stream = None
 
-def available_memory_mib() -> Optional[float]:
-    try:
-        import psutil
-    except ImportError:
-        return None
-    return float(psutil.virtual_memory().available / (1024.0 * 1024.0))
-
-
-class PerformanceMonitor:
-    def __init__(self, output_dir: Path, interval_sec: float, minimum_available_mib: float):
-        self.output_dir = output_dir
-        self.interval_sec = float(interval_sec)
-        self.minimum_available_mib = float(minimum_available_mib)
-        self.stop_event = threading.Event()
-        self.thread: Optional[threading.Thread] = None
-        self.samples: List[dict] = []
-        self.started_at = 0.0
-
-    def start(self) -> None:
+    def __enter__(self) -> "OutputRunLock":
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.stream = self.path.open("a+b")
+        if self.path.stat().st_size == 0:
+            self.stream.write(b"\0")
+            self.stream.flush()
+        self.stream.seek(0)
         try:
-            import psutil  # noqa: F401
-        except ImportError:
-            return
-        self.started_at = time.time()
-        self.thread = threading.Thread(target=self._loop, name="performance-monitor", daemon=True)
-        self.thread.start()
+            if os.name == "nt":
+                import msvcrt
 
-    @staticmethod
-    def _gpu_sample() -> Tuple[Optional[float], Optional[float]]:
-        try:
-            proc = subprocess.run(
-                [
-                    "nvidia-smi",
-                    "--query-gpu=utilization.gpu,memory.used",
-                    "--format=csv,noheader,nounits",
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-                timeout=5.0,
-            )
-            if proc.returncode != 0:
-                return None, None
-            first_line = proc.stdout.strip().splitlines()[0]
-            utilization, memory_mib = [float(part.strip()) for part in first_line.split(",")[:2]]
-            return utilization, memory_mib
-        except (OSError, ValueError, IndexError, subprocess.TimeoutExpired):
-            return None, None
+                msvcrt.locking(self.stream.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
 
-    def _loop(self) -> None:
-        import psutil
-
-        psutil.cpu_percent(interval=None)
-        sample_idx = 0
-        last_gpu = (None, None)
-        while not self.stop_event.wait(self.interval_sec):
-            if sample_idx % max(1, round(5.0 / self.interval_sec)) == 0:
-                last_gpu = self._gpu_sample()
-            memory = psutil.virtual_memory()
-            try:
-                children = psutil.Process(os.getpid()).children(recursive=True)
-            except psutil.Error:
-                children = []
-            self.samples.append(
-                {
-                    "elapsed_sec": time.time() - self.started_at,
-                    "cpu_percent": float(psutil.cpu_percent(interval=None)),
-                    "system_memory_used_mib": float(memory.used / (1024.0 * 1024.0)),
-                    "available_memory_mib": float(memory.available / (1024.0 * 1024.0)),
-                    "system_memory_percent": float(memory.percent),
-                    "gpu_percent": last_gpu[0],
-                    "gpu_memory_used_mib": last_gpu[1],
-                    "child_processes": len(children),
-                }
-            )
-            sample = self.samples[-1]
-            if sample["available_memory_mib"] < self.minimum_available_mib:
-                low_memory_event.set()
-            self.output_dir.mkdir(parents=True, exist_ok=True)
-            with (self.output_dir / "performance_live.json").open("w", encoding="utf-8") as f:
-                json.dump(
-                    {
-                        **sample,
-                        "minimum_available_memory_mib": self.minimum_available_mib,
-                        "low_memory_limit_reached": low_memory_event.is_set(),
-                    },
-                    f,
-                    ensure_ascii=False,
-                    indent=2,
+                fcntl.flock(
+                    self.stream.fileno(),
+                    fcntl.LOCK_EX | fcntl.LOCK_NB,
                 )
-            sample_idx += 1
+        except OSError as error:
+            self.stream.close()
+            self.stream = None
+            raise RuntimeError(
+                f"another tournament is using {self.path.parent}"
+            ) from error
+        return self
 
-    @staticmethod
-    def _average(samples: Sequence[dict], key: str) -> Optional[float]:
-        values = [float(sample[key]) for sample in samples if sample.get(key) is not None]
-        return sum(values) / len(values) if values else None
-
-    @staticmethod
-    def _maximum(samples: Sequence[dict], key: str) -> Optional[float]:
-        values = [float(sample[key]) for sample in samples if sample.get(key) is not None]
-        return max(values) if values else None
-
-    @staticmethod
-    def _minimum(samples: Sequence[dict], key: str) -> Optional[float]:
-        values = [float(sample[key]) for sample in samples if sample.get(key) is not None]
-        return min(values) if values else None
-
-    def stop(self) -> None:
-        if self.thread is None:
+    def __exit__(self, exc_type, exc, traceback_object) -> None:
+        if self.stream is None:
             return
-        self.stop_event.set()
-        self.thread.join(timeout=max(10.0, self.interval_sec * 2.0))
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        fields = [
-            "elapsed_sec",
-            "cpu_percent",
-            "system_memory_used_mib",
-            "available_memory_mib",
-            "system_memory_percent",
-            "gpu_percent",
-            "gpu_memory_used_mib",
-            "child_processes",
-        ]
-        with (self.output_dir / "performance_samples.csv").open("w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=fields)
-            writer.writeheader()
-            writer.writerows(self.samples)
-        summary = {
-            "sample_interval_sec": self.interval_sec,
-            "samples": len(self.samples),
-            "average_cpu_percent": self._average(self.samples, "cpu_percent"),
-            "maximum_cpu_percent": self._maximum(self.samples, "cpu_percent"),
-            "average_system_memory_used_mib": self._average(self.samples, "system_memory_used_mib"),
-            "maximum_system_memory_used_mib": self._maximum(self.samples, "system_memory_used_mib"),
-            "minimum_available_memory_mib": self._minimum(self.samples, "available_memory_mib"),
-            "configured_minimum_available_memory_mib": self.minimum_available_mib,
-            "low_memory_limit_reached": low_memory_event.is_set(),
-            "average_gpu_percent": self._average(self.samples, "gpu_percent"),
-            "maximum_gpu_percent": self._maximum(self.samples, "gpu_percent"),
-            "maximum_gpu_memory_used_mib": self._maximum(self.samples, "gpu_memory_used_mib"),
-            "maximum_child_processes": self._maximum(self.samples, "child_processes"),
-        }
-        with (self.output_dir / "performance_summary.json").open("w", encoding="utf-8") as f:
-            json.dump(summary, f, ensure_ascii=False, indent=2)
+        try:
+            self.stream.seek(0)
+            if os.name == "nt":
+                import msvcrt
+
+                msvcrt.locking(self.stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                fcntl.flock(self.stream.fileno(), fcntl.LOCK_UN)
+        finally:
+            self.stream.close()
+            self.stream = None
 
 
-@dataclass(frozen=True)
-class Task:
-    task_id: int
-    p0_idx: int
-    p1_idx: int
-    opening: str
-    actual_games: int
+def clear_abandoned_hint_claims(path: Path) -> int:
+    """Remove claims left by a killed run after the output lock is held."""
+
+    if not path.exists():
+        return 0
+    connection = sqlite3.connect(str(path), timeout=60.0)
+    try:
+        table_exists = connection.execute(
+            "SELECT 1 FROM sqlite_master "
+            "WHERE type = 'table' AND name = 'hint_claims'"
+        ).fetchone()
+        if table_exists is None:
+            return 0
+        cursor = connection.execute("DELETE FROM hint_claims")
+        connection.commit()
+        return max(0, int(cursor.rowcount))
+    finally:
+        connection.close()
 
 
 def parse_int_list(text: str) -> List[int]:
-    if text.strip() == "":
-        return []
-    return [int(token) for token in text.split(",") if token.strip()]
+    values = [int(token.strip()) for token in text.split(",") if token.strip()]
+    if len(values) != len(set(values)):
+        raise ValueError(f"duplicate integer in {text!r}")
+    return values
 
 
 def parse_float_list(text: str) -> List[float]:
-    if text.strip() == "":
-        return []
-    return [float(token) for token in text.split(",") if token.strip()]
+    values = [
+        float(token.strip()) for token in text.split(",") if token.strip()
+    ]
+    if len(values) != len(set(values)):
+        raise ValueError(f"duplicate value in {text!r}")
+    return values
+
+
+def format_alpha(alpha: float) -> str:
+    if alpha == 0.0:
+        return "0.0"
+    if alpha == 1.0:
+        return "1.0"
+    # repr(float) is the shortest text that round-trips to the same binary
+    # value; distinct accepted alpha values therefore cannot collide merely
+    # because a display formatter rounded them.
+    return repr(alpha)
 
 
 def repo_relative(path: Path) -> str:
@@ -248,140 +184,220 @@ def repo_relative(path: Path) -> str:
 
 
 def display_command(command: Sequence[str]) -> List[str]:
-    result = []
+    displayed: List[str] = []
     for part in command:
         try:
             if Path(part).resolve() == Path(sys.executable).resolve():
-                result.append("python")
+                displayed.append("python")
                 continue
         except (OSError, RuntimeError):
             pass
         path = Path(part)
-        if path.is_absolute() or path.exists():
-            result.append(repo_relative(path))
-        else:
-            result.append(part)
-    return result
+        displayed.append(
+            repo_relative(path)
+            if path.is_absolute() or path.exists()
+            else part
+        )
+    try:
+        port_index = displayed.index("--policy-server-port") + 1
+    except ValueError:
+        return displayed
+    if port_index < len(displayed) and displayed[port_index] == "0":
+        displayed[port_index] = "<managed-at-runtime>"
+    return displayed
 
 
-def default_output_dir() -> Path:
-    return SCRIPT_DIR / "output" / time.strftime("strength_%Y%m%d_%H%M%S")
+def read_openings(path: Path, seed: int) -> List[str]:
+    openings = [
+        line.strip().lower()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if not openings:
+        raise ValueError(f"no XOT openings found in {path}")
+    random.Random(seed).shuffle(openings)
+    return openings
 
 
-def display_path(path: Path) -> str:
-    return repo_relative(Path(path))
+def validate_scheduled_openings(
+    openings: Sequence[str],
+    match_sets_per_pair: int,
+) -> None:
+    if not openings:
+        raise ValueError("at least one XOT opening is required")
+    scheduled = [
+        openings[index % len(openings)]
+        for index in range(match_sets_per_pair)
+    ]
+    if len(set(scheduled)) != len(scheduled):
+        raise ValueError(
+            "each match-set index must use a distinct XOT opening for the "
+            "reported confidence intervals; provide at least "
+            f"{match_sets_per_pair} unique openings"
+        )
+    for set_index, opening in enumerate(scheduled):
+        try:
+            validate_xot_opening(opening)
+        except ValueError as error:
+            raise ValueError(
+                f"invalid XOT opening at scheduled set index {set_index}: "
+                f"{opening!r}"
+            ) from error
 
 
-class Player:
-    def __init__(
-        self,
-        name: str,
-        command: List[str],
-        processes_per_player: int,
-        close_after_game: bool,
-        setboard_before_genmove: bool,
-        alpha: Optional[float] = None,
-        random_seed: Optional[int] = None,
-        reports_move_stone_loss: bool = False,
-        measures_move_stone_loss: bool = False,
+def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
+    baseline_levels = parse_int_list(args.baseline_levels)
+    alphas = parse_float_list(args.alphas)
+    if any(not 0 <= level <= 60 for level in baseline_levels):
+        raise ValueError("baseline levels must be between 0 and 60")
+    if any(not 0.0 <= alpha <= 1.0 for alpha in alphas):
+        raise ValueError("all alpha values must be between 0 and 1")
+    if len(baseline_levels) + len(alphas) < 2:
+        raise ValueError("at least two total participants are required")
+    if args.match_sets_per_pair < 1:
+        raise ValueError("--match-sets-per-pair must be positive")
+    if args.parallel_match_sets < 1:
+        raise ValueError("--parallel-match-sets must be positive")
+    for option, value in (
+        ("--baseline-processes-per-player", args.baseline_processes_per_player),
+        ("--blend-processes-per-player", args.blend_processes_per_player),
     ):
-        self.name = name
-        self.command = command
-        self.processes: List[Optional[subprocess.Popen]] = []
-        self.proc_pool = [queue.Queue(), queue.Queue()]
-        self.proc_color_started = [0, 0]
-        self.lock = threading.Lock()
-        self.results: List[List[int]] = []
-        self.disc_diff: List[float] = []
-        self.n_played: List[int] = []
-        self.move_stone_loss: List[float] = []
-        self.move_stone_loss_count: List[int] = []
-        self.move_stone_loss_missing_count: List[int] = []
-        self.processes_per_player = processes_per_player
-        self.close_after_game = close_after_game
-        self.setboard_before_genmove = setboard_before_genmove
-        self.alpha = alpha
-        self.random_seed = random_seed
-        self.reports_move_stone_loss = reports_move_stone_loss
-        self.measures_move_stone_loss = measures_move_stone_loss
-
-    def start_processes(self) -> None:
-        # Processes are started lazily by acquire_process_idx(). Prestarting one
-        # process per player slot would be too memory-heavy for 32 parallel
-        # matches with blended engines.
-        return
-
-    def try_start_process_for_color(self, color_pool: int) -> Optional[int]:
-        if self.random_seed is not None:
-            raise RuntimeError("the internal random player does not use an engine process")
-        half = self.processes_per_player // 2
-        with self.lock:
-            if self.proc_color_started[color_pool] >= half:
-                return None
-            proc_idx = len(self.processes)
-            self.processes.append(start_engine(self.command))
-            self.proc_color_started[color_pool] += 1
-            return proc_idx
-
-
-def format_elapsed(seconds: float) -> str:
-    seconds = int(max(0, seconds))
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    seconds %= 60
-    if hours:
-        return f"{hours}:{minutes:02d}:{seconds:02d}"
-    return f"{minutes}:{seconds:02d}"
+        if value < 2 or value % 2:
+            raise ValueError(f"{option} must be an even number >= 2")
+    if args.engine_threads < 1:
+        raise ValueError("--engine-threads must be positive")
+    if not 0 <= args.blend_egaroucid_level <= 60:
+        raise ValueError("--blend-egaroucid-level must be between 0 and 60")
+    if args.score_temperature <= 0.0:
+        raise ValueError("--score-temperature must be positive")
+    if args.status_every_match_sets < 1:
+        raise ValueError("--status-every-match-sets must be positive")
+    if args.task_retries < 0:
+        raise ValueError("--task-retries must be non-negative")
+    if args.time_limit_sec is not None and args.time_limit_sec <= 0.0:
+        raise ValueError("--time-limit-sec must be positive")
+    if args.gtp_command_timeout_sec <= 0.0:
+        raise ValueError("--gtp-command-timeout-sec must be positive")
+    if args.egaroucid_hint_timeout_sec <= 0.0:
+        raise ValueError("--egaroucid-hint-timeout-sec must be positive")
+    if args.policy_server_timeout_sec <= 0.0:
+        raise ValueError("--policy-server-timeout-sec must be positive")
+    if args.policy_server_startup_timeout_sec <= 0.0:
+        raise ValueError(
+            "--policy-server-startup-timeout-sec must be positive"
+        )
+    if args.policy_max_batch_size < 1:
+        raise ValueError("--policy-max-batch-size must be positive")
+    if args.policy_batch_wait_ms < 0.0:
+        raise ValueError("--policy-batch-wait-ms must be non-negative")
+    if args.policy_inference_threads < 1:
+        raise ValueError("--policy-inference-threads must be positive")
+    if args.performance_sample_interval_sec <= 0.0:
+        raise ValueError(
+            "--performance-sample-interval-sec must be positive"
+        )
+    if args.minimum_available_memory_mib <= 0.0:
+        raise ValueError("--minimum-available-memory-mib must be positive")
+    if args.estimated_engine_memory_mib <= 0.0:
+        raise ValueError("--estimated-engine-memory-mib must be positive")
+    if args.estimated_wrapper_memory_mib <= 0.0:
+        raise ValueError("--estimated-wrapper-memory-mib must be positive")
+    if args.estimated_policy_server_memory_mib <= 0.0:
+        raise ValueError(
+            "--estimated-policy-server-memory-mib must be positive"
+        )
+    return baseline_levels, alphas
 
 
-def start_engine(command: List[str], env: Optional[dict] = None) -> subprocess.Popen:
-    popen_kwargs = {
-        "stdin": subprocess.PIPE,
-        "stdout": subprocess.PIPE,
-        "stderr": subprocess.DEVNULL,
-        "text": True,
-        "bufsize": 1,
+def policy_model_path(args: argparse.Namespace) -> Path:
+    if args.policy_model is not None:
+        return Path(args.policy_model)
+    return Path(args.weights).with_name("selected_model.h5")
+
+
+def validate_input_files(args: argparse.Namespace, alphas: Sequence[float]) -> None:
+    required = {
+        "Egaroucid executable": Path(args.egaroucid_exe),
+        "XOT openings": Path(args.openings),
     }
-    if env is not None:
-        popen_kwargs["env"] = env
-    if os.name == "nt":
-        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-    else:
-        popen_kwargs["start_new_session"] = True
-    with process_registry_lock:
-        if shutdown_event.is_set():
-            raise RuntimeError("shutdown in progress")
-        available_mib = available_memory_mib()
-        if available_mib is not None and available_mib < minimum_available_memory_mib:
-            low_memory_event.set()
-            raise AvailableMemoryLimitError(
-                f"available memory {available_mib:.0f} MiB is below "
-                f"the configured minimum {minimum_available_memory_mib:.0f} MiB"
-            )
-        proc = subprocess.Popen(command, **popen_kwargs)
-        process_registry.add(proc)
-        return proc
+    if any(alpha > 0.0 for alpha in alphas):
+        required["policy weights"] = Path(args.weights)
+        if args.policy_backend == "tensorflow":
+            required["policy model"] = policy_model_path(args)
+            if importlib.util.find_spec("tensorflow") is None:
+                raise ModuleNotFoundError(
+                    "TensorFlow is required by --policy-backend tensorflow"
+                )
+    missing = [
+        f"{description}: {path}"
+        for description, path in required.items()
+        if not path.is_file()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            "required tournament input is missing:\n" + "\n".join(missing)
+        )
 
 
-def needs_policy_batch_server(args: argparse.Namespace) -> bool:
-    if args.no_policy_batch_server:
-        return False
-    return any(alpha > 1.0e-12 for alpha in parse_float_list(args.blend_params))
+@dataclass(frozen=True)
+class PolicyServerInfo:
+    port: int
+    backend: str
+    device: str
+
+    @property
+    def runtime(self) -> str:
+        return f"{self.backend}/{self.device}"
 
 
-def start_policy_batch_server(args: argparse.Namespace) -> Tuple[subprocess.Popen, int, str, str]:
-    server_script = (HUMAN_LIKE_DIR / "30_blend_with_egaroucid" / "policy_batch_server.py").resolve()
-    model_path = args.policy_model
-    if model_path is None:
-        model_path = Path(args.weights).with_name("selected_model.h5")
-    stats_path = args.output_dir / "policy_batch_server_stats.json"
+def parse_policy_server_ready(
+    line: str,
+    requested_backend: str,
+    allow_policy_cpu: bool,
+) -> PolicyServerInfo:
+    parts = line.strip().split()
+    if len(parts) != 4 or parts[0] != "READY":
+        raise ValueError(f"invalid policy server READY line: {line!r}")
+    try:
+        port = int(parts[1])
+    except ValueError as error:
+        raise ValueError(
+            f"invalid policy server port in READY line: {line!r}"
+        ) from error
+    if not 1 <= port <= 65535:
+        raise ValueError(f"policy server port is out of range: {port}")
+    backend = parts[2]
+    device = parts[3]
+    if backend != requested_backend:
+        raise ValueError(
+            "policy inference server selected an unexpected backend: "
+            f"requested {requested_backend!r}, got {backend!r}"
+        )
+    if (
+        backend == "tensorflow"
+        and device != "GPU"
+        and not allow_policy_cpu
+    ):
+        raise ValueError(
+            "TensorFlow policy inference started without a GPU; use "
+            "--allow-policy-cpu only when this slower condition is intended"
+        )
+    return PolicyServerInfo(port=port, backend=backend, device=device)
+
+
+def start_policy_server(
+    args: argparse.Namespace,
+    manager: ProcessManager,
+    run_id: str,
+) -> PolicyServerInfo:
+    server_script = BLEND_DIR / "policy_batch_server.py"
     command = [
         sys.executable,
-        str(server_script),
+        str(server_script.resolve()),
         "--weights",
         str(Path(args.weights).resolve()),
         "--model",
-        str(Path(model_path).resolve()),
+        str(policy_model_path(args).resolve()),
         "--backend",
         args.policy_backend,
         "--host",
@@ -393,828 +409,74 @@ def start_policy_batch_server(args: argparse.Namespace) -> Tuple[subprocess.Pope
         "--batch-wait-ms",
         str(args.policy_batch_wait_ms),
         "--stats-path",
-        str(stats_path.resolve()),
+        str(
+            (
+                args.output_dir
+                / f"policy_batch_server_stats_{run_id}.json"
+            ).resolve()
+        ),
     ]
-    env = os.environ.copy()
-    env["TF_CPP_MIN_LOG_LEVEL"] = "2"
-    env["OPENBLAS_NUM_THREADS"] = str(args.policy_inference_threads)
-    env["OMP_NUM_THREADS"] = str(args.policy_inference_threads)
-    proc = start_engine(command, env=env)
-    ready_queue: queue.Queue[str] = queue.Queue()
+    environment = os.environ.copy()
+    environment["TF_CPP_MIN_LOG_LEVEL"] = "2"
+    environment["OPENBLAS_NUM_THREADS"] = str(
+        args.policy_inference_threads
+    )
+    environment["OMP_NUM_THREADS"] = str(args.policy_inference_threads)
+    process = manager.spawn(command, env=environment)
+    ready: queue.Queue[object] = queue.Queue()
 
-    def read_ready() -> None:
+    def read_ready_line() -> None:
         try:
-            ready_queue.put(proc.stdout.readline())
-        except BaseException:
-            ready_queue.put("")
+            if process.stdout is None:
+                ready.put(RuntimeError("policy server stdout is unavailable"))
+            else:
+                ready.put(process.stdout.readline())
+        except BaseException as error:
+            ready.put(error)
 
-    threading.Thread(target=read_ready, daemon=True).start()
+    threading.Thread(
+        target=read_ready_line,
+        name="policy-server-ready",
+        daemon=True,
+    ).start()
     try:
-        line = ready_queue.get(timeout=args.policy_server_startup_timeout_sec).strip()
+        line = ready.get(
+            timeout=args.policy_server_startup_timeout_sec
+        )
     except queue.Empty:
-        close_process(proc, send_quit=False)
-        raise TimeoutError("policy batch server startup timed out")
-    parts = line.split()
-    if len(parts) != 4 or parts[0] != "READY":
-        close_process(proc, send_quit=False)
-        raise RuntimeError(f"policy batch server failed to start: {line!r}")
-    return proc, int(parts[1]), parts[2], parts[3]
-
-
-def unregister_process(proc: subprocess.Popen) -> None:
-    with process_registry_lock:
-        process_registry.discard(proc)
-
-
-def kill_process_tree(proc: subprocess.Popen) -> None:
-    if proc is None or proc.poll() is not None:
-        return
-    if os.name == "nt":
-        try:
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=KILL_TIMEOUT_SEC)
-            if proc.poll() is not None:
-                return
-        except Exception:
-            pass
-    else:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-            return
-        except Exception:
-            pass
+        manager.terminate(process, graceful=False)
+        raise TimeoutError("policy inference server startup timed out")
+    if isinstance(line, BaseException):
+        manager.terminate(process, graceful=False)
+        raise RuntimeError("policy inference server failed to start") from line
     try:
-        proc.kill()
-    except Exception:
-        pass
-
-
-def close_process(proc: subprocess.Popen, send_quit: bool = True) -> None:
-    try:
-        if send_quit and proc.poll() is None and proc.stdin is not None:
-            proc.stdin.write("quit\n")
-            proc.stdin.flush()
-        if send_quit and proc.poll() is None:
-            try:
-                proc.wait(timeout=QUIT_TIMEOUT_SEC)
-            except subprocess.TimeoutExpired:
-                kill_process_tree(proc)
-        elif not send_quit:
-            kill_process_tree(proc)
-    finally:
-        for pipe in (proc.stdin, proc.stdout, proc.stderr):
-            try:
-                if pipe is not None:
-                    pipe.close()
-            except Exception:
-                pass
-        unregister_process(proc)
-
-
-def shutdown_all_processes() -> None:
-    shutdown_event.set()
-    with process_registry_lock:
-        procs = list(process_registry)
-    for proc in procs:
-        close_process(proc)
-
-
-atexit.register(shutdown_all_processes)
-
-
-def restart_process(players: List[Player], player_idx: int, proc_idx: int) -> subprocess.Popen:
-    old_proc = players[player_idx].processes[proc_idx]
-    if old_proc is not None:
-        close_process(old_proc, send_quit=False)
-    new_proc = start_engine(players[player_idx].command)
-    players[player_idx].processes[proc_idx] = new_proc
-    print("restart", players[player_idx].name, "proc", proc_idx, flush=True)
-    return new_proc
-
-
-def send_command(players: List[Player], player_idx: int, proc_idx: int, command: str) -> str:
-    proc = players[player_idx].processes[proc_idx]
-    if proc is None:
-        proc = restart_process(players, player_idx, proc_idx)
-    for _ in range(2):
-        if proc.poll() is not None:
-            proc = restart_process(players, player_idx, proc_idx)
-        try:
-            proc.stdin.write(command)
-            proc.stdin.flush()
-        except (BrokenPipeError, OSError):
-            proc = restart_process(players, player_idx, proc_idx)
-            continue
-        while True:
-            raw = proc.stdout.readline()
-            if raw == "":
-                proc = restart_process(players, player_idx, proc_idx)
-                break
-            line = raw.replace("\r", "").replace("\n", "")
-            if line:
-                return line
-    raise RuntimeError(f"failed to communicate with {players[player_idx].name}: {command.strip()}")
-
-
-def acquire_process_idx(player: Player, color_pool: int) -> int:
-    while True:
-        if shutdown_event.is_set():
-            raise RuntimeError("shutdown in progress")
-        try:
-            return player.proc_pool[color_pool].get_nowait()
-        except queue.Empty:
-            proc_idx = player.try_start_process_for_color(color_pool)
-            if proc_idx is not None:
-                return proc_idx
-        try:
-            return player.proc_pool[color_pool].get(timeout=PROCESS_POOL_GET_TIMEOUT_SEC)
-        except queue.Empty:
-            pass
-
-
-def release_process_idx(player: Player, color_pool: int, proc_idx: int) -> None:
-    if not player.close_after_game:
-        player.proc_pool[color_pool].put(proc_idx)
-        return
-    with player.lock:
-        proc = player.processes[proc_idx]
-        player.processes[proc_idx] = None
-        player.proc_color_started[color_pool] = max(0, player.proc_color_started[color_pool] - 1)
-    if proc is not None:
-        close_process(proc)
-
-
-def parse_gtp_move(line: str) -> str:
-    line = line.strip()
-    if line.startswith("?"):
-        raise RuntimeError(f"engine error: {line}")
-    if line.startswith("="):
-        line = line[1:].strip()
-    if not line:
-        return "pass"
-    return line.split()[-1].lower()
-
-
-def parse_gtp_float(line: str) -> float:
-    line = line.strip()
-    if line.startswith("?"):
-        raise RuntimeError(f"engine error: {line}")
-    if line.startswith("="):
-        line = line[1:].strip()
-    return float(line)
-
-
-def parse_gtp_optional_float(line: str) -> Optional[float]:
-    line = line.strip()
-    if line.startswith("?"):
-        raise RuntimeError(f"engine error: {line}")
-    if line.startswith("="):
-        line = line[1:].strip()
-    if line.lower() == "unavailable":
-        return None
-    return float(line)
-
-
-def count_bits(x: int) -> int:
-    return bin(int(x)).count("1")
-
-
-def disc_diff_for_p0(state: BoardState, p0_is_black: bool) -> int:
-    black_count = count_bits(state.black)
-    white_count = count_bits(state.white)
-    empty = 64 - black_count - white_count
-    diff_black = black_count - white_count
-    if diff_black > 0:
-        diff_black += empty
-    elif diff_black < 0:
-        diff_black -= empty
-    return diff_black if p0_is_black else -diff_black
-
-
-def play_command_to_stateful(
-    players: List[Player],
-    p0_idx: int,
-    p0_proc: Optional[int],
-    p1_idx: int,
-    p1_proc: Optional[int],
-    side: int,
-    move: str,
-) -> None:
-    cmd = f"play {side_to_gtp_color(side)} {move}\n"
-    if p0_proc is not None:
-        send_command(players, p0_idx, p0_proc, cmd)
-    if p1_proc is not None:
-        send_command(players, p1_idx, p1_proc, cmd)
-
-
-def generate_move(
-    players: List[Player],
-    player_idx: int,
-    held_proc: Optional[int],
-    color_pool: int,
-    state: BoardState,
-    side: int,
-    random_generator: Optional[random.Random] = None,
-) -> Tuple[str, Optional[float]]:
-    player = players[player_idx]
-    if player.random_seed is not None:
-        if random_generator is None:
-            raise RuntimeError("the internal random player requires a game-local random generator")
-        legal = state.legal_policies(side)
-        if not legal:
-            return "pass", None
-        policy = random_generator.choice(legal)
-        return policy_to_coord(policy), None
-
-    proc_idx = held_proc
-    borrowed_for_move = False
-    if player.setboard_before_genmove:
-        proc_idx = acquire_process_idx(player, color_pool)
-        borrowed_for_move = True
-    if proc_idx is None:
-        raise RuntimeError(f"no process available for {player.name}")
-    try:
-        if player.setboard_before_genmove:
-            send_command(players, player_idx, proc_idx, f"setboard {state.to_egaroucid_board(side)}\n")
-        line = send_command(players, player_idx, proc_idx, f"genmove {side_to_gtp_color(side)}\n")
-        move = parse_gtp_move(line)
-        move_stone_loss = None
-        if move != "pass":
-            if player.reports_move_stone_loss:
-                loss_line = send_command(players, player_idx, proc_idx, "last_move_stone_loss\n")
-                move_stone_loss = parse_gtp_optional_float(loss_line)
-            elif (
-                player.measures_move_stone_loss
-                and player.alpha is not None
-                and abs(player.alpha) < 1.0e-12
-            ):
-                move_stone_loss = 0.0
-        return move, move_stone_loss
-    finally:
-        if borrowed_for_move:
-            release_process_idx(player, color_pool, proc_idx)
-
-
-def play_single_game(
-    players: List[Player],
-    p0_idx: int,
-    p1_idx: int,
-    opening: str,
-    p0_is_black: bool,
-    task_id: int,
-) -> dict:
-    black_idx = p0_idx if p0_is_black else p1_idx
-    white_idx = p1_idx if p0_is_black else p0_idx
-    p0_color_pool = 0 if p0_is_black else 1
-    p1_color_pool = 1 if p0_is_black else 0
-    p0_proc = None
-    p1_proc = None
-    state = BoardState.initial()
-    transcript = ""
-    alpha_move_stone_loss = {}
-    random_generators = {
-        player_idx: random.Random(f"{players[player_idx].random_seed}:{task_id}:{int(p0_is_black)}:{player_idx}")
-        for player_idx in (p0_idx, p1_idx)
-        if players[player_idx].random_seed is not None
-    }
-
-    def record_move_stone_loss(player_idx: int, loss: Optional[float]) -> None:
-        if not players[player_idx].measures_move_stone_loss:
-            return
-        row = alpha_move_stone_loss.setdefault(
-            str(player_idx),
-            {"moves": 0, "missing_moves": 0, "total_stone_loss": 0.0},
+        info = parse_policy_server_ready(
+            str(line),
+            requested_backend=args.policy_backend,
+            allow_policy_cpu=args.allow_policy_cpu,
         )
-        if loss is None:
-            row["missing_moves"] += 1
-            return
-        row["moves"] += 1
-        row["total_stone_loss"] += float(loss)
-
-    try:
-        process_requests = []
-        if not players[p0_idx].setboard_before_genmove and players[p0_idx].random_seed is None:
-            process_requests.append((p0_idx, p0_color_pool, 0))
-        if not players[p1_idx].setboard_before_genmove and players[p1_idx].random_seed is None:
-            process_requests.append((p1_idx, p1_color_pool, 1))
-        for player_idx, color_pool, owner in sorted(process_requests):
-            proc_idx = acquire_process_idx(players[player_idx], color_pool)
-            if owner == 0:
-                p0_proc = proc_idx
-            else:
-                p1_proc = proc_idx
-            send_command(players, player_idx, proc_idx, "clear_board\n")
-
-        for i in range(0, len(opening), 2):
-            if not state.legal_policies(state.side):
-                play_command_to_stateful(players, p0_idx, p0_proc, p1_idx, p1_proc, state.side, "pass")
-                state.side ^= 1
-                if not state.legal_policies(state.side):
-                    break
-            move = opening[i : i + 2].lower()
-            play_command_to_stateful(players, p0_idx, p0_proc, p1_idx, p1_proc, state.side, move)
-            state.apply_move(state.side, coord_to_policy(move))
-            transcript += move
-
-        while True:
-            if not state.legal_policies(state.side):
-                play_command_to_stateful(players, p0_idx, p0_proc, p1_idx, p1_proc, state.side, "pass")
-                state.side ^= 1
-                if not state.legal_policies(state.side):
-                    break
-
-            mover = black_idx if state.side == BLACK else white_idx
-            watcher = white_idx if state.side == BLACK else black_idx
-            mover_proc = p0_proc if mover == p0_idx else p1_proc
-            watcher_proc = p0_proc if watcher == p0_idx else p1_proc
-            mover_color_pool = p0_color_pool if mover == p0_idx else p1_color_pool
-            side = state.side
-            move, move_stone_loss = generate_move(
-                players,
-                mover,
-                mover_proc,
-                mover_color_pool,
-                state,
-                side,
-                random_generator=random_generators.get(mover),
-            )
-            if move == "pass":
-                state.side ^= 1
-                if watcher_proc is not None:
-                    send_command(players, watcher, watcher_proc, f"play {side_to_gtp_color(side)} pass\n")
-                continue
-            record_move_stone_loss(mover, move_stone_loss)
-            state.apply_move(side, coord_to_policy(move))
-            transcript += move
-            if watcher_proc is not None:
-                send_command(players, watcher, watcher_proc, f"play {side_to_gtp_color(side)} {move}\n")
-
-        diff = disc_diff_for_p0(state, p0_is_black)
-        return {
-            "p0_idx": p0_idx,
-            "p1_idx": p1_idx,
-            "black_idx": black_idx,
-            "white_idx": white_idx,
-            "p0_disc_diff": diff,
-            "black_stones": count_bits(state.black),
-            "white_stones": count_bits(state.white),
-            "transcript": transcript,
-            "alpha_move_stone_loss": alpha_move_stone_loss,
-        }
-    finally:
-        if p0_proc is not None:
-            release_process_idx(players[p0_idx], p0_color_pool, p0_proc)
-        if p1_proc is not None:
-            release_process_idx(players[p1_idx], p1_color_pool, p1_proc)
+    except ValueError as error:
+        manager.terminate(process, graceful=False)
+        raise RuntimeError(
+            f"policy inference server failed to start: {line!r}"
+        ) from error
+    return info
 
 
-def update_result(players: List[Player], result: dict) -> None:
-    p0_idx = result["p0_idx"]
-    p1_idx = result["p1_idx"]
-    diff = result["p0_disc_diff"]
-    with results_lock:
-        if diff > 0:
-            players[p0_idx].results[p1_idx][0] += 1
-            players[p1_idx].results[p0_idx][2] += 1
-        elif diff < 0:
-            players[p1_idx].results[p0_idx][0] += 1
-            players[p0_idx].results[p1_idx][2] += 1
-        else:
-            players[p0_idx].results[p1_idx][1] += 1
-            players[p1_idx].results[p0_idx][1] += 1
-        players[p0_idx].disc_diff[p1_idx] += diff
-        players[p1_idx].disc_diff[p0_idx] -= diff
-        players[p0_idx].n_played[p1_idx] += 1
-        players[p1_idx].n_played[p0_idx] += 1
-        for game in result.get("color_games", []):
-            for player_idx_text, metric in game.get("alpha_move_stone_loss", {}).items():
-                player_idx = int(player_idx_text)
-                opponent_idx = p1_idx if player_idx == p0_idx else p0_idx
-                players[player_idx].move_stone_loss[opponent_idx] += float(metric["total_stone_loss"])
-                players[player_idx].move_stone_loss_count[opponent_idx] += int(metric["moves"])
-                players[player_idx].move_stone_loss_missing_count[opponent_idx] += int(metric.get("missing_moves", 0))
-
-
-def play_task(players: List[Player], task: Task) -> List[dict]:
-    if task.actual_games != 2:
-        raise ValueError("each XOT match set must contain exactly two color-swapped games")
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        black_future = executor.submit(play_single_game, players, task.p0_idx, task.p1_idx, task.opening, True, task.task_id)
-        white_future = executor.submit(play_single_game, players, task.p0_idx, task.p1_idx, task.opening, False, task.task_id)
-        black_result = black_future.result()
-        white_result = white_future.result()
-    average_disc_diff = (float(black_result["p0_disc_diff"]) + float(white_result["p0_disc_diff"])) / 2.0
-    result = {
-        "p0_idx": task.p0_idx,
-        "p1_idx": task.p1_idx,
-        "opening": task.opening,
-        "p0_disc_diff": average_disc_diff,
-        "p0_black_disc_diff": black_result["p0_disc_diff"],
-        "p0_white_disc_diff": white_result["p0_disc_diff"],
-        "actual_games": 2,
-        "color_games": [black_result, white_result],
-    }
-    update_result(players, result)
-    return [result]
-
-
-def estimate_elos(players: List[Player]) -> Dict[str, Tuple[float, float]]:
-    names = [player.name for player in players]
-    n_players = len(players)
-    win_rates = np.full((n_players, n_players), np.nan, dtype=float)
-    games = np.zeros((n_players, n_players), dtype=float)
-    for i, player in enumerate(players):
-        for j in range(n_players):
-            if i == j:
-                continue
-            w, d, l = player.results[j]
-            n = player.n_played[j]
-            games[i, j] = float(n)
-            if n:
-                win_rates[i, j] = (w + 0.5 * d) / n
-    try:
-        ratings, intervals = fit_elo_from_winrates_with_interval(win_rates, games=games, names=names, confidence=0.95)
-    except ValueError:
-        return {}
-    return {name: (float(ratings[name]), float(intervals[name])) for name in names}
-
-
-def build_matrix_report(players: List[Player], target_per_pair: int) -> str:
-    ratings = estimate_elos(players)
-    names = [player.name for player in players]
-    lines = []
-
-    lines.append("Win Rate")
-    lines.append("\t".join(["vs >"] + names + ["all", "e_rate95"]))
-    for i, player in enumerate(players):
-        cells = [player.name]
-        for j in range(len(players)):
-            if i == j:
-                cells.append("-")
-                continue
-            w, d, l = player.results[j]
-            n = w + d + l
-            cells.append(f"{(w + 0.5 * d) / n:.4f}" if n else "0.0000")
-        total_w = sum(result[0] for result in player.results)
-        total_d = sum(result[1] for result in player.results)
-        total_l = sum(result[2] for result in player.results)
-        total_n = total_w + total_d + total_l
-        cells.append(f"{(total_w + 0.5 * total_d) / total_n:.4f}" if total_n else "0.0000")
-        estimated = ratings.get(player.name)
-        cells.append("-" if estimated is None else f"{estimated[0]:.1f}+-{estimated[1]:.1f}")
-        lines.append("\t".join(cells))
-
-    lines.append("Average Disc Difference")
-    lines.append("\t".join(["vs >"] + names + ["all", "e_rate95"]))
-    for i, player in enumerate(players):
-        cells = [player.name]
-        for j in range(len(players)):
-            if i == j:
-                cells.append("-")
-                continue
-            n = player.n_played[j]
-            average = player.disc_diff[j] / n if n else 0.0
-            cells.append(f"{average:+.2f}")
-        total_n = sum(player.n_played)
-        total_average = sum(player.disc_diff) / total_n if total_n else 0.0
-        cells.append(f"{total_average:+.2f}")
-        estimated = ratings.get(player.name)
-        cells.append("-" if estimated is None else f"{estimated[0]:.1f}+-{estimated[1]:.1f}")
-        lines.append("\t".join(cells))
-
-    if any(player.measures_move_stone_loss for player in players):
-        lines.append("Average Estimated Stone Loss per Move vs alpha=0.0 (Egaroucid level 21)")
-        lines.append("\t".join(["vs >"] + names + ["all"]))
-        for i, player in enumerate(players):
-            cells = [player.name]
-            for j in range(len(players)):
-                if i == j or not player.measures_move_stone_loss:
-                    cells.append("-")
-                    continue
-                count = player.move_stone_loss_count[j]
-                cells.append(f"{player.move_stone_loss[j] / count:.4f}" if count else "-")
-            total_count = sum(player.move_stone_loss_count)
-            cells.append(f"{sum(player.move_stone_loss) / total_count:.4f}" if total_count else "-")
-            lines.append("\t".join(cells))
-
-        lines.append("Unmeasured Stone-Loss Moves")
-        lines.append("\t".join(["vs >"] + names + ["all"]))
-        for i, player in enumerate(players):
-            cells = [player.name]
-            for j in range(len(players)):
-                if i == j or not player.measures_move_stone_loss:
-                    cells.append("-")
-                else:
-                    cells.append(str(player.move_stone_loss_missing_count[j]))
-            cells.append(
-                str(sum(player.move_stone_loss_missing_count))
-                if player.measures_move_stone_loss
-                else "-"
-            )
-            lines.append("\t".join(cells))
-    else:
-        lines.append(
-            "Move stone loss: not measured during this tournament; "
-            "complete transcripts are stored in strength_games.jsonl."
-        )
-
-    lines.append("Games Progress (played/target)")
-    lines.append("\t".join(["vs >"] + names + ["all"]))
-    target_per_player = target_per_pair * (len(players) - 1)
-    for i, player in enumerate(players):
-        cells = [player.name]
-        for j in range(len(players)):
-            if i == j:
-                cells.append("-")
-            else:
-                cells.append(f"{player.n_played[j]}/{target_per_pair}")
-        cells.append(f"{sum(player.n_played)}/{target_per_player}")
-        lines.append("\t".join(cells))
-    return "\n".join(lines)
-
-
-def write_matrix_tables(players: List[Player], output_dir: Path, target_per_pair: int) -> None:
-    ratings = estimate_elos(players)
-    names = [player.name for player in players]
-    header = ["player"] + names + ["all", "elo", "elo_ci95"]
-
-    with (output_dir / "strength_win_rate_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow(header)
-        for i, player in enumerate(players):
-            row = [player.name]
-            for j in range(len(players)):
-                if i == j:
-                    row.append("-")
-                else:
-                    w, d, l = player.results[j]
-                    n = w + d + l
-                    row.append((w + 0.5 * d) / n if n else 0.0)
-            total_w = sum(result[0] for result in player.results)
-            total_d = sum(result[1] for result in player.results)
-            total_l = sum(result[2] for result in player.results)
-            total_n = total_w + total_d + total_l
-            row.append((total_w + 0.5 * total_d) / total_n if total_n else 0.0)
-            elo, ci = ratings.get(player.name, (None, None))
-            row.extend([elo, ci])
-            writer.writerow(row)
-
-    with (output_dir / "strength_disc_diff_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow(header)
-        for i, player in enumerate(players):
-            row = [player.name]
-            for j in range(len(players)):
-                if i == j:
-                    row.append("-")
-                else:
-                    n = player.n_played[j]
-                    row.append(player.disc_diff[j] / n if n else 0.0)
-            total_n = sum(player.n_played)
-            row.append(sum(player.disc_diff) / total_n if total_n else 0.0)
-            elo, ci = ratings.get(player.name, (None, None))
-            row.extend([elo, ci])
-            writer.writerow(row)
-
-    with (output_dir / "strength_move_stone_loss_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow(["player"] + names + ["all"])
-        for i, player in enumerate(players):
-            row = [player.name]
-            for j in range(len(players)):
-                if i == j or not player.measures_move_stone_loss:
-                    row.append("-")
-                    continue
-                count = player.move_stone_loss_count[j]
-                row.append(player.move_stone_loss[j] / count if count else "-")
-            total_count = sum(player.move_stone_loss_count)
-            row.append(sum(player.move_stone_loss) / total_count if total_count else "-")
-            writer.writerow(row)
-
-    with (output_dir / "strength_move_stone_loss_missing_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow(["player"] + names + ["all"])
-        for i, player in enumerate(players):
-            row = [player.name]
-            for j in range(len(players)):
-                if i == j or not player.measures_move_stone_loss:
-                    row.append("-")
-                else:
-                    row.append(player.move_stone_loss_missing_count[j])
-            row.append(
-                sum(player.move_stone_loss_missing_count)
-                if player.measures_move_stone_loss
-                else "-"
-            )
-            writer.writerow(row)
-
-    with (output_dir / "strength_progress_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow(["player"] + names + ["all"])
-        target_per_player = target_per_pair * (len(players) - 1)
-        for i, player in enumerate(players):
-            row = [player.name]
-            for j in range(len(players)):
-                row.append("-" if i == j else f"{player.n_played[j]}/{target_per_pair}")
-            row.append(f"{sum(player.n_played)}/{target_per_player}")
-            writer.writerow(row)
-
-    with (output_dir / "strength_report.txt").open("w", encoding="utf-8") as f:
-        f.write(build_matrix_report(players, target_per_pair) + "\n")
-
-
-def write_outputs(
-    players: List[Player],
-    output_dir: Path,
-    completed_match_sets: int,
-    total_match_sets: int,
-    target_per_pair: int,
-) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    ratings = estimate_elos(players)
-    names = [player.name for player in players]
-    summary_rows = []
-    for i, player in enumerate(players):
-        total_w = total_d = total_l = total_n = 0
-        total_disc = 0.0
-        for j in range(len(players)):
-            w, d, l = player.results[j]
-            n = player.n_played[j]
-            total_w += w
-            total_d += d
-            total_l += l
-            total_n += n
-            total_disc += player.disc_diff[j]
-        elo, ci = ratings.get(player.name, (None, None))
-        total_move_stone_loss_count = sum(player.move_stone_loss_count)
-        total_move_stone_loss_missing_count = sum(player.move_stone_loss_missing_count)
-        summary_rows.append(
-            {
-                "name": player.name,
-                "match_sets": total_n,
-                "actual_games": total_n * 2,
-                "win": total_w,
-                "draw": total_d,
-                "loss": total_l,
-                "win_rate": (total_w + 0.5 * total_d) / total_n if total_n else 0.0,
-                "avg_disc_diff": total_disc / total_n if total_n else 0.0,
-                "measured_moves": (
-                    total_move_stone_loss_count
-                    if player.measures_move_stone_loss
-                    else None
-                ),
-                "unmeasured_moves": (
-                    total_move_stone_loss_missing_count
-                    if player.measures_move_stone_loss
-                    else None
-                ),
-                "avg_stone_loss_per_move_vs_alpha0": (
-                    sum(player.move_stone_loss) / total_move_stone_loss_count
-                    if player.measures_move_stone_loss and total_move_stone_loss_count
-                    else None
-                ),
-                "elo": elo,
-                "elo_ci95": ci,
-            }
-        )
-    with (output_dir / "strength_summary.csv").open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(summary_rows[0].keys()) if summary_rows else ["name"])
-        writer.writeheader()
-        writer.writerows(summary_rows)
-
-    pair_rows = []
-    for i, player in enumerate(players):
-        for j, opponent in enumerate(players):
-            if i == j:
-                continue
-            w, d, l = player.results[j]
-            n = player.n_played[j]
-            measured_moves = player.move_stone_loss_count[j]
-            unmeasured_moves = player.move_stone_loss_missing_count[j]
-            pair_rows.append(
-                {
-                    "player": player.name,
-                    "opponent": opponent.name,
-                    "match_sets": n,
-                    "actual_games": n * 2,
-                    "win": w,
-                    "draw": d,
-                    "loss": l,
-                    "win_rate": (w + 0.5 * d) / n if n else 0.0,
-                    "avg_disc_diff": player.disc_diff[j] / n if n else 0.0,
-                    "measured_moves": (
-                        measured_moves if player.measures_move_stone_loss else None
-                    ),
-                    "unmeasured_moves": (
-                        unmeasured_moves if player.measures_move_stone_loss else None
-                    ),
-                    "avg_stone_loss_per_move_vs_alpha0": (
-                        player.move_stone_loss[j] / measured_moves
-                        if player.measures_move_stone_loss and measured_moves
-                        else None
-                    ),
-                }
-            )
-    with (output_dir / "strength_pair_results.csv").open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(pair_rows[0].keys()) if pair_rows else ["player"])
-        writer.writeheader()
-        writer.writerows(pair_rows)
-    write_matrix_tables(players, output_dir, target_per_pair)
-
-    data = {
-        "completed_match_sets": completed_match_sets,
-        "total_match_sets": total_match_sets,
-        "completed_actual_games": completed_match_sets * 2,
-        "total_actual_games": total_match_sets * 2,
-        "target_match_sets_per_pair": target_per_pair,
-        "move_stone_loss_metric": {
-            "enabled_during_tournament": any(
-                player.measures_move_stone_loss for player in players
-            ),
-            "players": "alpha series only",
-            "reference": "alpha=0.0 (Egaroucid level 21)",
-            "formula": "best legal move score at level 21 minus selected move score at level 21",
-            "unit": "estimated final disc difference",
-            "xot_opening_moves_included": False,
-            "unmeasured_move_handling": "Counted separately when the level-21 hint output omits the selected legal move.",
-            "posthoc_transcript_source": "strength_games.jsonl results[].color_games[].transcript",
-        },
-        "players": [
-            {
-                "name": player.name,
-                "command": display_command(player.command),
-            }
-            for player in players
-        ],
-        "summary": summary_rows,
-        "pair_results": pair_rows,
-    }
-    with (output_dir / "strength_results.json").open("w") as f:
-        json.dump(data, f, indent=2)
-
-
-def print_status(
-    players: List[Player],
-    output_dir: Path,
-    start_time: float,
-    completed_match_sets: int,
-    total_match_sets: int,
-    target_per_pair: int,
-) -> None:
-    elapsed = time.time() - start_time
-    pct = 100.0 * completed_match_sets / max(1, total_match_sets)
-    speed = completed_match_sets / elapsed if elapsed > 0 else 0.0
-    eta = (total_match_sets - completed_match_sets) / speed if speed > 0 else 0.0
-    print("\n" + "=" * 80)
-    print(f"Progress: {completed_match_sets}/{total_match_sets} match sets ({completed_match_sets * 2}/{total_match_sets * 2} actual games, {pct:.2f}%)")
-    print(f"Elapsed: {format_elapsed(elapsed)}  ETA: {format_elapsed(eta)}  Speed: {speed:.2f} match sets/sec")
-    print(build_matrix_report(players, target_per_pair))
-
-
-def read_openings(path: Path) -> List[str]:
-    with path.open("r", encoding="utf-8") as f:
-        openings = [line.strip() for line in f if line.strip()]
-    if not openings:
-        raise FileNotFoundError(f"no openings in {path}")
-    return openings
-
-
-def validate_input_files(args: argparse.Namespace) -> None:
-    required_files = {
-        "Egaroucid executable": Path(args.egaroucid_exe),
-        "policy weights": Path(args.weights),
-        "XOT openings": Path(args.openings),
-    }
-    if args.policy_backend == "tensorflow":
-        model_path = (
-            Path(args.policy_model)
-            if args.policy_model is not None
-            else Path(args.weights).with_name("selected_model.h5")
-        )
-        required_files["Keras policy model"] = model_path
-        if importlib.util.find_spec("tensorflow") is None:
-            raise ModuleNotFoundError(
-                "TensorFlow is required by --policy-backend tensorflow"
-            )
-    missing = [
-        f"{description}: {path}"
-        for description, path in required_files.items()
-        if not path.is_file()
-    ]
-    if missing:
-        raise FileNotFoundError(
-            "required tournament input file is missing:\n" + "\n".join(missing)
-        )
-
-
-def build_players(args: argparse.Namespace) -> List[Player]:
-    players: List[Player] = []
-    egaroucid_exe = Path(args.egaroucid_exe).resolve()
-    for level in parse_int_list(args.baseline_levels):
-        players.append(
-            Player(
-                f"egaroucid_l{level}",
-                [
-                    str(egaroucid_exe),
+def build_player_specs(
+    args: argparse.Namespace,
+    baseline_levels: Sequence[int],
+    alphas: Sequence[float],
+    policy_server_port: int,
+) -> List[PlayerSpec]:
+    egaroucid_exe = str(Path(args.egaroucid_exe).resolve())
+    specs: List[PlayerSpec] = []
+    for level in baseline_levels:
+        specs.append(
+            PlayerSpec(
+                name=f"egaroucid_l{level}",
+                command=(
+                    egaroucid_exe,
                     "-gtp",
                     "-quiet",
                     "-nobook",
@@ -1222,19 +484,21 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                     str(level),
                     "-t",
                     str(args.engine_threads),
-                ],
-                args.baseline_processes_per_player,
-                args.close_processes_after_game,
-                False,
+                ),
+                processes_per_player=args.baseline_processes_per_player,
+                setboard_before_genmove=False,
             )
         )
 
-    blend_script = (HUMAN_LIKE_DIR / "30_blend_with_egaroucid" / "blend_gtp_engine.py").resolve()
-    for alpha in parse_float_list(args.blend_params):
-        native_alpha_zero = args.native_alpha_zero and abs(alpha) < 1.0e-12
-        if native_alpha_zero:
-            command = [
-                str(egaroucid_exe),
+    blend_script = BLEND_DIR / "blend_gtp_engine.py"
+    hint_cache_db = (
+        args.output_dir / "egaroucid_hint_cache_v2.sqlite3"
+    ).resolve()
+    for alpha in alphas:
+        alpha_text = format_alpha(alpha)
+        if alpha == 0.0:
+            command = (
+                egaroucid_exe,
                 "-gtp",
                 "-quiet",
                 "-nobook",
@@ -1242,614 +506,1052 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                 str(args.blend_egaroucid_level),
                 "-t",
                 str(args.engine_threads),
-            ]
+            )
+            setboard_before_genmove = False
         else:
-            command = [
+            command_parts = [
                 sys.executable,
-                str(blend_script),
+                str(blend_script.resolve()),
                 "--weights",
                 str(Path(args.weights).resolve()),
                 "--alpha",
-                f"{alpha:.1f}",
+                alpha_text,
                 "--egaroucid-exe",
-                str(egaroucid_exe),
+                egaroucid_exe,
                 "--egaroucid-level",
                 str(args.blend_egaroucid_level),
                 "--egaroucid-threads",
                 str(args.engine_threads),
                 "--egaroucid-timeout-sec",
-                str(args.egaroucid_timeout_sec),
+                str(args.egaroucid_hint_timeout_sec),
+                "--minimum-available-memory-mib",
+                str(args.minimum_available_memory_mib),
+                "--estimated-egaroucid-memory-mib",
+                str(args.estimated_engine_memory_mib),
                 "--score-temperature",
                 str(args.score_temperature),
+                "--policy-server-host",
+                args.policy_server_host,
+                "--policy-server-port",
+                str(policy_server_port),
+                "--policy-server-timeout-sec",
+                str(args.policy_server_timeout_sec),
             ]
-            if not args.no_blend_cache:
-                command.append("--cache-egaroucid")
-            if args.measure_move_stone_loss:
-                command.append("--measure-move-stone-loss")
-            if args.hint_cache_db is not None:
-                command.extend(["--hint-cache-db", str(Path(args.hint_cache_db).resolve())])
-            if args.policy_server_port is not None:
-                command.extend(
-                    [
-                        "--policy-server-host",
-                        args.policy_server_host,
-                        "--policy-server-port",
-                        str(args.policy_server_port),
-                        "--policy-server-timeout-sec",
-                        str(args.policy_server_timeout_sec),
-                    ]
+            if not args.no_hint_cache:
+                command_parts.extend(
+                    ["--hint-cache-db", str(hint_cache_db)]
                 )
-        players.append(
-            Player(
-                f"alpha_{alpha:.1f}",
-                command,
-                args.blend_processes_per_player,
-                args.close_processes_after_game,
-                not native_alpha_zero,
+            command = tuple(command_parts)
+            setboard_before_genmove = True
+        specs.append(
+            PlayerSpec(
+                name=f"alpha_{alpha_text}",
+                command=tuple(command),
+                processes_per_player=args.blend_processes_per_player,
+                setboard_before_genmove=setboard_before_genmove,
                 alpha=alpha,
-                reports_move_stone_loss=(
-                    args.measure_move_stone_loss and not native_alpha_zero
-                ),
-                measures_move_stone_loss=args.measure_move_stone_loss,
             )
         )
-    if not args.no_random_player:
-        players.append(
-            Player(
-                "random_legal",
-                ["internal:uniform_random_legal", "--seed", str(args.random_seed)],
-                args.processes_per_player,
-                args.close_processes_after_game,
-                False,
-                random_seed=args.random_seed,
-            )
+    names = [spec.name for spec in specs]
+    if len(names) != len(set(names)):
+        raise ValueError("participant names must be unique")
+    return specs
+
+
+def task_plan_hash(tasks: Sequence[MatchSetTask]) -> str:
+    digest = hashlib.sha256()
+    for task in tasks:
+        digest.update(
+            (
+                f"{task.task_id}:{task.p0_idx}:{task.p1_idx}:"
+                f"{task.set_index}:{task.opening}\n"
+            ).encode("ascii")
         )
-    n = len(players)
-    for player in players:
-        player.results = [[0, 0, 0] for _ in range(n)]
-        player.disc_diff = [0.0 for _ in range(n)]
-        player.n_played = [0 for _ in range(n)]
-        player.move_stone_loss = [0.0 for _ in range(n)]
-        player.move_stone_loss_count = [0 for _ in range(n)]
-        player.move_stone_loss_missing_count = [0 for _ in range(n)]
-    return players
+    return digest.hexdigest()
 
 
-def make_tasks(
-    players: List[Player],
+def file_identity(path: Path) -> dict:
+    return {
+        "path": repo_relative(path),
+        "sha256": sha256_file(path),
+        "size": path.stat().st_size,
+    }
+
+
+def implementation_file_identities() -> Dict[str, dict]:
+    """Fingerprint every local source file that can affect this experiment."""
+
+    paths = {
+        "battle_orchestrator": SCRIPT_DIR / "battle_blend_strength.py",
+        "entry_point": SCRIPT_DIR / "run_strength_full.py",
+        "engine_runner": SCRIPT_DIR / "strength_engine.py",
+        "reporting": SCRIPT_DIR / "strength_reporting.py",
+        "tournament_model": SCRIPT_DIR / "strength_tournament.py",
+        "blend_gtp_engine": BLEND_DIR / "blend_gtp_engine.py",
+        "blend_policy": BLEND_DIR / "blend_policy_with_egaroucid.py",
+        "policy_batch_server": BLEND_DIR / "policy_batch_server.py",
+        "elo_fitter": BIN_DIR / "elo_rating_backcal.py",
+    }
+    return {
+        name: file_identity(path)
+        for name, path in sorted(paths.items())
+    }
+
+
+def package_runtime_versions(policy_backend: str) -> dict:
+    packages = ["numpy", "psutil"]
+    if policy_backend == "tensorflow":
+        packages.append("tensorflow")
+    versions: Dict[str, str] = {}
+    for package in packages:
+        try:
+            versions[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            versions[package] = "not-installed"
+    return {
+        "python": sys.version,
+        "packages": versions,
+    }
+
+
+def gpu_runtime_identity() -> List[str]:
+    """Return stable GPU model/driver rows without initializing TensorFlow."""
+
+    try:
+        process = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,driver_version",
+                "--format=csv,noheader,nounits",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=10.0,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if process.returncode != 0:
+        return []
+    return sorted(
+        line.strip()
+        for line in process.stdout.splitlines()
+        if line.strip()
+    )
+
+
+def build_manifest_configuration(
+    args: argparse.Namespace,
+    baseline_levels: Sequence[int],
+    alphas: Sequence[float],
     openings: Sequence[str],
-    match_sets_per_pair: int,
-    seed: int,
-    same_openings_for_all_pairs: bool,
-) -> List[Task]:
-    rng = random.Random(seed)
-    pairs = [(i, j) for i in range(len(players)) for j in range(i + 1, len(players))]
-    raw_tasks = []
-    opening_idx = 0
-    for set_idx in range(match_sets_per_pair):
-        round_pairs = list(pairs)
-        rng.shuffle(round_pairs)
-        for p0, p1 in round_pairs:
-            if same_openings_for_all_pairs:
-                opening = openings[set_idx % len(openings)]
-            else:
-                opening = openings[opening_idx]
-                opening_idx = (opening_idx + 1) % len(openings)
-            raw_tasks.append((p0, p1, opening, 2))
-    return [Task(task_id, p0, p1, opening, actual_games) for task_id, (p0, p1, opening, actual_games) in enumerate(raw_tasks)]
-
-
-def limit_tasks(tasks: Sequence[Task], max_match_sets: Optional[int]) -> List[Task]:
-    if max_match_sets is None:
-        return list(tasks)
-    if max_match_sets <= 0:
-        raise ValueError("--max-match-sets must be positive when set")
-    return list(tasks[:max_match_sets])
-
-
-def game_results_path(output_dir: Path) -> Path:
-    return output_dir / "strength_games.jsonl"
-
-
-def append_task_results(output_dir: Path, task: Task, results: Sequence[dict]) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    row = {
-        "task_id": task.task_id,
-        "p0_idx": task.p0_idx,
-        "p1_idx": task.p1_idx,
-        "opening": task.opening,
-        "actual_games": task.actual_games,
-        "results": list(results),
+    tasks: Sequence[MatchSetTask],
+) -> dict:
+    inputs: Dict[str, object] = {
+        "egaroucid_executable": file_identity(Path(args.egaroucid_exe)),
+        "xot_openings": file_identity(Path(args.openings)),
     }
-    with game_results_path(output_dir).open("a", encoding="utf-8") as f:
-        f.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-
-def failed_tasks_path(output_dir: Path) -> Path:
-    return output_dir / "strength_failed_tasks.jsonl"
-
-
-def append_task_failure(output_dir: Path, task: Task, attempt: int, exc: BaseException) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    row = {
-        "task_id": task.task_id,
-        "p0_idx": task.p0_idx,
-        "p1_idx": task.p1_idx,
-        "opening": task.opening,
-        "actual_games": task.actual_games,
-        "attempt": attempt,
-        "error": repr(exc),
-        "traceback": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+    if any(alpha > 0.0 for alpha in alphas):
+        inputs["policy_weights"] = file_identity(Path(args.weights))
+        if args.policy_backend == "tensorflow":
+            inputs["policy_model"] = file_identity(policy_model_path(args))
+    inputs["implementation_sources"] = implementation_file_identities()
+    opening_sequence_digest = hashlib.sha256(
+        ("\n".join(openings) + "\n").encode("ascii")
+    ).hexdigest()
+    return {
+        "implementation_revision": IMPLEMENTATION_REVISION,
+        "participants": {
+            "baseline_levels": list(baseline_levels),
+            "alphas": list(alphas),
+        },
+        "schedule": {
+            "match_sets_per_pair": args.match_sets_per_pair,
+            "max_match_sets": args.max_match_sets,
+            "xot_seed": args.seed,
+            "same_opening_sequence_for_every_pair": True,
+            "shuffled_opening_sequence_sha256": opening_sequence_digest,
+            "task_plan_sha256": task_plan_hash(tasks),
+            "total_match_sets": len(tasks),
+        },
+        "scoring": {
+            "actual_games_per_match_set": 2,
+            "color_swapped": True,
+            "paired_set_result": "sign of mean p0 disc difference",
+        },
+        "engine": {
+            "parallel_match_sets": args.parallel_match_sets,
+            "baseline_processes_per_player": (
+                args.baseline_processes_per_player
+            ),
+            "blend_processes_per_player": args.blend_processes_per_player,
+            "engine_threads": args.engine_threads,
+            "blend_egaroucid_level": args.blend_egaroucid_level,
+            "score_temperature": args.score_temperature,
+            "hint_cache": not args.no_hint_cache,
+            "gtp_command_timeout_sec": args.gtp_command_timeout_sec,
+            "egaroucid_hint_timeout_sec": (
+                args.egaroucid_hint_timeout_sec
+            ),
+        },
+        "policy_inference": {
+            "backend": args.policy_backend,
+            "managed_server": True,
+            "required_device": (
+                "CPU"
+                if args.policy_backend == "numpy"
+                else ("CPU-or-GPU" if args.allow_policy_cpu else "GPU")
+            ),
+            "max_batch_size": args.policy_max_batch_size,
+            "batch_wait_ms": args.policy_batch_wait_ms,
+            "inference_threads": args.policy_inference_threads,
+            "request_timeout_sec": args.policy_server_timeout_sec,
+            "startup_timeout_sec": args.policy_server_startup_timeout_sec,
+        },
+        "runtime_versions": package_runtime_versions(args.policy_backend),
+        "inputs": inputs,
     }
-    with failed_tasks_path(output_dir).open("a", encoding="utf-8") as f:
-        f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def load_completed_task_results(players: List[Player], output_dir: Path) -> Tuple[set, int]:
-    path = game_results_path(output_dir)
-    if not path.exists():
-        return set(), 0
-    completed_task_ids = set()
-    completed_match_sets = 0
-    with path.open("r", encoding="utf-8") as f:
-        for line_idx, line in enumerate(f, start=1):
-            line = line.strip()
-            if not line:
-                continue
-            row = json.loads(line)
-            task_id = int(row["task_id"])
-            if task_id in completed_task_ids:
-                continue
-            completed_task_ids.add(task_id)
-            results = row.get("results", [])
-            for result in results:
-                update_result(players, result)
-            completed_match_sets += len(results)
-    return completed_task_ids, completed_match_sets
+@dataclass
+class InFlightMatchSet:
+    task: MatchSetTask
+    started_at: float
+    futures: Dict[Future, bool] = field(default_factory=dict)
+    results: Dict[bool, GameResult] = field(default_factory=dict)
+    errors: List[BaseException] = field(default_factory=list)
+
+
+def print_configuration(
+    args: argparse.Namespace,
+    specs: Sequence[PlayerSpec],
+    total_match_sets: int,
+    startup_available_mib: float,
+    estimated_max_player_processes: int,
+    estimated_heavy_engine_processes: int,
+    estimated_max_memory_mib: float,
+    policy_runtime: str,
+) -> None:
+    capacities = [
+        spec.concurrent_match_set_capacity for spec in specs
+    ]
+    capacity_limited_sets = sum(capacities) // 2
+    effective_sets = min(args.parallel_match_sets, capacity_limited_sets)
+    print("players")
+    for spec in specs:
+        print(spec.name, " ".join(display_command(spec.command)))
+    print("match_sets_per_pair", args.match_sets_per_pair)
+    print("actual_games_per_pair", args.match_sets_per_pair * 2)
+    if args.max_match_sets is not None:
+        print("max_match_sets", args.max_match_sets)
+    print("requested_parallel_match_sets", args.parallel_match_sets)
+    print("capacity_limited_parallel_match_sets", capacity_limited_sets)
+    print("effective_parallel_match_sets", effective_sets)
+    print("actual_game_worker_threads", args.parallel_match_sets * 2)
+    print("theoretical_concurrent_actual_games", effective_sets * 2)
+    print("baseline_processes_per_player", args.baseline_processes_per_player)
+    print("blend_processes_per_player", args.blend_processes_per_player)
+    print("engine_threads_per_process", args.engine_threads)
+    print("xot_openings", repo_relative(Path(args.openings)))
+    print("same_opening_sequence_for_every_pair", True)
+    print("xot_shuffle_seed", args.seed)
+    print("policy_server_runtime", policy_runtime)
+    print("hint_cache", not args.no_hint_cache)
+    print(
+        "hint_cache_db",
+        (
+            repo_relative(
+                args.output_dir / "egaroucid_hint_cache_v2.sqlite3"
+            )
+            if not args.no_hint_cache
+            else "-"
+        ),
+    )
+    print("gtp_command_timeout_sec", args.gtp_command_timeout_sec)
+    print("egaroucid_hint_timeout_sec", args.egaroucid_hint_timeout_sec)
+    print("startup_available_memory_mib", f"{startup_available_mib:.0f}")
+    print("minimum_available_memory_mib", args.minimum_available_memory_mib)
+    print(
+        "estimated_max_player_processes",
+        estimated_max_player_processes,
+    )
+    print(
+        "estimated_heavy_egaroucid_processes",
+        estimated_heavy_engine_processes,
+    )
+    print(
+        "estimated_max_tournament_memory_mib",
+        estimated_max_memory_mib,
+    )
+    print("total_match_sets", total_match_sets)
+    print("total_actual_games", total_match_sets * 2)
+    print("output_dir", repo_relative(args.output_dir))
+
+
+def print_status(
+    specs: Sequence[PlayerSpec],
+    stats: TournamentStats,
+    start_time: float,
+    completed_match_sets: int,
+    completed_at_start: int,
+    total_match_sets: int,
+    target_matrix: Sequence[Sequence[int]],
+) -> None:
+    elapsed = time.time() - start_time
+    completed_this_run = completed_match_sets - completed_at_start
+    speed = completed_this_run / elapsed if elapsed > 0.0 else 0.0
+    remaining = max(0, total_match_sets - completed_match_sets)
+    eta = remaining / speed if speed > 0.0 else 0.0
+    percent = 100.0 * completed_match_sets / max(1, total_match_sets)
+    print("\n" + "=" * 80)
+    print(
+        f"Progress: {completed_match_sets}/{total_match_sets} paired sets "
+        f"({completed_match_sets * 2}/{total_match_sets * 2} actual games, "
+        f"{percent:.2f}%)"
+    )
+    print(
+        f"Elapsed this run: {format_elapsed(elapsed)}  "
+        f"ETA: {format_elapsed(eta)}  "
+        f"Speed: {speed:.3f} paired sets/sec"
+    )
+    ratings = estimate_elos(specs, stats)
+    print(build_text_report(specs, stats, target_matrix, ratings))
 
 
 def make_argparser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run round-robin strength tests for blended policy engines.")
-    random_player_group = parser.add_mutually_exclusive_group()
-    random_player_group.add_argument(
-        "--no-random-player",
-        dest="no_random_player",
-        action="store_true",
-        help="Exclude the uniformly random legal-move player (default).",
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run a timeout-safe, resumable XOT round robin for Egaroucid "
+            "levels and blended policies."
+        )
     )
-    random_player_group.add_argument(
-        "--include-random-player",
-        dest="no_random_player",
-        action="store_false",
-        help="Add the uniformly random legal-move player.",
+    parser.add_argument(
+        "--baseline-levels",
+        default="1,3,5,7,9,11,13,15,17,19",
     )
-    parser.set_defaults(no_random_player=True)
-    parser.add_argument("--random-seed", type=int, default=613, help="Seed for the uniformly random legal-move player.")
-    parser.add_argument("--baseline-levels", default="1,3,5,7,9,11,13,15,17,19")
-    parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
+    parser.add_argument(
+        "--alphas",
+        default="0.0,0.2,0.4,0.6,0.8,1.0",
+    )
     parser.add_argument(
         "--match-sets-per-pair",
-        "--games-per-pair",
-        dest="match_sets_per_pair",
+        type=int,
+        default=500,
+        help=(
+            "Paired XOT observations per player pair. Each set contains two "
+            "color-swapped actual games."
+        ),
+    )
+    parser.add_argument(
+        "--max-match-sets",
+        type=int,
+        default=None,
+        help="Limit the whole schedule for a benchmark or smoke test.",
+    )
+    parser.add_argument(
+        "--parallel-match-sets",
+        type=int,
+        default=20,
+        help="Maximum admitted color-swapped sets.",
+    )
+    parser.add_argument(
+        "--baseline-processes-per-player",
+        type=int,
+        default=2,
+    )
+    parser.add_argument(
+        "--blend-processes-per-player",
+        type=int,
+        default=10,
+    )
+    parser.add_argument("--engine-threads", type=int, default=1)
+    parser.add_argument(
+        "--status-every-match-sets",
         type=int,
         default=100,
-        help="Number of XOT color-swapped match sets per pair. One set contains two actual games.",
     )
-    parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None, help="Optional benchmark cap in XOT match sets; default runs the full requested schedule.")
-    parser.add_argument("--parallel-matches", type=int, default=16)
-    parser.add_argument("--processes-per-player", type=int, default=2)
-    parser.add_argument("--baseline-processes-per-player", type=int, default=None)
-    parser.add_argument("--blend-processes-per-player", type=int, default=None)
-    parser.add_argument("--engine-threads", type=int, default=1)
-    parser.add_argument("--status-every-match-sets", "--status-every-games", dest="status_every_match_sets", type=int, default=200)
-    parser.add_argument("--time-limit-sec", type=float, default=None, help="Stop launching new tasks after this many seconds.")
+    parser.add_argument("--task-retries", type=int, default=2)
+    parser.add_argument("--time-limit-sec", type=float, default=None)
     parser.add_argument("--weights", type=Path, default=default_weights_file())
-    parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
-    parser.add_argument("--blend-egaroucid-level", type=int, default=21)
-    parser.add_argument("--egaroucid-timeout-sec", type=float, default=1800.0)
-    parser.add_argument("--score-temperature", type=float, default=1.0)
-    parser.add_argument("--openings", type=Path, default=BIN_DIR / "problem" / "xot" / "openingslarge.txt")
-    parser.add_argument("--output-dir", type=Path, default=default_output_dir())
-    parser.add_argument("--seed", type=int, default=57, help="Seed used to shuffle XOT openings and pair order.")
-    parser.add_argument("--no-shuffle-openings", action="store_true", help="Keep the XOT opening file order instead of shuffling it.")
-    parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
     parser.add_argument(
-        "--measure-move-stone-loss",
-        action="store_true",
-        help="Measure alpha-series stone loss during play. Disabled by default because complete transcripts are saved for post-hoc analysis.",
-    )
-    parser.add_argument(
-        "--hint-cache-db",
+        "--policy-model",
         type=Path,
         default=None,
-        help="Shared SQLite cache for Egaroucid hint scores and alpha-series move-loss measurements. Defaults to output_dir/egaroucid_hint_cache.sqlite3.",
     )
-    parser.add_argument("--no-policy-batch-server", action="store_true", help="Run one local policy model in each blended GTP process.")
-    parser.add_argument("--policy-model", type=Path, default=None, help="Keras model used by the shared policy inference server.")
-    parser.add_argument("--policy-backend", choices=("auto", "tensorflow", "numpy"), default="auto")
+    parser.add_argument(
+        "--egaroucid-exe",
+        type=Path,
+        default=default_egaroucid_exe(),
+    )
+    parser.add_argument("--blend-egaroucid-level", type=int, default=21)
+    parser.add_argument(
+        "--gtp-command-timeout-sec",
+        type=float,
+        default=1900.0,
+        help="Outer timeout for every GTP command, including native genmove.",
+    )
+    parser.add_argument(
+        "--egaroucid-hint-timeout-sec",
+        type=float,
+        default=1800.0,
+        help="Timeout used inside each blended engine for one hint command.",
+    )
+    parser.add_argument("--score-temperature", type=float, default=1.0)
+    parser.add_argument(
+        "--openings",
+        type=Path,
+        default=BIN_DIR / "problem" / "xot" / "openingslarge.txt",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=SCRIPT_DIR / "output" / "xot_500sets_16players",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=57,
+        help="Deterministic XOT shuffle and pair-order seed.",
+    )
+    parser.add_argument(
+        "--no-hint-cache",
+        action="store_true",
+        help="Disable Egaroucid hint caching in blended engines.",
+    )
+    parser.add_argument(
+        "--policy-backend",
+        choices=("tensorflow", "numpy"),
+        default="tensorflow",
+    )
     parser.add_argument("--policy-server-host", default="127.0.0.1")
-    parser.add_argument("--policy-server-port", type=int, default=None, help="Reuse an existing policy server instead of starting one.")
-    parser.add_argument("--policy-server-timeout-sec", type=float, default=30.0)
-    parser.add_argument("--policy-server-startup-timeout-sec", type=float, default=120.0)
-    parser.add_argument("--policy-max-batch-size", type=int, default=128)
-    parser.add_argument("--policy-batch-wait-ms", type=float, default=2.0)
+    parser.add_argument(
+        "--allow-policy-cpu",
+        action="store_true",
+        help=(
+            "Allow TensorFlow inference without a GPU. By default this is "
+            "rejected so a long experiment cannot silently change device."
+        ),
+    )
+    parser.add_argument(
+        "--policy-server-timeout-sec",
+        type=float,
+        default=30.0,
+    )
+    parser.add_argument(
+        "--policy-server-startup-timeout-sec",
+        type=float,
+        default=120.0,
+    )
+    parser.add_argument("--policy-max-batch-size", type=int, default=32)
+    parser.add_argument("--policy-batch-wait-ms", type=float, default=1.0)
     parser.add_argument("--policy-inference-threads", type=int, default=4)
     parser.add_argument("--no-performance-monitor", action="store_true")
-    parser.add_argument("--performance-sample-interval-sec", type=float, default=2.0)
+    parser.add_argument(
+        "--performance-sample-interval-sec",
+        type=float,
+        default=2.0,
+    )
     parser.add_argument(
         "--minimum-available-memory-mib",
         type=float,
-        default=24576.0,
-        help="Stop before available system memory falls below this many MiB.",
+        default=16384.0,
+        help=(
+            "Stop starting engines below this much free RAM. The 16 GiB "
+            "reserve is for the default 128 GiB workstation profile."
+        ),
     )
     parser.add_argument(
         "--estimated-engine-memory-mib",
         type=float,
-        default=1400.0,
-        help="Conservative per-engine memory estimate used by the startup capacity check.",
+        default=1260.0,
+        help="Measured resident-memory estimate per Egaroucid process.",
     )
-    parser.add_argument("--no-native-alpha-zero", dest="native_alpha_zero", action="store_false", help="Use the Python blend engine even for alpha=0.0.")
-    parser.set_defaults(native_alpha_zero=True)
-    parser.add_argument("--same-openings-for-all-pairs", action="store_true", help="Use the same opening sequence for every pair.")
-    parser.add_argument("--close-processes-after-game", action="store_true", help="Close engines after each game instead of keeping them in per-player pools.")
-    parser.add_argument("--task-retries", type=int, default=2, help="Retry a failed task this many times before aborting.")
+    parser.add_argument(
+        "--estimated-wrapper-memory-mib",
+        type=float,
+        default=40.0,
+        help="Memory estimate per Python blended-policy GTP wrapper.",
+    )
+    parser.add_argument(
+        "--estimated-policy-server-memory-mib",
+        type=float,
+        default=2000.0,
+        help="System-memory estimate for the shared policy inference server.",
+    )
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser
 
 
-def main() -> None:
-    global minimum_available_memory_mib
+def run_tournament(args: argparse.Namespace) -> None:
+    baseline_levels, alphas = validate_args(args)
+    validate_input_files(args, alphas)
+    args.output_dir = Path(args.output_dir)
 
-    args = make_argparser().parse_args()
-    if args.processes_per_player < 2 or args.processes_per_player % 2 != 0:
-        raise ValueError("--processes-per-player must be an even number >= 2")
-    if args.baseline_processes_per_player is None:
-        args.baseline_processes_per_player = args.processes_per_player
-    if args.blend_processes_per_player is None:
-        args.blend_processes_per_player = args.processes_per_player
-    if args.baseline_processes_per_player < 2 or args.baseline_processes_per_player % 2 != 0:
-        raise ValueError("--baseline-processes-per-player must be an even number >= 2")
-    if args.blend_processes_per_player < 2 or args.blend_processes_per_player % 2 != 0:
-        raise ValueError("--blend-processes-per-player must be an even number >= 2")
-    if args.parallel_matches < 1:
-        raise ValueError("--parallel-matches must be positive")
-    if args.match_sets_per_pair < 1:
-        raise ValueError("--match-sets-per-pair must be positive")
-    if args.time_limit_sec is not None and args.time_limit_sec <= 0.0:
-        raise ValueError("--time-limit-sec must be positive when set")
-    if args.task_retries < 0:
-        raise ValueError("--task-retries must be non-negative")
-    if args.policy_max_batch_size < 1:
-        raise ValueError("--policy-max-batch-size must be positive")
-    if args.policy_batch_wait_ms < 0.0:
-        raise ValueError("--policy-batch-wait-ms must be non-negative")
-    if args.policy_inference_threads < 1:
-        raise ValueError("--policy-inference-threads must be positive")
-    if args.performance_sample_interval_sec <= 0.0:
-        raise ValueError("--performance-sample-interval-sec must be positive")
-    if args.minimum_available_memory_mib <= 0.0:
-        raise ValueError("--minimum-available-memory-mib must be positive")
-    if args.estimated_engine_memory_mib <= 0.0:
-        raise ValueError("--estimated-engine-memory-mib must be positive")
-    minimum_available_memory_mib = args.minimum_available_memory_mib
-    low_memory_event.clear()
-
-    if game_results_path(args.output_dir).exists() and not args.resume:
-        raise FileExistsError(
-            f"{game_results_path(args.output_dir)} already contains results; "
-            "use --resume with the same settings or choose a new --output-dir"
-        )
-
-    validate_input_files(args)
-
-    if args.hint_cache_db is None:
-        args.hint_cache_db = args.output_dir / "egaroucid_hint_cache.sqlite3"
-
-    baseline_player_count = len(parse_int_list(args.baseline_levels))
-    blend_player_count = len(parse_float_list(args.blend_params))
-    estimated_max_engine_processes = (
-        baseline_player_count * args.baseline_processes_per_player
-        + blend_player_count * args.blend_processes_per_player
-    )
-    estimated_max_engine_memory_mib = estimated_max_engine_processes * args.estimated_engine_memory_mib
-    startup_available_memory_mib = available_memory_mib()
-    if startup_available_memory_mib is None:
-        raise RuntimeError("psutil is required for the available-memory safety check")
-    if (
-        estimated_max_engine_memory_mib + args.minimum_available_memory_mib
-        > startup_available_memory_mib
-    ):
-        raise MemoryError(
-            "memory capacity check failed: "
-            f"up to {estimated_max_engine_processes} engine processes are estimated to use "
-            f"{estimated_max_engine_memory_mib:.0f} MiB, while only "
-            f"{startup_available_memory_mib:.0f} MiB is available and "
-            f"{args.minimum_available_memory_mib:.0f} MiB must remain free; "
-            "reduce --processes-per-player"
-        )
-
-    openings = read_openings(args.openings)
-    if not args.no_shuffle_openings:
-        random.Random(args.seed).shuffle(openings)
-    policy_server_proc = None
-    policy_server_runtime = "-"
-    if needs_policy_batch_server(args):
-        if args.policy_server_port is None:
-            if args.dry_run:
-                args.policy_server_port = 0
-                policy_server_runtime = f"{args.policy_backend}/dry-run"
-            else:
-                args.output_dir.mkdir(parents=True, exist_ok=True)
-                policy_server_proc, args.policy_server_port, backend, device = start_policy_batch_server(args)
-                policy_server_runtime = f"{backend}/{device}"
-        else:
-            policy_server_runtime = "external"
-    players = build_players(args)
-    if len(players) < 2:
-        raise ValueError("at least two players are required")
-    full_tasks = make_tasks(
-        players,
+    openings = read_openings(Path(args.openings), args.seed)
+    validate_scheduled_openings(openings, args.match_sets_per_pair)
+    player_count = len(baseline_levels) + len(alphas)
+    all_tasks = make_match_set_tasks(
+        player_count,
         openings,
         args.match_sets_per_pair,
         args.seed,
-        args.same_openings_for_all_pairs,
     )
-    tasks = limit_tasks(full_tasks, args.max_match_sets)
-    total_match_sets = len(tasks)
-    completed_task_ids = set()
-    completed_match_sets = 0
-    if args.resume:
-        completed_task_ids, completed_match_sets = load_completed_task_results(players, args.output_dir)
-        tasks = [task for task in tasks if task.task_id not in completed_task_ids]
+    tasks = limit_tasks(all_tasks, args.max_match_sets)
+    target_matrix = target_match_sets_by_pair(tasks, player_count)
+    tasks_by_id = {task.task_id: task for task in tasks}
+    results_path = args.output_dir / "strength_games.jsonl"
+    if results_path.exists() and not args.resume:
+        raise FileExistsError(
+            f"{results_path} already contains results; use --resume with "
+            "the identical experiment or choose a new --output-dir"
+        )
 
-    print("players")
-    for player in players:
-        print(player.name, " ".join(display_command(player.command)))
-    print("match_sets_per_pair", args.match_sets_per_pair)
-    print("actual_games_per_pair", args.match_sets_per_pair * 2)
-    if args.max_match_sets is not None:
-        print("max_match_sets", args.max_match_sets)
-    print("parallel_matches", args.parallel_matches)
-    print("max_processes_per_player", args.processes_per_player)
-    print("baseline_processes_per_player", args.baseline_processes_per_player)
-    print("blend_processes_per_player", args.blend_processes_per_player)
-    print("max_concurrent_match_sets_per_baseline_player", args.baseline_processes_per_player // 2)
-    print("max_concurrent_match_sets_per_blend_player", args.blend_processes_per_player // 2)
-    print("xot_openings", display_path(args.openings))
-    print("shuffle_xot_openings", not args.no_shuffle_openings)
-    print("seed", args.seed)
-    print("random_legal_player", not args.no_random_player)
-    print("random_legal_seed", args.random_seed if not args.no_random_player else "-")
-    print("blend_cache_egaroucid", not args.no_blend_cache)
-    print("measure_move_stone_loss_during_tournament", args.measure_move_stone_loss)
-    print("posthoc_transcripts", display_path(game_results_path(args.output_dir)))
-    print("shared_hint_cache_db", display_path(args.hint_cache_db) if args.hint_cache_db is not None else "-")
-    print("native_alpha_zero", args.native_alpha_zero)
-    print("policy_batch_server", needs_policy_batch_server(args))
-    print("policy_batch_server_runtime", policy_server_runtime)
-    print("policy_batch_server_endpoint", f"{args.policy_server_host}:{args.policy_server_port}" if args.policy_server_port is not None else "-")
-    print("policy_max_batch_size", args.policy_max_batch_size)
-    print("policy_batch_wait_ms", args.policy_batch_wait_ms)
-    print("performance_monitor", not args.no_performance_monitor)
-    print("performance_sample_interval_sec", args.performance_sample_interval_sec)
-    print("startup_available_memory_mib", f"{startup_available_memory_mib:.0f}" if startup_available_memory_mib is not None else "-")
-    print("minimum_available_memory_mib", args.minimum_available_memory_mib)
-    print("estimated_max_engine_processes", estimated_max_engine_processes)
-    print("estimated_engine_memory_mib", args.estimated_engine_memory_mib)
-    print("estimated_max_engine_memory_mib", estimated_max_engine_memory_mib)
-    print("same_openings_for_all_pairs", args.same_openings_for_all_pairs)
-    print("close_processes_after_game", args.close_processes_after_game)
-    print("task_retries", args.task_retries)
-    if args.time_limit_sec is not None:
-        print("time_limit_sec", args.time_limit_sec)
-    print("total_match_sets", total_match_sets)
-    print("total_actual_games", total_match_sets * 2)
-    if args.resume:
-        print("resume_completed_tasks", len(completed_task_ids))
-        print("resume_completed_match_sets", completed_match_sets)
-        print("resume_completed_actual_games", completed_match_sets * 2)
-        print("remaining_match_sets", len(tasks))
-        print("remaining_actual_games", len(tasks) * 2)
-    print("output_dir", display_path(args.output_dir))
+    configuration = build_manifest_configuration(
+        args,
+        baseline_levels,
+        alphas,
+        openings,
+        tasks,
+    )
+    manifest = make_manifest(configuration)
+    manifest_path = args.output_dir / "strength_manifest.json"
+    ensure_manifest(
+        manifest_path,
+        manifest,
+        resume=args.resume,
+        results_exist=results_path.exists(),
+    )
+    experiment_id = str(manifest["experiment_id"])
+    run_id = (
+        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+        + f"_{os.getpid()}"
+    )
 
+    estimated_max_player_processes = (
+        len(baseline_levels) * args.baseline_processes_per_player
+        + len(alphas) * args.blend_processes_per_player
+    )
+    # alpha=1 uses the policy network only; its Python wrapper never starts
+    # the lazily constructed Egaroucid hint subprocess.
+    egaroucid_alpha_count = sum(alpha != 1.0 for alpha in alphas)
+    estimated_heavy_engine_processes = (
+        len(baseline_levels) * args.baseline_processes_per_player
+        + egaroucid_alpha_count * args.blend_processes_per_player
+    )
+    estimated_wrapper_processes = (
+        sum(alpha > 0.0 for alpha in alphas)
+        * args.blend_processes_per_player
+    )
+    startup_available_mib = available_memory_mib()
+    if startup_available_mib is None:
+        raise RuntimeError("psutil is required for the memory safety check")
+    estimated_memory_mib = (
+        estimated_heavy_engine_processes
+        * args.estimated_engine_memory_mib
+        + estimated_wrapper_processes
+        * args.estimated_wrapper_memory_mib
+        + (
+            args.estimated_policy_server_memory_mib
+            if any(alpha > 0.0 for alpha in alphas)
+            else 0.0
+        )
+    )
+    if (
+        estimated_memory_mib + args.minimum_available_memory_mib
+        > startup_available_mib
+    ):
+        raise MemoryError(
+            "memory capacity check failed: "
+            f"{estimated_heavy_engine_processes} Egaroucid processes and "
+            f"{estimated_wrapper_processes} wrappers are estimated to use "
+            f"{estimated_memory_mib:.0f} MiB, only "
+            f"{startup_available_mib:.0f} MiB is currently available, and "
+            f"{args.minimum_available_memory_mib:.0f} MiB must remain free"
+        )
+
+    store = ResultStore(args.output_dir)
+    completed_task_ids: set[int] = set()
+    loaded_results = []
+    if args.resume:
+        completed_task_ids, loaded_results = store.load(tasks_by_id)
+    stats = TournamentStats(player_count)
+    for result in loaded_results:
+        stats.record(result)
+    completed_match_sets = len(loaded_results)
+    completed_at_start = completed_match_sets
+    remaining_tasks = [
+        task for task in tasks if task.task_id not in completed_task_ids
+    ]
+
+    placeholder_specs = build_player_specs(
+        args,
+        baseline_levels,
+        alphas,
+        policy_server_port=0,
+    )
     if args.dry_run:
-        args.output_dir.mkdir(parents=True, exist_ok=True)
-        with (args.output_dir / "strength_dry_run.json").open("w") as f:
-            json.dump(
-                {
-                    "players": [{"name": p.name, "command": display_command(p.command)} for p in players],
-                    "match_sets_per_pair": args.match_sets_per_pair,
-                    "actual_games_per_pair": args.match_sets_per_pair * 2,
-                    "max_match_sets": args.max_match_sets,
-                    "parallel_matches": args.parallel_matches,
-                    "max_processes_per_player": args.processes_per_player,
-                    "baseline_processes_per_player": args.baseline_processes_per_player,
-                    "blend_processes_per_player": args.blend_processes_per_player,
-                    "max_concurrent_match_sets_per_baseline_player": args.baseline_processes_per_player // 2,
-                    "max_concurrent_match_sets_per_blend_player": args.blend_processes_per_player // 2,
-                    "xot_openings": display_path(args.openings),
-                    "shuffle_xot_openings": not args.no_shuffle_openings,
-                    "seed": args.seed,
-                    "random_legal_player": not args.no_random_player,
-                    "random_legal_seed": args.random_seed if not args.no_random_player else None,
-                    "blend_cache_egaroucid": not args.no_blend_cache,
-                    "measure_move_stone_loss_during_tournament": args.measure_move_stone_loss,
-                    "posthoc_transcripts": display_path(game_results_path(args.output_dir)),
-                    "shared_hint_cache_db": display_path(args.hint_cache_db) if args.hint_cache_db is not None else None,
-                    "native_alpha_zero": args.native_alpha_zero,
-                    "policy_batch_server": needs_policy_batch_server(args),
-                    "policy_batch_server_runtime": policy_server_runtime,
-                    "policy_batch_server_endpoint": f"{args.policy_server_host}:{args.policy_server_port}" if args.policy_server_port is not None else None,
-                    "policy_max_batch_size": args.policy_max_batch_size,
-                    "policy_batch_wait_ms": args.policy_batch_wait_ms,
-                    "performance_monitor": not args.no_performance_monitor,
-                    "performance_sample_interval_sec": args.performance_sample_interval_sec,
-                    "startup_available_memory_mib": startup_available_memory_mib,
-                    "minimum_available_memory_mib": args.minimum_available_memory_mib,
-                    "estimated_max_engine_processes": estimated_max_engine_processes,
-                    "estimated_engine_memory_mib": args.estimated_engine_memory_mib,
-                    "estimated_max_engine_memory_mib": estimated_max_engine_memory_mib,
-                    "same_openings_for_all_pairs": args.same_openings_for_all_pairs,
-                    "close_processes_after_game": args.close_processes_after_game,
-                    "task_retries": args.task_retries,
-                    "time_limit_sec": args.time_limit_sec,
-                    "total_match_sets": total_match_sets,
-                    "total_actual_games": total_match_sets * 2,
-                    "n_tasks": len(tasks),
-                    "output_dir": display_path(args.output_dir),
-                    "resume": args.resume,
-                    "resume_completed_tasks": len(completed_task_ids),
-                    "resume_completed_match_sets": completed_match_sets,
-                    "resume_completed_actual_games": completed_match_sets * 2,
+        print_configuration(
+            args,
+            placeholder_specs,
+            len(tasks),
+            startup_available_mib,
+            estimated_max_player_processes,
+            estimated_heavy_engine_processes,
+            estimated_memory_mib,
+            "dry-run",
+        )
+        atomic_write_json(
+            args.output_dir / "strength_dry_run.json",
+            {
+                "experiment_id": experiment_id,
+                "players": [
+                    {
+                        "name": spec.name,
+                        "command": display_command(spec.command),
+                        "processes_per_player": spec.processes_per_player,
+                        "concurrent_match_set_capacity": (
+                            spec.concurrent_match_set_capacity
+                        ),
+                    }
+                    for spec in placeholder_specs
+                ],
+                "match_sets_per_pair": args.match_sets_per_pair,
+                "actual_games_per_pair": args.match_sets_per_pair * 2,
+                "total_match_sets": len(tasks),
+                "total_actual_games": len(tasks) * 2,
+                "parallel_match_sets": args.parallel_match_sets,
+                "capacity_limited_parallel_match_sets": (
+                    sum(
+                        spec.concurrent_match_set_capacity
+                        for spec in placeholder_specs
+                    )
+                    // 2
+                ),
+                "estimated_max_player_processes": (
+                    estimated_max_player_processes
+                ),
+                "estimated_heavy_egaroucid_processes": (
+                    estimated_heavy_engine_processes
+                ),
+                "estimated_max_tournament_memory_mib": (
+                    estimated_memory_mib
+                ),
+                "startup_available_memory_mib": startup_available_mib,
+                "minimum_available_memory_mib": (
+                    args.minimum_available_memory_mib
+                ),
+                "planning_ci95_half_width_at_50_percent": {
+                    str(match_sets): conservative_score_half_width(match_sets)
+                    for match_sets in (50, 100, 200, 300, 500)
                 },
-                f,
-                indent=2,
-            )
+                "resume_completed_match_sets": completed_match_sets,
+                "remaining_match_sets": len(remaining_tasks),
+            },
+        )
         return
 
-    for player in players:
-        player.start_processes()
-
-    start_time = time.time()
-    performance_monitor = None
-    if not args.no_performance_monitor:
-        performance_monitor = PerformanceMonitor(
+    if not remaining_tasks:
+        print("The manifest-matched tournament is already complete.")
+        write_outputs(
+            placeholder_specs,
+            stats,
             args.output_dir,
-            args.performance_sample_interval_sec,
-            args.minimum_available_memory_mib,
+            completed_match_sets,
+            len(tasks),
+            target_matrix,
+            experiment_id,
         )
-        performance_monitor.start()
+        previous_runtime = "not-started"
+        progress_path = args.output_dir / "strength_progress.json"
+        if progress_path.exists():
+            try:
+                previous_progress = json.loads(
+                    progress_path.read_text(encoding="utf-8")
+                )
+                if previous_progress.get("experiment_id") == experiment_id:
+                    previous_runtime = str(
+                        previous_progress.get(
+                            "policy_server_runtime",
+                            previous_runtime,
+                        )
+                    )
+            except (OSError, ValueError):
+                pass
+        atomic_write_json(
+            progress_path,
+            {
+                "schema_version": 3,
+                "experiment_id": experiment_id,
+                "completed_match_sets": completed_match_sets,
+                "total_match_sets": len(tasks),
+                "completed_actual_games": completed_match_sets * 2,
+                "total_actual_games": len(tasks) * 2,
+                "remaining_match_sets": 0,
+                "remaining_actual_games": 0,
+                "stop_reason": "already_complete",
+                "run_id": run_id,
+                "policy_server_runtime": previous_runtime,
+                "elapsed_sec_this_run": 0.0,
+            },
+        )
+        return
+
+    if not args.no_hint_cache:
+        cleared_claims = clear_abandoned_hint_claims(
+            args.output_dir / "egaroucid_hint_cache_v2.sqlite3"
+        )
+        if cleared_claims:
+            print("cleared_abandoned_hint_claims", cleared_claims)
+
+    manager = ProcessManager(args.minimum_available_memory_mib)
+    monitor: Optional[PerformanceMonitor] = None
+    store.open()
+    start_time = time.time()
     stop_reason = "finished"
-    executor = ThreadPoolExecutor(max_workers=args.parallel_matches)
-    retry_counts: Dict[int, int] = {}
-    pending_tasks = deque(tasks)
-    active_task_counts = [0] * len(players)
-    task_capacities = [
-        args.parallel_matches if player.random_seed is not None else player.processes_per_player // 2
-        for player in players
-    ]
-    futures = {}
-
-    def submit_available_tasks() -> None:
-        scan_count = len(pending_tasks)
-        for _ in range(scan_count):
-            if len(futures) >= args.parallel_matches:
-                return
-            task = pending_tasks.popleft()
-            if (
-                active_task_counts[task.p0_idx] >= task_capacities[task.p0_idx]
-                or active_task_counts[task.p1_idx] >= task_capacities[task.p1_idx]
-            ):
-                pending_tasks.append(task)
-                continue
-            active_task_counts[task.p0_idx] += 1
-            active_task_counts[task.p1_idx] += 1
-            futures[executor.submit(play_task, players, task)] = task
-
+    fatal_error: Optional[BaseException] = None
+    executor: Optional[ThreadPoolExecutor] = None
+    last_reported_match_sets: Optional[int] = None
     try:
-        submit_available_tasks()
-        while futures or pending_tasks:
-            if low_memory_event.is_set():
+        if any(alpha > 0.0 for alpha in alphas):
+            policy_server = start_policy_server(args, manager, run_id)
+        else:
+            policy_server = PolicyServerInfo(0, "none", "not-needed")
+        runtime_manifest = make_manifest(
+            {
+                "kind": "strength-tournament-runtime",
+                "experiment_id": experiment_id,
+                "policy_server": {
+                    "backend": policy_server.backend,
+                    "device": policy_server.device,
+                },
+                "gpu_model_and_driver": (
+                    gpu_runtime_identity()
+                    if policy_server.device == "GPU"
+                    else []
+                ),
+                "runtime_versions": package_runtime_versions(
+                    args.policy_backend
+                ),
+            }
+        )
+        ensure_manifest(
+            args.output_dir / "strength_runtime_manifest.json",
+            runtime_manifest,
+            resume=args.resume,
+            results_exist=results_path.exists(),
+        )
+        specs = build_player_specs(
+            args,
+            baseline_levels,
+            alphas,
+            policy_server.port,
+        )
+        print_configuration(
+            args,
+            specs,
+            len(tasks),
+            startup_available_mib,
+            estimated_max_player_processes,
+            estimated_heavy_engine_processes,
+            estimated_memory_mib,
+            policy_server.runtime,
+        )
+        if args.resume:
+            print("resume_completed_match_sets", completed_match_sets)
+            print("remaining_match_sets", len(remaining_tasks))
+
+        game_runner = GameRunner(
+            specs,
+            manager,
+            args.gtp_command_timeout_sec,
+        )
+        if not args.no_performance_monitor:
+            monitor = PerformanceMonitor(
+                args.output_dir,
+                args.performance_sample_interval_sec,
+                manager,
+                run_id=run_id,
+            )
+            monitor.start()
+
+        capacities = [
+            spec.concurrent_match_set_capacity for spec in specs
+        ]
+        pending = PendingTaskQueue(
+            remaining_tasks,
+            player_count=len(specs),
+        )
+        active_counts = [0 for _ in specs]
+        duration_weights = [1.0 for _ in specs]
+        duration_observations = [0 for _ in specs]
+        retry_counts: Dict[int, int] = {}
+        active_sets: Dict[int, InFlightMatchSet] = {}
+        future_to_task: Dict[Future, int] = {}
+        executor = ThreadPoolExecutor(
+            max_workers=args.parallel_match_sets * 2,
+            thread_name_prefix="strength-game",
+        )
+        launch_new_tasks = True
+        next_status = (
+            (completed_match_sets // args.status_every_match_sets + 1)
+            * args.status_every_match_sets
+        )
+
+        def admit_tasks() -> None:
+            while (
+                launch_new_tasks
+                and len(active_sets) < args.parallel_match_sets
+                and pending
+            ):
+                task = pending.pop_schedulable(
+                    active_counts,
+                    capacities,
+                    duration_weights,
+                )
+                if task is None:
+                    return
+                active_counts[task.p0_idx] += 1
+                active_counts[task.p1_idx] += 1
+                in_flight = InFlightMatchSet(
+                    task=task,
+                    started_at=time.monotonic(),
+                )
+                for p0_is_black in (True, False):
+                    future = executor.submit(
+                        game_runner.play_single_game,
+                        task,
+                        p0_is_black,
+                    )
+                    in_flight.futures[future] = p0_is_black
+                    future_to_task[future] = task.task_id
+                active_sets[task.task_id] = in_flight
+
+        admit_tasks()
+        while active_sets or (pending and launch_new_tasks):
+            elapsed = time.time() - start_time
+            if (
+                launch_new_tasks
+                and args.time_limit_sec is not None
+                and elapsed >= args.time_limit_sec
+            ):
+                launch_new_tasks = False
+                stop_reason = "time_limit"
+                print(
+                    "Time limit reached; draining already admitted games.",
+                    flush=True,
+                )
+            if launch_new_tasks and manager.low_memory_event.is_set():
+                launch_new_tasks = False
                 stop_reason = "low_available_memory"
-                print("Stopping: available memory reached the configured lower limit.", flush=True)
+                print(
+                    "Available-memory limit reached; draining admitted games.",
+                    flush=True,
+                )
+
+            if not active_sets:
+                if pending and launch_new_tasks:
+                    raise RuntimeError(
+                        "pending tasks remain but none can be scheduled"
+                    )
                 break
-            if not futures:
-                raise RuntimeError("no schedulable task remains despite pending work")
-            done, _ = wait(tuple(futures), timeout=1.0, return_when=FIRST_COMPLETED)
+            done, _ = wait(
+                tuple(future_to_task),
+                timeout=1.0,
+                return_when=FIRST_COMPLETED,
+            )
             if not done:
                 continue
+            finalized_ids: set[int] = set()
             for future in done:
-                task = futures.pop(future)
-                active_task_counts[task.p0_idx] -= 1
-                active_task_counts[task.p1_idx] -= 1
+                task_id = future_to_task.pop(future)
+                in_flight = active_sets[task_id]
+                p0_is_black = in_flight.futures.pop(future)
                 try:
-                    results = future.result()
-                except AvailableMemoryLimitError as exc:
-                    stop_reason = "low_available_memory"
-                    print(f"Stopping: {exc}", flush=True)
-                    break
-                except Exception as exc:
-                    attempt = retry_counts.get(task.task_id, 0) + 1
-                    append_task_failure(args.output_dir, task, attempt, exc)
-                    if attempt <= args.task_retries:
-                        retry_counts[task.task_id] = attempt
-                        print(f"retry_task {task.task_id} attempt {attempt}/{args.task_retries}", flush=True)
-                        pending_tasks.appendleft(task)
+                    in_flight.results[p0_is_black] = future.result()
+                except BaseException as error:
+                    in_flight.errors.append(error)
+                if not in_flight.futures:
+                    finalized_ids.add(task_id)
+
+            for task_id in finalized_ids:
+                in_flight = active_sets.pop(task_id)
+                task = in_flight.task
+                active_counts[task.p0_idx] -= 1
+                active_counts[task.p1_idx] -= 1
+                duration = max(
+                    0.001,
+                    time.monotonic() - in_flight.started_at,
+                )
+                for player_idx in (task.p0_idx, task.p1_idx):
+                    if duration_observations[player_idx] == 0:
+                        duration_weights[player_idx] = duration
                     else:
-                        write_outputs(
-                            players,
-                            args.output_dir,
-                            completed_match_sets,
-                            total_match_sets,
-                            args.match_sets_per_pair,
+                        duration_weights[player_idx] = (
+                            0.8 * duration_weights[player_idx]
+                            + 0.2 * duration
                         )
-                        raise
-                    break
-                append_task_results(args.output_dir, task, results)
-                completed_match_sets += len(results)
-                if completed_match_sets % args.status_every_match_sets < len(results) or completed_match_sets == total_match_sets:
+                    duration_observations[player_idx] += 1
+
+                if in_flight.errors:
+                    error = in_flight.errors[0]
+                    attempt = retry_counts.get(task.task_id, 0) + 1
+                    store.append_failure(
+                        task,
+                        attempt,
+                        error,
+                        "".join(
+                            traceback.format_exception(
+                                type(error),
+                                error,
+                                error.__traceback__,
+                            )
+                        ),
+                    )
+                    if (
+                        isinstance(error, AvailableMemoryLimitError)
+                        or "available memory is too low" in str(error).lower()
+                    ):
+                        manager.low_memory_event.set()
+                        launch_new_tasks = False
+                        stop_reason = "low_available_memory"
+                    elif attempt <= args.task_retries:
+                        retry_counts[task.task_id] = attempt
+                        pending.push_front(task)
+                        print(
+                            f"retry_match_set {task.task_id} "
+                            f"{attempt}/{args.task_retries}",
+                            flush=True,
+                        )
+                    else:
+                        launch_new_tasks = False
+                        stop_reason = "task_failed"
+                        fatal_error = error
+                    continue
+
+                result = combine_color_games(
+                    task,
+                    list(in_flight.results.values()),
+                )
+                # Commit order is deliberate: durable log first, aggregate
+                # second. Resume can always reconstruct exactly this state.
+                store.append_result(task, result)
+                stats.record(result)
+                completed_match_sets += 1
+
+                if (
+                    completed_match_sets >= next_status
+                    or completed_match_sets == len(tasks)
+                ):
+                    store.checkpoint()
                     print_status(
-                        players,
-                        args.output_dir,
+                        specs,
+                        stats,
                         start_time,
                         completed_match_sets,
-                        total_match_sets,
-                        args.match_sets_per_pair,
+                        completed_at_start,
+                        len(tasks),
+                        target_matrix,
                     )
                     write_outputs(
-                        players,
+                        specs,
+                        stats,
                         args.output_dir,
                         completed_match_sets,
-                        total_match_sets,
-                        args.match_sets_per_pair,
+                        len(tasks),
+                        target_matrix,
+                        experiment_id,
                     )
-                if args.time_limit_sec is not None and time.time() - start_time >= args.time_limit_sec:
-                    stop_reason = "time_limit"
-                break
-            if stop_reason != "finished":
-                break
-            submit_available_tasks()
+                    last_reported_match_sets = completed_match_sets
+                    while next_status <= completed_match_sets:
+                        next_status += args.status_every_match_sets
+
+            if fatal_error is not None:
+                launch_new_tasks = False
+            admit_tasks()
+
+        if completed_match_sets == len(tasks):
+            stop_reason = "finished"
+        elif stop_reason == "finished":
+            stop_reason = "interrupted"
+    except KeyboardInterrupt:
+        stop_reason = "keyboard_interrupt"
+        manager.close_all()
     finally:
-        shutdown_all_processes()
-        executor.shutdown(wait=True, cancel_futures=True)
-        if performance_monitor is not None:
-            performance_monitor.stop()
-    if completed_match_sets >= total_match_sets:
-        stop_reason = "finished"
-        print("\nAll games finished.")
-    else:
-        print(f"\nStopped before full schedule: {stop_reason}.")
-    print_status(
-        players,
-        args.output_dir,
-        start_time,
-        completed_match_sets,
-        total_match_sets,
-        args.match_sets_per_pair,
+        # Closing the process trees first also releases workers promptly when
+        # an unexpected coordinator exception occurs.
+        manager.close_all()
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
+        if monitor is not None:
+            monitor.stop()
+        store.checkpoint()
+        store.close()
+
+    final_specs = build_player_specs(
+        args,
+        baseline_levels,
+        alphas,
+        policy_server_port=(
+            policy_server.port
+            if "policy_server" in locals()
+            else 0
+        ),
     )
-    write_outputs(
-        players,
-        args.output_dir,
-        completed_match_sets,
-        total_match_sets,
-        args.match_sets_per_pair,
-    )
-    with (args.output_dir / "strength_progress.json").open("w", encoding="utf-8") as f:
-        json.dump(
-            {
-                "completed_match_sets": completed_match_sets,
-                "total_match_sets": total_match_sets,
-                "completed_actual_games": completed_match_sets * 2,
-                "total_actual_games": total_match_sets * 2,
-                "stop_reason": stop_reason,
-                "elapsed_sec": time.time() - start_time,
-                "remaining_match_sets": max(0, total_match_sets - completed_match_sets),
-                "remaining_actual_games": max(0, total_match_sets - completed_match_sets) * 2,
-            },
-            f,
-            indent=2,
+    if last_reported_match_sets != completed_match_sets:
+        print_status(
+            final_specs,
+            stats,
+            start_time,
+            completed_match_sets,
+            completed_at_start,
+            len(tasks),
+            target_matrix,
         )
+        write_outputs(
+            final_specs,
+            stats,
+            args.output_dir,
+            completed_match_sets,
+            len(tasks),
+            target_matrix,
+            experiment_id,
+        )
+    atomic_write_json(
+        args.output_dir / "strength_progress.json",
+        {
+            "schema_version": 3,
+            "experiment_id": experiment_id,
+            "completed_match_sets": completed_match_sets,
+            "total_match_sets": len(tasks),
+            "completed_actual_games": completed_match_sets * 2,
+            "total_actual_games": len(tasks) * 2,
+            "remaining_match_sets": len(tasks) - completed_match_sets,
+            "remaining_actual_games": (
+                len(tasks) - completed_match_sets
+            )
+            * 2,
+            "stop_reason": stop_reason,
+            "run_id": run_id,
+            "policy_server_runtime": (
+                policy_server.runtime
+                if "policy_server" in locals()
+                else "not-started"
+            ),
+            "elapsed_sec_this_run": time.time() - start_time,
+        },
+    )
+    if fatal_error is not None:
+        raise RuntimeError(
+            "a paired match set exhausted all retries"
+        ) from fatal_error
+
+
+def main(argv: Optional[Sequence[str]] = None) -> None:
+    args = make_argparser().parse_args(argv)
+    args.output_dir = Path(args.output_dir)
+    with OutputRunLock(args.output_dir):
+        run_tournament(args)
 
 
 if __name__ == "__main__":
