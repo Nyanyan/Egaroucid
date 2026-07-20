@@ -3,6 +3,7 @@
 from dataclasses import replace
 import csv
 from contextlib import redirect_stdout
+from importlib.metadata import PackageNotFoundError
 import io
 import json
 import math
@@ -124,29 +125,68 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
 
     def test_policy_server_ready_enforces_the_requested_runtime(self) -> None:
         info = battle_blend_strength.parse_policy_server_ready(
-            "READY 12345 tensorflow GPU",
+            "READY 12345 tensorflow GPU 2.10.0",
             requested_backend="tensorflow",
             allow_policy_cpu=False,
         )
-        self.assertEqual("tensorflow/GPU", info.runtime)
+        self.assertEqual("2.10.0", info.backend_version)
+        self.assertEqual("tensorflow/2.10.0/GPU", info.runtime)
         with self.assertRaisesRegex(ValueError, "without a GPU"):
             battle_blend_strength.parse_policy_server_ready(
-                "READY 12345 tensorflow CPU",
+                "READY 12345 tensorflow CPU 2.10.0",
                 requested_backend="tensorflow",
                 allow_policy_cpu=False,
             )
         cpu_info = battle_blend_strength.parse_policy_server_ready(
-            "READY 12345 tensorflow CPU",
+            "READY 12345 tensorflow CPU 2.10.0",
             requested_backend="tensorflow",
             allow_policy_cpu=True,
         )
-        self.assertEqual("tensorflow/CPU", cpu_info.runtime)
+        self.assertEqual("tensorflow/2.10.0/CPU", cpu_info.runtime)
         with self.assertRaisesRegex(ValueError, "unexpected backend"):
             battle_blend_strength.parse_policy_server_ready(
-                "READY 12345 numpy CPU",
+                "READY 12345 numpy CPU 1.24.3",
                 requested_backend="tensorflow",
                 allow_policy_cpu=True,
             )
+        with self.assertRaisesRegex(ValueError, "invalid policy server"):
+            battle_blend_strength.parse_policy_server_ready(
+                "READY 12345 tensorflow GPU",
+                requested_backend="tensorflow",
+                allow_policy_cpu=False,
+            )
+
+    def test_manifest_records_tensorflow_distribution_versions(self) -> None:
+        versions = {
+            "numpy": "1.24.3",
+            "psutil": "5.9.8",
+            "tensorflow-gpu": "2.10.0",
+            "tensorflow-intel": "2.13.0",
+        }
+
+        def distribution_version(name: str) -> str:
+            if name not in versions:
+                raise PackageNotFoundError(name)
+            return versions[name]
+
+        with patch(
+            "battle_blend_strength.importlib.metadata.version",
+            side_effect=distribution_version,
+        ):
+            runtime = battle_blend_strength.package_runtime_versions(
+                "tensorflow"
+            )
+
+        self.assertEqual("2.10.0", runtime["packages"]["tensorflow-gpu"])
+        self.assertEqual("2.13.0", runtime["packages"]["tensorflow-intel"])
+        self.assertEqual(
+            "not-installed",
+            runtime["packages"]["tensorflow"],
+        )
+        self.assertEqual(
+            "not-installed",
+            runtime["packages"]["tf-nightly"],
+        )
 
     def test_hint_cache_option_controls_the_shared_cache_only(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args(

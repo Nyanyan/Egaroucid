@@ -75,7 +75,17 @@ from strength_tournament import (  # noqa: E402
 )
 
 
-IMPLEMENTATION_REVISION = "clean-strength-tournament-v4"
+IMPLEMENTATION_REVISION = "clean-strength-tournament-v5"
+
+TENSORFLOW_DISTRIBUTIONS = (
+    "tensorflow",
+    "tensorflow-cpu",
+    "tensorflow-gpu",
+    "tensorflow-intel",
+    "tf-nightly",
+    "tf-nightly-cpu",
+    "tf-nightly-gpu",
+)
 
 
 class OutputRunLock:
@@ -345,10 +355,13 @@ class PolicyServerInfo:
     port: int
     backend: str
     device: str
+    backend_version: str
 
     @property
     def runtime(self) -> str:
-        return f"{self.backend}/{self.device}"
+        return (
+            f"{self.backend}/{self.backend_version}/{self.device}"
+        )
 
 
 def parse_policy_server_ready(
@@ -357,7 +370,7 @@ def parse_policy_server_ready(
     allow_policy_cpu: bool,
 ) -> PolicyServerInfo:
     parts = line.strip().split()
-    if len(parts) != 4 or parts[0] != "READY":
+    if len(parts) != 5 or parts[0] != "READY":
         raise ValueError(f"invalid policy server READY line: {line!r}")
     try:
         port = int(parts[1])
@@ -369,6 +382,7 @@ def parse_policy_server_ready(
         raise ValueError(f"policy server port is out of range: {port}")
     backend = parts[2]
     device = parts[3]
+    backend_version = parts[4]
     if backend != requested_backend:
         raise ValueError(
             "policy inference server selected an unexpected backend: "
@@ -383,7 +397,12 @@ def parse_policy_server_ready(
             "TensorFlow policy inference started without a GPU; use "
             "--allow-policy-cpu only when this slower condition is intended"
         )
-    return PolicyServerInfo(port=port, backend=backend, device=device)
+    return PolicyServerInfo(
+        port=port,
+        backend=backend,
+        device=device,
+        backend_version=backend_version,
+    )
 
 
 def start_policy_server(
@@ -602,7 +621,7 @@ def implementation_file_identities() -> Dict[str, dict]:
 def package_runtime_versions(policy_backend: str) -> dict:
     packages = ["numpy", "psutil"]
     if policy_backend == "tensorflow":
-        packages.append("tensorflow")
+        packages.extend(TENSORFLOW_DISTRIBUTIONS)
     versions: Dict[str, str] = {}
     for package in packages:
         try:
@@ -1224,13 +1243,19 @@ def run_tournament(args: argparse.Namespace) -> None:
         if any(alpha > 0.0 for alpha in alphas):
             policy_server = start_policy_server(args, manager, run_id)
         else:
-            policy_server = PolicyServerInfo(0, "none", "not-needed")
+            policy_server = PolicyServerInfo(
+                0,
+                "none",
+                "not-needed",
+                "not-applicable",
+            )
         runtime_manifest = make_manifest(
             {
                 "kind": "strength-tournament-runtime",
                 "experiment_id": experiment_id,
                 "policy_server": {
                     "backend": policy_server.backend,
+                    "backend_version": policy_server.backend_version,
                     "device": policy_server.device,
                 },
                 "gpu_model_and_driver": (

@@ -90,7 +90,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
   --resume
 ```
 
-`strength_manifest.json`には参加者、対戦数、XOT列、seed、探索条件、Python・NumPy・TensorFlow版と、実行exe・モデル・重み・XOT・対戦処理に関係するPython source一式のSHA-256を保存する。`strength_runtime_manifest.json`には実際に起動したpolicy backend、CPU/GPU、GPU modelとdriverを保存する。再開時に1項目でも異なれば停止する。identityを検証できない外部policy serverを使うオプションは設けていない。
+`strength_manifest.json`には参加者、対戦数、XOT列、seed、探索条件、Python・NumPy版、インストール済みのTensorFlow関連distribution版と、実行exe・モデル・重み・XOT・対戦処理に関係するPython source一式のSHA-256を保存する。`strength_runtime_manifest.json`には実際に起動したpolicy backend、実際にimportされたTensorFlow版、CPU/GPU、GPU modelとdriverを保存する。再開時に1項目でも異なれば停止する。identityを検証できない外部policy serverを使うオプションは設けていない。
 
 本番で使う500個のXOTは、重複だけでなく、文字数・座標・着手合法性をengine起動前にすべて再生検査する。数日後に壊れた局面を発見して停止することを避ける。
 
@@ -154,7 +154,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 | ファイル | 内容 |
 | --- | --- |
 | `strength_manifest.json` | 実験同一性、入力・source SHA-256、task plan |
-| `strength_runtime_manifest.json` | 実際のpolicy backend、device、GPU環境 |
+| `strength_runtime_manifest.json` | 実際のpolicy backendとその版、device、GPU環境 |
 | `strength_games.jsonl` | 対戦セット単位の先後2局、石差、完全棋譜 |
 | `strength_summary.csv` | 参加者別の記述的セット成績、実対局成績、参考Elo（CIなし） |
 | `strength_pair_results.csv` | 対戦相手別のセット成績と95%信頼区間 |

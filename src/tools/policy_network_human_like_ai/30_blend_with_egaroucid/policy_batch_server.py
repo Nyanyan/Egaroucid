@@ -74,6 +74,7 @@ class PolicyBackend:
     def __init__(self, backend: str, weights: Path, model: Path):
         self.name = backend
         self.device = "CPU"
+        self.version = str(np.__version__)
         self.binary_network: Optional[BinaryPolicyNetwork] = None
         self.tensorflow_infer = None
 
@@ -96,6 +97,7 @@ class PolicyBackend:
                 self.tensorflow_infer = infer
                 self.name = "tensorflow"
                 self.device = "GPU" if gpus else "CPU"
+                self.version = str(tf.__version__)
                 infer(tf.zeros((1, INPUT_SIZE), dtype=tf.float32)).numpy()
                 return
             except Exception:
@@ -105,6 +107,7 @@ class PolicyBackend:
         self.binary_network = BinaryPolicyNetwork(weights)
         self.name = "numpy"
         self.device = "CPU"
+        self.version = str(np.__version__)
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         if self.tensorflow_infer is not None:
@@ -253,6 +256,7 @@ class PolicyBatchServer:
             inference_sec = self.total_inference_sec
         return {
             "backend": self.backend.name,
+            "backend_version": self.backend.version,
             "device": self.backend.device,
             "host": self.host,
             "port": self.port,
@@ -327,7 +331,10 @@ def main() -> None:
         args.stats_path,
     )
     port = server.start()
-    print(f"READY {port} {backend.name} {backend.device}", flush=True)
+    print(
+        f"READY {port} {backend.name} {backend.device} {backend.version}",
+        flush=True,
+    )
     try:
         for line in sys.stdin:
             if line.strip().lower() == "quit":
