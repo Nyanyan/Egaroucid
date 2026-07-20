@@ -47,6 +47,8 @@ from evaluate_wthor_human_match import (  # noqa: E402
     move_bucket,
 )
 
+ALL_LEGAL_HINT_COUNT = POLICY_SIZE
+
 
 def default_board_data_dir() -> Path:
     return Path(os.environ["EGAROUCID_DATA"]) / "train_data" / "board_data" / "records1"
@@ -194,6 +196,61 @@ def iter_position_batches_for_selected_globals(
     mmap = np.memmap(path, dtype=BOARD_DTYPE, mode="r", shape=(size // BOARD_SAMPLE_SIZE,))
     for start in range(0, len(local_indices), batch_size):
         yield np.asarray(mmap[local_indices[start : start + batch_size]])
+
+
+class PositionSampleReader:
+    def __init__(self, dat_files: Sequence[Path], available_positions: int):
+        self.entries: List[Tuple[int, int, Path, int]] = []
+        self.global_ends: List[int] = []
+        self.mmaps: Dict[Path, np.memmap] = {}
+        global_start = 0
+        for path in dat_files:
+            total_file_positions = path.stat().st_size // BOARD_SAMPLE_SIZE
+            file_positions = min(
+                total_file_positions,
+                max(0, available_positions - global_start),
+            )
+            if file_positions <= 0:
+                break
+            global_end = global_start + file_positions
+            self.entries.append(
+                (global_start, global_end, path, total_file_positions)
+            )
+            self.global_ends.append(global_end)
+            global_start = global_end
+
+    def get(self, global_position: int):
+        entry_index = int(
+            np.searchsorted(self.global_ends, global_position, side="right")
+        )
+        if entry_index >= len(self.entries):
+            raise IndexError(f"global position is out of range: {global_position}")
+        global_start, global_end, path, total_file_positions = self.entries[
+            entry_index
+        ]
+        if global_position < global_start or global_position >= global_end:
+            raise IndexError(f"global position is out of range: {global_position}")
+        mmap = self.mmaps.get(path)
+        if mmap is None:
+            mmap = np.memmap(
+                path,
+                dtype=BOARD_DTYPE,
+                mode="r",
+                shape=(total_file_positions,),
+            )
+            self.mmaps[path] = mmap
+        return mmap[global_position - global_start]
+
+    def close(self) -> None:
+        self.mmaps.clear()
+
+
+def iter_position_task_queue(position_task_queue) -> Iterable[int]:
+    while True:
+        global_position = position_task_queue.get()
+        if global_position is None:
+            return
+        yield int(global_position)
 
 
 def popcount(x: int) -> int:
@@ -401,12 +458,11 @@ def update_metrics_for_position_sample(
         hint_move_order: List[int] = []
         egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
     else:
-        hint_count = max(n_values)
         scores, raw_hint = hint_scores_with_cache(
             blender,
             state,
             side,
-            hint_count,
+            ALL_LEGAL_HINT_COUNT,
             hint_cache,
         )
         hint_move_order = parse_hint_move_order(raw_hint)
@@ -552,6 +608,7 @@ def evaluate_worker(worker_args: dict) -> dict:
     dat_files = [Path(path) for path in worker_args["dat_files"]]
     available_positions = worker_args["available_positions"]
     selected_positions = worker_args["selected_positions"]
+    position_task_queue = worker_args.get("position_task_queue")
     if selected_positions is not None:
         selected_positions = np.array(selected_positions, dtype=np.int64)
     metrics = make_metrics(blend_params, n_values, bucket_names)
@@ -578,58 +635,86 @@ def evaluate_worker(worker_args: dict) -> dict:
     progress_queue = worker_args.get("progress_queue")
     progress_interval_sec = float(worker_args.get("progress_interval_sec") or 0.0)
     last_progress_time = time.monotonic()
+    position_reader = (
+        PositionSampleReader(dat_files, available_positions)
+        if position_task_queue is not None
+        else None
+    )
+    hint_cache_stats = {}
+
+    def process_position_sample(position_sample, sample_index: int) -> None:
+        nonlocal attempted
+        nonlocal illegal_label
+        nonlocal invalid_policy
+        nonlocal last_progress_time
+        nonlocal processed
+        ok, bad_policy, bad_label = update_metrics_for_position_sample(
+            position_sample,
+            blender,
+            blend_params,
+            n_values,
+            metrics,
+            raw_hint_samples,
+            worker_args["raw_hint_limit"],
+            sample_index,
+            hint_cache,
+        )
+        attempted += 1
+        processed += ok
+        invalid_policy += bad_policy
+        illegal_label += bad_label
+        now = time.monotonic()
+        if (
+            progress_queue is not None
+            and now - last_progress_time >= progress_interval_sec
+        ):
+            emit_worker_progress(
+                progress_queue,
+                worker_args["worker_id"],
+                attempted,
+                metrics,
+                blend_params,
+                n_values,
+                start_time,
+            )
+            last_progress_time = now
+
     try:
-        for dat_file in dat_files:
-            file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
-            if file_global_start >= available_positions:
-                break
-            if selected_positions is None:
-                batches = iter_position_batches_for_global_range(
-                    dat_file,
-                    file_global_start,
-                    available_positions,
-                    worker_args["range_start"],
-                    worker_args["range_end"],
-                    worker_args["batch_size"],
+        if position_task_queue is not None:
+            for global_position in iter_position_task_queue(position_task_queue):
+                process_position_sample(
+                    position_reader.get(global_position),
+                    global_position,
                 )
-            else:
-                batches = iter_position_batches_for_selected_globals(
-                    dat_file,
-                    file_global_start,
-                    available_positions,
-                    selected_positions,
-                    worker_args["batch_size"],
-                )
-            for position_samples in batches:
-                for position_sample in position_samples:
-                    ok, bad_policy, bad_label = update_metrics_for_position_sample(
-                        position_sample,
-                        blender,
-                        blend_params,
-                        n_values,
-                        metrics,
-                        raw_hint_samples,
-                        worker_args["raw_hint_limit"],
-                        processed,
-                        hint_cache,
+        else:
+            for dat_file in dat_files:
+                file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
+                if file_global_start >= available_positions:
+                    break
+                if selected_positions is None:
+                    batches = iter_position_batches_for_global_range(
+                        dat_file,
+                        file_global_start,
+                        available_positions,
+                        worker_args["range_start"],
+                        worker_args["range_end"],
+                        worker_args["batch_size"],
                     )
-                    attempted += 1
-                    processed += ok
-                    invalid_policy += bad_policy
-                    illegal_label += bad_label
-                    now = time.monotonic()
-                    if progress_queue is not None and now - last_progress_time >= progress_interval_sec:
-                        emit_worker_progress(
-                            progress_queue,
-                            worker_args["worker_id"],
-                            attempted,
-                            metrics,
-                            blend_params,
-                            n_values,
-                            start_time,
+                else:
+                    batches = iter_position_batches_for_selected_globals(
+                        dat_file,
+                        file_global_start,
+                        available_positions,
+                        selected_positions,
+                        worker_args["batch_size"],
+                    )
+                for position_samples in batches:
+                    for position_sample in position_samples:
+                        process_position_sample(
+                            position_sample,
+                            processed,
                         )
-                        last_progress_time = now
-            file_global_start += file_positions
+                file_global_start += file_positions
         hint_cache_stats = hint_cache.summary() if hint_cache is not None else {}
     finally:
         emit_worker_progress(
@@ -643,6 +728,8 @@ def evaluate_worker(worker_args: dict) -> dict:
         )
         if hint_cache is not None:
             hint_cache.close()
+        if position_reader is not None:
+            position_reader.close()
         blender.hint_runner.close()
     return {
         "worker_id": worker_args["worker_id"],
@@ -699,7 +786,8 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "weights": str(args.weights),
         "egaroucid_exe": str(args.egaroucid_exe),
         "egaroucid_level": args.egaroucid_level,
-        "console_hint_count": max(n_values),
+        "console_hint_count": ALL_LEGAL_HINT_COUNT,
+        "egaroucid_policy_support": "all_legal_moves",
         "hint_command_stagger_sec": float(
             getattr(args, "hint_command_stagger_sec", 0.0)
         ),
@@ -723,6 +811,14 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         "sample_positions": args.sample_positions,
         "sample_seed": args.sample_seed if args.sample_positions is not None else None,
         "jobs": args.jobs,
+        "position_scheduling": getattr(
+            args,
+            "position_scheduling",
+            {
+                "strategy": "single_process",
+                "task_size_positions": None,
+            },
+        ),
         "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
         "hint_cache_stats": hint_cache_stats,
         "shared_computation": {
@@ -824,13 +920,16 @@ def evaluate(
     raw_hint_samples = []
     hint_cache_stats_rows: List[dict] = []
     if args.jobs > 1:
-        progress_manager = None
+        process_manager = None
         progress_queue = None
         progress_stop_event = None
         progress_thread = None
+        position_task_queue = None
+        use_dynamic_position_queue = selected_global_positions is not None
+        if progress_callback is not None or use_dynamic_position_queue:
+            process_manager = multiprocessing.Manager()
         if progress_callback is not None:
-            progress_manager = multiprocessing.Manager()
-            progress_queue = progress_manager.Queue()
+            progress_queue = process_manager.Queue()
             progress_stop_event = threading.Event()
             progress_thread = threading.Thread(
                 target=monitor_worker_progress,
@@ -842,10 +941,23 @@ def evaluate(
         if selected_global_positions is None:
             work_ranges = split_absolute_ranges(range_start, range_end, args.jobs)
             selected_chunks = [None for _ in work_ranges]
+            args.position_scheduling = {
+                "strategy": "fixed_contiguous_ranges",
+                "task_size_positions": None,
+            }
         else:
-            selected_chunks_np = [chunk for chunk in np.array_split(selected_global_positions, min(args.jobs, len(selected_global_positions))) if len(chunk)]
-            work_ranges = [(int(chunk[0]), int(chunk[-1]) + 1) for chunk in selected_chunks_np]
-            selected_chunks = [chunk.astype(np.int64).tolist() for chunk in selected_chunks_np]
+            worker_count = min(args.jobs, len(selected_global_positions))
+            work_ranges = [(range_start, range_end) for _ in range(worker_count)]
+            selected_chunks = [None for _ in range(worker_count)]
+            position_task_queue = process_manager.Queue()
+            for global_position in selected_global_positions:
+                position_task_queue.put(int(global_position))
+            for _ in range(worker_count):
+                position_task_queue.put(None)
+            args.position_scheduling = {
+                "strategy": "dynamic_shared_position_queue",
+                "task_size_positions": 1,
+            }
         worker_summaries = []
         raw_hint_remaining = args.raw_hint_samples
         worker_args = []
@@ -858,6 +970,7 @@ def evaluate(
                     "range_start": worker_range_start,
                     "range_end": worker_range_end,
                     "selected_positions": selected_chunk,
+                    "position_task_queue": position_task_queue,
                     "weights": str(args.weights),
                     "egaroucid_exe": str(args.egaroucid_exe),
                     "egaroucid_level": args.egaroucid_level,
@@ -926,8 +1039,8 @@ def evaluate(
                 progress_stop_event.set()
             if progress_thread is not None:
                 progress_thread.join()
-            if progress_manager is not None:
-                progress_manager.shutdown()
+            if process_manager is not None:
+                process_manager.shutdown()
         worker_summaries.sort(key=lambda row: row["worker_id"])
         hint_cache_stats = merge_hint_cache_stats(hint_cache_stats_rows)
         return finalize_result(args, blend_params, n_values, bucket_names, metrics, invalid_policy, illegal_label, raw_hint_samples[: args.raw_hint_samples], available_positions, range_start, range_end, worker_summaries, hint_cache_stats)

@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
 
+from evaluate_wthor_blend_human_match import ALL_LEGAL_HINT_COUNT
+
 
 def resolve_result_path(path: Path) -> Path:
     if path.is_dir():
@@ -135,6 +137,15 @@ def merge_hint_cache_stats(results: Sequence[dict]) -> dict:
 
 
 def merge_results(results: Sequence[dict]) -> dict:
+    hint_counts = {
+        int(result.get("console_hint_count", -1))
+        for result in results
+    }
+    if hint_counts != {ALL_LEGAL_HINT_COUNT}:
+        raise ValueError(
+            "all inputs must use all-legal-move Egaroucid policies with "
+            f"hint {ALL_LEGAL_HINT_COUNT}; found {sorted(hint_counts)}"
+        )
     first = results[0]
     topn = merge_topn(results)
     bucket_rows = merge_buckets(results)
@@ -148,6 +159,8 @@ def merge_results(results: Sequence[dict]) -> dict:
         "weights": first["weights"],
         "egaroucid_exe": first["egaroucid_exe"],
         "egaroucid_level": first["egaroucid_level"],
+        "console_hint_count": ALL_LEGAL_HINT_COUNT,
+        "egaroucid_policy_support": "all_legal_moves",
         "blend_params": first["blend_params"],
         "available_positions": first["available_positions"],
         "range_start": min(int(result.get("range_start", 0)) for result in results),

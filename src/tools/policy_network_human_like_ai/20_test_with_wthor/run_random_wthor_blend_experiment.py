@@ -341,7 +341,7 @@ def default_output_dir(args: argparse.Namespace) -> Path:
             f"random_wthor_{args.data_split}_n{args.positions}"
             f"_seed{args.sample_seed}_level{args.egaroucid_level}"
             f"_jobs{args.jobs}_threads{args.egaroucid_threads}"
-            f"_hint{max(TOP_N_VALUES)}"
+            f"_hint{evaluator.ALL_LEGAL_HINT_COUNT}"
         )
     )
 
@@ -681,7 +681,8 @@ def run_blend_experiment(
 def load_cached_hint_orders(
     cache_path: Path,
     level: int,
-    hint_count: int,
+    cache_hint_count: int,
+    rank_limit: int,
 ) -> Dict[tuple[int, int, int], tuple[int, ...]]:
     result: Dict[tuple[int, int, int], tuple[int, ...]] = {}
     if not cache_path.exists():
@@ -691,14 +692,14 @@ def load_cached_hint_orders(
         rows = conn.execute("SELECT key, raw_hint FROM hint_scores").fetchall()
     finally:
         conn.close()
-    expected_prefix = (f"level={level}", f"hint={hint_count}")
+    expected_prefix = (f"level={level}", f"hint={cache_hint_count}")
     for key, raw_hint in rows:
         parts = str(key).split(":")
         if len(parts) != 5 or tuple(parts[:2]) != expected_prefix:
             continue
         state_key = (int(parts[2], 16), int(parts[3], 16), int(parts[4]))
         order = evaluator.parse_hint_move_order(str(raw_hint))
-        result[state_key] = tuple(order[:hint_count])
+        result[state_key] = tuple(order[:rank_limit])
     return result
 
 
@@ -761,16 +762,19 @@ def make_console_reference_validation(
         for key in ("positions_equal", "top1_hits_equal", "top3_hits_equal")
     )
 
-    hint_count = max(TOP_N_VALUES)
+    cache_hint_count = evaluator.ALL_LEGAL_HINT_COUNT
+    rank_limit = max(TOP_N_VALUES)
     blend_cache = load_cached_hint_orders(
         Path(blend_result["hint_cache_db"]),
         CONSOLE_REFERENCE_LEVEL,
-        hint_count,
+        cache_hint_count,
+        rank_limit,
     )
     console_cache = load_cached_hint_orders(
         Path(console_run["result"]["hint_cache_db"]),
         CONSOLE_REFERENCE_LEVEL,
-        hint_count,
+        cache_hint_count,
+        rank_limit,
     )
     common_keys = sorted(set(blend_cache) & set(console_cache))
     top1_equal = sum(
@@ -871,7 +875,8 @@ def write_summary(
         "blend_params": list(BLEND_PARAMS),
         "blend_egaroucid_level": args.egaroucid_level,
         "console_levels": list(CONSOLE_LEVELS),
-        "console_hint_count": max(TOP_N_VALUES),
+        "console_hint_count": evaluator.ALL_LEGAL_HINT_COUNT,
+        "egaroucid_policy_support": "all_legal_moves",
         "console_reference_validation": console_reference_validation,
         "console_level_process_isolation": {
             "separate_process_per_level": True,
@@ -893,6 +898,7 @@ def write_summary(
         "hint_command_stagger": command_stagger_stats,
         "concurrent_phase_timing": concurrent_phase_timing,
         "blend_jobs": args.jobs,
+        "blend_position_scheduling": blend_result.get("position_scheduling"),
         "console_level_processes": len(CONSOLE_LEVELS),
         "logical_cpu_threads": os.cpu_count(),
         "maximum_concurrent_console_processes": (
@@ -942,7 +948,10 @@ def print_configuration(
     print("alpha", ", ".join(f"{alpha:.1f}" for alpha in BLEND_PARAMS))
     print("ブレンド方策で使うEgaroucidレベル", args.egaroucid_level)
     print("単体で評価するEgaroucidレベル", ", ".join(str(level) for level in CONSOLE_LEVELS))
-    print("Consoleへ要求する候補手数", max(TOP_N_VALUES))
+    print(
+        "Consoleへ要求する候補手数",
+        f"{evaluator.ALL_LEGAL_HINT_COUNT}（全合法手を取得）",
+    )
     print("評価の実行方式", "ブレンド版とConsole単体版を同時実行する")
     print("Console起動方式", "全プロセスを常駐させ、hintコマンドの送信時刻を共通管理する")
     print("hintコマンドの送信間隔", f"{args.hint_command_stagger_sec:g}秒")
@@ -1025,7 +1034,7 @@ def print_results(
             f"{output['top3_set_equal_states']:,}/{output['common_states']:,}",
         )
         print(
-            "hint 3の完全な順序が同じ盤面・手番状態",
+            "hint出力の上位3手の完全な順序が同じ盤面・手番状態",
             f"{output['top3_order_equal_states']:,}/{output['common_states']:,}",
         )
         print(
@@ -1033,7 +1042,7 @@ def print_results(
             "一致" if console_reference_validation["evaluation_equivalent"] else "不一致",
         )
         print(
-            "hint 3の完全な出力順序",
+            "hint出力の上位3手の完全な順序",
             "一致" if console_reference_validation["exact_hint_order_equal"] else "不一致",
         )
     print("Console level別評価の並列実行時間", f"{console_levels_elapsed_sec:.3f}秒")
@@ -1084,10 +1093,10 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--jobs",
         type=positive_int,
-        default=1,
+        default=4,
         help=(
-            "ブレンド側の同時評価処理数。level間の比較条件を揃えるため既定値は1。"
-            "2以上ではlevel 21だけ複数のConsoleプロセスに分割される"
+            "ブレンド側の同時評価処理数。既定値は4。"
+            "2以上ではlevel 21を複数の常駐Consoleプロセスで動的に分担する"
         ),
     )
     parser.add_argument("--egaroucid-threads", type=positive_int, default=8)

@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
 
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
 from evaluate_wthor_blend_human_match import (
+    ALL_LEGAL_HINT_COUNT,
+    BLACK,
+    BOARD_DTYPE,
+    BoardState,
+    POLICY_SIZE,
     equivalent_targets,
+    hint_cache_key,
+    make_metrics,
     make_worker_progress_event,
     rank_for_distribution,
+    update_metrics_for_position_sample,
 )
+from merge_wthor_blend_results import merge_results
 from run_random_wthor_blend_experiment import (
     BLEND_PARAMS,
     make_blend_summary_rows,
@@ -43,6 +53,62 @@ def result_row(
 
 
 class SymmetryAgreementTest(unittest.TestCase):
+    def test_hint_request_covers_every_possible_legal_move(self) -> None:
+        state = type("State", (), {"black": 1, "white": 2})()
+
+        self.assertEqual(POLICY_SIZE, ALL_LEGAL_HINT_COUNT)
+        self.assertNotEqual(
+            hint_cache_key(21, state, 0, 3),
+            hint_cache_key(21, state, 0, ALL_LEGAL_HINT_COUNT),
+        )
+
+    def test_evaluator_requests_all_legal_moves_independent_of_top_n(self) -> None:
+        state = BoardState.initial()
+        player, opponent = state.player_opponent_bits(BLACK)
+        policy = state.legal_policies(BLACK)[0]
+        sample = np.zeros((), dtype=BOARD_DTYPE)
+        sample["player"] = player
+        sample["opponent"] = opponent
+        sample["color"] = BLACK
+        sample["policy"] = policy
+
+        class FakeBlender:
+            def policy_distribution(self, board, side, legal):
+                result = np.zeros(POLICY_SIZE, dtype=np.float32)
+                result[legal] = 1.0 / len(legal)
+                return result
+
+            def egaroucid_distribution(self, scores, legal):
+                result = np.zeros(POLICY_SIZE, dtype=np.float32)
+                result[legal] = 1.0 / len(legal)
+                return result
+
+        metrics = make_metrics([0.5], [1, 3], ["01_10"])
+        with patch(
+            "evaluate_wthor_blend_human_match.hint_scores_with_cache",
+            return_value=({}, ""),
+        ) as hint_scores:
+            update_metrics_for_position_sample(
+                sample,
+                FakeBlender(),
+                [0.5],
+                [1, 3],
+                metrics,
+                [],
+                0,
+                0,
+                None,
+            )
+
+        self.assertEqual(
+            ALL_LEGAL_HINT_COUNT,
+            hint_scores.call_args.args[3],
+        )
+
+    def test_merge_rejects_legacy_partial_hint_results(self) -> None:
+        with self.assertRaisesRegex(ValueError, "all-legal-move"):
+            merge_results([{"console_hint_count": 3}])
+
     def test_reflected_human_move_is_an_equivalent_target(self) -> None:
         # This position is invariant only under the a-file/h-file reflection.
         player = bitboard([10, 13])

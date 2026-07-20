@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from evaluate_wthor_blend_human_match import ALL_LEGAL_HINT_COUNT
 from run_random_wthor_blend_experiment import make_console_reference_validation
 
 
@@ -32,7 +33,10 @@ def create_cache(path: Path, raw: str) -> None:
         conn.execute(
             "INSERT INTO hint_scores VALUES (?, ?, ?, ?)",
             (
-                "level=21:hint=3:0000000000000001:0000000000000002:0",
+                (
+                    f"level=21:hint={ALL_LEGAL_HINT_COUNT}:"
+                    "0000000000000001:0000000000000002:0"
+                ),
                 "{}",
                 raw,
                 0.0,
