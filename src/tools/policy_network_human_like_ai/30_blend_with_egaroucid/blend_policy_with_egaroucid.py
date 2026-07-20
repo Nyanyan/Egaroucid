@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import queue
 import re
 import socket
 import sqlite3
@@ -272,10 +273,13 @@ class BinaryPolicyNetwork:
         return y
 
     def predict(self, x: np.ndarray) -> np.ndarray:
+        return softmax_rows(self.predict_logits(x))
+
+    def predict_logits(self, x: np.ndarray) -> np.ndarray:
         y = x
         for layer in self.layers:
             y = self._forward_layer(y, layer)
-        return softmax_rows(y)
+        return y
 
 
 class PolicyBatchClient:
@@ -441,6 +445,7 @@ class EgaroucidHintRunner:
         command_stagger_lock=None,
         command_stagger_state=None,
         command_semaphore=None,
+        cancel_event=None,
     ):
         self.exe = Path(exe)
         self.level = int(level)
@@ -453,9 +458,12 @@ class EgaroucidHintRunner:
         self.command_stagger_lock = command_stagger_lock
         self.command_stagger_state = command_stagger_state
         self.command_semaphore = command_semaphore
+        self.cancel_event = cancel_event
         self.local_stagger_lock = threading.Lock()
         self.local_next_command_time = time.monotonic()
         self.proc: Optional[subprocess.Popen] = None
+        self.stdout_queue = None
+        self.stdout_thread: Optional[threading.Thread] = None
 
     def command(self) -> List[str]:
         return [
@@ -479,27 +487,94 @@ class EgaroucidHintRunner:
             text=True,
             bufsize=0,
         )
+        self.stdout_queue = queue.Queue()
+        self.stdout_thread = threading.Thread(
+            target=self._pump_stdout,
+            args=(self.proc, self.stdout_queue),
+            name=f"egaroucid-stdout-{self.proc.pid}",
+            daemon=True,
+        )
+        self.stdout_thread.start()
         self._read_until_prompt()
         return self.proc
 
+    @staticmethod
+    def _pump_stdout(
+        proc: subprocess.Popen,
+        output_queue,
+    ) -> None:
+        try:
+            if proc.stdout is None:
+                output_queue.put(
+                    RuntimeError("Egaroucid stdout is not available")
+                )
+                return
+            while True:
+                ch = proc.stdout.read(1)
+                output_queue.put(ch)
+                if ch == "":
+                    return
+        except BaseException as exc:
+            output_queue.put(exc)
+
     def _read_until_prompt(self) -> str:
-        if self.proc is None or self.proc.stdout is None:
+        if self.proc is None or self.stdout_queue is None:
             raise RuntimeError("Egaroucid process is not running")
-        out = ""
-        deadline = time.time() + self.timeout_sec
+        chars: List[str] = []
+        previous = ""
+        deadline = time.monotonic() + self.timeout_sec
         while True:
-            if time.time() > deadline:
-                raise TimeoutError(f"Egaroucid prompt timeout after {self.timeout_sec} sec. partial output: {out[-500:]}")
-            ch = self.proc.stdout.read(1)
+            if (
+                self.cancel_event is not None
+                and self.cancel_event.is_set()
+            ):
+                self.proc.kill()
+                raise InterruptedError("Egaroucid command cancelled")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0.0:
+                partial = "".join(chars[-500:])
+                self.proc.kill()
+                raise TimeoutError(
+                    f"Egaroucid prompt timeout after {self.timeout_sec} sec. "
+                    f"partial output: {partial}"
+                )
+            try:
+                ch = self.stdout_queue.get(
+                    timeout=(
+                        min(remaining, 0.25)
+                        if self.cancel_event is not None
+                        else remaining
+                    )
+                )
+            except queue.Empty:
+                if self.cancel_event is not None:
+                    continue
+                partial = "".join(chars[-500:])
+                self.proc.kill()
+                raise TimeoutError(
+                    f"Egaroucid prompt timeout after {self.timeout_sec} sec. "
+                    f"partial output: {partial}"
+                )
+            if isinstance(ch, BaseException):
+                raise RuntimeError(
+                    "failed to read Egaroucid stdout"
+                ) from ch
             if ch == "":
-                raise RuntimeError(f"Egaroucid process ended. partial output: {out[-500:]}")
-            out += ch
-            if out.endswith("> "):
-                return out
+                partial = "".join(chars[-500:])
+                raise RuntimeError(
+                    f"Egaroucid process ended. partial output: {partial}"
+                )
+            chars.append(ch)
+            if previous == ">" and ch == " ":
+                return "".join(chars)
+            previous = ch
 
     def close(self) -> None:
         proc = self.proc
         self.proc = None
+        stdout_thread = self.stdout_thread
+        self.stdout_thread = None
+        self.stdout_queue = None
         if proc is None:
             return
         try:
@@ -515,6 +590,8 @@ class EgaroucidHintRunner:
                 proc.kill()
             except Exception:
                 pass
+        if stdout_thread is not None:
+            stdout_thread.join(timeout=2.0)
 
     def _wait_for_hint_command_slot(self) -> bool:
         if self.command_stagger_lock is None or self.command_stagger_state is None:
