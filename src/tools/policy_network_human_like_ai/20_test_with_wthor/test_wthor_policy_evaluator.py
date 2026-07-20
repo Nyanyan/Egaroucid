@@ -15,10 +15,37 @@ from evaluate_wthor_human_match import (
     split_counts,
     symmetry_aware_policy_ranks,
 )
-from policy_accuracy import xy_to_policy
+from policy_accuracy import TRANSFORM_MAPS, policy_to_xy, xy_to_policy
 
 
 class PolicyEvaluatorTest(unittest.TestCase):
+    def test_all_eight_square_board_transformations_are_present(self) -> None:
+        unique_maps = {
+            tuple(int(policy) for policy in mapping)
+            for mapping in TRANSFORM_MAPS
+        }
+        source = xy_to_policy(1, 2)
+        transformed_coordinates = {
+            policy_to_xy(int(mapping[source]))
+            for mapping in TRANSFORM_MAPS
+        }
+
+        self.assertEqual(8, len(TRANSFORM_MAPS))
+        self.assertEqual(8, len(unique_maps))
+        self.assertEqual(
+            {
+                (1, 2),
+                (6, 2),
+                (1, 5),
+                (6, 5),
+                (2, 1),
+                (5, 6),
+                (5, 1),
+                (2, 6),
+            },
+            transformed_coordinates,
+        )
+
     def test_explicit_board_data_does_not_require_environment(self) -> None:
         with mock.patch.dict(os.environ, {}, clear=True):
             args = parse_args(

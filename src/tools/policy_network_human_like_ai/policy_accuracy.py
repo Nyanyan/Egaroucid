@@ -23,6 +23,8 @@ def xy_to_policy(x: int, y: int) -> int:
 
 
 def make_transform_maps() -> List[np.ndarray]:
+    # The eight transformations of a square board: identity, rotations by
+    # 90/180/270 degrees, and reflections across four axes.
     transforms = (
         lambda x, y: (x, y),
         lambda x, y: (BOARD_WIDTH - 1 - x, y),

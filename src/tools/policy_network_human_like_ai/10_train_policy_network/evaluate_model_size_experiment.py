@@ -610,9 +610,11 @@ def main() -> None:
         "agreement_definition": {
             "metric": "board_symmetry_aware",
             "description": (
-                "A prediction matches when any legal move equivalent to the "
-                "recorded human move under a board-invariant D4 symmetry is "
-                "within the top N."
+                "A prediction matches when any legal move obtained from the "
+                "recorded human move by one of the eight square-board "
+                "transformations (identity, three rotations, or four "
+                "reflections) that leaves both players' stone placement "
+                "unchanged is within the top N."
             ),
             "tie_break": "ascending_policy_index",
         },

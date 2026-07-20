@@ -5,7 +5,7 @@
   "experiment": "policy_network_model_size_selection",
   "agreement_definition": {
     "metric": "board_symmetry_aware",
-    "description": "A prediction matches when any legal move equivalent to the recorded human move under a board-invariant D4 symmetry is within the top N.",
+    "description": "A prediction matches when any legal move obtained from the recorded human move by one of the eight square-board transformations (identity, three rotations, or four reflections) that leaves both players' stone placement unchanged is within the top N.",
     "tie_break": "ascending_policy_index"
   },
   "dataset": {
@@ -39,13 +39,13 @@
   },
   "runner": {
     "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\evaluate_model_size_experiment.py",
-    "sha256": "91c91c0d8f44c410c0511b255ffb6ca30a8b06a0f1530db2eae2ef6068d57c3c"
+    "sha256": "17ac22d3f46bf6f318b4207aab8fcee0ddc3880b99b8e350022b75294d29d5b4"
   },
   "evaluator": {
     "path": "src\\tools\\policy_network_human_like_ai\\20_test_with_wthor\\evaluate_wthor_human_match.py",
     "sha256": "d318c1b57eba6d2824fb50a471f7b1205ffb3e25405ac88b54abe95b575b2563",
     "policy_accuracy_path": "src\\tools\\policy_network_human_like_ai\\policy_accuracy.py",
-    "policy_accuracy_sha256": "cd1531def764c495f6a9caa4f2b6c8174bdc561912f9f961c968aa6121c846f7"
+    "policy_accuracy_sha256": "76545ddf7fd95036c3bcdd9a9ad67afb78ad557acdafe24ad52500084937ce17"
   },
   "top_n": [
     1,
