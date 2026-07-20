@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import json
+from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -9,13 +12,16 @@ from evaluate_wthor_blend_human_match import (
     ALL_LEGAL_HINT_COUNT,
     BLACK,
     BOARD_DTYPE,
+    BlendedPolicy,
     BoardState,
     POLICY_SIZE,
     equivalent_targets,
     hint_cache_key,
+    hint_scores_with_cache,
     make_metrics,
     make_worker_progress_event,
     rank_for_distribution,
+    require_complete_egaroucid_scores,
     update_metrics_for_position_sample,
 )
 from merge_wthor_blend_results import merge_results
@@ -23,6 +29,10 @@ from run_random_wthor_blend_experiment import (
     BLEND_PARAMS,
     make_blend_summary_rows,
     make_console_level_summary_row,
+)
+from run_wthor_blend_shards import shard_done
+from blend_policy_with_egaroucid import (
+    hint_cache_key as blended_policy_hint_cache_key,
 )
 
 
@@ -57,6 +67,16 @@ class SymmetryAgreementTest(unittest.TestCase):
         self.assertNotEqual(
             hint_cache_key(21, state, 0, 3),
             hint_cache_key(21, state, 0, ALL_LEGAL_HINT_COUNT),
+        )
+        self.assertNotEqual(
+            blended_policy_hint_cache_key(21, 1, 2, 0, 3),
+            blended_policy_hint_cache_key(
+                21,
+                1,
+                2,
+                0,
+                ALL_LEGAL_HINT_COUNT,
+            ),
         )
 
     def test_evaluator_requests_all_legal_moves_independent_of_top_n(self) -> None:
@@ -102,9 +122,192 @@ class SymmetryAgreementTest(unittest.TestCase):
             hint_scores.call_args.args[3],
         )
 
+    def test_partial_egaroucid_policy_is_rejected(self) -> None:
+        legal = BoardState.initial().legal_policies(BLACK)
+        complete = {policy: float(policy) for policy in legal}
+
+        require_complete_egaroucid_scores(complete, legal)
+        with self.assertRaisesRegex(ValueError, "missing="):
+            require_complete_egaroucid_scores(
+                {policy: complete[policy] for policy in legal[:-1]},
+                legal,
+            )
+        with self.assertRaisesRegex(ValueError, "unexpected="):
+            require_complete_egaroucid_scores(
+                {**complete, 0: 0.0},
+                legal,
+            )
+
+    def test_evaluator_rejects_partial_cached_hint_scores(self) -> None:
+        state = BoardState.initial()
+        legal = state.legal_policies(BLACK)
+
+        class FakeHintRunner:
+            level = 21
+
+        class FakeBlender:
+            hint_runner = FakeHintRunner()
+
+        class FakeHintCache:
+            def get(self, key):
+                return {legal[0]: 0.0}, "partial"
+
+        with self.assertRaisesRegex(ValueError, "does not cover exactly"):
+            hint_scores_with_cache(
+                FakeBlender(),
+                state,
+                BLACK,
+                ALL_LEGAL_HINT_COUNT,
+                FakeHintCache(),
+            )
+
+    def test_evaluator_does_not_cache_fresh_partial_hint_scores(self) -> None:
+        state = BoardState.initial()
+        legal = state.legal_policies(BLACK)
+
+        class FakeHintRunner:
+            level = 21
+
+            def hint_scores(self, board, side, hint_count):
+                return {legal[0]: 0.0}, "partial"
+
+        class FakeBlender:
+            hint_runner = FakeHintRunner()
+
+        class FakeHintCache:
+            put_called = False
+
+            def get(self, key):
+                return None
+
+            def put(self, key, scores, raw_hint):
+                self.put_called = True
+
+        hint_cache = FakeHintCache()
+        with self.assertRaisesRegex(ValueError, "does not cover exactly"):
+            hint_scores_with_cache(
+                FakeBlender(),
+                state,
+                BLACK,
+                ALL_LEGAL_HINT_COUNT,
+                hint_cache,
+            )
+        self.assertFalse(hint_cache.put_called)
+
+    def test_evaluator_rejects_partial_hint_request(self) -> None:
+        state = BoardState.initial()
+
+        class FakeHintRunner:
+            level = 21
+
+            def hint_scores(self, board, side, hint_count):
+                raise AssertionError("partial hint request must fail first")
+
+        class FakeBlender:
+            hint_runner = FakeHintRunner()
+
+        with self.assertRaisesRegex(ValueError, "expected hint 64"):
+            hint_scores_with_cache(
+                FakeBlender(),
+                state,
+                BLACK,
+                3,
+                None,
+            )
+
+    def test_blended_policy_requests_all_legal_hint_scores(self) -> None:
+        state = BoardState.initial()
+        legal = state.legal_policies(BLACK)
+
+        class FakeHintRunner:
+            level = 21
+            timeout_sec = 1.0
+            requested_hint_count = None
+
+            def hint_scores(self, board, side, hint_count):
+                self.requested_hint_count = hint_count
+                return {policy: float(policy) for policy in legal}, "complete"
+
+        blender = object.__new__(BlendedPolicy)
+        blender.cache_egaroucid = False
+        blender.egaroucid_cache = {}
+        blender.shared_hint_cache = None
+        blender.hint_runner = FakeHintRunner()
+
+        scores, _ = blender.cached_hint_scores(state, BLACK)
+
+        self.assertEqual(set(legal), set(scores))
+        self.assertEqual(
+            ALL_LEGAL_HINT_COUNT,
+            blender.hint_runner.requested_hint_count,
+        )
+
+    def test_blended_policy_rejects_partial_memory_cache(self) -> None:
+        state = BoardState.initial()
+        legal = state.legal_policies(BLACK)
+        memory_key = (state.black, state.white, BLACK)
+
+        blender = object.__new__(BlendedPolicy)
+        blender.cache_egaroucid = True
+        blender.egaroucid_cache = {
+            memory_key: ({legal[0]: 0.0}, "partial")
+        }
+        blender.shared_hint_cache = None
+
+        with self.assertRaisesRegex(ValueError, "does not cover exactly"):
+            blender.cached_hint_scores(state, BLACK)
+
     def test_merge_rejects_legacy_partial_hint_results(self) -> None:
         with self.assertRaisesRegex(ValueError, "all-legal-move"):
             merge_results([{"console_hint_count": 3}])
+
+    def test_merge_requires_explicit_all_legal_policy_support(self) -> None:
+        with self.assertRaisesRegex(ValueError, "explicitly declare"):
+            merge_results(
+                [
+                    {
+                        "console_hint_count": ALL_LEGAL_HINT_COUNT,
+                    }
+                ]
+            )
+
+    def test_shard_done_rejects_legacy_partial_hint_result(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            result_path = output_dir / "wthor_blend_human_match.json"
+            result_path.write_text(
+                json.dumps(
+                    {
+                        "topn": [{"top_n": 1}],
+                        "console_hint_count": 3,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertFalse(shard_done(output_dir))
+
+            result_path.write_text(
+                json.dumps(
+                    {
+                        "topn": [{"top_n": 1}],
+                        "console_hint_count": ALL_LEGAL_HINT_COUNT,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertFalse(shard_done(output_dir))
+
+            result_path.write_text(
+                json.dumps(
+                    {
+                        "topn": [{"top_n": 1}],
+                        "console_hint_count": ALL_LEGAL_HINT_COUNT,
+                        "egaroucid_policy_support": "all_legal_moves",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            self.assertTrue(shard_done(output_dir))
 
     def test_reflected_human_move_is_an_equivalent_target(self) -> None:
         # This position is invariant only under the a-file/h-file reflection.

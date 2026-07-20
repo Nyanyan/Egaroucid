@@ -134,6 +134,16 @@ def merge_results(results: Sequence[dict]) -> dict:
             "all inputs must use all-legal-move Egaroucid policies with "
             f"hint {ALL_LEGAL_HINT_COUNT}; found {sorted(hint_counts)}"
         )
+    policy_supports = {
+        result.get("egaroucid_policy_support")
+        for result in results
+    }
+    if policy_supports != {"all_legal_moves"}:
+        raise ValueError(
+            "all inputs must explicitly declare "
+            "egaroucid_policy_support=all_legal_moves; "
+            f"found {sorted(str(value) for value in policy_supports)}"
+        )
     first = results[0]
     topn = merge_topn(results)
     bucket_rows = merge_buckets(results)

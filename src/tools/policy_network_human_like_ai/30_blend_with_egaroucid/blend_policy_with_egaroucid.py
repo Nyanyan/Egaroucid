@@ -33,6 +33,7 @@ BLACK = 0
 WHITE = 1
 INPUT_SIZE = 128
 POLICY_SIZE = 64
+ALL_LEGAL_HINT_COUNT = POLICY_SIZE
 BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, HW2)
 
 
@@ -575,7 +576,12 @@ class EgaroucidHintRunner:
             if self.command_semaphore is not None:
                 self.command_semaphore.release()
 
-    def raw_hint(self, state: BoardState, side: int, hint_count: int = 100) -> str:
+    def raw_hint(
+        self,
+        state: BoardState,
+        side: int,
+        hint_count: int = ALL_LEGAL_HINT_COUNT,
+    ) -> str:
         hint_count = int(hint_count)
         if hint_count <= 0:
             raise ValueError("hint_count must be positive")
@@ -618,7 +624,7 @@ class EgaroucidHintRunner:
         self,
         state: BoardState,
         side: int,
-        hint_count: int = 100,
+        hint_count: int = ALL_LEGAL_HINT_COUNT,
     ) -> Tuple[Dict[int, float], str]:
         raw = self.raw_hint(state, side, hint_count)
         return parse_hint_output(raw), raw
@@ -627,8 +633,32 @@ class EgaroucidHintRunner:
         self.close()
 
 
-def hint_cache_key(level: int, black: int, white: int, side: int) -> str:
-    return f"level={int(level)}:{int(black):016x}:{int(white):016x}:{int(side)}"
+def hint_cache_key(
+    level: int,
+    black: int,
+    white: int,
+    side: int,
+    hint_count: int = ALL_LEGAL_HINT_COUNT,
+) -> str:
+    return (
+        f"level={int(level)}:hint={int(hint_count)}:"
+        f"{int(black):016x}:{int(white):016x}:{int(side)}"
+    )
+
+
+def require_complete_egaroucid_scores(
+    scores: Dict[int, float],
+    legal_policies: Sequence[int],
+) -> None:
+    legal = {int(policy) for policy in legal_policies}
+    scored = {int(policy) for policy in scores}
+    missing = sorted(legal - scored)
+    unexpected = sorted(scored - legal)
+    if missing or unexpected:
+        raise ValueError(
+            "Egaroucid hint output does not cover exactly all legal moves: "
+            f"missing={missing}, unexpected={unexpected}"
+        )
 
 
 class SharedHintCache:
@@ -776,13 +806,19 @@ class BlendedPolicy:
 
     def egaroucid_distribution(self, scores: Dict[int, float], legal_policies: Sequence[int]) -> np.ndarray:
         result = np.zeros(POLICY_SIZE, dtype=np.float32)
-        scored_legal = [policy for policy in legal_policies if policy in scores]
-        if not scored_legal:
-            if legal_policies:
-                result[np.array(legal_policies, dtype=np.int64)] = 1.0 / len(legal_policies)
+        require_complete_egaroucid_scores(scores, legal_policies)
+        if not legal_policies:
             return result
-        values = np.array([scores[policy] / self.score_temperature for policy in scored_legal], dtype=np.float32)
-        result[np.array(scored_legal, dtype=np.int64)] = softmax_values(values)
+        values = np.array(
+            [
+                scores[policy] / self.score_temperature
+                for policy in legal_policies
+            ],
+            dtype=np.float32,
+        )
+        result[np.array(legal_policies, dtype=np.int64)] = softmax_values(
+            values
+        )
         return result
 
     def cached_hint_scores(self, state: BoardState, side: int) -> Tuple[Dict[int, float], str]:
@@ -790,12 +826,26 @@ class BlendedPolicy:
         if self.cache_egaroucid:
             cached = self.egaroucid_cache.get(memory_key)
             if cached is not None:
+                require_complete_egaroucid_scores(
+                    cached[0],
+                    state.legal_policies(side),
+                )
                 return cached
-        shared_key = hint_cache_key(self.hint_runner.level, state.black, state.white, int(side))
+        shared_key = hint_cache_key(
+            self.hint_runner.level,
+            state.black,
+            state.white,
+            int(side),
+            ALL_LEGAL_HINT_COUNT,
+        )
         if self.shared_hint_cache is not None:
             while True:
                 cached = self.shared_hint_cache.get(shared_key)
                 if cached is not None:
+                    require_complete_egaroucid_scores(
+                        cached[0],
+                        state.legal_policies(side),
+                    )
                     if self.cache_egaroucid:
                         self.egaroucid_cache[memory_key] = cached
                     return cached
@@ -804,11 +854,23 @@ class BlendedPolicy:
                     break
                 cached = self.shared_hint_cache.wait_for(shared_key, self.hint_runner.timeout_sec)
                 if cached is not None:
+                    require_complete_egaroucid_scores(
+                        cached[0],
+                        state.legal_policies(side),
+                    )
                     if self.cache_egaroucid:
                         self.egaroucid_cache[memory_key] = cached
                     return cached
         try:
-            scores, raw_hint = self.hint_runner.hint_scores(state, side)
+            scores, raw_hint = self.hint_runner.hint_scores(
+                state,
+                side,
+                ALL_LEGAL_HINT_COUNT,
+            )
+            require_complete_egaroucid_scores(
+                scores,
+                state.legal_policies(side),
+            )
             if self.shared_hint_cache is not None:
                 self.shared_hint_cache.put(shared_key, scores, raw_hint)
         except BaseException:

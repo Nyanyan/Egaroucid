@@ -30,6 +30,7 @@ BLEND_DIR = SCRIPT_DIR.parents[0] / "30_blend_with_egaroucid"
 sys.path.insert(0, str(BLEND_DIR))
 
 from blend_policy_with_egaroucid import (  # noqa: E402
+    ALL_LEGAL_HINT_COUNT,
     BLACK,
     POLICY_SIZE,
     WHITE,
@@ -39,6 +40,7 @@ from blend_policy_with_egaroucid import (  # noqa: E402
     default_weights_file,
     geometric_blend_distribution,
     parse_hint_move_order,
+    require_complete_egaroucid_scores,
 )
 from evaluate_wthor_human_match import (  # noqa: E402
     BOARD_DTYPE,
@@ -46,9 +48,6 @@ from evaluate_wthor_human_match import (  # noqa: E402
     equivalent_policy_mask,
     move_bucket,
 )
-
-ALL_LEGAL_HINT_COUNT = POLICY_SIZE
-
 
 def default_board_data_dir() -> Path:
     return Path(os.environ["EGAROUCID_DATA"]) / "train_data" / "board_data" / "records1"
@@ -339,13 +338,31 @@ def hint_scores_with_cache(
     hint_count: int,
     hint_cache: Optional[HintScoreCache],
 ) -> Tuple[Dict[int, float], str]:
+    if int(hint_count) != ALL_LEGAL_HINT_COUNT:
+        raise ValueError(
+            "blended policy evaluation requires all legal Egaroucid moves: "
+            f"expected hint {ALL_LEGAL_HINT_COUNT}, got hint {hint_count}"
+        )
+    legal_policies = state.legal_policies(side)
     if hint_cache is None:
-        return blender.hint_runner.hint_scores(state, side, hint_count)
+        scores, raw_hint = blender.hint_runner.hint_scores(
+            state,
+            side,
+            ALL_LEGAL_HINT_COUNT,
+        )
+        require_complete_egaroucid_scores(scores, legal_policies)
+        return scores, raw_hint
     key = hint_cache_key(blender.hint_runner.level, state, side, hint_count)
     cached = hint_cache.get(key)
     if cached is not None:
+        require_complete_egaroucid_scores(cached[0], legal_policies)
         return cached
-    scores, raw_hint = blender.hint_runner.hint_scores(state, side, hint_count)
+    scores, raw_hint = blender.hint_runner.hint_scores(
+        state,
+        side,
+        ALL_LEGAL_HINT_COUNT,
+    )
+    require_complete_egaroucid_scores(scores, legal_policies)
     hint_cache.put(key, scores, raw_hint)
     return scores, raw_hint
 

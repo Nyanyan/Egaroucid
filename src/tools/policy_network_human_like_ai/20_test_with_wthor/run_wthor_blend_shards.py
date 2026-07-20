@@ -13,7 +13,13 @@ import sys
 import time
 from typing import Iterable, List, Optional, Sequence, Tuple
 
-from evaluate_wthor_blend_human_match import count_position_samples, default_board_data_dir, discover_dat_files, split_absolute_ranges
+from evaluate_wthor_blend_human_match import (
+    ALL_LEGAL_HINT_COUNT,
+    count_position_samples,
+    default_board_data_dir,
+    discover_dat_files,
+    split_absolute_ranges,
+)
 from blend_policy_with_egaroucid import default_egaroucid_exe, default_weights_file
 
 
@@ -52,7 +58,12 @@ def shard_done(output_dir: Path) -> bool:
     try:
         with result_path.open("r", encoding="utf-8") as f:
             result = json.load(f)
-        return bool(result.get("topn"))
+        return (
+            bool(result.get("topn"))
+            and int(result.get("console_hint_count", -1))
+            == ALL_LEGAL_HINT_COUNT
+            and result.get("egaroucid_policy_support") == "all_legal_moves"
+        )
     except Exception:
         return False
 
@@ -322,7 +333,15 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--positions-per-shard", type=int, default=None, help="Split by fixed position_samples per shard instead of --num-shards.")
     parser.add_argument("--jobs-per-shard", type=int, default=4)
     parser.add_argument("--raw-hint-samples", type=int, default=0)
-    parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "blend_wthor_full_sharded")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=(
+            SCRIPT_DIR
+            / "output"
+            / f"blend_wthor_full_sharded_hint{ALL_LEGAL_HINT_COUNT}_all_legal"
+        ),
+    )
     parser.add_argument("--hint-cache-db", type=Path, default=None, help="Shared SQLite cache for Egaroucid hint scores.")
     parser.add_argument("--no-hint-cache", action="store_true", help="Disable the default shared hint cache.")
     parser.add_argument("--max-shards-to-run", type=int, default=None, help="Optional smoke/benchmark cap.")
@@ -380,6 +399,8 @@ def main() -> None:
         "jobs_per_shard": args.jobs_per_shard,
         "time_limit_sec": args.time_limit_sec,
         "merge_completed": args.merge_completed,
+        "console_hint_count": ALL_LEGAL_HINT_COUNT,
+        "egaroucid_policy_support": "all_legal_moves",
         "hint_cache_db": str(args.hint_cache_db) if args.hint_cache_db is not None else None,
     }
     manifest.update(make_shard_preview(schedule, args.output_dir, args.manifest_shard_preview))
