@@ -14,6 +14,7 @@ from plot_rating_vs_human_match import (
     LABEL_FONT_SIZE,
     SERIES_STYLES,
     TITLE_FONT_SIZE,
+    label_candidates,
     plot_results,
     read_results,
 )
@@ -51,6 +52,12 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         self.assertGreaterEqual(LABEL_FONT_SIZE, 20)
         self.assertGreaterEqual(AXIS_LABEL_FONT_SIZE, 24)
         self.assertGreaterEqual(TITLE_FONT_SIZE, 32)
+
+    def test_label_placement_prefers_nearby_positions(self) -> None:
+        first_candidates = label_candidates()[:8]
+        self.assertTrue(
+            all(max(abs(dx), abs(dy)) <= 15.0 for dx, dy in first_candidates)
+        )
 
 
 if __name__ == "__main__":

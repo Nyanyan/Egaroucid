@@ -92,17 +92,29 @@ def read_results(path: Path) -> list[Result]:
 
 
 def label_candidates() -> list[tuple[float, float]]:
-    candidates: list[tuple[float, float]] = []
-    for vertical in (22.0, 32.0, 44.0, 58.0, 76.0, 98.0):
-        for horizontal in (12.0, 32.0, 54.0, 82.0, 110.0):
-            candidates.extend(
-                [
-                    (horizontal, vertical),
-                    (-horizontal, vertical),
-                    (horizontal, -vertical),
-                    (-horizontal, -vertical),
-                ]
-            )
+    candidates = [
+        (15.0, 0.0),
+        (-15.0, 0.0),
+        (0.0, 15.0),
+        (0.0, -15.0),
+        (12.0, 12.0),
+        (-12.0, 12.0),
+        (12.0, -12.0),
+        (-12.0, -12.0),
+    ]
+    for distance in (20.0, 28.0, 38.0, 52.0, 70.0):
+        candidates.extend(
+            [
+                (distance, 0.0),
+                (-distance, 0.0),
+                (0.0, distance),
+                (0.0, -distance),
+                (distance, distance),
+                (-distance, distance),
+                (distance, -distance),
+                (-distance, -distance),
+            ]
+        )
     return candidates
 
 
@@ -175,8 +187,8 @@ def place_labels_without_overlap(
                 (result.rating, result.top1),
                 xytext=(dx, dy),
                 textcoords="offset points",
-                ha="left" if dx > 0 else "right",
-                va="bottom" if dy > 0 else "top",
+                ha="left" if dx > 0 else "right" if dx < 0 else "center",
+                va="bottom" if dy > 0 else "top" if dy < 0 else "center",
                 fontsize=LABEL_FONT_SIZE,
                 color=style["color"],
                 weight="bold",
