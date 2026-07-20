@@ -37,18 +37,15 @@ def result_row(
     alpha: float,
     top_n: int,
     *,
-    exact_hits: int,
-    symmetric_hits: int,
+    hits: int,
     positions: int,
 ) -> dict:
     return {
         "blend_param": alpha,
         "top_n": top_n,
-        "exact_hits": exact_hits,
-        "symmetric_hits": symmetric_hits,
+        "hits": hits,
         "positions": positions,
-        "exact_accuracy": exact_hits / positions,
-        "symmetric_accuracy": symmetric_hits / positions,
+        "accuracy": hits / positions,
     }
 
 
@@ -136,8 +133,7 @@ class SymmetryAgreementTest(unittest.TestCase):
                 result_row(
                     alpha,
                     1,
-                    exact_hits=0,
-                    symmetric_hits=2,
+                    hits=2,
                     positions=2,
                 )
             )
@@ -145,8 +141,7 @@ class SymmetryAgreementTest(unittest.TestCase):
                 result_row(
                     alpha,
                     3,
-                    exact_hits=1,
-                    symmetric_hits=2,
+                    hits=2,
                     positions=2,
                 )
             )
@@ -166,15 +161,13 @@ class SymmetryAgreementTest(unittest.TestCase):
                 result_row(
                     0.0,
                     1,
-                    exact_hits=0,
-                    symmetric_hits=2,
+                    hits=2,
                     positions=2,
                 ),
                 result_row(
                     0.0,
                     3,
-                    exact_hits=1,
-                    symmetric_hits=2,
+                    hits=2,
                     positions=2,
                 ),
             ]
@@ -194,8 +187,7 @@ class SymmetryAgreementTest(unittest.TestCase):
             metrics={
                 0.5: {
                     "positions": 3,
-                    "exact_hits": {1: 0},
-                    "symmetric_hits": {1: 2},
+                    "hits": {1: 2},
                 }
             },
             blend_params=[0.5],

@@ -425,8 +425,7 @@ def make_metrics(blend_params: Sequence[float], n_values: Sequence[int], bucket_
     return {
         blend: {
             "positions": 0,
-            "exact_hits": {n: 0 for n in n_values},
-            "symmetric_hits": {n: 0 for n in n_values},
+            "hits": {n: 0 for n in n_values},
             "bucket_positions": {bucket: 0 for bucket in bucket_names},
             "bucket_hits": {bucket: {n: 0 for n in n_values} for bucket in bucket_names},
         }
@@ -470,33 +469,24 @@ def update_metrics_for_position_sample(
     if raw_hint_limit > 0 and len(raw_hint_samples) < raw_hint_limit:
         raw_hint_samples.append({"index": sample_index, "raw_hint": raw_hint})
 
-    exact_targets = [policy]
-    symmetric_targets = equivalent_targets(player, opponent, policy)
+    targets = equivalent_targets(player, opponent, policy)
     bucket = move_bucket(move_number)
 
     for blend in blend_params:
         distribution = geometric_blend_distribution(policy_dist, egaroucid_dist, legal_policies, blend)
         tie_break_order = hint_move_order if float(blend) == 0.0 else None
-        exact_rank = rank_for_distribution(
+        rank = rank_for_distribution(
             distribution,
             legal_policies,
-            exact_targets,
-            tie_break_order,
-        )
-        symmetric_rank = rank_for_distribution(
-            distribution,
-            legal_policies,
-            symmetric_targets,
+            targets,
             tie_break_order,
         )
         m = metrics[blend]
         m["positions"] += 1
         m["bucket_positions"][bucket] += 1
         for n in n_values:
-            if exact_rank <= n:
-                m["exact_hits"][n] += 1
-            if symmetric_rank <= n:
-                m["symmetric_hits"][n] += 1
+            if rank <= n:
+                m["hits"][n] += 1
                 m["bucket_hits"][bucket][n] += 1
     return 1, 0, 0
 
@@ -507,8 +497,7 @@ def merge_worker_result(target: Dict[float, dict], worker_metrics: Dict[float, d
         src = worker_metrics[blend]
         dst["positions"] += src["positions"]
         for n in n_values:
-            dst["exact_hits"][n] += src["exact_hits"][n]
-            dst["symmetric_hits"][n] += src["symmetric_hits"][n]
+            dst["hits"][n] += src["hits"][n]
         for bucket in bucket_names:
             dst["bucket_positions"][bucket] += src["bucket_positions"][bucket]
             for n in n_values:
@@ -551,7 +540,7 @@ def make_worker_progress_event(
             "positions": metric["positions"],
         }
         for n in n_values:
-            row[f"top{n}_hits"] = metric["symmetric_hits"][n]
+            row[f"top{n}_hits"] = metric["hits"][n]
         rows.append(row)
     return {
         "worker_id": worker_id,
@@ -751,19 +740,15 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         m = metrics[blend]
         positions = m["positions"]
         for n in n_values:
-            hits = m["symmetric_hits"][n]
+            hits = m["hits"][n]
             accuracy = hits / positions if positions else 0.0
             topn_rows.append(
                 {
                     "blend_param": blend,
                     "top_n": n,
                     "hits": hits,
-                    "accuracy": accuracy,
-                    "exact_hits": m["exact_hits"][n],
-                    "symmetric_hits": hits,
                     "positions": positions,
-                    "exact_accuracy": m["exact_hits"][n] / positions if positions else 0.0,
-                    "symmetric_accuracy": accuracy,
+                    "accuracy": accuracy,
                 }
             )
         for bucket in bucket_names:
@@ -775,9 +760,9 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
                         "blend_param": blend,
                         "move_bucket": bucket,
                         "top_n": n,
-                        "symmetric_hits": hits,
+                        "hits": hits,
                         "positions": bucket_positions,
-                        "symmetric_accuracy": hits / bucket_positions if bucket_positions else 0.0,
+                        "accuracy": hits / bucket_positions if bucket_positions else 0.0,
                     }
                 )
 
@@ -828,13 +813,12 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
             "note": "各局面のPolicy Network出力とhint出力を1回だけ計算し、すべてのalphaで共用する。",
         },
         "agreement_definition": {
-            "primary_metric": "symmetry_aware",
+            "metric": "board_symmetry_aware",
             "description": (
                 "手番側と相手側の石配置をそれぞれ不変に保つ盤面対称変換で、"
                 "WTHORの実着手から移る合法手を同値手とする。"
                 "同値手のいずれかが上位N手に入れば一致と数える。"
             ),
-            "exact_metric_role": "診断用。正式な着手一致率には使用しない。",
         },
         "ranking_definition": {
             "top_n": (
@@ -857,22 +841,12 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
     write_csv(
         args.output_dir / "wthor_blend_human_match_topn.csv",
         topn_rows,
-        [
-            "blend_param",
-            "top_n",
-            "hits",
-            "positions",
-            "accuracy",
-            "symmetric_hits",
-            "symmetric_accuracy",
-            "exact_hits",
-            "exact_accuracy",
-        ],
+        ["blend_param", "top_n", "hits", "positions", "accuracy"],
     )
     write_csv(
         args.output_dir / "wthor_blend_human_match_by_move10.csv",
         bucket_rows,
-        ["blend_param", "move_bucket", "top_n", "symmetric_hits", "positions", "symmetric_accuracy"],
+        ["blend_param", "move_bucket", "top_n", "hits", "positions", "accuracy"],
     )
     return result
 
@@ -1187,8 +1161,7 @@ def main() -> None:
             print(
                 f"blend {row['blend_param']:g} top-1 symmetry-aware "
                 f"{row['accuracy'] * 100.0:.3f}% "
-                f"(exact diagnostic {row['exact_accuracy'] * 100.0:.3f}%, "
-                f"{row['positions']} positions)"
+                f"({row['positions']} positions)"
             )
     print("output_dir", args.output_dir)
 

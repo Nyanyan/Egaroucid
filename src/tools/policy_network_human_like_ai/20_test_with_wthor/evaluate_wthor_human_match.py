@@ -12,19 +12,28 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 from pathlib import Path
 import struct
+import sys
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 
+HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
+
+from policy_accuracy import (  # noqa: E402
+    equivalent_policy_mask,
+    symmetry_aware_policy_ranks,
+)
+
+
 BOARD_SAMPLE_SIZE = 19
-HW = 8
 HW2 = 64
-HW2_M1 = 63
 INPUT_SIZE = 128
 POLICY_SIZE = 64
 
@@ -80,49 +89,6 @@ def shift_sw(x: np.ndarray) -> np.ndarray:
 
 
 SHIFT_FUNCS = (shift_east, shift_west, shift_north, shift_south, shift_ne, shift_nw, shift_se, shift_sw)
-
-
-def policy_to_xy(policy: int) -> Tuple[int, int]:
-    pos = HW2_M1 - policy
-    return pos % HW, pos // HW
-
-
-def xy_to_policy(x: int, y: int) -> int:
-    return HW2_M1 - (y * HW + x)
-
-
-def make_transform_maps() -> List[np.ndarray]:
-    maps = []
-    transforms = (
-        lambda x, y: (x, y),
-        lambda x, y: (HW - 1 - x, y),
-        lambda x, y: (x, HW - 1 - y),
-        lambda x, y: (HW - 1 - x, HW - 1 - y),
-        lambda x, y: (y, x),
-        lambda x, y: (HW - 1 - y, HW - 1 - x),
-        lambda x, y: (HW - 1 - y, x),
-        lambda x, y: (y, HW - 1 - x),
-    )
-    for transform in transforms:
-        mapping = np.empty(HW2, dtype=np.int64)
-        for policy in range(HW2):
-            x, y = policy_to_xy(policy)
-            tx, ty = transform(x, y)
-            mapping[policy] = xy_to_policy(tx, ty)
-        maps.append(mapping)
-    return maps
-
-
-TRANSFORM_MAPS = make_transform_maps()
-
-
-def transform_bitboards(bits: np.ndarray, mapping: np.ndarray) -> np.ndarray:
-    result = np.zeros_like(bits, dtype=np.uint64)
-    for old_policy, new_policy in enumerate(mapping):
-        old_bit = np.uint64(1) << np.uint64(old_policy)
-        new_bit = np.uint64(1) << np.uint64(new_policy)
-        result |= np.where((bits & old_bit) != 0, new_bit, np.uint64(0))
-    return result
 
 
 def softmax(logits: np.ndarray) -> np.ndarray:
@@ -193,6 +159,71 @@ def discover_dat_files(board_data_dir: Path) -> List[Path]:
     return files
 
 
+def count_position_samples(
+    dat_files: Sequence[Path],
+    max_positions: Optional[int],
+) -> int:
+    total = 0
+    for path in dat_files:
+        positions = path.stat().st_size // BOARD_SAMPLE_SIZE
+        if max_positions is not None:
+            positions = min(positions, max_positions - total)
+        if positions <= 0:
+            break
+        total += positions
+    return total
+
+
+def split_counts(
+    total: int,
+    train_ratio: float,
+    val_ratio: float,
+    test_ratio: float,
+) -> Tuple[int, int, int]:
+    ratio_sum = train_ratio + val_ratio + test_ratio
+    if total <= 0:
+        raise ValueError("total split size must be positive")
+    if ratio_sum <= 0.0:
+        raise ValueError("train/validation/test ratios must have a positive sum")
+    n_train = int(np.floor(total * (train_ratio / ratio_sum)))
+    n_val = int(np.floor(total * (val_ratio / ratio_sum)))
+    n_test = total - n_train - n_val
+    if n_train <= 0 or n_val <= 0 or n_test <= 0:
+        raise ValueError(
+            f"split produced an empty part: "
+            f"train={n_train} val={n_val} test={n_test}"
+        )
+    return n_train, n_val, n_test
+
+
+def choose_data_split_positions(
+    total_positions: int,
+    data_split: str,
+    train_ratio: float,
+    val_ratio: float,
+    test_ratio: float,
+    split_seed: int,
+) -> Tuple[Optional[np.ndarray], int]:
+    if data_split == "all":
+        return None, total_positions
+
+    n_train, n_val, n_test = split_counts(
+        total_positions,
+        train_ratio,
+        val_ratio,
+        test_ratio,
+    )
+    order = np.random.default_rng(split_seed).permutation(total_positions)
+    split_ranges = {
+        "train": (0, n_train),
+        "val": (n_train, n_train + n_val),
+        "test": (n_train + n_val, n_train + n_val + n_test),
+    }
+    start, end = split_ranges[data_split]
+    selected = np.sort(order[start:end].astype(np.int64, copy=False))
+    return selected, len(selected)
+
+
 def calc_legal_batch(player: np.ndarray, opponent: np.ndarray) -> np.ndarray:
     empty = ~(player | opponent)
     legal = np.zeros_like(player, dtype=np.uint64)
@@ -236,19 +267,6 @@ def legal_bitboard_to_mask(legal: np.ndarray) -> np.ndarray:
     return (legal.reshape(-1, 1) & POLICY_BIT_MASKS) != 0
 
 
-def equivalent_policy_mask(player: np.ndarray, opponent: np.ndarray, policies: np.ndarray) -> np.ndarray:
-    equiv = np.zeros((len(policies), POLICY_SIZE), dtype=bool)
-    rows = np.arange(len(policies))
-    equiv[rows, policies] = True
-    for mapping in TRANSFORM_MAPS[1:]:
-        t_player = transform_bitboards(player, mapping)
-        t_opponent = transform_bitboards(opponent, mapping)
-        invariant = (t_player == player) & (t_opponent == opponent)
-        if np.any(invariant):
-            equiv[rows[invariant], mapping[policies[invariant]]] = True
-    return equiv
-
-
 def move_bucket(move_number: int) -> str:
     start = ((max(1, min(60, int(move_number))) - 1) // 10) * 10 + 1
     return f"{start:02d}_{start + 9:02d}"
@@ -267,6 +285,50 @@ def iter_position_batches(path: Path, batch_size: int, max_positions: Optional[i
         yield np.asarray(mmap[start:end])
 
 
+def iter_position_batches_for_selected_globals(
+    path: Path,
+    file_global_start: int,
+    available_positions: int,
+    selected_global_positions: np.ndarray,
+    batch_size: int,
+) -> Iterable[np.ndarray]:
+    size = path.stat().st_size
+    file_positions = min(
+        size // BOARD_SAMPLE_SIZE,
+        max(0, available_positions - file_global_start),
+    )
+    file_global_end = file_global_start + file_positions
+    left = int(
+        np.searchsorted(
+            selected_global_positions,
+            file_global_start,
+            side="left",
+        )
+    )
+    right = int(
+        np.searchsorted(
+            selected_global_positions,
+            file_global_end,
+            side="left",
+        )
+    )
+    if left == right:
+        return
+    local_indices = (
+        selected_global_positions[left:right] - file_global_start
+    )
+    mmap = np.memmap(
+        path,
+        dtype=BOARD_DTYPE,
+        mode="r",
+        shape=(size // BOARD_SAMPLE_SIZE,),
+    )
+    for start in range(0, len(local_indices), batch_size):
+        yield np.asarray(
+            mmap[local_indices[start : start + batch_size]]
+        )
+
+
 def write_csv(path: Path, rows: Sequence[dict], fields: Sequence[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as f:
@@ -280,23 +342,61 @@ def evaluate(args: argparse.Namespace) -> dict:
     model = load_keras_model(args.model) if args.model is not None and args.model.exists() else None
     binary_network = None if model is not None else BinaryPolicyNetwork(args.weights)
     model_source = str(args.model) if model is not None else str(args.weights)
+    dat_files = discover_dat_files(args.board_data_dir)
+    available_positions = count_position_samples(
+        dat_files,
+        args.max_positions,
+    )
+    selected_global_positions, split_positions = choose_data_split_positions(
+        available_positions,
+        args.data_split,
+        args.train_ratio,
+        args.val_ratio,
+        args.test_ratio,
+        args.split_seed,
+    )
+    selected_position_set_sha256 = (
+        hashlib.sha256(
+            selected_global_positions.astype(
+                "<i8",
+                copy=False,
+            ).tobytes()
+        ).hexdigest()
+        if selected_global_positions is not None
+        else None
+    )
 
     total_valid = 0
     invalid_policy = 0
     illegal_label = 0
-    exact_hits = {n: 0 for n in n_values}
-    symmetric_hits = {n: 0 for n in n_values}
+    total_hits = {n: 0 for n in n_values}
     bucket_positions = {move_bucket(i): 0 for i in range(1, 61, 10)}
     bucket_hits = {bucket: {n: 0 for n in n_values} for bucket in bucket_positions}
 
-    remaining = args.max_positions
-    for dat_file in discover_dat_files(args.board_data_dir):
-        if remaining is not None and remaining <= 0:
+    remaining = available_positions
+    file_global_start = 0
+    for dat_file in dat_files:
+        file_positions = dat_file.stat().st_size // BOARD_SAMPLE_SIZE
+        if file_global_start >= available_positions:
             break
-        for position_samples in iter_position_batches(dat_file, args.batch_size, remaining):
+        if selected_global_positions is None:
+            batches = iter_position_batches(
+                dat_file,
+                args.batch_size,
+                remaining,
+            )
+        else:
+            batches = iter_position_batches_for_selected_globals(
+                dat_file,
+                file_global_start,
+                available_positions,
+                selected_global_positions,
+                args.batch_size,
+            )
+        for position_samples in batches:
             if len(position_samples) == 0:
                 continue
-            if remaining is not None:
+            if selected_global_positions is None:
                 remaining -= len(position_samples)
             x, policies, legal, player, opponent, move_numbers = position_samples_to_features(position_samples)
             probabilities = predict_batch(model, binary_network, x, args.predict_batch_size)
@@ -313,41 +413,38 @@ def evaluate(args: argparse.Namespace) -> dict:
             move_numbers = move_numbers[valid]
 
             legal_mask = legal_bitboard_to_mask(legal)
-            exact_label_prob = probabilities[np.arange(len(policies)), policies]
-            exact_rank = 1 + np.count_nonzero((probabilities > exact_label_prob.reshape(-1, 1)) & legal_mask, axis=1)
             equiv_mask = equivalent_policy_mask(player, opponent, policies)
-            equiv_prob = np.max(np.where(equiv_mask, probabilities, -1.0), axis=1)
-            symmetric_rank = 1 + np.count_nonzero((probabilities > equiv_prob.reshape(-1, 1)) & legal_mask, axis=1)
+            rank = symmetry_aware_policy_ranks(
+                probabilities,
+                legal_mask,
+                equiv_mask,
+            )
 
             for n in n_values:
-                exact_hits[n] += int(np.count_nonzero(exact_rank <= n))
-                symmetric_hits[n] += int(np.count_nonzero(symmetric_rank <= n))
+                total_hits[n] += int(np.count_nonzero(rank <= n))
             for bucket in bucket_positions:
                 start, end = [int(v) for v in bucket.split("_")]
                 mask = (start <= move_numbers) & (move_numbers <= end)
                 bucket_positions[bucket] += int(np.count_nonzero(mask))
                 if np.any(mask):
                     for n in n_values:
-                        bucket_hits[bucket][n] += int(np.count_nonzero(symmetric_rank[mask] <= n))
+                        bucket_hits[bucket][n] += int(np.count_nonzero(rank[mask] <= n))
 
             total_valid += len(policies)
             if args.verbose and total_valid and total_valid % args.progress_interval < len(position_samples):
                 print(f"evaluated {total_valid} valid positions")
+        file_global_start += file_positions
 
     topn_rows = []
     for n in n_values:
-        hits = symmetric_hits[n]
+        hits = total_hits[n]
         accuracy = hits / total_valid if total_valid else 0.0
         topn_rows.append(
             {
                 "top_n": n,
                 "hits": hits,
-                "accuracy": accuracy,
-                "exact_hits": exact_hits[n],
-                "symmetric_hits": hits,
                 "positions": total_valid,
-                "exact_accuracy": exact_hits[n] / total_valid if total_valid else 0.0,
-                "symmetric_accuracy": accuracy,
+                "accuracy": accuracy,
             }
         )
     bucket_rows = []
@@ -359,23 +456,43 @@ def evaluate(args: argparse.Namespace) -> dict:
                 {
                     "move_bucket": bucket,
                     "top_n": n,
-                    "symmetric_hits": hits,
+                    "hits": hits,
                     "positions": positions,
-                    "symmetric_accuracy": hits / positions if positions else 0.0,
+                    "accuracy": hits / positions if positions else 0.0,
                 }
             )
     result = {
         "board_data_dir": str(args.board_data_dir),
         "model_source": model_source,
+        "data_split": args.data_split,
+        "split_seed": (
+            args.split_seed
+            if args.data_split != "all"
+            else None
+        ),
+        "split_ratios": {
+            "train": args.train_ratio,
+            "validation": args.val_ratio,
+            "test": args.test_ratio,
+        },
+        "available_positions": available_positions,
+        "split_positions": split_positions,
+        "selected_position_set_sha256": selected_position_set_sha256,
         "positions": total_valid,
         "agreement_definition": {
-            "primary_metric": "symmetry_aware",
+            "metric": "board_symmetry_aware",
             "description": (
                 "手番側と相手側の石配置をそれぞれ不変に保つ盤面対称変換で、"
                 "人間の実着手から移る合法手を同値手とする。"
                 "同値手のいずれかが上位N手に入れば一致と数える。"
             ),
-            "exact_metric_role": "診断用。正式な着手一致率には使用しない。",
+        },
+        "ranking_definition": {
+            "description": (
+                "合法手を方策値の降順に一意に並べる。"
+                "方策値が同じ場合はpolicy番号の昇順を使用する。"
+            ),
+            "tie_break": "ascending_policy_index",
         },
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
@@ -388,18 +505,13 @@ def evaluate(args: argparse.Namespace) -> dict:
     write_csv(
         args.output_dir / "wthor_human_match_topn.csv",
         topn_rows,
-        [
-            "top_n",
-            "hits",
-            "positions",
-            "accuracy",
-            "symmetric_hits",
-            "symmetric_accuracy",
-            "exact_hits",
-            "exact_accuracy",
-        ],
+        ["top_n", "hits", "positions", "accuracy"],
     )
-    write_csv(args.output_dir / "wthor_human_match_by_move10.csv", bucket_rows, ["move_bucket", "top_n", "symmetric_hits", "positions", "symmetric_accuracy"])
+    write_csv(
+        args.output_dir / "wthor_human_match_by_move10.csv",
+        bucket_rows,
+        ["move_bucket", "top_n", "hits", "positions", "accuracy"],
+    )
     return result
 
 
@@ -413,6 +525,15 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--model", type=Path, default=None)
     parser.add_argument("--weights", type=Path, required=True)
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,4,5,8,10,16"))
+    parser.add_argument(
+        "--data-split",
+        choices=("all", "train", "val", "test"),
+        default="all",
+    )
+    parser.add_argument("--split-seed", type=int, default=613)
+    parser.add_argument("--train-ratio", type=float, default=0.8)
+    parser.add_argument("--val-ratio", type=float, default=0.1)
+    parser.add_argument("--test-ratio", type=float, default=0.1)
     parser.add_argument("--batch-size", type=int, default=65536)
     parser.add_argument("--predict-batch-size", type=int, default=8192)
     parser.add_argument("--max-positions", type=int, default=None)
@@ -427,13 +548,20 @@ def main() -> None:
     result = evaluate(args)
     print("model_source", result["model_source"])
     print("board_data_dir", result["board_data_dir"])
+    print("data_split", result["data_split"])
+    print("split_positions", result["split_positions"])
+    if result["selected_position_set_sha256"] is not None:
+        print(
+            "selected_position_set_sha256",
+            result["selected_position_set_sha256"],
+        )
     print("positions", result["positions"])
     print("invalid_policy_samples", result["invalid_policy_samples"])
     print("illegal_label_samples", result["illegal_label_samples"])
     for row in result["topn"]:
         print(
-            f"top-{row['top_n']:>2}: symmetry-aware {row['accuracy'] * 100.0:.3f}% "
-            f"(exact diagnostic {row['exact_accuracy'] * 100.0:.3f}%)"
+            f"top-{row['top_n']:>2}: symmetry-aware "
+            f"{row['accuracy'] * 100.0:.3f}%"
         )
     print("output_dir", args.output_dir)
 

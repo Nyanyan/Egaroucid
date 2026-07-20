@@ -33,6 +33,7 @@ from pathlib import Path
 import random
 import shutil
 import struct
+import sys
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -42,6 +43,15 @@ from tensorflow.keras.callbacks import CSVLogger
 from tensorflow.keras.layers import Dense, Dropout, Input, LeakyReLU, Softmax
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2 as keras_l2
+
+
+HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
+
+from policy_accuracy import (  # noqa: E402
+    equivalent_policy_mask,
+    symmetry_aware_policy_ranks,
+)
 
 
 BOARD_SAMPLE_SIZE = 19
@@ -78,6 +88,8 @@ class SplitArrays:
     x: np.ndarray
     policy: np.ndarray
     legal: np.ndarray
+    player: np.ndarray
+    opponent: np.ndarray
     n_discs: np.ndarray
 
 
@@ -214,7 +226,14 @@ def position_samples_to_split_arrays(position_samples: np.ndarray) -> SplitArray
     x, y_policy = position_samples_to_targets(position_samples)
     legal = calc_legal_batch(player_bits, opponent_bits)
     n_discs = np.count_nonzero(x, axis=1).astype(np.int16, copy=False)
-    return SplitArrays(x=x, policy=y_policy, legal=legal, n_discs=n_discs)
+    return SplitArrays(
+        x=x,
+        policy=y_policy,
+        legal=legal,
+        player=player_bits,
+        opponent=opponent_bits,
+        n_discs=n_discs,
+    )
 
 
 def load_position_samples(files: Sequence[BoardFile], max_position_samples: Optional[int]) -> np.ndarray:
@@ -368,6 +387,8 @@ def evaluate_policy_topn_arrays(
         probabilities = model.predict(split.x[start:end], batch_size=predict_batch_size, verbose=0)
         policies = split.policy[start:end]
         legal = split.legal[start:end]
+        player = split.player[start:end]
+        opponent = split.opponent[start:end]
         valid, n_invalid_policy, n_illegal_label = valid_policy_mask(policies, legal)
         invalid_policy += n_invalid_policy
         illegal_label += n_illegal_label
@@ -377,9 +398,19 @@ def evaluate_policy_topn_arrays(
         probabilities = probabilities[valid]
         policies = policies[valid]
         legal = legal[valid]
+        player = player[valid]
+        opponent = opponent[valid]
         legal_mask = legal_bitboard_to_mask(legal)
-        label_prob = probabilities[np.arange(len(policies)), policies]
-        rank = 1 + np.count_nonzero((probabilities > label_prob.reshape(-1, 1)) & legal_mask, axis=1)
+        equivalent_mask = equivalent_policy_mask(
+            player,
+            opponent,
+            policies,
+        )
+        rank = symmetry_aware_policy_ranks(
+            probabilities,
+            legal_mask,
+            equivalent_mask,
+        )
         for n in n_values:
             total_hits[n] += int(np.count_nonzero(rank <= n))
         total_positions += int(np.count_nonzero(valid))
@@ -393,6 +424,8 @@ def evaluate_policy_topn_arrays(
         "positions": total_positions,
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
+        "agreement_definition": "board_symmetry_aware",
+        "ranking_tie_break": "ascending_policy_index",
         "topn": topn_rows,
     }
 
@@ -461,11 +494,6 @@ def build_model(spec: ModelSpec) -> Model:
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=spec.learning_rate),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=[
-            tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-            tf.keras.metrics.SparseTopKCategoricalAccuracy(k=3, name="top3"),
-            tf.keras.metrics.SparseTopKCategoricalAccuracy(k=5, name="top5"),
-        ],
     )
     return model
 
@@ -545,13 +573,7 @@ def train_one_model(
         "adopted_epoch": adopted_epoch,
         "adoption_rule": "use_model_after_requested_epoch_count",
         "validation_loss": float(history.history["val_loss"][adopted_idx]),
-        "validation_accuracy": float(history.history["val_accuracy"][adopted_idx]),
-        "validation_top3": float(history.history["val_top3"][adopted_idx]),
-        "validation_top5": float(history.history["val_top5"][adopted_idx]),
         "final_loss": float(history.history["loss"][-1]),
-        "final_accuracy": float(history.history["accuracy"][-1]),
-        "final_top3": float(history.history["top3"][-1]),
-        "final_top5": float(history.history["top5"][-1]),
         "output_dir": str(run_dir),
     }
     if split_eval_data is not None and not args.no_split_topn:
@@ -576,10 +598,10 @@ def train_one_model(
             )
         result["split_topn"] = split_results
         val_topn = {int(row["top_n"]): float(row["accuracy"]) for row in split_results["val"]["topn"]}
-        result["validation_legal_masked_top1"] = val_topn.get(1)
-        result["validation_legal_masked_top3"] = val_topn.get(3)
-        result["validation_legal_masked_top5"] = val_topn.get(5)
-        result["validation_legal_masked_top10"] = val_topn.get(10)
+        result["validation_top1"] = val_topn.get(1)
+        result["validation_top3"] = val_topn.get(3)
+        result["validation_top5"] = val_topn.get(5)
+        result["validation_top10"] = val_topn.get(10)
         with (run_dir / "split_topn_accuracy.json").open("w", encoding="utf-8") as f:
             json.dump(split_results, f, indent=2)
         write_topn_rows(run_dir / "split_topn_accuracy.csv", all_rows)
@@ -599,16 +621,11 @@ def write_results(results: Sequence[dict], output_dir: Path) -> None:
         "adopted_epoch",
         "adoption_rule",
         "validation_loss",
-        "validation_accuracy",
+        "validation_top1",
         "validation_top3",
         "validation_top5",
-        "validation_legal_masked_top1",
-        "validation_legal_masked_top3",
-        "validation_legal_masked_top5",
+        "validation_top10",
         "final_loss",
-        "final_accuracy",
-        "final_top3",
-        "final_top5",
         "output_dir",
     ]
     with (output_dir / "results.csv").open("w", newline="") as f:
@@ -619,9 +636,14 @@ def write_results(results: Sequence[dict], output_dir: Path) -> None:
 
 
 def run_selection_key(result: dict) -> Tuple[float, float, int]:
+    if result.get("validation_top1") is None or result.get("validation_top3") is None:
+        raise ValueError(
+            "model selection requires symmetry-aware validation top-1 and top-3; "
+            "do not use --no-split-topn when comparing model configurations"
+        )
     return (
-        float(result.get("validation_legal_masked_top1", result.get("validation_accuracy", 0.0))),
-        float(result.get("validation_legal_masked_top3", result.get("validation_top3", 0.0))),
+        float(result["validation_top1"]),
+        float(result["validation_top3"]),
         -int(result.get("params", 0)),
     )
 
@@ -736,7 +758,7 @@ def main() -> None:
         results.append(train_one_model(spec, x_train, p_train, x_val, p_val, args, output_dir, split_eval_data))
         write_results(results, output_dir)
 
-    selected = max(results, key=run_selection_key)
+    selected = results[0] if len(results) == 1 else max(results, key=run_selection_key)
     selected_dir = Path(selected["output_dir"])
     shutil.copyfile(selected_dir / "policy_network_weights.bin", output_dir / "selected_policy_network_weights.bin")
     shutil.copyfile(selected_dir / "model.h5", output_dir / "selected_model.h5")

@@ -540,19 +540,19 @@ def make_blend_summary_rows(result: dict) -> List[dict]:
         top1 = topn[(round(alpha, 10), 1)]
         top3 = topn[(round(alpha, 10), 3)]
         lower, upper = wilson_interval(
-            int(top1["symmetric_hits"]),
+            int(top1["hits"]),
             int(top1["positions"]),
         )
         rows.append(
             {
                 "alpha": alpha,
                 "positions": int(top1["positions"]),
-                "top1_hits": int(top1["symmetric_hits"]),
-                "top1_accuracy": float(top1["symmetric_accuracy"]),
+                "top1_hits": int(top1["hits"]),
+                "top1_accuracy": float(top1["accuracy"]),
                 "top1_ci95_lower": lower,
                 "top1_ci95_upper": upper,
-                "top3_hits": int(top3["symmetric_hits"]),
-                "top3_accuracy": float(top3["symmetric_accuracy"]),
+                "top3_hits": int(top3["hits"]),
+                "top3_accuracy": float(top3["accuracy"]),
             }
         )
     return rows
@@ -567,18 +567,18 @@ def make_console_level_summary_row(level: int, result: dict, elapsed_sec: float)
     top1 = topn[1]
     top3 = topn[3]
     lower, upper = wilson_interval(
-        int(top1["symmetric_hits"]),
+        int(top1["hits"]),
         int(top1["positions"]),
     )
     return {
         "level": level,
         "positions": int(top1["positions"]),
-        "top1_hits": int(top1["symmetric_hits"]),
-        "top1_accuracy": float(top1["symmetric_accuracy"]),
+        "top1_hits": int(top1["hits"]),
+        "top1_accuracy": float(top1["accuracy"]),
         "top1_ci95_lower": lower,
         "top1_ci95_upper": upper,
-        "top3_hits": int(top3["symmetric_hits"]),
-        "top3_accuracy": float(top3["symmetric_accuracy"]),
+        "top3_hits": int(top3["hits"]),
+        "top3_accuracy": float(top3["accuracy"]),
         "elapsed_sec": elapsed_sec,
     }
 

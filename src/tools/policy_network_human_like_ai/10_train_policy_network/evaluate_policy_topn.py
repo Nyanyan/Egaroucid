@@ -17,9 +17,19 @@ import json
 import os
 from pathlib import Path
 import struct
+import sys
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
+
+
+HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
+
+from policy_accuracy import (  # noqa: E402
+    equivalent_policy_mask,
+    symmetry_aware_policy_ranks,
+)
 
 
 BOARD_SAMPLE_SIZE = 19
@@ -169,7 +179,9 @@ def calc_legal_batch(player: np.ndarray, opponent: np.ndarray) -> np.ndarray:
     return legal
 
 
-def position_samples_to_features(position_samples: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def position_samples_to_features(
+    position_samples: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     player = position_samples["player"].astype(np.uint64, copy=False)
     opponent = position_samples["opponent"].astype(np.uint64, copy=False)
     policies = position_samples["policy"].astype(np.int64, copy=False)
@@ -179,7 +191,7 @@ def position_samples_to_features(position_samples: np.ndarray) -> Tuple[np.ndarr
     x[:, HW2:] = ((opponent.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
     legal = calc_legal_batch(player, opponent)
     n_discs = np.count_nonzero(x, axis=1)
-    return x, policies, legal, n_discs
+    return x, policies, legal, player, opponent, n_discs
 
 
 def legal_bitboard_to_mask(legal: np.ndarray) -> np.ndarray:
@@ -206,6 +218,8 @@ def update_policy_hits(
     probabilities: np.ndarray,
     policies: np.ndarray,
     legal: np.ndarray,
+    player: np.ndarray,
+    opponent: np.ndarray,
     n_values: Sequence[int],
     total_hits: Dict[int, int],
     total_by_phase: Dict[str, int],
@@ -213,8 +227,16 @@ def update_policy_hits(
     n_discs: np.ndarray,
 ) -> None:
     legal_mask = legal_bitboard_to_mask(legal)
-    label_prob = probabilities[np.arange(len(policies)), policies]
-    rank = 1 + np.count_nonzero((probabilities > label_prob.reshape(-1, 1)) & legal_mask, axis=1)
+    equivalent_mask = equivalent_policy_mask(
+        player,
+        opponent,
+        policies,
+    )
+    rank = symmetry_aware_policy_ranks(
+        probabilities,
+        legal_mask,
+        equivalent_mask,
+    )
 
     for n in n_values:
         total_hits[n] += int(np.count_nonzero(rank <= n))
@@ -296,7 +318,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                 continue
             if remaining is not None:
                 remaining -= len(position_samples)
-            x, policies, legal, n_discs = position_samples_to_features(position_samples)
+            x, policies, legal, player, opponent, n_discs = position_samples_to_features(position_samples)
             probabilities = predict_batch(model, binary_network, x, args.predict_batch_size)
             valid, n_invalid_policy, n_illegal_label = valid_policy_mask(policies, legal)
             invalid_policy += n_invalid_policy
@@ -307,8 +329,21 @@ def evaluate(args: argparse.Namespace) -> dict:
             probabilities = probabilities[valid]
             policies = policies[valid]
             legal = legal[valid]
+            player = player[valid]
+            opponent = opponent[valid]
             n_discs = n_discs[valid]
-            update_policy_hits(probabilities, policies, legal, n_values, total_hits, total_by_phase, hits_by_phase, n_discs)
+            update_policy_hits(
+                probabilities,
+                policies,
+                legal,
+                player,
+                opponent,
+                n_values,
+                total_hits,
+                total_by_phase,
+                hits_by_phase,
+                n_discs,
+            )
 
             total_positions += int(np.count_nonzero(valid))
             if args.verbose and total_positions and total_positions % args.progress_interval < len(position_samples):
@@ -332,6 +367,8 @@ def evaluate(args: argparse.Namespace) -> dict:
         "positions": total_positions,
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
+        "agreement_definition": "board_symmetry_aware",
+        "ranking_tie_break": "ascending_policy_index",
         "topn": topn_rows,
         "phase_topn": phase_rows,
     }
