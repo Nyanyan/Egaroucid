@@ -495,7 +495,7 @@ def make_worker_progress_event(
             "positions": metric["positions"],
         }
         for n in n_values:
-            row[f"top{n}_hits"] = metric["exact_hits"][n]
+            row[f"top{n}_hits"] = metric["symmetric_hits"][n]
         rows.append(row)
     return {
         "worker_id": worker_id,
@@ -664,15 +664,19 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
         m = metrics[blend]
         positions = m["positions"]
         for n in n_values:
+            hits = m["symmetric_hits"][n]
+            accuracy = hits / positions if positions else 0.0
             topn_rows.append(
                 {
                     "blend_param": blend,
                     "top_n": n,
+                    "hits": hits,
+                    "accuracy": accuracy,
                     "exact_hits": m["exact_hits"][n],
-                    "symmetric_hits": m["symmetric_hits"][n],
+                    "symmetric_hits": hits,
                     "positions": positions,
                     "exact_accuracy": m["exact_hits"][n] / positions if positions else 0.0,
-                    "symmetric_accuracy": m["symmetric_hits"][n] / positions if positions else 0.0,
+                    "symmetric_accuracy": accuracy,
                 }
             )
         for bucket in bucket_names:
@@ -727,8 +731,20 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
             "blend_params_evaluated_from_shared_distributions": len(blend_params),
             "note": "各局面のPolicy Network出力とhint出力を1回だけ計算し、すべてのalphaで共用する。",
         },
+        "agreement_definition": {
+            "primary_metric": "symmetry_aware",
+            "description": (
+                "手番側と相手側の石配置をそれぞれ不変に保つ盤面対称変換で、"
+                "WTHORの実着手から移る合法手を同値手とする。"
+                "同値手のいずれかが上位N手に入れば一致と数える。"
+            ),
+            "exact_metric_role": "診断用。正式な着手一致率には使用しない。",
+        },
         "ranking_definition": {
-            "top_n": "確率の降順で手を一意に並べ、WTHORの実着手が先頭N手に含まれるかを数える。",
+            "top_n": (
+                "確率の降順で手を一意に並べ、WTHORの実着手または盤面対称性により"
+                "同値な手のいずれかが先頭N手に含まれるかを数える。"
+            ),
             "alpha_zero_tie_break": "Egaroucid for Consoleのhint出力順を使う。",
             "other_tie_break": "確率が同じ場合は合法手の固定順を使う。",
         },
@@ -745,7 +761,17 @@ def finalize_result(args: argparse.Namespace, blend_params: Sequence[float], n_v
     write_csv(
         args.output_dir / "wthor_blend_human_match_topn.csv",
         topn_rows,
-        ["blend_param", "top_n", "exact_hits", "symmetric_hits", "positions", "exact_accuracy", "symmetric_accuracy"],
+        [
+            "blend_param",
+            "top_n",
+            "hits",
+            "positions",
+            "accuracy",
+            "symmetric_hits",
+            "symmetric_accuracy",
+            "exact_hits",
+            "exact_accuracy",
+        ],
     )
     write_csv(
         args.output_dir / "wthor_blend_human_match_by_move10.csv",
@@ -1046,8 +1072,10 @@ def main() -> None:
     for row in result["topn"]:
         if row["top_n"] == 1:
             print(
-                f"blend {row['blend_param']:g} top-1 exact {row['exact_accuracy'] * 100.0:.3f}% "
-                f"symmetric {row['symmetric_accuracy'] * 100.0:.3f}% ({row['positions']})"
+                f"blend {row['blend_param']:g} top-1 symmetry-aware "
+                f"{row['accuracy'] * 100.0:.3f}% "
+                f"(exact diagnostic {row['exact_accuracy'] * 100.0:.3f}%, "
+                f"{row['positions']} positions)"
             )
     print("output_dir", args.output_dir)
 

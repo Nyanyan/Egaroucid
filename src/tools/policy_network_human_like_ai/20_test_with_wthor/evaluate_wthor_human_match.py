@@ -336,14 +336,18 @@ def evaluate(args: argparse.Namespace) -> dict:
 
     topn_rows = []
     for n in n_values:
+        hits = symmetric_hits[n]
+        accuracy = hits / total_valid if total_valid else 0.0
         topn_rows.append(
             {
                 "top_n": n,
+                "hits": hits,
+                "accuracy": accuracy,
                 "exact_hits": exact_hits[n],
-                "symmetric_hits": symmetric_hits[n],
+                "symmetric_hits": hits,
                 "positions": total_valid,
                 "exact_accuracy": exact_hits[n] / total_valid if total_valid else 0.0,
-                "symmetric_accuracy": symmetric_hits[n] / total_valid if total_valid else 0.0,
+                "symmetric_accuracy": accuracy,
             }
         )
     bucket_rows = []
@@ -364,6 +368,15 @@ def evaluate(args: argparse.Namespace) -> dict:
         "board_data_dir": str(args.board_data_dir),
         "model_source": model_source,
         "positions": total_valid,
+        "agreement_definition": {
+            "primary_metric": "symmetry_aware",
+            "description": (
+                "手番側と相手側の石配置をそれぞれ不変に保つ盤面対称変換で、"
+                "人間の実着手から移る合法手を同値手とする。"
+                "同値手のいずれかが上位N手に入れば一致と数える。"
+            ),
+            "exact_metric_role": "診断用。正式な着手一致率には使用しない。",
+        },
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
         "topn": topn_rows,
@@ -372,7 +385,20 @@ def evaluate(args: argparse.Namespace) -> dict:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     with (args.output_dir / "wthor_human_match.json").open("w") as f:
         json.dump(result, f, indent=2)
-    write_csv(args.output_dir / "wthor_human_match_topn.csv", topn_rows, ["top_n", "exact_hits", "symmetric_hits", "positions", "exact_accuracy", "symmetric_accuracy"])
+    write_csv(
+        args.output_dir / "wthor_human_match_topn.csv",
+        topn_rows,
+        [
+            "top_n",
+            "hits",
+            "positions",
+            "accuracy",
+            "symmetric_hits",
+            "symmetric_accuracy",
+            "exact_hits",
+            "exact_accuracy",
+        ],
+    )
     write_csv(args.output_dir / "wthor_human_match_by_move10.csv", bucket_rows, ["move_bucket", "top_n", "symmetric_hits", "positions", "symmetric_accuracy"])
     return result
 
@@ -406,8 +432,8 @@ def main() -> None:
     print("illegal_label_samples", result["illegal_label_samples"])
     for row in result["topn"]:
         print(
-            f"top-{row['top_n']:>2}: exact {row['exact_accuracy'] * 100.0:.3f}% "
-            f"symmetric {row['symmetric_accuracy'] * 100.0:.3f}%"
+            f"top-{row['top_n']:>2}: symmetry-aware {row['accuracy'] * 100.0:.3f}% "
+            f"(exact diagnostic {row['exact_accuracy'] * 100.0:.3f}%)"
         )
     print("output_dir", args.output_dir)
 

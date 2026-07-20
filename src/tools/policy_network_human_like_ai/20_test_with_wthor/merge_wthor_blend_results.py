@@ -74,11 +74,15 @@ def merge_topn(results: Sequence[dict]) -> List[dict]:
     for key in sorted(merged):
         row = merged[key]
         positions = row["positions"]
+        hits = row["symmetric_hits"]
+        accuracy = hits / positions if positions else 0.0
         rows.append(
             {
                 **row,
+                "hits": hits,
+                "accuracy": accuracy,
                 "exact_accuracy": row["exact_hits"] / positions if positions else 0.0,
-                "symmetric_accuracy": row["symmetric_hits"] / positions if positions else 0.0,
+                "symmetric_accuracy": accuracy,
             }
         )
     return rows
@@ -153,6 +157,15 @@ def merge_results(results: Sequence[dict]) -> dict:
         "jobs": sum(int(result.get("jobs", 1)) for result in results),
         "hint_cache_db": first.get("hint_cache_db"),
         "hint_cache_stats": merge_hint_cache_stats(results),
+        "agreement_definition": {
+            "primary_metric": "symmetry_aware",
+            "description": (
+                "手番側と相手側の石配置をそれぞれ不変に保つ盤面対称変換で、"
+                "人間の実着手から移る合法手を同値手とする。"
+                "同値手のいずれかが上位N手に入れば一致と数える。"
+            ),
+            "exact_metric_role": "診断用。正式な着手一致率には使用しない。",
+        },
         "invalid_policy_samples": sum(int(result.get("invalid_policy_samples", 0)) for result in results),
         "illegal_label_samples": sum(int(result.get("illegal_label_samples", 0)) for result in results),
         "topn": topn,
@@ -184,7 +197,17 @@ def main() -> None:
     write_csv(
         args.output_dir / "wthor_blend_human_match_topn.csv",
         merged["topn"],
-        ["blend_param", "top_n", "exact_hits", "symmetric_hits", "positions", "exact_accuracy", "symmetric_accuracy"],
+        [
+            "blend_param",
+            "top_n",
+            "hits",
+            "positions",
+            "accuracy",
+            "symmetric_hits",
+            "symmetric_accuracy",
+            "exact_hits",
+            "exact_accuracy",
+        ],
     )
     write_csv(
         args.output_dir / "wthor_blend_human_match_by_move10.csv",
