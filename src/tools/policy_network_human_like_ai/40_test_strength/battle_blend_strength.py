@@ -3,20 +3,21 @@
 Round-robin strength test for Egaroucid 7.8.1 levels and blended policy engines.
 
 Default settings follow the research request:
-  - uniformly random legal-move player
+  - no uniformly random legal-move player
   - Egaroucid levels: 1, 3, 5, ..., 19
   - alpha: 0.0, 0.2, ..., 1.0
   - XOT color-swapped match sets per pair: 100
   - parallel matches: 16
   - at most two engine processes per player
+  - move stone loss is not measured during the tournament
 
 Each task plays two color-swapped games from the same XOT opening. The requested
-games-per-pair value is counted as paired match sets. One paired match set
+match-sets-per-pair value is counted as paired match sets. One paired match set
 contains two actual games and is scored by the average disc difference.
 
-For alpha-series players, generated moves after the XOT opening are also
-measured against alpha=0.0. The per-move loss is the best legal Egaroucid level
-21 score minus the level 21 score of the selected move.
+Every actual-game transcript is saved so that move stone loss can be measured
+later. Passing --measure-move-stone-loss enables the former in-tournament
+measurement against alpha=0.0.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from collections import deque
 import csv
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -281,6 +283,7 @@ class Player:
         alpha: Optional[float] = None,
         random_seed: Optional[int] = None,
         reports_move_stone_loss: bool = False,
+        measures_move_stone_loss: bool = False,
     ):
         self.name = name
         self.command = command
@@ -300,6 +303,7 @@ class Player:
         self.alpha = alpha
         self.random_seed = random_seed
         self.reports_move_stone_loss = reports_move_stone_loss
+        self.measures_move_stone_loss = measures_move_stone_loss
 
     def start_processes(self) -> None:
         # Processes are started lazily by acquire_process_idx(). Prestarting one
@@ -638,7 +642,11 @@ def generate_move(
             if player.reports_move_stone_loss:
                 loss_line = send_command(players, player_idx, proc_idx, "last_move_stone_loss\n")
                 move_stone_loss = parse_gtp_optional_float(loss_line)
-            elif player.alpha is not None and abs(player.alpha) < 1.0e-12:
+            elif (
+                player.measures_move_stone_loss
+                and player.alpha is not None
+                and abs(player.alpha) < 1.0e-12
+            ):
                 move_stone_loss = 0.0
         return move, move_stone_loss
     finally:
@@ -670,7 +678,7 @@ def play_single_game(
     }
 
     def record_move_stone_loss(player_idx: int, loss: Optional[float]) -> None:
-        if players[player_idx].alpha is None:
+        if not players[player_idx].measures_move_stone_loss:
             return
         row = alpha_move_stone_loss.setdefault(
             str(player_idx),
@@ -873,31 +881,41 @@ def build_matrix_report(players: List[Player], target_per_pair: int) -> str:
         cells.append("-" if estimated is None else f"{estimated[0]:.1f}+-{estimated[1]:.1f}")
         lines.append("\t".join(cells))
 
-    lines.append("Average Estimated Stone Loss per Move vs alpha=0.0 (Egaroucid level 21)")
-    lines.append("\t".join(["vs >"] + names + ["all"]))
-    for i, player in enumerate(players):
-        cells = [player.name]
-        for j in range(len(players)):
-            if i == j or player.alpha is None:
-                cells.append("-")
-                continue
-            count = player.move_stone_loss_count[j]
-            cells.append(f"{player.move_stone_loss[j] / count:.4f}" if count else "-")
-        total_count = sum(player.move_stone_loss_count)
-        cells.append(f"{sum(player.move_stone_loss) / total_count:.4f}" if total_count else "-")
-        lines.append("\t".join(cells))
+    if any(player.measures_move_stone_loss for player in players):
+        lines.append("Average Estimated Stone Loss per Move vs alpha=0.0 (Egaroucid level 21)")
+        lines.append("\t".join(["vs >"] + names + ["all"]))
+        for i, player in enumerate(players):
+            cells = [player.name]
+            for j in range(len(players)):
+                if i == j or not player.measures_move_stone_loss:
+                    cells.append("-")
+                    continue
+                count = player.move_stone_loss_count[j]
+                cells.append(f"{player.move_stone_loss[j] / count:.4f}" if count else "-")
+            total_count = sum(player.move_stone_loss_count)
+            cells.append(f"{sum(player.move_stone_loss) / total_count:.4f}" if total_count else "-")
+            lines.append("\t".join(cells))
 
-    lines.append("Unmeasured Stone-Loss Moves")
-    lines.append("\t".join(["vs >"] + names + ["all"]))
-    for i, player in enumerate(players):
-        cells = [player.name]
-        for j in range(len(players)):
-            if i == j or player.alpha is None:
-                cells.append("-")
-            else:
-                cells.append(str(player.move_stone_loss_missing_count[j]))
-        cells.append(str(sum(player.move_stone_loss_missing_count)) if player.alpha is not None else "-")
-        lines.append("\t".join(cells))
+        lines.append("Unmeasured Stone-Loss Moves")
+        lines.append("\t".join(["vs >"] + names + ["all"]))
+        for i, player in enumerate(players):
+            cells = [player.name]
+            for j in range(len(players)):
+                if i == j or not player.measures_move_stone_loss:
+                    cells.append("-")
+                else:
+                    cells.append(str(player.move_stone_loss_missing_count[j]))
+            cells.append(
+                str(sum(player.move_stone_loss_missing_count))
+                if player.measures_move_stone_loss
+                else "-"
+            )
+            lines.append("\t".join(cells))
+    else:
+        lines.append(
+            "Move stone loss: not measured during this tournament; "
+            "complete transcripts are stored in strength_games.jsonl."
+        )
 
     lines.append("Games Progress (played/target)")
     lines.append("\t".join(["vs >"] + names + ["all"]))
@@ -963,7 +981,7 @@ def write_matrix_tables(players: List[Player], output_dir: Path, target_per_pair
         for i, player in enumerate(players):
             row = [player.name]
             for j in range(len(players)):
-                if i == j or player.alpha is None:
+                if i == j or not player.measures_move_stone_loss:
                     row.append("-")
                     continue
                 count = player.move_stone_loss_count[j]
@@ -978,11 +996,15 @@ def write_matrix_tables(players: List[Player], output_dir: Path, target_per_pair
         for i, player in enumerate(players):
             row = [player.name]
             for j in range(len(players)):
-                if i == j or player.alpha is None:
+                if i == j or not player.measures_move_stone_loss:
                     row.append("-")
                 else:
                     row.append(player.move_stone_loss_missing_count[j])
-            row.append(sum(player.move_stone_loss_missing_count) if player.alpha is not None else "-")
+            row.append(
+                sum(player.move_stone_loss_missing_count)
+                if player.measures_move_stone_loss
+                else "-"
+            )
             writer.writerow(row)
 
     with (output_dir / "strength_progress_matrix.tsv").open("w", newline="", encoding="utf-8") as f:
@@ -1035,11 +1057,19 @@ def write_outputs(
                 "loss": total_l,
                 "win_rate": (total_w + 0.5 * total_d) / total_n if total_n else 0.0,
                 "avg_disc_diff": total_disc / total_n if total_n else 0.0,
-                "measured_moves": total_move_stone_loss_count if player.alpha is not None else None,
-                "unmeasured_moves": total_move_stone_loss_missing_count if player.alpha is not None else None,
+                "measured_moves": (
+                    total_move_stone_loss_count
+                    if player.measures_move_stone_loss
+                    else None
+                ),
+                "unmeasured_moves": (
+                    total_move_stone_loss_missing_count
+                    if player.measures_move_stone_loss
+                    else None
+                ),
                 "avg_stone_loss_per_move_vs_alpha0": (
                     sum(player.move_stone_loss) / total_move_stone_loss_count
-                    if player.alpha is not None and total_move_stone_loss_count
+                    if player.measures_move_stone_loss and total_move_stone_loss_count
                     else None
                 ),
                 "elo": elo,
@@ -1071,11 +1101,15 @@ def write_outputs(
                     "loss": l,
                     "win_rate": (w + 0.5 * d) / n if n else 0.0,
                     "avg_disc_diff": player.disc_diff[j] / n if n else 0.0,
-                    "measured_moves": measured_moves if player.alpha is not None else None,
-                    "unmeasured_moves": unmeasured_moves if player.alpha is not None else None,
+                    "measured_moves": (
+                        measured_moves if player.measures_move_stone_loss else None
+                    ),
+                    "unmeasured_moves": (
+                        unmeasured_moves if player.measures_move_stone_loss else None
+                    ),
                     "avg_stone_loss_per_move_vs_alpha0": (
                         player.move_stone_loss[j] / measured_moves
-                        if player.alpha is not None and measured_moves
+                        if player.measures_move_stone_loss and measured_moves
                         else None
                     ),
                 }
@@ -1093,12 +1127,16 @@ def write_outputs(
         "total_actual_games": total_match_sets * 2,
         "target_match_sets_per_pair": target_per_pair,
         "move_stone_loss_metric": {
+            "enabled_during_tournament": any(
+                player.measures_move_stone_loss for player in players
+            ),
             "players": "alpha series only",
             "reference": "alpha=0.0 (Egaroucid level 21)",
             "formula": "best legal move score at level 21 minus selected move score at level 21",
             "unit": "estimated final disc difference",
             "xot_opening_moves_included": False,
             "unmeasured_move_handling": "Counted separately when the level-21 hint output omits the selected legal move.",
+            "posthoc_transcript_source": "strength_games.jsonl results[].color_games[].transcript",
         },
         "players": [
             {
@@ -1138,6 +1176,34 @@ def read_openings(path: Path) -> List[str]:
     if not openings:
         raise FileNotFoundError(f"no openings in {path}")
     return openings
+
+
+def validate_input_files(args: argparse.Namespace) -> None:
+    required_files = {
+        "Egaroucid executable": Path(args.egaroucid_exe),
+        "policy weights": Path(args.weights),
+        "XOT openings": Path(args.openings),
+    }
+    if args.policy_backend == "tensorflow":
+        model_path = (
+            Path(args.policy_model)
+            if args.policy_model is not None
+            else Path(args.weights).with_name("selected_model.h5")
+        )
+        required_files["Keras policy model"] = model_path
+        if importlib.util.find_spec("tensorflow") is None:
+            raise ModuleNotFoundError(
+                "TensorFlow is required by --policy-backend tensorflow"
+            )
+    missing = [
+        f"{description}: {path}"
+        for description, path in required_files.items()
+        if not path.is_file()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            "required tournament input file is missing:\n" + "\n".join(missing)
+        )
 
 
 def build_players(args: argparse.Namespace) -> List[Player]:
@@ -1195,10 +1261,11 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                 str(args.egaroucid_timeout_sec),
                 "--score-temperature",
                 str(args.score_temperature),
-                "--measure-move-stone-loss",
             ]
             if not args.no_blend_cache:
                 command.append("--cache-egaroucid")
+            if args.measure_move_stone_loss:
+                command.append("--measure-move-stone-loss")
             if args.hint_cache_db is not None:
                 command.extend(["--hint-cache-db", str(Path(args.hint_cache_db).resolve())])
             if args.policy_server_port is not None:
@@ -1220,7 +1287,10 @@ def build_players(args: argparse.Namespace) -> List[Player]:
                 args.close_processes_after_game,
                 not native_alpha_zero,
                 alpha=alpha,
-                reports_move_stone_loss=not native_alpha_zero,
+                reports_move_stone_loss=(
+                    args.measure_move_stone_loss and not native_alpha_zero
+                ),
+                measures_move_stone_loss=args.measure_move_stone_loss,
             )
         )
     if not args.no_random_player:
@@ -1245,12 +1315,18 @@ def build_players(args: argparse.Namespace) -> List[Player]:
     return players
 
 
-def make_tasks(players: List[Player], openings: Sequence[str], games_per_pair: int, seed: int, same_openings_for_all_pairs: bool) -> List[Task]:
+def make_tasks(
+    players: List[Player],
+    openings: Sequence[str],
+    match_sets_per_pair: int,
+    seed: int,
+    same_openings_for_all_pairs: bool,
+) -> List[Task]:
     rng = random.Random(seed)
     pairs = [(i, j) for i in range(len(players)) for j in range(i + 1, len(players))]
     raw_tasks = []
     opening_idx = 0
-    for set_idx in range(games_per_pair):
+    for set_idx in range(match_sets_per_pair):
         round_pairs = list(pairs)
         rng.shuffle(round_pairs)
         for p0, p1 in round_pairs:
@@ -1334,11 +1410,31 @@ def load_completed_task_results(players: List[Player], output_dir: Path) -> Tupl
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run round-robin strength tests for blended policy engines.")
-    parser.add_argument("--no-random-player", action="store_true", help="Exclude the uniformly random legal-move player.")
+    random_player_group = parser.add_mutually_exclusive_group()
+    random_player_group.add_argument(
+        "--no-random-player",
+        dest="no_random_player",
+        action="store_true",
+        help="Exclude the uniformly random legal-move player (default).",
+    )
+    random_player_group.add_argument(
+        "--include-random-player",
+        dest="no_random_player",
+        action="store_false",
+        help="Add the uniformly random legal-move player.",
+    )
+    parser.set_defaults(no_random_player=True)
     parser.add_argument("--random-seed", type=int, default=613, help="Seed for the uniformly random legal-move player.")
     parser.add_argument("--baseline-levels", default="1,3,5,7,9,11,13,15,17,19")
     parser.add_argument("--blend-params", "--alphas", dest="blend_params", default="0.0,0.2,0.4,0.6,0.8,1.0")
-    parser.add_argument("--games-per-pair", type=int, default=50, help="Number of XOT color-swapped match sets per pair. One set contains two actual games.")
+    parser.add_argument(
+        "--match-sets-per-pair",
+        "--games-per-pair",
+        dest="match_sets_per_pair",
+        type=int,
+        default=100,
+        help="Number of XOT color-swapped match sets per pair. One set contains two actual games.",
+    )
     parser.add_argument("--max-match-sets", "--max-games", dest="max_match_sets", type=int, default=None, help="Optional benchmark cap in XOT match sets; default runs the full requested schedule.")
     parser.add_argument("--parallel-matches", type=int, default=16)
     parser.add_argument("--processes-per-player", type=int, default=2)
@@ -1357,6 +1453,11 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=57, help="Seed used to shuffle XOT openings and pair order.")
     parser.add_argument("--no-shuffle-openings", action="store_true", help="Keep the XOT opening file order instead of shuffling it.")
     parser.add_argument("--no-blend-cache", action="store_true", help="Disable per-process Egaroucid hint caching in blended engines.")
+    parser.add_argument(
+        "--measure-move-stone-loss",
+        action="store_true",
+        help="Measure alpha-series stone loss during play. Disabled by default because complete transcripts are saved for post-hoc analysis.",
+    )
     parser.add_argument(
         "--hint-cache-db",
         type=Path,
@@ -1413,8 +1514,8 @@ def main() -> None:
         raise ValueError("--blend-processes-per-player must be an even number >= 2")
     if args.parallel_matches < 1:
         raise ValueError("--parallel-matches must be positive")
-    if args.games_per_pair < 1:
-        raise ValueError("--games-per-pair must be positive")
+    if args.match_sets_per_pair < 1:
+        raise ValueError("--match-sets-per-pair must be positive")
     if args.time_limit_sec is not None and args.time_limit_sec <= 0.0:
         raise ValueError("--time-limit-sec must be positive when set")
     if args.task_retries < 0:
@@ -1433,6 +1534,14 @@ def main() -> None:
         raise ValueError("--estimated-engine-memory-mib must be positive")
     minimum_available_memory_mib = args.minimum_available_memory_mib
     low_memory_event.clear()
+
+    if game_results_path(args.output_dir).exists() and not args.resume:
+        raise FileExistsError(
+            f"{game_results_path(args.output_dir)} already contains results; "
+            "use --resume with the same settings or choose a new --output-dir"
+        )
+
+    validate_input_files(args)
 
     if args.hint_cache_db is None:
         args.hint_cache_db = args.output_dir / "egaroucid_hint_cache.sqlite3"
@@ -1469,7 +1578,7 @@ def main() -> None:
         if args.policy_server_port is None:
             if args.dry_run:
                 args.policy_server_port = 0
-                policy_server_runtime = "auto"
+                policy_server_runtime = f"{args.policy_backend}/dry-run"
             else:
                 args.output_dir.mkdir(parents=True, exist_ok=True)
                 policy_server_proc, args.policy_server_port, backend, device = start_policy_batch_server(args)
@@ -1479,7 +1588,13 @@ def main() -> None:
     players = build_players(args)
     if len(players) < 2:
         raise ValueError("at least two players are required")
-    full_tasks = make_tasks(players, openings, args.games_per_pair, args.seed, args.same_openings_for_all_pairs)
+    full_tasks = make_tasks(
+        players,
+        openings,
+        args.match_sets_per_pair,
+        args.seed,
+        args.same_openings_for_all_pairs,
+    )
     tasks = limit_tasks(full_tasks, args.max_match_sets)
     total_match_sets = len(tasks)
     completed_task_ids = set()
@@ -1491,8 +1606,8 @@ def main() -> None:
     print("players")
     for player in players:
         print(player.name, " ".join(display_command(player.command)))
-    print("match_sets_per_pair", args.games_per_pair)
-    print("actual_games_per_pair", args.games_per_pair * 2)
+    print("match_sets_per_pair", args.match_sets_per_pair)
+    print("actual_games_per_pair", args.match_sets_per_pair * 2)
     if args.max_match_sets is not None:
         print("max_match_sets", args.max_match_sets)
     print("parallel_matches", args.parallel_matches)
@@ -1507,6 +1622,8 @@ def main() -> None:
     print("random_legal_player", not args.no_random_player)
     print("random_legal_seed", args.random_seed if not args.no_random_player else "-")
     print("blend_cache_egaroucid", not args.no_blend_cache)
+    print("measure_move_stone_loss_during_tournament", args.measure_move_stone_loss)
+    print("posthoc_transcripts", display_path(game_results_path(args.output_dir)))
     print("shared_hint_cache_db", display_path(args.hint_cache_db) if args.hint_cache_db is not None else "-")
     print("native_alpha_zero", args.native_alpha_zero)
     print("policy_batch_server", needs_policy_batch_server(args))
@@ -1542,8 +1659,8 @@ def main() -> None:
             json.dump(
                 {
                     "players": [{"name": p.name, "command": display_command(p.command)} for p in players],
-                    "match_sets_per_pair": args.games_per_pair,
-                    "actual_games_per_pair": args.games_per_pair * 2,
+                    "match_sets_per_pair": args.match_sets_per_pair,
+                    "actual_games_per_pair": args.match_sets_per_pair * 2,
                     "max_match_sets": args.max_match_sets,
                     "parallel_matches": args.parallel_matches,
                     "max_processes_per_player": args.processes_per_player,
@@ -1557,6 +1674,8 @@ def main() -> None:
                     "random_legal_player": not args.no_random_player,
                     "random_legal_seed": args.random_seed if not args.no_random_player else None,
                     "blend_cache_egaroucid": not args.no_blend_cache,
+                    "measure_move_stone_loss_during_tournament": args.measure_move_stone_loss,
+                    "posthoc_transcripts": display_path(game_results_path(args.output_dir)),
                     "shared_hint_cache_db": display_path(args.hint_cache_db) if args.hint_cache_db is not None else None,
                     "native_alpha_zero": args.native_alpha_zero,
                     "policy_batch_server": needs_policy_batch_server(args),
@@ -1658,14 +1777,33 @@ def main() -> None:
                         print(f"retry_task {task.task_id} attempt {attempt}/{args.task_retries}", flush=True)
                         pending_tasks.appendleft(task)
                     else:
-                        write_outputs(players, args.output_dir, completed_match_sets, total_match_sets, args.games_per_pair)
+                        write_outputs(
+                            players,
+                            args.output_dir,
+                            completed_match_sets,
+                            total_match_sets,
+                            args.match_sets_per_pair,
+                        )
                         raise
                     break
                 append_task_results(args.output_dir, task, results)
                 completed_match_sets += len(results)
                 if completed_match_sets % args.status_every_match_sets < len(results) or completed_match_sets == total_match_sets:
-                    print_status(players, args.output_dir, start_time, completed_match_sets, total_match_sets, args.games_per_pair)
-                    write_outputs(players, args.output_dir, completed_match_sets, total_match_sets, args.games_per_pair)
+                    print_status(
+                        players,
+                        args.output_dir,
+                        start_time,
+                        completed_match_sets,
+                        total_match_sets,
+                        args.match_sets_per_pair,
+                    )
+                    write_outputs(
+                        players,
+                        args.output_dir,
+                        completed_match_sets,
+                        total_match_sets,
+                        args.match_sets_per_pair,
+                    )
                 if args.time_limit_sec is not None and time.time() - start_time >= args.time_limit_sec:
                     stop_reason = "time_limit"
                 break
@@ -1682,8 +1820,21 @@ def main() -> None:
         print("\nAll games finished.")
     else:
         print(f"\nStopped before full schedule: {stop_reason}.")
-    print_status(players, args.output_dir, start_time, completed_match_sets, total_match_sets, args.games_per_pair)
-    write_outputs(players, args.output_dir, completed_match_sets, total_match_sets, args.games_per_pair)
+    print_status(
+        players,
+        args.output_dir,
+        start_time,
+        completed_match_sets,
+        total_match_sets,
+        args.match_sets_per_pair,
+    )
+    write_outputs(
+        players,
+        args.output_dir,
+        completed_match_sets,
+        total_match_sets,
+        args.match_sets_per_pair,
+    )
     with (args.output_dir / "strength_progress.json").open("w", encoding="utf-8") as f:
         json.dump(
             {
