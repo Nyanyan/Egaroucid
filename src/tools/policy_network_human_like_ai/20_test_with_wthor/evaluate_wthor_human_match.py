@@ -2,10 +2,10 @@
 """
 Evaluate policy-network agreement with WTHOR human moves.
 
-This evaluator uses all WTHOR board-data position samples by default. It reports exact
-top-N accuracy and symmetry-aware top-N accuracy. Symmetry-aware accuracy treats
-moves as equivalent when a board symmetry leaves both player/opponent bitboards
-unchanged and maps the human move to the predicted move.
+This evaluator uses all WTHOR board-data position samples by default. It reports one
+board-symmetry-aware top-N accuracy. Moves are equivalent when a board symmetry
+leaves both player/opponent bitboards unchanged and maps the human move to the
+predicted move.
 """
 
 from __future__ import annotations
@@ -149,7 +149,12 @@ def load_keras_model(path: Path):
 
 
 def default_board_data_dir() -> Path:
-    return Path(os.environ["EGAROUCID_DATA"]) / "train_data" / "board_data" / "records1"
+    data_root = os.environ.get("EGAROUCID_DATA")
+    if not data_root:
+        raise ValueError(
+            "--board-data-dir is required when EGAROUCID_DATA is not set"
+        )
+    return Path(data_root) / "train_data" / "board_data" / "records1"
 
 
 def discover_dat_files(board_data_dir: Path) -> List[Path]:
@@ -521,7 +526,7 @@ def parse_top_n(text: str) -> List[int]:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate WTHOR human move agreement with symmetry-aware matching.")
-    parser.add_argument("--board-data-dir", type=Path, default=default_board_data_dir())
+    parser.add_argument("--board-data-dir", type=Path, default=None)
     parser.add_argument("--model", type=Path, default=None)
     parser.add_argument("--weights", type=Path, required=True)
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,4,5,8,10,16"))
@@ -543,8 +548,19 @@ def make_argparser() -> argparse.ArgumentParser:
     return parser
 
 
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    parser = make_argparser()
+    args = parser.parse_args(argv)
+    if args.board_data_dir is None:
+        try:
+            args.board_data_dir = default_board_data_dir()
+        except ValueError as error:
+            parser.error(str(error))
+    return args
+
+
 def main() -> None:
-    args = make_argparser().parse_args()
+    args = parse_args()
     result = evaluate(args)
     print("model_source", result["model_source"])
     print("board_data_dir", result["board_data_dir"])

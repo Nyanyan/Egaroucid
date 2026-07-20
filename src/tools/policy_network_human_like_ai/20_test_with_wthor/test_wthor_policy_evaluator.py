@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+import os
+from pathlib import Path
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -8,6 +11,7 @@ from evaluate_wthor_human_match import (
     POLICY_SIZE,
     choose_data_split_positions,
     equivalent_policy_mask,
+    parse_args,
     split_counts,
     symmetry_aware_policy_ranks,
 )
@@ -15,6 +19,19 @@ from policy_accuracy import xy_to_policy
 
 
 class PolicyEvaluatorTest(unittest.TestCase):
+    def test_explicit_board_data_does_not_require_environment(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=True):
+            args = parse_args(
+                [
+                    "--board-data-dir",
+                    "chosen-board-data",
+                    "--weights",
+                    "weights.bin",
+                ]
+            )
+
+        self.assertEqual(Path("chosen-board-data"), args.board_data_dir)
+
     def test_split_matches_training_counts(self) -> None:
         self.assertEqual(
             (6_428_225, 803_528, 803_529),

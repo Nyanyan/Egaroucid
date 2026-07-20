@@ -1,0 +1,740 @@
+{
+  "schema_version": 1,
+  "issue": "#613",
+  "generated_at": "2026-07-20T13:44:40.732184+00:00",
+  "experiment": "policy_network_model_size_selection",
+  "agreement_definition": {
+    "metric": "board_symmetry_aware",
+    "description": "A prediction matches when any legal move equivalent to the recorded human move under a board-invariant D4 symmetry is within the top N.",
+    "tie_break": "ascending_policy_index"
+  },
+  "dataset": {
+    "board_data_dir": "E:\\egaroucid_data\\train_data\\board_data\\records1",
+    "positions": 8035282,
+    "files": [
+      {
+        "path": "E:\\egaroucid_data\\train_data\\board_data\\records1\\0.dat",
+        "bytes": 152670358,
+        "sha256": "75df1a979b3201e435a9dd2e9a4f49040b1facda0c2981c63835c53ddddb90bc"
+      }
+    ]
+  },
+  "split": {
+    "seed": 613,
+    "ratios": {
+      "train": 0.8,
+      "validation": 0.1,
+      "test": 0.1
+    },
+    "validation_positions": 803528,
+    "test_positions": 803529,
+    "validation_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+    "test_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493"
+  },
+  "runtime": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.9.13",
+    "numpy": "1.24.3",
+    "tensorflow": "2.10.0"
+  },
+  "runner": {
+    "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\evaluate_model_size_experiment.py",
+    "sha256": "91c91c0d8f44c410c0511b255ffb6ca30a8b06a0f1530db2eae2ef6068d57c3c"
+  },
+  "evaluator": {
+    "path": "src\\tools\\policy_network_human_like_ai\\20_test_with_wthor\\evaluate_wthor_human_match.py",
+    "sha256": "d318c1b57eba6d2824fb50a471f7b1205ffb3e25405ac88b54abe95b575b2563",
+    "policy_accuracy_path": "src\\tools\\policy_network_human_like_ai\\policy_accuracy.py",
+    "policy_accuracy_sha256": "cd1531def764c495f6a9caa4f2b6c8174bdc561912f9f961c968aa6121c846f7"
+  },
+  "top_n": [
+    1,
+    2,
+    3,
+    5,
+    10
+  ],
+  "evaluation_parameters": {
+    "configs": "256x4,384x4,512x4,768x4,1024x4,512x6,768x6,1024x6",
+    "epochs": 50,
+    "batch_size": 65536,
+    "predict_batch_size": 8192
+  },
+  "models": [
+    {
+      "model": "w256_d4",
+      "width": 256,
+      "depth": 4,
+      "params": 246848,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_256x4_e50\\selected_model.h5",
+      "model_sha256": "5c59984e0db88bf38e623cd868eda420513098f1001dba6ccf8caff700c141f9",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_256x4_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "25b7939000cd0301e538371c89967c83f2437e40ff35e73dd3355d7c7bc38d0e",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_256x4_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_256x4_e50_resource.json",
+        "elapsed_sec": 124.79289054870605,
+        "peak_rss_mib": 10315.9453125,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 256x4 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_256x4_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 431057,
+            "positions": 803528,
+            "accuracy": 0.5364554813273464
+          },
+          "2": {
+            "hits": 594141,
+            "positions": 803528,
+            "accuracy": 0.7394154279626846
+          },
+          "3": {
+            "hits": 679380,
+            "positions": 803528,
+            "accuracy": 0.8454963610477793
+          },
+          "5": {
+            "hits": 758804,
+            "positions": 803528,
+            "accuracy": 0.9443404585776725
+          },
+          "10": {
+            "hits": 801667,
+            "positions": 803528,
+            "accuracy": 0.9976839637199948
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 431859,
+            "positions": 803529,
+            "accuracy": 0.5374529108470261
+          },
+          "2": {
+            "hits": 594582,
+            "positions": 803529,
+            "accuracy": 0.739963336730846
+          },
+          "3": {
+            "hits": 679846,
+            "positions": 803529,
+            "accuracy": 0.8460752505510069
+          },
+          "5": {
+            "hits": 759160,
+            "positions": 803529,
+            "accuracy": 0.9447823289514131
+          },
+          "10": {
+            "hits": 801725,
+            "positions": 803529,
+            "accuracy": 0.9977549036811366
+          }
+        }
+      }
+    },
+    {
+      "model": "w384_d4",
+      "width": 384,
+      "depth": 4,
+      "params": 517696,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_384x4_e50\\selected_model.h5",
+      "model_sha256": "09276c5aed2664bb662743d518c4f9ec4949fd01cd23121b2f78c9c8b03fc2ef",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_384x4_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "ab4fb28fa8b65e0e04b44b5a2f284686d3adce8a7a59828978faecaeecd06bae",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_384x4_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_384x4_e50_resource.json",
+        "elapsed_sec": 159.104647397995,
+        "peak_rss_mib": 10436.3046875,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 384x4 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_384x4_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 455459,
+            "positions": 803528,
+            "accuracy": 0.5668240559134218
+          },
+          "2": {
+            "hits": 619895,
+            "positions": 803528,
+            "accuracy": 0.7714665823717406
+          },
+          "3": {
+            "hits": 701055,
+            "positions": 803528,
+            "accuracy": 0.8724711522187155
+          },
+          "5": {
+            "hits": 770982,
+            "positions": 803528,
+            "accuracy": 0.9594961221015322
+          },
+          "10": {
+            "hits": 802375,
+            "positions": 803528,
+            "accuracy": 0.9985650780059936
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 456028,
+            "positions": 803529,
+            "accuracy": 0.5675314767730847
+          },
+          "2": {
+            "hits": 620256,
+            "positions": 803529,
+            "accuracy": 0.7719148904395485
+          },
+          "3": {
+            "hits": 701144,
+            "positions": 803529,
+            "accuracy": 0.8725808278232646
+          },
+          "5": {
+            "hits": 770778,
+            "positions": 803529,
+            "accuracy": 0.9592410479273306
+          },
+          "10": {
+            "hits": 802368,
+            "positions": 803529,
+            "accuracy": 0.9985551237105319
+          }
+        }
+      }
+    },
+    {
+      "model": "w512_d4",
+      "width": 512,
+      "depth": 4,
+      "params": 886848,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x4_e50\\selected_model.h5",
+      "model_sha256": "1c7fc6117726ee76c43be7c05bd4f476b2f20d5d4b0d4cca8b8ca4e85b5d0d42",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x4_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "9f9caddd4d644a262a01879317e7d06e28b63f869e408af7d6e84532fcd30c42",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x4_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_512x4_e50_resource.json",
+        "elapsed_sec": 186.60173201560974,
+        "peak_rss_mib": 10359.609375,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 512x4 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x4_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 461235,
+            "positions": 803528,
+            "accuracy": 0.5740123555121912
+          },
+          "2": {
+            "hits": 623547,
+            "positions": 803528,
+            "accuracy": 0.7760115391125139
+          },
+          "3": {
+            "hits": 703544,
+            "positions": 803528,
+            "accuracy": 0.8755687418484484
+          },
+          "5": {
+            "hits": 771624,
+            "positions": 803528,
+            "accuracy": 0.9602950986151074
+          },
+          "10": {
+            "hits": 802258,
+            "positions": 803528,
+            "accuracy": 0.9984194701366972
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 461818,
+            "positions": 803529,
+            "accuracy": 0.5747371905681065
+          },
+          "2": {
+            "hits": 624587,
+            "positions": 803529,
+            "accuracy": 0.7773048639190372
+          },
+          "3": {
+            "hits": 704439,
+            "positions": 803529,
+            "accuracy": 0.8766814887826078
+          },
+          "5": {
+            "hits": 771448,
+            "positions": 803529,
+            "accuracy": 0.9600748697308996
+          },
+          "10": {
+            "hits": 802285,
+            "positions": 803529,
+            "accuracy": 0.9984518293677017
+          }
+        }
+      }
+    },
+    {
+      "model": "w768_d4",
+      "width": 768,
+      "depth": 4,
+      "params": 1920064,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x4_e50\\selected_model.h5",
+      "model_sha256": "9464b367a09479edb4668573f971b756ef517fee61e113928c8cda25e92230ad",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x4_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "50f91aa036d18cf4c83249d67b53814d77286f0ac291269bce6eae4411334ab1",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x4_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_768x4_e50_resource.json",
+        "elapsed_sec": 326.53743505477905,
+        "peak_rss_mib": 10379.4375,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 768x4 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x4_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 452133,
+            "positions": 803528,
+            "accuracy": 0.5626848099879531
+          },
+          "2": {
+            "hits": 613881,
+            "positions": 803528,
+            "accuracy": 0.7639820889875648
+          },
+          "3": {
+            "hits": 694463,
+            "positions": 803528,
+            "accuracy": 0.8642673310699814
+          },
+          "5": {
+            "hits": 765526,
+            "positions": 803528,
+            "accuracy": 0.952706066247847
+          },
+          "10": {
+            "hits": 801807,
+            "positions": 803528,
+            "accuracy": 0.9978581953584692
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 452812,
+            "positions": 803529,
+            "accuracy": 0.5635291321159535
+          },
+          "2": {
+            "hits": 614271,
+            "positions": 803529,
+            "accuracy": 0.7644664971643836
+          },
+          "3": {
+            "hits": 694518,
+            "positions": 803529,
+            "accuracy": 0.8643347035390135
+          },
+          "5": {
+            "hits": 765456,
+            "positions": 803529,
+            "accuracy": 0.9526177648846526
+          },
+          "10": {
+            "hits": 801737,
+            "positions": 803529,
+            "accuracy": 0.9977698378029916
+          }
+        }
+      }
+    },
+    {
+      "model": "w1024_d4",
+      "width": 1024,
+      "depth": 4,
+      "params": 3346496,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x4_e50\\selected_model.h5",
+      "model_sha256": "626c172a9f824bbacba62b840a7f3c0f6663f842240128c9bac79562602b747d",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x4_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "2eed6528f5a6296566f47b7a2a34e4a99e879bfe74d6c22b0a7ef880f730ac0d",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x4_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_1024x4_e50_resource.json",
+        "elapsed_sec": 383.2730703353882,
+        "peak_rss_mib": 10348.765625,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 1024x4 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x4_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 439641,
+            "positions": 803528,
+            "accuracy": 0.5471383697892295
+          },
+          "2": {
+            "hits": 599456,
+            "positions": 803528,
+            "accuracy": 0.7460300076661921
+          },
+          "3": {
+            "hits": 681655,
+            "positions": 803528,
+            "accuracy": 0.8483276251729871
+          },
+          "5": {
+            "hits": 758322,
+            "positions": 803528,
+            "accuracy": 0.9437406039366394
+          },
+          "10": {
+            "hits": 801290,
+            "positions": 803528,
+            "accuracy": 0.9972147828078175
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 440090,
+            "positions": 803529,
+            "accuracy": 0.547696473929379
+          },
+          "2": {
+            "hits": 599671,
+            "positions": 803529,
+            "accuracy": 0.7462966489075068
+          },
+          "3": {
+            "hits": 682011,
+            "positions": 803529,
+            "accuracy": 0.8487696150356738
+          },
+          "5": {
+            "hits": 758282,
+            "positions": 803529,
+            "accuracy": 0.9436896490356913
+          },
+          "10": {
+            "hits": 801301,
+            "positions": 803529,
+            "accuracy": 0.9972272313755944
+          }
+        }
+      }
+    },
+    {
+      "model": "w512_d6",
+      "width": 512,
+      "depth": 6,
+      "params": 1412160,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x6_e50\\selected_model.h5",
+      "model_sha256": "febe503732e3fdfb1f7e78d75b4ee8c0d0d3bea20f7813b67b162845554437e9",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x6_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "165bb3fb406ad042703e50d6b14ba48c6b3bec606eca17cd27c1e4f13c8953ff",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x6_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_512x6_e50_resource.json",
+        "elapsed_sec": 247.4393289089203,
+        "peak_rss_mib": 10321.94140625,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 512x6 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_512x6_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 457363,
+            "positions": 803528,
+            "accuracy": 0.5691936061966727
+          },
+          "2": {
+            "hits": 619801,
+            "positions": 803528,
+            "accuracy": 0.7713495982716222
+          },
+          "3": {
+            "hits": 699456,
+            "positions": 803528,
+            "accuracy": 0.8704811780049979
+          },
+          "5": {
+            "hits": 768402,
+            "positions": 803528,
+            "accuracy": 0.9562852819067911
+          },
+          "10": {
+            "hits": 801805,
+            "positions": 803528,
+            "accuracy": 0.9978557063350624
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 458687,
+            "positions": 803529,
+            "accuracy": 0.5708406292741146
+          },
+          "2": {
+            "hits": 620046,
+            "positions": 803529,
+            "accuracy": 0.7716535433070866
+          },
+          "3": {
+            "hits": 699634,
+            "positions": 803529,
+            "accuracy": 0.8707016174898479
+          },
+          "5": {
+            "hits": 767870,
+            "positions": 803529,
+            "accuracy": 0.9556220123978102
+          },
+          "10": {
+            "hits": 801855,
+            "positions": 803529,
+            "accuracy": 0.9979166900012321
+          }
+        }
+      }
+    },
+    {
+      "model": "w768_d6",
+      "width": 768,
+      "depth": 6,
+      "params": 3101248,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x6_e50\\selected_model.h5",
+      "model_sha256": "643969e58f0a4a04fff8282ac04698c2d1594139e3eb246853c0944defcbde89",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x6_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "3953d4f53bf180ff2e78a77e810dab3fadf7ec00c353048ed3224f10c3d99631",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x6_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_768x6_e50_resource.json",
+        "elapsed_sec": 449.01858925819397,
+        "peak_rss_mib": 10314.59765625,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 768x6 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x6_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 445422,
+            "positions": 803528,
+            "accuracy": 0.5543328919465159
+          },
+          "2": {
+            "hits": 605490,
+            "positions": 803528,
+            "accuracy": 0.7535393912844356
+          },
+          "3": {
+            "hits": 686301,
+            "positions": 803528,
+            "accuracy": 0.854109626546928
+          },
+          "5": {
+            "hits": 760042,
+            "positions": 803528,
+            "accuracy": 0.9458811640664668
+          },
+          "10": {
+            "hits": 801119,
+            "positions": 803528,
+            "accuracy": 0.9970019713065381
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 446615,
+            "positions": 803529,
+            "accuracy": 0.5558169026880175
+          },
+          "2": {
+            "hits": 606121,
+            "positions": 803529,
+            "accuracy": 0.7543237394045517
+          },
+          "3": {
+            "hits": 686424,
+            "positions": 803529,
+            "accuracy": 0.8542616383478381
+          },
+          "5": {
+            "hits": 759783,
+            "positions": 803529,
+            "accuracy": 0.9455576587777168
+          },
+          "10": {
+            "hits": 800930,
+            "positions": 803529,
+            "accuracy": 0.996765518108245
+          }
+        }
+      }
+    },
+    {
+      "model": "w1024_d6",
+      "width": 1024,
+      "depth": 6,
+      "params": 5445696,
+      "epochs": 50,
+      "model_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x6_e50\\selected_model.h5",
+      "model_sha256": "15fea4bae4325e9cca5897b882492992d25fcf0042f4abddb94c5aa6057eb81e",
+      "weights_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x6_e50\\selected_policy_network_weights.bin",
+      "weights_sha256": "064c5c8d2dcdd1521efd504975c3e1c2b7d1fc7c464c30816aaabb8858632140",
+      "training_summary_path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x6_e50\\selected_summary.json",
+      "training": {
+        "path": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_log\\wthor_final_arch_1024x6_e50_resource.json",
+        "elapsed_sec": 560.6655049324036,
+        "peak_rss_mib": 10426.44921875,
+        "command": "python src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\train_policy_network.py --wthor --split-mode shuffled --configs 1024x6 --epochs 50 --batch-size 8192 --eval-batch-size 65536 --predict-batch-size 8192 --output-dir src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x6_e50"
+      },
+      "validation": {
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "2125d6f0ba7561368e675298ed1f8ee1753b3ca0a264f6185f198876d677a5ce",
+        "topn": {
+          "1": {
+            "hits": 437686,
+            "positions": 803528,
+            "accuracy": 0.5447053494091059
+          },
+          "2": {
+            "hits": 596405,
+            "positions": 803528,
+            "accuracy": 0.7422330024591551
+          },
+          "3": {
+            "hits": 677926,
+            "positions": 803528,
+            "accuracy": 0.8436868410310531
+          },
+          "5": {
+            "hits": 755173,
+            "positions": 803528,
+            "accuracy": 0.9398216365826704
+          },
+          "10": {
+            "hits": 800589,
+            "positions": 803528,
+            "accuracy": 0.9963423801037425
+          }
+        }
+      },
+      "test": {
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "split_sha256": "ed6184991975da819681c6ae7c867d3dbcff2cc5a4b41260dbd7b26533a2a493",
+        "topn": {
+          "1": {
+            "hits": 437998,
+            "positions": 803529,
+            "accuracy": 0.5450929586859964
+          },
+          "2": {
+            "hits": 596952,
+            "positions": 803529,
+            "accuracy": 0.7429128257972021
+          },
+          "3": {
+            "hits": 678610,
+            "positions": 803529,
+            "accuracy": 0.8445370359999452
+          },
+          "5": {
+            "hits": 755199,
+            "positions": 803529,
+            "accuracy": 0.9398528242291193
+          },
+          "10": {
+            "hits": 800559,
+            "positions": 803529,
+            "accuracy": 0.9963038048408956
+          }
+        }
+      }
+    }
+  ],
+  "selection_rule": "highest validation top-1, then validation top-3, then fewer parameters",
+  "selected_model": "w512_d4",
+  "reproduction_command": "python src/tools/policy_network_human_like_ai/10_train_policy_network/evaluate_model_size_experiment.py"
+}
