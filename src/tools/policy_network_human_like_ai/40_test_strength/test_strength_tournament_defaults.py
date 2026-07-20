@@ -11,10 +11,11 @@ import sys
 import tempfile
 import time
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import battle_blend_strength
 import run_strength_full
+import strength_reporting
 from strength_engine import GtpProcess, ProcessManager
 from strength_reporting import (
     PerformanceMonitor,
@@ -33,6 +34,7 @@ from strength_tournament import (
     combine_color_games,
     conservative_score_half_width,
     make_match_set_tasks,
+    normalized_duration_weights,
     target_match_sets_by_pair,
     score_confidence_interval,
     student_t_critical_975,
@@ -244,6 +246,94 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         pending.push_front(first)
         self.assertEqual(remaining_before_retry + 1, len(pending))
 
+    def test_pair_queue_finishes_each_opening_wave_before_the_next(self) -> None:
+        tasks = make_match_set_tasks(
+            player_count=4,
+            openings=["first", "second", "third"],
+            match_sets_per_pair=3,
+            seed=57,
+        )
+        pending = PendingTaskQueue(tasks, player_count=4)
+        popped = []
+        while pending:
+            task = pending.pop_schedulable(
+                active_counts=[0, 0, 0, 0],
+                capacities=[3, 3, 3, 3],
+                duration_weights=[1000.0, 1.0, 1.0, 1.0],
+            )
+            self.assertIsNotNone(task)
+            assert task is not None
+            popped.append(task)
+
+        pair_count = 4 * 3 // 2
+        self.assertEqual(
+            [0] * pair_count + [1] * pair_count + [2] * pair_count,
+            [task.set_index for task in popped],
+        )
+        for set_index in range(3):
+            wave = popped[
+                set_index * pair_count:(set_index + 1) * pair_count
+            ]
+            self.assertEqual(
+                pair_count,
+                len({(task.p0_idx, task.p1_idx) for task in wave}),
+            )
+
+    def test_pair_queue_can_use_the_next_wave_when_older_work_is_blocked(
+        self,
+    ) -> None:
+        tasks = make_match_set_tasks(
+            player_count=4,
+            openings=["first", "second", "third"],
+            match_sets_per_pair=3,
+            seed=57,
+        )
+        pending = PendingTaskQueue(tasks, player_count=4)
+        first = pending.pop_schedulable(
+            active_counts=[0, 0, 0, 0],
+            capacities=[1, 1, 1, 1],
+        )
+        self.assertIsNotNone(first)
+        assert first is not None
+        active = [1, 1, 1, 1]
+        active[first.p0_idx] = 0
+        active[first.p1_idx] = 0
+
+        next_task = pending.pop_schedulable(
+            active_counts=active,
+            capacities=[1, 1, 1, 1],
+        )
+        self.assertIsNotNone(next_task)
+        assert next_task is not None
+        self.assertEqual(
+            (first.p0_idx, first.p1_idx, 1),
+            (next_task.p0_idx, next_task.p1_idx, next_task.set_index),
+        )
+        self.assertIsNone(
+            pending.pop_schedulable(
+                active_counts=active,
+                capacities=[1, 1, 1, 1],
+            )
+        )
+
+    def test_duration_weights_do_not_compare_warmup_with_one_second(self) -> None:
+        self.assertEqual(
+            [1.0, 1.0, 1.0],
+            normalized_duration_weights(
+                [99.0, 1.0, 1.0],
+                [0, 0, 0],
+            ),
+        )
+        self.assertEqual(
+            [10.0, 12.0, 24.0, 12.0],
+            normalized_duration_weights(
+                [10.0, 12.0, 1000.0, float("nan")],
+                [1, 1, 1, 0],
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "equal length"):
+            normalized_duration_weights([1.0], [0, 0])
+
     def test_color_games_are_combined_by_color_not_completion_order(self) -> None:
         task = make_match_set_tasks(2, [OPENING], 1, 57)[0]
         result = combine_color_games(
@@ -326,6 +416,65 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         self.assertIn("Participant-wide descriptive summary", report)
         self.assertIn("score(desc)", report)
         self.assertNotIn("\tCI95\t", report)
+
+    def test_interim_elo_uses_a_connected_sparse_pair_graph(self) -> None:
+        specs = [
+            PlayerSpec(f"player_{idx}", (f"player_{idx}",), 2, False)
+            for idx in range(4)
+        ]
+        stats = TournamentStats(4)
+        for player_idx, opponent_idx in ((0, 1), (1, 2), (2, 3)):
+            stats.results[player_idx][opponent_idx] = [1, 0, 0]
+            stats.results[opponent_idx][player_idx] = [0, 0, 1]
+
+        with patch(
+            "strength_reporting.fit_elo_from_winrates",
+            wraps=strength_reporting.fit_elo_from_winrates,
+        ) as fitter:
+            ratings = estimate_elos(specs, stats)
+
+        self.assertEqual(
+            {spec.name for spec in specs},
+            set(ratings),
+        )
+        self.assertTrue(all(math.isfinite(value) for value in ratings.values()))
+        self.assertGreater(ratings["player_0"], ratings["player_1"])
+        self.assertGreater(ratings["player_1"], ratings["player_2"])
+        self.assertGreater(ratings["player_2"], ratings["player_3"])
+        games = fitter.call_args.kwargs["games"]
+        self.assertEqual(2.0, games[0, 1])
+        self.assertEqual(0.0, games[0, 2])
+        self.assertEqual(0.0, games[0, 3])
+        self.assertEqual(0.0, games[1, 3])
+
+    def test_interim_elo_is_withheld_for_a_disconnected_pair_graph(self) -> None:
+        specs = [
+            PlayerSpec(f"player_{idx}", (f"player_{idx}",), 2, False)
+            for idx in range(4)
+        ]
+        stats = TournamentStats(4)
+        for player_idx, opponent_idx in ((0, 1), (2, 3)):
+            stats.results[player_idx][opponent_idx] = [1, 0, 0]
+            stats.results[opponent_idx][player_idx] = [0, 0, 1]
+
+        ratings = estimate_elos(specs, stats)
+
+        self.assertEqual({}, ratings)
+        report = build_text_report(
+            specs,
+            stats,
+            [
+                [0, 1, 1, 1],
+                [1, 0, 1, 1],
+                [1, 1, 0, 1],
+                [1, 1, 1, 0],
+            ],
+            ratings,
+        )
+        self.assertIn(
+            "played-pair graph is not connected (2/6 pairs played)",
+            report,
+        )
 
     def test_report_files_have_unambiguous_fields_and_no_double_cr(self) -> None:
         specs = self.two_player_specs()

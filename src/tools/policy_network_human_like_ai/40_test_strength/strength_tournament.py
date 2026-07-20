@@ -11,7 +11,7 @@ import math
 import os
 from pathlib import Path
 import random
-from statistics import NormalDist
+from statistics import median, NormalDist
 from typing import Deque, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 
@@ -229,6 +229,8 @@ class PendingTaskQueue:
     at most the 120 pairs in the default 16-player tournament.
     """
 
+    MAX_SET_INDEX_LOOKAHEAD = 1
+
     def __init__(
         self,
         tasks: Iterable[MatchSetTask],
@@ -286,12 +288,22 @@ class PendingTaskQueue:
             return None
         if duration_weights is None:
             duration_weights = [1.0 for _ in capacities]
-        best: Optional[Tuple[float, int, int]] = None
+        oldest_pending_set_index = min(
+            pair_tasks[0].set_index
+            for pair_tasks in self._by_pair.values()
+            if pair_tasks
+        )
+        best: Optional[Tuple[int, float, int, int]] = None
         for offset in range(len(self._pairs)):
             pair_index = (self._cursor + offset) % len(self._pairs)
             p0_idx, p1_idx = self._pairs[pair_index]
             pair_tasks = self._by_pair[(p0_idx, p1_idx)]
             if not pair_tasks:
+                continue
+            if (
+                pair_tasks[0].set_index
+                > oldest_pending_set_index + self.MAX_SET_INDEX_LOOKAHEAD
+            ):
                 continue
             if (
                 active_counts[p0_idx] >= capacities[p0_idx]
@@ -310,20 +322,71 @@ class PendingTaskQueue:
             )
             # Longest remaining participant workload first. The smaller sum
             # term breaks ties in favor of a pair that advances two loaded
-            # participants at once. ``-offset`` preserves rotating fairness.
+            # participants at once. Set index is the primary key so every
+            # schedulable pair receives the current shared XOT opening before
+            # a pair advances far into later openings. At most one opening of
+            # lookahead is allowed when all older tasks are capacity-blocked;
+            # this keeps workers useful without letting one fast pair consume
+            # its whole schedule. ``-offset`` preserves rotating fairness
+            # within the same opening wave.
             score = max(p0_work, p1_work) + 0.01 * (p0_work + p1_work)
-            candidate = (score, -offset, pair_index)
+            candidate = (
+                -pair_tasks[0].set_index,
+                score,
+                -offset,
+                pair_index,
+            )
             if best is None or candidate > best:
                 best = candidate
         if best is None:
             return None
-        pair_index = best[2]
+        pair_index = best[3]
         p0_idx, p1_idx = self._pairs[pair_index]
         self._cursor = (pair_index + 1) % len(self._pairs)
         self._remaining -= 1
         self._remaining_by_player[p0_idx] -= 1
         self._remaining_by_player[p1_idx] -= 1
         return self._by_pair[(p0_idx, p1_idx)].popleft()
+
+
+def normalized_duration_weights(
+    duration_weights: Sequence[float],
+    duration_observations: Sequence[int],
+) -> List[float]:
+    """Return stable relative duration estimates for scheduling.
+
+    A player's first completed set includes process startup and model/cache
+    warm-up. Comparing that value with the old synthetic default of one second
+    can make one pair monopolize the queue. Unobserved players therefore use
+    the median observed duration, and observed outliers are bounded to one
+    half through twice that median. Until any observation exists all players
+    receive the same unit weight.
+    """
+
+    if len(duration_weights) != len(duration_observations):
+        raise ValueError(
+            "duration weights and observation counts must have equal length"
+        )
+    observed = [
+        float(weight)
+        for weight, count in zip(
+            duration_weights,
+            duration_observations,
+        )
+        if count > 0 and math.isfinite(float(weight)) and float(weight) > 0.0
+    ]
+    if not observed:
+        return [1.0 for _ in duration_weights]
+    center = median(observed)
+    lower = center * 0.5
+    upper = center * 2.0
+    normalized = []
+    for weight, count in zip(duration_weights, duration_observations):
+        value = float(weight)
+        if count <= 0 or not math.isfinite(value) or value <= 0.0:
+            value = center
+        normalized.append(min(upper, max(lower, value)))
+    return normalized
 
 
 @dataclass(frozen=True)

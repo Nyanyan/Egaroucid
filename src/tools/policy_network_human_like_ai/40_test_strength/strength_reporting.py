@@ -44,35 +44,74 @@ def format_elapsed(seconds: float) -> str:
     return f"{minutes}:{seconds:02d}"
 
 
+def _played_pair_connectivity(
+    stats: TournamentStats,
+    player_count: int,
+) -> Tuple[int, bool]:
+    """Return the observed unordered-pair count and graph connectivity."""
+
+    if player_count < 2:
+        return 0, False
+    observed_opponents = [set() for _ in range(player_count)]
+    played_pairs = 0
+    for player_idx in range(player_count):
+        for opponent_idx in range(player_idx + 1, player_count):
+            if sum(stats.results[player_idx][opponent_idx]) == 0:
+                continue
+            played_pairs += 1
+            observed_opponents[player_idx].add(opponent_idx)
+            observed_opponents[opponent_idx].add(player_idx)
+
+    reached = {0}
+    frontier = [0]
+    while frontier:
+        player_idx = frontier.pop()
+        for opponent_idx in observed_opponents[player_idx]:
+            if opponent_idx not in reached:
+                reached.add(opponent_idx)
+                frontier.append(opponent_idx)
+    return played_pairs, len(reached) == player_count
+
+
 def estimate_elos(
     specs: Sequence[PlayerSpec],
     stats: TournamentStats,
 ) -> Dict[str, float]:
-    """Return descriptive Elo point estimates with finite pair smoothing.
+    """Return descriptive Elo point estimates from the observed pair graph.
 
     Every unordered player pair shares its XOT opening sequence with every
     other pair.  Consequently, the fitted ratings are useful summaries of this
     tournament, but the usual independent-game uncertainty calculation is not
-    applicable.  A half-win and half-loss are added to every pair so an
-    observed 0% or 100% score still produces a finite estimate.
+    applicable.  A half-win and half-loss are added to every played pair so an
+    observed 0% or 100% score still produces a finite estimate. Unplayed pairs
+    have zero fitting weight. Ratings are withheld until the observed pair
+    graph connects every participant, because offsets between disconnected
+    components are not identifiable.
     """
     player_count = len(specs)
-    win_rates = np.full((player_count, player_count), np.nan, dtype=float)
+    _, graph_is_connected = _played_pair_connectivity(stats, player_count)
+    if not graph_is_connected:
+        return {}
+    win_rates = np.full((player_count, player_count), 0.5, dtype=float)
+    np.fill_diagonal(win_rates, np.nan)
     match_sets = np.zeros((player_count, player_count), dtype=float)
     for player_idx in range(player_count):
-        for opponent_idx in range(player_count):
-            if player_idx == opponent_idx:
-                continue
+        for opponent_idx in range(player_idx + 1, player_count):
             wins, draws, losses = stats.results[player_idx][opponent_idx]
             n = wins + draws + losses
             if n == 0:
-                # A neutral pseudo-result for an unplayed pair would make the
-                # partial-tournament Elo look more complete than the data.
-                return {}
-            match_sets[player_idx, opponent_idx] = float(n + 1)
-            win_rates[player_idx, opponent_idx] = (
+                # The fitter requires a finite probability for every matrix
+                # cell, but the zero game count below makes this placeholder
+                # contribute exactly no loss, gradient, or Hessian weight.
+                continue
+            smoothed_rate = (
                 wins + 0.5 * draws + 0.5
             ) / (n + 1)
+            win_rates[player_idx, opponent_idx] = smoothed_rate
+            win_rates[opponent_idx, player_idx] = 1.0 - smoothed_rate
+            match_sets[player_idx, opponent_idx] = float(n + 1)
+            match_sets[opponent_idx, player_idx] = float(n + 1)
+
     try:
         ratings = fit_elo_from_winrates(
             win_rates,
@@ -301,7 +340,34 @@ def build_text_report(
             "without confidence intervals. Pair-specific score confidence "
             "intervals are available in strength_pair_results.csv."
         ),
+        (
+            "Elo uses only played pairs; unplayed pairs have zero fitting "
+            "weight. It is shown once the played-pair graph connects every "
+            "participant."
+        ),
         "",
+    ]
+    if not ratings:
+        played_pairs, graph_is_connected = _played_pair_connectivity(
+            stats,
+            len(specs),
+        )
+        total_pairs = len(specs) * (len(specs) - 1) // 2
+        unavailable_reason = (
+            "the Elo fitter could not produce stable estimates"
+            if graph_is_connected
+            else "the played-pair graph is not connected"
+        )
+        lines.extend(
+            [
+                (
+                    f"Interim Elo unavailable: {unavailable_reason} "
+                    f"({played_pairs}/{total_pairs} pairs played)."
+                ),
+                "",
+            ]
+        )
+    lines.append(
         "\t".join(
             [
                 "player",
@@ -313,8 +379,8 @@ def build_text_report(
                 "avg_disc(desc)",
                 "Elo(desc)",
             ]
-        ),
-    ]
+        )
+    )
     for player_idx, spec in enumerate(specs):
         wins, draws, losses = stats.player_record(player_idx)
         n = wins + draws + losses
@@ -543,8 +609,10 @@ def write_outputs(
                 ),
                 "paired_set_elo_descriptive": (
                     "finite descriptive point estimate with 0.5 pseudo-win "
-                    "and 0.5 pseudo-loss added independently to every player "
-                    "pair; no confidence interval"
+                    "and 0.5 pseudo-loss added independently to every played "
+                    "player pair; unplayed pairs have zero fitting weight, "
+                    "and ratings are withheld until the played-pair graph "
+                    "connects every participant; no confidence interval"
                 ),
                 "actual_game_score": (
                     "descriptive only; no independent-game confidence interval "

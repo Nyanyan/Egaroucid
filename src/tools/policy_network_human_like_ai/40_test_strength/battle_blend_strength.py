@@ -69,12 +69,13 @@ from strength_tournament import (  # noqa: E402
     limit_tasks,
     make_manifest,
     make_match_set_tasks,
+    normalized_duration_weights,
     sha256_file,
     target_match_sets_by_pair,
 )
 
 
-IMPLEMENTATION_REVISION = "clean-strength-tournament-v3"
+IMPLEMENTATION_REVISION = "clean-strength-tournament-v4"
 
 
 class OutputRunLock:
@@ -670,6 +671,9 @@ def build_manifest_configuration(
             "max_match_sets": args.max_match_sets,
             "xot_seed": args.seed,
             "same_opening_sequence_for_every_pair": True,
+            "max_set_index_lookahead": (
+                PendingTaskQueue.MAX_SET_INDEX_LOOKAHEAD
+            ),
             "shuffled_opening_sequence_sha256": opening_sequence_digest,
             "task_plan_sha256": task_plan_hash(tasks),
             "total_match_sets": len(tasks),
@@ -754,6 +758,10 @@ def print_configuration(
     print("engine_threads_per_process", args.engine_threads)
     print("xot_openings", repo_relative(Path(args.openings)))
     print("same_opening_sequence_for_every_pair", True)
+    print(
+        "max_set_index_lookahead",
+        PendingTaskQueue.MAX_SET_INDEX_LOOKAHEAD,
+    )
     print("xot_shuffle_seed", args.seed)
     print("policy_server_runtime", policy_runtime)
     print("hint_cache", not args.no_hint_cache)
@@ -1299,6 +1307,10 @@ def run_tournament(args: argparse.Namespace) -> None:
         )
 
         def admit_tasks() -> None:
+            schedule_duration_weights = normalized_duration_weights(
+                duration_weights,
+                duration_observations,
+            )
             while (
                 launch_new_tasks
                 and len(active_sets) < args.parallel_match_sets
@@ -1307,7 +1319,7 @@ def run_tournament(args: argparse.Namespace) -> None:
                 task = pending.pop_schedulable(
                     active_counts,
                     capacities,
-                    duration_weights,
+                    schedule_duration_weights,
                 )
                 if task is None:
                     return
