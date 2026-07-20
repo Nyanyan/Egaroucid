@@ -22,10 +22,10 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_INPUT = SCRIPT_DIR / "rating_vs_human_top1_data.csv"
 DEFAULT_OUTPUT = SCRIPT_DIR / "rating_vs_human_top1"
 DEFAULT_LABEL_POSITIONS = SCRIPT_DIR / "label_positions.json"
-BASE_FONT_SIZE = 20
-TITLE_FONT_SIZE = 32
-AXIS_LABEL_FONT_SIZE = 24
-LABEL_FONT_SIZE = 20
+BASE_FONT_SIZE = 30
+TITLE_FONT_SIZE = 48
+AXIS_LABEL_FONT_SIZE = 38
+LABEL_FONT_SIZE = 30
 MARKER_DIAMETER_POINTS = 16.0
 
 
@@ -259,9 +259,9 @@ def add_label_annotation(
         weight="bold",
         bbox={
             "boxstyle": "square,pad=0.12",
-            "facecolor": "#FAFBFC",
+            "facecolor": "#FFFFFF",
             "edgecolor": "none",
-            "alpha": 0.97,
+            "alpha": 1.0,
         },
         zorder=5,
     )
@@ -371,9 +371,12 @@ def create_plot(
             "font.weight": "bold",
             "axes.unicode_minus": False,
             "axes.edgecolor": "#4C566A",
+            "axes.facecolor": "#FFFFFF",
             "axes.linewidth": 1.0,
             "axes.labelweight": "bold",
             "axes.titleweight": "bold",
+            "figure.facecolor": "#FFFFFF",
+            "savefig.facecolor": "#FFFFFF",
             "xtick.color": "#344054",
             "ytick.color": "#344054",
             "text.color": "#20242A",
@@ -381,8 +384,8 @@ def create_plot(
     )
 
     figure, axis = plt.subplots(figsize=(16.0, 10.0), constrained_layout=True)
-    figure.patch.set_facecolor("white")
-    axis.set_facecolor("#FAFBFC")
+    figure.patch.set_facecolor("#FFFFFF")
+    axis.set_facecolor("#FFFFFF")
 
     for series, style in SERIES_STYLES.items():
         group = [result for result in results if result.series == series]
@@ -461,7 +464,12 @@ def create_plot(
 def save_plot(figure: plt.Figure, output_stem: Path) -> Path:
     output_stem.parent.mkdir(parents=True, exist_ok=True)
     png_path = output_stem.with_suffix(".png")
-    figure.savefig(png_path, dpi=180, facecolor=figure.get_facecolor())
+    figure.savefig(
+        png_path,
+        dpi=180,
+        facecolor="#FFFFFF",
+        transparent=False,
+    )
     return png_path
 
 

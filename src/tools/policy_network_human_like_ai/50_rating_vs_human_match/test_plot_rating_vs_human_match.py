@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import to_rgba
 
 from plot_rating_vs_human_match import (
     AXIS_LABEL_FONT_SIZE,
@@ -56,10 +57,24 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         self.assertEqual("#FF4B00", SERIES_STYLES["blend"]["color"])
 
     def test_text_is_large_and_bold_enough(self) -> None:
-        self.assertGreaterEqual(BASE_FONT_SIZE, 20)
-        self.assertGreaterEqual(LABEL_FONT_SIZE, 20)
-        self.assertGreaterEqual(AXIS_LABEL_FONT_SIZE, 24)
-        self.assertGreaterEqual(TITLE_FONT_SIZE, 32)
+        self.assertGreaterEqual(BASE_FONT_SIZE, 30)
+        self.assertGreaterEqual(LABEL_FONT_SIZE, 30)
+        self.assertGreaterEqual(AXIS_LABEL_FONT_SIZE, 38)
+        self.assertGreaterEqual(TITLE_FONT_SIZE, 48)
+
+    def test_figure_plot_area_and_labels_have_white_backgrounds(self) -> None:
+        results = read_results(DEFAULT_INPUT)
+        figure, annotations = create_plot(results)
+        axis = figure.axes[0]
+
+        self.assertEqual(to_rgba("#FFFFFF"), figure.get_facecolor())
+        self.assertEqual(to_rgba("#FFFFFF"), axis.get_facecolor())
+        for annotation in annotations.values():
+            self.assertEqual(
+                to_rgba("#FFFFFF"),
+                annotation.get_bbox_patch().get_facecolor(),
+            )
+        plt.close(figure)
 
     def test_label_placement_prefers_nearby_positions(self) -> None:
         first_candidates = label_candidates()[:8]
@@ -73,6 +88,27 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         positions = load_label_positions(DEFAULT_LABEL_POSITIONS, valid_labels)
 
         self.assertEqual(valid_labels, set(positions))
+
+    def test_initial_label_positions_do_not_overlap(self) -> None:
+        results = read_results(DEFAULT_INPUT)
+        valid_labels = {result.label for result in results}
+        positions = load_label_positions(DEFAULT_LABEL_POSITIONS, valid_labels)
+        figure, annotations = create_plot(results, positions)
+        figure.canvas.draw()
+        renderer = figure.canvas.get_renderer()
+        boxes = {
+            label: annotation.get_window_extent(renderer)
+            for label, annotation in annotations.items()
+        }
+        overlaps = [
+            (first_label, second_label)
+            for index, first_label in enumerate(boxes)
+            for second_label in list(boxes)[index + 1 :]
+            if boxes[first_label].overlaps(boxes[second_label])
+        ]
+        plt.close(figure)
+
+        self.assertEqual([], overlaps)
 
     def test_position_file_round_trip(self) -> None:
         positions = {
