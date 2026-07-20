@@ -8,9 +8,12 @@ from unittest.mock import patch
 import matplotlib.pyplot as plt
 
 from plot_rating_vs_human_match import (
+    AXIS_LABEL_FONT_SIZE,
     BASE_FONT_SIZE,
     DEFAULT_INPUT,
     LABEL_FONT_SIZE,
+    SERIES_STYLES,
+    TITLE_FONT_SIZE,
     plot_results,
     read_results,
 )
@@ -39,9 +42,15 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
                 10_000,
             )
 
-    def test_text_is_large_enough(self) -> None:
-        self.assertGreaterEqual(BASE_FONT_SIZE, 15)
-        self.assertGreaterEqual(LABEL_FONT_SIZE, 14)
+    def test_requested_series_colors(self) -> None:
+        self.assertEqual("#005AFF", SERIES_STYLES["console"]["color"])
+        self.assertEqual("#FF4B00", SERIES_STYLES["blend"]["color"])
+
+    def test_text_is_large_and_bold_enough(self) -> None:
+        self.assertGreaterEqual(BASE_FONT_SIZE, 20)
+        self.assertGreaterEqual(LABEL_FONT_SIZE, 20)
+        self.assertGreaterEqual(AXIS_LABEL_FONT_SIZE, 24)
+        self.assertGreaterEqual(TITLE_FONT_SIZE, 32)
 
 
 if __name__ == "__main__":

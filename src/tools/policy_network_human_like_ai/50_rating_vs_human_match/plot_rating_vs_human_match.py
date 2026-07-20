@@ -17,11 +17,11 @@ import numpy as np
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_INPUT = SCRIPT_DIR / "rating_vs_human_top1_data.csv"
 DEFAULT_OUTPUT = SCRIPT_DIR / "rating_vs_human_top1"
-BASE_FONT_SIZE = 15
-TITLE_FONT_SIZE = 24
-AXIS_LABEL_FONT_SIZE = 18
-LABEL_FONT_SIZE = 14
-MARKER_DIAMETER_POINTS = 12.0
+BASE_FONT_SIZE = 20
+TITLE_FONT_SIZE = 32
+AXIS_LABEL_FONT_SIZE = 24
+LABEL_FONT_SIZE = 20
+MARKER_DIAMETER_POINTS = 16.0
 
 
 @dataclass(frozen=True)
@@ -36,12 +36,12 @@ SERIES_STYLES = {
     "console": {
         "legend": "Egaroucid for Console",
         "marker": "o",
-        "color": "#2878B5",
+        "color": "#005AFF",
     },
     "blend": {
         "legend": "ブレンド方策",
         "marker": "s",
-        "color": "#D64B32",
+        "color": "#FF4B00",
     },
 }
 
@@ -93,8 +93,8 @@ def read_results(path: Path) -> list[Result]:
 
 def label_candidates() -> list[tuple[float, float]]:
     candidates: list[tuple[float, float]] = []
-    for vertical in (16.0, 24.0, 34.0, 46.0, 60.0, 78.0):
-        for horizontal in (10.0, 24.0, 40.0, 60.0, 82.0):
+    for vertical in (22.0, 32.0, 44.0, 58.0, 76.0, 98.0):
+        for horizontal in (12.0, 32.0, 54.0, 82.0, 110.0):
             candidates.extend(
                 [
                     (horizontal, vertical),
@@ -179,7 +179,7 @@ def place_labels_without_overlap(
                 va="bottom" if dy > 0 else "top",
                 fontsize=LABEL_FONT_SIZE,
                 color=style["color"],
-                weight="semibold",
+                weight="bold",
                 bbox={
                     "boxstyle": "square,pad=0.12",
                     "facecolor": "#FAFBFC",
@@ -218,16 +218,19 @@ def plot_results(results: list[Result], output_stem: Path) -> None:
         {
             "font.family": select_japanese_font(),
             "font.size": BASE_FONT_SIZE,
+            "font.weight": "bold",
             "axes.unicode_minus": False,
             "axes.edgecolor": "#4C566A",
             "axes.linewidth": 1.0,
+            "axes.labelweight": "bold",
+            "axes.titleweight": "bold",
             "xtick.color": "#344054",
             "ytick.color": "#344054",
             "text.color": "#20242A",
         }
     )
 
-    figure, axis = plt.subplots(figsize=(14.0, 9.0), constrained_layout=True)
+    figure, axis = plt.subplots(figsize=(16.0, 10.0), constrained_layout=True)
     figure.patch.set_facecolor("white")
     axis.set_facecolor("#FAFBFC")
 
@@ -250,17 +253,19 @@ def plot_results(results: list[Result], output_stem: Path) -> None:
         "推定Eloレーティングと人間との1位着手一致率",
         fontsize=TITLE_FONT_SIZE,
         pad=18,
-        weight="semibold",
+        weight="bold",
     )
     axis.set_xlabel(
         "推定Eloレーティング",
         fontsize=AXIS_LABEL_FONT_SIZE,
         labelpad=12,
+        weight="bold",
     )
     axis.set_ylabel(
         "人間との1位着手一致率 (%)",
         fontsize=AXIS_LABEL_FONT_SIZE,
         labelpad=12,
+        weight="bold",
     )
 
     rating_lower = min(result.rating for result in results)
@@ -275,12 +280,14 @@ def plot_results(results: list[Result], output_stem: Path) -> None:
     axis.set_xticks(np.arange(tick_min, tick_max + 1.0, 500.0))
     axis.set_yticks(np.arange(50, 67, 2))
     axis.tick_params(axis="both", labelsize=BASE_FONT_SIZE)
+    for tick_label in [*axis.get_xticklabels(), *axis.get_yticklabels()]:
+        tick_label.set_fontweight("bold")
     axis.grid(which="major", color="#D7DCE3", linewidth=0.8, alpha=0.68)
     axis.set_axisbelow(True)
 
     legend = axis.legend(
         loc="lower right",
-        fontsize=BASE_FONT_SIZE,
+        prop={"size": BASE_FONT_SIZE, "weight": "bold"},
         markerscale=1.15,
         frameon=True,
         facecolor="white",
