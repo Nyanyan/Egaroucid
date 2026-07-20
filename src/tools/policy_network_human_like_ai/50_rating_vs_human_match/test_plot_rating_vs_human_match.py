@@ -3,6 +3,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import matplotlib.pyplot as plt
@@ -11,12 +12,19 @@ from plot_rating_vs_human_match import (
     AXIS_LABEL_FONT_SIZE,
     BASE_FONT_SIZE,
     DEFAULT_INPUT,
+    DEFAULT_LABEL_POSITIONS,
     LABEL_FONT_SIZE,
+    LabelEditor,
+    LabelPosition,
     SERIES_STYLES,
     TITLE_FONT_SIZE,
+    annotation_position,
+    create_plot,
     label_candidates,
+    load_label_positions,
     plot_results,
     read_results,
+    save_label_positions,
 )
 
 
@@ -58,6 +66,56 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         self.assertTrue(
             all(max(abs(dx), abs(dy)) <= 15.0 for dx, dy in first_candidates)
         )
+
+    def test_initial_position_file_covers_every_label(self) -> None:
+        results = read_results(DEFAULT_INPUT)
+        valid_labels = {result.label for result in results}
+        positions = load_label_positions(DEFAULT_LABEL_POSITIONS, valid_labels)
+
+        self.assertEqual(valid_labels, set(positions))
+
+    def test_position_file_round_trip(self) -> None:
+        positions = {
+            "level 1": LabelPosition(12.5, -3.25, "left", "top"),
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "positions.json"
+            save_label_positions(path, positions)
+            loaded = load_label_positions(path, {"level 1"})
+
+        self.assertEqual(positions, loaded)
+
+    def test_dragged_position_can_be_saved_and_reloaded(self) -> None:
+        results = read_results(DEFAULT_INPUT)
+        valid_labels = {result.label for result in results}
+        positions = load_label_positions(DEFAULT_LABEL_POSITIONS, valid_labels)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_stem = Path(temp_dir) / "plot"
+            positions_path = Path(temp_dir) / "positions.json"
+            figure, annotations = create_plot(results, positions)
+            editor = LabelEditor(
+                figure,
+                annotations,
+                output_stem,
+                positions_path,
+            )
+            annotation = annotations["level 1"]
+            start = annotation_position(annotation)
+            editor.drag_state = (
+                annotation,
+                100.0,
+                100.0,
+                start.dx,
+                start.dy,
+            )
+            editor.on_motion(SimpleNamespace(x=125.0, y=80.0))
+            editor.on_release(SimpleNamespace())
+            editor.save()
+            saved = load_label_positions(positions_path, valid_labels)
+            plt.close(figure)
+
+        self.assertNotEqual(start.dx, saved["level 1"].dx)
+        self.assertNotEqual(start.dy, saved["level 1"].dy)
 
 
 if __name__ == "__main__":

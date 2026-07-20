@@ -30,4 +30,20 @@
 python src/tools/policy_network_human_like_ai/50_rating_vs_human_match/plot_rating_vs_human_match.py
 ```
 
-このコマンドは同じフォルダにPNG画像を出力する。
+このコマンドは[`label_positions.json`](label_positions.json)のラベル位置を読み込み、同じフォルダにPNG画像を出力する。
+
+## ラベル位置の調整
+
+次のコマンドでラベル位置調整画面を開く。
+
+```powershell
+python src/tools/policy_network_human_like_ai/50_rating_vs_human_match/plot_rating_vs_human_match.py `
+  --adjust-labels
+```
+
+- ラベルをマウスの左ボタンでドラッグすると、そのラベルだけを移動できる。
+- `S`キーを押すと、現在位置を`label_positions.json`へ保存し、同じ位置でPNG画像も更新する。
+- `R`キーを押すと、調整画面を開いた時点の位置へ戻す。
+- `--reset-labels`を併用すると、保存済み位置を無視し、自動配置を開始位置として調整できる。`S`キーを押すまでは保存済みファイルを変更しない。
+
+位置は各点からラベルまでの横方向・縦方向のオフセットをポイント単位で保存する。文字揃えも保存するため、通常の再生成では調整画面で確定した見た目を再現する。

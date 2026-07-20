@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "positions": {
+    "alpha=0.0": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "alpha=0.2": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "alpha=0.4": {
+      "dx": -15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "right",
+      "vertical_alignment": "center"
+    },
+    "alpha=0.6": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "alpha=0.8": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "alpha=1.0": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "level 1": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "level 11": {
+      "dx": -15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "right",
+      "vertical_alignment": "center"
+    },
+    "level 13": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "level 15": {
+      "dx": 0.0,
+      "dy": 15.0,
+      "horizontal_alignment": "center",
+      "vertical_alignment": "bottom"
+    },
+    "level 17": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "level 19": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "level 3": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "level 5": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    },
+    "level 7": {
+      "dx": -15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "right",
+      "vertical_alignment": "center"
+    },
+    "level 9": {
+      "dx": 15.0,
+      "dy": 0.0,
+      "horizontal_alignment": "left",
+      "vertical_alignment": "center"
+    }
+  }
+}
