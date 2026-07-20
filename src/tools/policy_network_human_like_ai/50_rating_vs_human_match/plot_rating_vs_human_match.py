@@ -13,6 +13,7 @@ import sys
 
 import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
+from matplotlib.colors import to_rgba
 from matplotlib.text import Annotation, Text
 from matplotlib.transforms import Bbox
 import numpy as np
@@ -28,6 +29,9 @@ AXIS_LABEL_FONT_SIZE = 38
 LABEL_FONT_SIZE = 30
 MARKER_DIAMETER_POINTS = 16.0
 LEADER_LINE_THRESHOLD_POINTS = 18.0
+ERROR_BAR_LINE_WIDTH = 2.2
+ERROR_BAR_CAP_SIZE = 7.0
+ERROR_BAR_ALPHA = 0.65
 
 
 @dataclass(frozen=True)
@@ -35,7 +39,10 @@ class Result:
     series: str
     label: str
     rating: float
+    rating_ci_half_width: float
     top1: float
+    top1_ci_lower: float
+    top1_ci_upper: float
 
 
 @dataclass(frozen=True)
@@ -111,10 +118,27 @@ def read_results(path: Path) -> list[Result]:
                 series=row["系列"],
                 label=row["ラベル"],
                 rating=float(row["推定Elo"]),
+                rating_ci_half_width=float(
+                    row["推定Eloの95%信頼区間半幅"]
+                ),
                 top1=float(row["1位着手一致率"]),
+                top1_ci_lower=float(
+                    row["1位着手一致率の95%信頼区間下限"]
+                ),
+                top1_ci_upper=float(
+                    row["1位着手一致率の95%信頼区間上限"]
+                ),
             )
             if result.series not in SERIES_STYLES:
                 raise ValueError(f"未知の系列です: {result.series}")
+            if result.rating_ci_half_width < 0.0:
+                raise ValueError(
+                    f"{result.label}のElo信頼区間半幅が負です"
+                )
+            if not result.top1_ci_lower <= result.top1 <= result.top1_ci_upper:
+                raise ValueError(
+                    f"{result.label}の着手一致率が信頼区間外です"
+                )
             results.append(result)
     if not results:
         raise ValueError(f"入力データが空です: {path}")
@@ -413,9 +437,38 @@ def create_plot(
 
     for series, style in SERIES_STYLES.items():
         group = [result for result in results if result.series == series]
+        ratings = np.array([result.rating for result in group], dtype=float)
+        top1_values = np.array([result.top1 for result in group], dtype=float)
+        axis.errorbar(
+            ratings,
+            top1_values,
+            xerr=np.array(
+                [result.rating_ci_half_width for result in group],
+                dtype=float,
+            ),
+            yerr=np.array(
+                [
+                    [
+                        result.top1 - result.top1_ci_lower
+                        for result in group
+                    ],
+                    [
+                        result.top1_ci_upper - result.top1
+                        for result in group
+                    ],
+                ],
+                dtype=float,
+            ),
+            fmt="none",
+            ecolor=to_rgba(style["color"], ERROR_BAR_ALPHA),
+            elinewidth=ERROR_BAR_LINE_WIDTH,
+            capsize=ERROR_BAR_CAP_SIZE,
+            capthick=ERROR_BAR_LINE_WIDTH,
+            zorder=2.5,
+        )
         axis.scatter(
-            [result.rating for result in group],
-            [result.top1 for result in group],
+            ratings,
+            top1_values,
             s=MARKER_DIAMETER_POINTS**2,
             marker=style["marker"],
             facecolor=style["color"],
@@ -445,9 +498,15 @@ def create_plot(
         weight="bold",
     )
 
-    rating_lower = min(result.rating for result in results)
-    rating_upper = max(result.rating for result in results)
-    rating_padding = max(250.0, (rating_upper - rating_lower) * 0.1)
+    rating_lower = min(
+        result.rating - result.rating_ci_half_width
+        for result in results
+    )
+    rating_upper = max(
+        result.rating + result.rating_ci_half_width
+        for result in results
+    )
+    rating_padding = max(100.0, (rating_upper - rating_lower) * 0.03)
     x_min = np.floor((rating_lower - rating_padding) / 250.0) * 250.0
     x_max = np.ceil((rating_upper + rating_padding) / 250.0) * 250.0
     axis.set_xlim(x_min, x_max)

@@ -4,10 +4,10 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgba
+from matplotlib.container import ErrorbarContainer
 
 from plot_rating_vs_human_match import (
     AXIS_LABEL_FONT_SIZE,
@@ -25,7 +25,6 @@ from plot_rating_vs_human_match import (
     label_bbox,
     label_candidates,
     load_label_positions,
-    plot_results,
     read_results,
     save_label_positions,
 )
@@ -39,20 +38,32 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         self.assertEqual(10, sum(result.series == "console" for result in results))
         self.assertEqual(6, sum(result.series == "blend" for result in results))
 
-    def test_plot_has_no_confidence_interval_error_bars(self) -> None:
+    def test_plot_has_horizontal_and_vertical_confidence_intervals(self) -> None:
         results = read_results(DEFAULT_INPUT)
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_stem = Path(temp_dir) / "plot"
-            with patch.object(
-                plt.Axes,
-                "errorbar",
-                side_effect=AssertionError("error bars must not be drawn"),
-            ):
-                plot_results(results, output_stem)
-            self.assertGreater(
-                output_stem.with_suffix(".png").stat().st_size,
-                10_000,
-            )
+        figure, _ = create_plot(results)
+        errorbars = [
+            container
+            for container in figure.axes[0].containers
+            if isinstance(container, ErrorbarContainer)
+        ]
+
+        self.assertEqual(2, len(errorbars))
+        self.assertTrue(all(errorbar.has_xerr for errorbar in errorbars))
+        self.assertTrue(all(errorbar.has_yerr for errorbar in errorbars))
+        plt.close(figure)
+
+    def test_ratings_are_reestimated_without_random_player(self) -> None:
+        loaded_results = read_results(DEFAULT_INPUT)
+        results = {result.label: result for result in loaded_results}
+
+        self.assertAlmostEqual(2472.958308, results["alpha=0.0"].rating)
+        self.assertAlmostEqual(78.640396, results["alpha=0.0"].rating_ci_half_width)
+        self.assertAlmostEqual(-274.883451, results["alpha=1.0"].rating)
+        self.assertAlmostEqual(320.277306, results["alpha=1.0"].rating_ci_half_width)
+        self.assertAlmostEqual(
+            1500.0,
+            sum(result.rating for result in loaded_results) / len(loaded_results),
+        )
 
     def test_requested_series_colors(self) -> None:
         self.assertEqual("#005AFF", SERIES_STYLES["console"]["color"])
