@@ -36,39 +36,52 @@ class ProgressReportingTest(unittest.TestCase):
     def test_metric_without_positions_is_not_reported_as_zero_percent(self):
         self.assertEqual("未算出 (n=0)", format_live_metric(metric()))
         self.assertEqual(
-            "60.000%/90.000% (n=10)",
+            "top-1 60.000% | top-3 90.000% | n=10",
             format_live_metric(metric(10, 6, 9)),
         )
 
-    def test_report_lists_every_alpha_and_level_with_denominators(self):
+    def test_report_uses_one_line_per_calculated_model(self):
         metrics = FakeIncrementalMetrics()
-        metrics.blend[0.0] = metric(10, 6, 9)
+        for alpha in BLEND_PARAMS:
+            metrics.blend[alpha] = metric(10, 6, 9)
         metrics.console[21] = metric(10, 6, 9)
+        reporter = AgreementProgressReporter(metrics)
+        output = io.StringIO()
+
+        with redirect_stderr(output):
+            reporter.report(
+                {
+                    "final": False,
+                    "reported_hints_by_level": {21: 1},
+                    "target_hints_by_level": {21: 100},
+                }
+            )
+
+        text = output.getvalue()
+        for alpha in BLEND_PARAMS:
+            self.assertEqual(1, text.count(f"[blend alpha={alpha:.1f}]"))
+        self.assertEqual(1, text.count("[Console level=21]"))
+        self.assertNotIn("[Console level= 1]", text)
+        self.assertIn("top-1 60.000% | top-3 90.000% | n=10", text)
+        self.assertIn("| hint 1/100", text)
+        self.assertNotIn("未算出", text)
+        self.assertNotIn("注意", text)
+        model_lines = [
+            line
+            for line in text.splitlines()
+            if "[blend alpha=" in line or "[Console level=" in line
+        ]
+        self.assertEqual(len(BLEND_PARAMS) + 1, len(model_lines))
+
+    def test_report_waits_for_first_calculated_model_without_noise(self):
+        metrics = FakeIncrementalMetrics()
         reporter = AgreementProgressReporter(metrics)
         output = io.StringIO()
 
         with redirect_stderr(output):
             reporter.report({"final": False})
 
-        text = output.getvalue()
-        for alpha in BLEND_PARAMS:
-            self.assertIn(f"alpha={alpha:.1f}", text)
-        for level in CONSOLE_LEVELS:
-            self.assertIn(f"level {level:2d}", text)
-        self.assertIn("60.000%/90.000% (n=10)", text)
-        self.assertIn("未算出 (n=0)", text)
-        self.assertIn("暫定値", text)
-
-    def test_final_report_does_not_show_interim_warning(self):
-        metrics = FakeIncrementalMetrics()
-        reporter = AgreementProgressReporter(metrics)
-        output = io.StringIO()
-
-        with redirect_stderr(output):
-            reporter.report({"final": True})
-
-        self.assertIn("完了", output.getvalue())
-        self.assertNotIn("暫定値", output.getvalue())
+        self.assertEqual("  一致率: 初回hint結果待ち\n", output.getvalue())
 
     def test_rows_are_forwarded_to_incremental_metrics(self):
         metrics = FakeIncrementalMetrics()

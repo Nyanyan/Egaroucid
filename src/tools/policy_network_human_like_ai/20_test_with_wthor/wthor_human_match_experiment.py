@@ -39,7 +39,7 @@ from wthor_human_match_evaluation import (
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SUMMARY_VERSION = 3
+SUMMARY_VERSION = 4
 SUMMARY_FIELDS = (
     "alpha",
     "positions",
@@ -94,7 +94,10 @@ def format_live_metric(metric: dict) -> str:
         return "未算出 (n=0)"
     top1 = int(metric["hits"][1]) / positions
     top3 = int(metric["hits"][3]) / positions
-    return f"{top1:.3%}/{top3:.3%} (n={positions:,})"
+    return (
+        f"top-1 {top1:.3%} | top-3 {top3:.3%} "
+        f"| n={positions:,}"
+    )
 
 
 class AgreementProgressReporter:
@@ -109,33 +112,43 @@ class AgreementProgressReporter:
 
     def report(self, progress: dict) -> None:
         blend_metrics, console_metrics, _, _ = self.metrics.snapshot()
-        complete = bool(
-            progress.get("final")
-            or progress.get("total_states") == 0
-        )
-        status = "完了" if complete else "暫定"
-        lines = [
-            f"  ブレンド方策 ({status}、top-1/top-3): "
-            + " | ".join(
-                f"alpha={alpha:.1f} {format_live_metric(blend_metrics[alpha])}"
-                for alpha in BLEND_PARAMS
+        reported_by_level = progress.get("reported_hints_by_level", {})
+        target_by_level = progress.get("target_hints_by_level", {})
+
+        def hint_progress(level: int) -> str:
+            reported = reported_by_level.get(
+                level,
+                reported_by_level.get(str(level)),
             )
-        ]
-        console_parts = [
-            f"level {level:2d} {format_live_metric(console_metrics[level])}"
-            for level in CONSOLE_LEVELS
-        ]
-        midpoint = (len(console_parts) + 1) // 2
-        lines.append(
-            f"  Console単体 ({status}、top-1/top-3): "
-            + " | ".join(console_parts[:midpoint])
-        )
-        lines.append("    " + " | ".join(console_parts[midpoint:]))
-        if not complete:
+            target = target_by_level.get(
+                level,
+                target_by_level.get(str(level)),
+            )
+            if reported is None or target is None:
+                return ""
+            return f" | hint {int(reported):,}/{int(target):,}"
+
+        lines = []
+        for alpha in BLEND_PARAMS:
+            metric = blend_metrics[alpha]
+            if int(metric["positions"]) == 0:
+                continue
             lines.append(
-                "  注意: 暫定値は、その時点までに探索が終わった局面だけの"
-                "値です。level間・alpha間の優劣は最終結果で判断してください。"
+                f"  [blend alpha={alpha:.1f}] "
+                f"{format_live_metric(metric)}"
+                f"{hint_progress(CONSOLE_REFERENCE_LEVEL)}"
             )
+        for level in CONSOLE_LEVELS:
+            metric = console_metrics[level]
+            if int(metric["positions"]) == 0:
+                continue
+            lines.append(
+                f"  [Console level={level:2d}] "
+                f"{format_live_metric(metric)}"
+                f"{hint_progress(level)}"
+            )
+        if not lines:
+            lines.append("  一致率: 初回hint結果待ち")
         sys.stderr.write("\n".join(lines) + "\n")
         sys.stderr.flush()
 
@@ -198,7 +211,7 @@ def make_experiment_identity(
     sample_records_hash: str,
 ) -> dict:
     return {
-        "identity_version": 3,
+        "identity_version": 4,
         "summary_version": SUMMARY_VERSION,
         "positions": args.positions,
         "data_split": args.data_split,
@@ -223,7 +236,10 @@ def make_experiment_identity(
         "egaroucid_threads": args.egaroucid_threads,
         "egaroucid_retries": args.egaroucid_retries,
         "workers": workers,
-        "partition": "fixed_strided_shards_v1",
+        "partition": (
+            "one_persistent_stream_per_level_1_to_19_"
+            "plus_level21_fixed_strided_shards_v2"
+        ),
         "weights": str(args.weights.resolve()),
         "weights_sha256": file_sha256(args.weights),
         "score_temperature": args.score_temperature,
@@ -304,7 +320,8 @@ def make_argparser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "同時に動かすConsoleプロセス数。省略時は"
-            "論理CPU数 // --egaroucid-threads"
+            "論理CPU数 // --egaroucid-threads。全levelを同時に"
+            "開始するため11以上が必要"
         ),
     )
     parser.add_argument(
@@ -366,6 +383,17 @@ def make_argparser() -> argparse.ArgumentParser:
     return parser
 
 
+def require_all_levels_to_start(workers: int) -> int:
+    minimum_workers = len(CONSOLE_LEVELS)
+    if workers < minimum_workers:
+        raise ValueError(
+            "level 1から21の専用Consoleを同時に起動するため、"
+            f"--workersには{minimum_workers}以上を指定してください: "
+            f"workers={workers}"
+        )
+    return workers
+
+
 def main() -> None:
     configure_output_streams()
     parser = make_argparser()
@@ -385,6 +413,7 @@ def main() -> None:
         1,
         logical_cpus // args.egaroucid_threads,
     )
+    workers = require_all_levels_to_start(workers)
     search_thread_budget = workers * args.egaroucid_threads
     if search_thread_budget > logical_cpus:
         print(
@@ -422,8 +451,15 @@ def main() -> None:
         args.sample_seed,
     )
     load_elapsed = time.perf_counter() - load_start
-    workers = min(workers, len(groups))
+    maximum_useful_processes = (
+        len(CONSOLE_LEVELS) - 1 + min(workers, len(groups))
+    )
+    workers = min(workers, maximum_useful_processes)
     search_thread_budget = workers * args.egaroucid_threads
+    initial_level21_processes = min(
+        len(groups),
+        max(1, workers - (len(CONSOLE_LEVELS) - 1)),
+    )
     output_dir = args.output_dir or default_output_dir(args, workers)
 
     report_stage(
@@ -446,6 +482,17 @@ def main() -> None:
     print("探索スレッド総数", search_thread_budget, flush=True)
     print("論理CPUスレッド", logical_cpus, flush=True)
     print("level 21", "ブレンドとConsole単体で共有", flush=True)
+    print(
+        "level 1-19のConsole",
+        "各level 1プロセスを全局面で常駐",
+        flush=True,
+    )
+    print(
+        "level 21のConsole",
+        f"cold cache開始時は{initial_level21_processes}プロセス、"
+        "低level完了後の空き枠も使用",
+        flush=True,
+    )
     print(
         "hint候補数",
         f"level 21={ALL_LEGAL_HINT_COUNT}（全合法手）、"
@@ -614,8 +661,10 @@ def main() -> None:
         "level21_reuse_validation": level21_validation,
         "execution": {
             "architecture": (
-                "single spawn process pool; one deterministic state shard "
-                "and one persistent Console child per task"
+                "single bounded spawn process pool; one persistent Console "
+                "for the complete state stream of each level 1--19, plus "
+                "fixed strided level-21 Console shards that consume all "
+                "remaining and subsequently released process slots"
             ),
             "workers": workers,
             "egaroucid_threads_per_worker": args.egaroucid_threads,
@@ -626,10 +675,20 @@ def main() -> None:
             "manager_proxy_hot_path": False,
             "nested_process_pools": False,
             "level21_duplicate_evaluation": False,
-            "state_partition": "fixed_strided_shards_v1",
+            "initial_level21_processes_cold_cache": (
+                initial_level21_processes
+            ),
+            "state_partition": (
+                "one_persistent_stream_per_level_1_to_19_"
+                "plus_level21_fixed_strided_shards_v2"
+            ),
             "cache_reset_between_positions": False,
             "transposition_table_scope": (
-                "persistent within each fixed state shard"
+                "persistent across the complete ordered state stream for "
+                "each level 1--19; persistent within each fixed strided "
+                "level-21 shard; never shared across levels or processes; "
+                "a retriable Console error restarts only that task's "
+                "Console before retrying the failed position"
             ),
             "reproducibility_note": (
                 "worker count, engine thread count, sample, and partition "

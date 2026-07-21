@@ -551,10 +551,15 @@ def make_hint_tasks(
         Dict[int, Dict[StateKey, HintData]]
     ] = None,
 ) -> List[HintTask]:
-    tasks = []
+    tasks_by_level: Dict[int, List[HintTask]] = {}
     for level in sorted(levels, reverse=True):
+        level_tasks = []
         states = list(states_by_level[level])
-        shard_count = min(workers, len(states))
+        shard_count = (
+            min(workers, len(states))
+            if level == CONSOLE_REFERENCE_LEVEL
+            else min(1, len(states))
+        )
         if shard_count == 0:
             continue
         for shard in range(shard_count):
@@ -568,7 +573,7 @@ def make_hint_tasks(
                 state_key in cached
                 for state_key in shard_states
             ):
-                tasks.append(
+                level_tasks.append(
                     HintTask(
                         level=level,
                         hint_count=(
@@ -583,7 +588,21 @@ def make_hint_tasks(
                         max_retries=max_retries,
                     )
                 )
-    return tasks
+        if level_tasks:
+            tasks_by_level[level] = level_tasks
+
+    # Levels 1--19 each keep one Console alive for their complete state stream.
+    # Level 21 is the expensive reference and uses all remaining process slots
+    # through fixed shards.  Once a lower level finishes, the bounded submitter
+    # below starts another queued level-21 shard in the released slot.
+    level_order = sorted(tasks_by_level, reverse=True)
+    frontier = [tasks_by_level[level][0] for level in level_order]
+    remaining = [
+        task
+        for level in level_order
+        for task in tasks_by_level[level][1:]
+    ]
+    return [*frontier, *remaining]
 
 
 def collect_hints(
@@ -840,6 +859,12 @@ def collect_hints(
                 if rate > 0.0
                 else None
             )
+            active_tasks_by_level = {}
+            for task_id in active_task_ids:
+                level = int(task_id[0])
+                active_tasks_by_level[level] = (
+                    active_tasks_by_level.get(level, 0) + 1
+                )
             return {
                 "kind": "hint_progress",
                 "final": final,
@@ -865,10 +890,19 @@ def collect_hints(
                     len(level_hints)
                     for level_hints in hints.values()
                 ),
+                "reported_hints_by_level": {
+                    level: len(notified_keys_by_level[level])
+                    for level in levels
+                },
+                "target_hints_by_level": {
+                    level: len(state_keys)
+                    for level in levels
+                },
                 "target_hints": len(state_keys) * len(levels),
                 "completed_tasks": completed_tasks,
                 "total_tasks": len(tasks),
                 "active_tasks": len(active_task_ids),
+                "active_tasks_by_level": active_tasks_by_level,
                 "retry_count": retry_count,
                 "attempt_error_count": attempt_error_count,
                 "cpu": monitor.snapshot(),
@@ -891,10 +925,10 @@ def collect_hints(
                 else "初回結果待ち"
             )
             cpu = snapshot["cpu"]
-            cpu_text = ""
+            resource_line = None
             if cpu.get("available"):
-                cpu_text = (
-                    f" | CPU {cpu['cpu_percent']:.0f}%"
+                resource_line = (
+                    f"  [資源] CPU {cpu['cpu_percent']:.0f}%"
                     f" | 空きRAM {cpu['available_memory_mib']:.0f} MiB"
                     f" | 関連メモリ "
                     f"{cpu['process_tree_memory_mib'] / 1024.0:.1f} GiB"
@@ -905,23 +939,36 @@ def collect_hints(
                 f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
                 f"[{progress_kind}] "
             )
-            print(
+            active_level_text = ", ".join(
+                f"level {level}:{count}"
+                for level, count in sorted(
+                    snapshot["active_tasks_by_level"].items(),
+                    reverse=True,
+                )
+            )
+            if active_level_text:
+                active_level_text = f" | {active_level_text}"
+            lines = [
                 f"{progress_label}{snapshot['completed_states']:,}/"
                 f"{snapshot['total_states']:,}件のhint計算 "
                 f"({snapshot['progress_fraction']:.1%})"
                 f" | 経過 {format_duration(snapshot['elapsed_sec'])}"
                 f" | 概算残り {eta_text}"
-                f" | {snapshot['rate_states_per_sec']:.2f}件/秒"
-                f" | task完了 {snapshot['completed_tasks']}/"
+                f" | {snapshot['rate_states_per_sec']:.2f}件/秒",
+                f"  [実行状況] task完了 {snapshot['completed_tasks']}/"
                 f"{snapshot['total_tasks']}"
-                f" (稼働 {snapshot['active_tasks']})"
+                f" | 稼働 {snapshot['active_tasks']}"
+                f"{active_level_text}"
                 f" | cache検出 {snapshot['cache_hits']:,}"
                 f" | 再試行 {snapshot['retry_count']}"
-                f" | 最終結果 {last_hint_status}"
-                f"{cpu_text}",
-                file=sys.stderr,
-                flush=True,
+                f" | 最終結果 {last_hint_status}",
+            ]
+            if resource_line is not None:
+                lines.append(resource_line)
+            sys.stderr.write(
+                "\n".join(lines) + "\n"
             )
+            sys.stderr.flush()
             if progress_callback is not None:
                 progress_callback(snapshot)
 
@@ -1006,10 +1053,22 @@ def collect_hints(
                 future_to_task = {}
                 processed_futures = set()
                 try:
-                    for task in tasks:
+                    pending_futures = set()
+                    next_task_index = 0
+
+                    def submit_next_task() -> bool:
+                        nonlocal next_task_index
+                        if next_task_index >= len(tasks):
+                            return False
+                        task = tasks[next_task_index]
+                        next_task_index += 1
                         future = executor.submit(run_hint_task, task)
                         future_to_task[future] = task
-                    pending_futures = set(future_to_task)
+                        pending_futures.add(future)
+                        return True
+
+                    for _ in range(min(workers, len(tasks))):
+                        submit_next_task()
                     while pending_futures:
                         drain_worker_events(progress_queue)
                         now = time.perf_counter()
@@ -1045,6 +1104,7 @@ def collect_hints(
                                     )
                                 raise
                             accept_task_result(task, result)
+                            submit_next_task()
                     drain_worker_events(progress_queue)
                 except BaseException:
                     cancel_event.set()

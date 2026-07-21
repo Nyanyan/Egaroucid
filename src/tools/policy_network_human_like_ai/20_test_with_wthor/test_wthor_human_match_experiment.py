@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import io
 import tempfile
 import time
@@ -33,10 +34,21 @@ from wthor_human_match_evaluation import (
     make_level21_reuse_validation,
     validate_aggregate_counts,
 )
-from wthor_human_match_experiment import ensure_experiment_identity
+from wthor_human_match_experiment import (
+    SUMMARY_VERSION,
+    default_output_dir,
+    ensure_experiment_identity,
+    make_experiment_identity,
+    require_all_levels_to_start,
+)
 
 
 class HumanMatchExperimentTest(unittest.TestCase):
+    def test_at_least_one_worker_per_level_is_required(self) -> None:
+        with self.assertRaisesRegex(ValueError, "11以上"):
+            require_all_levels_to_start(10)
+        self.assertEqual(11, require_all_levels_to_start(11))
+
     def test_duplicate_states_are_grouped_without_losing_labels(self) -> None:
         state = BoardState.initial()
         player, opponent = state.player_opponent_bits(BLACK)
@@ -91,6 +103,34 @@ class HumanMatchExperimentTest(unittest.TestCase):
         self.assertEqual(states, sorted(flattened))
         self.assertEqual(len(states), len(set(flattened)))
 
+    def test_lower_levels_keep_one_full_stream_and_level21_uses_shards(
+        self,
+    ) -> None:
+        states = [(index, index + 1, BLACK) for index in range(8)]
+        tasks = make_hint_tasks(
+            levels=[1, 3, 21],
+            states_by_level={level: states for level in (1, 3, 21)},
+            workers=4,
+            egaroucid_exe=Path("egaroucid.exe"),
+            egaroucid_threads=1,
+            timeout_sec=10.0,
+            max_retries=2,
+        )
+
+        self.assertEqual([21, 3, 1, 21, 21, 21], [t.level for t in tasks])
+        for level in (1, 3):
+            level_tasks = [task for task in tasks if task.level == level]
+            self.assertEqual(1, len(level_tasks))
+            self.assertEqual(tuple(states), level_tasks[0].states)
+        level21_tasks = [task for task in tasks if task.level == 21]
+        self.assertEqual(4, len(level21_tasks))
+        for shard, task in enumerate(level21_tasks):
+            self.assertEqual(tuple(states[shard::4]), task.states)
+        self.assertEqual(
+            {1, 3, 21},
+            {task.level for task in tasks[:4]},
+        )
+
     def test_resume_skips_only_complete_fixed_shards(self) -> None:
         states = [(index, index + 1, BLACK) for index in range(8)]
         cached = {
@@ -110,6 +150,26 @@ class HumanMatchExperimentTest(unittest.TestCase):
 
         self.assertEqual(1, len(tasks))
         self.assertEqual(tuple(states[1::2]), tasks[0].states)
+
+    def test_partial_lower_level_cache_replays_the_full_stream(self) -> None:
+        states = [(index, index + 1, BLACK) for index in range(8)]
+        cached = {
+            state: HintData({}, ())
+            for state in states[:4]
+        }
+        tasks = make_hint_tasks(
+            levels=[1],
+            states_by_level={1: states},
+            workers=16,
+            egaroucid_exe=Path("egaroucid.exe"),
+            egaroucid_threads=2,
+            timeout_sec=10.0,
+            max_retries=2,
+            cached_by_level={1: cached},
+        )
+
+        self.assertEqual(1, len(tasks))
+        self.assertEqual(tuple(states), tasks[0].states)
 
     def test_level21_console_counts_reuse_alpha_zero(self) -> None:
         validation = make_level21_reuse_validation(
@@ -159,6 +219,40 @@ class HumanMatchExperimentTest(unittest.TestCase):
                     output_dir,
                     {"workers": 32},
                 )
+
+    def test_v4_identity_records_level_specific_console_partition(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            executable = temp_path / "egaroucid.exe"
+            weights = temp_path / "weights.bin"
+            executable.write_bytes(b"console")
+            weights.write_bytes(b"weights")
+            args = argparse.Namespace(
+                positions=10000,
+                data_split="test",
+                split_seed=613,
+                sample_seed=613,
+                egaroucid_exe=executable,
+                egaroucid_threads=2,
+                egaroucid_retries=2,
+                weights=weights,
+                score_temperature=1.0,
+            )
+            identity = make_experiment_identity(
+                args,
+                workers=16,
+                sample_hash="sample",
+                sample_records_hash="records",
+            )
+
+        self.assertEqual(4, SUMMARY_VERSION)
+        self.assertEqual(4, identity["identity_version"])
+        self.assertEqual(
+            "one_persistent_stream_per_level_1_to_19_"
+            "plus_level21_fixed_strided_shards_v2",
+            identity["partition"],
+        )
+        self.assertTrue(default_output_dir(args, 16).name.endswith("_v4"))
 
     def test_top3_hint_is_valid_for_standalone_console_metrics(self) -> None:
         state = BoardState.initial()
@@ -302,6 +396,64 @@ class HumanMatchExperimentTest(unittest.TestCase):
         )
         self.assertEqual(1, len(events[2]["rows"]))
 
+    def test_different_levels_create_and_close_different_consoles(self) -> None:
+        state = BoardState.initial()
+
+        class FakeRunner:
+            instances = []
+
+            def __init__(self, *args, level, **kwargs):
+                self.level = level
+                self.close_count = 0
+                FakeRunner.instances.append(self)
+
+            def hint_scores(self, current_state, side, hint_count):
+                moves = current_state.legal_policies(side)[:hint_count]
+                scores = {
+                    policy: float(100 - rank)
+                    for rank, policy in enumerate(moves)
+                }
+                raw_hint = "\n".join(
+                    "0 | 0 | 0 | "
+                    f"{policy_to_coord(policy)} | {scores[policy]}"
+                    for policy in moves
+                )
+                return scores, raw_hint
+
+            def close(self):
+                self.close_count += 1
+
+        def task(level, repetitions=1):
+            return HintTask(
+                level=level,
+                hint_count=CONSOLE_ONLY_HINT_COUNT,
+                states=(
+                    (state.black, state.white, BLACK),
+                ) * repetitions,
+                egaroucid_exe="unused.exe",
+                egaroucid_threads=1,
+                timeout_sec=1.0,
+                max_retries=0,
+            )
+
+        with patch(
+            "wthor_hint_pipeline.EgaroucidHintRunner",
+            FakeRunner,
+        ), patch.object(
+            hint_pipeline,
+            "_HINT_PROGRESS_QUEUE",
+            None,
+        ):
+            level1_result = run_hint_task(task(1, repetitions=2))
+            run_hint_task(task(3))
+
+        self.assertEqual(2, level1_result["states"])
+        self.assertEqual([1, 3], [runner.level for runner in FakeRunner.instances])
+        self.assertEqual(
+            [1, 1],
+            [runner.close_count for runner in FakeRunner.instances],
+        )
+
     def test_hint_progress_uses_a_timer_before_a_future_finishes(self) -> None:
         state = BoardState.initial()
         legal = state.legal_policies(BLACK)
@@ -423,6 +575,156 @@ class HumanMatchExperimentTest(unittest.TestCase):
         self.assertTrue(progress[-1]["final"])
         self.assertEqual(1, progress[-1]["completed_states"])
         self.assertEqual(1, len(published_rows))
+
+    def test_finished_lower_level_slot_starts_waiting_level21(self) -> None:
+        groups = []
+        state = BoardState.initial()
+        for _ in range(3):
+            side = state.side
+            legal = state.legal_policies(side)
+            groups.append(
+                PositionGroup(
+                    state.black,
+                    state.white,
+                    side,
+                    ((legal[0], 1),),
+                )
+            )
+            state.apply_move(side, legal[0])
+
+        def task_result(task):
+            rows = []
+            for state_key in task.states:
+                current_state = BoardState(*state_key)
+                legal = current_state.legal_policies(state_key[2])
+                moves = (
+                    legal
+                    if task.hint_count == ALL_LEGAL_HINT_COUNT
+                    else legal[:task.hint_count]
+                )
+                scores = {
+                    policy: float(100 - rank)
+                    for rank, policy in enumerate(moves)
+                }
+                raw_hint = "\n".join(
+                    "0 | 0 | 0 | "
+                    f"{policy_to_coord(policy)} | {scores[policy]}"
+                    for policy in moves
+                )
+                rows.append((state_key, scores, raw_hint))
+            return {
+                "level": task.level,
+                "rows": rows,
+                "states": len(rows),
+                "started_at_unix": 1.0,
+                "finished_at_unix": 2.0,
+                "elapsed_sec": 1.0,
+            }
+
+        class FakeFuture:
+            def __init__(self, task, index):
+                self.task = task
+                self.index = index
+
+            def result(self):
+                return task_result(self.task)
+
+            def cancel(self):
+                return False
+
+            def cancelled(self):
+                return False
+
+            def done(self):
+                return True
+
+        class FakeExecutor:
+            instance = None
+
+            def __init__(self, *args, **kwargs):
+                self.submitted = []
+                FakeExecutor.instance = self
+
+            def submit(self, function, task):
+                future = FakeFuture(task, len(self.submitted))
+                self.submitted.append(future)
+                return future
+
+            def shutdown(self, *args, **kwargs):
+                pass
+
+        class FakeQueue:
+            def get_nowait(self):
+                raise hint_pipeline.queue.Empty
+
+            def close(self):
+                pass
+
+            def join_thread(self):
+                pass
+
+        class FakeContext:
+            def Event(self):
+                return hint_pipeline.threading.Event()
+
+            def Queue(self):
+                return FakeQueue()
+
+        submitted_counts_at_wait = []
+        first_wait = True
+
+        def fake_wait(pending, timeout, return_when):
+            nonlocal first_wait
+            submitted_counts_at_wait.append(
+                len(FakeExecutor.instance.submitted)
+            )
+            if first_wait:
+                first_wait = False
+                finished = next(
+                    future
+                    for future in pending
+                    if future.task.level == 1
+                )
+            else:
+                finished = min(pending, key=lambda future: future.index)
+            return {finished}, set(pending) - {finished}
+
+        with tempfile.TemporaryDirectory() as temp_dir, patch.object(
+            hint_pipeline,
+            "ProcessPoolExecutor",
+            FakeExecutor,
+        ), patch.object(
+            hint_pipeline.multiprocessing,
+            "get_context",
+            return_value=FakeContext(),
+        ), patch.object(
+            hint_pipeline,
+            "wait",
+            side_effect=fake_wait,
+        ), patch.object(
+            hint_pipeline.sys,
+            "stderr",
+            io.StringIO(),
+        ):
+            collect_hints(
+                groups,
+                [1, 21],
+                Path(temp_dir),
+                workers=2,
+                egaroucid_exe=Path("unused.exe"),
+                egaroucid_threads=1,
+                timeout_sec=1.0,
+                max_retries=0,
+                progress_interval_sec=60.0,
+            )
+
+        submitted_levels = [
+            future.task.level
+            for future in FakeExecutor.instance.submitted
+        ]
+        self.assertEqual([21, 1, 21], submitted_levels)
+        self.assertEqual(2, submitted_counts_at_wait[0])
+        self.assertEqual(3, submitted_counts_at_wait[1])
 
 
 if __name__ == "__main__":
