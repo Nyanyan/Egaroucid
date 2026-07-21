@@ -701,6 +701,37 @@ class GgsRootTeacherTests(unittest.TestCase):
                     coverage, exe, output, 60.0, 27, 29, resume=True
                 )
 
+    def test_uses_level_33_fallback_when_time_search_is_shallow(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            output = root / "teacher_rows.txt"
+            shallow = {
+                "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            fallback = {
+                "move": "f5", "score": -14, "level": "33", "depth": "33@74%",
+                "time": "000:00:02.000", "nodes": 2, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=shallow),
+                mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=fallback) as level_search,
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, output, 60.0, 28, 29, fallback_level=33
+                )
+            level_search.assert_called_once_with(exe, GGS_ROOT, 33, 28, 29)
+            manifest = json.loads(
+                output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual("hint_level_33", manifest["results"][GGS_ROOT]["method"])
+
 
 if __name__ == "__main__":
     unittest.main()

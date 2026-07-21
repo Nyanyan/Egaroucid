@@ -140,6 +140,48 @@ def search_root(
         ) from error
 
 
+def search_root_at_level(
+    exe: Path,
+    board: str,
+    level: int,
+    threads: int,
+    hash_level: int,
+) -> dict[str, int | str]:
+    if level < 1 or threads <= 0 or not 0 <= hash_level <= 29:
+        raise ValueError("invalid level, thread, or hash setting")
+    command = [
+        str(exe),
+        "-l", str(level),
+        "-t", str(threads),
+        "-hash", str(hash_level),
+        "-nobook",
+    ]
+    commands = f"setboard {board}\nhint 1\nquit\n"
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=exe.parent,
+            input=commands,
+            text=True,
+            capture_output=True,
+            timeout=180.0,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError(f"teacher fallback failed for {board}: {error}") from error
+    if completed.returncode != 0:
+        raise RuntimeError(
+            f"teacher fallback exited {completed.returncode} for {board}: {completed.stderr[-400:]}"
+        )
+    combined_output = completed.stdout + "\n" + completed.stderr
+    try:
+        return parse_search_result(combined_output, board)
+    except ValueError as error:
+        raise RuntimeError(
+            f"teacher fallback parsing failed for {board}: {error}; output={combined_output[-400:]}"
+        ) from error
+
+
 def validate_quality(result: dict[str, int | str], min_depth: int, min_selectivity: int) -> None:
     if min_depth < 1 or not 1 <= min_selectivity <= 100:
         raise ValueError("invalid minimum teacher quality")
@@ -164,6 +206,7 @@ def _new_state(
     hash_level: int,
     min_depth: int,
     min_selectivity: int,
+    fallback_level: int,
 ) -> dict[str, Any]:
     return {
         "schema": TEACHER_SCHEMA,
@@ -180,6 +223,7 @@ def _new_state(
         "hash_level": hash_level,
         "min_depth": min_depth,
         "min_selectivity": min_selectivity,
+        "fallback_level": fallback_level,
         "roots": roots,
         "results": {},
     }
@@ -195,7 +239,7 @@ def _load_state(
         raise ValueError(f"cannot resume teacher state {path}: {error}") from error
     for key in (
         "schema", "coverage", "engine", "time_seconds", "threads", "hash_level",
-        "min_depth", "min_selectivity", "roots",
+        "min_depth", "min_selectivity", "fallback_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -224,6 +268,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# hash_level {state['hash_level']}",
             f"# min_depth {state['min_depth']}",
             f"# min_selectivity {state['min_selectivity']}",
+            f"# fallback_level {state['fallback_level']}",
             f"# completed {len(rows)}/{len(roots)}",
             *rows,
             "",
@@ -249,6 +294,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "hash_level": state["hash_level"],
         "min_depth": state["min_depth"],
         "min_selectivity": state["min_selectivity"],
+        "fallback_level": state["fallback_level"],
         "results": {board: results[board] for board in sorted(results)},
     }
     _atomic_write_text(
@@ -266,6 +312,7 @@ def generate_teachers(
     hash_level: int,
     min_depth: int = 33,
     min_selectivity: int = 74,
+    fallback_level: int = 33,
     resume: bool = False,
     limit: int | None = None,
 ) -> dict[str, int]:
@@ -273,11 +320,14 @@ def generate_teachers(
         raise FileNotFoundError(f"engine executable not found: {exe}")
     if limit is not None and limit <= 0:
         raise ValueError("limit must be positive")
+    if fallback_level < 0:
+        raise ValueError("fallback_level must not be negative")
     roots = load_uncovered_roots(coverage_path)
     if limit is not None:
         roots = roots[:limit]
     expected = _new_state(
-        coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity
+        coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
+        fallback_level,
     )
     state_path = _state_path(output)
     if resume:
@@ -294,7 +344,15 @@ def generate_teachers(
         if board in state["results"]:
             continue
         result = search_root(exe, board, time_seconds, threads, hash_level)
-        validate_quality(result, min_depth, min_selectivity)
+        try:
+            validate_quality(result, min_depth, min_selectivity)
+            result["method"] = "time"
+        except ValueError:
+            if fallback_level == 0:
+                raise
+            result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
+            validate_quality(result, min_depth, min_selectivity)
+            result["method"] = f"hint_level_{fallback_level}"
         state["results"][board] = result
         _write_outputs(output, state)
         print(f"completed {len(state['results'])}/{len(roots)} {board}", flush=True)
@@ -311,6 +369,7 @@ def main() -> int:
     parser.add_argument("--hash", dest="hash_level", type=int, default=29)
     parser.add_argument("--min-depth", type=int, default=33)
     parser.add_argument("--min-selectivity", type=int, default=74)
+    parser.add_argument("--fallback-level", type=int, default=33)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
@@ -323,6 +382,7 @@ def main() -> int:
         args.hash_level,
         args.min_depth,
         args.min_selectivity,
+        args.fallback_level,
         args.resume,
         args.limit,
     )
