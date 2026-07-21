@@ -11,7 +11,7 @@
 リポジトリルートで実行してください。
 
 ```powershell
-clang++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.exe -mtune=native -march=native -pthread -std=c++20
+clang++ -O3 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console_clang.exe -mtune=native -march=native -pthread -std=c++20 -DINCLUDE_GGS -lws2_32 -DIS_GGS_TOURNAMENT
 ```
 
 ## 棋譜生成
@@ -28,6 +28,14 @@ python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 
 python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1
 ```
 
+`--games` は再実行のたびに追加する棋譜数ではなく、開始局面ごとのユニーク棋譜の目標総数です。既に一部の棋譜がある状態で `--games 512` を再実行すると合計512件まで生成し、既に512件以上あれば棋譜生成を行いません。
+
+全開始局面の処理では `--resume` を付けると、既に目標総数へ到達した局面について子プロセスの起動も省略します。
+
+```powershell
+python src/tools/gen_contest_book/generate_all_records.py --games 512 --resume
+```
+
 途中の開始局面から走査したい場合は、一覧に含まれる局面を `--start-board` に指定します。指定した局面を含めて処理を開始します。
 
 ```powershell
@@ -38,9 +46,15 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 
 既定値は、開始局面あたり512棋譜、16棋譜ごとの反復更新、レベル19、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。打ち切り局面の `leaf value` は30手99.9%読みで評価します。棋譜数、ロス制限、打ち切り空き数などはコマンドラインオプションで変更できます。
 
-棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。指定した棋譜数に達するか、上限lossまで列挙し終わると終了します。
+生成engineの既定値は大会用 `bin/Egaroucid_for_Console_clang.exe` です。別binaryを使う既存運用では、単局・全局面のどちらのdriverでも `--exe <path>` で上書きできます。
+
+棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。ユニーク棋譜の目標総数に達するか、上限lossまで列挙し終わると終了します。
 
 `generate_records.py` は `--batch-size 16` ごとに一旦 `build_book.py` を実行し、`trained` に仮bookを作ります。次のバッチからはその仮bookを `-contestbook` としてEgaroucidに渡し、bookにある手評価を活用しながら残りの手を探索して棋譜生成を続けます。既存の棋譜は開始局面フォルダ内の transcript で重複判定し、同じ棋譜は再保存しません。
+
+開始局面ごとの `generation_manifest.json` には、生成binaryのpath・SHA-256、探索設定、各batch前後の棋譜file hashとユニーク棋譜数を記録します。中断中のbatchや外部から追加された棋譜は、その旨を次回起動時に履歴へ残します。同じ棋譜フォルダへの生成と同じbookへの公開はOS管理のlockで直列化します。`.lock` file自体は残りますが、lock状態はプロセス終了時にOSが解放するため、異常終了後にfileを削除する必要はありません。
+
+`--use-existing-book` を指定した場合、manifestに利用設定は残りますが、engine標準bookの内容まではhash化しません。厳密な生成provenanceが必要な場合は、既定の `-nobook` 動作を使ってください。
 
 `--threads` を2以上にすると、Egaroucid側は共有タスクキューで並列化します。1本しか進行がない間はその探索に全スレッドを使い、棋譜上の分岐で新しい進行が増えたらキューへ追加します。各workerは空き次第、自分でキューから次の進行を取り出して処理します。実行中タスクと待ちタスクの合計がworker数を下回った場合は、合法手評価や葉の30手99.9%読みの直前に空きworker分のhelper slotを予約し、残っている各タスクが複数スレッドを使えるようにします。
 
@@ -52,11 +66,15 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 python src/tools/gen_contest_book/build_book.py "<initial board>"
 ```
 
+これは低水準の直接builderであり、既存出力へ直接書きます。検証済みstaging、manifest、排他lockが必要な管理用構築では `build_all_books.py` を使ってください。
+
 開始局面一覧を上から順に処理してbookを構築します。
 
 ```powershell
 python src/tools/gen_contest_book/build_all_books.py --resume
 ```
+
+`generate_records.py` と `build_all_books.py` によるbook公開では、一時ファイルへ構築し、ヘッダと各行を検証してから既存 `.egcb` をatomicに置き換えます。同じ場所の `.egcb.manifest.json` には、正規化した開始局面、構築オプション、builder・生成provenanceを含む入力・出力のhashを記録します。`--resume` ではbookとmanifestがともに検証を通り、入力とオプションも一致する場合だけスキップします。manifestのない従来book、途中までしか書かれていないbook、入力棋譜や設定が変わったbookは再構築します。
 
 book構築時は、生成棋譜に加えて `data/game_records` 内の実戦棋譜も同じ形式として読み込みます。開始局面から合計4石損までの局面を収録する設定が既定値です。生成棋譜に `leaf empty` がある場合、`build_book.py` はその空き数に合わせてbook掲載範囲を自動決定します。新規の30空き棋譜では30空きまで出力できます。過去の28空き棋譜だけから構築する場合は28空きまで、過去の30空き棋譜だけから構築する場合は30空きまで出力できます。明示したい場合は `--cut-empty 28` や `--cut-empty 30` を指定してください。
 
@@ -104,7 +122,7 @@ Start-specific directories under `data/book_records` and book files under `train
 Run from the repository root:
 
 ```powershell
-clang++ -O2 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console.exe -mtune=native -march=native -pthread -std=c++20
+clang++ -O3 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console_clang.exe -mtune=native -march=native -pthread -std=c++20 -DINCLUDE_GGS -lws2_32 -DIS_GGS_TOURNAMENT
 ```
 
 ## Generate Records
@@ -121,6 +139,18 @@ Generate records for starts in list order:
 python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1
 ```
 
+`--games` is a target total of unique records for each start, not an amount to
+append on every invocation. Re-running either generator with `--games 512`
+continues a partial directory up to 512 and does no record-generation work for
+a directory that already contains 512 or more unique transcripts.
+
+Use `--resume` with the all-start driver to avoid spawning the per-start process
+for starts that have already reached the target:
+
+```powershell
+python src/tools/gen_contest_book/generate_all_records.py --games 512 --resume
+```
+
 To resume scanning from a specific start position, pass a board from the start list to `--start-board`. The specified position is included.
 
 ```powershell
@@ -131,9 +161,25 @@ When combined with `--skip`, the script skips that many additional positions aft
 
 Defaults are 512 records per start, iterative updates every 16 records, level 19, per-move loss 2, total loss 4, and cut at 30 empties. The cutoff position's `leaf value` is evaluated with a 30-ply 99.9% selective endgame search. Record counts, loss limits, and the cutoff empty count can be changed with command-line options.
 
-Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the requested number of records is reached or all records up to the configured loss limit are exhausted.
+The default generation engine is the tournament build at
+`bin/Egaroucid_for_Console_clang.exe`. Existing workflows can select another
+binary with `--exe <path>` on either the single-start or all-start driver.
+
+Record generation exhausts all records with total loss 0 before moving to total loss 1, and continues in increasing-loss order. It stops when the target total of unique records is reached or all records up to the configured loss limit are exhausted.
 
 `generate_records.py` runs `build_book.py` after each `--batch-size 16` records and writes a provisional book under `trained`. The next batch passes that provisional book back to Egaroucid through `-contestbook`, so move scores already present in the book are reused while missing legal moves are still searched. Existing records are deduplicated by transcript in the start-position record directory and are not written again.
+
+Each start directory has a `generation_manifest.json` recording the generation
+binary path and SHA-256, search settings, and record-file hashes and unique
+counts before and after every batch. Interrupted batches and externally changed
+record sets are recorded explicitly on the next run. Generation for the same
+record directory and publication of the same book are serialized with OS-owned
+locks. The `.lock` files remain on disk, but their lock state is released by the
+OS when a process exits, so they do not become stale after a crash.
+
+With `--use-existing-book`, the manifest records that setting but does not hash
+the engine's separate standard-book data. Use the default `-nobook` behavior
+when strict generation provenance is required.
 
 When `--threads` is 2 or larger, Egaroucid parallelizes with a shared task queue. While there is only one progression, that search can use all threads. When branch points create more progressions, they are pushed to the queue, and each worker pulls the next progression as soon as it becomes free. If the number of running plus queued tasks drops below the worker count, Egaroucid reserves helper slots before scoring each legal move and before the leaf 30-ply 99.9% search, so the remaining tasks can use multiple threads without exceeding the configured budget.
 
@@ -145,11 +191,25 @@ Build one book:
 python src/tools/gen_contest_book/build_book.py "<initial board>"
 ```
 
+This is the low-level direct builder and still writes directly to its output.
+Use `build_all_books.py` when validated staging, manifests, and publication
+locking are required.
+
 Build books in start-list order:
 
 ```powershell
 python src/tools/gen_contest_book/build_all_books.py --resume
 ```
+
+Book publication through `generate_records.py` and `build_all_books.py` is
+transactional for each `.egcb`: `build_book.py` writes a staging file, the
+driver validates its header and rows, and only then atomically replaces the
+published file. A neighboring `.egcb.manifest.json` records the normalized
+start, build options, builder/input hashes (including generation provenance),
+and output hash. With `--resume`, a book is skipped only when both the book and
+manifest validate and all inputs and options still match. A legacy book without
+a manifest, a partial/corrupt book, or a book whose records/options changed is
+rebuilt.
 
 The builder reads generated records and also treats game records in `data/game_records` as the same record format. By default, it records positions up to a total loss of 4 discs from the start position. When generated records contain `leaf empty`, `build_book.py` automatically uses that empty count as the book output cutoff. New 30-empty records produce a 30-empty book, while old 28-empty or 30-empty records can still be rebuilt at their own cutoff. Use `--cut-empty 28` or `--cut-empty 30` to force a cutoff explicitly.
 
