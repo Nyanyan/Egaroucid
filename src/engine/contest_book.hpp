@@ -25,6 +25,8 @@
 #include "util.hpp"
 
 #define CONTEST_BOOK_EXTENSION ".egcb"
+#define CONTEST_ROOT_TABLE_FILENAME "contest_root_table.egcb"
+constexpr int CONTEST_ROOT_TABLE_DEFAULT_N_DISCS = 14;
 
 struct Contest_book_hash {
     size_t operator()(const Board &board) const {
@@ -259,6 +261,15 @@ class Contest_book {
             return entries.size();
         }
 
+        bool all_entries_have_n_discs(int n_discs) const {
+            for (const auto &entry: entries) {
+                if (entry.first.n_discs() != n_discs) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         std::string source() const {
             return source_file;
         }
@@ -310,5 +321,152 @@ class Contest_book {
             result->is_end_search = false;
             result->probability = -1;
             return true;
+        }
+};
+
+/*
+    A contest-root table deliberately reuses Contest_book's canonical-board
+    lookup and policy conversion, but has a separate, strict file header.  It
+    is a single table shared by every GGS start rather than one deep DAG per
+    start.  Individual contest books remain preferred where they exist.
+*/
+class Contest_root_table {
+    private:
+        Contest_book book;
+        bool loaded;
+        int n_discs;
+        uint64_t expected_entries;
+        std::string source_file;
+
+        static bool parse_header_int(const std::string &line, const std::string &prefix, int *value) {
+            if (!line.starts_with(prefix)) {
+                return false;
+            }
+            try {
+                size_t consumed = 0;
+                const int parsed = std::stoi(line.substr(prefix.size()), &consumed);
+                if (consumed != line.size() - prefix.size()) {
+                    return false;
+                }
+                *value = parsed;
+            } catch (const std::exception&) {
+                return false;
+            }
+            return true;
+        }
+
+        static bool parse_header_uint64(const std::string &line, const std::string &prefix, uint64_t *value) {
+            if (!line.starts_with(prefix)) {
+                return false;
+            }
+            const std::string value_text = line.substr(prefix.size());
+            if (value_text.empty() || value_text[0] == '-' || value_text[0] == '+') {
+                return false;
+            }
+            try {
+                size_t consumed = 0;
+                const uint64_t parsed = std::stoull(value_text, &consumed);
+                if (consumed != value_text.size()) {
+                    return false;
+                }
+                *value = parsed;
+            } catch (const std::exception&) {
+                return false;
+            }
+            return true;
+        }
+
+    public:
+        Contest_root_table()
+            : loaded(false), n_discs(CONTEST_ROOT_TABLE_DEFAULT_N_DISCS), expected_entries(0) {}
+
+        void clear() {
+            book.clear();
+            loaded = false;
+            n_discs = CONTEST_ROOT_TABLE_DEFAULT_N_DISCS;
+            expected_entries = 0;
+            source_file.clear();
+        }
+
+        bool init(const std::string &dir, bool show_log) {
+            clear();
+            const std::filesystem::path path = std::filesystem::path(dir) / CONTEST_ROOT_TABLE_FILENAME;
+            std::ifstream ifs(path);
+            if (!ifs) {
+                if (show_log) {
+                    std::cerr << "contest root table not found: " << path.string() << std::endl;
+                }
+                return false;
+            }
+            std::string format;
+            std::string root_discs;
+            std::string entries;
+            if (
+                !std::getline(ifs, format) ||
+                !std::getline(ifs, root_discs) ||
+                !std::getline(ifs, entries) ||
+                format != "# contest_root_table_v1" ||
+                !parse_header_int(root_discs, "# root_discs ", &n_discs) ||
+                !parse_header_uint64(entries, "# entries ", &expected_entries) ||
+                n_discs < 4 || n_discs > HW2 ||
+                expected_entries == 0
+            ) {
+                if (show_log) {
+                    std::cerr << "[WARNING] contest root table invalid header: " << path.string() << std::endl;
+                }
+                clear();
+                return false;
+            }
+            if (!book.init(path.string(), show_log)) {
+                clear();
+                return false;
+            }
+            if (book.size() != expected_entries) {
+                if (show_log) {
+                    std::cerr << "[WARNING] contest root table entry count mismatch: expected "
+                              << expected_entries << ", loaded " << book.size() << " from " << path.string() << std::endl;
+                }
+                clear();
+                return false;
+            }
+            if (!book.all_entries_have_n_discs(n_discs)) {
+                if (show_log) {
+                    std::cerr << "[WARNING] contest root table contains a non-root row: "
+                              << path.string() << std::endl;
+                }
+                clear();
+                return false;
+            }
+            loaded = true;
+            source_file = path.string();
+            if (show_log) {
+                std::cerr << "contest root table loaded " << expected_entries
+                          << " roots at " << n_discs << " discs from " << source_file << std::endl;
+            }
+            return true;
+        }
+
+        bool is_loaded() const {
+            return loaded;
+        }
+
+        uint64_t size() const {
+            return book.size();
+        }
+
+        int root_n_discs() const {
+            return n_discs;
+        }
+
+        std::string source() const {
+            return source_file;
+        }
+
+        bool get(const Board &board, Contest_book_entry *entry) const {
+            return loaded && board.n_discs() == n_discs && book.get(board, entry);
+        }
+
+        bool get_search_result(const Board &board, Search_result *result) const {
+            return loaded && board.n_discs() == n_discs && book.get_search_result(board, result);
         }
 };

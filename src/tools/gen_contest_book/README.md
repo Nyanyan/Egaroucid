@@ -217,6 +217,32 @@ The builder reads generated records and also treats game records in `data/game_r
 
 The console does not load a contest book by default. To enable it, pass the hidden command-line option `-contestbook <dir>`; it is accepted by normal and GGS builds but is not shown in help. In normal use, point it at `src/tools/gen_contest_book/trained`.
 
+## Root Table
+
+`contest_root_table.egcb` is an optional, single-file table of verified moves
+at a fixed root disc count (normally 14 for `s8r14`). It complements rather
+than replaces the per-start deep books: the runtime first uses a matching deep
+book, then falls back to the root table only at the initial board. It never
+uses a root-table row after the root ply.
+
+Build a table from verified individual books with:
+
+```powershell
+python src/tools/gen_contest_book/build_root_table.py --books-dir src/tools/gen_contest_book/trained --require-starts-dir src/tools/gen_contest_book/data/records321_14_random_setup
+```
+
+The builder canonicalizes every board and move with the same representative
+ordering as the C++ runtime, rejects conflicting duplicate roots, validates
+the completed table, atomically publishes it as
+`trained/contest_root_table.egcb`, and writes a neighbouring source/output
+hash manifest. For a full enumerated start set, pass that set with
+`--require-starts-dir`; publication fails unless coverage is exact. Shallow
+teacher results can therefore be accumulated for all starts independently of
+the smaller collection of deep books. A compact teacher artifact can avoid
+creating one file per root: pass repeatable `--root-results <file>` inputs with
+data rows in the same `<board> <side> <value> <move>:<score> ...` format. Its
+hash is recorded in the root-table manifest alongside deep-book sources.
+
 ## Testing
 
 Start with a small test for one start position. Use one line from `data/records321_14_random_setup` as `<initial board>`.

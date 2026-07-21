@@ -19,6 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import generate_all_records
 import generate_records
 import book_artifact
+import build_root_table
 from book_artifact import (
     BookBuildSpec,
     BookValidationError,
@@ -457,6 +458,90 @@ class BookArtifactTests(unittest.TestCase):
             self.assertTrue(second_entered.is_set())
             self.assertTrue(check_book_status(second_spec).current)
             self.assertFalse(check_book_status(first_spec).current)
+
+
+class RootTableTests(unittest.TestCase):
+    def write_root_book(self, path: Path, move: str = "d3") -> None:
+        path.write_text(
+            "# contest_book_v1\n"
+            f"# initial {INITIAL_BOARD}\n"
+            "# records_seen 1\n"
+            "# records_used 1\n"
+            "# cut_empty 30\n"
+            f"{INITIAL_BOARD} 0 {move}:0\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+    def test_builds_canonical_verified_root_table_and_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_dir = root / "books"
+            source_dir.mkdir()
+            self.write_root_book(source_dir / "first.egcb")
+            output = root / build_root_table.ROOT_TABLE_FILENAME
+
+            result = build_root_table.build_root_table(
+                [source_dir],
+                output,
+                root_discs=4,
+                required_starts=[INITIAL_BOARD],
+            )
+
+            self.assertEqual(1, result["entries"])
+            self.assertEqual(
+                {"root_discs": 4, "entries": 1},
+                build_root_table.validate_root_table(output, expected_root_discs=4),
+            )
+            manifest = json.loads(
+                build_root_table.manifest_path_for_root_table(output).read_text(encoding="utf-8")
+            )
+            self.assertEqual("contest_root_table_manifest_v1", manifest["schema"])
+            self.assertEqual(1, manifest["source_count"])
+            self.assertEqual(1, manifest["entries"])
+
+    def test_rejects_conflicting_duplicate_canonical_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first_dir = root / "first"
+            second_dir = root / "second"
+            first_dir.mkdir()
+            second_dir.mkdir()
+            self.write_root_book(first_dir / "first.egcb", "d3")
+            self.write_root_book(second_dir / "second.egcb", "e6")
+
+            with self.assertRaisesRegex(ValueError, "conflicting verified roots"):
+                build_root_table.build_root_table(
+                    [first_dir, second_dir],
+                    root / build_root_table.ROOT_TABLE_FILENAME,
+                    root_discs=4,
+                )
+
+    def test_accepts_compact_teacher_root_rows_without_deep_books(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            teacher_rows = root / "teacher_roots.txt"
+            teacher_rows.write_text(
+                "# level-33 verified roots\n"
+                f"{INITIAL_BOARD} 0 d3:0\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            output = root / build_root_table.ROOT_TABLE_FILENAME
+
+            result = build_root_table.build_root_table(
+                [],
+                output,
+                root_discs=4,
+                required_starts=[INITIAL_BOARD],
+                root_result_files=[teacher_rows],
+            )
+
+            self.assertEqual(1, result["entries"])
+            manifest = json.loads(
+                build_root_table.manifest_path_for_root_table(output).read_text(encoding="utf-8")
+            )
+            self.assertEqual("root_result", manifest["sources"][0]["kind"])
 
 
 if __name__ == "__main__":

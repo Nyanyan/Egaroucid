@@ -226,6 +226,58 @@ int main() {
             );
         }
 
+        std::filesystem::path root_table_path = temporary_directory.path() / CONTEST_ROOT_TABLE_FILENAME;
+        {
+            std::ofstream ofs(root_table_path);
+            require(static_cast<bool>(ofs), "could not create root-table test file");
+            ofs << "# contest_root_table_v1\n";
+            ofs << "# root_discs 14\n";
+            ofs << "# entries 1\n";
+            ofs << root_representative.to_str() << " 8 " << idx_to_coord(root_policy) << ":8\n";
+        }
+        Contest_root_table root_table;
+        require(root_table.init(temporary_directory.path().string(), false), "root table did not load");
+        require(root_table.size() == 1, "root table registered an unexpected entry count");
+        require(root_table.root_n_discs() == 14, "root table read an unexpected disc count");
+        for (size_t i = 0; i < root_symmetries.size(); ++i) {
+            int symmetry_idx;
+            representative_board(root_symmetries[i], &symmetry_idx);
+            const int expected_policy = convert_coord_from_representative_board(root_policy, symmetry_idx);
+            Search_result result;
+            require(root_table.get_search_result(root_symmetries[i], &result), "root-table symmetry lookup failed");
+            require(result.policy == expected_policy, "root-table lookup did not transform the policy");
+            require(result.value == 8, "root-table lookup returned an unexpected value");
+        }
+        Search_result child_root_result;
+        require(!root_table.get_search_result(child, &child_root_result), "root table leaked beyond its root ply");
+
+        std::filesystem::path invalid_root_dir = temporary_directory.path() / "invalid_root";
+        require(std::filesystem::create_directory(invalid_root_dir), "could not create invalid root-table directory");
+        {
+            std::ofstream ofs(invalid_root_dir / CONTEST_ROOT_TABLE_FILENAME);
+            require(static_cast<bool>(ofs), "could not create invalid root-table test file");
+            ofs << "# contest_root_table_v1\n";
+            ofs << "# root_discs 14\n";
+            ofs << "# entries 2\n";
+            ofs << root_representative.to_str() << " 8 " << idx_to_coord(root_policy) << ":8\n";
+        }
+        Contest_root_table invalid_root_table;
+        require(!invalid_root_table.init(invalid_root_dir.string(), false), "root table accepted a wrong entry count");
+
+        std::filesystem::path non_root_dir = temporary_directory.path() / "non_root";
+        require(std::filesystem::create_directory(non_root_dir), "could not create non-root table directory");
+        {
+            std::ofstream ofs(non_root_dir / CONTEST_ROOT_TABLE_FILENAME);
+            require(static_cast<bool>(ofs), "could not create non-root table file");
+            ofs << "# contest_root_table_v1\n";
+            ofs << "# root_discs 14\n";
+            ofs << "# entries 1\n";
+            ofs << child_representative.to_str() << " -4 "
+                << idx_to_coord(child_representative_policy) << ":-4\n";
+        }
+        Contest_root_table non_root_table;
+        require(!non_root_table.init(non_root_dir.string(), false), "root table accepted a non-root row");
+
         Board duplicate_orientation = root_symmetries[1];
         int duplicate_to_representative_idx;
         require(

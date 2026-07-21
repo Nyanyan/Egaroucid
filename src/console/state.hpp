@@ -18,6 +18,8 @@ struct State {
     std::future<std::vector<Ponder_elem>> ponder_future;
     bool ponder_searching;
     Contest_book contest_book;
+    Contest_root_table contest_root_table;
+    bool contest_root_table_attempted;
     std::string contest_book_start;
 
     State() {
@@ -25,6 +27,7 @@ struct State {
         remaining_time_msec_black = 0;
         remaining_time_msec_white = 0;
         ponder_searching = false;
+        contest_root_table_attempted = false;
         contest_book_start = "";
     }
 };

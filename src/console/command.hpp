@@ -60,11 +60,20 @@ void clear_contest_book(State *state) {
     state->contest_book_start = "";
 }
 
+void load_contest_root_table(Options *options, State *state) {
+    if (!options->contest_book || state->contest_root_table_attempted) {
+        return;
+    }
+    state->contest_root_table_attempted = true;
+    state->contest_root_table.init(options->contest_book_dir, options->show_log);
+}
+
 void load_contest_book_for_board(Board_info *board, Options *options, State *state) {
     clear_contest_book(state);
     if (!options->contest_book) {
         return;
     }
+    load_contest_root_table(options, state);
     std::string initial_board = board->board.to_str(board->player);
     std::filesystem::path contest_book_path = contest_book_path_for_start(options->contest_book_dir, initial_board);
     if (state->contest_book.init(contest_book_path.string(), options->show_log)) {
@@ -236,6 +245,14 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
             std::cerr << "contest book selected " << idx_to_coord(result.policy)
                       << " value " << result.value
                       << " boards " << state->contest_book.size()
+                      << " " << board->board.to_str()
+                      << std::endl;
+        }
+    } else if (options->contest_book && state->contest_root_table.get_search_result(board->board, &result)) {
+        if (options->show_log) {
+            std::cerr << "contest root table selected " << idx_to_coord(result.policy)
+                      << " value " << result.value
+                      << " roots " << state->contest_root_table.size()
                       << " " << board->board.to_str()
                       << std::endl;
         }
