@@ -17,6 +17,7 @@
 #include <string>
 #include <system_error>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include "board.hpp"
 #include "common.hpp"
@@ -154,7 +155,8 @@ class Contest_book {
         std::string source_file;
         std::unordered_map<Board, Contest_book_entry, Contest_book_hash> entries;
 
-        bool parse_line(const std::string &line) {
+        bool parse_line(const std::string &line, bool *duplicate_representative) {
+            *duplicate_representative = false;
             std::istringstream iss(line);
             std::string board_cells;
             std::string side;
@@ -192,7 +194,11 @@ class Contest_book {
             if (entry.moves.empty()) {
                 return false;
             }
-            entries[representative] = entry;
+            if (entries.find(representative) != entries.end()) {
+                *duplicate_representative = true;
+                return false;
+            }
+            entries.emplace(representative, std::move(entry));
             return true;
         }
 
@@ -217,13 +223,25 @@ class Contest_book {
             }
             std::string line;
             uint64_t n_loaded = 0;
+            uint64_t n_duplicate_representatives = 0;
             while (std::getline(ifs, line)) {
                 if (line.empty() || line[0] == '#') {
                     continue;
                 }
-                if (parse_line(line)) {
+                bool duplicate_representative = false;
+                if (parse_line(line, &duplicate_representative)) {
                     ++n_loaded;
+                } else if (duplicate_representative) {
+                    ++n_duplicate_representatives;
                 }
+            }
+            if (n_duplicate_representatives > 0) {
+                if (show_log) {
+                    std::cerr << "[WARNING] contest book invalid: " << n_duplicate_representatives
+                              << " duplicate representative board line(s) in " << file << std::endl;
+                }
+                clear();
+                return false;
             }
             loaded = n_loaded > 0;
             source_file = file;

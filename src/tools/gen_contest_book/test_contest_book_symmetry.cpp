@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
@@ -224,6 +225,37 @@ int main() {
                 "child symmetry " + std::to_string(i)
             );
         }
+
+        Board duplicate_orientation = root_symmetries[1];
+        int duplicate_to_representative_idx;
+        require(
+            representative_board(duplicate_orientation, &duplicate_to_representative_idx) == root_representative,
+            "duplicate test orientation has a different representative"
+        );
+        int duplicate_policy = convert_coord_from_representative_board(
+            root_policy,
+            duplicate_to_representative_idx
+        );
+        std::filesystem::path duplicate_path = temporary_directory.path() / "duplicate.egcb";
+        {
+            std::ofstream ofs(duplicate_path);
+            require(static_cast<bool>(ofs), "could not create duplicate test book");
+            ofs << "# contest_book_v1\n";
+            ofs << root_representative.to_str() << " 8 " << idx_to_coord(root_policy) << ":8\n";
+            ofs << duplicate_orientation.to_str() << " 6 " << idx_to_coord(duplicate_policy) << ":6\n";
+        }
+
+        Contest_book duplicate_book;
+        std::ostringstream duplicate_log;
+        std::streambuf *previous_cerr = std::cerr.rdbuf(duplicate_log.rdbuf());
+        bool duplicate_loaded = duplicate_book.init(duplicate_path.string(), true);
+        std::cerr.rdbuf(previous_cerr);
+        require(!duplicate_loaded, "book with duplicate representatives was accepted");
+        require(duplicate_book.size() == 0, "invalid duplicate book retained entries");
+        require(
+            duplicate_log.str().find("1 duplicate representative board line(s)") != std::string::npos,
+            "duplicate warning did not report its count"
+        );
 
         std::cout << "contest book symmetry test passed" << std::endl;
         return 0;

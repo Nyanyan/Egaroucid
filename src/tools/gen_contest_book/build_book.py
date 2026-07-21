@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import heapq
 import itertools
 from dataclasses import dataclass, field
@@ -42,6 +43,125 @@ class Node:
 
 
 N_SYMMETRIES = 8
+
+# Keep this order and these coordinate conversions in sync with
+# util.hpp::representative_board() and
+# convert_coord_{to,from}_representative_board().  C++ compares the unsigned
+# (player, opponent) bitboard pair, not the printable board string.
+CPP_REPRESENTATIVE_ORDER = (0, 2, 1, 3, 6, 4, 7, 5)
+
+
+def _cpp_coord_to_representative(cell: int, symmetry: int) -> int:
+    y = cell // 8
+    x = cell % 8
+    if symmetry == 0:
+        return cell
+    if symmetry == 1:
+        return (7 - y) * 8 + x
+    if symmetry == 2:
+        return (7 - x) * 8 + (7 - y)
+    if symmetry == 3:
+        return x * 8 + (7 - y)
+    if symmetry == 4:
+        return (7 - x) * 8 + y
+    if symmetry == 5:
+        return x * 8 + y
+    if symmetry == 6:
+        return y * 8 + (7 - x)
+    if symmetry == 7:
+        return (7 - y) * 8 + (7 - x)
+    raise ValueError(f"invalid C++ representative symmetry {symmetry}")
+
+
+def _cpp_coord_from_representative(cell: int, symmetry: int) -> int:
+    y = cell // 8
+    x = cell % 8
+    if symmetry == 0:
+        return cell
+    if symmetry == 1:
+        return (7 - y) * 8 + x
+    if symmetry == 2:
+        return (7 - x) * 8 + (7 - y)
+    if symmetry == 3:
+        return (7 - x) * 8 + y
+    if symmetry == 4:
+        return x * 8 + (7 - y)
+    if symmetry == 5:
+        return x * 8 + y
+    if symmetry == 6:
+        return y * 8 + (7 - x)
+    if symmetry == 7:
+        return (7 - y) * 8 + (7 - x)
+    raise ValueError(f"invalid C++ representative symmetry {symmetry}")
+
+
+def move_to_representative(index: int, symmetry: int) -> int:
+    """Map an a1=0 Python move into the C++ representative orientation."""
+    if not (0 <= index < N_CELLS):
+        raise ValueError(f"invalid board index {index}")
+    cpp_cell = N_CELLS - 1 - index
+    return N_CELLS - 1 - _cpp_coord_to_representative(cpp_cell, symmetry)
+
+
+def move_from_representative(index: int, symmetry: int) -> int:
+    """Map an a1=0 representative move back into the source orientation."""
+    if not (0 <= index < N_CELLS):
+        raise ValueError(f"invalid board index {index}")
+    cpp_cell = N_CELLS - 1 - index
+    return N_CELLS - 1 - _cpp_coord_from_representative(cpp_cell, symmetry)
+
+
+def _transform_bitboard(bits: int, symmetry: int) -> int:
+    transformed = 0
+    while bits:
+        low_bit = bits & -bits
+        cell = low_bit.bit_length() - 1
+        transformed |= 1 << _cpp_coord_to_representative(cell, symmetry)
+        bits ^= low_bit
+    return transformed
+
+
+def _bitboards_to_key(player: int, opponent: int) -> str:
+    cells: list[str] = []
+    for index in range(N_CELLS):
+        bit = 1 << (N_CELLS - 1 - index)
+        if player & bit:
+            cells.append("X")
+        elif opponent & bit:
+            cells.append("O")
+        else:
+            cells.append("-")
+    return "".join(cells) + " X"
+
+
+@functools.lru_cache(maxsize=262144)
+def canonicalize_board_key(board_key: str) -> tuple[str, int]:
+    """Return the exact C++ representative key and source-to-key symmetry."""
+    relative_key = Board.from_text(board_key).key()
+    player = 0
+    opponent = 0
+    for index, cell in enumerate(relative_key[:N_CELLS]):
+        bit = 1 << (N_CELLS - 1 - index)
+        if cell == "X":
+            player |= bit
+        elif cell == "O":
+            opponent |= bit
+
+    best_pair = (player, opponent)
+    best_symmetry = 0
+    for symmetry in CPP_REPRESENTATIVE_ORDER[1:]:
+        candidate = (
+            _transform_bitboard(player, symmetry),
+            _transform_bitboard(opponent, symmetry),
+        )
+        if candidate < best_pair:
+            best_pair = candidate
+            best_symmetry = symmetry
+    return _bitboards_to_key(*best_pair), best_symmetry
+
+
+def canonicalize_board(board: Board) -> tuple[str, int]:
+    return canonicalize_board_key(board.key())
 
 
 def transform_index(index: int, symmetry: int) -> int:
@@ -165,7 +285,7 @@ def node_registry(root: Node) -> dict[str, Node]:
 
 
 def get_or_create_node(nodes: dict[str, Node], board: Board) -> Node:
-    key = board.key()
+    key, _ = canonicalize_board(board)
     node = nodes.get(key)
     if node is None:
         node = Node(board_key=key)
@@ -177,6 +297,9 @@ def add_pass_nodes(node: Node, board: Board, nodes: dict[str, Node] | None = Non
     if nodes is None:
         nodes = node_registry(node)
     while not board.legal_moves() and not board.is_end():
+        parent_key, _ = canonicalize_board(board)
+        if node.board_key and node.board_key != parent_key:
+            raise ValueError(f"pass node does not match board {parent_key}")
         board.pass_turn()
         child = get_or_create_node(nodes, board)
         existing = node.children.get(PASS_MOVE)
@@ -189,9 +312,10 @@ def add_pass_nodes(node: Node, board: Board, nodes: dict[str, Node] | None = Non
 
 def add_record(root: Node, record: Record) -> bool:
     board = Board.from_text(record.initial_board)
+    root_key, _ = canonicalize_board(board)
     if not root.board_key:
-        root.board_key = board.key()
-    if root.board_key != board.key():
+        root.board_key = root_key
+    if root.board_key != root_key:
         return False
     nodes = node_registry(root)
     nodes[root.board_key] = root
@@ -202,9 +326,10 @@ def add_record(root: Node, record: Record) -> bool:
 
     def append_pass_edges() -> None:
         while not board.legal_moves() and not board.is_end():
-            parent_key = board.key()
+            parent_key, _ = canonicalize_board(board)
             board.pass_turn()
-            edges.append((parent_key, PASS_MOVE, board.key()))
+            child_key, _ = canonicalize_board(board)
+            edges.append((parent_key, PASS_MOVE, child_key))
 
     append_pass_edges()
     transcript = record.transcript
@@ -219,9 +344,11 @@ def add_record(root: Node, record: Record) -> bool:
             return False
         if move not in board.legal_moves():
             return False
-        parent_key = board.key()
+        parent_key, parent_symmetry = canonicalize_board(board)
+        representative_move = move_to_representative(move, parent_symmetry)
         board.play(move)
-        edges.append((parent_key, move, board.key()))
+        child_key, _ = canonicalize_board(board)
+        edges.append((parent_key, representative_move, child_key))
     if record.leaf_empty is not None and N_CELLS - board.n_discs() != record.leaf_empty:
         return False
 
@@ -239,7 +366,8 @@ def add_record(root: Node, record: Record) -> bool:
             raise ValueError(f"conflicting edge {parent_key} {move}")
         parent.children[move] = child
 
-    node = nodes[board.key()]
+    leaf_key, _ = canonicalize_board(board)
+    node = nodes[leaf_key]
     if record.leaf_value is not None:
         node.leaf_values.append(record.leaf_value)
     elif board.is_end():
@@ -311,8 +439,11 @@ def collect_book_lines(node: Node, board: Board, loss_sum: int, max_loss: int, c
     # every board key at most once using its least-loss path.
     counter = itertools.count()
     queue: list[tuple[int, str, int, Node, Board]] = []
-    root_key = board.key()
-    heapq.heappush(queue, (loss_sum, root_key, next(counter), node, board.copy()))
+    root_key, _ = canonicalize_board(board)
+    if node.board_key and node.board_key != root_key:
+        raise ValueError(f"root node {node.board_key} does not match board {root_key}")
+    canonical_root = Board.from_text(root_key)
+    heapq.heappush(queue, (loss_sum, root_key, next(counter), node, canonical_root))
     best_loss: dict[str, int] = {root_key: loss_sum}
     emitted: set[str] = set()
     processed: set[str] = set()
@@ -331,10 +462,15 @@ def collect_book_lines(node: Node, board: Board, loss_sum: int, max_loss: int, c
             if child is not None and child.value is not None:
                 passed = current_board.copy()
                 passed.pass_turn()
-                child_key = passed.key()
+                child_key, _ = canonicalize_board(passed)
+                if child.board_key != child_key:
+                    raise ValueError(f"pass edge points to {child.board_key}, expected {child_key}")
                 if current_loss < best_loss.get(child_key, max_loss + 1):
                     best_loss[child_key] = current_loss
-                    heapq.heappush(queue, (current_loss, child_key, next(counter), child, passed))
+                    heapq.heappush(
+                        queue,
+                        (current_loss, child_key, next(counter), child, Board.from_text(child_key)),
+                    )
             continue
 
         move_items: list[tuple[int, int, Node, int]] = []
@@ -356,17 +492,23 @@ def collect_book_lines(node: Node, board: Board, loss_sum: int, max_loss: int, c
         for move, _, child, move_loss in move_items:
             child_board = current_board.copy()
             child_board.play(move)
-            child_key = child_board.key()
+            child_key, _ = canonicalize_board(child_board)
+            if child.board_key != child_key:
+                raise ValueError(f"move edge points to {child.board_key}, expected {child_key}")
             child_loss = current_loss + move_loss
             if child_loss < best_loss.get(child_key, max_loss + 1):
                 best_loss[child_key] = child_loss
-                heapq.heappush(queue, (child_loss, child_key, next(counter), child, child_board))
+                heapq.heappush(
+                    queue,
+                    (child_loss, child_key, next(counter), child, Board.from_text(child_key)),
+                )
 
 
 def load_records(initial_board: str, records_dir: Path, include_game_records: bool) -> tuple[Node, int, int, list[int]]:
     initial_board = normalize_board_text(initial_board)
     root_board = Board.from_text(initial_board)
-    root = Node(board_key=root_board.key())
+    root_key, _ = canonicalize_board(root_board)
+    root = Node(board_key=root_key)
     root._nodes = {root.board_key: root}
     n_seen = 0
     n_used = 0
