@@ -31,6 +31,7 @@ from run_random_wthor_blend_experiment import (
     make_console_level_summary_row,
 )
 from run_wthor_blend_shards import shard_done
+from wthor_human_match_evaluation import wilson_interval
 from blend_policy_with_egaroucid import (
     hint_cache_key as blended_policy_hint_cache_key,
 )
@@ -382,6 +383,11 @@ class SymmetryAgreementTest(unittest.TestCase):
         self.assertEqual(1.0, row["top1_accuracy"])
         self.assertEqual(2, row["top3_hits"])
         self.assertEqual(1.0, row["top3_accuracy"])
+        expected_lower, expected_upper = wilson_interval(2, 2)
+        self.assertEqual(expected_lower, row["top1_ci95_lower"])
+        self.assertEqual(expected_upper, row["top1_ci95_upper"])
+        self.assertEqual(expected_lower, row["top3_ci95_lower"])
+        self.assertEqual(expected_upper, row["top3_ci95_upper"])
 
     def test_progress_uses_symmetry_aware_counts(self) -> None:
         event = make_worker_progress_event(

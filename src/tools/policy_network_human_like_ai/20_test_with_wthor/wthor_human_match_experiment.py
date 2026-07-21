@@ -35,6 +35,7 @@ from wthor_human_match_evaluation import (
     predict_policy_logits,
     split_position_count,
     validate_aggregate_counts,
+    wilson_interval,
 )
 
 
@@ -92,11 +93,28 @@ def format_live_metric(metric: dict) -> str:
     positions = int(metric["positions"])
     if positions == 0:
         return "未算出 (n=0)"
-    top1 = int(metric["hits"][1]) / positions
-    top3 = int(metric["hits"][3]) / positions
+    top1_hits = int(metric["hits"][1])
+    top3_hits = int(metric["hits"][3])
+    top1 = top1_hits / positions
+    top3 = top3_hits / positions
+    top1_lower, top1_upper = wilson_interval(top1_hits, positions)
+    top3_lower, top3_upper = wilson_interval(top3_hits, positions)
     return (
-        f"top-1 {top1:.3%} | top-3 {top3:.3%} "
+        f"top-1 {top1:.3%} [{top1_lower:.3%}, {top1_upper:.3%}] "
+        f"| top-3 {top3:.3%} [{top3_lower:.3%}, {top3_upper:.3%}] "
         f"| n={positions:,}"
+    )
+
+
+def format_console_summary_line(row: dict) -> str:
+    return (
+        f"level {row['level']:2d}: "
+        f"top-1 {row['top1_accuracy']:.3%} "
+        f"[{row['top1_ci95_lower']:.3%}, "
+        f"{row['top1_ci95_upper']:.3%}], "
+        f"top-3 {row['top3_accuracy']:.3%} "
+        f"[{row['top3_ci95_lower']:.3%}, "
+        f"{row['top3_ci95_upper']:.3%}]"
     )
 
 
@@ -808,11 +826,7 @@ def main() -> None:
     print()
     print("Console単体")
     for row in console_rows:
-        print(
-            f"level {row['level']:2d}: "
-            f"top-1 {row['top1_accuracy']:.3%}, "
-            f"top-3 {row['top3_accuracy']:.3%}"
-        )
+        print(format_console_summary_line(row))
     print()
     print("hint評価時間", format_duration(hint_elapsed))
     print("総実行時間", format_duration(elapsed_sec))
