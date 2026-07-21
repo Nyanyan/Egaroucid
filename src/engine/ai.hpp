@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <cmath>
 #include <iostream>
 #include <future>
 #include <unordered_set>
@@ -121,6 +122,19 @@ constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT = 2200ULL;
 constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MAX_TIME = 10000ULL;
 constexpr double AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE = 0.45;
 constexpr int AI_TL_GGS_ALT_VERIFY_RETRY_DEPTH_GAP = 3;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_MIN_N_EMPTY = 36;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_MAX_N_EMPTY = 48;
+constexpr uint64_t AI_TL_GGS_MATCH_REVALIDATE_MIN_REMAINING_TIME = 25000ULL;
+constexpr uint64_t AI_TL_GGS_MATCH_REVALIDATE_MIN_TIME_LIMIT = 700ULL;
+constexpr uint64_t AI_TL_GGS_MATCH_REVALIDATE_MAX_TIME_LIMIT = 1800ULL;
+constexpr double AI_TL_GGS_MATCH_REVALIDATE_RESERVE_COE = 0.30;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_RECENT_ITERATIONS = 4;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_MIN_POLICY_CHANGES = 2;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_BOUNDARY_PRECHECK_MARGIN = 4;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_SCREENING_MIN_DEPTH = 18;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_MIN_DECISION_DEPTH = 20;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_DEPTH_BACKOFF = 8;
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN = 1;
 #endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
@@ -128,6 +142,121 @@ constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
 constexpr int AI_TL_ADDITIONAL_SELFPLAY_BALANCED_PASSES = 2;
 #else
 constexpr int AI_TL_ADDITIONAL_SELFPLAY_BALANCED_PASSES = 1;
+#endif
+
+struct AI_Time_Limit_Match_Context {
+    bool has_pair_result;
+    int pair_value;
+    uint64_t real_remaining_time_msec;
+
+    AI_Time_Limit_Match_Context()
+        : has_pair_result(false), pair_value(0), real_remaining_time_msec(0) {}
+};
+
+struct AI_TL_Iteration_Diagnostics {
+    bool enable_match_revalidation;
+    int pair_value;
+    int recent_policies[4];
+    int recent_policy_count;
+    bool reserve_held;
+    bool policy_oscillation;
+    bool next_selectivity_incomplete;
+    uint64_t reserved_time_msec;
+    int attempted_depth;
+    int attempted_probability;
+
+    AI_TL_Iteration_Diagnostics()
+        : enable_match_revalidation(false),
+          pair_value(0),
+          recent_policies{MOVE_UNDEFINED, MOVE_UNDEFINED, MOVE_UNDEFINED, MOVE_UNDEFINED},
+          recent_policy_count(0),
+          reserve_held(false),
+          policy_oscillation(false),
+          next_selectivity_incomplete(false),
+          reserved_time_msec(0),
+          attempted_depth(-1),
+          attempted_probability(0) {}
+};
+
+#if IS_GGS_TOURNAMENT
+inline int ai_tl_ggs_match_outcome(int value) {
+    return (value > 0) - (value < 0);
+}
+
+inline bool ai_tl_ggs_crosses_match_boundary(int pair_value, int current_value, int alternative_value) {
+    return ai_tl_ggs_match_outcome(pair_value + current_value) !=
+           ai_tl_ggs_match_outcome(pair_value + alternative_value);
+}
+
+inline bool ai_tl_ggs_match_boundary_precheck(int pair_value, int current_value) {
+    return std::abs(pair_value + current_value) <= AI_TL_GGS_MATCH_REVALIDATE_BOUNDARY_PRECHECK_MARGIN;
+}
+
+inline bool ai_tl_ggs_match_revalidation_gate(
+    const Board &board,
+    uint64_t time_limit,
+    const AI_Time_Limit_Match_Context *context
+) {
+    const int n_empties = HW2 - board.n_discs();
+    return
+        context != nullptr &&
+        context->has_pair_result &&
+        AI_TL_GGS_MATCH_REVALIDATE_MIN_N_EMPTY <= n_empties &&
+        n_empties <= AI_TL_GGS_MATCH_REVALIDATE_MAX_N_EMPTY &&
+        context->real_remaining_time_msec >= AI_TL_GGS_MATCH_REVALIDATE_MIN_REMAINING_TIME &&
+        AI_TL_GGS_MATCH_REVALIDATE_MIN_TIME_LIMIT <= time_limit &&
+        time_limit <= AI_TL_GGS_MATCH_REVALIDATE_MAX_TIME_LIMIT;
+}
+
+inline void ai_tl_record_recent_policy(AI_TL_Iteration_Diagnostics *diagnostics, int policy) {
+    if (diagnostics == nullptr || !is_valid_policy(policy)) {
+        return;
+    }
+    if (diagnostics->recent_policy_count < AI_TL_GGS_MATCH_REVALIDATE_RECENT_ITERATIONS) {
+        diagnostics->recent_policies[diagnostics->recent_policy_count++] = policy;
+        return;
+    }
+    for (int i = 1; i < AI_TL_GGS_MATCH_REVALIDATE_RECENT_ITERATIONS; ++i) {
+        diagnostics->recent_policies[i - 1] = diagnostics->recent_policies[i];
+    }
+    diagnostics->recent_policies[AI_TL_GGS_MATCH_REVALIDATE_RECENT_ITERATIONS - 1] = policy;
+}
+
+inline int ai_tl_recent_policy_changes(const AI_TL_Iteration_Diagnostics *diagnostics) {
+    if (diagnostics == nullptr) {
+        return 0;
+    }
+    int changes = 0;
+    for (int i = 1; i < diagnostics->recent_policy_count; ++i) {
+        changes += diagnostics->recent_policies[i - 1] != diagnostics->recent_policies[i];
+    }
+    return changes;
+}
+
+inline bool ai_tl_ggs_should_hold_match_reserve(
+    AI_TL_Iteration_Diagnostics *diagnostics,
+    const Search_result &result,
+    int attempted_depth,
+    int attempted_probability
+) {
+    if (
+        diagnostics == nullptr ||
+        !diagnostics->enable_match_revalidation ||
+        !is_valid_policy(result.policy) ||
+        result.value == SCORE_UNDEFINED
+    ) {
+        return false;
+    }
+    diagnostics->attempted_depth = attempted_depth;
+    diagnostics->attempted_probability = attempted_probability;
+    diagnostics->policy_oscillation =
+        ai_tl_recent_policy_changes(diagnostics) >= AI_TL_GGS_MATCH_REVALIDATE_MIN_POLICY_CHANGES;
+    diagnostics->next_selectivity_incomplete =
+        attempted_depth == result.depth && attempted_probability > result.probability;
+    return
+        (diagnostics->policy_oscillation || diagnostics->next_selectivity_incomplete) &&
+        ai_tl_ggs_match_boundary_precheck(diagnostics->pair_value, result.value);
+}
 #endif
 
 struct Ponder_elem {
@@ -596,7 +725,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
 #endif
 }
 
-void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, Search_result *result, uint64_t time_limit, bool *searching) {
+void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, Search_result *result, uint64_t time_limit, bool *searching, AI_TL_Iteration_Diagnostics *diagnostics = nullptr) {
     const int n_usable_threads = thread_pool.get_max_thread_size(thread_id);
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
@@ -623,8 +752,23 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     int narrow_alt_verify_depth = -1;
     int defensive_alt_verify_policy = MOVE_UNDEFINED;
     int narrow_alt_verify_policy = MOVE_UNDEFINED;
+    uint64_t conditional_match_reserve = 0ULL;
+    uint64_t active_time_limit = time_limit;
+    bool conditional_match_reserve_released = true;
+    if (diagnostics != nullptr && diagnostics->enable_match_revalidation) {
+        conditional_match_reserve = std::max<uint64_t>(
+            1ULL,
+            (uint64_t)((double)time_limit * AI_TL_GGS_MATCH_REVALIDATE_RESERVE_COE)
+        );
+        if (conditional_match_reserve < time_limit) {
+            active_time_limit = time_limit - conditional_match_reserve;
+            conditional_match_reserve_released = false;
+        }
+    }
+#else
+    const uint64_t active_time_limit = time_limit;
 #endif
-    while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
+    while (global_searching && (*searching) && ((tim() - strt < active_time_limit) || main_depth <= 1)) {
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
             main_is_end_search = true;
@@ -644,7 +788,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         std::pair<int, int> id_result;
         bool search_success = false;
         bool main_searching = true;
-        uint64_t time_limit_this_search = get_this_search_time_limit(time_limit, tim() - strt);
+        uint64_t time_limit_this_search = get_this_search_time_limit(active_time_limit, tim() - strt);
 #if IS_GGS_TOURNAMENT
         uint64_t reserved_for_defensive_alt = 0ULL;
         if (
@@ -654,7 +798,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 (uint_fast8_t)main_mpc_level,
                 main_is_complete_search,
                 main_is_end_search,
-                time_limit,
+                active_time_limit,
                 !ai_tl_ggs_can_retry_alt_verify(defensive_alt_verify_depth, main_depth, defensive_alt_verify_policy, result->policy),
                 result->value,
                 result->policy,
@@ -689,6 +833,36 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         result->nodes += main_search.n_nodes;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
+#if IS_GGS_TOURNAMENT
+        if (!search_success && !conditional_match_reserve_released) {
+            const bool hold_reserve = ai_tl_ggs_should_hold_match_reserve(
+                diagnostics,
+                *result,
+                main_depth,
+                SELECTIVITY_PERCENTAGE[main_mpc_level]
+            );
+            if (hold_reserve) {
+                diagnostics->reserve_held = true;
+                diagnostics->reserved_time_msec = std::min<uint64_t>(
+                    conditional_match_reserve,
+                    get_this_search_time_limit(time_limit, tim() - strt)
+                );
+                if (show_log) {
+                    std::cerr << "ggs match-boundary reserve held " << diagnostics->reserved_time_msec
+                              << " ms oscillation " << diagnostics->policy_oscillation
+                              << " next_selectivity_incomplete " << diagnostics->next_selectivity_incomplete
+                              << " pair_sum " << diagnostics->pair_value + result->value << std::endl;
+                }
+                break;
+            }
+            conditional_match_reserve_released = true;
+            active_time_limit = time_limit;
+            if (show_log) {
+                std::cerr << "ggs match-boundary reserve released " << conditional_match_reserve << " ms" << std::endl;
+            }
+            continue;
+        }
+#endif
         if (search_success) {
             Search_result previous_result = *result;
             bool verify_timeout = false;
@@ -799,10 +973,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 bool verify_searching = true;
 #if IS_GGS_TOURNAMENT
                 uint64_t verify_budget = std::min<uint64_t>(
-                    get_this_search_time_limit(time_limit, tim() - strt),
+                    get_this_search_time_limit(active_time_limit, tim() - strt),
                     std::min<uint64_t>(
                         AI_TL_GGS_POLICY_CHANGE_VERIFY_MAX_TIME,
-                        (uint64_t)((double)time_limit * AI_TL_GGS_POLICY_CHANGE_VERIFY_TIME_COE)
+                        (uint64_t)((double)active_time_limit * AI_TL_GGS_POLICY_CHANGE_VERIFY_TIME_COE)
                     )
                 );
                 uint64_t verify_strt = tim();
@@ -905,7 +1079,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     (uint_fast8_t)main_mpc_level,
                     main_is_complete_search,
                     main_is_end_search,
-                    time_limit,
+                    active_time_limit,
                     !ai_tl_ggs_can_retry_alt_verify(defensive_alt_verify_depth, main_depth, defensive_alt_verify_policy, id_result.second),
                     id_result.first,
                     id_result.second,
@@ -913,13 +1087,13 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 )
             ) {
                 const uint64_t alternative_legal = fallback_legal & ~(1ULL << id_result.second);
-                const uint64_t time_left_for_verify = get_this_search_time_limit(time_limit, tim() - strt);
+                const uint64_t time_left_for_verify = get_this_search_time_limit(active_time_limit, tim() - strt);
                 if (alternative_legal != 0ULL && time_left_for_verify >= AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_TIME_LEFT) {
                     uint64_t defensive_verify_budget = std::min<uint64_t>(
                         time_left_for_verify,
                         std::min<uint64_t>(
                             AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MAX_TIME,
-                            (uint64_t)((double)time_limit * AI_TL_GGS_DEFENSIVE_ALT_VERIFY_TIME_COE)
+                            (uint64_t)((double)active_time_limit * AI_TL_GGS_DEFENSIVE_ALT_VERIFY_TIME_COE)
                         )
                     );
                     defensive_verify_budget = std::max<uint64_t>(defensive_verify_budget, AI_TL_GGS_DEFENSIVE_ALT_VERIFY_MIN_TIME_LEFT);
@@ -1006,7 +1180,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     main_depth,
                     (uint_fast8_t)main_mpc_level,
                     main_is_complete_search,
-                    time_limit,
+                    active_time_limit,
                     !ai_tl_ggs_can_retry_alt_verify(narrow_alt_verify_depth, main_depth, narrow_alt_verify_policy, id_result.second),
                     id_result.first,
                     id_result.second,
@@ -1014,13 +1188,13 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 )
             ) {
                 const uint64_t alternative_legal = fallback_legal & ~(1ULL << id_result.second);
-                const uint64_t time_left_for_verify = get_this_search_time_limit(time_limit, tim() - strt);
+                const uint64_t time_left_for_verify = get_this_search_time_limit(active_time_limit, tim() - strt);
                 if (alternative_legal != 0ULL && time_left_for_verify >= AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT) {
                     uint64_t narrow_verify_budget = std::min<uint64_t>(
                         time_left_for_verify,
                         std::min<uint64_t>(
                             AI_TL_GGS_NARROW_ALT_VERIFY_MAX_TIME,
-                            (uint64_t)((double)time_limit * AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE)
+                            (uint64_t)((double)active_time_limit * AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE)
                         )
                     );
                     narrow_verify_budget = std::max<uint64_t>(narrow_verify_budget, AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT);
@@ -1117,6 +1291,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             if (show_log) {
                 std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(result->policy) << verify_log << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
             }
+#if IS_GGS_TOURNAMENT
+            ai_tl_record_recent_policy(diagnostics, result->policy);
+#endif
             uint64_t legal_without_bestmove = use_legal ^ (1ULL << result->policy);
             if (
                 AI_TL_USE_EARLY_BREAK &&
@@ -1243,6 +1420,40 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 }
             }
         }
+#if IS_GGS_TOURNAMENT
+        if (
+            diagnostics != nullptr &&
+            !conditional_match_reserve_released &&
+            !diagnostics->reserve_held &&
+            tim() - strt >= active_time_limit
+        ) {
+            const bool hold_reserve = ai_tl_ggs_should_hold_match_reserve(
+                diagnostics,
+                *result,
+                main_depth,
+                SELECTIVITY_PERCENTAGE[main_mpc_level]
+            );
+            if (hold_reserve) {
+                diagnostics->reserve_held = true;
+                diagnostics->reserved_time_msec = std::min<uint64_t>(
+                    conditional_match_reserve,
+                    get_this_search_time_limit(time_limit, tim() - strt)
+                );
+                if (show_log) {
+                    std::cerr << "ggs match-boundary reserve held " << diagnostics->reserved_time_msec
+                              << " ms oscillation " << diagnostics->policy_oscillation
+                              << " next_selectivity_incomplete " << diagnostics->next_selectivity_incomplete
+                              << " pair_sum " << diagnostics->pair_value + result->value << std::endl;
+                }
+                break;
+            }
+            conditional_match_reserve_released = true;
+            active_time_limit = time_limit;
+            if (show_log) {
+                std::cerr << "ggs match-boundary reserve released " << conditional_match_reserve << " ms" << std::endl;
+            }
+        }
+#endif
     }
     if (show_log && result->is_end_search && result->probability == 100) {
         std::cerr << "completely searched" << std::endl;
@@ -1263,7 +1474,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     @param use_multi_thread     search in multi thread?
     @return the result in Search_result structure
 */
-inline Search_result tree_search_legal(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit, thread_id_t thread_id, bool *searching) {
+inline Search_result tree_search_legal(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit, thread_id_t thread_id, bool *searching, AI_TL_Iteration_Diagnostics *diagnostics = nullptr) {
     //thread_pool.tell_start_using();
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
@@ -1307,7 +1518,7 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
                 time_limit_proc -= tim() - strt_selfplay;
             }
             */
-            iterative_deepening_search_time_limit(board, alpha, beta, show_log, clogs, use_legal, use_multi_thread, thread_id, &res, time_limit_proc, searching);
+            iterative_deepening_search_time_limit(board, alpha, beta, show_log, clogs, use_legal, use_multi_thread, thread_id, &res, time_limit_proc, searching, diagnostics);
         } else {
             iterative_deepening_search(board, alpha, beta, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, thread_id, &res, searching);
         }
@@ -1334,7 +1545,7 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
     @param show_log             show log?
     @return the result in Search_result structure
 */
-Search_result ai_common(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit, thread_id_t thread_id, bool *searching) {
+Search_result ai_common(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal, bool use_specified_move_book, uint64_t time_limit, thread_id_t thread_id, bool *searching, AI_TL_Iteration_Diagnostics *diagnostics = nullptr) {
     Search_result res;
     int value_sign = 1;
     if (board.get_legal() == 0ULL) {
@@ -1382,7 +1593,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                     std::cerr << "there are " << pop_count_ull(use_legal) << " moves out of book" << std::endl;
                 }
                 int n_alpha = book_result.value;
-                Search_result additional_res = tree_search_legal(board, n_alpha, n_alpha + 1, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching);
+                Search_result additional_res = tree_search_legal(board, n_alpha, n_alpha + 1, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching, diagnostics);
                 if (additional_res.value <= n_alpha) { // no better move found in book
                     res.level = LEVEL_TYPE_BOOK;
                     res.policy = book_result.policy;
@@ -1400,7 +1611,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                     if (show_log) {
                         std::cerr << "there are better move out of book" << std::endl;
                     }
-                    res = tree_search_legal(board, n_alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching);
+                    res = tree_search_legal(board, n_alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching, diagnostics);
                     res.time += additional_res.time;
                     res.nodes += additional_res.nodes;
                     res.clog_nodes += additional_res.clog_nodes;
@@ -1430,7 +1641,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
             res.probability = 100;
         }
     } else { // no move in book
-        res = tree_search_legal(board, alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching);
+        res = tree_search_legal(board, alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching, diagnostics);
         res.level = level;
     }
     res.value *= value_sign;
@@ -2062,7 +2273,7 @@ inline bool ai_time_limit_presearch_search(Board board, int alpha, int beta, uin
         search_finished = true;
     } else {
         bool presearch_searching = true;
-        std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching);
+        std::future<Search_result> search_future = std::async(std::launch::async, ai_common, board, alpha, beta, AI_TL_PRESEARCH_LEVEL, false, 0, use_multi_thread, false, use_legal, false, TIME_LIMIT_INF, thread_id, &presearch_searching, nullptr);
         if (search_future.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::ready) {
             *result = search_future.get();
             search_finished = true;
@@ -2853,10 +3064,211 @@ inline bool ai_time_limit_ggs_selfplay_resolve_is_confident(const AI_TL_GGS_Self
             result_gap >= AI_TL_GGS_SELFPLAY_RESOLVE_SINGLE_PASS_MIN_RESULT_GAP
         );
 }
+
+struct AI_TL_GGS_Match_Revalidation_Pair {
+    bool complete;
+    int depth;
+    uint_fast8_t mpc_level;
+    int current_policy;
+    int current_value;
+    int alternative_policy;
+    int alternative_value;
+
+    AI_TL_GGS_Match_Revalidation_Pair()
+        : complete(false),
+          depth(-1),
+          mpc_level(MPC_88_LEVEL),
+          current_policy(MOVE_UNDEFINED),
+          current_value(SCORE_UNDEFINED),
+          alternative_policy(MOVE_UNDEFINED),
+          alternative_value(SCORE_UNDEFINED) {}
+};
+
+inline bool ai_tl_ggs_run_bounded_root_search(
+    const Board &board,
+    int depth,
+    uint_fast8_t mpc_level,
+    uint64_t legal,
+    bool use_multi_thread,
+    thread_id_t thread_id,
+    uint64_t time_limit,
+    int *value,
+    int *policy,
+    uint64_t *nodes
+) {
+    if (legal == 0ULL || time_limit == 0ULL || !global_searching) {
+        return false;
+    }
+    Search search(&board, mpc_level, use_multi_thread, false);
+    search.thread_id = thread_id;
+    bool local_searching = true;
+    const uint64_t search_start = tim();
+    std::future<std::pair<int, int>> future = std::async(
+        std::launch::async,
+        first_nega_scout_legal,
+        &search,
+        -SCORE_MAX,
+        SCORE_MAX,
+        depth,
+        false,
+        std::vector<Clog_result>(),
+        legal,
+        search_start,
+        &local_searching
+    );
+    bool complete = false;
+    if (future.wait_for(std::chrono::milliseconds(time_limit)) == std::future_status::ready) {
+        const std::pair<int, int> raw = future.get();
+        if (local_searching && global_searching && is_valid_policy(raw.second) && (legal & (1ULL << raw.second))) {
+            *value = raw.first;
+            *policy = raw.second;
+            complete = true;
+        }
+    } else {
+        local_searching = false;
+        try {
+            const std::pair<int, int> discarded = future.get();
+            (void)discarded;
+        } catch (const std::exception &e) {
+        }
+    }
+    *nodes += search.n_nodes;
+    return complete;
+}
+
+inline AI_TL_GGS_Match_Revalidation_Pair ai_tl_ggs_match_revalidate(
+    const Board &board,
+    const Search_result &main_result,
+    int pair_value,
+    uint64_t budget,
+    bool use_multi_thread,
+    thread_id_t thread_id,
+    bool *searching,
+    uint64_t *nodes,
+    bool show_log
+) {
+    AI_TL_GGS_Match_Revalidation_Pair deepest_pair;
+    if (
+        budget == 0ULL ||
+        searching == nullptr ||
+        !*searching ||
+        !is_valid_policy(main_result.policy)
+    ) {
+        return deepest_pair;
+    }
+    const uint64_t legal = board.get_legal();
+    const uint64_t alternative_legal = legal & ~(1ULL << main_result.policy);
+    if (alternative_legal == 0ULL) {
+        return deepest_pair;
+    }
+
+    const int maximum_depth = std::max(
+        AI_TL_GGS_MATCH_REVALIDATE_MIN_DECISION_DEPTH,
+        main_result.depth
+    );
+    const int start_depth = std::max(
+        AI_TL_GGS_MATCH_REVALIDATE_SCREENING_MIN_DEPTH,
+        maximum_depth - AI_TL_GGS_MATCH_REVALIDATE_DEPTH_BACKOFF
+    );
+    const uint64_t start = tim();
+    uint64_t selected_alternative = alternative_legal;
+    for (int depth = start_depth; depth <= maximum_depth && global_searching && *searching; ++depth) {
+        uint64_t remaining = get_this_search_time_limit(budget, tim() - start);
+        if (remaining < 2ULL) {
+            break;
+        }
+        const uint_fast8_t mpc_level =
+            depth >= AI_TL_GGS_MID_VERIFY_93_MIN_DEPTH ? MPC_93_LEVEL : MPC_88_LEVEL;
+        int alternative_value = SCORE_UNDEFINED;
+        int alternative_policy = MOVE_UNDEFINED;
+        // Screen every alternative once, then spend the remaining budget on a
+        // same-depth comparison of the resulting top two candidates.  Repeating
+        // the all-root search at every depth is too expensive for this path's
+        // deliberately small (0.7--1.8 second) allocation.
+        const bool screening = (selected_alternative & (selected_alternative - 1ULL)) != 0ULL;
+        const uint64_t alternative_budget = std::max<uint64_t>(
+            1ULL,
+            remaining * (screening ? 7ULL : 1ULL) / (screening ? 10ULL : 2ULL)
+        );
+        if (!ai_tl_ggs_run_bounded_root_search(
+                board,
+                depth,
+                mpc_level,
+                selected_alternative,
+                use_multi_thread,
+                thread_id,
+                alternative_budget,
+                &alternative_value,
+                &alternative_policy,
+                nodes
+            )) {
+            break;
+        }
+        if (screening) {
+            selected_alternative = 1ULL << alternative_policy;
+            if (show_log) {
+                std::cerr << "ggs match-boundary screened alternative "
+                          << idx_to_coord(alternative_policy) << " d" << depth
+                          << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "%" << std::endl;
+            }
+        }
+
+        remaining = get_this_search_time_limit(budget, tim() - start);
+        if (remaining == 0ULL) {
+            break;
+        }
+        int current_value = SCORE_UNDEFINED;
+        int current_policy = MOVE_UNDEFINED;
+        if (!ai_tl_ggs_run_bounded_root_search(
+                board,
+                depth,
+                mpc_level,
+                1ULL << main_result.policy,
+                use_multi_thread,
+                thread_id,
+                remaining,
+                &current_value,
+                &current_policy,
+                nodes
+            )) {
+            break;
+        }
+
+        if (depth >= AI_TL_GGS_MATCH_REVALIDATE_MIN_DECISION_DEPTH) {
+            deepest_pair.complete = true;
+            deepest_pair.depth = depth;
+            deepest_pair.mpc_level = mpc_level;
+            deepest_pair.current_policy = current_policy;
+            deepest_pair.current_value = current_value;
+            deepest_pair.alternative_policy = alternative_policy;
+            deepest_pair.alternative_value = alternative_value;
+        }
+        if (show_log) {
+            std::cerr << "ggs match-boundary pair d" << depth
+                      << "@" << SELECTIVITY_PERCENTAGE[mpc_level] << "% "
+                      << idx_to_coord(current_policy) << "=" << current_value << " "
+                      << idx_to_coord(alternative_policy) << "=" << alternative_value
+                      << " outcomes " << ai_tl_ggs_match_outcome(pair_value + current_value)
+                      << "/" << ai_tl_ggs_match_outcome(pair_value + alternative_value)
+                      << " elapsed " << tim() - start << " ms" << std::endl;
+        }
+    }
+    return deepest_pair;
+}
 #endif
 
-Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
+Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching, const AI_Time_Limit_Match_Context *match_context = nullptr) {
     uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
+#if IS_GGS_TOURNAMENT
+    const uint64_t allocated_time_limit = time_limit;
+    AI_TL_Iteration_Diagnostics iteration_diagnostics;
+    if (ai_tl_ggs_match_revalidation_gate(board, allocated_time_limit, match_context)) {
+        iteration_diagnostics.enable_match_revalidation = true;
+        iteration_diagnostics.pair_value = match_context->pair_value;
+    }
+#else
+    (void)match_context;
+#endif
     if (show_log) {
         std::cerr << "ai_time_limit start! tl " << time_limit << " remaining " << remaining_time_msec << " n_empties " << HW2 - board.n_discs() << " " << board.to_str() << std::endl;
     }
@@ -2981,6 +3393,12 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     std::vector<Ponder_elem> ambiguity_move_list;
     bool has_ambiguity_move_list = false;
     uint64_t ambiguity_probe_time = ai_time_limit_ggs_ambiguity_probe_time(board, time_limit, remaining_time_msec);
+    if (ambiguity_probe_time > 0ULL) {
+        // The existing, larger-budget ambiguity path already compares root
+        // candidates.  Do not stack the low-budget match-boundary reserve on
+        // the exact 1.8-second overlap.
+        iteration_diagnostics.enable_match_revalidation = false;
+    }
     if (ambiguity_probe_time > 0ULL && global_searching && *searching) {
         if (show_log) {
             std::cerr << "ggs ambiguity probe tl " << ambiguity_probe_time << std::endl;
@@ -3019,8 +3437,78 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     if (show_log) {
         std::cerr << "ai_common main search tl " << time_limit << std::endl;
     }
-    Search_result search_result = ai_common(board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, use_book, book_acc_level, use_multi_thread, show_log, board.get_legal(), false, time_limit, thread_id, searching);
+    Search_result search_result = ai_common(
+        board,
+        -SCORE_MAX,
+        SCORE_MAX,
+        MAX_LEVEL,
+        use_book,
+        book_acc_level,
+        use_multi_thread,
+        show_log,
+        board.get_legal(),
+        false,
+        time_limit,
+        thread_id,
+        searching,
 #if IS_GGS_TOURNAMENT
+        iteration_diagnostics.enable_match_revalidation ? &iteration_diagnostics : nullptr
+#else
+        nullptr
+#endif
+    );
+#if IS_GGS_TOURNAMENT
+    if (iteration_diagnostics.reserve_held && iteration_diagnostics.reserved_time_msec > 0ULL) {
+        uint64_t revalidation_nodes = 0ULL;
+        const AI_TL_GGS_Match_Revalidation_Pair revalidated = ai_tl_ggs_match_revalidate(
+            board,
+            search_result,
+            iteration_diagnostics.pair_value,
+            iteration_diagnostics.reserved_time_msec,
+            use_multi_thread,
+            thread_id,
+            searching,
+            &revalidation_nodes,
+            show_log
+        );
+        search_result.nodes += revalidation_nodes;
+        // ai_common reports only the iterative-deepening portion.  The held
+        // reserve is part of this move's real clock use, so keep the returned
+        // diagnostics consistent with the actual GGS allocation as well.
+        search_result.time = tim() - strt;
+        search_result.nps = calc_nps(search_result.nodes, search_result.time);
+        if (
+            revalidated.complete &&
+            revalidated.alternative_value >= revalidated.current_value + AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN &&
+            ai_tl_ggs_crosses_match_boundary(
+                iteration_diagnostics.pair_value,
+                revalidated.current_value,
+                revalidated.alternative_value
+            )
+        ) {
+            if (show_log) {
+                std::cerr << "ggs match-boundary switch "
+                          << idx_to_coord(search_result.policy) << "=" << revalidated.current_value
+                          << " -> " << idx_to_coord(revalidated.alternative_policy) << "=" << revalidated.alternative_value
+                          << " d" << revalidated.depth << "@" << SELECTIVITY_PERCENTAGE[revalidated.mpc_level] << "%"
+                          << " pair_value " << iteration_diagnostics.pair_value << std::endl;
+            }
+            search_result.policy = revalidated.alternative_policy;
+            search_result.value = revalidated.alternative_value;
+            search_result.depth = revalidated.depth;
+            search_result.probability = SELECTIVITY_PERCENTAGE[revalidated.mpc_level];
+            search_result.is_end_search = false;
+        } else if (show_log) {
+            std::cerr << "ggs match-boundary keep " << idx_to_coord(search_result.policy)
+                      << " complete " << revalidated.complete;
+            if (revalidated.complete) {
+                std::cerr << " d" << revalidated.depth << "@" << SELECTIVITY_PERCENTAGE[revalidated.mpc_level] << "%"
+                          << " current " << revalidated.current_value
+                          << " alternative " << revalidated.alternative_value;
+            }
+            std::cerr << std::endl;
+        }
+    }
     if (
         selfplay_resolve_result.valid &&
         is_valid_policy(search_result.policy) &&

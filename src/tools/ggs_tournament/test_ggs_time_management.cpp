@@ -153,6 +153,66 @@ void test_late_endgame_ramp() {
     require(allocation <= 24500ULL - 9000ULL, "late ramp consumed safety reserve");
 }
 
+void test_match_boundary_revalidation_gate() {
+    Board board;
+    const std::string board_text =
+        std::string(11, 'X') + std::string(10, 'O') + std::string(43, '-') + " X";
+    require(board.from_str(board_text), "failed to construct 43-empty gate board");
+
+    AI_Time_Limit_Match_Context context;
+    context.has_pair_result = true;
+    context.pair_value = -16;
+    context.real_remaining_time_msec = 25000ULL;
+    require(ai_tl_ggs_match_revalidation_gate(board, 700ULL, &context), "lower time gate");
+    require(ai_tl_ggs_match_revalidation_gate(board, 1800ULL, &context), "upper time gate");
+    require(!ai_tl_ggs_match_revalidation_gate(board, 699ULL, &context), "below time gate");
+    require(!ai_tl_ggs_match_revalidation_gate(board, 1801ULL, &context), "above time gate");
+    context.real_remaining_time_msec = 24999ULL;
+    require(!ai_tl_ggs_match_revalidation_gate(board, 1000ULL, &context), "remaining-time gate");
+    require(!ai_tl_ggs_match_revalidation_gate(board, 1000ULL, nullptr), "null context gate");
+}
+
+void test_match_boundary_classification() {
+    require(ai_tl_ggs_crosses_match_boundary(-16, 14, 16), "loss-to-draw crossing");
+    require(ai_tl_ggs_crosses_match_boundary(-16, 16, 17), "draw-to-win crossing");
+    require(!ai_tl_ggs_crosses_match_boundary(-16, 14, 15), "same-outcome candidates");
+    require(ai_tl_ggs_match_boundary_precheck(-16, 14), "near-boundary precheck");
+    require(!ai_tl_ggs_match_boundary_precheck(-16, 10), "far-boundary precheck");
+}
+
+void test_match_boundary_reserve_trigger() {
+    AI_TL_Iteration_Diagnostics diagnostics;
+    diagnostics.enable_match_revalidation = true;
+    diagnostics.pair_value = -16;
+    ai_tl_record_recent_policy(&diagnostics, 1);
+    ai_tl_record_recent_policy(&diagnostics, 2);
+    ai_tl_record_recent_policy(&diagnostics, 1);
+    ai_tl_record_recent_policy(&diagnostics, 2);
+
+    Search_result result;
+    result.policy = 2;
+    result.value = 14;
+    result.depth = 26;
+    result.probability = 74;
+    require(
+        ai_tl_ggs_should_hold_match_reserve(&diagnostics, result, 26, 88),
+        "oscillating/incomplete boundary reserve"
+    );
+    require(diagnostics.policy_oscillation, "policy oscillation was not recorded");
+    require(diagnostics.next_selectivity_incomplete, "incomplete selectivity was not recorded");
+
+    AI_TL_Iteration_Diagnostics stable;
+    stable.enable_match_revalidation = true;
+    stable.pair_value = -16;
+    for (int i = 0; i < 4; ++i) {
+        ai_tl_record_recent_policy(&stable, 2);
+    }
+    require(
+        !ai_tl_ggs_should_hold_match_reserve(&stable, result, 27, 74),
+        "stable next-depth search should release reserve"
+    );
+}
+
 } // namespace
 
 int main() {
@@ -161,6 +221,9 @@ int main() {
         test_pair_boost_phase_scale();
         test_early_endgame_ramp();
         test_late_endgame_ramp();
+        test_match_boundary_revalidation_gate();
+        test_match_boundary_classification();
+        test_match_boundary_reserve_trigger();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

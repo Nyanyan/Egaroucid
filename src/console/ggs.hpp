@@ -1855,6 +1855,12 @@ Search_result ggs_search(
             remaining_time_msec = std::max<uint64_t>(remaining_time_msec * 0.1, 1ULL);
         }
         remaining_time_msec = ggs_clock_adjusted_time_for_allocation(ggs_board.board, remaining_time_msec, raw_remaining_time_msec, ggs_board.clock);
+        AI_Time_Limit_Match_Context ai_match_context;
+        if (synchro_time_context.has_pair_result) {
+            ai_match_context.has_pair_result = true;
+            ai_match_context.pair_value = synchro_time_context.pair_value;
+            ai_match_context.real_remaining_time_msec = remaining_time_msec;
+        }
         remaining_time_msec = ggs_adjust_remaining_time_for_synchro_pair(
             ggs_board,
             remaining_time_msec,
@@ -1919,7 +1925,17 @@ Search_result ggs_search(
         if (remaining_time_msec <= 50ULL) {
             search_result = ggs_fallback_search_result(ggs_board.board);
         } else {
-            search_result = ai_time_limit(ggs_board.board, !options->nobook, 0, true, ggs_engine_show_log(options), remaining_time_msec, thread_id, searching);
+            search_result = ai_time_limit(
+                ggs_board.board,
+                !options->nobook,
+                0,
+                true,
+                ggs_engine_show_log(options),
+                remaining_time_msec,
+                thread_id,
+                searching,
+                ai_match_context.has_pair_result ? &ai_match_context : nullptr
+            );
             const uint64_t legal = ggs_board.board.get_legal();
             if (ggs_should_override_with_hint(ggs_board.board, hint_policy, hint_count, search_result)) {
                 ggs_print_debug(
