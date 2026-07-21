@@ -183,7 +183,10 @@ def _atomic_write_text(path: Path, text: str) -> None:
             temporary.unlink()
 
 
-def validate_root_table(path: Path, expected_root_discs: int | None = None) -> dict[str, int]:
+def load_root_table_entries(
+    path: Path, expected_root_discs: int | None = None
+) -> tuple[int, dict[str, RootEntry]]:
+    """Load every validated canonical entry from a published root table."""
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeError) as error:
@@ -210,6 +213,11 @@ def validate_root_table(path: Path, expected_root_discs: int | None = None) -> d
         entries[entry.board] = entry
     if len(entries) != expected_entries:
         raise ValueError(f"{path}: expected {expected_entries} rows, found {len(entries)}")
+    return root_discs, entries
+
+
+def validate_root_table(path: Path, expected_root_discs: int | None = None) -> dict[str, int]:
+    root_discs, entries = load_root_table_entries(path, expected_root_discs)
     return {"root_discs": root_discs, "entries": len(entries)}
 
 

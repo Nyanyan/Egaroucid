@@ -20,6 +20,8 @@ import generate_all_records
 import generate_records
 import book_artifact
 import build_root_table
+import collect_ggs_roots
+from build_book import transform_board_text
 from book_artifact import (
     BookBuildSpec,
     BookValidationError,
@@ -493,6 +495,9 @@ class RootTableTests(unittest.TestCase):
                 {"root_discs": 4, "entries": 1},
                 build_root_table.validate_root_table(output, expected_root_discs=4),
             )
+            root_discs, entries = build_root_table.load_root_table_entries(output, 4)
+            self.assertEqual(4, root_discs)
+            self.assertEqual(1, len(entries))
             manifest = json.loads(
                 build_root_table.manifest_path_for_root_table(output).read_text(encoding="utf-8")
             )
@@ -542,6 +547,67 @@ class RootTableTests(unittest.TestCase):
                 build_root_table.manifest_path_for_root_table(output).read_text(encoding="utf-8")
             )
             self.assertEqual("root_result", manifest["sources"][0]["kind"])
+
+
+class GgsRootCollectionTests(unittest.TestCase):
+    @staticmethod
+    def start_log(match_id: str, board: str, game_id: str | None = None) -> str:
+        cells, side = board.split()
+        game_id = game_id or f"{match_id}.0"
+        return (
+            f"GGS RECV> /os: -  {match_id} 2600 egrcd 01:00//00:30 s8r14 R 2600 nyanyan\n"
+            "GGS INFO> match start!\n"
+            f"GGS INFO> ggs pending search wait {game_id} max 350 {cells} {side}\n"
+        )
+
+    def test_deduplicates_symmetric_roots_and_reports_coverage(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            books = root / "books"
+            books.mkdir()
+            RootTableTests().write_root_book(books / "root.egcb")
+            table = books / build_root_table.ROOT_TABLE_FILENAME
+            build_root_table.build_root_table([books], table, root_discs=4)
+            first_log = root / "first.log"
+            second_log = root / "second.log"
+            first_log.write_text(self.start_log(".41", INITIAL_BOARD), encoding="utf-8")
+            symmetric = transform_board_text(INITIAL_BOARD, 1)
+            second_log.write_text(self.start_log(".42", symmetric), encoding="utf-8")
+
+            report = collect_ggs_roots.collect_coverage(
+                [first_log, second_log], [books], table, root_discs=4
+            )
+
+            self.assertEqual(2, report["observed_start_events"])
+            self.assertEqual(1, report["unique_canonical_roots"])
+            self.assertEqual(
+                {"deep_book": 1, "root_table": 1, "either": 1, "uncovered": 0},
+                report["coverage"],
+            )
+            root_row = report["roots"][0]
+            self.assertEqual(2, root_row["observed"])
+            self.assertTrue(root_row["deep_book"])
+            self.assertTrue(root_row["root_table"])
+            self.assertEqual([".41", ".42"], [row["match_id"] for row in root_row["occurrences"]])
+
+    def test_keeps_distinct_match_and_game_identifiers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "ids.log"
+            path.write_text(self.start_log(".70", INITIAL_BOARD, ".59.0"), encoding="utf-8")
+            occurrence = collect_ggs_roots.parse_ggs_start_roots(path, root_discs=4)[0]
+            self.assertEqual(".70", occurrence.match_id)
+            self.assertEqual(".59.0", occurrence.game_id)
+
+    def test_rejects_truncated_match_start(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "truncated.log"
+            path.write_text(
+                "GGS RECV> /os: -  .41 2600 egrcd 01:00//00:30 s8r14 R 2600 nyanyan\n"
+                "GGS INFO> match start!\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "missing root board"):
+                collect_ggs_roots.parse_ggs_start_roots(path, root_discs=4)
 
 
 if __name__ == "__main__":
