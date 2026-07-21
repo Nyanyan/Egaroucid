@@ -954,12 +954,20 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "search_root_at_level",
                     side_effect=[mismatch, tiebreak_mismatch, deep_tiebreak_mismatch],
                 ),
-                self.assertRaisesRegex(ValueError, "level-30 tiebreak d3 does not match level-31"),
             ):
-                generate_ggs_root_teacher.generate_teachers(
+                result = generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29, min_depth=30,
                     fallback_level=30, method="time_then_verify", verify_level=27,
                 )
+            self.assertEqual({"completed": 0, "requested": 1}, result)
+            manifest = json.loads(
+                (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(1, manifest["output"]["rejected"])
+            self.assertEqual(
+                "level-30 tiebreak d3 does not match level-31 tiebreak b4",
+                manifest["rejections"][GGS_ROOT]["reason"],
+            )
 
 
 if __name__ == "__main__":

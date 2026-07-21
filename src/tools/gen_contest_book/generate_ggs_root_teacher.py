@@ -22,7 +22,7 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v7"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v8"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 DEEP_TIEBREAK_LEVEL = 31
 RESULT_RE = re.compile(
@@ -234,6 +234,7 @@ def _new_state(
         "deep_tiebreak_level": DEEP_TIEBREAK_LEVEL,
         "roots": roots,
         "results": {},
+        "rejections": {},
     }
 
 
@@ -252,16 +253,20 @@ def _load_state(
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
-    if not isinstance(state.get("results"), dict):
-        raise ValueError(f"{path}: results is invalid")
-    if not set(state["results"]).issubset(set(expected["roots"])):
-        raise ValueError(f"{path}: results include an unexpected root")
+    for field in ("results", "rejections"):
+        if not isinstance(state.get(field), dict):
+            raise ValueError(f"{path}: {field} is invalid")
+        if not set(state[field]).issubset(set(expected["roots"])):
+            raise ValueError(f"{path}: {field} includes an unexpected root")
+    if set(state["results"]) & set(state["rejections"]):
+        raise ValueError(f"{path}: a root is both accepted and rejected")
     return state
 
 
 def _write_outputs(output: Path, state: dict[str, Any]) -> None:
     roots = state["roots"]
     results = state["results"]
+    rejections = state["rejections"]
     rows = []
     for board in roots:
         result = results.get(board)
@@ -282,7 +287,9 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# teacher_level {state['teacher_level']}",
             f"# verify_level {state['verify_level']}",
             f"# deep_tiebreak_level {state['deep_tiebreak_level']}",
-            f"# completed {len(rows)}/{len(roots)}",
+            f"# accepted {len(rows)}/{len(roots)}",
+            f"# rejected {len(rejections)}/{len(roots)}",
+            f"# processed {len(rows) + len(rejections)}/{len(roots)}",
             *rows,
             "",
         ]
@@ -293,11 +300,13 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v7",
+        "schema": "ggs_root_teacher_manifest_v8",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
             "completed": len(rows),
+            "rejected": len(rejections),
+            "processed": len(rows) + len(rejections),
             "requested": len(roots),
         },
         "coverage": state["coverage"],
@@ -313,6 +322,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "verify_level": state["verify_level"],
         "deep_tiebreak_level": state["deep_tiebreak_level"],
         "results": {board: results[board] for board in sorted(results)},
+        "rejections": {board: rejections[board] for board in sorted(rejections)},
     }
     _atomic_write_text(
         _manifest_path(output),
@@ -374,7 +384,7 @@ def generate_teachers(
         _write_outputs(output, state)
 
     for board in roots:
-        if board in state["results"]:
+        if board in state["results"] or board in state["rejections"]:
             continue
         if method == "hint":
             result = search_root_at_level(exe, board, teacher_level, threads, hash_level)
@@ -417,10 +427,22 @@ def generate_teachers(
                     )
                     validate_quality(deep_tiebreak, min_depth, min_selectivity)
                     if str(tiebreak["move"]) != str(deep_tiebreak["move"]):
-                        raise ValueError(
-                            f"level-{fallback_level} tiebreak {tiebreak['move']} does not match "
-                            f"level-{DEEP_TIEBREAK_LEVEL} tiebreak {deep_tiebreak['move']}"
+                        state["rejections"][board] = {
+                            "reason": (
+                                f"level-{fallback_level} tiebreak {tiebreak['move']} does not "
+                                f"match level-{DEEP_TIEBREAK_LEVEL} tiebreak {deep_tiebreak['move']}"
+                            ),
+                            "teacher": result,
+                            "verification": verification,
+                            "tiebreak": tiebreak,
+                            "deep_tiebreak": deep_tiebreak,
+                        }
+                        _write_outputs(output, state)
+                        print(
+                            f"rejected {len(state['rejections'])} {board}",
+                            flush=True,
                         )
+                        continue
                     deep_tiebreak["method"] = (
                         f"time_disagreement_tiebreak_levels_{fallback_level}_{DEEP_TIEBREAK_LEVEL}"
                     )
