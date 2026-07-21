@@ -22,8 +22,9 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v6"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v7"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
+DEEP_TIEBREAK_LEVEL = 31
 RESULT_RE = re.compile(
     r"^\|\s*(?P<level>[^|]+)\|\s*(?P<depth>[^|]+)\|\s*"
     r"(?P<move>[a-h][1-8])\|\s*(?P<score>[+-]?\d+)\|\s*"
@@ -230,6 +231,7 @@ def _new_state(
         "method": method,
         "teacher_level": teacher_level,
         "verify_level": verify_level,
+        "deep_tiebreak_level": DEEP_TIEBREAK_LEVEL,
         "roots": roots,
         "results": {},
     }
@@ -246,7 +248,7 @@ def _load_state(
     for key in (
         "schema", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
-        "verify_level", "roots",
+        "verify_level", "deep_tiebreak_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -279,6 +281,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# method {state['method']}",
             f"# teacher_level {state['teacher_level']}",
             f"# verify_level {state['verify_level']}",
+            f"# deep_tiebreak_level {state['deep_tiebreak_level']}",
             f"# completed {len(rows)}/{len(roots)}",
             *rows,
             "",
@@ -290,7 +293,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v6",
+        "schema": "ggs_root_teacher_manifest_v7",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
@@ -308,6 +311,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "method": state["method"],
         "teacher_level": state["teacher_level"],
         "verify_level": state["verify_level"],
+        "deep_tiebreak_level": state["deep_tiebreak_level"],
         "results": {board: results[board] for board in sorted(results)},
     }
     _atomic_write_text(
@@ -408,12 +412,27 @@ def generate_teachers(
                 )
                 validate_quality(tiebreak, min_depth, min_selectivity)
                 if str(result["move"]) != str(tiebreak["move"]):
-                    raise ValueError(
-                        f"teacher move {result['move']} does not match level-{fallback_level} "
-                        f"tiebreak {tiebreak['move']}"
+                    deep_tiebreak = search_root_at_level(
+                        exe, board, DEEP_TIEBREAK_LEVEL, threads, hash_level
                     )
-                result["tiebreak"] = tiebreak
-                verification_mode = f"level_{fallback_level}_tiebreak"
+                    validate_quality(deep_tiebreak, min_depth, min_selectivity)
+                    if str(tiebreak["move"]) != str(deep_tiebreak["move"]):
+                        raise ValueError(
+                            f"level-{fallback_level} tiebreak {tiebreak['move']} does not match "
+                            f"level-{DEEP_TIEBREAK_LEVEL} tiebreak {deep_tiebreak['move']}"
+                        )
+                    deep_tiebreak["method"] = (
+                        f"time_disagreement_tiebreak_levels_{fallback_level}_{DEEP_TIEBREAK_LEVEL}"
+                    )
+                    deep_tiebreak["primary"] = result
+                    deep_tiebreak["tiebreak"] = tiebreak
+                    result = deep_tiebreak
+                    verification_mode = (
+                        f"levels_{fallback_level}_{DEEP_TIEBREAK_LEVEL}_tiebreak"
+                    )
+                else:
+                    result["tiebreak"] = tiebreak
+                    verification_mode = f"level_{fallback_level}_tiebreak"
             result["verification"] = verification
             result["verification_mode"] = verification_mode
         state["results"][board] = result

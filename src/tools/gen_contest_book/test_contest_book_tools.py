@@ -766,6 +766,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual("time_verified_hint_level_27", saved["method"])
             self.assertEqual("f5", saved["verification"]["move"])
             self.assertEqual("level_27_exact", saved["verification_mode"])
+            self.assertEqual(31, manifest["deep_tiebreak_level"])
 
     def test_time_teacher_retries_shallow_time_search_at_quality_level(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -858,6 +859,53 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual("b4", saved["tiebreak"]["move"])
             self.assertEqual("level_30_tiebreak", saved["verification_mode"])
 
+    def test_time_teacher_promotes_agreeing_deep_tiebreak(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            primary = {
+                "move": "f5", "score": -12, "level": "-", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            verification = {
+                "move": "b4", "score": -12, "level": "27", "depth": "27@74%",
+                "time": "000:00:02.000", "nodes": 2, "nps": 1,
+            }
+            tiebreak = {
+                "move": "c7", "score": -11, "level": "30", "depth": "30@74%",
+                "time": "000:00:03.000", "nodes": 3, "nps": 1,
+            }
+            deep_tiebreak = {
+                "move": "c7", "score": -10, "level": "31", "depth": "31@74%",
+                "time": "000:00:04.000", "nodes": 4, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_at_level",
+                    side_effect=[verification, tiebreak, deep_tiebreak],
+                ),
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29, min_depth=30,
+                    fallback_level=30, method="time_then_verify", verify_level=27,
+                )
+            manifest = json.loads(
+                (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
+            )
+            saved = manifest["results"][GGS_ROOT]
+            self.assertEqual("c7", saved["move"])
+            self.assertEqual("f5", saved["primary"]["move"])
+            self.assertEqual("b4", saved["verification"]["move"])
+            self.assertEqual("c7", saved["tiebreak"]["move"])
+            self.assertEqual("levels_30_31_tiebreak", saved["verification_mode"])
+
     def test_time_teacher_rejects_quality_fallback_below_minimum_depth(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -895,14 +943,18 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "move": "d3", "score": -15, "level": "30", "depth": "30@74%",
                 "time": "000:00:02.000", "nodes": 3, "nps": 1,
             }
+            deep_tiebreak_mismatch = {
+                "move": "b4", "score": -15, "level": "31", "depth": "31@74%",
+                "time": "000:00:02.000", "nodes": 4, "nps": 1,
+            }
             with (
                 mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
                 mock.patch.object(
                     generate_ggs_root_teacher,
                     "search_root_at_level",
-                    side_effect=[mismatch, tiebreak_mismatch],
+                    side_effect=[mismatch, tiebreak_mismatch, deep_tiebreak_mismatch],
                 ),
-                self.assertRaisesRegex(ValueError, "does not match level-30 tiebreak"),
+                self.assertRaisesRegex(ValueError, "level-30 tiebreak d3 does not match level-31"),
             ):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29, min_depth=30,
