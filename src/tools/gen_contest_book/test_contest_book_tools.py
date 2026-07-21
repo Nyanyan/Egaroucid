@@ -741,6 +741,21 @@ class GgsRootTeacherTests(unittest.TestCase):
                 generate_ggs_root_teacher.load_uncovered_roots(coverage),
             )
 
+    def test_seeded_cohort_order_is_reproducible(self) -> None:
+        roots = ["root-c", "root-a", "root-b", "root-d"]
+        first = generate_ggs_root_teacher.select_teacher_roots(roots, 3, 620)
+        self.assertEqual(
+            first,
+            generate_ggs_root_teacher.select_teacher_roots(
+                list(reversed(roots)), 3, 620
+            ),
+        )
+        self.assertEqual(3, len(first))
+        self.assertEqual(
+            ["root-a", "root-b", "root-c"],
+            generate_ggs_root_teacher.select_teacher_roots(roots, 3, None),
+        )
+
     def test_generates_and_resumes_only_with_identical_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

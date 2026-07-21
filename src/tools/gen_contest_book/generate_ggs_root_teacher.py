@@ -83,6 +83,24 @@ def load_uncovered_roots(coverage_path: Path) -> list[str]:
     return sorted(result)
 
 
+def select_teacher_roots(
+    roots: list[str], limit: int | None, cohort_seed: int | None
+) -> list[str]:
+    """Freeze a bounded cohort without relying on source-file ordering."""
+    selected = sorted(set(roots))
+    if cohort_seed is not None:
+        selected = sorted(
+            selected,
+            key=lambda board: (
+                hashlib.sha256(f"{cohort_seed}\0{board}".encode("ascii")).digest(),
+                board,
+            ),
+        )
+    if limit is not None:
+        selected = selected[:limit]
+    return selected
+
+
 def parse_search_result(output: str, board: str) -> dict[str, int | str]:
     rows = [match.groupdict() for match in RESULT_RE.finditer(output)]
     if len(rows) != 1:
@@ -214,6 +232,7 @@ def _new_state(
     method: str,
     teacher_level: int,
     verify_level: int,
+    cohort_seed: int | None,
 ) -> dict[str, Any]:
     return {
         "schema": TEACHER_SCHEMA,
@@ -234,6 +253,7 @@ def _new_state(
         "method": method,
         "teacher_level": teacher_level,
         "verify_level": verify_level,
+        "cohort_seed": cohort_seed,
         "deep_tiebreak_level": DEEP_TIEBREAK_LEVEL,
         "roots": roots,
         "results": {},
@@ -252,7 +272,7 @@ def _load_state(
     for key in (
         "schema", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
-        "verify_level", "deep_tiebreak_level", "roots",
+        "verify_level", "cohort_seed", "deep_tiebreak_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -289,6 +309,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# method {state['method']}",
             f"# teacher_level {state['teacher_level']}",
             f"# verify_level {state['verify_level']}",
+            f"# cohort_seed {state['cohort_seed']}",
             f"# deep_tiebreak_level {state['deep_tiebreak_level']}",
             f"# accepted {len(rows)}/{len(roots)}",
             f"# rejected {len(rejections)}/{len(roots)}",
@@ -323,6 +344,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "method": state["method"],
         "teacher_level": state["teacher_level"],
         "verify_level": state["verify_level"],
+        "cohort_seed": state["cohort_seed"],
         "deep_tiebreak_level": state["deep_tiebreak_level"],
         "results": {board: results[board] for board in sorted(results)},
         "rejections": {board: rejections[board] for board in sorted(rejections)},
@@ -348,6 +370,7 @@ def generate_teachers(
     verify_level: int = 0,
     resume: bool = False,
     limit: int | None = None,
+    cohort_seed: int | None = None,
 ) -> dict[str, int]:
     if not exe.is_file():
         raise FileNotFoundError(f"engine executable not found: {exe}")
@@ -368,12 +391,10 @@ def generate_teachers(
             "time_then_verify requires fallback_level at least min_depth "
             "so a shallow time search cannot lower teacher quality"
         )
-    roots = load_uncovered_roots(coverage_path)
-    if limit is not None:
-        roots = roots[:limit]
+    roots = select_teacher_roots(load_uncovered_roots(coverage_path), limit, cohort_seed)
     expected = _new_state(
         coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
-        fallback_level, method, teacher_level, verify_level,
+        fallback_level, method, teacher_level, verify_level, cohort_seed,
     )
     state_path = _state_path(output)
     if resume:
@@ -481,6 +502,11 @@ def main() -> int:
     parser.add_argument("--teacher-level", type=int, default=33)
     parser.add_argument("--verify-level", type=int, default=0)
     parser.add_argument("--limit", type=int)
+    parser.add_argument(
+        "--cohort-seed",
+        type=int,
+        help="Hash-sort uncovered roots by this fixed seed before applying --limit",
+    )
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     result = generate_teachers(
@@ -498,6 +524,7 @@ def main() -> int:
         args.verify_level,
         args.resume,
         args.limit,
+        args.cohort_seed,
     )
     print(f"teacher roots complete {result['completed']}/{result['requested']}")
     return 0
