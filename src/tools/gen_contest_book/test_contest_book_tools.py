@@ -19,10 +19,11 @@ if str(SCRIPT_DIR) not in sys.path:
 import generate_all_records
 import generate_records
 import book_artifact
+import audit_r14_corpus
 import build_root_table
 import collect_ggs_roots
 import generate_ggs_root_teacher
-from build_book import transform_board_text
+from build_book import canonicalize_board_key, transform_board_text
 from book_artifact import (
     BookBuildSpec,
     BookValidationError,
@@ -33,6 +34,7 @@ from book_artifact import (
     manifest_path_for_book,
     validate_book_file,
 )
+from othello import Board
 
 
 INITIAL_BOARD = "---------------------------OX------XO--------------------------- X"
@@ -610,6 +612,53 @@ class GgsRootCollectionTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "missing root board"):
                 collect_ggs_roots.parse_ggs_start_roots(path, root_discs=4)
+
+
+class R14CorpusAuditTests(unittest.TestCase):
+    def test_fast_canonicalizer_matches_runtime_book_canonicalizer(self) -> None:
+        for board in (INITIAL_BOARD, GGS_ROOT):
+            for symmetry in range(8):
+                oriented = transform_board_text(board, symmetry)
+                self.assertEqual(
+                    canonicalize_board_key(oriented)[0],
+                    audit_r14_corpus.canonicalize_relative_key(Board.from_text(oriented).key()),
+                )
+
+    def test_canonicalizes_d4_aliases_and_keeps_reproducible_population(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            starts = root / "starts"
+            starts.mkdir()
+            symmetric = transform_board_text(INITIAL_BOARD, 1)
+            (starts / "0000000.txt").write_text(
+                f"{INITIAL_BOARD}\n{symmetric}\n{INITIAL_BOARD}\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+
+            report = audit_r14_corpus.audit_corpus(starts, root_discs=4)
+
+            self.assertEqual(audit_r14_corpus.CORPUS_REPORT_SCHEMA, report["schema"])
+            self.assertEqual(3, report["raw_start_rows"])
+            self.assertEqual(2, report["unique_normalized_starts"])
+            self.assertEqual(1, report["unique_canonical_roots"])
+            self.assertEqual(1, report["duplicate_normalized_rows"])
+            self.assertEqual(2, report["d4_alias_rows"])
+            self.assertEqual(3, report["max_rows_for_one_canonical_root"])
+            self.assertEqual(64, len(report["canonical_roots_sha256"]))
+            self.assertEqual(
+                {"deep_book": 0, "root_table": 0, "either": 0, "uncovered": 1},
+                report["coverage"],
+            )
+            self.assertEqual(3, report["roots"][0]["source_rows"])
+
+    def test_rejects_start_with_unexpected_disc_count(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            starts = Path(temporary) / "starts"
+            starts.mkdir()
+            (starts / "0000000.txt").write_text("X" * 64 + " X\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "start has 64 discs, expected 4"):
+                audit_r14_corpus.audit_corpus(starts, root_discs=4)
 
 
 class GgsRootTeacherTests(unittest.TestCase):
