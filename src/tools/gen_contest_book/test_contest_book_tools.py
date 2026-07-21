@@ -874,7 +874,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             saved = manifest["results"][GGS_ROOT]
             self.assertEqual(["b4", "f5"], saved["verification_top_moves"])
-            self.assertEqual("top8_tie_check", saved["verification_mode"])
+            self.assertEqual("top_candidates_tie_check", saved["verification_mode"])
 
     def test_time_teacher_rejects_quality_fallback_below_minimum_depth(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -22,7 +22,7 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v4"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v5"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 VERIFICATION_CANDIDATE_COUNT = 2
 RESULT_RE = re.compile(
@@ -352,7 +352,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v4",
+        "schema": "ggs_root_teacher_manifest_v5",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
@@ -481,7 +481,7 @@ def generate_teachers(
                     for row in verification_candidates
                     if int(row["score"]) == best_verification_score
                 )
-                verification_mode = "top8_tie_check"
+                verification_mode = "top_candidates_tie_check"
                 if str(result["move"]) not in verification_top_moves:
                     raise ValueError(
                         f"teacher move {result['move']} is not tied for best at level-{verify_level}: "
