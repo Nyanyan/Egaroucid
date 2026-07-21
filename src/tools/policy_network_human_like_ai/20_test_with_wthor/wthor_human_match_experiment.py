@@ -39,7 +39,7 @@ from wthor_human_match_evaluation import (
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SUMMARY_VERSION = 4
+SUMMARY_VERSION = 5
 SUMMARY_FIELDS = (
     "alpha",
     "positions",
@@ -211,7 +211,7 @@ def make_experiment_identity(
     sample_records_hash: str,
 ) -> dict:
     return {
-        "identity_version": 4,
+        "identity_version": 5,
         "summary_version": SUMMARY_VERSION,
         "positions": args.positions,
         "data_split": args.data_split,
@@ -237,8 +237,8 @@ def make_experiment_identity(
         "egaroucid_retries": args.egaroucid_retries,
         "workers": workers,
         "partition": (
-            "one_persistent_stream_per_level_1_to_19_"
-            "plus_level21_fixed_strided_shards_v2"
+            "level_fixed_persistent_actors_with_atomic_per_level_"
+            "cursor_elastic_after_level21_v1"
         ),
         "weights": str(args.weights.resolve()),
         "weights_sha256": file_sha256(args.weights),
@@ -451,9 +451,7 @@ def main() -> None:
         args.sample_seed,
     )
     load_elapsed = time.perf_counter() - load_start
-    maximum_useful_processes = (
-        len(CONSOLE_LEVELS) - 1 + min(workers, len(groups))
-    )
+    maximum_useful_processes = len(CONSOLE_LEVELS) * len(groups)
     workers = min(workers, maximum_useful_processes)
     search_thread_budget = workers * args.egaroucid_threads
     initial_level21_processes = min(
@@ -484,13 +482,13 @@ def main() -> None:
     print("level 21", "ブレンドとConsole単体で共有", flush=True)
     print(
         "level 1-19のConsole",
-        "各level 1プロセスを全局面で常駐",
+        "cold cache開始時は各level 1プロセスを常駐",
         flush=True,
     )
     print(
         "level 21のConsole",
         f"cold cache開始時は{initial_level21_processes}プロセス、"
-        "低level完了後の空き枠も使用",
+        "低level完了後の空き枠も使用。level 21完了後は残りlevelへ割当",
         flush=True,
     )
     print(
@@ -661,10 +659,10 @@ def main() -> None:
         "level21_reuse_validation": level21_validation,
         "execution": {
             "architecture": (
-                "single bounded spawn process pool; one persistent Console "
-                "for the complete state stream of each level 1--19, plus "
-                "fixed strided level-21 Console shards that consume all "
-                "remaining and subsequently released process slots"
+                "single bounded spawn process pool; level-fixed persistent "
+                "Console actors atomically claim states from one cursor per "
+                "level; level 21 consumes released slots until complete, "
+                "then remaining levels scale out into every available slot"
             ),
             "workers": workers,
             "egaroucid_threads_per_worker": args.egaroucid_threads,
@@ -678,21 +676,28 @@ def main() -> None:
             "initial_level21_processes_cold_cache": (
                 initial_level21_processes
             ),
+            "elastic_lower_scaling_after_level21": True,
+            "atomic_state_claim": True,
+            "actual_actor_assignment_recorded_at": (
+                "level_timing.<level>.actors[*].state_indices"
+            ),
             "state_partition": (
-                "one_persistent_stream_per_level_1_to_19_"
-                "plus_level21_fixed_strided_shards_v2"
+                "level_fixed_persistent_actors_with_atomic_per_level_"
+                "cursor_elastic_after_level21_v1"
             ),
             "cache_reset_between_positions": False,
             "transposition_table_scope": (
-                "persistent across the complete ordered state stream for "
-                "each level 1--19; persistent within each fixed strided "
-                "level-21 shard; never shared across levels or processes; "
+                "persistent within each level-fixed actor across every "
+                "state claimed by that actor; never shared across levels "
+                "or processes; additional actors use independent tables; "
                 "a retriable Console error restarts only that task's "
                 "Console before retrying the failed position"
             ),
             "reproducibility_note": (
-                "worker count, engine thread count, sample, and partition "
-                "are part of experiment_identity"
+                "worker count, engine thread count, sample, and allocation "
+                "algorithm are part of experiment_identity; exact same-level "
+                "actor assignment can depend on process completion timing "
+                "and is recorded in level_timing"
             ),
         },
         "hint_computations": {

@@ -51,7 +51,7 @@ alpha * Policy Networkの変換前出力
 
 したがって、`hint 3`が誤りなのは「ブレンド方策の生成に使う場合」であり、Egaroucid単体のtop-1・top-3を測る用途では正しい。
 
-Consoleはlevel間で共有しない。level 1から19は各level専用のConsoleを1つずつ起動し、全局面を同じConsoleへ順番に渡す。level 21は複数の専用Consoleへ、固定ストライド分割した局面列を渡す。16 workersではlevel 1から19の10プロセスとlevel 21の6プロセスを同時に開始し、低levelが完了して空いた枠では待機中のlevel 21プロセスを起動する。置換表は同一Console内だけで保持し、異なるlevel・異なるConsole間では共有しない。worker数、1 worker当たりの探索スレッド数、標本、分割方式を実験identityへ保存する。
+Consoleはlevel間で共有しない。v5で16 workersを使う場合、開始時はlevel 1から19の各level専用Consoleを1つずつ、level 21専用Consoleを6つ起動する。低levelのConsoleが完了したら、空いた枠にlevel 21専用Consoleを追加する。level 21の全actorが完了した後も他levelの局面が残っていれば、全ての空き枠にそのlevel専用Consoleを追加する。同levelの複数actorはlevel別のatomic cursorから次の局面を1件ずつ取得し、各局面を厳密に1回だけclaimする。置換表は同一Console内だけで保持し、異なるlevel間だけでなく、同levelの別actor間でもConsoleと置換表を共有しない。worker数、1 worker当たりの探索スレッド数、標本、分配方式を実験identityへ保存する。
 
 ## 書き直した実装
 
@@ -60,22 +60,27 @@ Consoleはlevel間で共有しない。level 1から19は各level専用のConsol
 主な処理は次の通り。
 
 - N局面を先に抽出し、その後で同一の`(盤面, 手番)`をまとめる。人間着手ごとの出現回数は保持し、評価分母は元のN局面のままにする。
-- 同時実行数を制限した単一のspawn ProcessPoolを使う。level 1から19は各1本の全局面stream、level 21は最大worker数の固定ストライドシャードとし、各taskで専用Consoleを1つ常駐させる。
-- 16 workersのcold cacheでは、Console起動はlevel 1から19の10回とlevel 21の16回の合計26回である。局面ごとには再起動しない。同時起動数は最大16である。
-- workerは数状態ごとに探索結果だけを親へ送り、SQLiteは親プロセスだけがtransactionで保存する。task境界は変えず、Consoleの置換表履歴を保つ。
+- 同時実行数を制限した単一のspawn ProcessPoolを使う。各actorは終了までlevelを固定し、専用Consoleを1つ常駐させる。
+- 16 workersのcold cacheでは、level 1から19の10 actorとlevel 21の6 actorを同時に開始する。level 21が未完了の間は低levelの完了で空いた枠へlevel 21 actorを追加する。level 21の全actor完了後は、残存levelの推定残作業に応じて全ての空き枠を再分配する。同時起動数は最大16である。
+- 各levelは未処理局面列とatomic cursorを持つ。同levelのactorが増えても、cursorのclaimによって重複・取りこぼしなく各局面を1回だけ計算する。
+- workerは数状態ごとに探索結果だけを親へ送り、SQLiteは親プロセスだけがtransactionで保存する。Consoleと置換表はactorごとに独立し、異なるactorと共有しない。
+- 最終JSONの`level_timing`には各actorのID、worker PID、処理した局面index列、開始・終了時刻、処理時間を保存し、実際の動的割当を後から追跡できるようにする。
 - timeout、異常終了、不完全なhint出力はConsoleを再起動して再試行する。
-- 失敗やCtrl+Cでは未開始taskを取り消し、実行中workerへ協調キャンセルを通知する。task完了前に得られた結果も随時キャッシュへ保存する。ただし再開時には、未完了の全局面streamまたはlevel 21シャードを先頭から再実行して置換表履歴を再現する。
+- 失敗やCtrl+Cでは未開始actorを取り消し、実行中workerへ協調キャンセルを通知する。actor完了前に得られた結果も随時キャッシュへ保存する。再開時にあるlevelのキャッシュが不完全なら、そのlevelの全局面を新しいatomic cursorへ載せ直して再計算し、中断前後の異なる置換表履歴を混在させない。
 - Policy Networkは一意状態だけをbatch推論し、全alphaでlogitを共有する。
 - 実行ファイル、重み、抽出位置、抽出レコード内容、並列条件などをhash付きidentityへ保存し、条件の異なる出力先の再利用を拒否する。
-- 標本読込、Policy Network推論、Console探索、集計、保存の各段階を開始時に即時表示する。Console探索中は既定で30秒ごとに全体進捗、level別の稼働プロセス数、CPU・メモリ、再試行回数を表示する。続けて値が得られた各モデルを1モデル1行で表示し、top-1、top-3、評価分母`n`、当該levelのhint進捗を示す。値がまだないモデルの行と注意書きは表示しない。
+- 標本読込、Policy Network推論、Console探索、集計、保存の各段階を開始時に即時表示する。Console探索中は既定で30秒ごとに全体進捗、Console actorの累計起動数・完了数、level別の稼働Console数、CPU・メモリ、再試行回数を表示する。続けて値が得られた各モデルを1モデル1行で表示し、top-1、top-3、評価分母`n`、当該levelのhint進捗を示す。値がまだないモデルの行と注意書きは表示しない。
 
 既定値は、この32スレッドPCで実測の速かった16 workers × 2探索スレッドである。探索スレッド総数は32となる。
 
 ## 検証
 
-- 関連unit test 51件がすべて成功した。
-- v4を実バイナリ、1局面、11 workers × 1 thread、cold cacheで実行し、level 1から21までの11個の専用Consoleが同時に起動すること、全level・全alpha・CSV・JSON・SQLiteキャッシュの生成まで完走することを確認した。所要時間は約4.8秒だった。
-- 同じv4実機確認で進捗表示を1秒間隔にし、最初のtaskが完了する前からlevel別の稼働プロセス数が表示され、値が得られたモデルだけが1モデル1行で更新されることを確認した。最終の途中集計値と全hintからの再集計値も一致した。
+- 関連unit test 53件がすべて成功した。
+- 回帰テストでは、level 21の最後のactor完了直後に稼働中の低level actorを残したまま同level actorが追加されること、level 21が全件キャッシュ済みなら開始直後から低levelへ複数actorを割り当てること、8並列actorが100局面を重複・欠落なく1回ずつclaimすることを確認した。
+- v5を実バイナリ、1局面、11 workers × 1 thread、cold cacheで実行し、11個のlevel固定actor、Windows spawnでのatomic cursor共有、全level・全alpha・CSV・JSON・SQLiteキャッシュの生成まで完走することを確認した。所要時間は約6秒だった。
+- level 19の同じ12局面を1 actorと4 actorsで比較すると、置換表履歴が分かれるため2局面でtop-3順が異なった。一方、4 actors条件をcold cacheで2回実行した比較では12局面すべてのtop-3順が一致した。actor数と分配方式をv5 identityへ含め、実際の局面割当も成果物へ保存する。
+- 旧v4方式を実バイナリ、1局面、11 workers × 1 thread、cold cacheで実行し、level 1から21までの11個の専用Consoleが同時に起動すること、全level・全alpha・CSV・JSON・SQLiteキャッシュの生成まで完走することを確認した。所要時間は約4.8秒だった。これはv5の動的actor方式の実測値ではなく、歴史値とする。
+- 同じ旧v4実機確認で進捗表示を1秒間隔にし、最初のtaskが完了する前からlevel別の稼働プロセス数が表示され、値が得られたモデルだけが1モデル1行で更新されることを確認した。最終の途中集計値と全hintからの再集計値も一致した。これもv4の歴史的な確認結果である。
 - v3では同じ100局面について、全levelで`hint 64`を使った修正版と、level 1から19だけ`hint 3`へ短縮した実装を比較し、全levelのtop-1・top-3集計値と全alphaのブレンド集計値が一致した。
 - v3では同じ出力先を再実行した場合、保存済みhintをすべて検証して再利用し、100局面を約1秒で再集計できた。
 
@@ -88,7 +93,7 @@ Consoleはlevel間で共有しない。level 1から19は各level専用のConsol
 | v3実装、16 workers × 2 threads | 100 | 97 | 67.8秒 | 78.0% | 20.1 GiB |
 | v3実装、16 workers × 2 threads | 300 | 283 | 176.1秒 | 73.2% | 20.1 GiB |
 
-v3の短い標本では16 × 2が32 × 1より約20%速く、使用メモリも約半分だったため、同時探索スレッド数の既定値は16 × 2の32 threadsを維持する。v4ではlevel別のConsole常駐範囲とプロセス割当を変更したため、上表および旧来の10,000局面に対する1.2から1.6時間という予測はv4の所要時間として使わない。v4のcold-cache完走後に更新する。
+v3の短い標本では16 × 2が32 × 1より約20%速く、使用メモリも約半分だったため、同時探索スレッド数の既定値は16 × 2の32 threadsを維持する。上表とv4の実バイナリ確認は、いずれもv5導入前の歴史値である。level別のConsole分配を動的actor方式へ変更したため、旧来の10,000局面に対する1.2から1.6時間という予測もv5の所要時間として使わない。v5のcold-cache完走後に更新する。
 
 ## 10,000局面の統計精度
 
@@ -132,9 +137,9 @@ python src/tools/policy_network_human_like_ai/20_test_with_wthor/run_random_wtho
 進捗は開始直後と、Console探索中は既定で30秒ごとに標準エラーへ表示される。表示間隔を10秒へ変更する場合は`--progress-interval-sec 10`を追加する。標準出力と標準エラーを同じ生ログへ残しながら画面でも確認する例は次の通り。
 
 ```powershell
-python src/tools/policy_network_human_like_ai/20_test_with_wthor/run_random_wthor_blend_experiment.py 10000 --workers 16 --egaroucid-threads 2 --progress-interval-sec 30 2>&1 | Tee-Object -FilePath human_match_n10000_v4.log
+python src/tools/policy_network_human_like_ai/20_test_with_wthor/run_random_wthor_blend_experiment.py 10000 --workers 16 --egaroucid-threads 2 --progress-interval-sec 30 2>&1 | Tee-Object -FilePath human_match_n10000_v5.log
 ```
 
 再試行可能なConsoleエラーは発生時点で警告として表示し、再試行上限に達したエラーやworkerの異常終了は直ちに標準エラーへ表示して実験を停止する。同じ実験条件・出力先でコマンドを再実行すると、利用可能なキャッシュを検証して再利用する。
 
-既定の出力先は`output/random_wthor_test_n10000_seed613_workers16_threads2_blendhint64_consolehint3_v4/`である。v3とはConsoleの常駐範囲が異なるため、v3のキャッシュは自動再利用しない。主な出力は`random_wthor_blend_summary.json`、`random_wthor_blend_summary.csv`、`random_wthor_console_level_summary.csv`である。
+既定の出力先は`output/random_wthor_test_n10000_seed613_workers16_threads2_blendhint64_consolehint3_v5/`である。v5は局面の分配とConsoleの置換表履歴がv4と異なるため、v4以前のキャッシュは自動再利用しない。主な出力は`random_wthor_blend_summary.json`、`random_wthor_blend_summary.csv`、`random_wthor_console_level_summary.csv`である。
