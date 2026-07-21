@@ -90,8 +90,11 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_N_EMPTY
         #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_N_EMPTY 36
     #endif
-    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_REMAINING
-        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_REMAINING 25000.0
+    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_RAMP_START_REMAINING
+        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_RAMP_START_REMAINING 20000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_FULL_REMAINING
+        #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_FULL_REMAINING 32000.0
     #endif
     #ifndef TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC
         #define TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC 12000.0
@@ -105,14 +108,26 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_N_EMPTY
         #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_N_EMPTY 31
     #endif
-    #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_REMAINING
-        #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_REMAINING 25000.0
+    #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_RAMP_START_REMAINING
+        #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_RAMP_START_REMAINING 20000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_FULL_REMAINING
+        #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_FULL_REMAINING 32000.0
     #endif
     #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_LEAVE_MSEC
         #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_LEAVE_MSEC 9000.0
     #endif
     #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_TIME
         #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_TIME 20000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE
+        #define TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE 0.60
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX
+        #define TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX 16
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC
+        #define TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC 24
     #endif
 #else
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
@@ -146,13 +161,61 @@ inline double time_management_ggs_shortage_scale(uint64_t remaining_time_msec, d
 inline uint64_t time_management_ggs_cap_time_limit(uint64_t time_limit, uint64_t remaining_time_msec, double remaining_moves) {
     remaining_moves = std::max(1.0, remaining_moves);
     const double reserve = TIME_MANAGEMENT_GGS_TARGET_SAFE_REMAINING_MSEC + TIME_MANAGEMENT_GGS_MAX_RESERVE_MSEC_PER_MOVE * remaining_moves;
-    double max_use_time;
-    if ((double)remaining_time_msec > reserve) {
-        max_use_time = ((double)remaining_time_msec - reserve) * TIME_MANAGEMENT_GGS_MAX_SURPLUS_USE_COE;
-    } else {
-        max_use_time = (double)remaining_time_msec * TIME_MANAGEMENT_GGS_LOW_TIME_MAX_USE_COE;
-    }
+    // Keep the cap continuous when the clock crosses the reserve line.  The
+    // previous branch changed from 25% of the clock to almost zero immediately
+    // above the line, which could turn a multi-second midgame allocation into
+    // a few milliseconds merely because one more millisecond was available.
+    const double low_time_cap = (double)remaining_time_msec * TIME_MANAGEMENT_GGS_LOW_TIME_MAX_USE_COE;
+    const double surplus_cap = std::max(
+        0.0,
+        ((double)remaining_time_msec - reserve) * TIME_MANAGEMENT_GGS_MAX_SURPLUS_USE_COE
+    );
+    const double max_use_time = std::max(low_time_cap, surplus_cap);
     return std::max<uint64_t>(1ULL, std::min<uint64_t>(time_limit, (uint64_t)std::max(1.0, max_use_time)));
+}
+
+inline double time_management_ggs_pair_boost_phase_scale(int n_discs) {
+    if (n_discs <= TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX) {
+        return TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE;
+    }
+    if (n_discs >= TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC) {
+        return 1.0;
+    }
+    const double progress =
+        (double)(n_discs - TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX) /
+        (double)(TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC - TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX);
+    return TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE +
+           (1.0 - TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE) * progress;
+}
+
+inline uint64_t time_management_ggs_ramped_endgame_force_time(
+    uint64_t selected_time,
+    uint64_t remaining_time_msec,
+    double ramp_start_remaining_msec,
+    double full_remaining_msec,
+    double leave_msec,
+    double max_force_time_msec
+) {
+    const double remaining = (double)remaining_time_msec;
+    if (
+        remaining <= ramp_start_remaining_msec ||
+        remaining <= leave_msec ||
+        full_remaining_msec <= ramp_start_remaining_msec
+    ) {
+        return selected_time;
+    }
+    const double ramp = std::clamp(
+        (remaining - ramp_start_remaining_msec) /
+            (full_remaining_msec - ramp_start_remaining_msec),
+        0.0,
+        1.0
+    );
+    const double available = remaining - leave_msec;
+    const uint64_t ramped_force = (uint64_t)std::max(
+        0.0,
+        std::min(max_force_time_msec, available * ramp)
+    );
+    return std::max(selected_time, ramped_force);
 }
 #endif
 
@@ -276,36 +339,48 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_N_EMPTY <= n_empties &&
         n_empties <= TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_N_EMPTY &&
         n_empties <= endgame_search_depth &&
-        (double)remaining_time_msec >= TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_REMAINING &&
-        (double)remaining_time_msec > TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC
+        (double)remaining_time_msec > TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_RAMP_START_REMAINING
     ) {
-        endgame_forced_time = (uint64_t)std::min(
-            TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_TIME,
-            (double)remaining_time_msec - TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC
+        endgame_forced_time = time_management_ggs_ramped_endgame_force_time(
+            selected_time,
+            remaining_time_msec,
+            TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_RAMP_START_REMAINING,
+            TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_FULL_REMAINING,
+            TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_LEAVE_MSEC,
+            TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_TIME
         );
         if (endgame_forced_time > selected_time) {
             if (show_log) {
-                std::cerr << "ggs early endgame force tl " << selected_time << " -> " << endgame_forced_time << std::endl;
+                std::cerr << "ggs early endgame ramp tl " << selected_time << " -> " << endgame_forced_time
+                          << " remaining " << remaining_time_msec << std::endl;
             }
             selected_time = endgame_forced_time;
+        } else {
+            endgame_forced_time = 0ULL;
         }
     }
     if (
         TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_N_EMPTY <= n_empties &&
         n_empties <= TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_N_EMPTY &&
         n_empties <= endgame_search_depth &&
-        (double)remaining_time_msec >= TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_REMAINING &&
-        (double)remaining_time_msec > TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_LEAVE_MSEC
+        (double)remaining_time_msec > TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_RAMP_START_REMAINING
     ) {
-        endgame_forced_time = (uint64_t)std::min(
-            TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_TIME,
-            (double)remaining_time_msec - TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_LEAVE_MSEC
+        endgame_forced_time = time_management_ggs_ramped_endgame_force_time(
+            selected_time,
+            remaining_time_msec,
+            TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_RAMP_START_REMAINING,
+            TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_FULL_REMAINING,
+            TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_LEAVE_MSEC,
+            TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_TIME
         );
         if (endgame_forced_time > selected_time) {
             if (show_log) {
-                std::cerr << "ggs late endgame force tl " << selected_time << " -> " << endgame_forced_time << std::endl;
+                std::cerr << "ggs late endgame ramp tl " << selected_time << " -> " << endgame_forced_time
+                          << " remaining " << remaining_time_msec << std::endl;
             }
             selected_time = endgame_forced_time;
+        } else {
+            endgame_forced_time = 0ULL;
         }
     }
     const uint64_t capped_time = time_management_ggs_cap_time_limit(selected_time, remaining_time_msec, remaining_moves);

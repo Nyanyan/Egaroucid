@@ -604,7 +604,9 @@ uint64_t ggs_adjust_remaining_time_for_synchro_pair(
         return remaining_time_msec;
     }
 
+    const double phase_scale = time_management_ggs_pair_boost_phase_scale(ggs_board.board.n_discs());
     uint64_t bonus = std::min<uint64_t>(bonus_cap, (uint64_t)((double)raw_remaining_time_msec * bonus_coe));
+    bonus = (uint64_t)((double)bonus * phase_scale);
     if (bonus == 0ULL) {
         return remaining_time_msec;
     }
@@ -617,6 +619,7 @@ uint64_t ggs_adjust_remaining_time_for_synchro_pair(
         " pair_depth " + std::to_string(context.pair_depth) +
         "@" + std::to_string(context.pair_probability) + "%" +
         " reason " + reason +
+        " phase_scale " + std::to_string(phase_scale) +
         " bonus " + std::to_string(bonus) +
         " limit " + std::to_string(remaining_time_msec) +
         "->" + std::to_string(adjusted_remaining_time_msec),
