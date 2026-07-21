@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
+import io
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 from pathlib import Path
 
 import numpy as np
 
+import wthor_hint_pipeline as hint_pipeline
 from evaluate_wthor_blend_human_match import (
     BLACK,
     BOARD_DTYPE,
@@ -15,6 +18,7 @@ from evaluate_wthor_blend_human_match import (
 from blend_policy_with_egaroucid import policy_to_coord
 from wthor_hint_pipeline import (
     HintTask,
+    collect_hints,
     make_hint_tasks,
     run_hint_task,
     validate_hint_data,
@@ -23,6 +27,7 @@ from wthor_human_match_evaluation import (
     ALL_LEGAL_HINT_COUNT,
     CONSOLE_ONLY_HINT_COUNT,
     HintData,
+    PositionGroup,
     egaroucid_log_scores,
     load_position_groups,
     make_level21_reuse_validation,
@@ -273,14 +278,151 @@ class HumanMatchExperimentTest(unittest.TestCase):
             timeout_sec=1.0,
             max_retries=1,
         )
+        events = []
+
+        class EventQueue:
+            def put(self, event):
+                events.append(event)
+
         with patch(
             "wthor_hint_pipeline.EgaroucidHintRunner",
             FakeRunner,
+        ), patch.object(
+            hint_pipeline,
+            "_HINT_PROGRESS_QUEUE",
+            EventQueue(),
         ):
             result = run_hint_task(task)
 
         self.assertEqual(2, FakeRunner.attempts)
         self.assertEqual(1, result["states"])
+        self.assertEqual(
+            ["task_started", "retry", "rows", "task_finished"],
+            [event["kind"] for event in events],
+        )
+        self.assertEqual(1, len(events[2]["rows"]))
+
+    def test_hint_progress_uses_a_timer_before_a_future_finishes(self) -> None:
+        state = BoardState.initial()
+        legal = state.legal_policies(BLACK)
+        top3 = legal[:CONSOLE_ONLY_HINT_COUNT]
+        scores = {
+            policy: float(100 - rank)
+            for rank, policy in enumerate(top3)
+        }
+        raw_hint = "\n".join(
+            "0 | 0 | 0 | "
+            f"{policy_to_coord(policy)} | {scores[policy]}"
+            for policy in top3
+        )
+        state_key = (state.black, state.white, BLACK)
+        task_result = {
+            "level": 1,
+            "rows": [(state_key, scores, raw_hint)],
+            "states": 1,
+            "started_at_unix": 1.0,
+            "finished_at_unix": 2.0,
+            "elapsed_sec": 1.0,
+        }
+
+        class FakeFuture:
+            def result(self):
+                return task_result
+
+            def cancel(self):
+                return False
+
+            def cancelled(self):
+                return False
+
+            def done(self):
+                return True
+
+        future = FakeFuture()
+
+        class FakeExecutor:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def submit(self, function, task):
+                return future
+
+            def shutdown(self, *args, **kwargs):
+                pass
+
+        class FakeQueue:
+            def get_nowait(self):
+                raise hint_pipeline.queue.Empty
+
+            def close(self):
+                pass
+
+            def join_thread(self):
+                pass
+
+        class FakeContext:
+            def Event(self):
+                return hint_pipeline.threading.Event()
+
+            def Queue(self):
+                return FakeQueue()
+
+        wait_calls = 0
+
+        def fake_wait(pending, timeout, return_when):
+            nonlocal wait_calls
+            wait_calls += 1
+            time.sleep(0.004)
+            if wait_calls == 1:
+                return set(), set(pending)
+            return set(pending), set()
+
+        progress = []
+        published_rows = []
+        group = PositionGroup(
+            state.black,
+            state.white,
+            BLACK,
+            ((top3[0], 1),),
+        )
+        with tempfile.TemporaryDirectory() as temp_dir, patch.object(
+            hint_pipeline,
+            "ProcessPoolExecutor",
+            FakeExecutor,
+        ), patch.object(
+            hint_pipeline.multiprocessing,
+            "get_context",
+            return_value=FakeContext(),
+        ), patch.object(
+            hint_pipeline,
+            "wait",
+            side_effect=fake_wait,
+        ), patch.object(
+            hint_pipeline.sys,
+            "stderr",
+            io.StringIO(),
+        ):
+            collect_hints(
+                [group],
+                [1],
+                Path(temp_dir),
+                workers=1,
+                egaroucid_exe=Path("unused.exe"),
+                egaroucid_threads=1,
+                timeout_sec=1.0,
+                max_retries=0,
+                progress_interval_sec=0.001,
+                on_rows=lambda level, rows: published_rows.extend(rows),
+                progress_callback=progress.append,
+            )
+
+        self.assertGreaterEqual(wait_calls, 2)
+        self.assertGreaterEqual(len(progress), 3)
+        self.assertEqual(0, progress[0]["completed_states"])
+        self.assertFalse(progress[1]["final"])
+        self.assertTrue(progress[-1]["final"])
+        self.assertEqual(1, progress[-1]["completed_states"])
+        self.assertEqual(1, len(published_rows))
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ import hashlib
 import math
 from pathlib import Path
 import sys
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 import numpy as np
 
@@ -61,6 +61,12 @@ class PositionGroup:
 class HintData:
     scores: Dict[int, float]
     move_order: Tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class _PreparedPositionGroup:
+    legal: Tuple[int, ...]
+    valid_targets: Tuple[Tuple[Tuple[int, ...], int], ...]
 
 
 def wilson_interval(
@@ -228,109 +234,257 @@ def add_rank(metric: dict, rank: int, count: int) -> None:
             metric["hits"][top_n] += count
 
 
+def _copy_metric(metric: dict) -> dict:
+    return {
+        "positions": int(metric["positions"]),
+        "hits": {
+            top_n: int(metric["hits"][top_n])
+            for top_n in TOP_N_VALUES
+        },
+    }
+
+
+def _merge_metric(destination: dict, source: dict) -> None:
+    destination["positions"] += source["positions"]
+    for top_n in TOP_N_VALUES:
+        destination["hits"][top_n] += source["hits"][top_n]
+
+
+def _prepare_position_group(
+    group: PositionGroup,
+) -> Tuple[_PreparedPositionGroup, int, int]:
+    state = BoardState(group.black, group.white, group.side)
+    legal = tuple(state.legal_policies(group.side))
+    legal_set = set(legal)
+    player, opponent = state.player_opponent_bits(group.side)
+    valid_targets = []
+    invalid_policy_samples = 0
+    illegal_label_samples = 0
+    for policy, count in group.policy_counts:
+        if policy < 0 or policy >= POLICY_SIZE:
+            invalid_policy_samples += count
+            continue
+        if policy not in legal_set:
+            illegal_label_samples += count
+            continue
+        valid_targets.append(
+            (
+                tuple(
+                    wthor.equivalent_targets(
+                        player,
+                        opponent,
+                        policy,
+                    )
+                ),
+                count,
+            )
+        )
+    return (
+        _PreparedPositionGroup(
+            legal=legal,
+            valid_targets=tuple(valid_targets),
+        ),
+        invalid_policy_samples,
+        illegal_label_samples,
+    )
+
+
+class IncrementalAgreementMetrics:
+    """Accumulate agreement metrics as Egaroucid hints become available.
+
+    A hint is counted at most once for each ``(level, state_key)`` pair.
+    ``snapshot`` and ``result`` return independent copies that are safe for
+    progress formatters to modify.
+    """
+
+    def __init__(
+        self,
+        groups: Sequence[PositionGroup],
+        policy_logits: Mapping[StateKey, np.ndarray],
+        score_temperature: float,
+    ) -> None:
+        self._policy_logits = policy_logits
+        self._score_temperature = score_temperature
+        self._groups_by_key: Dict[
+            StateKey,
+            List[_PreparedPositionGroup],
+        ] = {}
+        self.invalid_policy_samples = 0
+        self.illegal_label_samples = 0
+        for group in groups:
+            prepared, invalid, illegal = _prepare_position_group(group)
+            self._groups_by_key.setdefault(group.key, []).append(prepared)
+            self.invalid_policy_samples += invalid
+            self.illegal_label_samples += illegal
+
+        self._blend_metrics = {
+            alpha: empty_metric()
+            for alpha in BLEND_PARAMS
+        }
+        self._console_metrics = {
+            level: empty_metric()
+            for level in CONSOLE_LEVELS
+            if level != CONSOLE_REFERENCE_LEVEL
+        }
+        self._seen_hints = set()
+
+    @property
+    def accepted_hint_count(self) -> int:
+        return len(self._seen_hints)
+
+    def add_hint(
+        self,
+        level: int,
+        state_key: StateKey,
+        hint: HintData,
+    ) -> bool:
+        """Add one hint, returning ``False`` when it was already counted."""
+        if level not in CONSOLE_LEVELS:
+            raise ValueError(f"unsupported console level: {level}")
+        if state_key not in self._groups_by_key:
+            raise KeyError(f"unknown state key: {state_key}")
+        identity = (level, state_key)
+        if identity in self._seen_hints:
+            return False
+
+        prepared_groups = self._groups_by_key[state_key]
+        if level == CONSOLE_REFERENCE_LEVEL:
+            additions = {
+                alpha: empty_metric()
+                for alpha in BLEND_PARAMS
+            }
+            network_scores = self._policy_logits[state_key]
+            for prepared in prepared_groups:
+                legal = prepared.legal
+                level_scores = egaroucid_log_scores(
+                    hint,
+                    legal,
+                    self._score_temperature,
+                    require_all_legal=True,
+                )
+                legal_indices = np.asarray(legal, dtype=np.int64)
+                blend_scores = {}
+                for alpha in BLEND_PARAMS:
+                    scores = np.full(
+                        POLICY_SIZE,
+                        -np.inf,
+                        dtype=np.float64,
+                    )
+                    scores[legal_indices] = (
+                        alpha * network_scores[legal_indices]
+                        + (1.0 - alpha) * level_scores[legal_indices]
+                    )
+                    blend_scores[alpha] = scores
+                for targets, count in prepared.valid_targets:
+                    for alpha, scores in blend_scores.items():
+                        rank = wthor.rank_for_distribution(
+                            scores,
+                            legal,
+                            targets,
+                            hint.move_order if alpha == 0.0 else None,
+                        )
+                        add_rank(additions[alpha], rank, count)
+            for alpha in BLEND_PARAMS:
+                _merge_metric(
+                    self._blend_metrics[alpha],
+                    additions[alpha],
+                )
+        else:
+            addition = empty_metric()
+            for prepared in prepared_groups:
+                legal = prepared.legal
+                scores = egaroucid_log_scores(
+                    hint,
+                    legal,
+                    self._score_temperature,
+                    require_all_legal=False,
+                )
+                for targets, count in prepared.valid_targets:
+                    rank = wthor.rank_for_distribution(
+                        scores,
+                        legal,
+                        targets,
+                        hint.move_order,
+                    )
+                    add_rank(addition, rank, count)
+            _merge_metric(self._console_metrics[level], addition)
+
+        self._seen_hints.add(identity)
+        return True
+
+    def add_hints(
+        self,
+        level: int,
+        hints: Mapping[StateKey, HintData],
+    ) -> int:
+        """Add all hints for one level and return the accepted row count."""
+        return sum(
+            self.add_hint(level, state_key, hint)
+            for state_key, hint in hints.items()
+        )
+
+    def add_hint_rows(
+        self,
+        rows: Iterable[Tuple[int, StateKey, HintData]],
+    ) -> int:
+        """Add ``(level, state_key, hint)`` rows from a streaming worker."""
+        return sum(
+            self.add_hint(level, state_key, hint)
+            for level, state_key, hint in rows
+        )
+
+    def snapshot(
+        self,
+    ) -> Tuple[dict, Dict[int, dict], int, int]:
+        """Return a deep copy, including zero metrics for pending levels."""
+        blend_metrics = {
+            alpha: _copy_metric(self._blend_metrics[alpha])
+            for alpha in BLEND_PARAMS
+        }
+        console_metrics = {
+            level: _copy_metric(self._console_metrics[level])
+            for level in CONSOLE_LEVELS
+            if level != CONSOLE_REFERENCE_LEVEL
+        }
+        console_metrics[CONSOLE_REFERENCE_LEVEL] = _copy_metric(
+            blend_metrics[0.0]
+        )
+        return (
+            blend_metrics,
+            console_metrics,
+            self.invalid_policy_samples,
+            self.illegal_label_samples,
+        )
+
+    def result(
+        self,
+    ) -> Tuple[dict, Dict[int, dict], int, int]:
+        """Return the current metrics as an independent snapshot."""
+        return self.snapshot()
+
+
 def evaluate_agreement(
     groups: Sequence[PositionGroup],
     hints: Dict[int, Dict[StateKey, HintData]],
     policy_logits: Dict[StateKey, np.ndarray],
     score_temperature: float,
 ) -> Tuple[dict, Dict[int, dict], int, int]:
-    blend_metrics = {
-        alpha: empty_metric()
-        for alpha in BLEND_PARAMS
-    }
-    console_metrics = {
-        level: empty_metric()
-        for level in CONSOLE_LEVELS
-        if level != CONSOLE_REFERENCE_LEVEL
-    }
-    invalid_policy_samples = 0
-    illegal_label_samples = 0
-
-    for group in groups:
-        state = BoardState(group.black, group.white, group.side)
-        legal = state.legal_policies(group.side)
-        player, opponent = state.player_opponent_bits(group.side)
-        valid_targets = []
-        for policy, count in group.policy_counts:
-            if policy < 0 or policy >= POLICY_SIZE:
-                invalid_policy_samples += count
-                continue
-            if policy not in legal:
-                illegal_label_samples += count
-                continue
-            valid_targets.append(
-                (
-                    wthor.equivalent_targets(
-                        player,
-                        opponent,
-                        policy,
-                    ),
-                    count,
-                )
-            )
-
-        level21_hint = hints[CONSOLE_REFERENCE_LEVEL][group.key]
-        level21_scores = egaroucid_log_scores(
-            level21_hint,
-            legal,
-            score_temperature,
-            require_all_legal=True,
-        )
-        network_scores = policy_logits[group.key]
-        legal_indices = np.asarray(legal, dtype=np.int64)
-        blend_scores = {}
-        for alpha in BLEND_PARAMS:
-            scores = np.full(
-                POLICY_SIZE,
-                -np.inf,
-                dtype=np.float64,
-            )
-            scores[legal_indices] = (
-                alpha * network_scores[legal_indices]
-                + (1.0 - alpha) * level21_scores[legal_indices]
-            )
-            blend_scores[alpha] = scores
-        for targets, count in valid_targets:
-            for alpha, scores in blend_scores.items():
-                rank = wthor.rank_for_distribution(
-                    scores,
-                    legal,
-                    targets,
-                    (
-                        level21_hint.move_order
-                        if alpha == 0.0
-                        else None
-                    ),
-                )
-                add_rank(blend_metrics[alpha], rank, count)
-
-        for level, metric in console_metrics.items():
-            hint = hints[level][group.key]
-            scores = egaroucid_log_scores(
-                hint,
-                legal,
-                score_temperature,
-                require_all_legal=False,
-            )
-            for targets, count in valid_targets:
-                rank = wthor.rank_for_distribution(
-                    scores,
-                    legal,
-                    targets,
-                    hint.move_order,
-                )
-                add_rank(metric, rank, count)
-
-    console_metrics[CONSOLE_REFERENCE_LEVEL] = {
-        "positions": blend_metrics[0.0]["positions"],
-        "hits": dict(blend_metrics[0.0]["hits"]),
-    }
-    return (
-        blend_metrics,
-        console_metrics,
-        invalid_policy_samples,
-        illegal_label_samples,
+    metrics = IncrementalAgreementMetrics(
+        groups,
+        policy_logits,
+        score_temperature,
     )
+    for group in groups:
+        metrics.add_hint(
+            CONSOLE_REFERENCE_LEVEL,
+            group.key,
+            hints[CONSOLE_REFERENCE_LEVEL][group.key],
+        )
+        for level in CONSOLE_LEVELS:
+            if level == CONSOLE_REFERENCE_LEVEL:
+                continue
+            metrics.add_hint(level, group.key, hints[level][group.key])
+    return metrics.result()
 
 
 def metrics_to_result(metrics: Dict[float, dict]) -> dict:

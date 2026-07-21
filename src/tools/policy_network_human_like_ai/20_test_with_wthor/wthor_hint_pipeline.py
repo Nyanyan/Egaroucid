@@ -3,17 +3,18 @@
 
 from __future__ import annotations
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from dataclasses import dataclass
 import json
 import multiprocessing
 import os
 from pathlib import Path
+import queue
 import sqlite3
 import sys
 import threading
 import time
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -38,6 +39,11 @@ from wthor_human_match_evaluation import (  # noqa: E402
 
 
 _HINT_CANCEL_EVENT = None
+_HINT_PROGRESS_QUEUE = None
+
+HINT_RESULT_BATCH_SIZE = 8
+HINT_RESULT_BATCH_INTERVAL_SEC = 5.0
+HINT_EVENT_POLL_INTERVAL_SEC = 0.5
 
 
 @dataclass(frozen=True)
@@ -51,9 +57,34 @@ class HintTask:
     max_retries: int
 
 
-def initialize_hint_worker(cancel_event) -> None:
-    global _HINT_CANCEL_EVENT
+HintRowsCallback = Callable[
+    [int, Sequence[Tuple[StateKey, HintData]]],
+    None,
+]
+HintProgressCallback = Callable[[dict], None]
+
+
+def hint_task_id(task: HintTask) -> tuple:
+    return (
+        task.level,
+        task.states[0] if task.states else None,
+        len(task.states),
+    )
+
+
+def initialize_hint_worker(cancel_event, progress_queue=None) -> None:
+    """Initialize spawn workers without passing a Queue in every task."""
+    global _HINT_CANCEL_EVENT, _HINT_PROGRESS_QUEUE
     _HINT_CANCEL_EVENT = cancel_event
+    _HINT_PROGRESS_QUEUE = progress_queue
+    if progress_queue is not None:
+        try:
+            # Events are best-effort and every row is also in the Future.
+            # Do not let a full event pipe prevent a worker from exiting while
+            # the parent is cancelling and waiting in executor.shutdown().
+            progress_queue.cancel_join_thread()
+        except (AttributeError, OSError, ValueError):
+            pass
 
 
 def hint_worker_cancelled() -> bool:
@@ -61,6 +92,21 @@ def hint_worker_cancelled() -> bool:
         _HINT_CANCEL_EVENT is not None
         and _HINT_CANCEL_EVENT.is_set()
     )
+
+
+def emit_hint_worker_event(event: dict) -> None:
+    """Best-effort worker-to-parent event delivery.
+
+    Every result row is also returned by :func:`run_hint_task`, so a broken
+    progress pipe cannot lose experiment data.  It only reduces live
+    visibility until the task future completes.
+    """
+    if _HINT_PROGRESS_QUEUE is None:
+        return
+    try:
+        _HINT_PROGRESS_QUEUE.put(event)
+    except (BrokenPipeError, EOFError, OSError, ValueError):
+        pass
 
 
 def format_duration(seconds: float) -> str:
@@ -241,6 +287,7 @@ class CpuMonitor:
         self.stop_event = threading.Event()
         self.thread: Optional[threading.Thread] = None
         self.samples: List[dict] = []
+        self.lock = threading.Lock()
 
     def start(self) -> None:
         try:
@@ -274,61 +321,69 @@ class CpuMonitor:
                 except psutil.Error:
                     pass
             memory = psutil.virtual_memory()
-            self.samples.append(
-                {
-                    "cpu_percent": float(
-                        psutil.cpu_percent(interval=None)
-                    ),
-                    "available_memory_mib": float(
-                        memory.available / (1024.0 * 1024.0)
-                    ),
-                    "process_tree_memory_mib": float(
-                        tree_rss / (1024.0 * 1024.0)
-                    ),
-                    "egaroucid_processes": egaroucid_processes,
-                }
-            )
+            sample = {
+                "cpu_percent": float(
+                    psutil.cpu_percent(interval=None)
+                ),
+                "available_memory_mib": float(
+                    memory.available / (1024.0 * 1024.0)
+                ),
+                "process_tree_memory_mib": float(
+                    tree_rss / (1024.0 * 1024.0)
+                ),
+                "egaroucid_processes": egaroucid_processes,
+            }
+            with self.lock:
+                self.samples.append(sample)
+
+    def snapshot(self) -> dict:
+        with self.lock:
+            if not self.samples:
+                return {"available": False}
+            return {"available": True, **self.samples[-1]}
 
     def stop(self) -> dict:
         self.stop_event.set()
         if self.thread is not None:
             self.thread.join(timeout=self.interval_sec * 2.0 + 1.0)
+        with self.lock:
+            samples = list(self.samples)
         return {
-            "available": bool(self.samples),
-            "samples": len(self.samples),
+            "available": bool(samples),
+            "samples": len(samples),
             "average_cpu_percent": (
-                sum(row["cpu_percent"] for row in self.samples)
-                / len(self.samples)
-                if self.samples
+                sum(row["cpu_percent"] for row in samples)
+                / len(samples)
+                if samples
                 else None
             ),
             "maximum_cpu_percent": (
-                max(row["cpu_percent"] for row in self.samples)
-                if self.samples
+                max(row["cpu_percent"] for row in samples)
+                if samples
                 else None
             ),
             "minimum_available_memory_mib": (
                 min(
                     row["available_memory_mib"]
-                    for row in self.samples
+                    for row in samples
                 )
-                if self.samples
+                if samples
                 else None
             ),
             "maximum_process_tree_memory_mib": (
                 max(
                     row["process_tree_memory_mib"]
-                    for row in self.samples
+                    for row in samples
                 )
-                if self.samples
+                if samples
                 else None
             ),
             "maximum_egaroucid_processes": (
                 max(
                     row["egaroucid_processes"]
-                    for row in self.samples
+                    for row in samples
                 )
-                if self.samples
+                if samples
                 else None
             ),
         }
@@ -339,6 +394,40 @@ def run_hint_task(task: HintTask) -> dict:
     start = time.perf_counter()
     runner = None
     rows = []
+    pending_rows = []
+    last_batch_at = start
+    task_id = hint_task_id(task)
+    final_attempt_error_sent = False
+    failure = None
+
+    def flush_rows() -> None:
+        nonlocal last_batch_at
+        if not pending_rows:
+            return
+        emit_hint_worker_event(
+            {
+                "kind": "rows",
+                "task_id": task_id,
+                "level": task.level,
+                "hint_count": task.hint_count,
+                "rows": tuple(pending_rows),
+                "worker_pid": os.getpid(),
+                "emitted_at_unix": time.time(),
+            }
+        )
+        pending_rows.clear()
+        last_batch_at = time.perf_counter()
+
+    emit_hint_worker_event(
+        {
+            "kind": "task_started",
+            "task_id": task_id,
+            "level": task.level,
+            "states": len(task.states),
+            "worker_pid": os.getpid(),
+            "emitted_at_unix": started_at,
+        }
+    )
     try:
         for state_key in task.states:
             if hint_worker_cancelled():
@@ -369,7 +458,27 @@ def run_hint_task(task: HintTask) -> dict:
                         task.hint_count,
                     )
                     break
-                except (OSError, RuntimeError, ValueError):
+                except (OSError, RuntimeError, ValueError) as exc:
+                    will_retry = attempt < task.max_retries
+                    emit_hint_worker_event(
+                        {
+                            "kind": (
+                                "retry"
+                                if will_retry
+                                else "attempt_error"
+                            ),
+                            "task_id": task_id,
+                            "level": task.level,
+                            "state_key": state_key,
+                            "attempt": attempt + 1,
+                            "maximum_attempts": task.max_retries + 1,
+                            "error_type": type(exc).__name__,
+                            "error": str(exc),
+                            "worker_pid": os.getpid(),
+                            "emitted_at_unix": time.time(),
+                        }
+                    )
+                    final_attempt_error_sent = not will_retry
                     runner.close()
                     runner = None
                     if hint_worker_cancelled():
@@ -379,9 +488,47 @@ def run_hint_task(task: HintTask) -> dict:
                     if attempt >= task.max_retries:
                         raise
             rows.append((state_key, scores, raw_hint))
+            pending_rows.append((state_key, scores, raw_hint))
+            now = time.perf_counter()
+            if (
+                len(pending_rows) >= HINT_RESULT_BATCH_SIZE
+                or now - last_batch_at
+                >= HINT_RESULT_BATCH_INTERVAL_SEC
+            ):
+                flush_rows()
+    except BaseException as exc:
+        failure = exc
+        if not final_attempt_error_sent and not (
+            isinstance(exc, InterruptedError)
+            and hint_worker_cancelled()
+        ):
+            emit_hint_worker_event(
+                {
+                    "kind": "fatal",
+                    "task_id": task_id,
+                    "level": task.level,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                    "worker_pid": os.getpid(),
+                    "emitted_at_unix": time.time(),
+                }
+            )
+        raise
     finally:
+        flush_rows()
         if runner is not None:
             runner.close()
+        emit_hint_worker_event(
+            {
+                "kind": "task_finished",
+                "task_id": task_id,
+                "level": task.level,
+                "states": len(rows),
+                "status": "failed" if failure is not None else "ok",
+                "worker_pid": os.getpid(),
+                "emitted_at_unix": time.time(),
+            }
+        )
     return {
         "level": task.level,
         "rows": rows,
@@ -449,12 +596,17 @@ def collect_hints(
     timeout_sec: float,
     max_retries: int,
     progress_interval_sec: float,
+    on_rows: Optional[HintRowsCallback] = None,
+    progress_callback: Optional[HintProgressCallback] = None,
 ) -> Tuple[
     Dict[int, Dict[StateKey, HintData]],
     Dict[int, dict],
     Dict[int, dict],
     dict,
 ]:
+    if progress_interval_sec <= 0.0:
+        raise ValueError("progress_interval_sec must be positive")
+
     state_keys = [group.key for group in groups]
     caches: Dict[int, HintCache] = {}
     hints: Dict[int, Dict[StateKey, HintData]] = {}
@@ -517,40 +669,140 @@ def collect_hints(
             max_retries,
             cached_by_level=hints,
         )
+        scheduled_keys_by_level = {
+            level: set()
+            for level in levels
+        }
         for task in tasks:
             cache_stats[task.level][
                 "scheduled_computations"
             ] += len(task.states)
+            scheduled_keys_by_level[task.level].update(task.states)
+
+        notified_keys_by_level = {
+            level: set()
+            for level in levels
+        }
+
+        def notify_rows(
+            level: int,
+            rows: Sequence[Tuple[StateKey, HintData]],
+        ) -> None:
+            fresh_rows = []
+            notified = notified_keys_by_level[level]
+            for state_key, hint_data in rows:
+                if state_key in notified:
+                    continue
+                notified.add(state_key)
+                fresh_rows.append((state_key, hint_data))
+            if fresh_rows and on_rows is not None:
+                on_rows(level, tuple(fresh_rows))
+
+        # A cached row in an incomplete fixed shard will be recomputed.  Do
+        # not publish its old value to live metrics before its replacement.
+        for level in levels:
+            scheduled_keys = scheduled_keys_by_level[level]
+            notify_rows(
+                level,
+                tuple(
+                    (state_key, hint_data)
+                    for state_key, hint_data in hints[level].items()
+                    if state_key not in scheduled_keys
+                ),
+            )
+
         total_states = sum(len(task.states) for task in tasks)
         completed_states = 0
+        completed_work_keys = set()
+        completed_tasks = 0
+        retry_count = 0
+        attempt_error_count = 0
+        active_task_ids = set()
+        reported_fatal_task_ids = set()
         started = time.perf_counter()
-        last_report = started
+        last_success_at = None
 
-        def accept_result(future, result: dict) -> None:
-            nonlocal completed_states, last_report
-            task = future_to_task[future]
-            level = int(result["level"])
-            rows = result["rows"]
-            cache_stats[level]["writes"] += caches[level].put_many(
-                level,
-                int(task.hint_count),
-                rows,
+        def accept_rows(
+            level: int,
+            hint_count: int,
+            rows: Sequence[Tuple[StateKey, Dict[int, float], str]],
+        ) -> int:
+            nonlocal completed_states, last_success_at
+            if level not in caches:
+                raise RuntimeError(
+                    f"received hint rows for unexpected level {level}"
+                )
+            expected_hint_count = (
+                ALL_LEGAL_HINT_COUNT
+                if level == CONSOLE_REFERENCE_LEVEL
+                else CONSOLE_ONLY_HINT_COUNT
             )
-            for state_key, scores, raw_hint in rows:
-                state_key = tuple(state_key)
+            if hint_count != expected_hint_count:
+                raise RuntimeError(
+                    f"level {level}: expected hint_count "
+                    f"{expected_hint_count}, got {hint_count}"
+                )
+
+            accepted_cache_rows = []
+            accepted_hint_rows = []
+            for raw_state_key, raw_scores, raw_hint in rows:
+                state_key = tuple(raw_state_key)
+                work_key = (level, state_key)
+                if work_key in completed_work_keys:
+                    continue
+                if state_key not in scheduled_keys_by_level[level]:
+                    raise RuntimeError(
+                        f"level {level}: received an unscheduled state "
+                        f"{state_key}"
+                    )
+                scores = {
+                    int(policy): float(score)
+                    for policy, score in raw_scores.items()
+                }
+                raw_hint = str(raw_hint)
                 state = BoardState(*state_key)
                 move_order = validate_hint_data(
                     state,
                     state_key[2],
                     scores,
                     raw_hint,
-                    int(task.hint_count),
+                    hint_count,
                 )
-                hints[level][state_key] = HintData(
-                    scores,
-                    move_order,
+                hint_data = HintData(scores, move_order)
+                completed_work_keys.add(work_key)
+                accepted_cache_rows.append(
+                    (state_key, scores, raw_hint)
                 )
-            completed_states += int(result["states"])
+                accepted_hint_rows.append((state_key, hint_data))
+
+            if not accepted_cache_rows:
+                return 0
+            cache_stats[level]["writes"] += caches[level].put_many(
+                level,
+                hint_count,
+                accepted_cache_rows,
+            )
+            for state_key, hint_data in accepted_hint_rows:
+                hints[level][state_key] = hint_data
+            completed_states += len(accepted_cache_rows)
+            last_success_at = time.perf_counter()
+            notify_rows(level, accepted_hint_rows)
+            return len(accepted_cache_rows)
+
+        def accept_task_result(task: HintTask, result: dict) -> None:
+            nonlocal completed_tasks
+            active_task_ids.discard(hint_task_id(task))
+            level = int(result["level"])
+            if level != task.level:
+                raise RuntimeError(
+                    f"hint task for level {task.level} returned level {level}"
+                )
+            rows = result["rows"]
+            if int(result["states"]) != len(rows):
+                raise RuntimeError(
+                    f"level {level}: task state count does not match rows"
+                )
+            accept_rows(level, task.hint_count, rows)
             timing = level_timing[level]
             timing["task_count"] += 1
             timing["engine_seconds"] += float(result["elapsed_sec"])
@@ -566,53 +818,234 @@ def collect_hints(
                 if timing["finished_at_unix"] is None
                 else max(timing["finished_at_unix"], finished_at)
             )
-
-            now = time.perf_counter()
-            if (
-                now - last_report >= progress_interval_sec
-                or completed_states == total_states
-            ):
-                elapsed = now - started
-                rate = (
-                    completed_states / elapsed
-                    if elapsed > 0.0
-                    else 0.0
-                )
-                remaining = total_states - completed_states
-                eta = remaining / rate if rate > 0.0 else 0.0
-                print(
-                    "hint進捗 "
-                    f"{completed_states:,}/{total_states:,} "
-                    f"({completed_states / total_states:.1%}) "
-                    f"経過 {format_duration(elapsed)} "
-                    f"ETA {format_duration(eta)}",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                last_report = now
+            completed_tasks += 1
 
         monitor = CpuMonitor()
         monitor.start()
+        next_report_at = started
+
+        def progress_snapshot(final: bool = False) -> dict:
+            now = time.perf_counter()
+            elapsed = now - started
+            rate = (
+                completed_states / elapsed
+                if elapsed > 0.0 and completed_states
+                else 0.0
+            )
+            remaining = max(0, total_states - completed_states)
+            eta = (
+                0.0
+                if remaining == 0
+                else remaining / rate
+                if rate > 0.0
+                else None
+            )
+            return {
+                "kind": "hint_progress",
+                "final": final,
+                "completed_states": completed_states,
+                "total_states": total_states,
+                "progress_fraction": (
+                    completed_states / total_states
+                    if total_states
+                    else 1.0
+                ),
+                "elapsed_sec": elapsed,
+                "rate_states_per_sec": rate,
+                "eta_sec": eta,
+                "seconds_since_last_hint": (
+                    now - last_success_at
+                    if last_success_at is not None
+                    else None
+                ),
+                "cache_hits": sum(
+                    row["hits"] for row in cache_stats.values()
+                ),
+                "available_hints": sum(
+                    len(level_hints)
+                    for level_hints in hints.values()
+                ),
+                "target_hints": len(state_keys) * len(levels),
+                "completed_tasks": completed_tasks,
+                "total_tasks": len(tasks),
+                "active_tasks": len(active_task_ids),
+                "retry_count": retry_count,
+                "attempt_error_count": attempt_error_count,
+                "cpu": monitor.snapshot(),
+            }
+
+        def report_progress(final: bool = False) -> None:
+            snapshot = progress_snapshot(final=final)
+            eta = snapshot["eta_sec"]
+            eta_text = (
+                format_duration(eta)
+                if eta is not None
+                else "算出待ち"
+            )
+            since_hint = snapshot["seconds_since_last_hint"]
+            last_hint_status = (
+                f"{format_duration(since_hint)}前"
+                if since_hint is not None
+                else "全件キャッシュ済み"
+                if snapshot["total_states"] == 0
+                else "初回結果待ち"
+            )
+            cpu = snapshot["cpu"]
+            cpu_text = ""
+            if cpu.get("available"):
+                cpu_text = (
+                    f" | CPU {cpu['cpu_percent']:.0f}%"
+                    f" | 空きRAM {cpu['available_memory_mib']:.0f} MiB"
+                    f" | 関連メモリ "
+                    f"{cpu['process_tree_memory_mib'] / 1024.0:.1f} GiB"
+                    f" | Egaroucid {cpu['egaroucid_processes']}"
+                )
+            progress_kind = "hint進捗・完了" if final else "hint進捗"
+            progress_label = (
+                f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
+                f"[{progress_kind}] "
+            )
+            print(
+                f"{progress_label}{snapshot['completed_states']:,}/"
+                f"{snapshot['total_states']:,}件のhint計算 "
+                f"({snapshot['progress_fraction']:.1%})"
+                f" | 経過 {format_duration(snapshot['elapsed_sec'])}"
+                f" | 概算残り {eta_text}"
+                f" | {snapshot['rate_states_per_sec']:.2f}件/秒"
+                f" | task完了 {snapshot['completed_tasks']}/"
+                f"{snapshot['total_tasks']}"
+                f" (稼働 {snapshot['active_tasks']})"
+                f" | cache検出 {snapshot['cache_hits']:,}"
+                f" | 再試行 {snapshot['retry_count']}"
+                f" | 最終結果 {last_hint_status}"
+                f"{cpu_text}",
+                file=sys.stderr,
+                flush=True,
+            )
+            if progress_callback is not None:
+                progress_callback(snapshot)
+
+        def format_state_key(state_key) -> str:
+            try:
+                black, white, side = state_key
+                return f"({int(black):#018x},{int(white):#018x},{side})"
+            except (TypeError, ValueError):
+                return repr(state_key)
+
+        def handle_worker_event(event: dict) -> None:
+            nonlocal retry_count, attempt_error_count
+            kind = event.get("kind")
+            task_id = event.get("task_id")
+            if kind == "rows":
+                accept_rows(
+                    int(event["level"]),
+                    int(event["hint_count"]),
+                    event["rows"],
+                )
+            elif kind == "task_started":
+                active_task_ids.add(task_id)
+            elif kind == "task_finished":
+                active_task_ids.discard(task_id)
+            elif kind in ("retry", "attempt_error"):
+                if kind == "retry":
+                    retry_count += 1
+                    label = "再試行"
+                else:
+                    attempt_error_count += 1
+                    label = "エラー"
+                print(
+                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
+                    f"[hint{label}] level {event['level']} "
+                    f"状態 {format_state_key(event.get('state_key'))} "
+                    f"試行 {event['attempt']}/"
+                    f"{event['maximum_attempts']}: "
+                    f"{event['error_type']}: {event['error']}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            elif kind == "fatal":
+                reported_fatal_task_ids.add(task_id)
+                print(
+                    f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
+                    f"[hint致命的エラー] level {event['level']}: "
+                    f"{event['error_type']}: {event['error']}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            else:
+                raise RuntimeError(
+                    f"unknown hint worker event: {kind!r}"
+                )
+
+        def drain_worker_events(progress_queue) -> None:
+            while True:
+                try:
+                    event = progress_queue.get_nowait()
+                except queue.Empty:
+                    return
+                handle_worker_event(event)
+
         try:
+            report_progress(final=not tasks)
+            next_report_at = started + progress_interval_sec
             if tasks:
                 context = multiprocessing.get_context("spawn")
                 cancel_event = context.Event()
-                executor = ProcessPoolExecutor(
-                    max_workers=workers,
-                    mp_context=context,
-                    initializer=initialize_hint_worker,
-                    initargs=(cancel_event,),
-                )
+                progress_queue = context.Queue()
+                try:
+                    executor = ProcessPoolExecutor(
+                        max_workers=workers,
+                        mp_context=context,
+                        initializer=initialize_hint_worker,
+                        initargs=(cancel_event, progress_queue),
+                    )
+                except BaseException:
+                    progress_queue.close()
+                    progress_queue.join_thread()
+                    raise
                 future_to_task = {}
                 processed_futures = set()
                 try:
                     for task in tasks:
                         future = executor.submit(run_hint_task, task)
                         future_to_task[future] = task
-                    for future in as_completed(future_to_task):
-                        processed_futures.add(future)
-                        result = future.result()
-                        accept_result(future, result)
+                    pending_futures = set(future_to_task)
+                    while pending_futures:
+                        drain_worker_events(progress_queue)
+                        now = time.perf_counter()
+                        if now >= next_report_at:
+                            report_progress()
+                            while next_report_at <= now:
+                                next_report_at += progress_interval_sec
+                        timeout = min(
+                            HINT_EVENT_POLL_INTERVAL_SEC,
+                            max(0.0, next_report_at - now),
+                        )
+                        done, _ = wait(
+                            pending_futures,
+                            timeout=timeout,
+                            return_when=FIRST_COMPLETED,
+                        )
+                        drain_worker_events(progress_queue)
+                        for future in done:
+                            pending_futures.remove(future)
+                            processed_futures.add(future)
+                            task = future_to_task[future]
+                            try:
+                                result = future.result()
+                            except BaseException as exc:
+                                task_id = hint_task_id(task)
+                                if task_id not in reported_fatal_task_ids:
+                                    print(
+                                        f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
+                                        f"[hint致命的エラー] level {task.level}: "
+                                        f"{type(exc).__name__}: {exc}",
+                                        file=sys.stderr,
+                                        flush=True,
+                                    )
+                                raise
+                            accept_task_result(task, result)
+                    drain_worker_events(progress_queue)
                 except BaseException:
                     cancel_event.set()
                     for future in future_to_task:
@@ -630,12 +1063,22 @@ def collect_hints(
                             continue
                         try:
                             result = future.result()
-                            accept_result(future, result)
+                            accept_task_result(
+                                future_to_task[future],
+                                result,
+                            )
                         except BaseException:
                             pass
+                    drain_worker_events(progress_queue)
                     raise
                 else:
                     executor.shutdown(wait=True)
+                    drain_worker_events(progress_queue)
+                finally:
+                    progress_queue.close()
+                    progress_queue.join_thread()
+            if tasks:
+                report_progress(final=True)
         finally:
             cpu_stats = monitor.stop()
 

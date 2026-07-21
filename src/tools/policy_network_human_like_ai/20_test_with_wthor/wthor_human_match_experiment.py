@@ -25,6 +25,7 @@ from wthor_human_match_evaluation import (
     CONSOLE_LEVELS,
     CONSOLE_ONLY_HINT_COUNT,
     CONSOLE_REFERENCE_LEVEL,
+    IncrementalAgreementMetrics,
     evaluate_agreement,
     load_position_groups,
     make_blend_summary_rows,
@@ -65,6 +66,78 @@ CONSOLE_SUMMARY_FIELDS = (
     "elapsed_sec",
     "engine_seconds",
 )
+
+
+def configure_output_streams() -> None:
+    """Make progress visible immediately under IDEs, pipes, and loggers."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(line_buffering=True, write_through=True)
+        except (OSError, TypeError, ValueError):
+            pass
+
+
+def report_stage(message: str) -> None:
+    print(
+        f"[{time.strftime('%Y-%m-%d %H:%M:%S')}][段階] {message}",
+        file=sys.stderr,
+        flush=True,
+    )
+
+
+def format_live_metric(metric: dict) -> str:
+    positions = int(metric["positions"])
+    if positions == 0:
+        return "未算出 (n=0)"
+    top1 = int(metric["hits"][1]) / positions
+    top3 = int(metric["hits"][3]) / positions
+    return f"{top1:.3%}/{top3:.3%} (n={positions:,})"
+
+
+class AgreementProgressReporter:
+    """Add partial hint rows and print the corresponding agreement values."""
+
+    def __init__(self, metrics: IncrementalAgreementMetrics):
+        self.metrics = metrics
+
+    def accept_rows(self, level: int, rows: Sequence[tuple]) -> None:
+        for state_key, hint in rows:
+            self.metrics.add_hint(level, tuple(state_key), hint)
+
+    def report(self, progress: dict) -> None:
+        blend_metrics, console_metrics, _, _ = self.metrics.snapshot()
+        complete = bool(
+            progress.get("final")
+            or progress.get("total_states") == 0
+        )
+        status = "完了" if complete else "暫定"
+        lines = [
+            f"  ブレンド方策 ({status}、top-1/top-3): "
+            + " | ".join(
+                f"alpha={alpha:.1f} {format_live_metric(blend_metrics[alpha])}"
+                for alpha in BLEND_PARAMS
+            )
+        ]
+        console_parts = [
+            f"level {level:2d} {format_live_metric(console_metrics[level])}"
+            for level in CONSOLE_LEVELS
+        ]
+        midpoint = (len(console_parts) + 1) // 2
+        lines.append(
+            f"  Console単体 ({status}、top-1/top-3): "
+            + " | ".join(console_parts[:midpoint])
+        )
+        lines.append("    " + " | ".join(console_parts[midpoint:]))
+        if not complete:
+            lines.append(
+                "  注意: 暫定値は、その時点までに探索が終わった局面だけの"
+                "値です。level間・alpha間の優劣は最終結果で判断してください。"
+            )
+        sys.stderr.write("\n".join(lines) + "\n")
+        sys.stderr.flush()
 
 
 def positive_int(text: str) -> int:
@@ -212,7 +285,7 @@ def make_argparser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "盤面データのディレクトリ。省略時は"
-            "%EGAROUCID_DATA%/train_data/board_data/records1"
+            "%%EGAROUCID_DATA%%/train_data/board_data/records1"
         ),
     )
     parser.add_argument(
@@ -269,6 +342,10 @@ def make_argparser() -> argparse.ArgumentParser:
         "--progress-interval-sec",
         type=positive_float,
         default=30.0,
+        help=(
+            "標準エラーへ探索進捗と暫定一致率を表示する間隔"
+            "（既定値: 30秒）"
+        ),
     )
     parser.add_argument(
         "--minimum-remaining-memory-mib",
@@ -290,6 +367,7 @@ def make_argparser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    configure_output_streams()
     parser = make_argparser()
     args = parser.parse_args()
     if args.board_data_dir is None:
@@ -313,8 +391,10 @@ def main() -> None:
             "注意: Console探索スレッド総数が論理CPU数を超えます: "
             f"{search_thread_budget} > {logical_cpus}",
             file=sys.stderr,
+            flush=True,
         )
 
+    report_stage("WTHOR標本の確認と読込を開始")
     dat_files = wthor.discover_dat_files(args.board_data_dir)
     available_positions = wthor.count_position_samples(dat_files, None)
     selected_split_positions = split_position_count(
@@ -346,21 +426,35 @@ def main() -> None:
     search_thread_budget = workers * args.egaroucid_threads
     output_dir = args.output_dir or default_output_dir(args, workers)
 
-    print("評価標本", f"{args.positions:,}局面")
-    print("一意な盤面・手番", f"{len(groups):,}状態")
-    print("重複再利用", f"{args.positions - len(groups):,}局面")
-    print("Console worker", workers)
-    print("1 worker当たりの探索スレッド", args.egaroucid_threads)
-    print("探索スレッド総数", search_thread_budget)
-    print("論理CPUスレッド", logical_cpus)
-    print("level 21", "ブレンドとConsole単体で共有")
+    report_stage(
+        "WTHOR標本の読込を完了 "
+        f"({format_duration(load_elapsed)})"
+    )
+    print("評価標本", f"{args.positions:,}局面", flush=True)
+    print("一意な盤面・手番", f"{len(groups):,}状態", flush=True)
+    print(
+        "重複再利用",
+        f"{args.positions - len(groups):,}局面",
+        flush=True,
+    )
+    print("Console worker", workers, flush=True)
+    print(
+        "1 worker当たりの探索スレッド",
+        args.egaroucid_threads,
+        flush=True,
+    )
+    print("探索スレッド総数", search_thread_budget, flush=True)
+    print("論理CPUスレッド", logical_cpus, flush=True)
+    print("level 21", "ブレンドとConsole単体で共有", flush=True)
     print(
         "hint候補数",
         f"level 21={ALL_LEGAL_HINT_COUNT}（全合法手）、"
         f"level 1-19={CONSOLE_ONLY_HINT_COUNT}（top-3測定分）",
+        flush=True,
     )
-    print("出力先", output_dir)
+    print("出力先", output_dir, flush=True)
     if args.dry_run:
+        report_stage("dry-runを完了（探索は未実行）")
         return
 
     startup_available_memory_mib = check_memory(
@@ -377,6 +471,26 @@ def main() -> None:
     )
     ensure_experiment_identity(output_dir, experiment_identity)
 
+    report_stage("Policy Networkの推論を開始")
+    policy_start = time.perf_counter()
+    policy_logits = predict_policy_logits(
+        groups,
+        args.weights,
+        args.policy_batch_size,
+    )
+    policy_elapsed = time.perf_counter() - policy_start
+    report_stage(
+        "Policy Networkの推論を完了 "
+        f"({format_duration(policy_elapsed)})"
+    )
+    live_metrics = IncrementalAgreementMetrics(
+        groups,
+        policy_logits,
+        args.score_temperature,
+    )
+    progress_reporter = AgreementProgressReporter(live_metrics)
+
+    report_stage("Egaroucidによるhint探索を開始")
     hint_start = time.perf_counter()
     hints, cache_stats, level_timing, cpu_stats = collect_hints(
         groups,
@@ -388,17 +502,16 @@ def main() -> None:
         args.egaroucid_timeout_sec,
         args.egaroucid_retries,
         args.progress_interval_sec,
+        on_rows=progress_reporter.accept_rows,
+        progress_callback=progress_reporter.report,
     )
     hint_elapsed = time.perf_counter() - hint_start
-
-    policy_start = time.perf_counter()
-    policy_logits = predict_policy_logits(
-        groups,
-        args.weights,
-        args.policy_batch_size,
+    report_stage(
+        "Egaroucidによるhint探索を完了 "
+        f"({format_duration(hint_elapsed)})"
     )
-    policy_elapsed = time.perf_counter() - policy_start
 
+    report_stage("最終一致率の検算と集計を開始")
     aggregate_start = time.perf_counter()
     (
         blend_metrics,
@@ -411,6 +524,15 @@ def main() -> None:
         policy_logits,
         args.score_temperature,
     )
+    if live_metrics.result() != (
+        blend_metrics,
+        console_metrics,
+        invalid_policy_samples,
+        illegal_label_samples,
+    ):
+        raise RuntimeError(
+            "途中進捗の集計値と全hintから再計算した最終値が一致しません"
+        )
     blend_rows = make_blend_summary_rows(
         metrics_to_result(blend_metrics)
     )
@@ -426,6 +548,10 @@ def main() -> None:
             )
         )
     aggregate_elapsed = time.perf_counter() - aggregate_start
+    report_stage(
+        "最終一致率の検算と集計を完了 "
+        f"({format_duration(aggregate_elapsed)})"
+    )
     level21_validation = make_level21_reuse_validation(
         blend_rows,
         console_rows,
@@ -586,6 +712,7 @@ def main() -> None:
         "console_level_results": console_rows,
     }
 
+    report_stage("CSV・JSON成果物の保存を開始")
     write_csv(
         output_dir / "random_wthor_blend_summary.csv",
         blend_rows,
@@ -600,6 +727,7 @@ def main() -> None:
         output_dir / "random_wthor_blend_summary.json"
     ).open("w", encoding="utf-8") as json_file:
         json.dump(summary, json_file, ensure_ascii=False, indent=2)
+    report_stage("CSV・JSON成果物の保存を完了")
 
     print()
     print("ブレンド方策")
@@ -632,6 +760,7 @@ def main() -> None:
     print(
         "集計JSON",
         output_dir / "random_wthor_blend_summary.json",
+        flush=True,
     )
 
 
