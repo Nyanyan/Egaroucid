@@ -22,9 +22,8 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v5"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v6"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
-VERIFICATION_CANDIDATE_COUNT = 2
 RESULT_RE = re.compile(
     r"^\|\s*(?P<level>[^|]+)\|\s*(?P<depth>[^|]+)\|\s*"
     r"(?P<move>[a-h][1-8])\|\s*(?P<score>[+-]?\d+)\|\s*"
@@ -80,37 +79,23 @@ def load_uncovered_roots(coverage_path: Path) -> list[str]:
     return sorted(result)
 
 
-def parse_search_results(output: str, board: str) -> list[dict[str, int | str]]:
-    rows = [match.groupdict() for match in RESULT_RE.finditer(output)]
-    if not rows:
-        raise ValueError("expected at least one search-result row, found none")
-    legal_moves = Board.from_text(board).legal_moves()
-    result: list[dict[str, int | str]] = []
-    seen_moves: set[str] = set()
-    for row in rows:
-        move = str(row["move"])
-        if move in seen_moves:
-            raise ValueError(f"engine returned duplicate teacher move {move}")
-        seen_moves.add(move)
-        if coord_to_index(move) not in legal_moves:
-            raise ValueError(f"engine returned illegal teacher move {move}")
-        result.append({
-            "move": move,
-            "score": int(str(row["score"])),
-            "level": str(row["level"]).strip(),
-            "depth": str(row["depth"]).strip(),
-            "time": str(row["time"]).strip(),
-            "nodes": int(str(row["nodes"])),
-            "nps": int(str(row["nps"])),
-        })
-    return result
-
-
 def parse_search_result(output: str, board: str) -> dict[str, int | str]:
-    results = parse_search_results(output, board)
-    if len(results) != 1:
-        raise ValueError(f"expected exactly one search-result row, found {len(results)}")
-    return results[0]
+    rows = [match.groupdict() for match in RESULT_RE.finditer(output)]
+    if len(rows) != 1:
+        raise ValueError(f"expected exactly one search-result row, found {len(rows)}")
+    row = rows[0]
+    move = str(row["move"])
+    if coord_to_index(move) not in Board.from_text(board).legal_moves():
+        raise ValueError(f"engine returned illegal teacher move {move}")
+    return {
+        "move": move,
+        "score": int(str(row["score"])),
+        "level": str(row["level"]).strip(),
+        "depth": str(row["depth"]).strip(),
+        "time": str(row["time"]).strip(),
+        "nodes": int(str(row["nodes"])),
+        "nps": int(str(row["nps"])),
+    }
 
 
 def search_root(
@@ -197,51 +182,6 @@ def search_root_at_level(
         ) from error
 
 
-def search_root_candidates_at_level(
-    exe: Path,
-    board: str,
-    level: int,
-    threads: int,
-    hash_level: int,
-    n_candidates: int = 8,
-) -> list[dict[str, int | str]]:
-    if level < 1 or threads <= 0 or not 0 <= hash_level <= 29 or n_candidates < 1:
-        raise ValueError("invalid level, thread, hash setting, or candidate count")
-    command = [
-        str(exe),
-        "-l", str(level),
-        "-t", str(threads),
-        "-hash", str(hash_level),
-        "-nobook",
-    ]
-    commands = f"setboard {board}\\nhint {n_candidates}\\nquit\\n"
-    try:
-        completed = subprocess.run(
-            command,
-            cwd=exe.parent,
-            input=commands,
-            text=True,
-            capture_output=True,
-            timeout=180.0,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired) as error:
-        raise RuntimeError(f"teacher verification failed for {board}: {error}") from error
-    if completed.returncode != 0:
-        raise RuntimeError(
-            f"teacher verification exited {completed.returncode} for {board}: "
-            f"{completed.stderr[-400:]}"
-        )
-    combined_output = completed.stdout + "\\n" + completed.stderr
-    try:
-        return parse_search_results(combined_output, board)
-    except ValueError as error:
-        raise RuntimeError(
-            f"teacher verification parsing failed for {board}: {error}; "
-            f"output={combined_output[-400:]}"
-        ) from error
-
-
 def validate_quality(result: dict[str, int | str], min_depth: int, min_selectivity: int) -> None:
     if min_depth < 1 or not 1 <= min_selectivity <= 100:
         raise ValueError("invalid minimum teacher quality")
@@ -290,7 +230,6 @@ def _new_state(
         "method": method,
         "teacher_level": teacher_level,
         "verify_level": verify_level,
-        "verification_candidate_count": VERIFICATION_CANDIDATE_COUNT,
         "roots": roots,
         "results": {},
     }
@@ -307,7 +246,7 @@ def _load_state(
     for key in (
         "schema", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
-        "verify_level", "verification_candidate_count", "roots",
+        "verify_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -340,7 +279,6 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# method {state['method']}",
             f"# teacher_level {state['teacher_level']}",
             f"# verify_level {state['verify_level']}",
-            f"# verification_candidate_count {state['verification_candidate_count']}",
             f"# completed {len(rows)}/{len(roots)}",
             *rows,
             "",
@@ -352,7 +290,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v5",
+        "schema": "ggs_root_teacher_manifest_v6",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
@@ -370,7 +308,6 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "method": state["method"],
         "teacher_level": state["teacher_level"],
         "verify_level": state["verify_level"],
-        "verification_candidate_count": state["verification_candidate_count"],
         "results": {board: results[board] for board in sorted(results)},
     }
     _atomic_write_text(
@@ -464,33 +401,20 @@ def generate_teachers(
                 )
                 result["primary"] = primary
             verification = search_root_at_level(exe, board, verify_level, threads, hash_level)
-            verification_candidates = [verification]
-            verification_top_moves = [str(verification["move"])]
-            verification_mode = "top1_exact"
+            verification_mode = f"level_{verify_level}_exact"
             if str(result["move"]) != str(verification["move"]):
-                verification_candidates = search_root_candidates_at_level(
-                    exe, board, verify_level, threads, hash_level,
-                    VERIFICATION_CANDIDATE_COUNT,
+                tiebreak = search_root_at_level(
+                    exe, board, fallback_level, threads, hash_level
                 )
-                verification = verification_candidates[0]
-                best_verification_score = max(
-                    int(row["score"]) for row in verification_candidates
-                )
-                verification_top_moves = sorted(
-                    str(row["move"])
-                    for row in verification_candidates
-                    if int(row["score"]) == best_verification_score
-                )
-                verification_mode = "top_candidates_tie_check"
-                if str(result["move"]) not in verification_top_moves:
+                validate_quality(tiebreak, min_depth, min_selectivity)
+                if str(result["move"]) != str(tiebreak["move"]):
                     raise ValueError(
-                        f"teacher move {result['move']} is not tied for best at level-{verify_level}: "
-                        f"top moves {','.join(verification_top_moves)} score "
-                        f"{best_verification_score}"
+                        f"teacher move {result['move']} does not match level-{fallback_level} "
+                        f"tiebreak {tiebreak['move']}"
                     )
+                result["tiebreak"] = tiebreak
+                verification_mode = f"level_{fallback_level}_tiebreak"
             result["verification"] = verification
-            result["verification_candidates"] = verification_candidates
-            result["verification_top_moves"] = verification_top_moves
             result["verification_mode"] = verification_mode
         state["results"][board] = result
         _write_outputs(output, state)
