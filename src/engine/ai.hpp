@@ -134,7 +134,9 @@ constexpr int AI_TL_GGS_MATCH_REVALIDATE_BOUNDARY_PRECHECK_MARGIN = 4;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_SCREENING_MIN_DEPTH = 18;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_MIN_DECISION_DEPTH = 20;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_DEPTH_BACKOFF = 8;
-constexpr int AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN = 1;
+// The bounded 88/93% revalidation can be noisy at a one-disc separation.
+// Require two discs before it replaces the main iterative-deepening result.
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN = 2;
 #endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
@@ -186,6 +188,16 @@ inline int ai_tl_ggs_match_outcome(int value) {
 inline bool ai_tl_ggs_crosses_match_boundary(int pair_value, int current_value, int alternative_value) {
     return ai_tl_ggs_match_outcome(pair_value + current_value) !=
            ai_tl_ggs_match_outcome(pair_value + alternative_value);
+}
+
+inline bool ai_tl_ggs_match_revalidation_should_switch(
+    int pair_value,
+    int current_value,
+    int alternative_value
+) {
+    return
+        alternative_value >= current_value + AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN &&
+        ai_tl_ggs_crosses_match_boundary(pair_value, current_value, alternative_value);
 }
 
 inline bool ai_tl_ggs_match_boundary_precheck(int pair_value, int current_value) {
@@ -3479,8 +3491,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         search_result.nps = calc_nps(search_result.nodes, search_result.time);
         if (
             revalidated.complete &&
-            revalidated.alternative_value >= revalidated.current_value + AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN &&
-            ai_tl_ggs_crosses_match_boundary(
+            ai_tl_ggs_match_revalidation_should_switch(
                 iteration_diagnostics.pair_value,
                 revalidated.current_value,
                 revalidated.alternative_value
