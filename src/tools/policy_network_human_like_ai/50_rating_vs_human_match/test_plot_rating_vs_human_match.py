@@ -52,17 +52,80 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         self.assertTrue(all(errorbar.has_yerr for errorbar in errorbars))
         plt.close(figure)
 
-    def test_ratings_are_reestimated_without_random_player(self) -> None:
+    def test_ratings_match_50_set_results(self) -> None:
         loaded_results = read_results(DEFAULT_INPUT)
         results = {result.label: result for result in loaded_results}
 
-        self.assertAlmostEqual(2472.958308, results["alpha=0.0"].rating)
-        self.assertAlmostEqual(78.640396, results["alpha=0.0"].rating_ci_half_width)
-        self.assertAlmostEqual(-274.883451, results["alpha=1.0"].rating)
-        self.assertAlmostEqual(320.277306, results["alpha=1.0"].rating_ci_half_width)
+        self.assertAlmostEqual(
+            2238.9648171704375,
+            results["alpha=0.0"].rating,
+        )
+        self.assertAlmostEqual(
+            2179.368198724032,
+            results["alpha=0.0"].rating_ci_lower,
+        )
+        self.assertAlmostEqual(
+            2294.994042320917,
+            results["alpha=0.0"].rating_ci_upper,
+        )
+        self.assertAlmostEqual(
+            386.58207142362244,
+            results["alpha=1.0"].rating,
+        )
+        self.assertAlmostEqual(
+            326.05871764385046,
+            results["alpha=1.0"].rating_ci_lower,
+        )
+        self.assertAlmostEqual(
+            453.2212892796188,
+            results["alpha=1.0"].rating_ci_upper,
+        )
         self.assertAlmostEqual(
             1500.0,
             sum(result.rating for result in loaded_results) / len(loaded_results),
+        )
+
+    def test_human_match_values_match_30000_position_results(self) -> None:
+        results = {
+            result.label: result
+            for result in read_results(DEFAULT_INPUT)
+        }
+        expected_top1 = {
+            "level 1": 53.27,
+            "level 3": 59.45333333333334,
+            "level 5": 61.36333333333334,
+            "level 7": 62.35,
+            "level 9": 62.78333333333334,
+            "level 11": 63.31,
+            "level 13": 62.96333333333334,
+            "level 15": 62.94333333333333,
+            "level 17": 62.92,
+            "level 19": 62.74,
+            "alpha=0.0": 63.39333333333333,
+            "alpha=0.2": 64.22,
+            "alpha=0.4": 64.56333333333333,
+            "alpha=0.6": 65.14666666666666,
+            "alpha=0.8": 64.17333333333334,
+            "alpha=1.0": 57.14666666666667,
+        }
+
+        for label, expected in expected_top1.items():
+            self.assertAlmostEqual(expected, results[label].top1)
+        self.assertAlmostEqual(
+            52.70503574571409,
+            results["level 1"].top1_ci_lower,
+        )
+        self.assertAlmostEqual(
+            53.83412692348205,
+            results["level 1"].top1_ci_upper,
+        )
+        self.assertAlmostEqual(
+            64.60555118634693,
+            results["alpha=0.6"].top1_ci_lower,
+        )
+        self.assertAlmostEqual(
+            65.68390362387456,
+            results["alpha=0.6"].top1_ci_upper,
         )
 
     def test_requested_series_colors(self) -> None:
@@ -127,11 +190,12 @@ class RatingHumanMatchPlotTest(unittest.TestCase):
         results = read_results(DEFAULT_INPUT)
         valid_labels = {result.label for result in results}
         positions = load_label_positions(DEFAULT_LABEL_POSITIONS, valid_labels)
+        positions["level 1"] = LabelPosition(12.0, 0.0, "left", "center")
+        positions["level 17"] = LabelPosition(36.0, 0.0, "left", "center")
         figure, annotations = create_plot(results, positions)
 
         self.assertFalse(annotations["level 1"].arrow_patch.get_visible())
         self.assertTrue(annotations["level 17"].arrow_patch.get_visible())
-        self.assertTrue(annotations["level 19"].arrow_patch.get_visible())
         self.assertGreater(
             abs(positions["level 17"].dx),
             LEADER_LINE_THRESHOLD_POINTS,

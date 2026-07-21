@@ -39,7 +39,8 @@ class Result:
     series: str
     label: str
     rating: float
-    rating_ci_half_width: float
+    rating_ci_lower: float
+    rating_ci_upper: float
     top1: float
     top1_ci_lower: float
     top1_ci_upper: float
@@ -118,9 +119,8 @@ def read_results(path: Path) -> list[Result]:
                 series=row["系列"],
                 label=row["ラベル"],
                 rating=float(row["推定Elo"]),
-                rating_ci_half_width=float(
-                    row["推定Eloの95%信頼区間半幅"]
-                ),
+                rating_ci_lower=float(row["推定Eloの95%信頼区間下限"]),
+                rating_ci_upper=float(row["推定Eloの95%信頼区間上限"]),
                 top1=float(row["1位着手一致率"]),
                 top1_ci_lower=float(
                     row["1位着手一致率の95%信頼区間下限"]
@@ -131,9 +131,9 @@ def read_results(path: Path) -> list[Result]:
             )
             if result.series not in SERIES_STYLES:
                 raise ValueError(f"未知の系列です: {result.series}")
-            if result.rating_ci_half_width < 0.0:
+            if not result.rating_ci_lower <= result.rating <= result.rating_ci_upper:
                 raise ValueError(
-                    f"{result.label}のElo信頼区間半幅が負です"
+                    f"{result.label}のElo推定値が信頼区間外です"
                 )
             if not result.top1_ci_lower <= result.top1 <= result.top1_ci_upper:
                 raise ValueError(
@@ -213,7 +213,7 @@ def label_candidates() -> list[tuple[float, float]]:
         (12.0, -12.0),
         (-12.0, -12.0),
     ]
-    for distance in (20.0, 28.0, 38.0, 52.0, 70.0):
+    for distance in (20.0, 28.0, 38.0, 52.0, 70.0, 90.0, 115.0, 140.0):
         candidates.extend(
             [
                 (distance, 0.0),
@@ -443,7 +443,16 @@ def create_plot(
             ratings,
             top1_values,
             xerr=np.array(
-                [result.rating_ci_half_width for result in group],
+                [
+                    [
+                        result.rating - result.rating_ci_lower
+                        for result in group
+                    ],
+                    [
+                        result.rating_ci_upper - result.rating
+                        for result in group
+                    ],
+                ],
                 dtype=float,
             ),
             yerr=np.array(
@@ -492,25 +501,19 @@ def create_plot(
         weight="bold",
     )
     axis.set_ylabel(
-        "人間との1位着手一致率 (%)",
+        "人間の着手とのtop-1一致率(%)",
         fontsize=AXIS_LABEL_FONT_SIZE,
         labelpad=12,
         weight="bold",
     )
 
-    rating_lower = min(
-        result.rating - result.rating_ci_half_width
-        for result in results
-    )
-    rating_upper = max(
-        result.rating + result.rating_ci_half_width
-        for result in results
-    )
+    rating_lower = min(result.rating_ci_lower for result in results)
+    rating_upper = max(result.rating_ci_upper for result in results)
     rating_padding = max(100.0, (rating_upper - rating_lower) * 0.03)
     x_min = np.floor((rating_lower - rating_padding) / 250.0) * 250.0
     x_max = np.ceil((rating_upper + rating_padding) / 250.0) * 250.0
     axis.set_xlim(x_min, x_max)
-    axis.set_ylim(49.5, 66.5)
+    axis.set_ylim(49.5, 67.0)
     tick_min = np.ceil(x_min / 500.0) * 500.0
     tick_max = np.floor(x_max / 500.0) * 500.0
     axis.set_xticks(np.arange(tick_min, tick_max + 1.0, 500.0))
