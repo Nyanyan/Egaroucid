@@ -679,14 +679,14 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "nodes": 1,
                 "nps": 1,
             }
-            with mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=result) as search:
+            with mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=result) as search:
                 self.assertEqual(
                     {"completed": 1, "requested": 1},
                     generate_ggs_root_teacher.generate_teachers(
                         coverage, exe, output, 60.0, 28, 29
                     ),
                 )
-                search.assert_called_once_with(exe, GGS_ROOT, 60.0, 28, 29)
+                search.assert_called_once_with(exe, GGS_ROOT, 33, 28, 29)
             self.assertIn(f"{GGS_ROOT} -15 f5:-15", output.read_text(encoding="utf-8"))
             with mock.patch.object(generate_ggs_root_teacher, "search_root") as search:
                 self.assertEqual(
@@ -724,7 +724,8 @@ class GgsRootTeacherTests(unittest.TestCase):
                 mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=fallback) as level_search,
             ):
                 generate_ggs_root_teacher.generate_teachers(
-                    coverage, exe, output, 60.0, 28, 29, fallback_level=33
+                    coverage, exe, output, 60.0, 28, 29, fallback_level=33,
+                    method="time_then_hint",
                 )
             level_search.assert_called_once_with(exe, GGS_ROOT, 33, 28, 29)
             manifest = json.loads(

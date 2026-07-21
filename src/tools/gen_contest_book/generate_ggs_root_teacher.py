@@ -207,6 +207,8 @@ def _new_state(
     min_depth: int,
     min_selectivity: int,
     fallback_level: int,
+    method: str,
+    teacher_level: int,
 ) -> dict[str, Any]:
     return {
         "schema": TEACHER_SCHEMA,
@@ -224,6 +226,8 @@ def _new_state(
         "min_depth": min_depth,
         "min_selectivity": min_selectivity,
         "fallback_level": fallback_level,
+        "method": method,
+        "teacher_level": teacher_level,
         "roots": roots,
         "results": {},
     }
@@ -239,7 +243,7 @@ def _load_state(
         raise ValueError(f"cannot resume teacher state {path}: {error}") from error
     for key in (
         "schema", "coverage", "engine", "time_seconds", "threads", "hash_level",
-        "min_depth", "min_selectivity", "fallback_level", "roots",
+        "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -269,6 +273,8 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# min_depth {state['min_depth']}",
             f"# min_selectivity {state['min_selectivity']}",
             f"# fallback_level {state['fallback_level']}",
+            f"# method {state['method']}",
+            f"# teacher_level {state['teacher_level']}",
             f"# completed {len(rows)}/{len(roots)}",
             *rows,
             "",
@@ -295,6 +301,8 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "min_depth": state["min_depth"],
         "min_selectivity": state["min_selectivity"],
         "fallback_level": state["fallback_level"],
+        "method": state["method"],
+        "teacher_level": state["teacher_level"],
         "results": {board: results[board] for board in sorted(results)},
     }
     _atomic_write_text(
@@ -313,6 +321,8 @@ def generate_teachers(
     min_depth: int = 33,
     min_selectivity: int = 74,
     fallback_level: int = 33,
+    method: str = "hint",
+    teacher_level: int = 33,
     resume: bool = False,
     limit: int | None = None,
 ) -> dict[str, int]:
@@ -322,12 +332,16 @@ def generate_teachers(
         raise ValueError("limit must be positive")
     if fallback_level < 0:
         raise ValueError("fallback_level must not be negative")
+    if method not in {"hint", "time_then_hint"}:
+        raise ValueError("method must be hint or time_then_hint")
+    if teacher_level < 1:
+        raise ValueError("teacher_level must be positive")
     roots = load_uncovered_roots(coverage_path)
     if limit is not None:
         roots = roots[:limit]
     expected = _new_state(
         coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
-        fallback_level,
+        fallback_level, method, teacher_level,
     )
     state_path = _state_path(output)
     if resume:
@@ -343,16 +357,21 @@ def generate_teachers(
     for board in roots:
         if board in state["results"]:
             continue
-        result = search_root(exe, board, time_seconds, threads, hash_level)
-        try:
+        if method == "hint":
+            result = search_root_at_level(exe, board, teacher_level, threads, hash_level)
             validate_quality(result, min_depth, min_selectivity)
-            result["method"] = "time"
-        except ValueError:
-            if fallback_level == 0:
-                raise
-            result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
-            validate_quality(result, min_depth, min_selectivity)
-            result["method"] = f"hint_level_{fallback_level}"
+            result["method"] = f"hint_level_{teacher_level}"
+        else:
+            result = search_root(exe, board, time_seconds, threads, hash_level)
+            try:
+                validate_quality(result, min_depth, min_selectivity)
+                result["method"] = "time"
+            except ValueError:
+                if fallback_level == 0:
+                    raise
+                result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
+                validate_quality(result, min_depth, min_selectivity)
+                result["method"] = f"hint_level_{fallback_level}"
         state["results"][board] = result
         _write_outputs(output, state)
         print(f"completed {len(state['results'])}/{len(roots)} {board}", flush=True)
@@ -370,6 +389,8 @@ def main() -> int:
     parser.add_argument("--min-depth", type=int, default=33)
     parser.add_argument("--min-selectivity", type=int, default=74)
     parser.add_argument("--fallback-level", type=int, default=33)
+    parser.add_argument("--method", choices=("hint", "time_then_hint"), default="hint")
+    parser.add_argument("--teacher-level", type=int, default=33)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
@@ -383,6 +404,8 @@ def main() -> int:
         args.min_depth,
         args.min_selectivity,
         args.fallback_level,
+        args.method,
+        args.teacher_level,
         args.resume,
         args.limit,
     )
