@@ -654,6 +654,14 @@ class GgsRootTeacherTests(unittest.TestCase):
         self.assertEqual("f5", result["move"])
         self.assertEqual(-15, result["score"])
 
+    def test_parse_search_results_accepts_distinct_legal_candidates(self) -> None:
+        output = (
+            "|             27|         27@74%|             f5|            -15|  000:00:02.786|      239460993|       85951540|\n"
+            "|             27|         27@74%|             b4|            -16|  000:00:01.000|      139460993|       85951540|\n"
+        )
+        result = generate_ggs_root_teacher.parse_search_results(output, GGS_ROOT)
+        self.assertEqual(["f5", "b4"], [row["move"] for row in result])
+
     def test_rejects_teacher_below_minimum_depth(self) -> None:
         with self.assertRaisesRegex(ValueError, "below 33@74%"):
             generate_ggs_root_teacher.validate_quality(
@@ -753,7 +761,11 @@ class GgsRootTeacherTests(unittest.TestCase):
             }
             with (
                 mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
-                mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=verification),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_candidates_at_level",
+                    return_value=[verification],
+                ),
             ):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, output, 60.0, 28, 29, min_depth=30,
@@ -765,6 +777,11 @@ class GgsRootTeacherTests(unittest.TestCase):
             saved = manifest["results"][GGS_ROOT]
             self.assertEqual("time_verified_hint_level_27", saved["method"])
             self.assertEqual("f5", saved["verification"]["move"])
+            self.assertEqual(["f5"], saved["verification_top_moves"])
+            self.assertEqual(
+                generate_ggs_root_teacher.VERIFICATION_CANDIDATE_COUNT,
+                manifest["verification_candidate_count"],
+            )
 
     def test_time_teacher_retries_shallow_time_search_at_quality_level(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -793,19 +810,25 @@ class GgsRootTeacherTests(unittest.TestCase):
                 mock.patch.object(
                     generate_ggs_root_teacher,
                     "search_root_at_level",
-                    side_effect=[fallback, verification],
+                    return_value=fallback,
                 ) as level_search,
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_candidates_at_level",
+                    return_value=[verification],
+                ) as verification_search,
             ):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, output, 60.0, 28, 29, min_depth=30,
                     fallback_level=30, method="time_then_verify", verify_level=27,
                 )
             self.assertEqual(
-                [
-                    mock.call(exe, GGS_ROOT, 30, 28, 29),
-                    mock.call(exe, GGS_ROOT, 27, 28, 29),
-                ],
+                [mock.call(exe, GGS_ROOT, 30, 28, 29)],
                 level_search.call_args_list,
+            )
+            verification_search.assert_called_once_with(
+                exe, GGS_ROOT, 27, 28, 29,
+                generate_ggs_root_teacher.VERIFICATION_CANDIDATE_COUNT,
             )
             manifest = json.loads(
                 output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
@@ -816,6 +839,45 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             self.assertEqual("28@74%", saved["primary"]["depth"])
             self.assertEqual("f5", saved["verification"]["move"])
+
+    def test_time_teacher_accepts_different_tied_best_verification_move(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            primary = {
+                "move": "b4", "score": -15, "level": "-", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            first_tied = {
+                "move": "f5", "score": -15, "level": "27", "depth": "27@74%",
+                "time": "000:00:02.000", "nodes": 2, "nps": 1,
+            }
+            teacher_tied = {
+                "move": "b4", "score": -15, "level": "27", "depth": "27@74%",
+                "time": "000:00:01.000", "nodes": 3, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_candidates_at_level",
+                    return_value=[first_tied, teacher_tied],
+                ),
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29, min_depth=30,
+                    method="time_then_verify", verify_level=27,
+                )
+            manifest = json.loads(
+                (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
+            )
+            saved = manifest["results"][GGS_ROOT]
+            self.assertEqual(["b4", "f5"], saved["verification_top_moves"])
 
     def test_time_teacher_rejects_quality_fallback_below_minimum_depth(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -852,8 +914,12 @@ class GgsRootTeacherTests(unittest.TestCase):
             }
             with (
                 mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
-                mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=mismatch),
-                self.assertRaisesRegex(ValueError, "disagrees with level-27 hint"),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_candidates_at_level",
+                    return_value=[mismatch],
+                ),
+                self.assertRaisesRegex(ValueError, "not tied for best at level-27"),
             ):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29, min_depth=30,
