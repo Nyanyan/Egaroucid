@@ -11,6 +11,8 @@ The images show values on every legal move for:
 
 Policy values are rendered with exactly three digits after the decimal point.
 Raw Egaroucid evaluation values are rendered as integers.
+Every image except the raw evaluation uses a white-to-orange heatmap on legal
+move cells, with RGB(255, 75, 0) representing the largest value in that image.
 """
 
 from __future__ import annotations
@@ -30,6 +32,7 @@ BOARD = "------------------XO-O----XXOO-----XOX-----OOX------O-----------"
 BOARD_WIDTH = 8
 SUPERSAMPLE = 2
 BLEND_ALPHAS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
+HEATMAP_BASE_COLOR = (255, 75, 0)
 
 
 # These are the legal-masked values printed by board_demo.py for the default
@@ -99,6 +102,7 @@ class ImageSpec:
     filename: str
     values: Dict[str, float]
     value_format: str = ".3f"
+    heatmap: bool = True
 
 
 def geometric_blend_values(alpha: float) -> Dict[str, float]:
@@ -132,6 +136,7 @@ BASE_IMAGE_SPECS = (
         "02_egaroucid_raw_evaluation.png",
         EGAROUCID_RAW_VALUES,
         value_format=".0f",
+        heatmap=False,
     ),
     ImageSpec("03_egaroucid_policy.png", EGAROUCID_POLICY_VALUES),
 )
@@ -220,6 +225,17 @@ def draw_centered_text(
     draw.text((x, y), text, font=font, fill="black")
 
 
+def heatmap_color(value: float, maximum_value: float) -> Tuple[int, int, int]:
+    """Linearly blend white into the configured orange heatmap color."""
+    if value < 0.0:
+        raise ValueError("heatmap values must not be negative")
+    intensity = 0.0 if maximum_value <= 0.0 else min(1.0, value / maximum_value)
+    return tuple(
+        round(255 + (channel - 255) * intensity)
+        for channel in HEATMAP_BASE_COLOR
+    )
+
+
 def render_image(
     spec: ImageSpec,
     output_path: Path,
@@ -252,6 +268,19 @@ def render_image(
         outline="black",
         width=outer_line_width,
     )
+    if spec.heatmap:
+        maximum_value = max(spec.values.values(), default=0.0)
+        for coord, value in spec.values.items():
+            x, y = coord_to_xy(coord)
+            draw.rectangle(
+                (
+                    board_left + x * cell_size,
+                    board_top + y * cell_size,
+                    board_left + (x + 1) * cell_size,
+                    board_top + (y + 1) * cell_size,
+                ),
+                fill=heatmap_color(value, maximum_value),
+            )
     for line in range(1, BOARD_WIDTH):
         x = board_left + line * cell_size
         y = board_top + line * cell_size
