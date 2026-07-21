@@ -709,6 +709,38 @@ class GgsRootTeacherTests(unittest.TestCase):
                 {"depth": "32@88%"}, 33, 74
             )
 
+    def test_loads_uncovered_roots_from_full_r14_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            coverage = Path(temporary) / "r14_audit.json"
+            coverage.write_text(
+                json.dumps(
+                    {
+                        "schema": audit_r14_corpus.CORPUS_REPORT_SCHEMA,
+                        "root_discs": 14,
+                        "roots": [
+                            {
+                                "canonical_board": GGS_ROOT,
+                                "source_rows": 1,
+                                "deep_book": False,
+                                "root_table": False,
+                            },
+                            {
+                                "canonical_board": GGS_ROOT,
+                                "source_rows": 1,
+                                "deep_book": True,
+                                "root_table": True,
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            self.assertEqual(
+                [GGS_ROOT],
+                generate_ggs_root_teacher.load_uncovered_roots(coverage),
+            )
+
     def test_generates_and_resumes_only_with_identical_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

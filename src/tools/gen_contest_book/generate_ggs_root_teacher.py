@@ -1,9 +1,11 @@
-"""Generate resumable, contest-time root teachers for uncovered GGS starts.
+"""Generate resumable, contest-time root teachers for uncovered r14 starts.
 
-Input is the immutable JSON report produced by ``collect_ggs_roots.py``.
-Every teacher search disables both ordinary and contest books, uses one engine
-process per root, and checkpoints after each completed root.  The output data
-rows are accepted directly by ``build_root_table.py --root-results``.
+Input is an immutable JSON report produced either by ``collect_ggs_roots.py``
+from actual GGS starts or by ``audit_r14_corpus.py`` from the complete standard
+r14 corpus. Every teacher search disables both ordinary and contest books,
+uses one engine process per root, and checkpoints after each completed root.
+The output data rows are accepted directly by ``build_root_table.py
+--root-results``.
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from audit_r14_corpus import CORPUS_REPORT_SCHEMA
 from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
@@ -58,7 +61,7 @@ def load_uncovered_roots(coverage_path: Path) -> list[str]:
         report = json.loads(coverage_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot read coverage report {coverage_path}: {error}") from error
-    if report.get("schema") != REPORT_SCHEMA:
+    if report.get("schema") not in {REPORT_SCHEMA, CORPUS_REPORT_SCHEMA}:
         raise ValueError(f"{coverage_path}: unexpected coverage report schema")
     if report.get("root_discs") != 14:
         raise ValueError(f"{coverage_path}: expected 14-disc roots")
