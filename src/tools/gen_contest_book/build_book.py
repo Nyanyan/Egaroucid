@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import heapq
+import itertools
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -32,9 +34,67 @@ class Record:
 
 @dataclass
 class Node:
+    board_key: str = ""
     leaf_values: list[int] = field(default_factory=list)
     children: dict[int, "Node"] = field(default_factory=dict)
     value: int | None = None
+    _nodes: dict[str, "Node"] | None = field(default=None, repr=False, compare=False)
+
+
+N_SYMMETRIES = 8
+
+
+def transform_index(index: int, symmetry: int) -> int:
+    """Transform a square with one of the eight D4 board symmetries."""
+    if not (0 <= index < N_CELLS):
+        raise ValueError(f"invalid board index {index}")
+    if not (0 <= symmetry < N_SYMMETRIES):
+        raise ValueError(f"invalid symmetry {symmetry}")
+    x = index % 8
+    y = index // 8
+    if symmetry >= 4:
+        x = 7 - x
+    for _ in range(symmetry % 4):
+        x, y = 7 - y, x
+    return y * 8 + x
+
+
+def transform_board_text(board_text: str, symmetry: int) -> str:
+    normalized = normalize_board_text(board_text)
+    transformed = ["-"] * N_CELLS
+    for index, cell in enumerate(normalized[:N_CELLS]):
+        transformed[transform_index(index, symmetry)] = cell
+    return "".join(transformed) + normalized[N_CELLS:]
+
+
+def transform_transcript(transcript: str, symmetry: int) -> str:
+    transcript = transcript.strip().lower()
+    if len(transcript) % 2 != 0:
+        raise ValueError("transcript length must be even")
+    moves: list[str] = []
+    for pos in range(0, len(transcript), 2):
+        move = coord_to_index(transcript[pos:pos + 2])
+        moves.append(index_to_coord(transform_index(move, symmetry)))
+    return "".join(moves)
+
+
+def align_record_to_initial(record: Record, initial_board: str) -> Record | None:
+    """Rotate/reflect a record into the requested start-position orientation."""
+    initial_board = normalize_board_text(initial_board)
+    candidates: list[str] = []
+    for symmetry in range(N_SYMMETRIES):
+        if transform_board_text(record.initial_board, symmetry) != initial_board:
+            continue
+        try:
+            candidates.append(transform_transcript(record.transcript, symmetry))
+        except ValueError:
+            return None
+    if not candidates:
+        return None
+    # A symmetric start can admit several equivalent orientations.  Choosing
+    # one canonical transcript makes ingestion independent of input order.
+    transcript = min(set(candidates))
+    return Record(initial_board, transcript, record.leaf_value, record.leaf_empty)
 
 
 def parse_block_record(block: dict[str, str]) -> Record | None:
@@ -87,21 +147,71 @@ def parse_record_file(path: Path) -> list[Record]:
     return records
 
 
-def add_pass_nodes(node: Node, board: Board) -> Node:
+def node_registry(root: Node) -> dict[str, Node]:
+    if root._nodes is not None:
+        return root._nodes
+    nodes: dict[str, Node] = {}
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if node.board_key:
+            previous = nodes.get(node.board_key)
+            if previous is not None and previous is not node:
+                raise ValueError(f"duplicate Node objects for {node.board_key}")
+            nodes[node.board_key] = node
+        stack.extend(node.children.values())
+    root._nodes = nodes
+    return nodes
+
+
+def get_or_create_node(nodes: dict[str, Node], board: Board) -> Node:
+    key = board.key()
+    node = nodes.get(key)
+    if node is None:
+        node = Node(board_key=key)
+        nodes[key] = node
+    return node
+
+
+def add_pass_nodes(node: Node, board: Board, nodes: dict[str, Node] | None = None) -> Node:
+    if nodes is None:
+        nodes = node_registry(node)
     while not board.legal_moves() and not board.is_end():
-        node = node.children.setdefault(PASS_MOVE, Node())
         board.pass_turn()
+        child = get_or_create_node(nodes, board)
+        existing = node.children.get(PASS_MOVE)
+        if existing is not None and existing is not child:
+            raise ValueError(f"conflicting pass edge from {node.board_key}")
+        node.children[PASS_MOVE] = child
+        node = child
     return node
 
 
 def add_record(root: Node, record: Record) -> bool:
     board = Board.from_text(record.initial_board)
-    node = add_pass_nodes(root, board)
+    if not root.board_key:
+        root.board_key = board.key()
+    if root.board_key != board.key():
+        return False
+    nodes = node_registry(root)
+    nodes[root.board_key] = root
+
+    # Validate the entire record before mutating the DAG.  A malformed record
+    # must not leave a valid-looking prefix behind.
+    edges: list[tuple[str, int, str]] = []
+
+    def append_pass_edges() -> None:
+        while not board.legal_moves() and not board.is_end():
+            parent_key = board.key()
+            board.pass_turn()
+            edges.append((parent_key, PASS_MOVE, board.key()))
+
+    append_pass_edges()
     transcript = record.transcript
     if len(transcript) % 2 != 0:
         return False
     for pos in range(0, len(transcript), 2):
-        node = add_pass_nodes(node, board)
+        append_pass_edges()
         coord = transcript[pos:pos + 2]
         try:
             move = coord_to_index(coord)
@@ -109,10 +219,27 @@ def add_record(root: Node, record: Record) -> bool:
             return False
         if move not in board.legal_moves():
             return False
-        node = node.children.setdefault(move, Node())
+        parent_key = board.key()
         board.play(move)
+        edges.append((parent_key, move, board.key()))
     if record.leaf_empty is not None and N_CELLS - board.n_discs() != record.leaf_empty:
         return False
+
+    for parent_key, move, child_key in edges:
+        parent = nodes.get(parent_key)
+        if parent is None:
+            parent = Node(board_key=parent_key)
+            nodes[parent_key] = parent
+        child = nodes.get(child_key)
+        if child is None:
+            child = Node(board_key=child_key)
+            nodes[child_key] = child
+        existing = parent.children.get(move)
+        if existing is not None and existing is not child:
+            raise ValueError(f"conflicting edge {parent_key} {move}")
+        parent.children[move] = child
+
+    node = nodes[board.key()]
     if record.leaf_value is not None:
         node.leaf_values.append(record.leaf_value)
     elif board.is_end():
@@ -120,56 +247,127 @@ def add_record(root: Node, record: Record) -> bool:
     return True
 
 
-def solve_node(node: Node) -> int | None:
+def expected_moves(node: Node) -> set[int]:
+    if not node.board_key:
+        return set(node.children)
+    board = Board.from_text(node.board_key)
+    legal_moves = set(board.legal_moves())
+    if legal_moves:
+        return legal_moves
+    if not board.is_end():
+        return {PASS_MOVE}
+    return set()
+
+
+def solve_node(
+    node: Node,
+    memo: dict[str, int | None] | None = None,
+    visiting: set[str] | None = None,
+) -> int | None:
+    if memo is None:
+        memo = {}
+    if visiting is None:
+        visiting = set()
+    memo_key = node.board_key or f"node:{id(node)}"
+    if memo_key in memo:
+        node.value = memo[memo_key]
+        return node.value
+    if memo_key in visiting:
+        raise ValueError(f"cycle in contest-book DAG at {memo_key}")
+    visiting.add(memo_key)
+
     move_scores: list[int] = []
+    covered_moves: set[int] = set()
     for move, child in node.children.items():
-        child_value = solve_node(child)
+        child_value = solve_node(child, memo, visiting)
         if child_value is None:
             continue
-        if move == PASS_MOVE:
-            move_scores.append(-child_value)
-        else:
-            move_scores.append(-child_value)
+        move_scores.append(-child_value)
+        covered_moves.add(move)
+
+    leaf_value = None
+    if node.leaf_values:
+        leaf_value = round(sum(node.leaf_values) / len(node.leaf_values))
+    required_moves = expected_moves(node)
+    fully_expanded = bool(required_moves) and required_moves.issubset(covered_moves)
+
     if move_scores:
-        node.value = max(move_scores)
-    elif node.leaf_values:
-        node.value = round(sum(node.leaf_values) / len(node.leaf_values))
+        candidates = move_scores
+        if leaf_value is not None and not fully_expanded:
+            candidates = [*move_scores, leaf_value]
+        node.value = max(candidates)
+    elif leaf_value is not None:
+        node.value = leaf_value
     else:
         node.value = None
+    visiting.remove(memo_key)
+    memo[memo_key] = node.value
     return node.value
 
 
 def collect_book_lines(node: Node, board: Board, loss_sum: int, max_loss: int, cut_empty: int, lines: list[str]) -> None:
-    if node.value is None:
-        return
-    if N_CELLS - board.n_discs() <= cut_empty:
-        return
-    legal_moves = set(board.legal_moves())
-    move_items: list[tuple[int, int, Node, int]] = []
-    for move, child in node.children.items():
-        if move == PASS_MOVE:
-            passed = board.copy()
-            passed.pass_turn()
-            collect_book_lines(child, passed, loss_sum, max_loss, cut_empty, lines)
+    # A transposition may be reachable with different accumulated losses.  A
+    # shortest-path traversal makes the result history-independent and emits
+    # every board key at most once using its least-loss path.
+    counter = itertools.count()
+    queue: list[tuple[int, str, int, Node, Board]] = []
+    root_key = board.key()
+    heapq.heappush(queue, (loss_sum, root_key, next(counter), node, board.copy()))
+    best_loss: dict[str, int] = {root_key: loss_sum}
+    emitted: set[str] = set()
+    processed: set[str] = set()
+
+    while queue:
+        current_loss, board_key, _, current, current_board = heapq.heappop(queue)
+        if current_loss != best_loss.get(board_key) or board_key in processed:
             continue
-        if move not in legal_moves or child.value is None:
+        processed.add(board_key)
+        if current.value is None or N_CELLS - current_board.n_discs() <= cut_empty:
             continue
-        score = -child.value
-        move_loss = node.value - score
-        if loss_sum + move_loss <= max_loss:
-            move_items.append((move, score, child, move_loss))
-    if move_items:
+
+        legal_moves = set(current_board.legal_moves())
+        if not legal_moves and not current_board.is_end():
+            child = current.children.get(PASS_MOVE)
+            if child is not None and child.value is not None:
+                passed = current_board.copy()
+                passed.pass_turn()
+                child_key = passed.key()
+                if current_loss < best_loss.get(child_key, max_loss + 1):
+                    best_loss[child_key] = current_loss
+                    heapq.heappush(queue, (current_loss, child_key, next(counter), child, passed))
+            continue
+
+        move_items: list[tuple[int, int, Node, int]] = []
+        for move in sorted(legal_moves):
+            child = current.children.get(move)
+            if child is None or child.value is None:
+                continue
+            score = -child.value
+            move_loss = current.value - score
+            if current_loss + move_loss <= max_loss:
+                move_items.append((move, score, child, move_loss))
         move_items.sort(key=lambda item: (-item[1], item[0]))
-        move_text = " ".join(f"{index_to_coord(move)}:{score}" for move, score, _, _ in move_items)
-        lines.append(f"{board.key()} {node.value} {move_text}")
-    for move, _, child, move_loss in move_items:
-        child_board = board.copy()
-        child_board.play(move)
-        collect_book_lines(child, child_board, loss_sum + move_loss, max_loss, cut_empty, lines)
+
+        if move_items and board_key not in emitted:
+            move_text = " ".join(f"{index_to_coord(move)}:{score}" for move, score, _, _ in move_items)
+            lines.append(f"{board_key} {current.value} {move_text}")
+            emitted.add(board_key)
+
+        for move, _, child, move_loss in move_items:
+            child_board = current_board.copy()
+            child_board.play(move)
+            child_key = child_board.key()
+            child_loss = current_loss + move_loss
+            if child_loss < best_loss.get(child_key, max_loss + 1):
+                best_loss[child_key] = child_loss
+                heapq.heappush(queue, (child_loss, child_key, next(counter), child, child_board))
 
 
 def load_records(initial_board: str, records_dir: Path, include_game_records: bool) -> tuple[Node, int, int, list[int]]:
-    root = Node()
+    initial_board = normalize_board_text(initial_board)
+    root_board = Board.from_text(initial_board)
+    root = Node(board_key=root_board.key())
+    root._nodes = {root.board_key: root}
     n_seen = 0
     n_used = 0
     explicit_cut_empties: list[int] = []
@@ -179,12 +377,13 @@ def load_records(initial_board: str, records_dir: Path, include_game_records: bo
     for path in paths:
         for record in parse_record_file(path):
             n_seen += 1
-            if record.initial_board != initial_board:
+            aligned_record = align_record_to_initial(record, initial_board)
+            if aligned_record is None:
                 continue
-            if add_record(root, record):
+            if add_record(root, aligned_record):
                 n_used += 1
-                if record.leaf_empty is not None:
-                    explicit_cut_empties.append(record.leaf_empty)
+                if aligned_record.leaf_empty is not None:
+                    explicit_cut_empties.append(aligned_record.leaf_empty)
     return root, n_seen, n_used, explicit_cut_empties
 
 
