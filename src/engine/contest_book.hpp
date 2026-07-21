@@ -21,6 +21,7 @@
 #include "board.hpp"
 #include "common.hpp"
 #include "search.hpp"
+#include "util.hpp"
 
 #define CONTEST_BOOK_EXTENSION ".egcb"
 
@@ -65,15 +66,19 @@ inline std::string contest_book_sanitize_name(std::string name) {
     return res;
 }
 
-inline std::filesystem::path contest_book_path_for_start(const std::string &dir, const std::string &initial_board) {
-    std::filesystem::path root(dir);
-    std::string filename = contest_book_sanitize_name(initial_board) + CONTEST_BOOK_EXTENSION;
+inline std::filesystem::path contest_book_path_for_filename(
+    const std::filesystem::path &root,
+    const std::string &filename,
+    bool *found
+) {
     std::filesystem::path exact_path = root / filename;
     std::error_code ec;
     if (std::filesystem::exists(exact_path, ec)) {
+        *found = true;
         return exact_path;
     }
     if (!std::filesystem::is_directory(root, ec)) {
+        *found = false;
         return exact_path;
     }
     std::string prefixed_suffix = "_" + filename;
@@ -83,10 +88,64 @@ inline std::filesystem::path contest_book_path_for_start(const std::string &dir,
         }
         std::string candidate = entry.path().filename().string();
         if (candidate.size() >= prefixed_suffix.size() && candidate.ends_with(prefixed_suffix)) {
+            *found = true;
             return entry.path();
         }
     }
+    *found = false;
     return exact_path;
+}
+
+inline bool contest_book_representative_start(const std::string &initial_board, std::string *representative_start) {
+    std::string compact = initial_board;
+    compact.erase(std::remove_if(compact.begin(), compact.end(), [](unsigned char c) {
+        return std::isspace(c);
+    }), compact.end());
+    if (compact.size() != HW2 + 1) {
+        return false;
+    }
+    int player_to_move;
+    if (is_black_like_char(compact[HW2])) {
+        player_to_move = BLACK;
+    } else if (is_white_like_char(compact[HW2])) {
+        player_to_move = WHITE;
+    } else {
+        return false;
+    }
+    Board board;
+    if (!board.from_str(initial_board)) {
+        return false;
+    }
+    *representative_start = representative_board(board).to_str(player_to_move);
+    return true;
+}
+
+inline std::filesystem::path contest_book_path_for_start(const std::string &dir, const std::string &initial_board) {
+    std::filesystem::path root(dir);
+    std::string filename = contest_book_sanitize_name(initial_board) + CONTEST_BOOK_EXTENSION;
+    std::filesystem::path exact_path = root / filename;
+    std::error_code ec;
+    if (std::filesystem::exists(exact_path, ec)) {
+        return exact_path;
+    }
+
+    bool found = false;
+    std::string representative_start;
+    if (!contest_book_representative_start(initial_board, &representative_start)) {
+        return contest_book_path_for_filename(root, filename, &found);
+    }
+    std::string representative_filename = contest_book_sanitize_name(representative_start) + CONTEST_BOOK_EXTENSION;
+    if (representative_filename != filename) {
+        std::filesystem::path representative_path = contest_book_path_for_filename(
+            root,
+            representative_filename,
+            &found
+        );
+        if (found) {
+            return representative_path;
+        }
+    }
+    return contest_book_path_for_filename(root, filename, &found);
 }
 
 class Contest_book {
@@ -107,6 +166,8 @@ class Contest_book {
                 return false;
             }
             Board board(board_cells + " " + side);
+            int symmetry_idx;
+            Board representative = representative_board(board, &symmetry_idx);
             Contest_book_entry entry;
             entry.value = value;
 
@@ -124,13 +185,14 @@ class Contest_book {
                     continue;
                 }
                 if (is_valid_policy(policy)) {
+                    policy = convert_coord_to_representative_board(policy, symmetry_idx);
                     entry.moves.emplace_back(policy, score);
                 }
             }
             if (entry.moves.empty()) {
                 return false;
             }
-            entries[board] = entry;
+            entries[representative] = entry;
             return true;
         }
 
@@ -187,11 +249,18 @@ class Contest_book {
             if (!loaded) {
                 return false;
             }
-            auto it = entries.find(board);
+            int symmetry_idx;
+            Board representative = representative_board(board, &symmetry_idx);
+            auto it = entries.find(representative);
             if (it == entries.end()) {
                 return false;
             }
             *entry = it->second;
+            for (Contest_book_move &move: entry->moves) {
+                if (is_valid_policy(move.policy)) {
+                    move.policy = convert_coord_from_representative_board(move.policy, symmetry_idx);
+                }
+            }
             return true;
         }
 
