@@ -733,6 +733,66 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             self.assertEqual("hint_level_33", manifest["results"][GGS_ROOT]["method"])
 
+    def test_time_teacher_requires_matching_level_27_hint(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            output = root / "teacher_rows.txt"
+            primary = {
+                "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            verification = {
+                "move": "f5", "score": -14, "level": "27", "depth": "27@74%",
+                "time": "000:00:02.000", "nodes": 2, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
+                mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=verification),
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, output, 60.0, 28, 29, min_depth=30,
+                    method="time_then_verify", verify_level=27,
+                )
+            manifest = json.loads(
+                output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
+            )
+            saved = manifest["results"][GGS_ROOT]
+            self.assertEqual("time_verified_hint_level_27", saved["method"])
+            self.assertEqual("f5", saved["verification"]["move"])
+
+    def test_rejects_mismatched_verification_hint(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            primary = {
+                "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            mismatch = {
+                "move": "d3", "score": -15, "level": "27", "depth": "27@74%",
+                "time": "000:00:02.000", "nodes": 2, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
+                mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=mismatch),
+                self.assertRaisesRegex(ValueError, "disagrees with level-27 hint"),
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29, min_depth=30,
+                    method="time_then_verify", verify_level=27,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
