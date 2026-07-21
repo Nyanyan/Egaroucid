@@ -22,9 +22,9 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v3"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v4"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
-VERIFICATION_CANDIDATE_COUNT = 8
+VERIFICATION_CANDIDATE_COUNT = 2
 RESULT_RE = re.compile(
     r"^\|\s*(?P<level>[^|]+)\|\s*(?P<depth>[^|]+)\|\s*"
     r"(?P<move>[a-h][1-8])\|\s*(?P<score>[+-]?\d+)\|\s*"
@@ -352,7 +352,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v3",
+        "schema": "ggs_root_teacher_manifest_v4",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
