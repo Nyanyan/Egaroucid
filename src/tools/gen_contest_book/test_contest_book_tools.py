@@ -761,11 +761,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             }
             with (
                 mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
-                mock.patch.object(
-                    generate_ggs_root_teacher,
-                    "search_root_candidates_at_level",
-                    return_value=[verification],
-                ),
+                mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=verification),
             ):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, output, 60.0, 28, 29, min_depth=30,
@@ -778,6 +774,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual("time_verified_hint_level_27", saved["method"])
             self.assertEqual("f5", saved["verification"]["move"])
             self.assertEqual(["f5"], saved["verification_top_moves"])
+            self.assertEqual("top1_exact", saved["verification_mode"])
             self.assertEqual(
                 generate_ggs_root_teacher.VERIFICATION_CANDIDATE_COUNT,
                 manifest["verification_candidate_count"],
@@ -810,25 +807,19 @@ class GgsRootTeacherTests(unittest.TestCase):
                 mock.patch.object(
                     generate_ggs_root_teacher,
                     "search_root_at_level",
-                    return_value=fallback,
+                    side_effect=[fallback, verification],
                 ) as level_search,
-                mock.patch.object(
-                    generate_ggs_root_teacher,
-                    "search_root_candidates_at_level",
-                    return_value=[verification],
-                ) as verification_search,
             ):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, output, 60.0, 28, 29, min_depth=30,
                     fallback_level=30, method="time_then_verify", verify_level=27,
                 )
             self.assertEqual(
-                [mock.call(exe, GGS_ROOT, 30, 28, 29)],
+                [
+                    mock.call(exe, GGS_ROOT, 30, 28, 29),
+                    mock.call(exe, GGS_ROOT, 27, 28, 29),
+                ],
                 level_search.call_args_list,
-            )
-            verification_search.assert_called_once_with(
-                exe, GGS_ROOT, 27, 28, 29,
-                generate_ggs_root_teacher.VERIFICATION_CANDIDATE_COUNT,
             )
             manifest = json.loads(
                 output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
@@ -865,6 +856,11 @@ class GgsRootTeacherTests(unittest.TestCase):
                 mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
                 mock.patch.object(
                     generate_ggs_root_teacher,
+                    "search_root_at_level",
+                    return_value=first_tied,
+                ),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
                     "search_root_candidates_at_level",
                     return_value=[first_tied, teacher_tied],
                 ),
@@ -878,6 +874,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             saved = manifest["results"][GGS_ROOT]
             self.assertEqual(["b4", "f5"], saved["verification_top_moves"])
+            self.assertEqual("top8_tie_check", saved["verification_mode"])
 
     def test_time_teacher_rejects_quality_fallback_below_minimum_depth(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -914,6 +911,11 @@ class GgsRootTeacherTests(unittest.TestCase):
             }
             with (
                 mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_at_level",
+                    return_value=mismatch,
+                ),
                 mock.patch.object(
                     generate_ggs_root_teacher,
                     "search_root_candidates_at_level",

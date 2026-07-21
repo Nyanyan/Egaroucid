@@ -22,7 +22,7 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v2"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v3"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 VERIFICATION_CANDIDATE_COUNT = 8
 RESULT_RE = re.compile(
@@ -352,7 +352,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v2",
+        "schema": "ggs_root_teacher_manifest_v3",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
@@ -463,24 +463,35 @@ def generate_teachers(
                     f"time_fallback_hint_level_{fallback_level}_verified_hint_level_{verify_level}"
                 )
                 result["primary"] = primary
-            verification_candidates = search_root_candidates_at_level(
-                exe, board, verify_level, threads, hash_level, VERIFICATION_CANDIDATE_COUNT
-            )
-            verification = verification_candidates[0]
-            best_verification_score = max(int(row["score"]) for row in verification_candidates)
-            verification_top_moves = sorted(
-                str(row["move"])
-                for row in verification_candidates
-                if int(row["score"]) == best_verification_score
-            )
-            if str(result["move"]) not in verification_top_moves:
-                raise ValueError(
-                    f"teacher move {result['move']} is not tied for best at level-{verify_level}: "
-                    f"top moves {','.join(verification_top_moves)} score {best_verification_score}"
+            verification = search_root_at_level(exe, board, verify_level, threads, hash_level)
+            verification_candidates = [verification]
+            verification_top_moves = [str(verification["move"])]
+            verification_mode = "top1_exact"
+            if str(result["move"]) != str(verification["move"]):
+                verification_candidates = search_root_candidates_at_level(
+                    exe, board, verify_level, threads, hash_level,
+                    VERIFICATION_CANDIDATE_COUNT,
                 )
+                verification = verification_candidates[0]
+                best_verification_score = max(
+                    int(row["score"]) for row in verification_candidates
+                )
+                verification_top_moves = sorted(
+                    str(row["move"])
+                    for row in verification_candidates
+                    if int(row["score"]) == best_verification_score
+                )
+                verification_mode = "top8_tie_check"
+                if str(result["move"]) not in verification_top_moves:
+                    raise ValueError(
+                        f"teacher move {result['move']} is not tied for best at level-{verify_level}: "
+                        f"top moves {','.join(verification_top_moves)} score "
+                        f"{best_verification_score}"
+                    )
             result["verification"] = verification
             result["verification_candidates"] = verification_candidates
             result["verification_top_moves"] = verification_top_moves
+            result["verification_mode"] = verification_mode
         state["results"][board] = result
         _write_outputs(output, state)
         print(f"completed {len(state['results'])}/{len(roots)} {board}", flush=True)
