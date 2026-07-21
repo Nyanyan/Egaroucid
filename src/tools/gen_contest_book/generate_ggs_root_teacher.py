@@ -346,6 +346,11 @@ def generate_teachers(
         raise ValueError("verify_level must not be negative")
     if method == "time_then_verify" and verify_level < 1:
         raise ValueError("time_then_verify requires a positive verify_level")
+    if method == "time_then_verify" and fallback_level < min_depth:
+        raise ValueError(
+            "time_then_verify requires fallback_level at least min_depth "
+            "so a shallow time search cannot lower teacher quality"
+        )
     roots = load_uncovered_roots(coverage_path)
     if limit is not None:
         roots = roots[:limit]
@@ -384,14 +389,23 @@ def generate_teachers(
                 result["method"] = f"hint_level_{fallback_level}"
         else:
             result = search_root(exe, board, time_seconds, threads, hash_level)
-            validate_quality(result, min_depth, min_selectivity)
+            primary = result
+            try:
+                validate_quality(result, min_depth, min_selectivity)
+                result["method"] = f"time_verified_hint_level_{verify_level}"
+            except ValueError:
+                result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
+                validate_quality(result, min_depth, min_selectivity)
+                result["method"] = (
+                    f"time_fallback_hint_level_{fallback_level}_verified_hint_level_{verify_level}"
+                )
+                result["primary"] = primary
             verification = search_root_at_level(exe, board, verify_level, threads, hash_level)
             if verification["move"] != result["move"]:
                 raise ValueError(
                     f"teacher move {result['move']} disagrees with level-{verify_level} hint "
                     f"{verification['move']}"
                 )
-            result["method"] = f"time_verified_hint_level_{verify_level}"
             result["verification"] = verification
         state["results"][board] = result
         _write_outputs(output, state)

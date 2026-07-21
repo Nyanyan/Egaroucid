@@ -766,6 +766,73 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual("time_verified_hint_level_27", saved["method"])
             self.assertEqual("f5", saved["verification"]["move"])
 
+    def test_time_teacher_retries_shallow_time_search_at_quality_level(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            output = root / "teacher_rows.txt"
+            shallow = {
+                "move": "d3", "score": -15, "level": "-", "depth": "28@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            fallback = {
+                "move": "f5", "score": -14, "level": "30", "depth": "30@74%",
+                "time": "000:00:06.000", "nodes": 2, "nps": 1,
+            }
+            verification = {
+                "move": "f5", "score": -13, "level": "27", "depth": "27@74%",
+                "time": "000:00:02.000", "nodes": 3, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=shallow),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_at_level",
+                    side_effect=[fallback, verification],
+                ) as level_search,
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, output, 60.0, 28, 29, min_depth=30,
+                    fallback_level=30, method="time_then_verify", verify_level=27,
+                )
+            self.assertEqual(
+                [
+                    mock.call(exe, GGS_ROOT, 30, 28, 29),
+                    mock.call(exe, GGS_ROOT, 27, 28, 29),
+                ],
+                level_search.call_args_list,
+            )
+            manifest = json.loads(
+                output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
+            )
+            saved = manifest["results"][GGS_ROOT]
+            self.assertEqual(
+                "time_fallback_hint_level_30_verified_hint_level_27", saved["method"]
+            )
+            self.assertEqual("28@74%", saved["primary"]["depth"])
+            self.assertEqual("f5", saved["verification"]["move"])
+
+    def test_time_teacher_rejects_quality_fallback_below_minimum_depth(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            with self.assertRaisesRegex(ValueError, "fallback_level at least min_depth"):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29,
+                    min_depth=30, fallback_level=29,
+                    method="time_then_verify", verify_level=27,
+                )
+
     def test_rejects_mismatched_verification_hint(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
