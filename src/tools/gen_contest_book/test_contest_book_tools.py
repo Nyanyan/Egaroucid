@@ -21,6 +21,7 @@ import generate_records
 import book_artifact
 import build_root_table
 import collect_ggs_roots
+import generate_ggs_root_teacher
 from build_book import transform_board_text
 from book_artifact import (
     BookBuildSpec,
@@ -35,6 +36,7 @@ from book_artifact import (
 
 
 INITIAL_BOARD = "---------------------------OX------XO--------------------------- X"
+GGS_ROOT = "------------------XXXX----XOOX----OXX-----OXO------------------- X"
 
 
 def write_records(path: Path, transcripts: list[str]) -> None:
@@ -608,6 +610,96 @@ class GgsRootCollectionTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "missing root board"):
                 collect_ggs_roots.parse_ggs_start_roots(path, root_discs=4)
+
+
+class GgsRootTeacherTests(unittest.TestCase):
+    @staticmethod
+    def coverage_report(board: str) -> dict[str, object]:
+        return {
+            "schema": collect_ggs_roots.REPORT_SCHEMA,
+            "root_discs": 14,
+            "roots": [
+                {"canonical_board": board, "deep_book": False, "root_table": False},
+                {"canonical_board": board, "deep_book": True, "root_table": True},
+            ],
+        }
+
+    def test_parses_one_legal_search_result(self) -> None:
+        output = (
+            "|          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|\n"
+            "|             27|         27@74%|             f5|            -15|  000:00:02.786|      239460993|       85951540|\n"
+        )
+        self.assertEqual(
+            {
+                "move": "f5",
+                "score": -15,
+                "level": "27",
+                "depth": "27@74%",
+                "time": "000:00:02.786",
+                "nodes": 239460993,
+                "nps": 85951540,
+            },
+            generate_ggs_root_teacher.parse_search_result(output, GGS_ROOT),
+        )
+
+    def test_search_root_accepts_console_result_on_stderr(self) -> None:
+        table = (
+            "|             27|         27@74%|             f5|            -15|  000:00:02.786|      239460993|       85951540|\n"
+        )
+        completed = SimpleNamespace(returncode=0, stdout="", stderr=table)
+        with mock.patch.object(generate_ggs_root_teacher.subprocess, "run", return_value=completed):
+            result = generate_ggs_root_teacher.search_root(
+                Path("C:/teacher.exe"), GGS_ROOT, 60.0, 28, 29
+            )
+        self.assertEqual("f5", result["move"])
+        self.assertEqual(-15, result["score"])
+
+    def test_rejects_teacher_below_minimum_depth(self) -> None:
+        with self.assertRaisesRegex(ValueError, "below 33@74%"):
+            generate_ggs_root_teacher.validate_quality(
+                {"depth": "32@88%"}, 33, 74
+            )
+
+    def test_generates_and_resumes_only_with_identical_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            output = root / "teacher_rows.txt"
+            result = {
+                "move": "f5",
+                "score": -15,
+                "level": "time",
+                "depth": "33@74%",
+                "time": "000:00:54.500",
+                "nodes": 1,
+                "nps": 1,
+            }
+            with mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=result) as search:
+                self.assertEqual(
+                    {"completed": 1, "requested": 1},
+                    generate_ggs_root_teacher.generate_teachers(
+                        coverage, exe, output, 60.0, 28, 29
+                    ),
+                )
+                search.assert_called_once_with(exe, GGS_ROOT, 60.0, 28, 29)
+            self.assertIn(f"{GGS_ROOT} -15 f5:-15", output.read_text(encoding="utf-8"))
+            with mock.patch.object(generate_ggs_root_teacher, "search_root") as search:
+                self.assertEqual(
+                    {"completed": 1, "requested": 1},
+                    generate_ggs_root_teacher.generate_teachers(
+                        coverage, exe, output, 60.0, 28, 29, resume=True
+                    ),
+                )
+                search.assert_not_called()
+            with self.assertRaisesRegex(ValueError, "resume mismatch for threads"):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, output, 60.0, 27, 29, resume=True
+                )
 
 
 if __name__ == "__main__":
