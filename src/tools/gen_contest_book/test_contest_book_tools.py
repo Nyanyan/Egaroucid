@@ -65,16 +65,48 @@ def valid_book_text(*, records_seen: int = 1, records_used: int = 1) -> str:
     )
 
 
-def write_v11_teacher_manifest(
+def write_teacher_execution_resources(exe: Path) -> None:
+    resources = exe.parent / "resources"
+    resources.mkdir(parents=True, exist_ok=True)
+    (resources / "eval.egev2").write_bytes(b"test evaluation")
+    (resources / "eval_move_ordering_end.egev").write_bytes(b"test move ordering")
+
+
+def write_teacher_executable(exe: Path, content: bytes) -> None:
+    exe.write_bytes(content)
+    write_teacher_execution_resources(exe)
+
+
+def saved_teacher_execution_executable(output: Path) -> Path:
+    state = json.loads(output.with_suffix(output.suffix + ".state.json").read_text(encoding="utf-8"))
+    return Path(
+        state["calculation_provenance"]["execution_environment"]["executable"]["snapshot"]["path"]
+    )
+
+
+def write_v12_teacher_manifest(
     teacher: Path,
     *,
-    engine_sha256: str | None = None,
+    engine: Path | None = None,
     include_match_requirements: bool = False,
 ) -> None:
-    """Create one small, internally consistent v11 teacher artifact for tests."""
-    provenance = generate_ggs_root_teacher._new_calculation_provenance(teacher)
+    """Create one small, internally consistent v12 teacher artifact for tests."""
+    if engine is None:
+        engine = teacher.parent / "teacher.exe"
+        engine.write_bytes(b"test teacher executable")
+    write_teacher_execution_resources(engine)
+    provenance = generate_ggs_root_teacher._new_calculation_provenance(teacher, engine, 29)
     source_snapshot = Path(provenance["teacher_script_snapshot"]["path"])
     source_snapshot.write_bytes(Path(generate_ggs_root_teacher.__file__).read_bytes())
+    environment = provenance["execution_environment"]
+    executable = environment["executable"]
+    generate_ggs_root_teacher._copy_or_verify_saved_file(
+        executable["source"], executable["snapshot"], "test executable"
+    )
+    for resource in environment["resources"]:
+        generate_ggs_root_teacher._copy_or_verify_saved_file(
+            resource["source"], resource["snapshot"], f"test {resource['role']} resource"
+        )
     entry = build_root_table.load_root_rows(teacher, 14)[0]
     manifest: dict[str, object] = {
         "schema": generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA,
@@ -93,8 +125,10 @@ def write_v11_teacher_manifest(
         },
         "rejections": {},
     }
-    if engine_sha256 is not None:
-        manifest["engine"] = {"sha256": engine_sha256}
+    manifest["engine"] = {
+        "path": engine.resolve().as_posix(),
+        "sha256": build_root_table.sha256_file(engine),
+    }
     if include_match_requirements:
         manifest.update(
             {
@@ -790,7 +824,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             output = root / "teacher_rows.txt"
             state = generate_ggs_root_teacher._new_state(
                 output,
@@ -832,6 +866,99 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertFalse(output.with_suffix(output.suffix + ".pending.jsonl").exists())
             self.assertIn(f"{GGS_ROOT} -15 f5:-15", output.read_text(encoding="utf-8"))
 
+    def test_rejects_missing_endgame_resource_before_search(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            resources = root / "resources"
+            resources.mkdir()
+            (resources / "eval.egev2").write_bytes(b"test evaluation")
+            # The endgame move-ordering file is fixed relative to Console and
+            # must therefore be present before a teacher search begins.
+            with mock.patch.object(generate_ggs_root_teacher, "search_root_at_level") as search:
+                with self.assertRaisesRegex(FileNotFoundError, "endgame_move_ordering resource"):
+                    generate_ggs_root_teacher.generate_teachers(
+                        coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29
+                    )
+            search.assert_not_called()
+
+    def test_compact_only_repairs_manifest_without_pending_updates(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            write_teacher_executable(exe, b"test teacher")
+            output = root / "teacher_rows.txt"
+            state = generate_ggs_root_teacher._new_state(
+                output, coverage, exe, [GGS_ROOT], 60.0, 28, 29, 33, 74, 33,
+                "hint", 33, 0, None, [],
+            )
+            generate_ggs_root_teacher._write_outputs(output, state)
+            manifest_path = output.with_suffix(output.suffix + ".manifest.json")
+            manifest_path.write_text("{broken", encoding="utf-8", newline="\n")
+            result = generate_ggs_root_teacher.generate_teachers(
+                coverage, exe, output, 60.0, 28, 29, resume=True, compact_only=True
+            )
+            self.assertEqual({"completed": 0, "requested": 1}, result)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(build_root_table.sha256_file(output), manifest["output"]["sha256"])
+
+    def test_resume_rejects_changed_saved_execution_input_before_search(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            write_teacher_executable(exe, b"test teacher")
+            output = root / "teacher_rows.txt"
+            state = generate_ggs_root_teacher._new_state(
+                output, coverage, exe, [GGS_ROOT], 60.0, 28, 29, 33, 74, 33,
+                "hint", 33, 0, None, [],
+            )
+            generate_ggs_root_teacher._write_outputs(output, state)
+            saved_evaluation = Path(
+                state["calculation_provenance"]["execution_environment"]["resources"][0]["snapshot"]["path"]
+            )
+            saved_evaluation.write_bytes(b"changed")
+            with mock.patch.object(generate_ggs_root_teacher, "search_root_at_level") as search:
+                with self.assertRaisesRegex(ValueError, "saved evaluation resource"):
+                    generate_ggs_root_teacher.generate_teachers(
+                        coverage, exe, output, 60.0, 28, 29, resume=True
+                    )
+            search.assert_not_called()
+
+    def test_execution_environment_cannot_write_outside_its_content_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            write_teacher_executable(exe, b"test teacher")
+            output = root / "teacher_rows.txt"
+            state = generate_ggs_root_teacher._new_state(
+                output, coverage, exe, [GGS_ROOT], 60.0, 28, 29, 33, 74, 33,
+                "hint", 33, 0, None, [],
+            )
+            outside = root / "must_not_be_created.exe"
+            state["calculation_provenance"]["execution_environment"]["executable"][
+                "snapshot"
+            ]["path"] = outside.resolve().as_posix()
+            with self.assertRaisesRegex(ValueError, "unexpected saved executable path"):
+                generate_ggs_root_teacher._ensure_execution_environment(output, state)
+            self.assertFalse(outside.exists())
+
     def test_prepares_match_input_from_all_compacted_accepted_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -842,7 +969,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 encoding="utf-8",
                 newline="\n",
             )
-            write_v11_teacher_manifest(teacher)
+            write_v12_teacher_manifest(teacher)
             destination = root / "prepared"
             result = prepare_root_table_match.prepare_match_input(
                 teacher, destination, minimum_processed=1, minimum_accepted=1
@@ -863,7 +990,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             prepared = json.loads(
                 (destination / "prepared_match_input.json").read_text(encoding="utf-8")
             )
-            self.assertEqual("prepared_root_table_match_input_v3", prepared["schema"])
+            self.assertEqual("prepared_root_table_match_input_v4", prepared["schema"])
             self.assertEqual(
                 build_root_table.sha256_file(destination / "teacher_manifest.json"),
                 prepared["teacher_manifest"]["sha256"],
@@ -872,6 +999,10 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual(
                 build_root_table.sha256_file(destination / "teacher_calculation_script.py"),
                 prepared["teacher_script_snapshot"]["sha256"],
+            )
+            self.assertEqual(
+                {"executable", "evaluation", "endgame_move_ordering"},
+                {entry["role"] for entry in prepared["teacher_execution_environment"]["files"]},
             )
             report = (destination / "README.md").read_text(encoding="utf-8")
             self.assertIn("受理局面", report)
@@ -925,8 +1056,6 @@ class GgsRootTeacherTests(unittest.TestCase):
             engine = root / "engine.exe"
             engine.write_bytes(b"same binary for both sides")
             binary_sha256 = build_root_table.sha256_file(engine)
-            evaluation = root / "eval.egev2"
-            evaluation.write_bytes(b"evaluation")
             harness = root / "run_root_table_matches.py"
             harness.write_text("# fixed runner\n", encoding="utf-8", newline="\n")
             teacher = root / "teacher_rows.txt"
@@ -936,11 +1065,13 @@ class GgsRootTeacherTests(unittest.TestCase):
                 encoding="utf-8",
                 newline="\n",
             )
-            write_v11_teacher_manifest(
+            write_v12_teacher_manifest(
                 teacher,
-                engine_sha256=binary_sha256,
+                engine=engine,
                 include_match_requirements=True,
             )
+            evaluation = engine.parent / "resources" / "eval.egev2"
+            endgame_move_ordering = engine.parent / "resources" / "eval_move_ordering_end.egev"
             prepared_dir = root / "prepared"
             prepare_root_table_match.prepare_match_input(
                 teacher,
@@ -1097,6 +1228,10 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "evaluation": {
                         "path": evaluation.resolve().as_posix(),
                         "sha256": build_root_table.sha256_file(evaluation),
+                    },
+                    "endgame_move_ordering": {
+                        "path": endgame_move_ordering.resolve().as_posix(),
+                        "sha256": build_root_table.sha256_file(endgame_move_ordering),
                     },
                 },
                 "engine_commands": {
@@ -1563,6 +1698,32 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
         self.assertEqual("f5", result["move"])
         self.assertEqual(-15, result["score"])
+        self.assertEqual(
+            generate_ggs_root_teacher._build_search_command(
+                "time_limited_search", Path("C:/teacher.exe"), time_seconds=60.0, threads=28, hash_level=29
+            ),
+            search.call_args.args[0],
+        )
+        self.assertIn("-nobook", search.call_args.args[0])
+        self.assertIn("-nocontestbook", search.call_args.args[0])
+
+    def test_fixed_level_search_uses_the_recorded_command_builder(self) -> None:
+        table = (
+            "|             31|         31@74%|             f5|            -15|  000:00:02.786|      239460993|       85951540|\n"
+        )
+        completed = SimpleNamespace(returncode=0, stdout=table, stderr="")
+        with mock.patch.object(
+            generate_ggs_root_teacher.subprocess, "run", return_value=completed
+        ) as search:
+            generate_ggs_root_teacher.search_root_at_level(
+                Path("C:/teacher.exe"), GGS_ROOT, 31, 28, 29
+            )
+        self.assertEqual(
+            generate_ggs_root_teacher._build_search_command(
+                "fixed_level_search", Path("C:/teacher.exe"), level=31, threads=28, hash_level=29
+            ),
+            search.call_args.args[0],
+        )
         self.assertIn("-nobook", search.call_args.args[0])
         self.assertIn("-nocontestbook", search.call_args.args[0])
 
@@ -1640,7 +1801,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(canonical_root)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             with self.assertRaisesRegex(ValueError, "no uncovered 14-disc roots remain after exclusions"):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage,
@@ -1660,7 +1821,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             output = root / "teacher_rows.txt"
             expected = generate_ggs_root_teacher._new_state(
                 output,
@@ -1710,7 +1871,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             output = root / "teacher_rows.txt"
             state = generate_ggs_root_teacher._new_state(
                 output,
@@ -1763,7 +1924,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             output = root / "teacher_rows.txt"
             result = {
                 "move": "f5",
@@ -1781,7 +1942,9 @@ class GgsRootTeacherTests(unittest.TestCase):
                         coverage, exe, output, 60.0, 28, 29
                     ),
                 )
-                search.assert_called_once_with(exe, GGS_ROOT, 33, 28, 29)
+                search.assert_called_once_with(
+                    saved_teacher_execution_executable(output), GGS_ROOT, 33, 28, 29
+                )
             teacher_text = output.read_text(encoding="utf-8")
             self.assertIn(f"{GGS_ROOT} -15 f5:-15", teacher_text)
             self.assertIn("# ordinary_book_disabled true", teacher_text)
@@ -1838,7 +2001,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             output = root / "teacher_rows.txt"
             shallow = {
                 "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
@@ -1856,7 +2019,9 @@ class GgsRootTeacherTests(unittest.TestCase):
                     coverage, exe, output, 60.0, 28, 29, fallback_level=33,
                     method="time_then_hint",
                 )
-            level_search.assert_called_once_with(exe, GGS_ROOT, 33, 28, 29)
+            level_search.assert_called_once_with(
+                saved_teacher_execution_executable(output), GGS_ROOT, 33, 28, 29
+            )
             manifest = json.loads(
                 output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
             )
@@ -1870,7 +2035,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             teacher = {
                 "move": "f5", "score": -15, "level": "30", "depth": "30@74%",
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
@@ -1902,8 +2067,8 @@ class GgsRootTeacherTests(unittest.TestCase):
             time_search.assert_not_called()
             self.assertEqual(
                 [
-                    mock.call(exe, GGS_ROOT, 30, 28, 29),
-                    mock.call(exe, GGS_ROOT, 31, 28, 29),
+                    mock.call(saved_teacher_execution_executable(root / "teacher_rows.txt"), GGS_ROOT, 30, 28, 29),
+                    mock.call(saved_teacher_execution_executable(root / "teacher_rows.txt"), GGS_ROOT, 31, 28, 29),
                 ],
                 level_search.call_args_list,
             )
@@ -1922,7 +2087,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             teacher = {
                 "move": "f5", "score": -15, "level": "30", "depth": "30@74%",
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
@@ -1971,7 +2136,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             teacher = {
                 "move": "f5", "score": -15, "level": "30", "depth": "30@74%",
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
@@ -2016,7 +2181,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             primary = {
                 "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
@@ -2054,7 +2219,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             output = root / "teacher_rows.txt"
             primary = {
                 "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
@@ -2089,7 +2254,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             output = root / "teacher_rows.txt"
             shallow = {
                 "move": "d3", "score": -15, "level": "-", "depth": "28@74%",
@@ -2117,8 +2282,8 @@ class GgsRootTeacherTests(unittest.TestCase):
                 )
             self.assertEqual(
                 [
-                    mock.call(exe, GGS_ROOT, 30, 28, 29),
-                    mock.call(exe, GGS_ROOT, 27, 28, 29),
+                    mock.call(saved_teacher_execution_executable(output), GGS_ROOT, 30, 28, 29),
+                    mock.call(saved_teacher_execution_executable(output), GGS_ROOT, 27, 28, 29),
                 ],
                 level_search.call_args_list,
             )
@@ -2140,7 +2305,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             primary = {
                 "move": "b4", "score": -15, "level": "-", "depth": "30@74%",
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
@@ -2180,7 +2345,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             primary = {
                 "move": "f5", "score": -12, "level": "-", "depth": "30@74%",
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
@@ -2227,7 +2392,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             with self.assertRaisesRegex(ValueError, "fallback_level at least min_depth"):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29,
@@ -2243,7 +2408,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
             )
             exe = root / "teacher.exe"
-            exe.write_bytes(b"test teacher")
+            write_teacher_executable(exe, b"test teacher")
             primary = {
                 "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,

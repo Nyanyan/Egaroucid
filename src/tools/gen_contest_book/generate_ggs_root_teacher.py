@@ -28,13 +28,18 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v11"
-TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v11"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v12"
+TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v12"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 TEACHER_UPDATE_SCHEMA = "ggs_root_teacher_update_v1"
-CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v1"
+CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v2"
+EXECUTION_ENVIRONMENT_SCHEMA = "ggs_root_teacher_execution_environment_v1"
 DEEP_TIEBREAK_LEVEL = 31
 BOOK_DISABLED_ARGUMENTS = ("-nobook", "-nocontestbook")
+RESOURCE_SPECS = (
+    ("evaluation", Path("eval.egev2")),
+    ("endgame_move_ordering", Path("eval_move_ordering_end.egev")),
+)
 TIME_SEARCH_COMMAND_TEMPLATE = [
     "{executable}",
     "-time",
@@ -106,6 +111,53 @@ def _teacher_script_snapshot_path(output: Path) -> Path:
     return output.with_suffix(output.suffix + ".teacher_script.py")
 
 
+def _calculation_input_cache_directory(output: Path) -> Path:
+    """Return the shared cache for immutable Console inputs for one output directory."""
+    return output.parent / ".teacher_calculation_inputs"
+
+
+def _fingerprint(path: Path, description: str) -> dict[str, int | str]:
+    if not path.is_file():
+        raise FileNotFoundError(f"{description} not found: {path}")
+    return {
+        "path": path.resolve().as_posix(),
+        "sha256": sha256_file(path),
+        "bytes": path.stat().st_size,
+    }
+
+
+def _environment_identifier(
+    executable: dict[str, int | str], resources: list[dict[str, Any]]
+) -> str:
+    payload = {
+        "executable_name": Path(str(executable["path"])).name,
+        "executable_sha256": executable["sha256"],
+        "resources": [
+            {
+                "role": resource["role"],
+                "relative_path": resource["relative_path"],
+                "sha256": resource["source"]["sha256"],
+            }
+            for resource in resources
+        ],
+    }
+    return hashlib.sha256(
+        json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("ascii")
+    ).hexdigest()
+
+
+def _execution_environment_directory(
+    output: Path,
+    executable: dict[str, int | str],
+    resources: list[dict[str, Any]],
+) -> Path:
+    return _calculation_input_cache_directory(output) / f"console-{_environment_identifier(executable, resources)}"
+
+
+def _execution_environment_lock_path(directory: Path) -> Path:
+    return directory.parent / f".{directory.name}.lock"
+
+
 def _book_configuration() -> dict[str, dict[str, bool | str]]:
     """Return the exact book-related command-line contract for teacher searches."""
     return {
@@ -128,23 +180,222 @@ def _standard_input_templates() -> dict[str, str]:
     }
 
 
-def _new_calculation_provenance(output: Path) -> dict[str, Any]:
-    """Freeze how this output disables books and which script produced it."""
+def _search_invocation_contract() -> dict[str, Any]:
+    """Return the one command/input contract used both for execution and evidence."""
+    return {
+        "command_templates": _command_templates(),
+        "standard_input_templates": _standard_input_templates(),
+    }
+
+
+def _build_search_command(
+    search_kind: str,
+    exe: Path,
+    *,
+    time_seconds: float | None = None,
+    level: int | None = None,
+    threads: int,
+    hash_level: int,
+) -> list[str]:
+    """Instantiate the same command template that is saved in provenance."""
+    template = _search_invocation_contract()["command_templates"].get(search_kind)
+    if template is None:
+        raise ValueError(f"unknown search kind {search_kind}")
+    values = {
+        "executable": str(exe),
+        "time_seconds": "" if time_seconds is None else f"{time_seconds:g}",
+        "level": "" if level is None else str(level),
+        "threads": str(threads),
+        "hash_level": str(hash_level),
+    }
+    return [part.format(**values) for part in template]
+
+
+def _validate_fingerprint_metadata(fingerprint: object, label: str) -> dict[str, int | str]:
+    if not isinstance(fingerprint, dict):
+        raise ValueError(f"teacher calculation provenance has no {label} fingerprint")
+    path = fingerprint.get("path")
+    digest = fingerprint.get("sha256")
+    size = fingerprint.get("bytes")
+    if not isinstance(path, str) or not path:
+        raise ValueError(f"teacher calculation provenance has no {label} path")
+    if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+        raise ValueError(f"teacher calculation provenance has an invalid {label} SHA-256")
+    if isinstance(size, bool) or not isinstance(size, int) or size < 0:
+        raise ValueError(f"teacher calculation provenance has an invalid {label} byte count")
+    return {"path": path, "sha256": digest, "bytes": size}
+
+
+def _execution_environment_metadata(
+    provenance: dict[str, Any],
+    output: Path | None = None,
+) -> tuple[
+    Path,
+    dict[str, int | str],
+    dict[str, int | str],
+    list[tuple[str, Path, dict[str, int | str], dict[str, int | str]]],
+]:
+    """Validate paths and fingerprints before copying any saved Console input.
+
+    A resumed state is durable input, not trusted write instructions.  In
+    particular, every source file must keep Console's documented layout and
+    every snapshot path must stay below the cache directory derived from its
+    content fingerprints.
+    """
+    environment = provenance.get("execution_environment")
+    if not isinstance(environment, dict) or environment.get("schema") != EXECUTION_ENVIRONMENT_SCHEMA:
+        raise ValueError("teacher calculation provenance has no supported execution environment")
+    directory = environment.get("directory")
+    if not isinstance(directory, str) or not directory:
+        raise ValueError("teacher calculation provenance has no execution-environment directory")
+    recorded_root = Path(directory).resolve()
+    executable = environment.get("executable")
+    if not isinstance(executable, dict):
+        raise ValueError("teacher calculation provenance has no execution-environment executable")
+    source_executable = _validate_fingerprint_metadata(
+        executable.get("source"), "source executable"
+    )
+    snapshot_executable = _validate_fingerprint_metadata(
+        executable.get("snapshot"), "saved executable"
+    )
+    if (
+        source_executable["sha256"] != snapshot_executable["sha256"]
+        or source_executable["bytes"] != snapshot_executable["bytes"]
+    ):
+        raise ValueError("source executable and its saved copy differ")
+    expected_executable = recorded_root / Path(str(source_executable["path"])).name
+    if Path(str(snapshot_executable["path"])).resolve() != expected_executable.resolve():
+        raise ValueError("teacher calculation provenance has an unexpected saved executable path")
+
+    resources = environment.get("resources")
+    if not isinstance(resources, list) or len(resources) != len(RESOURCE_SPECS):
+        raise ValueError("teacher calculation provenance has an invalid resource list")
+    records: list[tuple[str, Path, dict[str, int | str], dict[str, int | str]]] = []
+    source_resources: list[dict[str, Any]] = []
+    executable_resources = Path(str(source_executable["path"])).resolve().parent / "resources"
+    for resource, (expected_role, expected_relative) in zip(resources, RESOURCE_SPECS):
+        if not isinstance(resource, dict) or resource.get("role") != expected_role:
+            raise ValueError("teacher calculation provenance has resources in an unexpected order")
+        if resource.get("relative_path") != expected_relative.as_posix():
+            raise ValueError("teacher calculation provenance has an unexpected Console resource")
+        source = _validate_fingerprint_metadata(
+            resource.get("source"), f"source {expected_role} resource"
+        )
+        saved = _validate_fingerprint_metadata(
+            resource.get("snapshot"), f"saved {expected_role} resource"
+        )
+        if source["sha256"] != saved["sha256"] or source["bytes"] != saved["bytes"]:
+            raise ValueError(f"source and saved {expected_role} resources differ")
+        expected_source = executable_resources / expected_relative
+        expected_saved = recorded_root / "resources" / expected_relative
+        if Path(str(source["path"])).resolve() != expected_source.resolve():
+            raise ValueError(f"teacher calculation provenance has an unexpected source {expected_role} path")
+        if Path(str(saved["path"])).resolve() != expected_saved.resolve():
+            raise ValueError(f"teacher calculation provenance has an unexpected saved {expected_role} path")
+        records.append((expected_role, expected_relative, source, saved))
+        source_resources.append(
+            {
+                "role": expected_role,
+                "relative_path": expected_relative.as_posix(),
+                "source": source,
+            }
+        )
+    if output is not None:
+        expected_root = _execution_environment_directory(
+            output, source_executable, source_resources
+        ).resolve()
+        if recorded_root != expected_root:
+            raise ValueError("teacher calculation provenance has an unexpected execution-environment directory")
+    return recorded_root, source_executable, snapshot_executable, records
+
+
+def _relative_snapshot_path(
+    recorded_root: Path,
+    recorded_path: Path,
+    actual_root: Path,
+    label: str,
+) -> Path:
+    try:
+        relative = recorded_path.resolve().relative_to(recorded_root.resolve())
+    except ValueError as error:
+        raise ValueError(f"{label} is outside the saved execution environment") from error
+    return actual_root.resolve() / relative
+
+
+def _verify_snapshot_file(
+    fingerprint: dict[str, int | str], path: Path, label: str
+) -> None:
+    if not path.is_file() or sha256_file(path) != fingerprint["sha256"]:
+        raise ValueError(f"saved {label} does not match its SHA-256")
+    if path.stat().st_size != fingerprint["bytes"]:
+        raise ValueError(f"saved {label} does not match its byte count")
+
+
+def _new_calculation_provenance(
+    output: Path,
+    exe: Path,
+    hash_level: int,
+) -> dict[str, Any]:
+    """Freeze the executable, Console inputs, book options, and generator source."""
+    if not 0 <= hash_level <= 29:
+        raise ValueError("hash_level must be between zero and 29")
     teacher_script = Path(__file__).resolve()
     teacher_script_sha256 = sha256_file(teacher_script)
-    snapshot = _teacher_script_snapshot_path(output).resolve()
+    teacher_script_snapshot = _teacher_script_snapshot_path(output).resolve()
+    executable = _fingerprint(exe, "teacher executable")
+    source_resources: list[dict[str, Any]] = []
+    resources_directory = exe.resolve().parent / "resources"
+    for role, relative_path in RESOURCE_SPECS:
+        source = _fingerprint(resources_directory / relative_path, f"teacher {role} resource")
+        source_resources.append(
+            {
+                "role": role,
+                "relative_path": relative_path.as_posix(),
+                "source": source,
+            }
+        )
+    environment_directory = _execution_environment_directory(output, executable, source_resources).resolve()
+    resources: list[dict[str, Any]] = []
+    for resource in source_resources:
+        relative_path = Path(str(resource["relative_path"]))
+        source = resource["source"]
+        resources.append(
+            {
+                "role": resource["role"],
+                "relative_path": resource["relative_path"],
+                "source": source,
+                "snapshot": {
+                    "path": (environment_directory / "resources" / relative_path).as_posix(),
+                    "sha256": source["sha256"],
+                    "bytes": source["bytes"],
+                },
+            }
+        )
+    executable_snapshot = {
+        "path": (environment_directory / Path(str(executable["path"])).name).as_posix(),
+        "sha256": executable["sha256"],
+        "bytes": executable["bytes"],
+    }
     return {
         "schema": CALCULATION_PROVENANCE_SCHEMA,
         "book_configuration": _book_configuration(),
-        "command_templates": _command_templates(),
-        "standard_input_templates": _standard_input_templates(),
+        "search_invocation": _search_invocation_contract(),
         "teacher_script": {
             "path": teacher_script.as_posix(),
             "sha256": teacher_script_sha256,
         },
         "teacher_script_snapshot": {
-            "path": snapshot.as_posix(),
+            "path": teacher_script_snapshot.as_posix(),
             "sha256": teacher_script_sha256,
+        },
+        "execution_environment": {
+            "schema": EXECUTION_ENVIRONMENT_SCHEMA,
+            "directory": environment_directory.as_posix(),
+            "executable": {
+                "source": executable,
+                "snapshot": executable_snapshot,
+            },
+            "resources": resources,
         },
     }
 
@@ -152,6 +403,7 @@ def _new_calculation_provenance(output: Path) -> dict[str, Any]:
 def validate_calculation_provenance(
     provenance: object,
     snapshot_path: Path | None = None,
+    execution_environment_directory: Path | None = None,
 ) -> dict[str, Any]:
     """Validate the immutable teacher-calculation evidence.
 
@@ -165,10 +417,8 @@ def validate_calculation_provenance(
         raise ValueError("teacher calculation provenance has an unsupported schema")
     if provenance.get("book_configuration") != _book_configuration():
         raise ValueError("teacher calculation provenance does not disable both books")
-    if provenance.get("command_templates") != _command_templates():
-        raise ValueError("teacher calculation provenance has unexpected command templates")
-    if provenance.get("standard_input_templates") != _standard_input_templates():
-        raise ValueError("teacher calculation provenance has unexpected input templates")
+    if provenance.get("search_invocation") != _search_invocation_contract():
+        raise ValueError("teacher calculation provenance has an unexpected search-invocation contract")
     teacher_script = provenance.get("teacher_script")
     snapshot = provenance.get("teacher_script_snapshot")
     if not isinstance(teacher_script, dict) or not isinstance(snapshot, dict):
@@ -188,9 +438,56 @@ def validate_calculation_provenance(
         script_text = script_copy.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as error:
         raise ValueError(f"cannot read saved teacher script {script_copy}: {error}") from error
-    if any(option not in script_text for option in BOOK_DISABLED_ARGUMENTS):
-        raise ValueError("saved teacher script does not contain both book-disable options")
+    if (
+        any(option not in script_text for option in BOOK_DISABLED_ARGUMENTS)
+        or "_build_search_command" not in script_text
+        or "_search_invocation_contract" not in script_text
+    ):
+        raise ValueError("saved teacher script does not contain the recorded book-disable command builder")
+
+    recorded_root, _source_executable, snapshot_executable, resources = _execution_environment_metadata(
+        provenance
+    )
+    actual_root = (
+        execution_environment_directory
+        if execution_environment_directory is not None
+        else recorded_root
+    )
+    executable_path = _relative_snapshot_path(
+        recorded_root,
+        Path(str(snapshot_executable["path"])),
+        actual_root,
+        "saved executable",
+    )
+    _verify_snapshot_file(snapshot_executable, executable_path, "executable")
+
+    for role, _relative_path, _source, saved in resources:
+        saved_path = _relative_snapshot_path(
+            recorded_root,
+            Path(str(saved["path"])),
+            actual_root,
+            f"saved {role} resource",
+        )
+        _verify_snapshot_file(saved, saved_path, f"{role} resource")
     return provenance
+
+
+def _copy_or_verify_saved_file(
+    source: dict[str, int | str], snapshot: dict[str, int | str], label: str
+) -> None:
+    source_path = Path(str(source["path"]))
+    snapshot_path = Path(str(snapshot["path"]))
+    if snapshot_path.exists():
+        _verify_snapshot_file(snapshot, snapshot_path, label)
+        return
+    try:
+        content = source_path.read_bytes()
+    except OSError as error:
+        raise ValueError(f"cannot read source {label} {source_path}: {error}") from error
+    if hashlib.sha256(content).hexdigest() != source["sha256"] or len(content) != source["bytes"]:
+        raise ValueError(f"source {label} changed before its saved copy was created")
+    _atomic_write_bytes(snapshot_path, content)
+    _verify_snapshot_file(snapshot, snapshot_path, label)
 
 
 def _ensure_teacher_script_snapshot(output: Path, state: dict[str, Any]) -> None:
@@ -202,18 +499,39 @@ def _ensure_teacher_script_snapshot(output: Path, state: dict[str, Any]) -> None
     snapshot = provenance.get("teacher_script_snapshot")
     if not isinstance(teacher_script, dict) or not isinstance(snapshot, dict):
         raise ValueError("teacher state has incomplete script provenance")
-    source = Path(__file__).resolve()
     expected_snapshot = _teacher_script_snapshot_path(output).resolve()
-    if teacher_script.get("path") != source.as_posix() or teacher_script.get("sha256") != sha256_file(source):
-        raise ValueError("teacher state was created by a different generator script")
     if snapshot.get("path") != expected_snapshot.as_posix() or snapshot.get("sha256") != teacher_script["sha256"]:
         raise ValueError("teacher state has an unexpected saved-script location or SHA-256")
     if expected_snapshot.exists():
         if sha256_file(expected_snapshot) != snapshot["sha256"]:
             raise ValueError("saved teacher script does not match its SHA-256")
     else:
+        source = Path(__file__).resolve()
+        if teacher_script.get("path") != source.as_posix() or teacher_script.get("sha256") != sha256_file(source):
+            raise ValueError("teacher state was created by a different generator script")
         _atomic_write_bytes(expected_snapshot, source.read_bytes())
-    validate_calculation_provenance(provenance)
+
+
+def _ensure_execution_environment(output: Path, state: dict[str, Any]) -> Path:
+    """Create once, then verify, the isolated executable and its two inputs."""
+    provenance = state.get("calculation_provenance")
+    if not isinstance(provenance, dict):
+        raise ValueError("teacher state has no calculation provenance")
+    root, source_executable, saved_executable, resources = _execution_environment_metadata(
+        provenance, output
+    )
+    with file_lock(_execution_environment_lock_path(root)):
+        _copy_or_verify_saved_file(source_executable, saved_executable, "executable")
+        for role, _relative_path, source, saved in resources:
+            _copy_or_verify_saved_file(source, saved, f"{role} resource")
+    return Path(str(saved_executable["path"]))
+
+
+def _ensure_calculation_snapshots(output: Path, state: dict[str, Any]) -> Path:
+    _ensure_teacher_script_snapshot(output, state)
+    executable = _ensure_execution_environment(output, state)
+    validate_calculation_provenance(state.get("calculation_provenance"))
+    return executable
 
 
 def _append_pending_update(
@@ -385,13 +703,13 @@ def search_root(
 ) -> dict[str, int | str]:
     if time_seconds <= 0 or threads <= 0 or not 0 <= hash_level <= 29:
         raise ValueError("invalid time, thread, or hash setting")
-    command = [
-        str(exe),
-        "-time", f"{time_seconds:g}",
-        "-t", str(threads),
-        "-hash", str(hash_level),
-        *BOOK_DISABLED_ARGUMENTS,
-    ]
+    command = _build_search_command(
+        "time_limited_search",
+        exe,
+        time_seconds=time_seconds,
+        threads=threads,
+        hash_level=hash_level,
+    )
     commands = TIME_SEARCH_INPUT_TEMPLATE.format(board=board)
     try:
         completed = subprocess.run(
@@ -427,13 +745,13 @@ def search_root_at_level(
 ) -> dict[str, int | str]:
     if level < 1 or threads <= 0 or not 0 <= hash_level <= 29:
         raise ValueError("invalid level, thread, or hash setting")
-    command = [
-        str(exe),
-        "-l", str(level),
-        "-t", str(threads),
-        "-hash", str(hash_level),
-        *BOOK_DISABLED_ARGUMENTS,
-    ]
+    command = _build_search_command(
+        "fixed_level_search",
+        exe,
+        level=level,
+        threads=threads,
+        hash_level=hash_level,
+    )
     commands = LEVEL_SEARCH_INPUT_TEMPLATE.format(board=board)
     try:
         completed = subprocess.run(
@@ -494,7 +812,7 @@ def _new_state(
 ) -> dict[str, Any]:
     return {
         "schema": TEACHER_SCHEMA,
-        "calculation_provenance": _new_calculation_provenance(output),
+        "calculation_provenance": _new_calculation_provenance(output, exe, hash_level),
         "coverage": {
             "path": coverage_path.resolve().as_posix(),
             "sha256": sha256_file(coverage_path),
@@ -547,7 +865,7 @@ def _load_state(
 
 
 def _write_outputs(output: Path, state: dict[str, Any]) -> None:
-    _ensure_teacher_script_snapshot(output, state)
+    _ensure_calculation_snapshots(output, state)
     roots = state["roots"]
     results = state["results"]
     rejections = state["rejections"]
@@ -555,6 +873,8 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
     book_configuration = provenance["book_configuration"]
     teacher_script = provenance["teacher_script"]
     teacher_script_snapshot = provenance["teacher_script_snapshot"]
+    resources = provenance["execution_environment"]["resources"]
+    resource_sha256 = {resource["role"]: resource["snapshot"]["sha256"] for resource in resources}
     rows = []
     for board in roots:
         result = results.get(board)
@@ -572,6 +892,8 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# contest_book_option {book_configuration['contest_book']['command_line_option']}",
             f"# teacher_script_sha256 {teacher_script['sha256']}",
             f"# teacher_script_snapshot_sha256 {teacher_script_snapshot['sha256']}",
+            f"# evaluation_sha256 {resource_sha256['evaluation']}",
+            f"# endgame_move_ordering_sha256 {resource_sha256['endgame_move_ordering']}",
             f"# time_seconds {state['time_seconds']:g}",
             f"# threads {state['threads']}",
             f"# hash_level {state['hash_level']}",
@@ -701,50 +1023,65 @@ def _generate_teachers_unlocked(
         if not state_path.is_file():
             raise FileNotFoundError(f"resume state not found: {state_path}")
         state = _load_state(state_path, expected)
-        if _pending_updates_path(output).exists():
-            _apply_pending_updates(output, state)
-            _write_outputs(output, state)
-            _clear_pending_updates(output)
+        _ensure_calculation_snapshots(output, state)
+        _apply_pending_updates(output, state)
+        # Always republish all three public files.  This repairs a stop between
+        # writing the rows/state and writing the manifest even with no pending row.
+        _write_outputs(output, state)
+        _clear_pending_updates(output)
     else:
-        if state_path.exists() or output.exists():
-            raise FileExistsError(f"output exists; use --resume or choose a new output: {output}")
+        artifacts = (
+            output,
+            state_path,
+            _manifest_path(output),
+            _pending_updates_path(output),
+            _teacher_script_snapshot_path(output),
+        )
+        existing = [path for path in artifacts if path.exists()]
+        if existing:
+            raise FileExistsError(
+                "teacher output artifacts already exist; use --resume or choose a new output: "
+                + ", ".join(path.as_posix() for path in existing)
+            )
         state = expected
         _write_outputs(output, state)
 
     completed_since_checkpoint = _completed_since_checkpoint(state, checkpoint_every)
     if compact_only:
+        # The resume branch has already replayed and republished every durable row.
         return {"completed": len(state["results"]), "requested": len(roots)}
+    execution_exe = _ensure_calculation_snapshots(output, state)
     for board in roots:
         if board in state["results"] or board in state["rejections"]:
             continue
         if method == "hint":
-            result = search_root_at_level(exe, board, teacher_level, threads, hash_level)
+            result = search_root_at_level(execution_exe, board, teacher_level, threads, hash_level)
             validate_quality(result, max(min_depth, teacher_level), min_selectivity)
             result["method"] = f"hint_level_{teacher_level}"
         elif method == "time_then_hint":
-            result = search_root(exe, board, time_seconds, threads, hash_level)
+            result = search_root(execution_exe, board, time_seconds, threads, hash_level)
             try:
                 validate_quality(result, min_depth, min_selectivity)
                 result["method"] = "time"
             except ValueError:
                 if fallback_level == 0:
                     raise
-                result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
+                result = search_root_at_level(execution_exe, board, fallback_level, threads, hash_level)
                 validate_quality(result, max(min_depth, fallback_level), min_selectivity)
                 result["method"] = f"hint_level_{fallback_level}"
         elif method == "hint_then_verify":
-            result = search_root_at_level(exe, board, teacher_level, threads, hash_level)
+            result = search_root_at_level(execution_exe, board, teacher_level, threads, hash_level)
             validate_quality(result, max(min_depth, teacher_level), min_selectivity)
             result["method"] = (
                 f"hint_level_{teacher_level}_verified_hint_level_{verify_level}"
             )
             verification = search_root_at_level(
-                exe, board, verify_level, threads, hash_level
+                execution_exe, board, verify_level, threads, hash_level
             )
             validate_quality(verification, max(min_depth, verify_level), min_selectivity)
             if str(result["move"]) != str(verification["move"]):
                 verification_repeat = search_root_at_level(
-                    exe, board, verify_level, threads, hash_level
+                    execution_exe, board, verify_level, threads, hash_level
                 )
                 validate_quality(
                     verification_repeat, max(min_depth, verify_level), min_selectivity
@@ -790,29 +1127,29 @@ def _generate_teachers_unlocked(
                 result["verification"] = verification
                 result["verification_mode"] = f"level_{verify_level}_exact"
         else:
-            result = search_root(exe, board, time_seconds, threads, hash_level)
+            result = search_root(execution_exe, board, time_seconds, threads, hash_level)
             primary = result
             try:
                 validate_quality(result, min_depth, min_selectivity)
                 result["method"] = f"time_verified_hint_level_{verify_level}"
             except ValueError:
-                result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
+                result = search_root_at_level(execution_exe, board, fallback_level, threads, hash_level)
                 validate_quality(result, max(min_depth, fallback_level), min_selectivity)
                 result["method"] = (
                     f"time_fallback_hint_level_{fallback_level}_verified_hint_level_{verify_level}"
                 )
                 result["primary"] = primary
-            verification = search_root_at_level(exe, board, verify_level, threads, hash_level)
+            verification = search_root_at_level(execution_exe, board, verify_level, threads, hash_level)
             validate_quality(verification, max(min_depth, verify_level), min_selectivity)
             verification_mode = f"level_{verify_level}_exact"
             if str(result["move"]) != str(verification["move"]):
                 tiebreak = search_root_at_level(
-                    exe, board, fallback_level, threads, hash_level
+                    execution_exe, board, fallback_level, threads, hash_level
                 )
                 validate_quality(tiebreak, max(min_depth, fallback_level), min_selectivity)
                 if str(result["move"]) != str(tiebreak["move"]):
                     deep_tiebreak = search_root_at_level(
-                        exe, board, DEEP_TIEBREAK_LEVEL, threads, hash_level
+                        execution_exe, board, DEEP_TIEBREAK_LEVEL, threads, hash_level
                     )
                     validate_quality(
                         deep_tiebreak,

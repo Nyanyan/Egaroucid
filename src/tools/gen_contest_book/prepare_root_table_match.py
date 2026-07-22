@@ -27,7 +27,7 @@ from generate_ggs_root_teacher import TEACHER_MANIFEST_SCHEMA, validate_calculat
 from othello import coord_to_index, normalize_board_text
 
 
-PREPARED_SCHEMA = "prepared_root_table_match_input_v3"
+PREPARED_SCHEMA = "prepared_root_table_match_input_v4"
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
@@ -163,6 +163,54 @@ def _teacher_script_snapshot_bytes(manifest: dict[str, Any]) -> tuple[bytes, str
     return content, digest
 
 
+def _teacher_execution_environment_files(
+    manifest: dict[str, Any],
+) -> list[tuple[str, Path, bytes, dict[str, Any]]]:
+    """Return the saved executable and Console inputs, preserving their layout."""
+    provenance = manifest["calculation_provenance"]
+    environment = provenance["execution_environment"]
+    directory = environment["directory"]
+    if not isinstance(directory, str):
+        raise ValueError("saved teacher execution environment has no directory")
+    root = Path(directory).resolve()
+    raw_files: list[tuple[str, dict[str, Any]]] = []
+    executable = environment.get("executable")
+    if not isinstance(executable, dict) or not isinstance(executable.get("snapshot"), dict):
+        raise ValueError("saved teacher execution environment has no executable")
+    raw_files.append(("executable", executable["snapshot"]))
+    resources = environment.get("resources")
+    if not isinstance(resources, list):
+        raise ValueError("saved teacher execution environment has no resources")
+    for resource in resources:
+        if not isinstance(resource, dict) or not isinstance(resource.get("role"), str):
+            raise ValueError("saved teacher execution environment has an invalid resource")
+        snapshot = resource.get("snapshot")
+        if not isinstance(snapshot, dict):
+            raise ValueError("saved teacher execution environment has an invalid resource copy")
+        raw_files.append((resource["role"], snapshot))
+
+    files: list[tuple[str, Path, bytes, dict[str, Any]]] = []
+    for role, fingerprint in raw_files:
+        path_text = fingerprint.get("path")
+        digest = fingerprint.get("sha256")
+        size = fingerprint.get("bytes")
+        if not isinstance(path_text, str) or not isinstance(digest, str) or not isinstance(size, int):
+            raise ValueError(f"saved teacher {role} fingerprint is invalid")
+        source = Path(path_text).resolve()
+        try:
+            relative = source.relative_to(root)
+        except ValueError as error:
+            raise ValueError(f"saved teacher {role} is outside its execution environment") from error
+        try:
+            content = source.read_bytes()
+        except OSError as error:
+            raise ValueError(f"cannot read saved teacher {role} {source}: {error}") from error
+        if _sha256_bytes(content) != digest or len(content) != size:
+            raise ValueError(f"saved teacher {role} changed while preparing match input")
+        files.append((role, relative, content, fingerprint))
+    return files
+
+
 def prepare_match_input(
     teacher_results: Path,
     output_dir: Path,
@@ -215,6 +263,7 @@ def prepare_match_input(
     teacher_script_content, teacher_script_sha256 = _teacher_script_snapshot_bytes(
         teacher_manifest
     )
+    teacher_execution_files = _teacher_execution_environment_files(teacher_manifest)
 
     snapshot = output_dir / "teacher_rows.txt"
     _atomic_write_bytes(snapshot, teacher_content)
@@ -228,6 +277,30 @@ def prepare_match_input(
     _atomic_write_bytes(teacher_script_snapshot, teacher_script_content)
     if sha256_file(teacher_script_snapshot) != teacher_script_sha256:
         raise RuntimeError(f"{teacher_script_snapshot}: copied SHA-256 mismatch")
+    teacher_execution_environment = output_dir / "teacher_execution_environment"
+    prepared_execution_files: list[dict[str, Any]] = []
+    for role, relative, content, fingerprint in teacher_execution_files:
+        destination = teacher_execution_environment / relative
+        _atomic_write_bytes(destination, content)
+        if sha256_file(destination) != fingerprint["sha256"] or destination.stat().st_size != fingerprint["bytes"]:
+            raise RuntimeError(f"{destination}: copied teacher {role} mismatch")
+        prepared_execution_files.append(
+            {
+                "role": role,
+                "relative_path": relative.as_posix(),
+                "path": destination.resolve().as_posix(),
+                "sha256": fingerprint["sha256"],
+                "bytes": fingerprint["bytes"],
+            }
+        )
+    try:
+        validate_calculation_provenance(
+            teacher_manifest["calculation_provenance"],
+            snapshot_path=teacher_script_snapshot,
+            execution_environment_directory=teacher_execution_environment,
+        )
+    except ValueError as error:
+        raise RuntimeError(f"prepared teacher calculation evidence is inconsistent: {error}") from error
 
     openings = output_dir / "openings" / "roots.txt"
     _atomic_write_text(openings, "\n".join(boards) + "\n")
@@ -253,6 +326,10 @@ def prepare_match_input(
         "teacher_script_snapshot": {
             "path": teacher_script_snapshot.resolve().as_posix(),
             "sha256": sha256_file(teacher_script_snapshot),
+        },
+        "teacher_execution_environment": {
+            "path": teacher_execution_environment.resolve().as_posix(),
+            "files": prepared_execution_files,
         },
         "snapshot": {
             "path": snapshot.resolve().as_posix(),
@@ -285,13 +362,13 @@ def prepare_match_input(
 
 このディレクトリは、`{teacher_results.name}` の一貫した出力を複製して作成した。元の出力の処理済み局面数は {processed}、受理局面数は {completed}、不採用局面数は {rejected} である。受理局面はすべて一時的な開始局面用の手の表と開始局面一覧へ入れた。対局結果を見て局面を選び直していない。教師計算時に通常bookと大会bookを無効にした起動条件と、使用した生成スクリプトの保存コピーもSHA-256で照合して固定した。
 
-このディレクトリは対局の入力専用であり、大会用の `trained/` は変更しない。入力と出力のSHA-256は `prepared_match_input.json` に記録した。
+このディレクトリは対局の入力専用であり、大会用の `trained/` は変更しない。教師計算で使ったConsole実行ファイル、主評価ファイル、終盤の手順評価ファイルの保存コピーもSHA-256で照合して保存した。入力と出力のSHA-256は `prepared_match_input.json` に記録した。
 
 ## English
 
 This directory was created by copying one coherent output from `{teacher_results.name}`. The source output processed {processed} positions, accepted {completed}, and rejected {rejected}. Every accepted position was placed in the temporary table of moves for starting positions and in the starting-position list. No position was selected after observing game results. The immutable manifest records that both books were disabled during teacher calculation, and this directory contains a SHA-256-checked copy of the generator script.
 
-This directory is only match input and does not modify tournament `trained/`. SHA-256 values for every input and output are recorded in `prepared_match_input.json`.
+This directory is only match input and does not modify tournament `trained/`. It also preserves SHA-256-checked copies of the Console executable, the main evaluation file, the endgame move-ordering evaluation file, and the fixed hash file used for teacher calculation. SHA-256 values for every input and output are recorded in `prepared_match_input.json`.
 """
     _atomic_write_text(output_dir / "README.md", report)
     return {

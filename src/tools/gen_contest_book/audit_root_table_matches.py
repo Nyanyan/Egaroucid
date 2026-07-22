@@ -169,6 +169,73 @@ def _d4_canonical_board(board: str) -> str:
     return min(transform_board_text(board, symmetry) for symmetry in range(8))
 
 
+def _validate_prepared_execution_environment(
+    prepared_environment: object,
+    provenance: dict[str, Any],
+) -> tuple[Path | None, list[str]]:
+    """Verify copied Console inputs before using them as audit evidence."""
+    if not isinstance(prepared_environment, dict):
+        return None, ["prepared input has no saved teacher execution environment"]
+    path_text = prepared_environment.get("path")
+    file_records = prepared_environment.get("files")
+    if not isinstance(path_text, str) or not isinstance(file_records, list):
+        return None, ["prepared teacher execution environment is incomplete"]
+    actual_root = Path(path_text).resolve()
+    environment = provenance.get("execution_environment")
+    if not isinstance(environment, dict) or not isinstance(environment.get("directory"), str):
+        return None, ["teacher calculation evidence has no execution environment"]
+    recorded_root = Path(environment["directory"]).resolve()
+    executable = environment.get("executable")
+    resources = environment.get("resources")
+    if not isinstance(executable, dict) or not isinstance(executable.get("snapshot"), dict) or not isinstance(resources, list):
+        return None, ["teacher calculation evidence has incomplete execution inputs"]
+    expected: list[tuple[str, dict[str, Any]]] = [("executable", executable["snapshot"])]
+    for resource in resources:
+        if not isinstance(resource, dict) or not isinstance(resource.get("role"), str) or not isinstance(resource.get("snapshot"), dict):
+            return None, ["teacher calculation evidence has an invalid saved resource"]
+        expected.append((resource["role"], resource["snapshot"]))
+    records_by_role: dict[str, dict[str, Any]] = {}
+    failures: list[str] = []
+    for record in file_records:
+        if not isinstance(record, dict) or not isinstance(record.get("role"), str):
+            failures.append("prepared teacher execution environment has an invalid file record")
+            continue
+        role = record["role"]
+        if role in records_by_role:
+            failures.append("prepared teacher execution environment lists a role more than once")
+        else:
+            records_by_role[role] = record
+    if set(records_by_role) != {role for role, _snapshot in expected}:
+        failures.append("prepared teacher execution environment has different files from the teacher manifest")
+    for role, snapshot in expected:
+        path_value = snapshot.get("path")
+        digest = snapshot.get("sha256")
+        size = snapshot.get("bytes")
+        if not isinstance(path_value, str) or not isinstance(digest, str) or not isinstance(size, int):
+            failures.append(f"teacher manifest has an invalid saved {role} fingerprint")
+            continue
+        try:
+            relative = Path(path_value).resolve().relative_to(recorded_root)
+        except ValueError:
+            failures.append(f"teacher manifest saved {role} is outside its execution environment")
+            continue
+        expected_path = actual_root / relative
+        record = records_by_role.get(role)
+        if not isinstance(record, dict):
+            continue
+        if (
+            record.get("relative_path") != relative.as_posix()
+            or record.get("path") != expected_path.resolve().as_posix()
+            or record.get("sha256") != digest
+            or record.get("bytes") != size
+        ):
+            failures.append(f"prepared saved {role} does not match the teacher manifest")
+            continue
+        if not expected_path.is_file() or sha256_file(expected_path) != digest or expected_path.stat().st_size != size:
+            failures.append(f"prepared saved {role} does not match its SHA-256 or byte count")
+    return actual_root, failures
+
+
 def _validate_prepared_input(
     prepared: dict[str, Any],
     minimum_processed: int,
@@ -181,6 +248,8 @@ def _validate_prepared_input(
         "contest_book_disabled": False,
         "teacher_script_sha256": None,
         "teacher_script_snapshot_sha256": None,
+        "evaluation_sha256": None,
+        "endgame_move_ordering_sha256": None,
     }
     try:
         openings = _load_openings(prepared)
@@ -191,6 +260,7 @@ def _validate_prepared_input(
     snapshot = prepared.get("snapshot")
     teacher_manifest = prepared.get("teacher_manifest")
     teacher_script_snapshot = prepared.get("teacher_script_snapshot")
+    teacher_execution_environment = prepared.get("teacher_execution_environment")
     table = prepared.get("table")
     selection = prepared.get("selection")
     required_sections = (
@@ -198,6 +268,7 @@ def _validate_prepared_input(
         snapshot,
         teacher_manifest,
         teacher_script_snapshot,
+        teacher_execution_environment,
         table,
         selection,
     )
@@ -274,14 +345,27 @@ def _validate_prepared_input(
             failures.append("frozen teacher manifest has no executable SHA-256")
         else:
             teacher_engine_sha256 = engine["sha256"]
+        provenance_for_environment = manifest.get("calculation_provenance")
+        if isinstance(provenance_for_environment, dict):
+            prepared_environment_root, environment_failures = _validate_prepared_execution_environment(
+                teacher_execution_environment,
+                provenance_for_environment,
+            )
+            failures.extend(environment_failures)
+        else:
+            prepared_environment_root = None
+            failures.append("frozen teacher manifest has no calculation evidence")
         if not _snapshot_file_is_current(teacher_script_snapshot):
             failures.append("frozen teacher script does not match its SHA-256")
+        elif prepared_environment_root is None:
+            failures.append("frozen teacher execution environment cannot be verified")
         else:
             script_copy = Path(str(teacher_script_snapshot["path"]))
             try:
                 provenance = validate_calculation_provenance(
                     manifest.get("calculation_provenance"),
                     snapshot_path=script_copy,
+                    execution_environment_directory=prepared_environment_root,
                 )
             except ValueError as error:
                 failures.append(f"frozen teacher calculation evidence is invalid: {error}")
@@ -290,12 +374,21 @@ def _validate_prepared_input(
                 if saved_script["sha256"] != teacher_script_snapshot.get("sha256"):
                     failures.append("frozen teacher script SHA-256 differs from the teacher manifest")
                 else:
+                    saved_executable = provenance["execution_environment"]["executable"]["snapshot"]
+                    if teacher_engine_sha256 is not None and saved_executable["sha256"] != teacher_engine_sha256:
+                        failures.append("frozen teacher executable SHA-256 differs from its calculation evidence")
                     book_configuration = provenance["book_configuration"]
+                    resources = {
+                        resource["role"]: resource["snapshot"]["sha256"]
+                        for resource in provenance["execution_environment"]["resources"]
+                    }
                     teacher_calculation = {
                         "ordinary_book_disabled": book_configuration["ordinary_book"]["disabled"],
                         "contest_book_disabled": book_configuration["contest_book"]["disabled"],
                         "teacher_script_sha256": provenance["teacher_script"]["sha256"],
                         "teacher_script_snapshot_sha256": saved_script["sha256"],
+                        "evaluation_sha256": resources["evaluation"],
+                        "endgame_move_ordering_sha256": resources["endgame_move_ordering"],
                     }
         try:
             _validate_manifest_results(
@@ -362,6 +455,7 @@ def _validate_metadata(
     openings_input: list[str],
     expected_game_boards: list[str],
     teacher_engine_sha256: str | None,
+    teacher_calculation: dict[str, Any],
 ) -> list[str]:
     """Return violations when anything except the temporary table differs."""
     payload = _read_json(metadata_path, "match metadata")
@@ -386,8 +480,8 @@ def _validate_metadata(
         if parsed.get(key) != expected:
             failures.append(f"game metadata has {key}={parsed.get(key)!r}, expected {expected}")
     workers = parsed.get("workers")
-    if not isinstance(workers, int) or not 1 <= workers <= 3:
-        failures.append("game metadata must use between one and three simultaneous games")
+    if workers != 1:
+        failures.append("game metadata must use exactly one simultaneous game")
     if parsed.get("random_symmetry") is not True:
         failures.append("game metadata does not enable the fixed rotation/reflection procedure")
     for key in ("candidate_extra", "baseline_extra"):
@@ -417,11 +511,13 @@ def _validate_metadata(
     table_binary = artifacts.get("candidate_binary")
     no_book_binary = artifacts.get("baseline_binary")
     evaluation = artifacts.get("evaluation")
+    endgame_move_ordering = artifacts.get("endgame_move_ordering")
     harness = run_spec.get("harness")
     for label, snapshot in (
         ("table-using executable", table_binary),
         ("no-book executable", no_book_binary),
         ("evaluation data", evaluation),
+        ("endgame move-ordering data", endgame_move_ordering),
         ("game runner", harness),
     ):
         if not _snapshot_file_is_current(snapshot):
@@ -433,8 +529,11 @@ def _validate_metadata(
         failures.append("table-using side and no-book side used different executables")
     if teacher_engine_sha256 is None or table_binary.get("sha256") != teacher_engine_sha256:
         failures.append("game executable does not match the executable that calculated the table")
-    if not isinstance(evaluation, dict) or not isinstance(evaluation.get("path"), str):
-        failures.append("game metadata lacks evaluation-data provenance")
+    if not all(
+        isinstance(snapshot, dict) and isinstance(snapshot.get("path"), str)
+        for snapshot in (evaluation, endgame_move_ordering)
+    ):
+        failures.append("game metadata lacks Console-input provenance")
         return failures
 
     binary_path_text = table_binary.get("path")
@@ -445,10 +544,19 @@ def _validate_metadata(
     binary_path = Path(binary_path_text).resolve()
     no_book_binary_path = Path(no_book_binary_path_text).resolve()
     evaluation_path = Path(evaluation["path"]).resolve()
+    endgame_move_ordering_path = Path(endgame_move_ordering["path"]).resolve()
     if binary_path != no_book_binary_path:
         failures.append("table-using side and no-book side use different executable paths")
     if parsed.get("candidate") != str(binary_path) or parsed.get("baseline") != str(no_book_binary_path):
         failures.append("parsed executable paths do not match executable fingerprints")
+    if endgame_move_ordering_path != binary_path.parent / "resources" / "eval_move_ordering_end.egev":
+        failures.append("game metadata has an unexpected endgame move-ordering path")
+    for key, artifact in (
+        ("evaluation_sha256", evaluation),
+        ("endgame_move_ordering_sha256", endgame_move_ordering),
+    ):
+        if teacher_calculation.get(key) is None or artifact.get("sha256") != teacher_calculation[key]:
+            failures.append(f"game {key.removesuffix('_sha256')} does not match teacher calculation")
     common_command = [
         str(binary_path),
         "-quiet",
@@ -791,6 +899,7 @@ def audit_match_results(
             openings,
             expected_game_boards,
             teacher_engine_sha256,
+            teacher_calculation,
         )
     )
     valid_stat_rows = [
@@ -884,6 +993,8 @@ def audit_match_results(
 - 教師計算時の大会book: {contest_book_ja}
 - 教師計算に使った生成スクリプトのSHA-256: {teacher_calculation['teacher_script_sha256']}
 - 保存した生成スクリプトのSHA-256: {teacher_calculation['teacher_script_snapshot_sha256']}
+- 教師計算に使った主評価ファイルのSHA-256: {teacher_calculation['evaluation_sha256']}
+- 教師計算に使った終盤の手順評価ファイルのSHA-256: {teacher_calculation['endgame_move_ordering_sha256']}
 - 監査上の問題: {failure_text_ja}
 
 判定: {decision_ja}
@@ -907,6 +1018,8 @@ def audit_match_results(
 - Contest book during teacher calculation: {contest_book_en}
 - Generator-script SHA-256 used for teacher calculation: {teacher_calculation['teacher_script_sha256']}
 - Saved generator-script SHA-256: {teacher_calculation['teacher_script_snapshot_sha256']}
+- Main evaluation-file SHA-256 used for teacher calculation: {teacher_calculation['evaluation_sha256']}
+- Endgame move-ordering evaluation-file SHA-256 used for teacher calculation: {teacher_calculation['endgame_move_ordering_sha256']}
 - Audit failures: {failure_text_en}
 
 Decision: {decision_en}

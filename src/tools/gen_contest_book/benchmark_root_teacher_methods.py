@@ -392,6 +392,7 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     schema = manifest.get("schema")
     if schema not in {
         "ggs_root_teacher_manifest_v10",
+        "ggs_root_teacher_manifest_v11",
         generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA,
     }:
         raise ValueError(f"generated manifest has an unsupported schema: {path}")
