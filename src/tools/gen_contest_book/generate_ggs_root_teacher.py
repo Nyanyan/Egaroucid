@@ -491,6 +491,7 @@ def _generate_teachers_unlocked(
     cohort_seed: int | None = None,
     excluded_root_files: list[Path] | None = None,
     checkpoint_every: int = 1,
+    compact_only: bool = False,
 ) -> dict[str, int]:
     if not exe.is_file():
         raise FileNotFoundError(f"engine executable not found: {exe}")
@@ -498,6 +499,8 @@ def _generate_teachers_unlocked(
         raise ValueError("limit must be positive")
     if checkpoint_every <= 0:
         raise ValueError("checkpoint_every must be positive")
+    if compact_only and not resume:
+        raise ValueError("compact_only requires resume")
     if fallback_level < 0:
         raise ValueError("fallback_level must not be negative")
     if method not in {"hint", "time_then_hint", "time_then_verify", "hint_then_verify"}:
@@ -552,6 +555,8 @@ def _generate_teachers_unlocked(
         _write_outputs(output, state)
 
     completed_since_checkpoint = _completed_since_checkpoint(state, checkpoint_every)
+    if compact_only:
+        return {"completed": len(state["results"]), "requested": len(roots)}
     for board in roots:
         if board in state["results"] or board in state["rejections"]:
             continue
@@ -719,6 +724,7 @@ def generate_teachers(
     cohort_seed: int | None = None,
     excluded_root_files: list[Path] | None = None,
     checkpoint_every: int = 1,
+    compact_only: bool = False,
 ) -> dict[str, int]:
     """Generate one output while holding its OS-owned exclusive lock."""
     with file_lock(_lock_path(output)):
@@ -740,6 +746,7 @@ def generate_teachers(
             cohort_seed,
             excluded_root_files,
             checkpoint_every,
+            compact_only,
         )
 
 
@@ -781,6 +788,11 @@ def main() -> int:
         help="Compact durable per-position updates after this many completed positions",
     )
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--compact-only",
+        action="store_true",
+        help="With --resume, replay durable updates and publish them without starting another search",
+    )
     args = parser.parse_args()
     result = generate_teachers(
         args.coverage,
@@ -800,6 +812,7 @@ def main() -> int:
         args.cohort_seed,
         args.exclude_root_results,
         args.checkpoint_every,
+        args.compact_only,
     )
     print(f"teacher roots complete {result['completed']}/{result['requested']}")
     return 0

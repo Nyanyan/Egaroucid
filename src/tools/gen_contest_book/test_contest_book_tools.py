@@ -38,7 +38,7 @@ from book_artifact import (
     manifest_path_for_book,
     validate_book_file,
 )
-from othello import Board
+from othello import Board, index_to_coord, normalize_board_text
 
 
 INITIAL_BOARD = "---------------------------OX------XO--------------------------- X"
@@ -734,6 +734,55 @@ class GgsRootTeacherTests(unittest.TestCase):
         lock.assert_called_once_with(output.with_suffix(output.suffix + ".lock"))
         unlocked.assert_called_once()
 
+    def test_compact_only_replays_durable_updates_without_a_new_search(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            output = root / "teacher_rows.txt"
+            state = generate_ggs_root_teacher._new_state(
+                coverage,
+                exe,
+                [GGS_ROOT],
+                60.0,
+                28,
+                29,
+                33,
+                74,
+                33,
+                "hint",
+                33,
+                0,
+                None,
+                [],
+            )
+            generate_ggs_root_teacher._write_outputs(output, state)
+            generate_ggs_root_teacher._append_pending_update(
+                output,
+                GGS_ROOT,
+                "results",
+                {"move": "f5", "score": -15},
+            )
+            with mock.patch.object(generate_ggs_root_teacher, "search_root_at_level") as search:
+                result = generate_ggs_root_teacher.generate_teachers(
+                    coverage,
+                    exe,
+                    output,
+                    60.0,
+                    28,
+                    29,
+                    resume=True,
+                    compact_only=True,
+                )
+            self.assertEqual({"completed": 1, "requested": 1}, result)
+            search.assert_not_called()
+            self.assertFalse(output.with_suffix(output.suffix + ".pending.jsonl").exists())
+            self.assertIn(f"{GGS_ROOT} -15 f5:-15", output.read_text(encoding="utf-8"))
+
     def test_prepares_match_input_from_all_compacted_accepted_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -808,31 +857,104 @@ class GgsRootTeacherTests(unittest.TestCase):
     def test_audits_color_swapped_root_table_match(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            openings = root / "roots.txt"
-            openings.write_text(f"{GGS_ROOT}\n", encoding="utf-8", newline="\n")
-            table_dir = root / "table"
-            table_dir.mkdir()
-            table = table_dir / build_root_table.ROOT_TABLE_FILENAME
-            table.write_text("# temporary table\n", encoding="utf-8", newline="\n")
-            prepared = {
-                "schema": "prepared_root_table_match_input_v1",
-                "teacher_results": {"processed": 1},
-                "openings": {
-                    "path": openings.resolve().as_posix(),
-                    "sha256": build_root_table.sha256_file(openings),
-                    "entries": 1,
-                },
-                "table": {"sha256": build_root_table.sha256_file(table)},
-            }
-            prepared_path = root / "prepared.json"
-            prepared_path.write_text(
-                json.dumps(prepared), encoding="utf-8", newline="\n"
+            engine = root / "engine.exe"
+            engine.write_bytes(b"same binary for both sides")
+            binary_sha256 = build_root_table.sha256_file(engine)
+            evaluation = root / "eval.egev2"
+            evaluation.write_bytes(b"evaluation")
+            harness = root / "run_root_table_matches.py"
+            harness.write_text("# fixed runner\n", encoding="utf-8", newline="\n")
+            teacher = root / "teacher_rows.txt"
+            teacher.write_text(
+                "# ggs_root_teacher_v1\n"
+                f"{GGS_ROOT} -15 f5:-15\n",
+                encoding="utf-8",
+                newline="\n",
             )
+            teacher.with_suffix(teacher.suffix + ".manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema": "ggs_root_teacher_manifest_v10",
+                        "output": {
+                            "sha256": build_root_table.sha256_file(teacher),
+                            "processed": 1,
+                            "completed": 1,
+                            "rejected": 0,
+                        },
+                        "engine": {"sha256": binary_sha256},
+                        "time_seconds": 60,
+                        "threads": 28,
+                        "hash_level": 29,
+                        "min_depth": 30,
+                        "min_selectivity": 74,
+                        "verify_level": 31,
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            prepared_dir = root / "prepared"
+            prepare_root_table_match.prepare_match_input(
+                teacher,
+                prepared_dir,
+                minimum_processed=1,
+                minimum_accepted=1,
+            )
+            prepared_path = prepared_dir / "prepared_match_input.json"
+            table_dir = prepared_dir / "table"
+            _root_discs, table_entries = build_root_table.load_root_table_entries(
+                table_dir / build_root_table.ROOT_TABLE_FILENAME,
+                14,
+            )
+            played_board = audit_root_table_matches._expected_game_boards([GGS_ROOT])[0]
+            expected_move = audit_root_table_matches._expected_table_move(
+                played_board, table_entries
+            )
+
+            def complete_record(first_move: str) -> str:
+                normalized = normalize_board_text(played_board)
+                position = Board.from_text(normalized)
+                record = ""
+                first = True
+                while not position.is_end():
+                    legal = position.legal_moves()
+                    if not legal:
+                        position.pass_turn()
+                        continue
+                    move = first_move if first else index_to_coord(legal[0])
+                    position.play(next(index for index in legal if index_to_coord(index) == move))
+                    record += move
+                    first = False
+                return record
+
+            record = complete_record(expected_move)
+
+            def replayed_game(color: str, game_id: int) -> dict[str, object]:
+                replay, replay_failures = audit_root_table_matches._replay_game(
+                    played_board,
+                    {
+                        "candidate_color": color,
+                        "record": record,
+                        "final_discs": None,
+                        "candidate_disc_diff": None,
+                    },
+                )
+                self.assertTrue(replay)
+                self.assertTrue(replay_failures)
+                return {
+                    "game": game_id,
+                    "candidate_color": color,
+                    "candidate_disc_diff": replay["candidate_difference"],
+                    "final_discs": replay["final_discs"],
+                    "record": record,
+                }
+
             table_log_first = root / "table_first.log"
             table_log_first.write_text(
                 "contest root table loaded 1 roots\n"
-                "contest root table selected f5 value 2 roots 1\n"
-                "level Book depth - f5 2 elapsed 000:00:00.000 nodes 0 nps 0\n",
+                f"contest root table selected {expected_move} value -15 roots 1 "
+                f"{canonicalize_board_key(played_board)[0]}\n"
+                f"level Book depth - {expected_move} -15 elapsed 000:00:00.000 nodes 0 nps 0\n",
                 encoding="utf-8",
                 newline="\n",
             )
@@ -853,54 +975,95 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "timeout_suspected": False,
                     "zero_clock_seen": False,
                     "harness_clock_overrun_msec": 0,
-                    "unexpected_error_lines": [],
-                }
+                "unexpected_error_lines": [],
+            }
 
             results = root / "matches.jsonl"
+            first_game = replayed_game("X", 0)
+            second_game = replayed_game("O", 1)
+            first_game["engine_audit"] = {
+                "candidate": engine_audit(table_log_first),
+                "baseline": engine_audit(no_book_first),
+            }
+            second_game["engine_audit"] = {
+                "candidate": engine_audit(table_log_second),
+                "baseline": engine_audit(no_book_second),
+            }
+            margin = int(first_game["candidate_disc_diff"]) + int(second_game["candidate_disc_diff"])
             row = {
                 "match": 0,
-                "board": GGS_ROOT,
-                "margin": 2,
-                "result": "W",
-                "games": [
-                    {
-                        "candidate_color": "X",
-                        "candidate_disc_diff": 2,
-                        "engine_audit": {
-                            "candidate": engine_audit(table_log_first),
-                            "baseline": engine_audit(no_book_first),
-                        },
-                    },
-                    {
-                        "candidate_color": "O",
-                        "candidate_disc_diff": 0,
-                        "engine_audit": {
-                            "candidate": engine_audit(table_log_second),
-                            "baseline": engine_audit(no_book_second),
-                        },
-                    },
-                ],
+                "board": played_board,
+                "margin": margin,
+                "result": "W" if margin > 0 else "L" if margin < 0 else "D",
+                "games": [first_game, second_game],
             }
             results.write_text(json.dumps(row) + "\n", encoding="utf-8", newline="\n")
-            binary_sha256 = "a" * 64
+            common_command = [
+                str(engine.resolve()),
+                "-quiet",
+                "-noise",
+                "-nobook",
+                "-t",
+                "8",
+                "-hash",
+                "29",
+                "-eval",
+                str(evaluation.resolve()),
+                "-time",
+                "60",
+            ]
+            selected_canonical = sorted(
+                canonicalize_board_key(board)[0] for board in [played_board]
+            )
+            pool_canonical = sorted(canonicalize_board_key(board)[0] for board in [GGS_ROOT])
             run_spec = {
                 "parsed_args": {
                     "time": 60,
                     "threads": 8,
                     "hash": 29,
                     "matches": 1,
+                    "workers": 1,
+                    "seed": 624,
+                    "random_symmetry": True,
+                    "candidate": str(engine.resolve()),
+                    "baseline": str(engine.resolve()),
+                    "contestbook": None,
                     "candidate_contestbook": table_dir.resolve().as_posix(),
                     "baseline_contestbook": None,
+                    "candidate_extra": "",
+                    "baseline_extra": "",
                 },
                 "artifacts": {
-                    "candidate_binary": {"sha256": binary_sha256},
-                    "baseline_binary": {"sha256": binary_sha256},
+                    "candidate_binary": {
+                        "path": engine.resolve().as_posix(),
+                        "sha256": binary_sha256,
+                    },
+                    "baseline_binary": {
+                        "path": engine.resolve().as_posix(),
+                        "sha256": binary_sha256,
+                    },
+                    "evaluation": {
+                        "path": evaluation.resolve().as_posix(),
+                        "sha256": build_root_table.sha256_file(evaluation),
+                    },
                 },
                 "engine_commands": {
-                    "candidate": ["engine", "-nobook", "-contestbook", str(table_dir)],
-                    "baseline": ["engine", "-nobook"],
+                    "candidate": [*common_command, "-contestbook", str(table_dir.resolve())],
+                    "baseline": common_command,
                 },
-                "openings": {"selected_count": 1},
+                "harness": {
+                    "path": harness.resolve().as_posix(),
+                    "sha256": build_root_table.sha256_file(harness),
+                },
+                "openings": {
+                    "raw_count": 1,
+                    "d4_unique_count": 1,
+                    "d4_duplicates_dropped": 0,
+                    "canonical_pool_sha256": audit_root_table_matches._sha256_lines(pool_canonical),
+                    "selected_count": 1,
+                    "ordered_sha256": audit_root_table_matches._sha256_lines([played_board]),
+                    "d4_canonical_set_sha256": audit_root_table_matches._sha256_lines(selected_canonical),
+                },
             }
             metadata = {
                 "run_spec": run_spec,
@@ -917,12 +1080,75 @@ class GgsRootTeacherTests(unittest.TestCase):
                 bootstrap_seed=620,
                 bootstrap_repetitions=100,
                 minimum_processed=1,
+                minimum_accepted=1,
             )
             self.assertTrue(payload["valid"])
-            self.assertTrue(payload["eligible_for_adoption"])
+            self.assertFalse(payload["eligible_for_adoption"])
             text = report.read_text(encoding="utf-8")
             self.assertIn("表を使う側の勝ち", text)
             self.assertIn("Table-using side W/D/L", text)
+
+            altered_spec = json.loads(json.dumps(run_spec))
+            altered_spec["parsed_args"]["candidate_extra"] = "-t 1"
+            metadata_path.write_text(
+                json.dumps(
+                    {
+                        "run_spec": altered_spec,
+                        "run_spec_sha256": audit_root_table_matches._canonical_json_sha256(
+                            altered_spec
+                        ),
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            altered = audit_root_table_matches.audit_match_results(
+                results,
+                prepared_path,
+                metadata_path,
+                root / "altered_extra.md",
+                bootstrap_seed=620,
+                bootstrap_repetitions=100,
+                minimum_processed=1,
+                minimum_accepted=1,
+            )
+            self.assertFalse(altered["valid"])
+            self.assertTrue(
+                any("nonempty candidate_extra" in failure for failure in altered["failures"])
+            )
+
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8", newline="\n")
+            other_move = next(
+                index_to_coord(index)
+                for index in Board.from_text(played_board).legal_moves()
+                if index_to_coord(index) != expected_move
+            )
+            table_log_first.write_text(
+                "contest root table loaded 1 roots\n"
+                f"contest root table selected {other_move} value -15 roots 1 "
+                f"{canonicalize_board_key(played_board)[0]}\n"
+                f"level Book depth - {other_move} -15 elapsed 000:00:00.000 nodes 0 nps 0\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            row["games"][0]["engine_audit"]["candidate"]["log_sha256"] = (
+                build_root_table.sha256_file(table_log_first)
+            )
+            results.write_text(json.dumps(row) + "\n", encoding="utf-8", newline="\n")
+            altered_selection = audit_root_table_matches.audit_match_results(
+                results,
+                prepared_path,
+                metadata_path,
+                root / "altered_selection.md",
+                bootstrap_seed=620,
+                bootstrap_repetitions=100,
+                minimum_processed=1,
+                minimum_accepted=1,
+            )
+            self.assertFalse(altered_selection["valid"])
+            self.assertTrue(
+                any("not stored in the temporary table" in failure for failure in altered_selection["failures"])
+            )
 
     def test_match_bootstrap_sorts_score_and_margin_independently(self) -> None:
         rows = [
