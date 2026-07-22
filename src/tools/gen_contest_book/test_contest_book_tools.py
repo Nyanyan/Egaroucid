@@ -1265,6 +1265,11 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertTrue(audit["valid"])
             self.assertEqual(1, audit["counts"]["completed_positions"])
             self.assertEqual(2, audit["counts"]["saved_method_results"])
+            self.assertEqual(1, audit["timing_seconds"]["same_session_pairs"])
+            self.assertGreater(
+                audit["timing_seconds"]["level_30_then_level_31_to_time_managed_search_ratio"],
+                0.0,
+            )
             self.assertTrue((root / "benchmark_audit.json").is_file())
             with mock.patch.object(
                 benchmark_root_teacher_methods,

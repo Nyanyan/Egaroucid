@@ -49,9 +49,16 @@ def _format_failures(failures: list[str]) -> str:
 
 def _write_report(payload: dict[str, Any], path: Path) -> None:
     counts = payload["counts"]
+    timing = payload["timing_seconds"]
     failures = payload["failures"]
     status_ja = "有効" if payload["valid"] else "無効"
     status_en = "valid" if payload["valid"] else "invalid"
+    if timing["same_session_pairs"]:
+        ratio_ja = f"{timing['level_30_then_level_31_to_time_managed_search_ratio']:.4f}"
+        ratio_en = ratio_ja
+    else:
+        ratio_ja = "該当なし"
+        ratio_en = "not available"
     report = f"""# 固定局面による計算方法比較の保存状態の監査
 
 ## 日本語
@@ -64,8 +71,14 @@ def _write_report(payload: dict[str, Any], path: Path) -> None:
 - 確認した結果ファイル: {counts['saved_method_results']}
 - 手が異なり、level 33確認が必要な局面: {counts['different_accepted_moves']}
 - 進行中の計算: {counts['in_progress_positions']}
+- 同じプログラム起動中に両方の計時を得た局面: {timing['same_session_pairs']}
+- その局面での60秒の持ち時間を与える探索の合計実時間: {timing['time_managed_search_total']:.3f}秒
+- その局面でのlevel 30・level 31の照合の合計実時間: {timing['level_30_then_level_31_total']:.3f}秒
+- 合計実時間の比（level 30・level 31の照合 ÷ 60秒の持ち時間を与える探索）: {ratio_ja}
 
 この監査は、状態ファイル、固定局面一覧、進捗ファイル、保存済みの結果ファイルとmanifestのSHA-256、実行ファイル、二つのPythonスクリプトを照合する。対象110,766局面の一覧そのものは、状態ファイルに記録された入力SHA-256を照合することで確認する。探索、対局、手の表の作成は行わない。
+
+上記の実時間は完了済み局面の途中集計であり、600局面が完了するまでは方法選択に使わない。
 
 ### 検出した問題
 
@@ -80,8 +93,14 @@ def _write_report(payload: dict[str, Any], path: Path) -> None:
 - Saved result files checked: {counts['saved_method_results']}
 - Positions with different accepted moves that require a level-33 check: {counts['different_accepted_moves']}
 - Calculations in progress: {counts['in_progress_positions']}
+- Positions whose two times were measured in one program invocation: {timing['same_session_pairs']}
+- Total wall time for the search given 60 seconds of remaining game time on those positions: {timing['time_managed_search_total']:.3f} seconds
+- Total wall time for the level-30/level-31 check on those positions: {timing['level_30_then_level_31_total']:.3f} seconds
+- Total wall-time ratio (level-30/level-31 check ÷ search given 60 seconds of remaining game time): {ratio_en}
 
 This audit compares the state file, fixed-position list, progress file, saved-result and manifest SHA-256 values, executable, and two Python scripts. It checks the 110,766-position input through the input SHA-256 stored in the state file; it does not parse that entire input again. It does not start an engine, play a game, or build a move table.
+
+The wall-time values above are an interim aggregate of completed positions and are not used to select a method until all 600 positions are complete.
 
 ### Detected problems
 
@@ -181,6 +200,13 @@ def audit_benchmark(output_dir: Path, report_path: Path) -> dict[str, Any]:
         1 for record in with_both if benchmark._record_requires_deep_check(record)
     )
     in_progress_positions = sum(1 for record in records if isinstance(record.get("in_progress"), dict))
+    same_session_pairs = benchmark._records_with_same_session_pair(completed)
+    time_managed_search_total = sum(
+        float(record[benchmark.TIME_METHOD]["wall_seconds"]) for record in same_session_pairs
+    )
+    level_30_then_level_31_total = sum(
+        float(record[benchmark.LEVEL_METHOD]["wall_seconds"]) for record in same_session_pairs
+    )
     payload: dict[str, Any] = {
         "schema": AUDIT_SCHEMA,
         "output_dir": output_dir.resolve().as_posix(),
@@ -198,6 +224,16 @@ def audit_benchmark(output_dir: Path, report_path: Path) -> dict[str, Any]:
             "saved_method_results": saved_method_results,
             "different_accepted_moves": different_accepted_moves,
             "in_progress_positions": in_progress_positions,
+        },
+        "timing_seconds": {
+            "same_session_pairs": len(same_session_pairs),
+            "time_managed_search_total": time_managed_search_total,
+            "level_30_then_level_31_total": level_30_then_level_31_total,
+            "level_30_then_level_31_to_time_managed_search_ratio": (
+                level_30_then_level_31_total / time_managed_search_total
+                if time_managed_search_total > 0.0
+                else None
+            ),
         },
     }
     _atomic_write_text(
