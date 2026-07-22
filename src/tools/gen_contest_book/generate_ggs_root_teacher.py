@@ -28,11 +28,11 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v12"
-TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v12"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v13"
+TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v13"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 TEACHER_UPDATE_SCHEMA = "ggs_root_teacher_update_v1"
-CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v2"
+CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v3"
 EXECUTION_ENVIRONMENT_SCHEMA = "ggs_root_teacher_execution_environment_v1"
 DEEP_TIEBREAK_LEVEL = 31
 BOOK_DISABLED_ARGUMENTS = ("-nobook", "-nocontestbook")
@@ -48,6 +48,8 @@ TIME_SEARCH_COMMAND_TEMPLATE = [
     "{threads}",
     "-hash",
     "{hash_level}",
+    "-seed",
+    "{random_seed}",
     *BOOK_DISABLED_ARGUMENTS,
 ]
 LEVEL_SEARCH_COMMAND_TEMPLATE = [
@@ -58,6 +60,8 @@ LEVEL_SEARCH_COMMAND_TEMPLATE = [
     "{threads}",
     "-hash",
     "{hash_level}",
+    "-seed",
+    "{random_seed}",
     *BOOK_DISABLED_ARGUMENTS,
 ]
 TIME_SEARCH_INPUT_TEMPLATE = "setboard {board}\ngo\nquit\n"
@@ -188,6 +192,14 @@ def _search_invocation_contract() -> dict[str, Any]:
     }
 
 
+def _validate_random_seed(random_seed: object) -> int:
+    if isinstance(random_seed, bool) or not isinstance(random_seed, int):
+        raise ValueError("random_seed must be an integer")
+    if not 0 <= random_seed <= 0xFFFFFFFF:
+        raise ValueError("random_seed must be between zero and 4294967295")
+    return random_seed
+
+
 def _build_search_command(
     search_kind: str,
     exe: Path,
@@ -196,8 +208,10 @@ def _build_search_command(
     level: int | None = None,
     threads: int,
     hash_level: int,
+    random_seed: int = 620,
 ) -> list[str]:
     """Instantiate the same command template that is saved in provenance."""
+    random_seed = _validate_random_seed(random_seed)
     template = _search_invocation_contract()["command_templates"].get(search_kind)
     if template is None:
         raise ValueError(f"unknown search kind {search_kind}")
@@ -207,6 +221,7 @@ def _build_search_command(
         "level": "" if level is None else str(level),
         "threads": str(threads),
         "hash_level": str(hash_level),
+        "random_seed": str(random_seed),
     }
     return [part.format(**values) for part in template]
 
@@ -335,10 +350,12 @@ def _new_calculation_provenance(
     output: Path,
     exe: Path,
     hash_level: int,
+    random_seed: int = 620,
 ) -> dict[str, Any]:
     """Freeze the executable, Console inputs, book options, and generator source."""
     if not 0 <= hash_level <= 29:
         raise ValueError("hash_level must be between zero and 29")
+    random_seed = _validate_random_seed(random_seed)
     teacher_script = Path(__file__).resolve()
     teacher_script_sha256 = sha256_file(teacher_script)
     teacher_script_snapshot = _teacher_script_snapshot_path(output).resolve()
@@ -379,6 +396,7 @@ def _new_calculation_provenance(
     return {
         "schema": CALCULATION_PROVENANCE_SCHEMA,
         "book_configuration": _book_configuration(),
+        "random_seed": random_seed,
         "search_invocation": _search_invocation_contract(),
         "teacher_script": {
             "path": teacher_script.as_posix(),
@@ -417,6 +435,7 @@ def validate_calculation_provenance(
         raise ValueError("teacher calculation provenance has an unsupported schema")
     if provenance.get("book_configuration") != _book_configuration():
         raise ValueError("teacher calculation provenance does not disable both books")
+    _validate_random_seed(provenance.get("random_seed"))
     if provenance.get("search_invocation") != _search_invocation_contract():
         raise ValueError("teacher calculation provenance has an unexpected search-invocation contract")
     teacher_script = provenance.get("teacher_script")
@@ -700,15 +719,18 @@ def search_root(
     time_seconds: float,
     threads: int,
     hash_level: int,
+    random_seed: int = 620,
 ) -> dict[str, int | str]:
     if time_seconds <= 0 or threads <= 0 or not 0 <= hash_level <= 29:
         raise ValueError("invalid time, thread, or hash setting")
+    random_seed = _validate_random_seed(random_seed)
     command = _build_search_command(
         "time_limited_search",
         exe,
         time_seconds=time_seconds,
         threads=threads,
         hash_level=hash_level,
+        random_seed=random_seed,
     )
     commands = TIME_SEARCH_INPUT_TEMPLATE.format(board=board)
     try:
@@ -742,15 +764,18 @@ def search_root_at_level(
     level: int,
     threads: int,
     hash_level: int,
+    random_seed: int = 620,
 ) -> dict[str, int | str]:
     if level < 1 or threads <= 0 or not 0 <= hash_level <= 29:
         raise ValueError("invalid level, thread, or hash setting")
+    random_seed = _validate_random_seed(random_seed)
     command = _build_search_command(
         "fixed_level_search",
         exe,
         level=level,
         threads=threads,
         hash_level=hash_level,
+        random_seed=random_seed,
     )
     commands = LEVEL_SEARCH_INPUT_TEMPLATE.format(board=board)
     try:
@@ -809,10 +834,14 @@ def _new_state(
     verify_level: int,
     cohort_seed: int | None,
     excluded_root_files: list[Path],
+    random_seed: int = 620,
 ) -> dict[str, Any]:
+    random_seed = _validate_random_seed(random_seed)
     return {
         "schema": TEACHER_SCHEMA,
-        "calculation_provenance": _new_calculation_provenance(output, exe, hash_level),
+        "calculation_provenance": _new_calculation_provenance(
+            output, exe, hash_level, random_seed
+        ),
         "coverage": {
             "path": coverage_path.resolve().as_posix(),
             "sha256": sha256_file(coverage_path),
@@ -824,6 +853,7 @@ def _new_state(
         "time_seconds": time_seconds,
         "threads": threads,
         "hash_level": hash_level,
+        "random_seed": random_seed,
         "min_depth": min_depth,
         "min_selectivity": min_selectivity,
         "fallback_level": fallback_level,
@@ -848,7 +878,7 @@ def _load_state(
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot resume teacher state {path}: {error}") from error
     for key in (
-        "schema", "calculation_provenance", "coverage", "engine", "time_seconds", "threads", "hash_level",
+        "schema", "random_seed", "calculation_provenance", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
         "verify_level", "cohort_seed", "excluded_root_files", "deep_tiebreak_level", "roots",
     ):
@@ -897,6 +927,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# time_seconds {state['time_seconds']:g}",
             f"# threads {state['threads']}",
             f"# hash_level {state['hash_level']}",
+            f"# random_seed {state['random_seed']}",
             f"# min_depth {state['min_depth']}",
             f"# min_selectivity {state['min_selectivity']}",
             f"# fallback_level {state['fallback_level']}",
@@ -934,6 +965,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "time_seconds": state["time_seconds"],
         "threads": state["threads"],
         "hash_level": state["hash_level"],
+        "random_seed": state["random_seed"],
         "min_depth": state["min_depth"],
         "min_selectivity": state["min_selectivity"],
         "fallback_level": state["fallback_level"],
@@ -971,6 +1003,7 @@ def _generate_teachers_unlocked(
     excluded_root_files: list[Path] | None = None,
     checkpoint_every: int = 1,
     compact_only: bool = False,
+    random_seed: int = 620,
 ) -> dict[str, int]:
     if not exe.is_file():
         raise FileNotFoundError(f"engine executable not found: {exe}")
@@ -980,6 +1013,7 @@ def _generate_teachers_unlocked(
         raise ValueError("checkpoint_every must be positive")
     if compact_only and not resume:
         raise ValueError("compact_only requires resume")
+    random_seed = _validate_random_seed(random_seed)
     if fallback_level < 0:
         raise ValueError("fallback_level must not be negative")
     if method not in {"hint", "time_then_hint", "time_then_verify", "hint_then_verify"}:
@@ -1017,6 +1051,7 @@ def _generate_teachers_unlocked(
     expected = _new_state(
         output, coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
         fallback_level, method, teacher_level, verify_level, cohort_seed, excluded_root_files,
+        random_seed,
     )
     state_path = _state_path(output)
     if resume:
@@ -1055,33 +1090,41 @@ def _generate_teachers_unlocked(
         if board in state["results"] or board in state["rejections"]:
             continue
         if method == "hint":
-            result = search_root_at_level(execution_exe, board, teacher_level, threads, hash_level)
+            result = search_root_at_level(
+                execution_exe, board, teacher_level, threads, hash_level, random_seed
+            )
             validate_quality(result, max(min_depth, teacher_level), min_selectivity)
             result["method"] = f"hint_level_{teacher_level}"
         elif method == "time_then_hint":
-            result = search_root(execution_exe, board, time_seconds, threads, hash_level)
+            result = search_root(
+                execution_exe, board, time_seconds, threads, hash_level, random_seed
+            )
             try:
                 validate_quality(result, min_depth, min_selectivity)
                 result["method"] = "time"
             except ValueError:
                 if fallback_level == 0:
                     raise
-                result = search_root_at_level(execution_exe, board, fallback_level, threads, hash_level)
+                result = search_root_at_level(
+                    execution_exe, board, fallback_level, threads, hash_level, random_seed
+                )
                 validate_quality(result, max(min_depth, fallback_level), min_selectivity)
                 result["method"] = f"hint_level_{fallback_level}"
         elif method == "hint_then_verify":
-            result = search_root_at_level(execution_exe, board, teacher_level, threads, hash_level)
+            result = search_root_at_level(
+                execution_exe, board, teacher_level, threads, hash_level, random_seed
+            )
             validate_quality(result, max(min_depth, teacher_level), min_selectivity)
             result["method"] = (
                 f"hint_level_{teacher_level}_verified_hint_level_{verify_level}"
             )
             verification = search_root_at_level(
-                execution_exe, board, verify_level, threads, hash_level
+                execution_exe, board, verify_level, threads, hash_level, random_seed
             )
             validate_quality(verification, max(min_depth, verify_level), min_selectivity)
             if str(result["move"]) != str(verification["move"]):
                 verification_repeat = search_root_at_level(
-                    execution_exe, board, verify_level, threads, hash_level
+                    execution_exe, board, verify_level, threads, hash_level, random_seed
                 )
                 validate_quality(
                     verification_repeat, max(min_depth, verify_level), min_selectivity
@@ -1127,29 +1170,35 @@ def _generate_teachers_unlocked(
                 result["verification"] = verification
                 result["verification_mode"] = f"level_{verify_level}_exact"
         else:
-            result = search_root(execution_exe, board, time_seconds, threads, hash_level)
+            result = search_root(
+                execution_exe, board, time_seconds, threads, hash_level, random_seed
+            )
             primary = result
             try:
                 validate_quality(result, min_depth, min_selectivity)
                 result["method"] = f"time_verified_hint_level_{verify_level}"
             except ValueError:
-                result = search_root_at_level(execution_exe, board, fallback_level, threads, hash_level)
+                result = search_root_at_level(
+                    execution_exe, board, fallback_level, threads, hash_level, random_seed
+                )
                 validate_quality(result, max(min_depth, fallback_level), min_selectivity)
                 result["method"] = (
                     f"time_fallback_hint_level_{fallback_level}_verified_hint_level_{verify_level}"
                 )
                 result["primary"] = primary
-            verification = search_root_at_level(execution_exe, board, verify_level, threads, hash_level)
+            verification = search_root_at_level(
+                execution_exe, board, verify_level, threads, hash_level, random_seed
+            )
             validate_quality(verification, max(min_depth, verify_level), min_selectivity)
             verification_mode = f"level_{verify_level}_exact"
             if str(result["move"]) != str(verification["move"]):
                 tiebreak = search_root_at_level(
-                    execution_exe, board, fallback_level, threads, hash_level
+                    execution_exe, board, fallback_level, threads, hash_level, random_seed
                 )
                 validate_quality(tiebreak, max(min_depth, fallback_level), min_selectivity)
                 if str(result["move"]) != str(tiebreak["move"]):
                     deep_tiebreak = search_root_at_level(
-                        execution_exe, board, DEEP_TIEBREAK_LEVEL, threads, hash_level
+                        execution_exe, board, DEEP_TIEBREAK_LEVEL, threads, hash_level, random_seed
                     )
                     validate_quality(
                         deep_tiebreak,
@@ -1225,6 +1274,7 @@ def generate_teachers(
     excluded_root_files: list[Path] | None = None,
     checkpoint_every: int = 1,
     compact_only: bool = False,
+    random_seed: int = 620,
 ) -> dict[str, int]:
     """Generate one output while holding its OS-owned exclusive lock."""
     with file_lock(_lock_path(output)):
@@ -1247,6 +1297,7 @@ def generate_teachers(
             excluded_root_files,
             checkpoint_every,
             compact_only,
+            random_seed,
         )
 
 
@@ -1258,6 +1309,12 @@ def main() -> int:
     parser.add_argument("--time-seconds", type=float, default=60.0)
     parser.add_argument("--threads", type=int, default=28)
     parser.add_argument("--hash", dest="hash_level", type=int, default=29)
+    parser.add_argument(
+        "--random-seed",
+        type=int,
+        default=620,
+        help="Console -seed value recorded and used for every teacher process",
+    )
     parser.add_argument("--min-depth", type=int, default=33)
     parser.add_argument("--min-selectivity", type=int, default=74)
     parser.add_argument("--fallback-level", type=int, default=33)
@@ -1313,6 +1370,7 @@ def main() -> int:
         args.exclude_root_results,
         args.checkpoint_every,
         args.compact_only,
+        args.random_seed,
     )
     print(f"teacher roots complete {result['completed']}/{result['requested']}")
     return 0

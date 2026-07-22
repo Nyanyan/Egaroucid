@@ -248,6 +248,7 @@ def _validate_prepared_input(
         "contest_book_disabled": False,
         "teacher_script_sha256": None,
         "teacher_script_snapshot_sha256": None,
+        "random_seed": None,
         "evaluation_sha256": None,
         "endgame_move_ordering_sha256": None,
     }
@@ -378,6 +379,8 @@ def _validate_prepared_input(
                     if teacher_engine_sha256 is not None and saved_executable["sha256"] != teacher_engine_sha256:
                         failures.append("frozen teacher executable SHA-256 differs from its calculation evidence")
                     book_configuration = provenance["book_configuration"]
+                    if manifest.get("random_seed") != provenance["random_seed"]:
+                        failures.append("frozen teacher manifest random seed differs from its calculation evidence")
                     resources = {
                         resource["role"]: resource["snapshot"]["sha256"]
                         for resource in provenance["execution_environment"]["resources"]
@@ -387,6 +390,7 @@ def _validate_prepared_input(
                         "contest_book_disabled": book_configuration["contest_book"]["disabled"],
                         "teacher_script_sha256": provenance["teacher_script"]["sha256"],
                         "teacher_script_snapshot_sha256": saved_script["sha256"],
+                        "random_seed": provenance["random_seed"],
                         "evaluation_sha256": resources["evaluation"],
                         "endgame_move_ordering_sha256": resources["endgame_move_ordering"],
                     }
@@ -993,6 +997,7 @@ def audit_match_results(
 - 教師計算時の大会book: {contest_book_ja}
 - 教師計算に使った生成スクリプトのSHA-256: {teacher_calculation['teacher_script_sha256']}
 - 保存した生成スクリプトのSHA-256: {teacher_calculation['teacher_script_snapshot_sha256']}
+- 教師計算で指定した乱数seed: {teacher_calculation['random_seed']}
 - 教師計算に使った主評価ファイルのSHA-256: {teacher_calculation['evaluation_sha256']}
 - 教師計算に使った終盤の手順評価ファイルのSHA-256: {teacher_calculation['endgame_move_ordering_sha256']}
 - 監査上の問題: {failure_text_ja}
@@ -1018,6 +1023,7 @@ def audit_match_results(
 - Contest book during teacher calculation: {contest_book_en}
 - Generator-script SHA-256 used for teacher calculation: {teacher_calculation['teacher_script_sha256']}
 - Saved generator-script SHA-256: {teacher_calculation['teacher_script_snapshot_sha256']}
+- Random seed specified for teacher calculation: {teacher_calculation['random_seed']}
 - Main evaluation-file SHA-256 used for teacher calculation: {teacher_calculation['evaluation_sha256']}
 - Endgame move-ordering evaluation-file SHA-256 used for teacher calculation: {teacher_calculation['endgame_move_ordering_sha256']}
 - Audit failures: {failure_text_en}

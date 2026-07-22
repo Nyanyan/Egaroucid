@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS_BASE 34
+#define N_COMMANDLINE_OPTIONS_BASE 35
 
 #ifdef INCLUDE_GGS
     #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
@@ -57,6 +57,7 @@
 #define ID_CONTEST_BOOK_DIR 31
 #define ID_NO_CONTEST_BOOK 32
 #define ID_CONTEST_RECORD 33
+#define ID_RANDOM_SEED 34
 
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
@@ -114,6 +115,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_CONTEST_BOOK_DIR,   {"-contestbook"},                                   1, "<dir>",             "Directory for contest book files"},
     {ID_NO_CONTEST_BOOK,    {"-nocontestbook"},                                 0, "",                  "Disable contest book"},
     {ID_CONTEST_RECORD,     {"-contestrecord"},                                 6, "<board> <n> <dir> <per_move_loss> <total_loss> <cut_empty>", "Generate contest book records"},
+    {ID_RANDOM_SEED,        {"-seed", "-randomseed"},                          1, "<0..4294967295>",   "Set the deterministic seed for internal randomized choices"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},

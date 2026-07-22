@@ -67,9 +67,11 @@ def _load_manifest_bytes(path: Path) -> tuple[bytes, dict[str, Any]]:
     if manifest.get("schema") != TEACHER_MANIFEST_SCHEMA:
         raise ValueError(f"{path}: unsupported teacher manifest schema")
     try:
-        validate_calculation_provenance(manifest.get("calculation_provenance"))
+        provenance = validate_calculation_provenance(manifest.get("calculation_provenance"))
     except ValueError as error:
         raise ValueError(f"{path}: invalid teacher-calculation evidence: {error}") from error
+    if manifest.get("random_seed") != provenance["random_seed"]:
+        raise ValueError(f"{path}: random seed does not match teacher-calculation evidence")
     return content, manifest
 
 

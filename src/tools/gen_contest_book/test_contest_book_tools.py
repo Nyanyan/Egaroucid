@@ -84,13 +84,13 @@ def saved_teacher_execution_executable(output: Path) -> Path:
     )
 
 
-def write_v12_teacher_manifest(
+def write_v13_teacher_manifest(
     teacher: Path,
     *,
     engine: Path | None = None,
     include_match_requirements: bool = False,
 ) -> None:
-    """Create one small, internally consistent v12 teacher artifact for tests."""
+    """Create one small, internally consistent v13 teacher artifact for tests."""
     if engine is None:
         engine = teacher.parent / "teacher.exe"
         engine.write_bytes(b"test teacher executable")
@@ -117,6 +117,7 @@ def write_v12_teacher_manifest(
             "rejected": 0,
         },
         "calculation_provenance": provenance,
+        "random_seed": provenance["random_seed"],
         "results": {
             entry.board: {
                 "move": index_to_coord(entry.moves[0][0]),
@@ -969,7 +970,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 encoding="utf-8",
                 newline="\n",
             )
-            write_v12_teacher_manifest(teacher)
+            write_v13_teacher_manifest(teacher)
             destination = root / "prepared"
             result = prepare_root_table_match.prepare_match_input(
                 teacher, destination, minimum_processed=1, minimum_accepted=1
@@ -1049,6 +1050,16 @@ class GgsRootTeacherTests(unittest.TestCase):
                     legacy, legacy_destination, minimum_processed=1, minimum_accepted=1
                 )
             self.assertFalse(legacy_destination.exists())
+            manifest_path = teacher.with_suffix(teacher.suffix + ".manifest.json")
+            seed_mismatch = json.loads(manifest_path.read_text(encoding="utf-8"))
+            seed_mismatch["random_seed"] = 621
+            manifest_path.write_text(json.dumps(seed_mismatch), encoding="utf-8", newline="\n")
+            seed_destination = root / "seed_mismatch"
+            with self.assertRaisesRegex(ValueError, "random seed does not match"):
+                prepare_root_table_match.prepare_match_input(
+                    teacher, seed_destination, minimum_processed=1, minimum_accepted=1
+                )
+            self.assertFalse(seed_destination.exists())
 
     def test_audits_color_swapped_root_table_match(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -1065,7 +1076,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 encoding="utf-8",
                 newline="\n",
             )
-            write_v12_teacher_manifest(
+            write_v13_teacher_manifest(
                 teacher,
                 engine=engine,
                 include_match_requirements=True,
@@ -1706,6 +1717,7 @@ class GgsRootTeacherTests(unittest.TestCase):
         )
         self.assertIn("-nobook", search.call_args.args[0])
         self.assertIn("-nocontestbook", search.call_args.args[0])
+        self.assertEqual("620", search.call_args.args[0][search.call_args.args[0].index("-seed") + 1])
 
     def test_fixed_level_search_uses_the_recorded_command_builder(self) -> None:
         table = (
@@ -1726,6 +1738,7 @@ class GgsRootTeacherTests(unittest.TestCase):
         )
         self.assertIn("-nobook", search.call_args.args[0])
         self.assertIn("-nocontestbook", search.call_args.args[0])
+        self.assertEqual("620", search.call_args.args[0][search.call_args.args[0].index("-seed") + 1])
 
     def test_rejects_teacher_below_minimum_depth(self) -> None:
         with self.assertRaisesRegex(ValueError, "below 33@74%"):
@@ -1943,7 +1956,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                     ),
                 )
                 search.assert_called_once_with(
-                    saved_teacher_execution_executable(output), GGS_ROOT, 33, 28, 29
+                    saved_teacher_execution_executable(output), GGS_ROOT, 33, 28, 29, 620
                 )
             teacher_text = output.read_text(encoding="utf-8")
             self.assertIn(f"{GGS_ROOT} -15 f5:-15", teacher_text)
@@ -1955,11 +1968,14 @@ class GgsRootTeacherTests(unittest.TestCase):
                 output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
             )
             self.assertEqual(generate_ggs_root_teacher.TEACHER_SCHEMA, state["schema"])
+            self.assertEqual(620, state["random_seed"])
+            self.assertIn("# random_seed 620", teacher_text)
             self.assertEqual(
                 generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA,
                 manifest["schema"],
             )
             provenance = state["calculation_provenance"]
+            self.assertEqual(620, provenance["random_seed"])
             self.assertEqual(provenance, manifest["calculation_provenance"])
             self.assertEqual(
                 {
@@ -1985,6 +2001,10 @@ class GgsRootTeacherTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "resume mismatch for threads"):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, output, 60.0, 27, 29, resume=True
+                )
+            with self.assertRaisesRegex(ValueError, "resume mismatch for random_seed"):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, output, 60.0, 28, 29, resume=True, random_seed=621
                 )
             state["calculation_provenance"]["teacher_script"]["sha256"] = "0" * 64
             state_path.write_text(json.dumps(state), encoding="utf-8", newline="\n")
@@ -2020,7 +2040,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                     method="time_then_hint",
                 )
             level_search.assert_called_once_with(
-                saved_teacher_execution_executable(output), GGS_ROOT, 33, 28, 29
+                saved_teacher_execution_executable(output), GGS_ROOT, 33, 28, 29, 620
             )
             manifest = json.loads(
                 output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
@@ -2067,8 +2087,8 @@ class GgsRootTeacherTests(unittest.TestCase):
             time_search.assert_not_called()
             self.assertEqual(
                 [
-                    mock.call(saved_teacher_execution_executable(root / "teacher_rows.txt"), GGS_ROOT, 30, 28, 29),
-                    mock.call(saved_teacher_execution_executable(root / "teacher_rows.txt"), GGS_ROOT, 31, 28, 29),
+                    mock.call(saved_teacher_execution_executable(root / "teacher_rows.txt"), GGS_ROOT, 30, 28, 29, 620),
+                    mock.call(saved_teacher_execution_executable(root / "teacher_rows.txt"), GGS_ROOT, 31, 28, 29, 620),
                 ],
                 level_search.call_args_list,
             )
@@ -2282,8 +2302,8 @@ class GgsRootTeacherTests(unittest.TestCase):
                 )
             self.assertEqual(
                 [
-                    mock.call(saved_teacher_execution_executable(output), GGS_ROOT, 30, 28, 29),
-                    mock.call(saved_teacher_execution_executable(output), GGS_ROOT, 27, 28, 29),
+                    mock.call(saved_teacher_execution_executable(output), GGS_ROOT, 30, 28, 29, 620),
+                    mock.call(saved_teacher_execution_executable(output), GGS_ROOT, 27, 28, 29, 620),
                 ],
                 level_search.call_args_list,
             )

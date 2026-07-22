@@ -57,6 +57,11 @@ int main(int argc, char* argv[]) {
         }
         std::cerr.rdbuf(ofs.rdbuf());
     }
+    if (options.random_seed_specified) {
+        raw_myrandom.seed(options.random_seed);
+        if (options.show_log)
+            std::cerr << "random seed = " << options.random_seed << std::endl;
+    }
     print_special_commandline_options(commandline_options);
     init_console(options, binary_path);
     execute_special_tasks(options); // tuning etc.

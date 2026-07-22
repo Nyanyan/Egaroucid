@@ -48,6 +48,7 @@ EXPERIMENT_PROGRESS_SCHEMA = "root_teacher_method_benchmark_progress_v1"
 TIME_SECONDS = 60.0
 THREADS = 28
 HASH_LEVEL = 29
+RANDOM_SEED = 620
 MIN_DEPTH = 30
 MIN_SELECTIVITY = 74
 LEVEL_30 = 30
@@ -161,6 +162,7 @@ def _conditions() -> dict[str, Any]:
     return {
         "threads": THREADS,
         "hash": HASH_LEVEL,
+        "random_seed": RANDOM_SEED,
         "minimum_depth": MIN_DEPTH,
         "minimum_selectivity": MIN_SELECTIVITY,
         TIME_METHOD: {
@@ -393,6 +395,7 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     if schema not in {
         "ggs_root_teacher_manifest_v10",
         "ggs_root_teacher_manifest_v11",
+        "ggs_root_teacher_manifest_v12",
         generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA,
     }:
         raise ValueError(f"generated manifest has an unsupported schema: {path}")
@@ -437,6 +440,7 @@ def _run_one_method(
         teacher_level,
         verify_level,
         checkpoint_every=1,
+        random_seed=RANDOM_SEED,
     )
     elapsed_seconds = time.monotonic() - started
     finished_at_utc = datetime.now(timezone.utc).isoformat()
@@ -662,6 +666,7 @@ def evaluate_forced_move_at_level(
     move: str,
     level: int,
     log_path: Path,
+    random_seed: int = RANDOM_SEED,
 ) -> dict[str, int | str]:
     """Evaluate exactly one played initial move with Console ``analyze``.
 
@@ -675,6 +680,7 @@ def evaluate_forced_move_at_level(
         "-l", str(level),
         "-t", str(THREADS),
         "-hash", str(HASH_LEVEL),
+        "-seed", str(random_seed),
         "-nobook",
         "-nocontestbook",
     ]
@@ -728,8 +734,12 @@ def _deep_check_different_moves(
 ) -> dict[str, Any]:
     """Compare two different accepted moves conservatively at level 33."""
     try:
-        root_first = search_root_at_level(exe, board, LEVEL_33, THREADS, HASH_LEVEL)
-        root_second = search_root_at_level(exe, board, LEVEL_33, THREADS, HASH_LEVEL)
+        root_first = search_root_at_level(
+            exe, board, LEVEL_33, THREADS, HASH_LEVEL, RANDOM_SEED
+        )
+        root_second = search_root_at_level(
+            exe, board, LEVEL_33, THREADS, HASH_LEVEL, RANDOM_SEED
+        )
         _validate_at_requested_level(root_first, LEVEL_33)
         _validate_at_requested_level(root_second, LEVEL_33)
         forced: dict[str, list[dict[str, int | str]]] = {}

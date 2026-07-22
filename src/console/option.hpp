@@ -9,8 +9,11 @@
 */
 
 #pragma once
+#include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <filesystem>
+#include <limits>
 #include "./../engine/engine_all.hpp"
 #include "commandline_option.hpp"
 #include "console_common.hpp"
@@ -44,6 +47,8 @@ struct Options {
     int play_loss_max;
     bool contest_book;
     std::string contest_book_dir;
+    bool random_seed_specified;
+    uint32_t random_seed;
 #ifdef INCLUDE_GGS
     bool ggs;
     std::string ggs_username;
@@ -128,6 +133,31 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         }
     }
     res.nobook = find_commandline_option(commandline_options, ID_NOBOOK);
+    res.random_seed_specified = false;
+    res.random_seed = 0;
+    if (find_commandline_option(commandline_options, ID_RANDOM_SEED)) {
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_RANDOM_SEED);
+        try {
+            if (
+                arg.empty() || arg[0].empty() ||
+                std::any_of(arg[0].begin(), arg[0].end(), [](unsigned char c) {
+                    return c < '0' || c > '9';
+                })
+            ) {
+                throw std::invalid_argument("random seed must be decimal");
+            }
+            unsigned long long parsed = std::stoull(arg[0]);
+            if (parsed > std::numeric_limits<uint32_t>::max()) {
+                throw std::out_of_range("random seed exceeds uint32_t");
+            }
+            res.random_seed = static_cast<uint32_t>(parsed);
+            res.random_seed_specified = true;
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] random seed argument invalid" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] random seed argument out of range" << std::endl;
+        }
+    }
     res.mode = MODE_HUMAN_HUMAN;
     if (find_commandline_option(commandline_options, ID_MODE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_MODE);
