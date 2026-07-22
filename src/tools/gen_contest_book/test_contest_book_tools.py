@@ -692,6 +692,14 @@ class GgsRootTeacherTests(unittest.TestCase):
             generate_ggs_root_teacher.parse_search_result(output, GGS_ROOT),
         )
 
+    def test_atomic_output_write_flushes_before_replace(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "teacher_rows.txt"
+            with mock.patch.object(generate_ggs_root_teacher.os, "fsync") as fsync:
+                generate_ggs_root_teacher._atomic_write_text(output, "verified\n")
+            self.assertEqual("verified\n", output.read_text(encoding="utf-8"))
+            fsync.assert_called_once()
+
     def test_search_root_accepts_console_result_on_stderr(self) -> None:
         table = (
             "|             27|         27@74%|             f5|            -15|  000:00:02.786|      239460993|       85951540|\n"
