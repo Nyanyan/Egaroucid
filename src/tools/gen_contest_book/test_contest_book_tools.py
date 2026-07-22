@@ -20,6 +20,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import generate_all_records
 import generate_records
 import audit_root_table_matches
+import benchmark_root_teacher_methods
 import book_artifact
 import audit_r14_corpus
 import build_root_table
@@ -1171,6 +1172,76 @@ class GgsRootTeacherTests(unittest.TestCase):
         margin_samples.sort()
         self.assertEqual((score_samples[2], score_samples[96]), intervals["score"])
         self.assertEqual((margin_samples[2], margin_samples[96]), intervals["margin"])
+
+    def test_benchmarks_two_root_teacher_methods_on_fixed_reference_positions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"teacher executable")
+            reference = root / "reference.txt"
+            reference.write_text(
+                "# ggs_root_teacher_v1\n"
+                f"{GGS_ROOT} -15 f5:-15\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            reference.with_suffix(reference.suffix + ".manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema": "ggs_root_teacher_manifest_v10",
+                        "output": {
+                            "sha256": build_root_table.sha256_file(reference),
+                            "completed": 1,
+                        },
+                        "engine": {"sha256": build_root_table.sha256_file(exe)},
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+
+            def fake_generate(coverage: Path, _exe: Path, output: Path, *args, **_kwargs) -> dict[str, int]:
+                method = args[6]
+                board = json.loads(coverage.read_text(encoding="utf-8"))["roots"][0]["canonical_board"]
+                move = "f5" if method == "time_then_verify" else "f5"
+                output.write_text(
+                    "# ggs_root_teacher_v1\n" f"{board} -15 {move}:-15\n",
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                output.with_suffix(output.suffix + ".manifest.json").write_text(
+                    json.dumps(
+                        {
+                            "schema": "ggs_root_teacher_manifest_v10",
+                            "output": {
+                                "sha256": build_root_table.sha256_file(output),
+                                "completed": 1,
+                                "rejected": 0,
+                            },
+                            "results": {board: {"move": move}},
+                        }
+                    ),
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                return {"completed": 1, "requested": 1}
+
+            with mock.patch.object(
+                benchmark_root_teacher_methods,
+                "generate_teachers",
+                side_effect=fake_generate,
+            ):
+                payload = benchmark_root_teacher_methods.compare_methods(
+                    reference,
+                    exe,
+                    root / "benchmark",
+                    1,
+                )
+            self.assertEqual(1, payload["comparison"]["same_move"])
+            self.assertEqual(0, payload["comparison"]["different_move"])
+            report = (root / "benchmark" / "README.md").read_text(encoding="utf-8")
+            self.assertIn("60秒の持ち時間を与える探索", report)
+            self.assertIn("Level-30/31 check", report)
 
     def test_search_root_accepts_console_result_on_stderr(self) -> None:
         table = (
