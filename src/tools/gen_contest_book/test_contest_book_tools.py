@@ -747,6 +747,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             exe.write_bytes(b"test teacher")
             output = root / "teacher_rows.txt"
             state = generate_ggs_root_teacher._new_state(
+                output,
                 coverage,
                 exe,
                 [GGS_ROOT],
@@ -1579,6 +1580,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             exe.write_bytes(b"test teacher")
             output = root / "teacher_rows.txt"
             expected = generate_ggs_root_teacher._new_state(
+                output,
                 coverage,
                 exe,
                 [GGS_ROOT],
@@ -1628,6 +1630,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             exe.write_bytes(b"test teacher")
             output = root / "teacher_rows.txt"
             state = generate_ggs_root_teacher._new_state(
+                output,
                 coverage,
                 exe,
                 [GGS_ROOT],
@@ -1696,7 +1699,35 @@ class GgsRootTeacherTests(unittest.TestCase):
                     ),
                 )
                 search.assert_called_once_with(exe, GGS_ROOT, 33, 28, 29)
-            self.assertIn(f"{GGS_ROOT} -15 f5:-15", output.read_text(encoding="utf-8"))
+            teacher_text = output.read_text(encoding="utf-8")
+            self.assertIn(f"{GGS_ROOT} -15 f5:-15", teacher_text)
+            self.assertIn("# ordinary_book_disabled true", teacher_text)
+            self.assertIn("# contest_book_disabled true", teacher_text)
+            state_path = output.with_suffix(output.suffix + ".state.json")
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            manifest = json.loads(
+                output.with_suffix(output.suffix + ".manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(generate_ggs_root_teacher.TEACHER_SCHEMA, state["schema"])
+            self.assertEqual(
+                generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA,
+                manifest["schema"],
+            )
+            provenance = state["calculation_provenance"]
+            self.assertEqual(provenance, manifest["calculation_provenance"])
+            self.assertEqual(
+                {
+                    "ordinary_book": {"disabled": True, "command_line_option": "-nobook"},
+                    "contest_book": {"disabled": True, "command_line_option": "-nocontestbook"},
+                },
+                provenance["book_configuration"],
+            )
+            script_snapshot = Path(provenance["teacher_script_snapshot"]["path"])
+            self.assertTrue(script_snapshot.is_file())
+            self.assertEqual(
+                provenance["teacher_script"]["sha256"],
+                build_root_table.sha256_file(script_snapshot),
+            )
             with mock.patch.object(generate_ggs_root_teacher, "search_root") as search:
                 self.assertEqual(
                     {"completed": 1, "requested": 1},
@@ -1708,6 +1739,12 @@ class GgsRootTeacherTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "resume mismatch for threads"):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage, exe, output, 60.0, 27, 29, resume=True
+                )
+            state["calculation_provenance"]["teacher_script"]["sha256"] = "0" * 64
+            state_path.write_text(json.dumps(state), encoding="utf-8", newline="\n")
+            with self.assertRaisesRegex(ValueError, "resume mismatch for calculation_provenance"):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage, exe, output, 60.0, 28, 29, resume=True
                 )
 
     def test_uses_level_33_fallback_when_time_search_is_shallow(self) -> None:

@@ -28,10 +28,35 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v10"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v11"
+TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v11"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 TEACHER_UPDATE_SCHEMA = "ggs_root_teacher_update_v1"
+CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v1"
 DEEP_TIEBREAK_LEVEL = 31
+BOOK_DISABLED_ARGUMENTS = ("-nobook", "-nocontestbook")
+TIME_SEARCH_COMMAND_TEMPLATE = [
+    "{executable}",
+    "-time",
+    "{time_seconds}",
+    "-t",
+    "{threads}",
+    "-hash",
+    "{hash_level}",
+    *BOOK_DISABLED_ARGUMENTS,
+]
+LEVEL_SEARCH_COMMAND_TEMPLATE = [
+    "{executable}",
+    "-l",
+    "{level}",
+    "-t",
+    "{threads}",
+    "-hash",
+    "{hash_level}",
+    *BOOK_DISABLED_ARGUMENTS,
+]
+TIME_SEARCH_INPUT_TEMPLATE = "setboard {board}\ngo\nquit\n"
+LEVEL_SEARCH_INPUT_TEMPLATE = "setboard {board}\nhint 1\nquit\n"
 RESULT_RE = re.compile(
     r"^\|\s*(?P<level>[^|]+)\|\s*(?P<depth>[^|]+)\|\s*"
     r"(?P<move>[a-h][1-8])\|\s*(?P<score>[+-]?\d+)\|\s*"
@@ -41,18 +66,22 @@ RESULT_RE = re.compile(
 DEPTH_RE = re.compile(r"(?P<depth>\d+)@(?P<selectivity>\d+)%")
 
 
-def _atomic_write_text(path: Path, text: str) -> None:
+def _atomic_write_bytes(path: Path, content: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
     try:
-        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-            stream.write(text)
+        with temporary.open("wb") as stream:
+            stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
     finally:
         if temporary.exists():
             temporary.unlink()
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    _atomic_write_bytes(path, text.encode("utf-8"))
 
 
 def _state_path(output: Path) -> Path:
@@ -70,6 +99,121 @@ def _pending_updates_path(output: Path) -> Path:
 def _lock_path(output: Path) -> Path:
     """Return the OS-lock path guarding all state for one teacher output."""
     return output.with_suffix(output.suffix + ".lock")
+
+
+def _teacher_script_snapshot_path(output: Path) -> Path:
+    """Return the immutable source-copy path associated with one output."""
+    return output.with_suffix(output.suffix + ".teacher_script.py")
+
+
+def _book_configuration() -> dict[str, dict[str, bool | str]]:
+    """Return the exact book-related command-line contract for teacher searches."""
+    return {
+        "ordinary_book": {"disabled": True, "command_line_option": "-nobook"},
+        "contest_book": {"disabled": True, "command_line_option": "-nocontestbook"},
+    }
+
+
+def _command_templates() -> dict[str, list[str]]:
+    return {
+        "time_limited_search": list(TIME_SEARCH_COMMAND_TEMPLATE),
+        "fixed_level_search": list(LEVEL_SEARCH_COMMAND_TEMPLATE),
+    }
+
+
+def _standard_input_templates() -> dict[str, str]:
+    return {
+        "time_limited_search": TIME_SEARCH_INPUT_TEMPLATE,
+        "fixed_level_search": LEVEL_SEARCH_INPUT_TEMPLATE,
+    }
+
+
+def _new_calculation_provenance(output: Path) -> dict[str, Any]:
+    """Freeze how this output disables books and which script produced it."""
+    teacher_script = Path(__file__).resolve()
+    teacher_script_sha256 = sha256_file(teacher_script)
+    snapshot = _teacher_script_snapshot_path(output).resolve()
+    return {
+        "schema": CALCULATION_PROVENANCE_SCHEMA,
+        "book_configuration": _book_configuration(),
+        "command_templates": _command_templates(),
+        "standard_input_templates": _standard_input_templates(),
+        "teacher_script": {
+            "path": teacher_script.as_posix(),
+            "sha256": teacher_script_sha256,
+        },
+        "teacher_script_snapshot": {
+            "path": snapshot.as_posix(),
+            "sha256": teacher_script_sha256,
+        },
+    }
+
+
+def validate_calculation_provenance(
+    provenance: object,
+    snapshot_path: Path | None = None,
+) -> dict[str, Any]:
+    """Validate the immutable teacher-calculation evidence.
+
+    ``snapshot_path`` is used by a later audit after the script copy has been
+    frozen in a separate directory.  With the default, the path recorded in
+    the provenance itself is checked.
+    """
+    if not isinstance(provenance, dict):
+        raise ValueError("teacher calculation provenance is not an object")
+    if provenance.get("schema") != CALCULATION_PROVENANCE_SCHEMA:
+        raise ValueError("teacher calculation provenance has an unsupported schema")
+    if provenance.get("book_configuration") != _book_configuration():
+        raise ValueError("teacher calculation provenance does not disable both books")
+    if provenance.get("command_templates") != _command_templates():
+        raise ValueError("teacher calculation provenance has unexpected command templates")
+    if provenance.get("standard_input_templates") != _standard_input_templates():
+        raise ValueError("teacher calculation provenance has unexpected input templates")
+    teacher_script = provenance.get("teacher_script")
+    snapshot = provenance.get("teacher_script_snapshot")
+    if not isinstance(teacher_script, dict) or not isinstance(snapshot, dict):
+        raise ValueError("teacher calculation provenance has no script fingerprints")
+    for label, fingerprint in (("teacher script", teacher_script), ("teacher script snapshot", snapshot)):
+        if not isinstance(fingerprint.get("path"), str):
+            raise ValueError(f"teacher calculation provenance has no {label} path")
+        digest = fingerprint.get("sha256")
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ValueError(f"teacher calculation provenance has an invalid {label} SHA-256")
+    if teacher_script["sha256"] != snapshot["sha256"]:
+        raise ValueError("teacher script and its saved copy have different SHA-256 values")
+    script_copy = snapshot_path if snapshot_path is not None else Path(snapshot["path"])
+    if not script_copy.is_file() or sha256_file(script_copy) != snapshot["sha256"]:
+        raise ValueError("saved teacher script does not match its SHA-256")
+    try:
+        script_text = script_copy.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise ValueError(f"cannot read saved teacher script {script_copy}: {error}") from error
+    if any(option not in script_text for option in BOOK_DISABLED_ARGUMENTS):
+        raise ValueError("saved teacher script does not contain both book-disable options")
+    return provenance
+
+
+def _ensure_teacher_script_snapshot(output: Path, state: dict[str, Any]) -> None:
+    """Create once, then verify, the exact generator source beside an output."""
+    provenance = state.get("calculation_provenance")
+    if not isinstance(provenance, dict):
+        raise ValueError("teacher state has no calculation provenance")
+    teacher_script = provenance.get("teacher_script")
+    snapshot = provenance.get("teacher_script_snapshot")
+    if not isinstance(teacher_script, dict) or not isinstance(snapshot, dict):
+        raise ValueError("teacher state has incomplete script provenance")
+    source = Path(__file__).resolve()
+    expected_snapshot = _teacher_script_snapshot_path(output).resolve()
+    if teacher_script.get("path") != source.as_posix() or teacher_script.get("sha256") != sha256_file(source):
+        raise ValueError("teacher state was created by a different generator script")
+    if snapshot.get("path") != expected_snapshot.as_posix() or snapshot.get("sha256") != teacher_script["sha256"]:
+        raise ValueError("teacher state has an unexpected saved-script location or SHA-256")
+    if expected_snapshot.exists():
+        if sha256_file(expected_snapshot) != snapshot["sha256"]:
+            raise ValueError("saved teacher script does not match its SHA-256")
+    else:
+        _atomic_write_bytes(expected_snapshot, source.read_bytes())
+    validate_calculation_provenance(provenance)
 
 
 def _append_pending_update(
@@ -246,10 +390,9 @@ def search_root(
         "-time", f"{time_seconds:g}",
         "-t", str(threads),
         "-hash", str(hash_level),
-        "-nobook",
-        "-nocontestbook",
+        *BOOK_DISABLED_ARGUMENTS,
     ]
-    commands = f"setboard {board}\ngo\nquit\n"
+    commands = TIME_SEARCH_INPUT_TEMPLATE.format(board=board)
     try:
         completed = subprocess.run(
             command,
@@ -289,10 +432,9 @@ def search_root_at_level(
         "-l", str(level),
         "-t", str(threads),
         "-hash", str(hash_level),
-        "-nobook",
-        "-nocontestbook",
+        *BOOK_DISABLED_ARGUMENTS,
     ]
-    commands = f"setboard {board}\nhint 1\nquit\n"
+    commands = LEVEL_SEARCH_INPUT_TEMPLATE.format(board=board)
     try:
         completed = subprocess.run(
             command,
@@ -334,6 +476,7 @@ def validate_quality(result: dict[str, int | str], min_depth: int, min_selectivi
 
 
 def _new_state(
+    output: Path,
     coverage_path: Path,
     exe: Path,
     roots: list[str],
@@ -351,6 +494,7 @@ def _new_state(
 ) -> dict[str, Any]:
     return {
         "schema": TEACHER_SCHEMA,
+        "calculation_provenance": _new_calculation_provenance(output),
         "coverage": {
             "path": coverage_path.resolve().as_posix(),
             "sha256": sha256_file(coverage_path),
@@ -386,7 +530,7 @@ def _load_state(
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot resume teacher state {path}: {error}") from error
     for key in (
-        "schema", "coverage", "engine", "time_seconds", "threads", "hash_level",
+        "schema", "calculation_provenance", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
         "verify_level", "cohort_seed", "excluded_root_files", "deep_tiebreak_level", "roots",
     ):
@@ -403,9 +547,14 @@ def _load_state(
 
 
 def _write_outputs(output: Path, state: dict[str, Any]) -> None:
+    _ensure_teacher_script_snapshot(output, state)
     roots = state["roots"]
     results = state["results"]
     rejections = state["rejections"]
+    provenance = validate_calculation_provenance(state["calculation_provenance"])
+    book_configuration = provenance["book_configuration"]
+    teacher_script = provenance["teacher_script"]
+    teacher_script_snapshot = provenance["teacher_script_snapshot"]
     rows = []
     for board in roots:
         result = results.get(board)
@@ -416,6 +565,13 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             TEACHER_FORMAT,
             f"# coverage_sha256 {state['coverage']['sha256']}",
             f"# engine_sha256 {state['engine']['sha256']}",
+            f"# calculation_provenance_schema {provenance['schema']}",
+            f"# ordinary_book_disabled {str(book_configuration['ordinary_book']['disabled']).lower()}",
+            f"# ordinary_book_option {book_configuration['ordinary_book']['command_line_option']}",
+            f"# contest_book_disabled {str(book_configuration['contest_book']['disabled']).lower()}",
+            f"# contest_book_option {book_configuration['contest_book']['command_line_option']}",
+            f"# teacher_script_sha256 {teacher_script['sha256']}",
+            f"# teacher_script_snapshot_sha256 {teacher_script_snapshot['sha256']}",
             f"# time_seconds {state['time_seconds']:g}",
             f"# threads {state['threads']}",
             f"# hash_level {state['hash_level']}",
@@ -441,7 +597,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v10",
+        "schema": TEACHER_MANIFEST_SCHEMA,
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
@@ -452,6 +608,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         },
         "coverage": state["coverage"],
         "engine": state["engine"],
+        "calculation_provenance": provenance,
         "time_seconds": state["time_seconds"],
         "threads": state["threads"],
         "hash_level": state["hash_level"],
@@ -536,7 +693,7 @@ def _generate_teachers_unlocked(
     if not roots:
         raise ValueError("no uncovered 14-disc roots remain after exclusions")
     expected = _new_state(
-        coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
+        output, coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
         fallback_level, method, teacher_level, verify_level, cohort_seed, excluded_root_files,
     )
     state_path = _state_path(output)

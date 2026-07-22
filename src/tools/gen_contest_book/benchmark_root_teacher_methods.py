@@ -389,8 +389,16 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     output = manifest.get("output") if isinstance(manifest, dict) else None
     if not isinstance(output, dict) or output.get("sha256") != sha256_file(path):
         raise ValueError(f"generated output does not match its manifest: {path}")
-    if manifest.get("schema") != "ggs_root_teacher_manifest_v10":
+    schema = manifest.get("schema")
+    if schema not in {
+        "ggs_root_teacher_manifest_v10",
+        generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA,
+    }:
         raise ValueError(f"generated manifest has an unsupported schema: {path}")
+    if schema == generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA:
+        generate_ggs_root_teacher.validate_calculation_provenance(
+            manifest.get("calculation_provenance")
+        )
     return manifest
 
 
