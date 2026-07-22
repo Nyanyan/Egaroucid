@@ -177,8 +177,9 @@ void test_match_boundary_classification() {
     require(ai_tl_ggs_crosses_match_boundary(-16, 16, 17), "draw-to-win crossing");
     require(!ai_tl_ggs_crosses_match_boundary(-16, 14, 15), "same-outcome candidates");
     require(
-        !ai_tl_ggs_match_revalidation_should_switch(-16, 15, 16),
-        "one-disc loss-to-draw candidate must not switch"
+        ai_tl_ggs_match_revalidation_should_switch(-16, 15, 16) ==
+            (AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN == 1),
+        "one-disc loss-to-draw switch must follow the configured margin"
     );
     require(
         ai_tl_ggs_match_revalidation_should_switch(-16, 14, 16),

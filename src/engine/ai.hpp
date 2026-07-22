@@ -134,9 +134,14 @@ constexpr int AI_TL_GGS_MATCH_REVALIDATE_BOUNDARY_PRECHECK_MARGIN = 4;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_SCREENING_MIN_DEPTH = 18;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_MIN_DECISION_DEPTH = 20;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_DEPTH_BACKOFF = 8;
-// The bounded 88/93% revalidation can be noisy at a one-disc separation.
-// Require two discs before it replaces the main iterative-deepening result.
-constexpr int AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN = 2;
+#ifndef EGAROUCID_GGS_MATCH_REVALIDATE_SWITCH_MARGIN
+    // The bounded 88/93% revalidation can be noisy at a one-disc separation.
+    // Keep two discs in tournament builds; the override is only for the
+    // controlled comparison with the earlier one-disc rule.
+    #define EGAROUCID_GGS_MATCH_REVALIDATE_SWITCH_MARGIN 2
+#endif
+static_assert(EGAROUCID_GGS_MATCH_REVALIDATE_SWITCH_MARGIN >= 1);
+constexpr int AI_TL_GGS_MATCH_REVALIDATE_SWITCH_MARGIN = EGAROUCID_GGS_MATCH_REVALIDATE_SWITCH_MARGIN;
 #endif
 
 constexpr double AI_TL_ADDITIONAL_SEARCH_THRESHOLD = 1.5;
