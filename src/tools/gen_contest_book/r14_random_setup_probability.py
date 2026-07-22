@@ -80,7 +80,7 @@ R14_LOCAL_PROBABILITY_MODEL_SOURCE_FILES: tuple[dict[str, str], ...] = (
         "relative_path": "src/tools/enumerate_ggs_random_boards/README.md",
         "role": (
             "documents this repository's claimed correspondence and the boundary "
-            "between the primary and alternate constructions"
+            "between the random_setup(14) and random_setup_2 constructions"
         ),
         "limitation": "does not authenticate the source or version currently deployed by GGS",
     },
