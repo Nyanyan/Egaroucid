@@ -1867,7 +1867,16 @@ def main() -> int:
     parser.add_argument("--coverage", type=Path, required=True)
     parser.add_argument("--exe", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--time-seconds", type=float, default=60.0)
+    parser.add_argument(
+        "--time-seconds",
+        type=float,
+        default=60.0,
+        help=(
+            "Console -time value in seconds for each color. Console's time-management "
+            "logic chooses the actual root-search time, so this is not a per-root "
+            "wall-clock guarantee."
+        ),
+    )
     parser.add_argument("--threads", type=int, default=28)
     parser.add_argument("--hash", dest="hash_level", type=int, default=29)
     parser.add_argument(

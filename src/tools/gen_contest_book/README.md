@@ -269,6 +269,11 @@ refuses to resume if that list changes. For example:
 python src/tools/gen_contest_book/generate_ggs_root_teacher.py --coverage ignored/ggs_620_progress/r14_corpus_coverage_reaudit_20260722.json --exe bin/Egaroucid_for_Console_clang.exe --output ignored/ggs_620_progress/new_teacher_rows.txt --method time_then_verify --time-seconds 60 --threads 28 --hash 29 --min-depth 30 --min-selectivity 74 --fallback-level 30 --verify-level 31 --cohort-seed 623 --limit 50 --exclude-root-results ignored/ggs_620_progress/r14_seed622_50_t60_verified.txt
 ```
 
+`--time-seconds 60` passes `-time 60` to Console: it gives each color a
+60-second clock. It is not a requirement that every root search run for 60
+seconds. Console's time-management code assigns the actual search time from
+the board and the remaining clock, which is the behavior used in a GGS game.
+
 The new rows remain outside `trained` until a fixed-start color-swapped
 comparison against the same executable with no book has a valid audit and does
 not include a neutral value in its pre-specified confidence intervals.
