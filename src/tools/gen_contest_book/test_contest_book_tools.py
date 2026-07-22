@@ -20,6 +20,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import generate_all_records
 import generate_records
 import audit_root_table_matches
+import audit_root_teacher_method_benchmark
 import benchmark_root_teacher_methods
 import book_artifact
 import audit_r14_corpus
@@ -1258,6 +1259,13 @@ class GgsRootTeacherTests(unittest.TestCase):
             report = (root / "benchmark" / "README.md").read_text(encoding="utf-8")
             self.assertIn("60秒の持ち時間を与える探索", report)
             self.assertIn("level-30/level-31 check", report)
+            audit = audit_root_teacher_method_benchmark.audit_benchmark(
+                root / "benchmark", root / "benchmark_audit.md"
+            )
+            self.assertTrue(audit["valid"])
+            self.assertEqual(1, audit["counts"]["completed_positions"])
+            self.assertEqual(2, audit["counts"]["saved_method_results"])
+            self.assertTrue((root / "benchmark_audit.json").is_file())
             with mock.patch.object(
                 benchmark_root_teacher_methods,
                 "generate_teachers",
@@ -1404,6 +1412,13 @@ class GgsRootTeacherTests(unittest.TestCase):
                 first_after[benchmark_root_teacher_methods.TIME_METHOD]["output_path"]
             )
             completed_output.write_text("tampered\n", encoding="utf-8", newline="\n")
+            tampered_audit = audit_root_teacher_method_benchmark.audit_benchmark(
+                output_dir, root / "tampered_benchmark_audit.md"
+            )
+            self.assertFalse(tampered_audit["valid"])
+            self.assertTrue(
+                any("generated output does not match" in failure for failure in tampered_audit["failures"])
+            )
             with mock.patch.object(
                 benchmark_root_teacher_methods,
                 "generate_teachers",
