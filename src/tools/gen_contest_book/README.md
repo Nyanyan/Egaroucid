@@ -250,7 +250,7 @@ selection, records each exclusion file's SHA-256 in its state and manifest, and
 refuses to resume if that list changes. For example:
 
 ```powershell
-python src/tools/gen_contest_book/generate_ggs_root_teacher.py --coverage ignored/ggs_620_progress/r14_corpus_coverage_reaudit_20260722.json --exe bin/Egaroucid_for_Console_clang.exe --output ignored/ggs_620_progress/new_teacher_rows.txt --method time_then_verify --time-seconds 60 --threads 28 --hash 29 --min-depth 30 --min-selectivity 74 --fallback-level 31 --verify-level 30 --cohort-seed 623 --limit 50 --exclude-root-results ignored/ggs_620_progress/r14_seed622_50_t60_verified.txt
+python src/tools/gen_contest_book/generate_ggs_root_teacher.py --coverage ignored/ggs_620_progress/r14_corpus_coverage_reaudit_20260722.json --exe bin/Egaroucid_for_Console_clang.exe --output ignored/ggs_620_progress/new_teacher_rows.txt --method time_then_verify --time-seconds 60 --threads 28 --hash 29 --min-depth 30 --min-selectivity 74 --fallback-level 30 --verify-level 31 --cohort-seed 623 --limit 50 --exclude-root-results ignored/ggs_620_progress/r14_seed622_50_t60_verified.txt
 ```
 
 The new rows remain outside `trained` until a fixed-start color-swapped
@@ -263,6 +263,13 @@ the generator atomically rewrites the complete output, state, and manifest,
 then removes the companion file. On `--resume`, any companion-file entries are
 replayed before the next search. This avoids rewriting the complete result set
 after every position while retaining completed positions after an interruption.
+
+To write a Japanese-and-English progress report that includes the durable
+per-position records not yet compacted into the state file, run:
+
+```powershell
+python src/tools/gen_contest_book/report_ggs_root_teacher_progress.py --state ignored/ggs_620_progress/new_teacher_rows.txt.state.json --output ignored/ggs_620_progress/new_teacher_rows_progress.md
+```
 
 ## Testing
 

@@ -23,6 +23,7 @@ import audit_r14_corpus
 import build_root_table
 import collect_ggs_roots
 import generate_ggs_root_teacher
+import report_ggs_root_teacher_progress
 from build_book import canonicalize_board_key, transform_board_text
 from book_artifact import (
     BookBuildSpec,
@@ -837,6 +838,58 @@ class GgsRootTeacherTests(unittest.TestCase):
             generate_ggs_root_teacher._write_outputs(output, resumed)
             generate_ggs_root_teacher._clear_pending_updates(output)
             self.assertFalse(generate_ggs_root_teacher._pending_updates_path(output).exists())
+
+    def test_progress_report_counts_durable_updates_before_compaction(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            output = root / "teacher_rows.txt"
+            state = generate_ggs_root_teacher._new_state(
+                coverage,
+                exe,
+                [GGS_ROOT],
+                60.0,
+                28,
+                29,
+                33,
+                74,
+                33,
+                "hint",
+                33,
+                0,
+                None,
+                [],
+            )
+            generate_ggs_root_teacher._write_outputs(output, state)
+            entry = {
+                "move": "f5",
+                "score": -15,
+                "level": "33",
+                "depth": "33@74%",
+                "time": "000:00:02.000",
+                "nodes": 1,
+                "nps": 1,
+                "method": "hint_level_33",
+            }
+            generate_ggs_root_teacher._append_pending_update(
+                output, GGS_ROOT, "results", entry
+            )
+            report = root / "progress.md"
+            counts = report_ggs_root_teacher_progress.write_progress_report(
+                output.with_suffix(output.suffix + ".state.json"), report
+            )
+            self.assertEqual(1, counts["accepted"])
+            self.assertEqual(1, counts["processed"])
+            self.assertEqual(0, counts["compacted_accepted"])
+            self.assertEqual(1, counts["pending_records"])
+            text = report.read_text(encoding="utf-8")
+            self.assertIn("受理済み局面数", text)
+            self.assertIn("Accepted positions", text)
 
     def test_generates_and_resumes_only_with_identical_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
