@@ -23,6 +23,7 @@ import audit_r14_corpus
 import build_root_table
 import collect_ggs_roots
 import generate_ggs_root_teacher
+import prepare_root_table_match
 import report_ggs_root_teacher_progress
 from build_book import canonicalize_board_key, transform_board_text
 from book_artifact import (
@@ -713,6 +714,59 @@ class GgsRootTeacherTests(unittest.TestCase):
             0,
             generate_ggs_root_teacher._completed_since_checkpoint(state, 2),
         )
+
+    def test_prepares_match_input_from_all_compacted_accepted_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            teacher = root / "teacher_rows.txt"
+            teacher.write_text(
+                "# ggs_root_teacher_v1\n"
+                f"{GGS_ROOT} -15 f5:-15\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            teacher_sha256 = build_root_table.sha256_file(teacher)
+            teacher.with_suffix(teacher.suffix + ".manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema": "ggs_root_teacher_manifest_v10",
+                        "output": {
+                            "sha256": teacher_sha256,
+                            "processed": 1,
+                            "completed": 1,
+                            "rejected": 0,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            destination = root / "prepared"
+            result = prepare_root_table_match.prepare_match_input(
+                teacher, destination, minimum_processed=1
+            )
+            self.assertEqual(1, result["accepted"])
+            self.assertEqual(1, result["table_entries"])
+            self.assertEqual(
+                {"root_discs": 14, "entries": 1},
+                build_root_table.validate_root_table(
+                    destination / "table" / build_root_table.ROOT_TABLE_FILENAME,
+                    expected_root_discs=14,
+                ),
+            )
+            self.assertEqual(
+                f"{GGS_ROOT}\n",
+                (destination / "openings" / "roots.txt").read_text(encoding="utf-8"),
+            )
+            report = (destination / "README.md").read_text(encoding="utf-8")
+            self.assertIn("受理局面", report)
+            self.assertIn("Every accepted position", report)
+            too_small = root / "too_small"
+            with self.assertRaisesRegex(ValueError, "below required 2"):
+                prepare_root_table_match.prepare_match_input(
+                    teacher, too_small, minimum_processed=2
+                )
+            self.assertFalse(too_small.exists())
 
     def test_search_root_accepts_console_result_on_stderr(self) -> None:
         table = (

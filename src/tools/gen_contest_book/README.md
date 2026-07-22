@@ -272,6 +272,14 @@ per-position records not yet compacted into the state file, run:
 python src/tools/gen_contest_book/report_ggs_root_teacher_progress.py --state ignored/ggs_620_progress/new_teacher_rows.txt.state.json --output ignored/ggs_620_progress/new_teacher_rows_progress.md
 ```
 
+After a compacted teacher output has reached the required number of processed
+positions, prepare a hash-recorded temporary table and starting-position list
+without selecting rows by game results:
+
+```powershell
+python src/tools/gen_contest_book/prepare_root_table_match.py --teacher-results ignored/ggs_620_progress/new_teacher_rows.txt --output-dir ignored/ggs_620_progress/new_root_table_match_input --minimum-processed 500
+```
+
 ## Testing
 
 Start with a small test for one start position. Use one line from `data/records321_14_random_setup` as `<initial board>`.
