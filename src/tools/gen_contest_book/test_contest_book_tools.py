@@ -863,7 +863,9 @@ class GgsRootTeacherTests(unittest.TestCase):
                     resume=True,
                     compact_only=True,
                 )
-            self.assertEqual({"completed": 1, "requested": 1}, result)
+            self.assertEqual(
+                {"accepted": 1, "rejected": 0, "processed": 1, "requested": 1}, result
+            )
             search.assert_not_called()
             self.assertFalse(output.with_suffix(output.suffix + ".pending.jsonl").exists())
             self.assertIn(f"{GGS_ROOT} -15 f5:-15", output.read_text(encoding="utf-8"))
@@ -909,7 +911,9 @@ class GgsRootTeacherTests(unittest.TestCase):
             result = generate_ggs_root_teacher.generate_teachers(
                 coverage, exe, output, 60.0, 28, 29, resume=True, compact_only=True
             )
-            self.assertEqual({"completed": 0, "requested": 1}, result)
+            self.assertEqual(
+                {"accepted": 0, "rejected": 0, "processed": 0, "requested": 1}, result
+            )
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             self.assertEqual(build_root_table.sha256_file(output), manifest["output"]["sha256"])
 
@@ -2126,7 +2130,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             }
             with mock.patch.object(generate_ggs_root_teacher, "search_root_at_level", return_value=result) as search:
                 self.assertEqual(
-                    {"completed": 1, "requested": 1},
+                    {"accepted": 1, "rejected": 0, "processed": 1, "requested": 1},
                     generate_ggs_root_teacher.generate_teachers(
                         coverage, exe, output, 60.0, 28, 29
                     ),
@@ -2168,7 +2172,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             with mock.patch.object(generate_ggs_root_teacher, "search_root") as search:
                 self.assertEqual(
-                    {"completed": 1, "requested": 1},
+                    {"accepted": 1, "rejected": 0, "processed": 1, "requested": 1},
                     generate_ggs_root_teacher.generate_teachers(
                         coverage, exe, output, 60.0, 28, 29, resume=True
                     ),
@@ -2362,7 +2366,9 @@ class GgsRootTeacherTests(unittest.TestCase):
                     teacher_level=30,
                     verify_level=31,
                 )
-            self.assertEqual({"completed": 0, "requested": 1}, result)
+            self.assertEqual(
+                {"accepted": 0, "rejected": 1, "processed": 1, "requested": 1}, result
+            )
             manifest = json.loads(
                 (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
             )
@@ -2633,7 +2639,9 @@ class GgsRootTeacherTests(unittest.TestCase):
                     coverage, exe, root / "teacher_rows.txt", 60.0, 28, 29, min_depth=30,
                     fallback_level=30, method="time_then_verify", verify_level=27,
                 )
-            self.assertEqual({"completed": 0, "requested": 1}, result)
+            self.assertEqual(
+                {"accepted": 0, "rejected": 1, "processed": 1, "requested": 1}, result
+            )
             manifest = json.loads(
                 (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
             )

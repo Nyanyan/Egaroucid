@@ -4,8 +4,8 @@ Input is an immutable JSON report produced either by ``collect_ggs_roots.py``
 from actual GGS starts or by ``audit_r14_corpus.py`` from the complete standard
 r14 corpus. Every teacher search disables both ordinary and contest books and
 uses one engine process per root. A durable per-position journal is written
-after each completed root; complete output files are compacted at the selected
-interval. The output data rows are accepted directly by ``build_root_table.py
+after each processed root, whether accepted or rejected; output files are
+compacted at the selected interval. The output data rows are accepted directly by ``build_root_table.py
 --root-results``.
 """
 
@@ -28,14 +28,14 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 from r14_random_setup_probability import (
     R14_RANDOM_SETUP_PROBABILITY_MODEL,
+    local_probability_model_source_fingerprints,
     load_r14_random_setup_priority_manifest,
     order_r14_random_setup_boards,
-    priority_manifest_provenance,
 )
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v15"
-TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v15"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v17"
+TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v17"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 TEACHER_UPDATE_SCHEMA = "ggs_root_teacher_update_v1"
 CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v3"
@@ -634,8 +634,20 @@ def _clear_pending_updates(output: Path) -> None:
 
 
 def _completed_since_checkpoint(state: dict[str, Any], checkpoint_every: int) -> int:
-    """Keep every compaction aligned to the total number of completed roots."""
+    """Keep every compaction aligned to the total number of processed roots."""
     return (len(state["results"]) + len(state["rejections"])) % checkpoint_every
+
+
+def _generation_status(state: dict[str, Any], roots: list[str]) -> dict[str, int]:
+    """Return unambiguous accepted/rejected/processed counts for one invocation."""
+    accepted = len(state["results"])
+    rejected = len(state["rejections"])
+    return {
+        "accepted": accepted,
+        "rejected": rejected,
+        "processed": accepted + rejected,
+        "requested": len(roots),
+    }
 
 
 def load_uncovered_roots(coverage_path: Path) -> list[str]:
@@ -685,6 +697,23 @@ def root_file_provenance(paths: list[Path]) -> list[dict[str, str]]:
     ]
 
 
+def probability_model_source_header_lines(
+    prefix: str, sources: dict[str, object] | None
+) -> list[str]:
+    """Render all frozen local probability-model source hashes in teacher output."""
+    if sources is None:
+        return [f"# {prefix}_schema -"]
+    files = sources.get("files")
+    if not isinstance(files, list):
+        raise ValueError("probability-model source record has no files")
+    lines = [f"# {prefix}_schema {sources['schema']}"]
+    for source in files:
+        if not isinstance(source, dict):
+            raise ValueError("probability-model source record has an invalid file")
+        lines.append(f"# {prefix}_{source['id']}_sha256 {source['sha256']}")
+    return lines
+
+
 def select_teacher_roots(
     roots: list[str],
     limit: int | None,
@@ -696,11 +725,15 @@ def select_teacher_roots(
     """Freeze a bounded teacher input without source-file-order dependence.
 
     ``hash`` preserves the original uniform hashed order.  ``ggs-r14-probability``
-    instead orders the complete primary r14 corpus by its exact GGS generation
-    probability.  ``cohort_seed`` applies only to ``hash``.  The separately
-    named ``priority_tie_seed`` applies only within an equal-probability group
-    in ``ggs-r14-probability``.  The selected board list is saved in the state
-    file and is the authoritative future resume input.
+    instead orders the ``random_setup(14)`` r14 corpus by the exact probability from the
+    repository-local ``random_setup(14)`` reimplementation; it does not claim
+    to identify the current GGS server source.  ``cohort_seed`` applies only
+    to ``hash``.  The separately named ``priority_tie_seed`` applies only
+    within an equal-probability group in ``ggs-r14-probability``.  A frozen
+    priority file may contain roots already covered elsewhere: those extras
+    are intentionally ignored, but every current teacher root must occur in
+    the file.  The selected board list is saved in the state file and is the
+    authoritative future resume input.
     """
     if root_order not in ROOT_ORDER_CHOICES:
         raise ValueError(f"root_order must be one of {ROOT_ORDER_CHOICES}")
@@ -1103,6 +1136,28 @@ def _new_state(
     random_seed = _validate_random_seed(random_seed)
     if root_order not in ROOT_ORDER_CHOICES:
         raise ValueError(f"root_order must be one of {ROOT_ORDER_CHOICES}")
+    local_probability_model_sources = (
+        local_probability_model_source_fingerprints()
+        if root_order == ROOT_ORDER_GGS_R14_PROBABILITY
+        else None
+    )
+    priority_manifest_tie_seed: int | None = None
+    if priority_manifest is not None:
+        if root_order != ROOT_ORDER_GGS_R14_PROBABILITY:
+            raise ValueError("a frozen priority manifest requires probability root order")
+        value = priority_manifest.get("tie_seed")
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int)):
+            raise ValueError("frozen priority manifest has an invalid tie seed")
+        input_audit = priority_manifest.get("input_audit")
+        if (
+            not isinstance(input_audit, dict)
+            or input_audit.get("local_probability_model_sources")
+            != local_probability_model_sources
+        ):
+            raise ValueError(
+                "frozen priority manifest does not match the current local probability-model sources"
+            )
+        priority_manifest_tie_seed = value
     return {
         "schema": TEACHER_SCHEMA,
         "calculation_provenance": _new_calculation_provenance(
@@ -1130,11 +1185,13 @@ def _new_state(
         "root_order": root_order,
         "priority_tie_seed": priority_tie_seed,
         "priority_manifest": priority_manifest,
+        "priority_manifest_tie_seed": priority_manifest_tie_seed,
         "r14_probability_model": (
             R14_RANDOM_SETUP_PROBABILITY_MODEL
             if root_order == ROOT_ORDER_GGS_R14_PROBABILITY
             else None
         ),
+        "r14_local_probability_model_sources": local_probability_model_sources,
         "excluded_root_files": root_file_provenance(excluded_root_files),
         "deep_tiebreak_level": DEEP_TIEBREAK_LEVEL,
         "roots": roots,
@@ -1155,7 +1212,9 @@ def _load_state(
         "schema", "random_seed", "calculation_provenance", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
         "verify_level", "cohort_seed", "root_order", "priority_tie_seed", "priority_manifest",
-        "r14_probability_model", "excluded_root_files", "deep_tiebreak_level", "roots",
+        "priority_manifest_tie_seed",
+        "r14_probability_model", "r14_local_probability_model_sources", "excluded_root_files",
+        "deep_tiebreak_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -1180,6 +1239,19 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
     teacher_script_snapshot = provenance["teacher_script_snapshot"]
     resources = provenance["execution_environment"]["resources"]
     resource_sha256 = {resource["role"]: resource["snapshot"]["sha256"] for resource in resources}
+    priority_sources = (
+        state["priority_manifest"]["input_audit"]["local_probability_model_sources"]
+        if state["priority_manifest"]
+        else None
+    )
+    probability_source_lines = [
+        *probability_model_source_header_lines(
+            "priority_manifest_probability_model_sources", priority_sources
+        ),
+        *probability_model_source_header_lines(
+            "r14_probability_model_sources", state["r14_local_probability_model_sources"]
+        ),
+    ]
     rows = []
     for board in roots:
         result = results.get(board)
@@ -1212,8 +1284,14 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# cohort_seed {state['cohort_seed']}",
             f"# root_order {state['root_order']}",
             f"# priority_tie_seed {state['priority_tie_seed']}",
+            f"# priority_manifest_tie_seed {state['priority_manifest_tie_seed']}",
             f"# priority_manifest_sha256 "
             f"{state['priority_manifest']['sha256'] if state['priority_manifest'] else '-'}",
+            f"# priority_manifest_metadata_sha256 "
+            f"{state['priority_manifest']['metadata_sha256'] if state['priority_manifest'] else '-'}",
+            f"# priority_manifest_ordered_roots_sha256 "
+            f"{state['priority_manifest']['ordered_roots_sha256'] if state['priority_manifest'] else '-'}",
+            *probability_source_lines,
             f"# excluded_root_files {len(state['excluded_root_files'])}",
             f"# deep_tiebreak_level {state['deep_tiebreak_level']}",
             f"# accepted {len(rows)}/{len(roots)}",
@@ -1255,7 +1333,11 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "root_order": state["root_order"],
         "priority_tie_seed": state["priority_tie_seed"],
         "priority_manifest": state["priority_manifest"],
+        "priority_manifest_tie_seed": state["priority_manifest_tie_seed"],
         "r14_probability_model": state["r14_probability_model"],
+        "r14_local_probability_model_sources": state[
+            "r14_local_probability_model_sources"
+        ],
         "excluded_root_files": state["excluded_root_files"],
         "deep_tiebreak_level": state["deep_tiebreak_level"],
         "results": {board: results[board] for board in sorted(results)},
@@ -1333,10 +1415,9 @@ def _generate_teachers_unlocked(
     priority_boards: list[str] | None = None
     priority_manifest: dict[str, object] | None = None
     if priority_manifest_path is not None:
-        priority_boards, _priority_metadata = load_r14_random_setup_priority_manifest(
+        priority_boards, _priority_metadata, priority_manifest = load_r14_random_setup_priority_manifest(
             priority_manifest_path
         )
-        priority_manifest = priority_manifest_provenance(priority_manifest_path)
     roots = select_teacher_roots(
         [board for board in load_uncovered_roots(coverage_path) if board not in excluded_roots],
         limit,
@@ -1400,7 +1481,7 @@ def _generate_teachers_unlocked(
     newly_processed = 0
     if compact_only:
         # The resume branch has already replayed and republished every durable row.
-        return {"completed": len(state["results"]), "requested": len(roots)}
+        return _generation_status(state, roots)
     execution_exe = _ensure_calculation_snapshots(output, state)
     for board in roots:
         if board in state["results"] or board in state["rejections"]:
@@ -1485,7 +1566,7 @@ def _generate_teachers_unlocked(
                     if max_new_positions is not None and newly_processed >= max_new_positions:
                         _write_outputs(output, state)
                         _clear_pending_updates(output)
-                        return {"completed": len(state["results"]), "requested": len(roots)}
+                        return _generation_status(state, roots)
                     continue
             else:
                 result["verification"] = verification
@@ -1553,7 +1634,7 @@ def _generate_teachers_unlocked(
                         if max_new_positions is not None and newly_processed >= max_new_positions:
                             _write_outputs(output, state)
                             _clear_pending_updates(output)
-                            return {"completed": len(state["results"]), "requested": len(roots)}
+                            return _generation_status(state, roots)
                         continue
                     deep_tiebreak["method"] = (
                         f"time_disagreement_tiebreak_levels_{fallback_level}_{DEEP_TIEBREAK_LEVEL}"
@@ -1577,15 +1658,15 @@ def _generate_teachers_unlocked(
             _write_outputs(output, state)
             _clear_pending_updates(output)
             completed_since_checkpoint = 0
-        print(f"completed {len(state['results'])}/{len(roots)} {board}", flush=True)
+        print(f"accepted {len(state['results'])}/{len(roots)} {board}", flush=True)
         if max_new_positions is not None and newly_processed >= max_new_positions:
             _write_outputs(output, state)
             _clear_pending_updates(output)
-            return {"completed": len(state["results"]), "requested": len(roots)}
+            return _generation_status(state, roots)
     if completed_since_checkpoint:
         _write_outputs(output, state)
         _clear_pending_updates(output)
-    return {"completed": len(state["results"]), "requested": len(roots)}
+    return _generation_status(state, roots)
 
 
 def generate_teachers(
@@ -1678,7 +1759,8 @@ def main() -> int:
         default=ROOT_ORDER_HASH,
         help=(
             "hash preserves the existing uniform order; ggs-r14-probability orders the "
-            "primary r14 corpus by its exact GGS occurrence probability"
+            "r14 corpus from the local random_setup(14) reimplementation by "
+            "probability"
         ),
     )
     parser.add_argument(
@@ -1708,7 +1790,7 @@ def main() -> int:
         "--checkpoint-every",
         type=int,
         default=1,
-        help="Compact durable per-position updates after this many completed positions",
+        help="Compact durable per-position updates after this many processed positions",
     )
     parser.add_argument(
         "--max-new-positions",
@@ -1750,7 +1832,10 @@ def main() -> int:
         args.priority_manifest,
         args.max_new_positions,
     )
-    print(f"teacher roots complete {result['completed']}/{result['requested']}")
+    print(
+        f"teacher roots processed {result['processed']}/{result['requested']} "
+        f"accepted={result['accepted']} rejected={result['rejected']}"
+    )
     return 0
 
 

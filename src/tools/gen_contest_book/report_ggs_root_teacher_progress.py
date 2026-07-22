@@ -22,6 +22,20 @@ from r14_random_setup_probability import fraction_json, r14_random_setup_probabi
 
 
 STATE_SUFFIX = ".state.json"
+PROBABILITY_SOURCE_JAPANESE_DESCRIPTIONS = {
+    "enumerated_population": (
+        "`random_setup(14)` で作り得る局面集合の列挙と、回転・反射を一つの代表局面へまとめる処理",
+        "このファイル単独では、各局面が選ばれる確率を決めない",
+    ),
+    "sampling_steps": (
+        "セルの選択、O 石数の選択、色の割当てを行うローカルの抽選手順",
+        "alternate 方式用のツールであり、`random_setup(14)` を直接実行してはいない",
+    ),
+    "repository_description": (
+        "このリポジトリが主方式・alternate 方式との対応関係として記録している説明",
+        "現在 GGS で動いているソースや版を証明するものではない",
+    ),
+}
 
 
 def output_path_from_state(state_path: Path) -> Path:
@@ -65,7 +79,7 @@ def _format_fraction_with_percent(value: Fraction) -> str:
 
 
 def _probability_sums(state: dict[str, Any]) -> dict[str, Any] | None:
-    """Return exact sums for a probability-ordered primary r14 calculation.
+    """Return exact sums for a probability-ordered ``random_setup(14)`` calculation.
 
     The sums apply only to the boards listed in this teacher calculation.  They
     are not a claim about all ``s8r14`` starts, because the other start-board
@@ -101,6 +115,51 @@ def _probability_sums(state: dict[str, Any]) -> dict[str, Any] | None:
     sha256 = priority_manifest.get("sha256")
     if not isinstance(sha256, str) or len(sha256) != 64:
         raise ValueError("probability-ordered state has an invalid priority-file SHA-256")
+    metadata_sha256 = priority_manifest.get("metadata_sha256")
+    if not isinstance(metadata_sha256, str) or len(metadata_sha256) != 64:
+        raise ValueError("probability-ordered state has an invalid priority metadata SHA-256")
+    frozen_tie_seed = priority_manifest.get("tie_seed")
+    if frozen_tie_seed is not None and (
+        isinstance(frozen_tie_seed, bool) or not isinstance(frozen_tie_seed, int)
+    ):
+        raise ValueError("probability-ordered state has an invalid frozen priority-file tie seed")
+    if state.get("priority_manifest_tie_seed") != frozen_tie_seed:
+        raise ValueError("probability-ordered state does not record its frozen priority-file tie seed")
+    input_audit = priority_manifest.get("input_audit")
+    if not isinstance(input_audit, dict):
+        raise ValueError("probability-ordered state has no frozen priority-file input audit")
+    sources = input_audit.get("local_probability_model_sources")
+    if not isinstance(sources, dict) or not isinstance(sources.get("files"), list):
+        raise ValueError("probability-ordered state has no local probability-model sources")
+    if state.get("r14_local_probability_model_sources") != sources:
+        raise ValueError(
+            "probability-ordered state does not match its frozen probability-model sources"
+        )
+    source_files: list[dict[str, str]] = []
+    for index, source in enumerate(sources["files"]):
+        if not isinstance(source, dict):
+            raise ValueError(f"probability-ordered state has invalid source file {index}")
+        identifier = source.get("id")
+        path = source.get("relative_path")
+        digest = source.get("sha256")
+        role = source.get("role")
+        limitation = source.get("limitation")
+        if not all(
+            isinstance(value, str) and value
+            for value in (identifier, path, digest, role, limitation)
+        ):
+            raise ValueError(f"probability-ordered state has invalid source file {index}")
+        if identifier not in PROBABILITY_SOURCE_JAPANESE_DESCRIPTIONS:
+            raise ValueError(f"probability-ordered state has an unknown source file {identifier}")
+        source_files.append(
+            {
+                "id": identifier,
+                "relative_path": path,
+                "sha256": digest,
+                "role": role,
+                "limitation": limitation,
+            }
+        )
     return {
         "requested": fraction_json(requested),
         "accepted": fraction_json(accepted),
@@ -108,6 +167,9 @@ def _probability_sums(state: dict[str, Any]) -> dict[str, Any] | None:
         "processed": fraction_json(accepted + rejected),
         "remaining": fraction_json(remaining),
         "priority_manifest_sha256": sha256,
+        "priority_manifest_metadata_sha256": metadata_sha256,
+        "priority_manifest_tie_seed": frozen_tie_seed,
+        "local_probability_model_source_files": source_files,
     }
 
 
@@ -162,6 +224,22 @@ def write_progress_report(state_path: Path, report_path: Path) -> dict[str, Any]
             key: _fraction_from_json(probability_sums[key])
             for key in ("requested", "accepted", "rejected", "processed", "remaining")
         }
+        japanese_source_lines = "\n".join(
+            (
+                f"  - `{source['relative_path']}`: "
+                f"{PROBABILITY_SOURCE_JAPANESE_DESCRIPTIONS[source['id']][0]}。"
+                f"制限: {PROBABILITY_SOURCE_JAPANESE_DESCRIPTIONS[source['id']][1]}。"
+                f" SHA-256: `{source['sha256']}`"
+            )
+            for source in probability_sums["local_probability_model_source_files"]
+        )
+        english_source_lines = "\n".join(
+            (
+                f"  - `{source['relative_path']}`: {source['role']}. "
+                f"Limitation: {source['limitation']}. SHA-256: `{source['sha256']}`"
+            )
+            for source in probability_sums["local_probability_model_source_files"]
+        )
         probability_japanese = f"""
 - この計算の対象局面が表す出現確率の合計: {_format_fraction_with_percent(exact['requested'])}
 - 採用済み局面が表す出現確率の合計: {_format_fraction_with_percent(exact['accepted'])}
@@ -169,8 +247,22 @@ def write_progress_report(state_path: Path, report_path: Path) -> dict[str, Any]
 - 処理済み局面が表す出現確率の合計: {_format_fraction_with_percent(exact['processed'])}
 - 未処理局面が表す出現確率の合計: {_format_fraction_with_percent(exact['remaining'])}
 - この順番を固定した入力ファイルの SHA-256: `{probability_sums['priority_manifest_sha256']}`
+- 入力ファイルのメタデータの SHA-256: `{probability_sums['priority_manifest_metadata_sha256']}`
+- 同じ確率の局面を並べるため、固定順位ファイルに記録された seed: `{probability_sums['priority_manifest_tie_seed']}`
+- 確率式の根拠ファイル:
+{japanese_source_lines}
 
-ここでいう「出現確率の合計」は、`records321_14_random_setup` にある通常方式の開始局面だけについて、各局面の回転・反射の個数と O 石数から求めた確率を足した値である。別方式で作られる `s8r14` の開始局面はこの値に含めない。このため、ここに示す百分率を `s8r14` 全体のカバー率と解釈してはならない。整数や丸め誤差で順位を決めないため、判定には先頭の分数を用い、百分率は読みやすさのための表示だけである。
+ここでいう「出現確率の合計」は、`records321_14_random_setup` にある `random_setup(14)` で作られる開始局面だけについて、各局面の回転・反射の個数と O 石数から求めた確率を足した値である。回転・反射は盤面の幾何学的な 8 通りであり、X と O の交換や手番の変更は含めない。`random_setup_2` で作られる開始局面はこの値に含めない。このため、ここに示す百分率を `s8r14` 全体のカバー率と解釈してはならない。式は上記3ファイルから作ったローカルの確率モデルを根拠にしており、現行 GGS サーバーのソースそのものと主張するものではない。整数や丸め誤差で順位を決めないため、判定には先頭の分数を用い、百分率は読みやすさのための表示だけである。
+
+「確率順序記録ファイル」の定義:
+
+- 出典: 上記3ファイル、開始局面一覧、および開始局面一覧の監査結果。
+- 目的: 途中までの計算で、`random_setup(14)` の中で出現しやすい局面から処理する。
+- 具体対象: 各代表局面、その有理数の確率、順位、同率時の seed、入力ファイルと根拠ファイルの SHA-256。
+- 役割: 計算順・再開・進捗の確率合計を再現可能にする。
+- 前後関係: 開始局面一覧を監査した後、教師計算の前に作成し、教師計算はその順を変更せずに読む。
+- 候補語: 「確率順序記録ファイル」「出現確率順の局面一覧」。
+- 初出定義: この報告書のこの節。
 """
         probability_english = f"""
 - Sum of occurrence probabilities represented by all positions in this calculation: {_format_fraction_with_percent(exact['requested'])}
@@ -179,8 +271,22 @@ def write_progress_report(state_path: Path, report_path: Path) -> dict[str, Any]
 - Sum represented by processed positions: {_format_fraction_with_percent(exact['processed'])}
 - Sum represented by remaining positions: {_format_fraction_with_percent(exact['remaining'])}
 - SHA-256 of the fixed input file that established this order: `{probability_sums['priority_manifest_sha256']}`
+- SHA-256 of the metadata sidecar for that input file: `{probability_sums['priority_manifest_metadata_sha256']}`
+- Seed recorded in the frozen priority file for ordering equal-probability positions: `{probability_sums['priority_manifest_tie_seed']}`
+- Local files used as evidence for the formula:
+{english_source_lines}
 
-These sums cover only positions from the primary construction in `records321_14_random_setup`.  They add the probability of each representative using its number of distinct rotations/reflections and its O-disc count.  They exclude the other construction used by `s8r14`; therefore they are not coverage percentages for all `s8r14` starts.  The fractions are the exact values used for accounting; displayed percentages are only for readability.
+These sums cover only positions made by `random_setup(14)` in `records321_14_random_setup`. They add the probability of each representative using its number of distinct rotations/reflections and its O-disc count. The rotations/reflections are the eight geometric board transformations; they do not exchange X and O or change side to move. They exclude positions made by `random_setup_2`, so they are not coverage percentages for all `s8r14` starts. The formula is a local probability model derived from the three files above, not a claim about the current GGS server source. The fractions are the exact values used for accounting; displayed percentages are only for readability.
+
+Definition of “probability-order record file”:
+
+- Source: the three files above, the starting-position list, and the audit of that list.
+- Purpose: process more frequently occurring positions within `random_setup(14)` first when the calculation is incomplete.
+- Concrete target: each representative position, its exact rational probability, rank, equal-probability seed, and SHA-256 values for input and source files.
+- Role: make calculation order, resumption, and probability-sum progress reproducible.
+- Preceding and following steps: create it after auditing the starting-position list and before teacher calculation; teacher calculation reads it without changing its order.
+- Candidate terms: “probability-order record file” and “position list ordered by occurrence probability”.
+- Initial definition: this section of this report.
 """
     text = f"""# 開始局面の最初の手の事前計算：進捗報告
 
