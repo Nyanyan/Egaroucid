@@ -163,6 +163,11 @@ def _expected_game_boards(openings: list[str]) -> list[str]:
     return [transform_board_text(board, generator.randrange(8)) for board in selected]
 
 
+def _d4_canonical_board(board: str) -> str:
+    """Match the game runner's rotation/reflection representative exactly."""
+    return min(transform_board_text(board, symmetry) for symmetry in range(8))
+
+
 def _validate_prepared_input(
     prepared: dict[str, Any],
     minimum_processed: int,
@@ -421,8 +426,8 @@ def _validate_metadata(
     if commands.get("baseline") != common_command:
         failures.append("no-book engine command differs from the prescribed command")
 
-    selected_canonical = sorted(canonicalize_board_key(board)[0] for board in expected_game_boards)
-    pool_canonical = sorted(canonicalize_board_key(board)[0] for board in openings_input)
+    selected_canonical = sorted(_d4_canonical_board(board) for board in expected_game_boards)
+    pool_canonical = sorted(_d4_canonical_board(board) for board in openings_input)
     expected_opening_metadata = {
         "raw_count": len(pool_canonical),
         "d4_unique_count": len(pool_canonical),

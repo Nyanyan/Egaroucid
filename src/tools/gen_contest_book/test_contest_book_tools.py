@@ -1014,9 +1014,13 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "60",
             ]
             selected_canonical = sorted(
-                canonicalize_board_key(board)[0] for board in [played_board]
+                audit_root_table_matches._d4_canonical_board(board)
+                for board in [played_board]
             )
-            pool_canonical = sorted(canonicalize_board_key(board)[0] for board in [GGS_ROOT])
+            pool_canonical = sorted(
+                audit_root_table_matches._d4_canonical_board(board)
+                for board in [GGS_ROOT]
+            )
             run_spec = {
                 "parsed_args": {
                     "time": 60,
