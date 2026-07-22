@@ -818,6 +818,224 @@ def validate_quality(result: dict[str, int | str], min_depth: int, min_selectivi
         )
 
 
+def _validate_recorded_search_result(
+    board: str,
+    result: object,
+    label: str,
+    min_depth: int | None,
+    min_selectivity: int,
+    expected_level: int | None = None,
+) -> dict[str, Any]:
+    """Validate one search result embedded in an accepted teacher result."""
+    if not isinstance(result, dict):
+        raise ValueError(f"{label} is not a search-result object")
+    move = result.get("move")
+    score = result.get("score")
+    if not isinstance(move, str) or not isinstance(score, int):
+        raise ValueError(f"{label} has no legal move and integer score")
+    try:
+        move_index = coord_to_index(move)
+    except ValueError as error:
+        raise ValueError(f"{label} has an invalid move") from error
+    if move_index not in Board.from_text(board).legal_moves():
+        raise ValueError(f"{label} has an illegal move")
+    if expected_level is not None and result.get("level") != str(expected_level):
+        raise ValueError(
+            f"{label} has level {result.get('level')!r}, expected {expected_level}"
+        )
+    if min_depth is not None:
+        try:
+            validate_quality(result, min_depth, min_selectivity)
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError(f"{label} does not meet its recorded quality") from error
+    return result
+
+
+def validate_verified_teacher_result(
+    board: str,
+    result: object,
+    *,
+    method: str,
+    min_depth: int,
+    min_selectivity: int,
+    fallback_level: int,
+    teacher_level: int,
+    verify_level: int,
+) -> None:
+    """Require the complete verification trail for a formal teacher result.
+
+    This validator is deliberately stricter than a row-format check.  It
+    proves that every accepted move came from one of the two methods that
+    actually performs a level verification, rather than merely carrying an
+    unrelated ``verify_level`` field in the manifest.
+    """
+    if min_depth < 1 or not 1 <= min_selectivity <= 100:
+        raise ValueError("formal teacher result has invalid minimum quality settings")
+    if fallback_level < 0 or teacher_level < 1:
+        raise ValueError("formal teacher result has invalid fixed-level settings")
+    if method not in {"hint_then_verify", "time_then_verify"}:
+        raise ValueError("formal teacher result uses a method without level verification")
+    if verify_level < 1:
+        raise ValueError("formal teacher result has no positive verification level")
+    if method == "hint_then_verify" and teacher_level < min_depth:
+        raise ValueError("formal hint teacher level is below the required quality")
+    if method == "time_then_verify" and fallback_level < min_depth:
+        raise ValueError("formal time fallback level is below the required quality")
+    final = _validate_recorded_search_result(board, result, "accepted result", min_depth, min_selectivity)
+    result_method = final.get("method")
+    verification_mode = final.get("verification_mode")
+    if not isinstance(result_method, str) or not isinstance(verification_mode, str):
+        raise ValueError("accepted result has no method or verification mode")
+    verification = _validate_recorded_search_result(
+        board,
+        final.get("verification"),
+        "verification result",
+        max(min_depth, verify_level),
+        min_selectivity,
+        verify_level,
+    )
+
+    if method == "hint_then_verify":
+        exact_method = f"hint_level_{teacher_level}_verified_hint_level_{verify_level}"
+        repeated_method = (
+            f"hint_level_{teacher_level}_overridden_by_repeated_hint_level_{verify_level}"
+        )
+        if verification_mode == f"level_{verify_level}_exact":
+            if result_method != exact_method:
+                raise ValueError("exact hint verification has an unexpected selected-method record")
+            _validate_recorded_search_result(
+                board,
+                final,
+                "accepted initial hint result",
+                max(min_depth, teacher_level),
+                min_selectivity,
+                teacher_level,
+            )
+            if final["move"] != verification["move"]:
+                raise ValueError("exact hint verification does not match the accepted move")
+            return
+        if verification_mode != f"level_{verify_level}_repeated_after_disagreement":
+            raise ValueError("hint verification has an unexpected verification mode")
+        if result_method != repeated_method:
+            raise ValueError("repeated hint verification has an unexpected selected-method record")
+        teacher = _validate_recorded_search_result(
+            board,
+            final.get("teacher"),
+            "initial hint result",
+            max(min_depth, teacher_level),
+            min_selectivity,
+            teacher_level,
+        )
+        repeated = _validate_recorded_search_result(
+            board,
+            final.get("verification_repeat"),
+            "repeated verification result",
+            max(min_depth, verify_level),
+            min_selectivity,
+            verify_level,
+        )
+        _validate_recorded_search_result(
+            board,
+            final,
+            "accepted repeated verification result",
+            max(min_depth, verify_level),
+            min_selectivity,
+            verify_level,
+        )
+        if teacher["move"] == final["move"]:
+            raise ValueError("repeated hint verification did not record the original disagreement")
+        if verification["move"] != repeated["move"] or final["move"] != repeated["move"]:
+            raise ValueError("repeated hint verification does not support the accepted move")
+        return
+
+    direct_method = f"time_verified_hint_level_{verify_level}"
+    fallback_method = f"time_fallback_hint_level_{fallback_level}_verified_hint_level_{verify_level}"
+
+    def validate_time_primary(value: dict[str, Any], label: str) -> None:
+        """Validate the time-search or fallback result preceding verification."""
+        value_method = value.get("method")
+        if value_method == direct_method:
+            _validate_recorded_search_result(
+                board, value, label, min_depth, min_selectivity
+            )
+            if value.get("level") != "-":
+                raise ValueError(f"{label} is not recorded as a time search")
+            return
+        if value_method == fallback_method:
+            _validate_recorded_search_result(
+                board,
+                value,
+                label,
+                max(min_depth, fallback_level),
+                min_selectivity,
+                fallback_level,
+            )
+            time_result = _validate_recorded_search_result(
+                board,
+                value.get("primary"),
+                f"{label} original time result",
+                None,
+                min_selectivity,
+            )
+            if time_result.get("level") != "-":
+                raise ValueError(f"{label} original result is not recorded as a time search")
+            return
+        raise ValueError(f"{label} has an unexpected selected-method record")
+
+    if verification_mode == f"level_{verify_level}_exact":
+        validate_time_primary(final, "accepted time result")
+        if final["move"] != verification["move"]:
+            raise ValueError("exact time verification does not match the accepted move")
+        return
+    if verification_mode == f"level_{fallback_level}_tiebreak":
+        validate_time_primary(final, "accepted time result before tiebreak")
+        tiebreak = _validate_recorded_search_result(
+            board,
+            final.get("tiebreak"),
+            "time tiebreak result",
+            max(min_depth, fallback_level),
+            min_selectivity,
+            fallback_level,
+        )
+        if final["move"] != tiebreak["move"] or final["move"] == verification["move"]:
+            raise ValueError("time tiebreak does not support the accepted move")
+        return
+    if verification_mode == f"levels_{fallback_level}_{DEEP_TIEBREAK_LEVEL}_tiebreak":
+        expected_method = (
+            f"time_disagreement_tiebreak_levels_{fallback_level}_{DEEP_TIEBREAK_LEVEL}"
+        )
+        if result_method != expected_method:
+            raise ValueError("deep time tiebreak has an unexpected selected-method record")
+        _validate_recorded_search_result(
+            board,
+            final,
+            "deep time tiebreak result",
+            max(min_depth, DEEP_TIEBREAK_LEVEL),
+            min_selectivity,
+            DEEP_TIEBREAK_LEVEL,
+        )
+        primary = _validate_recorded_search_result(
+            board, final.get("primary"), "time result before tiebreak", None, min_selectivity
+        )
+        validate_time_primary(primary, "time result before tiebreak")
+        tiebreak = _validate_recorded_search_result(
+            board,
+            final.get("tiebreak"),
+            "first time tiebreak result",
+            max(min_depth, fallback_level),
+            min_selectivity,
+            fallback_level,
+        )
+        if (
+            primary["move"] == tiebreak["move"]
+            or primary["move"] == verification["move"]
+            or final["move"] != tiebreak["move"]
+        ):
+            raise ValueError("deep time tiebreak does not support the accepted move")
+        return
+    raise ValueError("time verification has an unexpected verification mode")
+
+
 def _new_state(
     output: Path,
     coverage_path: Path,

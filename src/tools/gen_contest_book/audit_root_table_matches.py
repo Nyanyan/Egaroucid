@@ -27,7 +27,11 @@ from build_root_table import (
 )
 from generate_ggs_root_teacher import TEACHER_MANIFEST_SCHEMA, validate_calculation_provenance
 from othello import Board, coord_to_index, index_to_coord, normalize_board_text
-from prepare_root_table_match import PREPARED_SCHEMA, _validate_manifest_results
+from prepare_root_table_match import (
+    PREPARED_SCHEMA,
+    _validate_level_verified_manifest_results,
+    _validate_manifest_results,
+)
 
 
 AUDIT_SCHEMA = "root_table_match_audit_v1"
@@ -46,6 +50,8 @@ REQUIRED_MIN_DEPTH = 30
 REQUIRED_MIN_SELECTIVITY = 74
 REQUIRED_VERIFY_LEVEL = 31
 REQUIRED_MATCH_SEED = 624
+REQUIRED_ENGINE_RANDOM_SEED = 620
+REQUIRED_TEACHER_RANDOM_SEED = 620
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
@@ -298,6 +304,9 @@ def _validate_prepared_input(
         failures.append("prepared input used a different minimum processed-position count")
     if selection.get("minimum_accepted") != minimum_accepted:
         failures.append("prepared input used a different minimum accepted-position count")
+    level_31_verification_required = selection.get("level_31_verification_required")
+    if not isinstance(level_31_verification_required, bool):
+        failures.append("prepared input does not state whether level-31 verification was required")
 
     snapshot_path_text = snapshot.get("path")
     if not _snapshot_file_is_current(snapshot):
@@ -394,6 +403,10 @@ def _validate_prepared_input(
                         "evaluation_sha256": resources["evaluation"],
                         "endgame_move_ordering_sha256": resources["endgame_move_ordering"],
                     }
+                    if provenance["random_seed"] != REQUIRED_TEACHER_RANDOM_SEED:
+                        failures.append(
+                            "frozen teacher calculation used an unexpected Console random seed"
+                        )
         try:
             _validate_manifest_results(
                 teacher_rows,
@@ -402,6 +415,22 @@ def _validate_prepared_input(
             )
         except ValueError as error:
             failures.append(f"frozen teacher rows do not match the teacher manifest: {error}")
+        if level_31_verification_required is True:
+            verify_level = manifest.get("verify_level")
+            if isinstance(verify_level, bool) or not isinstance(verify_level, int) or verify_level < 31:
+                failures.append("frozen teacher manifest has verification below level 31")
+            else:
+                try:
+                    _validate_level_verified_manifest_results(
+                        teacher_rows,
+                        manifest,
+                        Path(str(snapshot_path_text)),
+                    )
+                except ValueError as error:
+                    failures.append(
+                        "frozen teacher rows do not have valid level-31 verification: "
+                        f"{error}"
+                    )
         for key, expected in (
             ("time_seconds", REQUIRED_TIME_SECONDS),
             ("threads", REQUIRED_TEACHER_THREADS),
@@ -480,6 +509,7 @@ def _validate_metadata(
         ("hash", REQUIRED_GAME_HASH),
         ("matches", len(expected_game_boards)),
         ("seed", REQUIRED_MATCH_SEED),
+        ("engine_random_seed", REQUIRED_ENGINE_RANDOM_SEED),
     ):
         if parsed.get(key) != expected:
             failures.append(f"game metadata has {key}={parsed.get(key)!r}, expected {expected}")
@@ -488,6 +518,16 @@ def _validate_metadata(
         failures.append("game metadata must use exactly one simultaneous game")
     if parsed.get("random_symmetry") is not True:
         failures.append("game metadata does not enable the fixed rotation/reflection procedure")
+    selection = prepared.get("selection")
+    required_level_verification = (
+        selection.get("level_31_verification_required")
+        if isinstance(selection, dict)
+        else None
+    )
+    if parsed.get("level_31_verification_required") is not required_level_verification:
+        failures.append(
+            "game metadata level-31 verification setting does not match the prepared input"
+        )
     for key in ("candidate_extra", "baseline_extra"):
         if parsed.get(key) != "":
             failures.append(f"game metadata has a nonempty {key}")
@@ -570,6 +610,8 @@ def _validate_metadata(
         str(REQUIRED_GAME_THREADS),
         "-hash",
         str(REQUIRED_GAME_HASH),
+        "-seed",
+        str(REQUIRED_ENGINE_RANDOM_SEED),
         "-eval",
         str(evaluation_path),
         "-time",
@@ -926,7 +968,17 @@ def audit_match_results(
         mean_margin = sum(float(row["margin"]) for row in valid_stat_rows) / len(valid_stat_rows)
         intervals = _bootstrap_intervals(valid_stat_rows, bootstrap_seed, bootstrap_repetitions)
     valid = not failures
-    eligible = valid and intervals["score"][0] > 0.5 and intervals["margin"][0] > 0.0
+    selection_payload = prepared.get("selection")
+    level_31_verification_required = (
+        isinstance(selection_payload, dict)
+        and selection_payload.get("level_31_verification_required") is True
+    )
+    eligible = (
+        valid
+        and level_31_verification_required
+        and intervals["score"][0] > 0.5
+        and intervals["margin"][0] > 0.0
+    )
     payload = {
         "schema": AUDIT_SCHEMA,
         "results": {"path": results_path.resolve().as_posix(), "sha256": sha256_file(results_path)},
@@ -946,6 +998,7 @@ def audit_match_results(
         "margin_interval": intervals["margin"],
         "checks": checks,
         "teacher_calculation": teacher_calculation,
+        "level_31_verification_required": level_31_verification_required,
         "failures": failures,
         "valid": valid,
         "eligible_for_adoption": eligible,
@@ -955,12 +1008,12 @@ def audit_match_results(
     decision_ja = (
         "有効な対局であり、得点率と平均石差の両方の95%区間下限が中立値を上回った。採用を検討できる。"
         if eligible
-        else "大会用ファイルへは追加しない。対局の有効性または事前に定めた95%区間の条件を満たしていない。"
+        else "大会用ファイルへは追加しない。各受理局面のlevel 31以上の照合、対局の有効性、または事前に定めた95%区間の条件を満たしていない。"
     )
     decision_en = (
         "The games are valid and both lower 95% limits exceed their neutral values. Adoption may be considered."
         if eligible
-        else "Do not add moves to the tournament file: validity or the pre-specified 95% interval condition is not satisfied."
+        else "Do not add moves to the tournament file: level-31-or-higher verification for every accepted position, validity, or the pre-specified 95% interval condition is not satisfied."
     )
     ordinary_book_ja = (
         "無効化を確認" if teacher_calculation["ordinary_book_disabled"] else "無効化を確認できない"
@@ -985,6 +1038,7 @@ def audit_match_results(
 - match数: {len(rows)}
 - 1 matchの定義: 同じ開始局面から、表を使う側を黒石（X）と白石（O）に一度ずつ置く2局
 - 最低処理済み局面数・最低採用局面数: {minimum_processed}・{minimum_accepted}
+- 各受理局面で level 31 以上の照合を必須にしたか: {str(level_31_verification_required).lower()}
 - 表を使う側の勝ち・引分・負け: {wins}・{draws}・{losses}
 - 得点率: {score_rate:.2%}
 - 平均石差: {mean_margin:+.3f}石
@@ -1011,6 +1065,7 @@ def audit_match_results(
 - Matches: {len(rows)}
 - Definition of one match: two games from one starting position, with the table-using side as X once and O once.
 - Minimum processed and accepted positions: {minimum_processed} and {minimum_accepted}
+- Level-31-or-higher verification required for every accepted position: {str(level_31_verification_required).lower()}
 - Table-using side W/D/L: {wins}/{draws}/{losses}
 - Score rate: {score_rate:.2%}
 - Mean disc margin: {mean_margin:+.3f} discs

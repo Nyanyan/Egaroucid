@@ -16,6 +16,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from build_book import canonicalize_board_key, move_to_representative
 from build_root_table import (
     ROOT_TABLE_FILENAME,
     build_root_table,
@@ -23,11 +24,15 @@ from build_root_table import (
     sha256_file,
     validate_root_table,
 )
-from generate_ggs_root_teacher import TEACHER_MANIFEST_SCHEMA, validate_calculation_provenance
-from othello import coord_to_index, normalize_board_text
+from generate_ggs_root_teacher import (
+    TEACHER_MANIFEST_SCHEMA,
+    validate_calculation_provenance,
+    validate_verified_teacher_result,
+)
+from othello import Board, coord_to_index, normalize_board_text
 
 
-PREPARED_SCHEMA = "prepared_root_table_match_input_v4"
+PREPARED_SCHEMA = "prepared_root_table_match_input_v5"
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
@@ -121,34 +126,95 @@ def _validate_manifest_results(
     entries: list[Any],
     manifest: dict[str, Any],
     teacher_results: Path,
-) -> None:
+) -> dict[str, tuple[str, dict[str, Any], int]]:
     """Require every exported row to agree with the frozen calculation result."""
     results = manifest.get("results")
     if not isinstance(results, dict):
         raise ValueError(f"{_manifest_path(teacher_results)}: accepted results are missing")
     boards = {entry.board for entry in entries}
-    if set(results) != boards:
+    canonical_results: dict[str, tuple[str, dict[str, Any], int]] = {}
+    for raw_board, result in results.items():
+        if not isinstance(raw_board, str) or not isinstance(result, dict):
+            raise ValueError(f"{_manifest_path(teacher_results)}: invalid accepted result")
+        try:
+            normalized_board = normalize_board_text(raw_board)
+            canonical_board, symmetry = canonicalize_board_key(normalized_board)
+        except ValueError as error:
+            raise ValueError(
+                f"{_manifest_path(teacher_results)}: invalid accepted-result board"
+            ) from error
+        if canonical_board in canonical_results:
+            raise ValueError(
+                f"{_manifest_path(teacher_results)}: duplicate canonical accepted result"
+            )
+        canonical_results[canonical_board] = (normalized_board, result, symmetry)
+    if set(canonical_results) != boards:
         raise ValueError(
             f"{_manifest_path(teacher_results)}: accepted results do not equal teacher rows"
         )
     for entry in entries:
-        result = results[entry.board]
-        if not isinstance(result, dict):
-            raise ValueError(f"{_manifest_path(teacher_results)}: invalid result for {entry.board}")
+        raw_board, result, symmetry = canonical_results[entry.board]
         move = result.get("move")
         score = result.get("score")
         if not isinstance(move, str) or not isinstance(score, int):
             raise ValueError(f"{_manifest_path(teacher_results)}: invalid move or score for {entry.board}")
         try:
-            expected_moves = ((coord_to_index(move), score),)
+            source_move = coord_to_index(move)
         except ValueError as error:
             raise ValueError(
                 f"{_manifest_path(teacher_results)}: invalid move for {entry.board}"
             ) from error
+        if source_move not in Board.from_text(raw_board).legal_moves():
+            raise ValueError(f"{_manifest_path(teacher_results)}: illegal move for {entry.board}")
+        expected_moves = ((move_to_representative(source_move, symmetry), score),)
         if entry.value != score or entry.moves != expected_moves:
             raise ValueError(
                 f"{_manifest_path(teacher_results)}: teacher row does not match result for {entry.board}"
             )
+    return canonical_results
+
+
+def _validate_level_verified_manifest_results(
+    entries: list[Any],
+    manifest: dict[str, Any],
+    teacher_results: Path,
+) -> None:
+    """Require a complete level-verification trail for every accepted row."""
+    required_integer_settings = (
+        "min_depth",
+        "min_selectivity",
+        "fallback_level",
+        "teacher_level",
+        "verify_level",
+    )
+    settings: dict[str, int] = {}
+    for key in required_integer_settings:
+        value = manifest.get(key)
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{_manifest_path(teacher_results)}: {key} is missing or invalid")
+        settings[key] = value
+    method = manifest.get("method")
+    if not isinstance(method, str):
+        raise ValueError(f"{_manifest_path(teacher_results)}: method is missing or invalid")
+    canonical_results = _validate_manifest_results(entries, manifest, teacher_results)
+    for entry in entries:
+        raw_board, result, _symmetry = canonical_results[entry.board]
+        try:
+            validate_verified_teacher_result(
+                raw_board,
+                result,
+                method=method,
+                min_depth=settings["min_depth"],
+                min_selectivity=settings["min_selectivity"],
+                fallback_level=settings["fallback_level"],
+                teacher_level=settings["teacher_level"],
+                verify_level=settings["verify_level"],
+            )
+        except ValueError as error:
+            raise ValueError(
+                f"{_manifest_path(teacher_results)}: accepted result for {entry.board} "
+                f"has no valid level-verification trail: {error}"
+            ) from error
 
 
 def _teacher_script_snapshot_bytes(manifest: dict[str, Any]) -> tuple[bytes, str]:
@@ -218,11 +284,14 @@ def prepare_match_input(
     output_dir: Path,
     minimum_processed: int,
     minimum_accepted: int,
+    require_level_31_verification: bool = False,
 ) -> dict[str, int | str]:
     if minimum_processed < 1:
         raise ValueError("minimum_processed must be positive")
     if minimum_accepted < 1:
         raise ValueError("minimum_accepted must be positive")
+    if not isinstance(require_level_31_verification, bool):
+        raise ValueError("require_level_31_verification must be a boolean")
     if output_dir.exists():
         raise FileExistsError(f"output directory already exists: {output_dir}")
 
@@ -262,6 +331,17 @@ def prepare_match_input(
     if len(canonical_boards) != len(entries):
         raise ValueError(f"{teacher_results}: duplicate canonical accepted roots")
     _validate_manifest_results(entries, teacher_manifest, teacher_results)
+    if require_level_31_verification:
+        verify_level = teacher_manifest.get("verify_level")
+        if isinstance(verify_level, bool) or not isinstance(verify_level, int) or verify_level < 31:
+            raise ValueError(
+                f"{_manifest_path(teacher_results)}: formal matches require verify_level at least 31"
+            )
+        _validate_level_verified_manifest_results(
+            entries,
+            teacher_manifest,
+            teacher_results,
+        )
     teacher_script_content, teacher_script_sha256 = _teacher_script_snapshot_bytes(
         teacher_manifest
     )
@@ -352,6 +432,7 @@ def prepare_match_input(
             "minimum_processed": minimum_processed,
             "minimum_accepted": minimum_accepted,
             "all_accepted_positions_used": True,
+            "level_31_verification_required": require_level_31_verification,
         },
     }
     _atomic_write_text(
@@ -364,13 +445,17 @@ def prepare_match_input(
 
 このディレクトリは、`{teacher_results.name}` の一貫した出力を複製して作成した。元の出力の処理済み局面数は {processed}、受理局面数は {completed}、不採用局面数は {rejected} である。受理局面はすべて一時的な開始局面用の手の表と開始局面一覧へ入れた。対局結果を見て局面を選び直していない。教師計算時に通常bookと大会bookを無効にした起動条件と、使用した生成スクリプトの保存コピーもSHA-256で照合して固定した。
 
+各受理局面で level 31 以上の照合を必須にしたか: {str(require_level_31_verification).lower()}。true の場合、各採用手について、manifestに記録された固定levelの探索結果、手、探索品質、設定値の対応を検査してから、この入力を作成している。
+
 このディレクトリは対局の入力専用であり、大会用の `trained/` は変更しない。教師計算で使ったConsole実行ファイル、主評価ファイル、終盤の手順評価ファイルの保存コピーもSHA-256で照合して保存した。入力と出力のSHA-256は `prepared_match_input.json` に記録した。
 
 ## English
 
 This directory was created by copying one coherent output from `{teacher_results.name}`. The source output processed {processed} positions, accepted {completed}, and rejected {rejected}. Every accepted position was placed in the temporary table of moves for starting positions and in the starting-position list. No position was selected after observing game results. The immutable manifest records that both books were disabled during teacher calculation, and this directory contains a SHA-256-checked copy of the generator script.
 
-This directory is only match input and does not modify tournament `trained/`. It also preserves SHA-256-checked copies of the Console executable, the main evaluation file, the endgame move-ordering evaluation file, and the fixed hash file used for teacher calculation. SHA-256 values for every input and output are recorded in `prepared_match_input.json`.
+Level-31-or-higher verification required for every accepted position: {str(require_level_31_verification).lower()}. When true, this input is created only after checking that each accepted move is supported by the recorded fixed-level searches, moves, search quality, and manifest settings.
+
+This directory is only match input and does not modify tournament `trained/`. It also preserves SHA-256-checked copies of the Console executable, the main evaluation file, and the endgame move-ordering evaluation file used for teacher calculation. SHA-256 values for every input and output are recorded in `prepared_match_input.json`.
 """
     _atomic_write_text(output_dir / "README.md", report)
     return {
@@ -388,12 +473,14 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--minimum-processed", type=int, default=500)
     parser.add_argument("--minimum-accepted", type=int, default=500)
+    parser.add_argument("--require-level-31-verification", action="store_true")
     args = parser.parse_args()
     result = prepare_match_input(
         args.teacher_results,
         args.output_dir,
         args.minimum_processed,
         args.minimum_accepted,
+        args.require_level_31_verification,
     )
     print(
         f"prepared processed={result['processed']} accepted={result['accepted']} "

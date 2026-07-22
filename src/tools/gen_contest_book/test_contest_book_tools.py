@@ -991,7 +991,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             prepared = json.loads(
                 (destination / "prepared_match_input.json").read_text(encoding="utf-8")
             )
-            self.assertEqual("prepared_root_table_match_input_v4", prepared["schema"])
+            self.assertEqual("prepared_root_table_match_input_v5", prepared["schema"])
             self.assertEqual(
                 build_root_table.sha256_file(destination / "teacher_manifest.json"),
                 prepared["teacher_manifest"]["sha256"],
@@ -1197,6 +1197,8 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "8",
                 "-hash",
                 "29",
+                "-seed",
+                "620",
                 "-eval",
                 str(evaluation.resolve()),
                 "-time",
@@ -1218,7 +1220,9 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "matches": 1,
                     "workers": 1,
                     "seed": 624,
+                    "engine_random_seed": 620,
                     "random_symmetry": True,
+                    "level_31_verification_required": False,
                     "candidate": str(engine.resolve()),
                     "baseline": str(engine.resolve()),
                     "contestbook": None,
@@ -1290,6 +1294,30 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertIn("Ordinary book during teacher calculation", text)
 
             original_prepared = prepared_path.read_bytes()
+            strict_selection = json.loads(original_prepared.decode("utf-8"))
+            strict_selection["selection"]["level_31_verification_required"] = True
+            prepared_path.write_text(
+                json.dumps(strict_selection), encoding="utf-8", newline="\n"
+            )
+            altered_level_verification = audit_root_table_matches.audit_match_results(
+                results,
+                prepared_path,
+                metadata_path,
+                root / "altered_level_verification.md",
+                bootstrap_seed=620,
+                bootstrap_repetitions=100,
+                minimum_processed=1,
+                minimum_accepted=1,
+            )
+            self.assertFalse(altered_level_verification["valid"])
+            self.assertTrue(
+                any(
+                    "valid level-31 verification" in failure
+                    for failure in altered_level_verification["failures"]
+                )
+            )
+            prepared_path.write_bytes(original_prepared)
+
             frozen_manifest_path = prepared_dir / "teacher_manifest.json"
             original_manifest = frozen_manifest_path.read_bytes()
             prepared = json.loads(original_prepared.decode("utf-8"))
@@ -2465,6 +2493,106 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual(
                 "level-30 tiebreak d3 does not match level-31 tiebreak b4",
                 manifest["rejections"][GGS_ROOT]["reason"],
+            )
+
+    def test_formal_preparation_requires_the_recorded_level_31_verification(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            write_teacher_executable(exe, b"test teacher")
+            output = root / "teacher_rows.txt"
+            teacher = {
+                "move": "f5", "score": -15, "level": "30", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            verification = {
+                "move": "f5", "score": -14, "level": "31", "depth": "31@74%",
+                "time": "000:00:08.000", "nodes": 2, "nps": 1,
+            }
+            with mock.patch.object(
+                generate_ggs_root_teacher,
+                "search_root_at_level",
+                side_effect=[teacher, verification],
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage,
+                    exe,
+                    output,
+                    60.0,
+                    28,
+                    29,
+                    min_depth=30,
+                    min_selectivity=74,
+                    fallback_level=30,
+                    method="hint_then_verify",
+                    teacher_level=30,
+                    verify_level=31,
+                )
+            prepared = root / "prepared"
+            prepare_root_table_match.prepare_match_input(
+                output,
+                prepared,
+                minimum_processed=1,
+                minimum_accepted=1,
+                require_level_31_verification=True,
+            )
+            prepared_payload = json.loads(
+                (prepared / "prepared_match_input.json").read_text(encoding="utf-8")
+            )
+            self.assertTrue(
+                prepared_payload["selection"]["level_31_verification_required"]
+            )
+
+            manifest_path = output.with_suffix(output.suffix + ".manifest.json")
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["results"][GGS_ROOT]["verification"]["level"] = "30"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8", newline="\n")
+            with self.assertRaisesRegex(ValueError, "expected 31"):
+                prepare_root_table_match.prepare_match_input(
+                    output,
+                    root / "mismatched_level",
+                    minimum_processed=1,
+                    minimum_accepted=1,
+                    require_level_31_verification=True,
+                )
+
+    def test_formal_validation_rejects_time_deep_tiebreak_without_the_initial_disagreement(self) -> None:
+        primary = {
+            "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
+            "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            "method": "time_verified_hint_level_31",
+        }
+        verification = {
+            "move": "f5", "score": -14, "level": "31", "depth": "31@74%",
+            "time": "000:00:08.000", "nodes": 2, "nps": 1,
+        }
+        tiebreak = {
+            "move": "c7", "score": -13, "level": "30", "depth": "30@74%",
+            "time": "000:00:09.000", "nodes": 3, "nps": 1,
+        }
+        deep = {
+            "move": "c7", "score": -12, "level": "31", "depth": "31@74%",
+            "time": "000:00:10.000", "nodes": 4, "nps": 1,
+            "method": "time_disagreement_tiebreak_levels_30_31",
+            "verification_mode": "levels_30_31_tiebreak",
+            "primary": primary,
+            "verification": verification,
+            "tiebreak": tiebreak,
+        }
+        with self.assertRaisesRegex(ValueError, "deep time tiebreak does not support"):
+            generate_ggs_root_teacher.validate_verified_teacher_result(
+                GGS_ROOT,
+                deep,
+                method="time_then_verify",
+                min_depth=30,
+                min_selectivity=74,
+                fallback_level=30,
+                teacher_level=30,
+                verify_level=31,
             )
 
 
