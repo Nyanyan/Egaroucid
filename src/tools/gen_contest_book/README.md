@@ -225,23 +225,39 @@ than replaces the per-start deep books: the runtime first uses a matching deep
 book, then falls back to the root table only at the initial board. It never
 uses a root-table row after the root ply.
 
-Build a table from verified individual books with:
+Build a temporary table from verified individual books with:
 
 ```powershell
-python src/tools/gen_contest_book/build_root_table.py --books-dir src/tools/gen_contest_book/trained --require-starts-dir src/tools/gen_contest_book/data/records321_14_random_setup
+python src/tools/gen_contest_book/build_root_table.py --books-dir src/tools/gen_contest_book/trained --require-starts-dir src/tools/gen_contest_book/data/records321_14_random_setup --output ignored/ggs_620_progress/temporary_contest_root_table.egcb
 ```
 
 The builder canonicalizes every board and move with the same representative
 ordering as the C++ runtime, rejects conflicting duplicate roots, validates
-the completed table, atomically publishes it as
-`trained/contest_root_table.egcb`, and writes a neighbouring source/output
-hash manifest. For a full enumerated start set, pass that set with
-`--require-starts-dir`; publication fails unless coverage is exact. Shallow
-teacher results can therefore be accumulated for all starts independently of
-the smaller collection of deep books. A compact teacher artifact can avoid
-creating one file per root: pass repeatable `--root-results <file>` inputs with
-data rows in the same `<board> <side> <value> <move>:<score> ...` format. Its
-hash is recorded in the root-table manifest alongside deep-book sources.
+the completed table, and writes a neighbouring source/output hash manifest.
+For a full enumerated start set, pass that set with `--require-starts-dir`; the
+build fails unless coverage is exact. Shallow teacher results can therefore be
+accumulated for all starts independently of the smaller collection of deep
+books. A compact teacher artifact can avoid creating one file per root: pass
+repeatable `--root-results <file>` inputs with data rows in the same
+`<board> <side> <value> <move>:<score> ...` format. Its hash is recorded in the
+root-table manifest alongside deep-book sources.
+
+`build_root_table.py` deliberately refuses to write the tournament path
+`trained/contest_root_table.egcb` directly. That file is published only after
+the complete fixed-start, color-swapped match has passed its audit. The
+publication command reruns the recorded audit with the fixed seed and 100,000
+bootstrap repetitions, checks every input SHA-256 again, rebuilds the table
+from the frozen teacher rows, and requires it to match the table used in the
+games. It then writes a `contest_root_table.egcb.publication.json` record
+linking the published table to the audit and its inputs:
+
+```powershell
+python src/tools/gen_contest_book/publish_verified_root_table.py --audit-json ignored/ggs_620_progress/root_table_match_audit.md.json
+```
+
+An existing tournament table is not replaced unless `--replace-existing` is
+given explicitly. To add later rows, prepare, play, and audit the complete
+replacement table; the publisher never silently mixes unaudited old rows.
 
 To generate a new, disjoint batch of verified starting moves, pass every
 previous accepted teacher file or published root table with repeatable
