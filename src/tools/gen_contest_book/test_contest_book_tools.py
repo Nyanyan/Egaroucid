@@ -65,6 +65,52 @@ def valid_book_text(*, records_seen: int = 1, records_used: int = 1) -> str:
     )
 
 
+def write_v11_teacher_manifest(
+    teacher: Path,
+    *,
+    engine_sha256: str | None = None,
+    include_match_requirements: bool = False,
+) -> None:
+    """Create one small, internally consistent v11 teacher artifact for tests."""
+    provenance = generate_ggs_root_teacher._new_calculation_provenance(teacher)
+    source_snapshot = Path(provenance["teacher_script_snapshot"]["path"])
+    source_snapshot.write_bytes(Path(generate_ggs_root_teacher.__file__).read_bytes())
+    entry = build_root_table.load_root_rows(teacher, 14)[0]
+    manifest: dict[str, object] = {
+        "schema": generate_ggs_root_teacher.TEACHER_MANIFEST_SCHEMA,
+        "output": {
+            "sha256": build_root_table.sha256_file(teacher),
+            "processed": 1,
+            "completed": 1,
+            "rejected": 0,
+        },
+        "calculation_provenance": provenance,
+        "results": {
+            entry.board: {
+                "move": index_to_coord(entry.moves[0][0]),
+                "score": entry.value,
+            }
+        },
+        "rejections": {},
+    }
+    if engine_sha256 is not None:
+        manifest["engine"] = {"sha256": engine_sha256}
+    if include_match_requirements:
+        manifest.update(
+            {
+                "time_seconds": 60,
+                "threads": 28,
+                "hash_level": 29,
+                "min_depth": 30,
+                "min_selectivity": 74,
+                "verify_level": 31,
+            }
+        )
+    teacher.with_suffix(teacher.suffix + ".manifest.json").write_text(
+        json.dumps(manifest), encoding="utf-8", newline="\n"
+    )
+
+
 class GenerateRecordsTests(unittest.TestCase):
     def make_args(self, games: int, batch_size: int = 16) -> SimpleNamespace:
         return SimpleNamespace(
@@ -796,22 +842,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 encoding="utf-8",
                 newline="\n",
             )
-            teacher_sha256 = build_root_table.sha256_file(teacher)
-            teacher.with_suffix(teacher.suffix + ".manifest.json").write_text(
-                json.dumps(
-                    {
-                        "schema": "ggs_root_teacher_manifest_v10",
-                        "output": {
-                            "sha256": teacher_sha256,
-                            "processed": 1,
-                            "completed": 1,
-                            "rejected": 0,
-                        },
-                    }
-                ),
-                encoding="utf-8",
-                newline="\n",
-            )
+            write_v11_teacher_manifest(teacher)
             destination = root / "prepared"
             result = prepare_root_table_match.prepare_match_input(
                 teacher, destination, minimum_processed=1, minimum_accepted=1
@@ -832,12 +863,16 @@ class GgsRootTeacherTests(unittest.TestCase):
             prepared = json.loads(
                 (destination / "prepared_match_input.json").read_text(encoding="utf-8")
             )
-            self.assertEqual("prepared_root_table_match_input_v2", prepared["schema"])
+            self.assertEqual("prepared_root_table_match_input_v3", prepared["schema"])
             self.assertEqual(
                 build_root_table.sha256_file(destination / "teacher_manifest.json"),
                 prepared["teacher_manifest"]["sha256"],
             )
             self.assertEqual(1, prepared["selection"]["minimum_accepted"])
+            self.assertEqual(
+                build_root_table.sha256_file(destination / "teacher_calculation_script.py"),
+                prepared["teacher_script_snapshot"]["sha256"],
+            )
             report = (destination / "README.md").read_text(encoding="utf-8")
             self.assertIn("受理局面", report)
             self.assertIn("Every accepted position", report)
@@ -856,6 +891,33 @@ class GgsRootTeacherTests(unittest.TestCase):
                     minimum_accepted=2,
                 )
             self.assertFalse(too_few_accepted.exists())
+            legacy = root / "legacy_teacher_rows.txt"
+            legacy.write_text(
+                "# ggs_root_teacher_v1\n" f"{GGS_ROOT} -15 f5:-15\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            legacy.with_suffix(legacy.suffix + ".manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema": "ggs_root_teacher_manifest_v10",
+                        "output": {
+                            "sha256": build_root_table.sha256_file(legacy),
+                            "processed": 1,
+                            "completed": 1,
+                            "rejected": 0,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            legacy_destination = root / "legacy_prepared"
+            with self.assertRaisesRegex(ValueError, "unsupported teacher manifest schema"):
+                prepare_root_table_match.prepare_match_input(
+                    legacy, legacy_destination, minimum_processed=1, minimum_accepted=1
+                )
+            self.assertFalse(legacy_destination.exists())
 
     def test_audits_color_swapped_root_table_match(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -874,27 +936,10 @@ class GgsRootTeacherTests(unittest.TestCase):
                 encoding="utf-8",
                 newline="\n",
             )
-            teacher.with_suffix(teacher.suffix + ".manifest.json").write_text(
-                json.dumps(
-                    {
-                        "schema": "ggs_root_teacher_manifest_v10",
-                        "output": {
-                            "sha256": build_root_table.sha256_file(teacher),
-                            "processed": 1,
-                            "completed": 1,
-                            "rejected": 0,
-                        },
-                        "engine": {"sha256": binary_sha256},
-                        "time_seconds": 60,
-                        "threads": 28,
-                        "hash_level": 29,
-                        "min_depth": 30,
-                        "min_selectivity": 74,
-                        "verify_level": 31,
-                    }
-                ),
-                encoding="utf-8",
-                newline="\n",
+            write_v11_teacher_manifest(
+                teacher,
+                engine_sha256=binary_sha256,
+                include_match_requirements=True,
             )
             prepared_dir = root / "prepared"
             prepare_root_table_match.prepare_match_input(
@@ -1091,9 +1136,47 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             self.assertTrue(payload["valid"])
             self.assertFalse(payload["eligible_for_adoption"])
+            self.assertTrue(payload["teacher_calculation"]["ordinary_book_disabled"])
+            self.assertTrue(payload["teacher_calculation"]["contest_book_disabled"])
             text = report.read_text(encoding="utf-8")
             self.assertIn("表を使う側の勝ち", text)
             self.assertIn("Table-using side W/D/L", text)
+            self.assertIn("Ordinary book during teacher calculation", text)
+
+            original_prepared = prepared_path.read_bytes()
+            frozen_manifest_path = prepared_dir / "teacher_manifest.json"
+            original_manifest = frozen_manifest_path.read_bytes()
+            prepared = json.loads(original_prepared.decode("utf-8"))
+            frozen_manifest = json.loads(original_manifest.decode("utf-8"))
+            frozen_manifest["calculation_provenance"]["book_configuration"]["contest_book"][
+                "disabled"
+            ] = False
+            frozen_manifest_path.write_text(
+                json.dumps(frozen_manifest), encoding="utf-8", newline="\n"
+            )
+            prepared["teacher_manifest"]["sha256"] = build_root_table.sha256_file(
+                frozen_manifest_path
+            )
+            prepared_path.write_text(json.dumps(prepared), encoding="utf-8", newline="\n")
+            altered_teacher_calculation = audit_root_table_matches.audit_match_results(
+                results,
+                prepared_path,
+                metadata_path,
+                root / "altered_teacher_calculation.md",
+                bootstrap_seed=620,
+                bootstrap_repetitions=100,
+                minimum_processed=1,
+                minimum_accepted=1,
+            )
+            self.assertFalse(altered_teacher_calculation["valid"])
+            self.assertTrue(
+                any(
+                    "does not disable both books" in failure
+                    for failure in altered_teacher_calculation["failures"]
+                )
+            )
+            frozen_manifest_path.write_bytes(original_manifest)
+            prepared_path.write_bytes(original_prepared)
 
             altered_spec = json.loads(json.dumps(run_spec))
             altered_spec["parsed_args"]["candidate_extra"] = "-t 1"

@@ -23,10 +23,11 @@ from build_root_table import (
     sha256_file,
     validate_root_table,
 )
-from othello import normalize_board_text
+from generate_ggs_root_teacher import TEACHER_MANIFEST_SCHEMA, validate_calculation_provenance
+from othello import coord_to_index, normalize_board_text
 
 
-PREPARED_SCHEMA = "prepared_root_table_match_input_v2"
+PREPARED_SCHEMA = "prepared_root_table_match_input_v3"
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
@@ -63,6 +64,12 @@ def _load_manifest_bytes(path: Path) -> tuple[bytes, dict[str, Any]]:
         raise ValueError(f"cannot read teacher manifest {path}: {error}") from error
     if not isinstance(manifest, dict) or not isinstance(manifest.get("output"), dict):
         raise ValueError(f"{path}: invalid teacher manifest")
+    if manifest.get("schema") != TEACHER_MANIFEST_SCHEMA:
+        raise ValueError(f"{path}: unsupported teacher manifest schema")
+    try:
+        validate_calculation_provenance(manifest.get("calculation_provenance"))
+    except ValueError as error:
+        raise ValueError(f"{path}: invalid teacher-calculation evidence: {error}") from error
     return content, manifest
 
 
@@ -108,6 +115,54 @@ def _read_coherent_teacher_results(
     )
 
 
+def _validate_manifest_results(
+    entries: list[Any],
+    manifest: dict[str, Any],
+    teacher_results: Path,
+) -> None:
+    """Require every exported row to agree with the frozen calculation result."""
+    results = manifest.get("results")
+    if not isinstance(results, dict):
+        raise ValueError(f"{_manifest_path(teacher_results)}: accepted results are missing")
+    boards = {entry.board for entry in entries}
+    if set(results) != boards:
+        raise ValueError(
+            f"{_manifest_path(teacher_results)}: accepted results do not equal teacher rows"
+        )
+    for entry in entries:
+        result = results[entry.board]
+        if not isinstance(result, dict):
+            raise ValueError(f"{_manifest_path(teacher_results)}: invalid result for {entry.board}")
+        move = result.get("move")
+        score = result.get("score")
+        if not isinstance(move, str) or not isinstance(score, int):
+            raise ValueError(f"{_manifest_path(teacher_results)}: invalid move or score for {entry.board}")
+        try:
+            expected_moves = ((coord_to_index(move), score),)
+        except ValueError as error:
+            raise ValueError(
+                f"{_manifest_path(teacher_results)}: invalid move for {entry.board}"
+            ) from error
+        if entry.value != score or entry.moves != expected_moves:
+            raise ValueError(
+                f"{_manifest_path(teacher_results)}: teacher row does not match result for {entry.board}"
+            )
+
+
+def _teacher_script_snapshot_bytes(manifest: dict[str, Any]) -> tuple[bytes, str]:
+    provenance = manifest["calculation_provenance"]
+    snapshot = provenance["teacher_script_snapshot"]
+    snapshot_path = Path(snapshot["path"])
+    try:
+        content = snapshot_path.read_bytes()
+    except OSError as error:
+        raise ValueError(f"cannot read saved teacher script {snapshot_path}: {error}") from error
+    digest = _sha256_bytes(content)
+    if digest != snapshot["sha256"]:
+        raise ValueError("saved teacher script changed while preparing match input")
+    return content, digest
+
+
 def prepare_match_input(
     teacher_results: Path,
     output_dir: Path,
@@ -145,6 +200,22 @@ def prepare_match_input(
             f"{teacher_results}: accepted {completed}, below required {minimum_accepted}"
         )
 
+    entries = load_root_rows(teacher_results, 14)
+    boards = _accepted_start_boards(teacher_results)
+    if sha256_file(teacher_results) != teacher_sha256:
+        raise ValueError(f"{teacher_results}: changed while its rows were being checked")
+    if len(entries) != completed or len(boards) != completed:
+        raise ValueError(
+            f"{teacher_results}: accepted rows {len(entries)} do not match manifest {completed}"
+        )
+    canonical_boards = {entry.board for entry in entries}
+    if len(canonical_boards) != len(entries):
+        raise ValueError(f"{teacher_results}: duplicate canonical accepted roots")
+    _validate_manifest_results(entries, teacher_manifest, teacher_results)
+    teacher_script_content, teacher_script_sha256 = _teacher_script_snapshot_bytes(
+        teacher_manifest
+    )
+
     snapshot = output_dir / "teacher_rows.txt"
     _atomic_write_bytes(snapshot, teacher_content)
     if sha256_file(snapshot) != teacher_sha256:
@@ -153,16 +224,10 @@ def prepare_match_input(
     _atomic_write_bytes(manifest_snapshot, teacher_manifest_content)
     if sha256_file(manifest_snapshot) != teacher_manifest_sha256:
         raise RuntimeError(f"{manifest_snapshot}: copied SHA-256 mismatch")
-
-    entries = load_root_rows(snapshot, 14)
-    boards = _accepted_start_boards(snapshot)
-    if len(entries) != completed or len(boards) != completed:
-        raise ValueError(
-            f"{teacher_results}: accepted rows {len(entries)} do not match manifest {completed}"
-        )
-    canonical_boards = {entry.board for entry in entries}
-    if len(canonical_boards) != len(entries):
-        raise ValueError(f"{teacher_results}: duplicate canonical accepted roots")
+    teacher_script_snapshot = output_dir / "teacher_calculation_script.py"
+    _atomic_write_bytes(teacher_script_snapshot, teacher_script_content)
+    if sha256_file(teacher_script_snapshot) != teacher_script_sha256:
+        raise RuntimeError(f"{teacher_script_snapshot}: copied SHA-256 mismatch")
 
     openings = output_dir / "openings" / "roots.txt"
     _atomic_write_text(openings, "\n".join(boards) + "\n")
@@ -184,6 +249,10 @@ def prepare_match_input(
         "teacher_manifest": {
             "path": manifest_snapshot.resolve().as_posix(),
             "sha256": sha256_file(manifest_snapshot),
+        },
+        "teacher_script_snapshot": {
+            "path": teacher_script_snapshot.resolve().as_posix(),
+            "sha256": sha256_file(teacher_script_snapshot),
         },
         "snapshot": {
             "path": snapshot.resolve().as_posix(),
@@ -214,13 +283,13 @@ def prepare_match_input(
 
 ## 日本語
 
-このディレクトリは、`{teacher_results.name}` の一貫した出力を複製して作成した。元の出力の処理済み局面数は {processed}、受理局面数は {completed}、不採用局面数は {rejected} である。受理局面はすべて一時的な開始局面用の手の表と開始局面一覧へ入れた。対局結果を見て局面を選び直していない。
+このディレクトリは、`{teacher_results.name}` の一貫した出力を複製して作成した。元の出力の処理済み局面数は {processed}、受理局面数は {completed}、不採用局面数は {rejected} である。受理局面はすべて一時的な開始局面用の手の表と開始局面一覧へ入れた。対局結果を見て局面を選び直していない。教師計算時に通常bookと大会bookを無効にした起動条件と、使用した生成スクリプトの保存コピーもSHA-256で照合して固定した。
 
 このディレクトリは対局の入力専用であり、大会用の `trained/` は変更しない。入力と出力のSHA-256は `prepared_match_input.json` に記録した。
 
 ## English
 
-This directory was created by copying one coherent output from `{teacher_results.name}`. The source output processed {processed} positions, accepted {completed}, and rejected {rejected}. Every accepted position was placed in the temporary table of moves for starting positions and in the starting-position list. No position was selected after observing game results.
+This directory was created by copying one coherent output from `{teacher_results.name}`. The source output processed {processed} positions, accepted {completed}, and rejected {rejected}. Every accepted position was placed in the temporary table of moves for starting positions and in the starting-position list. No position was selected after observing game results. The immutable manifest records that both books were disabled during teacher calculation, and this directory contains a SHA-256-checked copy of the generator script.
 
 This directory is only match input and does not modify tournament `trained/`. SHA-256 values for every input and output are recorded in `prepared_match_input.json`.
 """

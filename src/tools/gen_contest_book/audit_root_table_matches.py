@@ -25,8 +25,9 @@ from build_root_table import (
     manifest_path_for_root_table,
     sha256_file,
 )
+from generate_ggs_root_teacher import TEACHER_MANIFEST_SCHEMA, validate_calculation_provenance
 from othello import Board, coord_to_index, index_to_coord, normalize_board_text
-from prepare_root_table_match import PREPARED_SCHEMA
+from prepare_root_table_match import PREPARED_SCHEMA, _validate_manifest_results
 
 
 AUDIT_SCHEMA = "root_table_match_audit_v1"
@@ -172,22 +173,36 @@ def _validate_prepared_input(
     prepared: dict[str, Any],
     minimum_processed: int,
     minimum_accepted: int,
-) -> tuple[list[str], dict[str, Any], str | None, list[str]]:
+) -> tuple[list[str], dict[str, Any], str | None, dict[str, Any], list[str]]:
     """Recheck every frozen artifact that ties teacher rows to the temporary table."""
     failures: list[str] = []
+    teacher_calculation = {
+        "ordinary_book_disabled": False,
+        "contest_book_disabled": False,
+        "teacher_script_sha256": None,
+        "teacher_script_snapshot_sha256": None,
+    }
     try:
         openings = _load_openings(prepared)
     except ValueError as error:
-        return [], {}, None, [str(error)]
+        return [], {}, None, teacher_calculation, [str(error)]
 
     teacher = prepared.get("teacher_results")
     snapshot = prepared.get("snapshot")
     teacher_manifest = prepared.get("teacher_manifest")
+    teacher_script_snapshot = prepared.get("teacher_script_snapshot")
     table = prepared.get("table")
     selection = prepared.get("selection")
-    required_sections = (teacher, snapshot, teacher_manifest, table, selection)
+    required_sections = (
+        teacher,
+        snapshot,
+        teacher_manifest,
+        teacher_script_snapshot,
+        table,
+        selection,
+    )
     if not all(isinstance(value, dict) for value in required_sections):
-        return openings, {}, None, ["prepared input is missing immutable provenance"]
+        return openings, {}, None, teacher_calculation, ["prepared input is missing immutable provenance"]
 
     accepted = teacher.get("accepted")
     processed = teacher.get("processed")
@@ -245,7 +260,7 @@ def _validate_prepared_input(
             manifest = {}
         output = manifest.get("output") if isinstance(manifest, dict) else None
         engine = manifest.get("engine") if isinstance(manifest, dict) else None
-        if manifest.get("schema") != "ggs_root_teacher_manifest_v10":
+        if manifest.get("schema") != TEACHER_MANIFEST_SCHEMA:
             failures.append("frozen teacher manifest has an unsupported schema")
         if not isinstance(output, dict) or output.get("sha256") != snapshot.get("sha256"):
             failures.append("frozen teacher manifest does not identify the frozen teacher rows")
@@ -259,6 +274,37 @@ def _validate_prepared_input(
             failures.append("frozen teacher manifest has no executable SHA-256")
         else:
             teacher_engine_sha256 = engine["sha256"]
+        if not _snapshot_file_is_current(teacher_script_snapshot):
+            failures.append("frozen teacher script does not match its SHA-256")
+        else:
+            script_copy = Path(str(teacher_script_snapshot["path"]))
+            try:
+                provenance = validate_calculation_provenance(
+                    manifest.get("calculation_provenance"),
+                    snapshot_path=script_copy,
+                )
+            except ValueError as error:
+                failures.append(f"frozen teacher calculation evidence is invalid: {error}")
+            else:
+                saved_script = provenance["teacher_script_snapshot"]
+                if saved_script["sha256"] != teacher_script_snapshot.get("sha256"):
+                    failures.append("frozen teacher script SHA-256 differs from the teacher manifest")
+                else:
+                    book_configuration = provenance["book_configuration"]
+                    teacher_calculation = {
+                        "ordinary_book_disabled": book_configuration["ordinary_book"]["disabled"],
+                        "contest_book_disabled": book_configuration["contest_book"]["disabled"],
+                        "teacher_script_sha256": provenance["teacher_script"]["sha256"],
+                        "teacher_script_snapshot_sha256": saved_script["sha256"],
+                    }
+        try:
+            _validate_manifest_results(
+                teacher_rows,
+                manifest,
+                Path(str(snapshot_path_text)),
+            )
+        except ValueError as error:
+            failures.append(f"frozen teacher rows do not match the teacher manifest: {error}")
         for key, expected in (
             ("time_seconds", REQUIRED_TIME_SECONDS),
             ("threads", REQUIRED_TEACHER_THREADS),
@@ -307,7 +353,7 @@ def _validate_prepared_input(
                 for source in sources
             ):
                 failures.append("temporary-table manifest does not identify the frozen teacher rows")
-    return openings, table_entries, teacher_engine_sha256, failures
+    return openings, table_entries, teacher_engine_sha256, teacher_calculation, failures
 
 
 def _validate_metadata(
@@ -720,12 +766,24 @@ def audit_match_results(
     prepared = _read_json(prepared_input_path, "prepared match input")
     if prepared.get("schema") != PREPARED_SCHEMA:
         raise ValueError(f"{prepared_input_path}: unsupported prepared-input schema")
-    openings, table_entries, teacher_engine_sha256, failures = _validate_prepared_input(
+    (
+        openings,
+        table_entries,
+        teacher_engine_sha256,
+        teacher_calculation,
+        failures,
+    ) = _validate_prepared_input(
         prepared, minimum_processed, minimum_accepted
     )
     expected_game_boards = _expected_game_boards(openings) if openings else []
     checks, row_failures = _audit_rows(rows, expected_game_boards, table_entries)
     failures.extend(row_failures)
+    checks["teacher_ordinary_book_disabled"] = teacher_calculation[
+        "ordinary_book_disabled"
+    ]
+    checks["teacher_contest_book_disabled"] = teacher_calculation[
+        "contest_book_disabled"
+    ]
     failures.extend(
         _validate_metadata(
             metadata_path,
@@ -774,6 +832,7 @@ def audit_match_results(
         "score_interval": intervals["score"],
         "margin_interval": intervals["margin"],
         "checks": checks,
+        "teacher_calculation": teacher_calculation,
         "failures": failures,
         "valid": valid,
         "eligible_for_adoption": eligible,
@@ -790,6 +849,22 @@ def audit_match_results(
         if eligible
         else "Do not add moves to the tournament file: validity or the pre-specified 95% interval condition is not satisfied."
     )
+    ordinary_book_ja = (
+        "無効化を確認" if teacher_calculation["ordinary_book_disabled"] else "無効化を確認できない"
+    )
+    contest_book_ja = (
+        "無効化を確認" if teacher_calculation["contest_book_disabled"] else "無効化を確認できない"
+    )
+    ordinary_book_en = (
+        "disabled and verified"
+        if teacher_calculation["ordinary_book_disabled"]
+        else "not verified as disabled"
+    )
+    contest_book_en = (
+        "disabled and verified"
+        if teacher_calculation["contest_book_disabled"]
+        else "not verified as disabled"
+    )
     text = f"""# 開始局面用の手の表を使う対局の監査
 
 ## 日本語
@@ -805,6 +880,10 @@ def audit_match_results(
 - エンジン実行数: {checks['engine_executions']}
 - 表の読込み: {checks['table_loaded']}回、表の選択: {checks['table_selected']}回、探索ノード0での表選択: {checks['table_zero_nodes']}回
 - 表を使わない側での表の読込み・表の選択: {checks['no_book_table_loaded']}回・{checks['no_book_table_selected']}回
+- 教師計算時の通常book: {ordinary_book_ja}
+- 教師計算時の大会book: {contest_book_ja}
+- 教師計算に使った生成スクリプトのSHA-256: {teacher_calculation['teacher_script_sha256']}
+- 保存した生成スクリプトのSHA-256: {teacher_calculation['teacher_script_snapshot_sha256']}
 - 監査上の問題: {failure_text_ja}
 
 判定: {decision_ja}
@@ -824,6 +903,10 @@ def audit_match_results(
 - Engine executions: {checks['engine_executions']}
 - Temporary-table loads: {checks['table_loaded']}; selections: {checks['table_selected']}; zero-node selections: {checks['table_zero_nodes']}
 - Temporary-table loads and selections by the no-book side: {checks['no_book_table_loaded']}; {checks['no_book_table_selected']}
+- Ordinary book during teacher calculation: {ordinary_book_en}
+- Contest book during teacher calculation: {contest_book_en}
+- Generator-script SHA-256 used for teacher calculation: {teacher_calculation['teacher_script_sha256']}
+- Saved generator-script SHA-256: {teacher_calculation['teacher_script_snapshot_sha256']}
 - Audit failures: {failure_text_en}
 
 Decision: {decision_en}
