@@ -26,7 +26,11 @@ from typing import Any
 
 from audit_r14_corpus import CORPUS_REPORT_SCHEMA
 from build_root_table import load_root_rows, sha256_file
-from generate_ggs_root_teacher import generate_teachers
+from generate_ggs_root_teacher import (
+    generate_teachers,
+    search_root_at_level,
+    validate_quality,
+)
 
 
 BENCHMARK_SCHEMA = "root_teacher_method_benchmark_v1"
@@ -37,6 +41,7 @@ MIN_DEPTH = 30
 MIN_SELECTIVITY = 74
 LEVEL_30 = 30
 LEVEL_31 = 31
+LEVEL_33 = 33
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
@@ -182,6 +187,20 @@ def compare_methods(
         for board in common
         if time_moves[board] != level_moves[board]
     ]
+    deep_started = time.monotonic()
+    for difference in differing:
+        deep_result = search_root_at_level(
+            exe, difference["board"], LEVEL_33, THREADS, HASH_LEVEL
+        )
+        validate_quality(deep_result, MIN_DEPTH, MIN_SELECTIVITY)
+        difference["level_33_move"] = deep_result["move"]
+        difference["time_managed_matches_level_33"] = (
+            difference["time_managed_move"] == deep_result["move"]
+        )
+        difference["level_30_then_31_matches_level_33"] = (
+            difference["level_30_then_31_move"] == deep_result["move"]
+        )
+    deep_elapsed = time.monotonic() - deep_started
     time_output_info = time_manifest["output"]
     level_output_info = level_manifest["output"]
     payload: dict[str, Any] = {
@@ -236,6 +255,17 @@ def compare_methods(
             "accepted_by_both": len(common),
             "same_move": len(common) - len(differing),
             "different_move": len(differing),
+            "level_33_check_wall_seconds": deep_elapsed,
+            "time_managed_matches_level_33": sum(
+                bool(item["time_managed_matches_level_33"]) for item in differing
+            ),
+            "level_30_then_31_matches_level_33": sum(
+                bool(item["level_30_then_31_matches_level_33"]) for item in differing
+            ),
+            "level_30_then_31_supported_for_every_different_move": all(
+                bool(item["level_30_then_31_matches_level_33"])
+                for item in differing
+            ),
             "differences": differing,
         },
     }
@@ -254,8 +284,10 @@ def compare_methods(
 - 両方で採用された局面数: {len(common)}
 - 最初の手が一致した局面数: {len(common) - len(differing)}
 - 最初の手が異なった局面数: {len(differing)}
+- 手が異なった局面でlevel 33と一致した数（60秒の持ち時間を与える探索・level 30とlevel 31の照合）: {payload['comparison']['time_managed_matches_level_33']}・{payload['comparison']['level_30_then_31_matches_level_33']}
 - 60秒の持ち時間を与える探索の実時間: {time_elapsed:.3f}秒
 - level 30・level 31の照合の実時間: {level_elapsed:.3f}秒
+- 手が異なった局面に対するlevel 33の追加探索時間: {deep_elapsed:.3f}秒
 
 この比較だけでは大会用の表を変更しない。採用するかどうかは、同じ開始局面から先後を入れ替えた2局の対局による別の検証で決める。
 
@@ -268,8 +300,10 @@ This comparison recalculates the first {positions} fixed positions from `{refere
 - Positions accepted by both methods: {len(common)}
 - Positions with the same first move: {len(common) - len(differing)}
 - Positions with different first moves: {len(differing)}
+- Different-move positions matching level 33 (time-managed search; level-30/31 check): {payload['comparison']['time_managed_matches_level_33']}; {payload['comparison']['level_30_then_31_matches_level_33']}
 - Time-managed-search wall time: {time_elapsed:.3f} seconds
 - Level-30/31-check wall time: {level_elapsed:.3f} seconds
+- Additional level-33-check wall time for different-move positions: {deep_elapsed:.3f} seconds
 
 This comparison does not modify the tournament table. A separate color-swapped two-game match from each same starting position decides whether a table may be adopted.
 """
