@@ -273,6 +273,18 @@ The new rows remain outside `trained` until a fixed-start color-swapped
 comparison against the same executable with no book has a valid audit and does
 not include a neutral value in its pre-specified confidence intervals.
 
+When the completed formal comparison has selected the level-30/level-31
+method, pass its JSON report to the teacher generator. This rejects an
+incomplete or unsuccessful comparison, a different corpus, a different
+Console or evaluation file, and any teacher setting other than the selected
+`hint_then_verify`, level 30, level 31, 28-thread, hash-29, depth-30,
+selectivity-74 setup. The report and its `experiment_state.json` are recorded
+in the teacher state and manifest, so a resume also rejects changed evidence:
+
+```powershell
+python src/tools/gen_contest_book/generate_ggs_root_teacher.py --coverage ignored/ggs_620_progress/r14_corpus_current_audit_20260722.json --exe bin/Egaroucid_for_Console_clang.exe --output ignored/ggs_620_progress/r14_priority_teacher_rows.txt --method hint_then_verify --teacher-level 30 --verify-level 31 --min-depth 30 --min-selectivity 74 --threads 28 --hash 29 --random-seed 620 --root-order ggs-r14-probability --priority-manifest ignored/ggs_620_progress/r14_random_setup_probability_priority_20260722.jsonl --formal-comparison-report ignored/ggs_620_progress/r14_formal_root_teacher_method_comparison_seeded_20260722/formal_comparison_report.json --limit 500 --checkpoint-every 25
+```
+
 For a long calculation, use `--checkpoint-every 500`. Each completed position
 is first written and flushed to a small companion file. After 500 positions,
 the generator flushes and `fsync`s each replacement file, atomically rewrites

@@ -40,6 +40,15 @@ TEACHER_FORMAT = "# ggs_root_teacher_v1"
 TEACHER_UPDATE_SCHEMA = "ggs_root_teacher_update_v1"
 CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v3"
 EXECUTION_ENVIRONMENT_SCHEMA = "ggs_root_teacher_execution_environment_v1"
+FORMAL_COMPARISON_REPORT_SCHEMA = "formal_root_teacher_method_comparison_report_v1"
+FORMAL_COMPARISON_STATE_SCHEMA = "formal_root_teacher_method_comparison_state_v1"
+FORMAL_SELECTED_METHOD = "hint_then_verify"
+FORMAL_SELECTED_TEACHER_LEVEL = 30
+FORMAL_SELECTED_VERIFY_LEVEL = 31
+FORMAL_SELECTED_THREADS = 28
+FORMAL_SELECTED_HASH_LEVEL = 29
+FORMAL_SELECTED_MIN_DEPTH = 30
+FORMAL_SELECTED_MIN_SELECTIVITY = 74
 DEEP_TIEBREAK_LEVEL = 31
 BOOK_DISABLED_ARGUMENTS = ("-nobook", "-nocontestbook")
 RESOURCE_SPECS = (
@@ -136,6 +145,110 @@ def _fingerprint(path: Path, description: str) -> dict[str, int | str]:
         "path": path.resolve().as_posix(),
         "sha256": sha256_file(path),
         "bytes": path.stat().st_size,
+    }
+
+
+def _load_formal_comparison_selection(
+    report_path: Path,
+    coverage_path: Path,
+    exe: Path,
+    *,
+    method: str,
+    teacher_level: int,
+    verify_level: int,
+    threads: int,
+    hash_level: int,
+    min_depth: int,
+    min_selectivity: int,
+) -> dict[str, object]:
+    """Verify that a completed formal comparison selected this exact setup.
+
+    The comparison program imports this module, so this deliberately reads its
+    persisted JSON rather than importing that program back here.
+    """
+    report_fingerprint = _fingerprint(report_path, "formal comparison report")
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot read formal comparison report {report_path}: {error}") from error
+    if not isinstance(report, dict) or report.get("schema") != FORMAL_COMPARISON_REPORT_SCHEMA:
+        raise ValueError("formal comparison report has an unsupported schema")
+    expected_state_sha = report.get("experiment_state_sha256")
+    if not isinstance(expected_state_sha, str):
+        raise ValueError("formal comparison report has no experiment-state SHA-256")
+    state_path = report_path.parent / "experiment_state.json"
+    state_fingerprint = _fingerprint(state_path, "formal comparison state")
+    if state_fingerprint["sha256"] != expected_state_sha:
+        raise ValueError("formal comparison state does not match the report SHA-256")
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot read formal comparison state {state_path}: {error}") from error
+    if not isinstance(state, dict) or state.get("schema") != FORMAL_COMPARISON_STATE_SCHEMA:
+        raise ValueError("formal comparison state has an unsupported schema")
+    rule = report.get("decision_protocol")
+    conditions = report.get("decision_conditions")
+    if not isinstance(rule, dict) or not isinstance(conditions, dict):
+        raise ValueError("formal comparison report has no decision rule or conditions")
+    required_pairs = rule.get("required_complete_pairs")
+    if (
+        rule.get("candidate_method") != FORMAL_SELECTED_METHOD
+        or rule.get("reference_method") != "time_then_verify"
+        or isinstance(required_pairs, bool)
+        or not isinstance(required_pairs, int)
+        or report.get("completed_pairs") != required_pairs
+        or report.get("level_30_then_level_31_can_continue_to_larger_calculation") is not True
+        or not conditions
+        or any(value is not True for value in conditions.values())
+    ):
+        raise ValueError("formal comparison did not select the level-30/level-31 method")
+    expected_setup = {
+        "method": FORMAL_SELECTED_METHOD,
+        "teacher_level": FORMAL_SELECTED_TEACHER_LEVEL,
+        "verify_level": FORMAL_SELECTED_VERIFY_LEVEL,
+        "threads": FORMAL_SELECTED_THREADS,
+        "hash_level": FORMAL_SELECTED_HASH_LEVEL,
+        "min_depth": FORMAL_SELECTED_MIN_DEPTH,
+        "min_selectivity": FORMAL_SELECTED_MIN_SELECTIVITY,
+    }
+    actual_setup = {
+        "method": method,
+        "teacher_level": teacher_level,
+        "verify_level": verify_level,
+        "threads": threads,
+        "hash_level": hash_level,
+        "min_depth": min_depth,
+        "min_selectivity": min_selectivity,
+    }
+    if actual_setup != expected_setup:
+        raise ValueError(
+            "teacher settings do not match the method selected by the formal comparison"
+        )
+    coverage = state.get("coverage")
+    environment = state.get("execution_environment")
+    if not isinstance(coverage, dict) or not isinstance(environment, dict):
+        raise ValueError("formal comparison state has incomplete input evidence")
+    if coverage.get("sha256") != sha256_file(coverage_path):
+        raise ValueError("teacher coverage differs from the formal comparison coverage")
+    executable = environment.get("executable")
+    resources = environment.get("resources")
+    if not isinstance(executable, dict) or not isinstance(resources, list):
+        raise ValueError("formal comparison state has incomplete Console evidence")
+    formal_exe = executable.get("source")
+    current_exe = _fingerprint(exe, "teacher executable")
+    if not isinstance(formal_exe, dict) or formal_exe.get("sha256") != current_exe["sha256"]:
+        raise ValueError("teacher executable differs from the formal comparison executable")
+    formal_resources = {item.get("role"): item.get("source") for item in resources if isinstance(item, dict)}
+    for role, relative in RESOURCE_SPECS:
+        expected_resource = formal_resources.get(role)
+        actual_resource = _fingerprint(exe.parent / "resources" / relative, role)
+        if not isinstance(expected_resource, dict) or expected_resource.get("sha256") != actual_resource["sha256"]:
+            raise ValueError(f"teacher {role} differs from the formal comparison input")
+    return {
+        "report": report_fingerprint,
+        "experiment_state": state_fingerprint,
+        "selected_method": FORMAL_SELECTED_METHOD,
+        "selected_setup": expected_setup,
     }
 
 
@@ -1132,6 +1245,7 @@ def _new_state(
     root_order: str = ROOT_ORDER_HASH,
     priority_tie_seed: int | None = None,
     priority_manifest: dict[str, object] | None = None,
+    formal_comparison: dict[str, object] | None = None,
 ) -> dict[str, Any]:
     random_seed = _validate_random_seed(random_seed)
     if root_order not in ROOT_ORDER_CHOICES:
@@ -1186,6 +1300,7 @@ def _new_state(
         "priority_tie_seed": priority_tie_seed,
         "priority_manifest": priority_manifest,
         "priority_manifest_tie_seed": priority_manifest_tie_seed,
+        "formal_comparison": formal_comparison,
         "r14_probability_model": (
             R14_RANDOM_SETUP_PROBABILITY_MODEL
             if root_order == ROOT_ORDER_GGS_R14_PROBABILITY
@@ -1213,6 +1328,7 @@ def _load_state(
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
         "verify_level", "cohort_seed", "root_order", "priority_tie_seed", "priority_manifest",
         "priority_manifest_tie_seed",
+        "formal_comparison",
         "r14_probability_model", "r14_local_probability_model_sources", "excluded_root_files",
         "deep_tiebreak_level", "roots",
     ):
@@ -1291,6 +1407,10 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"{state['priority_manifest']['metadata_sha256'] if state['priority_manifest'] else '-'}",
             f"# priority_manifest_ordered_roots_sha256 "
             f"{state['priority_manifest']['ordered_roots_sha256'] if state['priority_manifest'] else '-'}",
+            f"# formal_comparison_report_sha256 "
+            f"{state['formal_comparison']['report']['sha256'] if state['formal_comparison'] else '-'}",
+            f"# formal_comparison_state_sha256 "
+            f"{state['formal_comparison']['experiment_state']['sha256'] if state['formal_comparison'] else '-'}",
             *probability_source_lines,
             f"# excluded_root_files {len(state['excluded_root_files'])}",
             f"# deep_tiebreak_level {state['deep_tiebreak_level']}",
@@ -1334,6 +1454,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "priority_tie_seed": state["priority_tie_seed"],
         "priority_manifest": state["priority_manifest"],
         "priority_manifest_tie_seed": state["priority_manifest_tie_seed"],
+        "formal_comparison": state["formal_comparison"],
         "r14_probability_model": state["r14_probability_model"],
         "r14_local_probability_model_sources": state[
             "r14_local_probability_model_sources"
@@ -1372,6 +1493,7 @@ def _generate_teachers_unlocked(
     root_order: str = ROOT_ORDER_HASH,
     priority_tie_seed: int | None = None,
     priority_manifest_path: Path | None = None,
+    formal_comparison_report_path: Path | None = None,
     max_new_positions: int | None = None,
 ) -> dict[str, int]:
     if not exe.is_file():
@@ -1405,6 +1527,20 @@ def _generate_teachers_unlocked(
     if method == "hint_then_verify" and teacher_level < min_depth:
         raise ValueError(
             "hint_then_verify requires teacher_level at least min_depth"
+        )
+    formal_comparison: dict[str, object] | None = None
+    if formal_comparison_report_path is not None:
+        formal_comparison = _load_formal_comparison_selection(
+            formal_comparison_report_path,
+            coverage_path,
+            exe,
+            method=method,
+            teacher_level=teacher_level,
+            verify_level=verify_level,
+            threads=threads,
+            hash_level=hash_level,
+            min_depth=min_depth,
+            min_selectivity=min_selectivity,
         )
     if excluded_root_files is None:
         excluded_root_files = []
@@ -1448,6 +1584,7 @@ def _generate_teachers_unlocked(
         root_order,
         priority_tie_seed,
         priority_manifest,
+        formal_comparison,
     )
     state_path = _state_path(output)
     if resume:
@@ -1692,6 +1829,7 @@ def generate_teachers(
     root_order: str = ROOT_ORDER_HASH,
     priority_tie_seed: int | None = None,
     priority_manifest_path: Path | None = None,
+    formal_comparison_report_path: Path | None = None,
     max_new_positions: int | None = None,
 ) -> dict[str, int]:
     """Generate one output while holding its OS-owned exclusive lock."""
@@ -1719,6 +1857,7 @@ def generate_teachers(
             root_order,
             priority_tie_seed,
             priority_manifest_path,
+            formal_comparison_report_path,
             max_new_positions,
         )
 
@@ -1780,6 +1919,14 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--formal-comparison-report",
+        type=Path,
+        help=(
+            "Completed formal method-comparison JSON. When supplied, require its "
+            "selected level-30/level-31 setup and record its SHA-256."
+        ),
+    )
+    parser.add_argument(
         "--exclude-root-results",
         type=Path,
         action="append",
@@ -1830,6 +1977,7 @@ def main() -> int:
         args.root_order,
         args.priority_tie_seed,
         args.priority_manifest,
+        args.formal_comparison_report,
         args.max_new_positions,
     )
     print(

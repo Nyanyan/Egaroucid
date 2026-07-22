@@ -919,6 +919,84 @@ class GgsRootTeacherTests(unittest.TestCase):
             generate_ggs_root_teacher.parse_search_result(output, GGS_ROOT),
         )
 
+    def test_formal_comparison_report_must_be_complete_and_match_teacher_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text("{}\n", encoding="utf-8", newline="\n")
+            exe = root / "engine.exe"
+            write_teacher_executable(exe, b"formal comparison engine")
+            environment = {
+                "executable": {
+                    "source": {
+                        "sha256": build_root_table.sha256_file(exe),
+                    }
+                },
+                "resources": [
+                    {
+                        "role": role,
+                        "source": {
+                            "sha256": build_root_table.sha256_file(exe.parent / "resources" / relative),
+                        },
+                    }
+                    for role, relative in generate_ggs_root_teacher.RESOURCE_SPECS
+                ],
+            }
+            report_path = root / "formal_comparison_report.json"
+            state_path = root / "experiment_state.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "schema": generate_ggs_root_teacher.FORMAL_COMPARISON_STATE_SCHEMA,
+                        "coverage": {"sha256": build_root_table.sha256_file(coverage)},
+                        "execution_environment": environment,
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            report = {
+                "schema": generate_ggs_root_teacher.FORMAL_COMPARISON_REPORT_SCHEMA,
+                "experiment_state_sha256": build_root_table.sha256_file(state_path),
+                "completed_pairs": 4800,
+                "decision_protocol": {
+                    "candidate_method": "hint_then_verify",
+                    "reference_method": "time_then_verify",
+                    "required_complete_pairs": 4800,
+                },
+                "decision_conditions": {"all_pairs_complete": True, "speed": True},
+                "level_30_then_level_31_can_continue_to_larger_calculation": True,
+            }
+            report_path.write_text(json.dumps(report), encoding="utf-8", newline="\n")
+            selection = generate_ggs_root_teacher._load_formal_comparison_selection(
+                report_path,
+                coverage,
+                exe,
+                method="hint_then_verify",
+                teacher_level=30,
+                verify_level=31,
+                threads=28,
+                hash_level=29,
+                min_depth=30,
+                min_selectivity=74,
+            )
+            self.assertEqual("hint_then_verify", selection["selected_method"])
+            report["completed_pairs"] = 4799
+            report_path.write_text(json.dumps(report), encoding="utf-8", newline="\n")
+            with self.assertRaisesRegex(ValueError, "did not select"):
+                generate_ggs_root_teacher._load_formal_comparison_selection(
+                    report_path,
+                    coverage,
+                    exe,
+                    method="hint_then_verify",
+                    teacher_level=30,
+                    verify_level=31,
+                    threads=28,
+                    hash_level=29,
+                    min_depth=30,
+                    min_selectivity=74,
+                )
+
     def test_atomic_output_write_flushes_before_replace(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "teacher_rows.txt"
