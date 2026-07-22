@@ -1235,9 +1235,184 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual(1, payload["comparison"]["same_accepted_move"])
             self.assertEqual(0, payload["comparison"]["different_accepted_move"])
             self.assertEqual(1, payload["population"]["count"])
+            state = json.loads(
+                (root / "benchmark" / "experiment_state.json").read_text(encoding="utf-8")
+            )
+            progress = json.loads(
+                (root / "benchmark" / "comparison_progress.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                benchmark_root_teacher_methods.EXPERIMENT_STATE_SCHEMA,
+                state["schema"],
+            )
+            self.assertEqual(1, progress["completed_positions"])
+            for method_name in (
+                benchmark_root_teacher_methods.TIME_METHOD,
+                benchmark_root_teacher_methods.LEVEL_METHOD,
+            ):
+                self.assertGreater(progress["records"][0][method_name]["wall_seconds"], 0.0)
+                self.assertEqual(
+                    64,
+                    len(progress["records"][0][method_name]["output_sha256"]),
+                )
             report = (root / "benchmark" / "README.md").read_text(encoding="utf-8")
             self.assertIn("60秒の持ち時間を与える探索", report)
             self.assertIn("level-30/level-31 check", report)
+            with mock.patch.object(
+                benchmark_root_teacher_methods,
+                "generate_teachers",
+                side_effect=AssertionError("completed calculation was unexpectedly repeated"),
+            ):
+                resumed = benchmark_root_teacher_methods.compare_methods(
+                    coverage,
+                    [],
+                    exe,
+                    root / "benchmark",
+                    1,
+                    620,
+                    621,
+                    622,
+                    resume=True,
+                )
+            self.assertEqual(payload["positions_detail"], resumed["positions_detail"])
+            with self.assertRaisesRegex(ValueError, "resume conditions do not exactly match"):
+                benchmark_root_teacher_methods.compare_methods(
+                    coverage,
+                    [],
+                    exe,
+                    root / "benchmark",
+                    1,
+                    623,
+                    621,
+                    622,
+                    resume=True,
+                )
+
+    def test_benchmark_resumes_after_archiving_uncheckpointed_method_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"teacher executable")
+            second_board = transform_board_text(GGS_ROOT, 1)
+            self.assertNotEqual(GGS_ROOT, second_board)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(
+                    {
+                        "schema": collect_ggs_roots.REPORT_SCHEMA,
+                        "root_discs": 14,
+                        "roots": [
+                            {"canonical_board": GGS_ROOT, "deep_book": False, "root_table": False},
+                            {
+                                "canonical_board": second_board,
+                                "deep_book": False,
+                                "root_table": False,
+                            },
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+
+            def write_generated(coverage_path: Path, output: Path, args: tuple[object, ...]) -> tuple[str, str]:
+                method = str(args[6])
+                board = json.loads(coverage_path.read_text(encoding="utf-8"))["roots"][0][
+                    "canonical_board"
+                ]
+                move = "f5"
+                output.write_text(
+                    "# ggs_root_teacher_v1\n" f"{board} -15 {move}:-15\n",
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                output.with_suffix(output.suffix + ".manifest.json").write_text(
+                    json.dumps(
+                        {
+                            "schema": "ggs_root_teacher_manifest_v10",
+                            "output": {
+                                "sha256": build_root_table.sha256_file(output),
+                                "completed": 1,
+                                "rejected": 0,
+                                "processed": 1,
+                            },
+                            "results": {board: {"move": move}},
+                            "rejections": {},
+                        }
+                    ),
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                return board, method
+
+            initial_calls: list[tuple[str, str]] = []
+
+            def interrupted_generate(coverage_path: Path, _exe: Path, output: Path, *args, **_kwargs):
+                initial_calls.append(write_generated(coverage_path, output, args))
+                if len(initial_calls) == 3:
+                    raise RuntimeError("simulated interruption after output creation")
+                return {"completed": 1, "requested": 1}
+
+            output_dir = root / "benchmark"
+            with mock.patch.object(
+                benchmark_root_teacher_methods,
+                "generate_teachers",
+                side_effect=interrupted_generate,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "simulated interruption"):
+                    benchmark_root_teacher_methods.compare_methods(
+                        coverage, [], exe, output_dir, 2, 620, 621, 622
+                    )
+            before = json.loads(
+                (output_dir / "comparison_progress.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(1, before["completed_positions"])
+            first_before = next(record for record in before["records"] if record["index"] == 1)
+            self.assertIn("in_progress", next(record for record in before["records"] if record["index"] == 2))
+
+            resumed_calls: list[tuple[str, str]] = []
+
+            def resume_generate(coverage_path: Path, _exe: Path, output: Path, *args, **_kwargs):
+                resumed_calls.append(write_generated(coverage_path, output, args))
+                return {"completed": 1, "requested": 1}
+
+            with mock.patch.object(
+                benchmark_root_teacher_methods,
+                "generate_teachers",
+                side_effect=resume_generate,
+            ):
+                payload = benchmark_root_teacher_methods.compare_methods(
+                    coverage, [], exe, output_dir, 2, 620, 621, 622, resume=True
+                )
+            self.assertEqual(2, len(resumed_calls))
+            self.assertTrue(all(call[0] == initial_calls[2][0] for call in resumed_calls))
+            archived = (output_dir / "interrupted_attempts" / "archived_attempts.jsonl").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("calculation output was not present", archived)
+            after = json.loads(
+                (output_dir / "comparison_progress.json").read_text(encoding="utf-8")
+            )
+            first_after = next(record for record in after["records"] if record["index"] == 1)
+            self.assertEqual(
+                first_before[benchmark_root_teacher_methods.TIME_METHOD]["wall_seconds"],
+                first_after[benchmark_root_teacher_methods.TIME_METHOD]["wall_seconds"],
+            )
+            self.assertEqual(2, len(payload["positions_detail"]))
+
+            completed_output = Path(
+                first_after[benchmark_root_teacher_methods.TIME_METHOD]["output_path"]
+            )
+            completed_output.write_text("tampered\n", encoding="utf-8", newline="\n")
+            with mock.patch.object(
+                benchmark_root_teacher_methods,
+                "generate_teachers",
+                side_effect=AssertionError("tampered output must not be recalculated silently"),
+            ):
+                with self.assertRaisesRegex(ValueError, "does not match"):
+                    benchmark_root_teacher_methods.compare_methods(
+                        coverage, [], exe, output_dir, 2, 620, 621, 622, resume=True
+                    )
 
     def test_forced_move_analysis_reads_played_score_at_requested_level(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
