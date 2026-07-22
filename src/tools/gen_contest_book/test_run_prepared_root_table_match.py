@@ -166,7 +166,7 @@ class PreparedRunnerTest(unittest.TestCase):
                 list(runner.RUNNER_DEPENDENT_SOURCE_FILES),
             )
 
-    def test_requires_level_31_verification_but_not_a_hash_resource(self) -> None:
+    def test_requires_explicit_opt_in_for_an_unverified_teacher(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             prepared_path, _openings = self._fixture(Path(temporary))
             # The fixture intentionally contains no hash29.eghs.  Hash level
@@ -177,6 +177,20 @@ class PreparedRunnerTest(unittest.TestCase):
             prepared_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "level-31 verification"):
                 runner.load_prepared_match_input(prepared_path)
+            unverified = runner.load_prepared_match_input(
+                prepared_path, allow_unverified_teacher=True
+            )
+            self.assertFalse(unverified.level_31_verification_required)
+            with mock.patch.object(
+                runner, "_fixed_run_provenance", return_value=self._fixed_provenance(Path(temporary))
+            ):
+                spec = runner.build_run_spec(
+                    unverified,
+                    Path(temporary) / "unverified_results.jsonl",
+                    runner.select_starting_boards(unverified.openings),
+                    180.0,
+                )
+            self.assertFalse(spec["parsed_args"]["level_31_verification_required"])
 
     def test_rejects_pre_v5_prepared_input(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

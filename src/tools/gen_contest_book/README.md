@@ -316,6 +316,20 @@ any addition to `trained`:
 python src/tools/gen_contest_book/audit_root_table_matches.py --results ignored/ggs_620_progress/root_table_matches.jsonl --prepared-input ignored/ggs_620_progress/new_root_table_match_input/prepared_match_input.json --metadata ignored/ggs_620_progress/root_table_matches.jsonl.meta.json --output ignored/ggs_620_progress/root_table_match_audit.md --bootstrap-seed 624 --minimum-processed 500
 ```
 
+For a time-bounded teacher calculation that intentionally did not require
+level-31 verification, the match runner refuses the input by default. Pass
+`--allow-unverified-teacher` only to measure that temporary table in the same
+two-game-per-start protocol:
+
+```powershell
+python src/tools/gen_contest_book/run_prepared_root_table_match.py --prepared-input ignored/ggs_620_progress/time_bounded_match_input/prepared_match_input.json --output ignored/ggs_620_progress/time_bounded_matches.jsonl --allow-unverified-teacher
+```
+
+The audit records that level-31 verification was absent and therefore always
+sets `eligible_for_adoption` to false. Such a result can guide a later,
+separately calculated and fully verified table, but the command cannot publish
+the temporary table to `trained`.
+
 ## Testing
 
 Start with a small test for one start position. Use one line from `data/records321_14_random_setup` as `<initial board>`.

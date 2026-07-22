@@ -118,6 +118,7 @@ class PreparedMatchInput:
     openings: tuple[str, ...]
     table: Path
     table_sha256: str
+    level_31_verification_required: bool
 
 
 def sha256_file(path: Path) -> str:
@@ -362,7 +363,9 @@ def _d4_representative(board: str) -> str:
     return min(transform_board_text(board, symmetry) for symmetry in range(8))
 
 
-def load_prepared_match_input(path: Path) -> PreparedMatchInput:
+def load_prepared_match_input(
+    path: Path, *, allow_unverified_teacher: bool = False
+) -> PreparedMatchInput:
     """Verify and return one immutable input directory for a local match."""
     input_path = path.resolve()
     prepared = _read_json(input_path, "prepared match input")
@@ -371,9 +374,17 @@ def load_prepared_match_input(path: Path) -> PreparedMatchInput:
             f"{input_path}: expected {PREPARED_INPUT_SCHEMA}, got {prepared.get('schema')!r}"
         )
     selection = prepared.get("selection")
-    if not isinstance(selection, dict) or selection.get("level_31_verification_required") is not True:
+    if not isinstance(selection, dict) or not isinstance(
+        selection.get("level_31_verification_required"), bool
+    ):
         raise ValueError(
-            "prepared input does not require level-31 verification for every accepted root"
+            "prepared input does not state whether level-31 verification was required"
+        )
+    level_31_verification_required = selection["level_31_verification_required"]
+    if not level_31_verification_required and not allow_unverified_teacher:
+        raise ValueError(
+            "prepared input does not require level-31 verification for every accepted root; "
+            "pass --allow-unverified-teacher only for a non-publication evaluation"
         )
     environment_root, environment = _load_execution_environment(
         prepared.get("teacher_execution_environment")
@@ -409,6 +420,7 @@ def load_prepared_match_input(path: Path) -> PreparedMatchInput:
         openings=openings,
         table=table_path,
         table_sha256=table_sha256,
+        level_31_verification_required=level_31_verification_required,
     )
 
 
@@ -565,7 +577,7 @@ def build_run_spec(
             "seed": MATCH_OPENING_SEED,
             "engine_random_seed": ENGINE_RANDOM_SEED,
             "random_symmetry": True,
-            "level_31_verification_required": True,
+            "level_31_verification_required": prepared.level_31_verification_required,
             "move_timeout": move_timeout,
             "candidate": str(prepared.executable),
             "baseline": str(prepared.executable),
@@ -1231,6 +1243,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prepared-input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
+        "--allow-unverified-teacher",
+        action="store_true",
+        help=(
+            "Allow a prepared input without level-31 verification only for "
+            "a non-publication evaluation; audit will not mark it eligible for adoption."
+        ),
+    )
+    parser.add_argument(
         "--move-timeout",
         type=float,
         default=180.0,
@@ -1253,7 +1273,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    prepared = load_prepared_match_input(args.prepared_input)
+    prepared = load_prepared_match_input(
+        args.prepared_input,
+        allow_unverified_teacher=args.allow_unverified_teacher,
+    )
     results = run_matches(
         prepared,
         args.output,
