@@ -1978,7 +1978,9 @@ def _write_readme(output_dir: Path, state: dict[str, Any], records: list[dict[st
 No method-selection decision is made before all 4,800 pairs complete. Resume with the same arguments and `--resume`. Any interrupted pair absent from durable progress is preserved as evidence and rerun from the beginning.
 """
     environment = state["execution_environment"]
-    text = f"""# 最初の手を計算する二方法の事前固定比較 / Precommitted comparison of two root-move calculation methods
+    text = f"""# 最初の手を計算する二方法の比較 / Comparison of two root-move calculation methods
+
+{_term_definitions_markdown()}
 
 ## 日本語
 
@@ -2011,8 +2013,6 @@ This document records a comparison of two methods for calculating a root move fo
 - Saved Console: `{environment['executable']['snapshot']['path']}`
 - Saved evaluation files: `eval.egev2` and `eval_move_ordering_end.egev`
 - Position-selection ID: `{selection['selection_id']}`
-
-{_term_definitions_markdown()}
 
 ## 事前固定の条件 / Precommitted conditions
 
