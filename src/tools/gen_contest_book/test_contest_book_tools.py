@@ -29,6 +29,7 @@ import build_root_table
 import collect_ggs_roots
 import generate_ggs_root_teacher
 import prepare_root_table_match
+import publish_verified_root_table
 import report_ggs_root_teacher_progress
 from build_book import canonicalize_board_key, transform_board_text
 from book_artifact import (
@@ -555,6 +556,126 @@ class BookArtifactTests(unittest.TestCase):
 
 
 class RootTableTests(unittest.TestCase):
+    def test_publish_requires_fresh_passing_audit_and_rebuilds_table(self) -> None:
+        """The publication command must not trust a hand-edited audit JSON."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            snapshot = root / "teacher_rows.txt"
+            snapshot.write_text(
+                "# ggs_root_teacher_v1\n"
+                f"{GGS_ROOT} -15 f5:-15\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            prepared_dir = root / "prepared"
+            table = prepared_dir / "table" / build_root_table.ROOT_TABLE_FILENAME
+            build_root_table.build_root_table([], table, root_result_files=[snapshot])
+            table_manifest = build_root_table.manifest_path_for_root_table(table)
+            prepared = prepared_dir / "prepared_match_input.json"
+            prepared.write_text(
+                json.dumps(
+                    {
+                        "schema": prepare_root_table_match.PREPARED_SCHEMA,
+                        "snapshot": {
+                            "path": snapshot.resolve().as_posix(),
+                            "sha256": build_root_table.sha256_file(snapshot),
+                        },
+                        "table": {
+                            "path": table.resolve().as_posix(),
+                            "sha256": build_root_table.sha256_file(table),
+                            "entries": 1,
+                            "manifest_sha256": build_root_table.sha256_file(table_manifest),
+                        },
+                    }
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            results = root / "results.jsonl"
+            metadata = root / "matches.meta.json"
+            results.write_text("{}\n", encoding="utf-8", newline="\n")
+            metadata.write_text("{}\n", encoding="utf-8", newline="\n")
+            audit = {
+                "schema": audit_root_table_matches.AUDIT_SCHEMA,
+                "results": {
+                    "path": results.resolve().as_posix(),
+                    "sha256": build_root_table.sha256_file(results),
+                },
+                "prepared_input": {
+                    "path": prepared.resolve().as_posix(),
+                    "sha256": build_root_table.sha256_file(prepared),
+                },
+                "metadata": {
+                    "path": metadata.resolve().as_posix(),
+                    "sha256": build_root_table.sha256_file(metadata),
+                },
+                "matches": 500,
+                "wins": 300,
+                "draws": 50,
+                "losses": 150,
+                "score_rate": 0.65,
+                "mean_margin": 2.0,
+                "bootstrap_seed": 624,
+                "bootstrap_repetitions": 100_000,
+                "minimum_processed": 500,
+                "minimum_accepted": 500,
+                "score_interval": [0.55, 0.75],
+                "margin_interval": [0.1, 3.9],
+                "checks": {},
+                "teacher_calculation": {},
+                "level_31_verification_required": True,
+                "failures": [],
+                "valid": True,
+                "eligible_for_adoption": True,
+            }
+            audit_path = root / "audit.json"
+            audit_path.write_text(json.dumps(audit), encoding="utf-8", newline="\n")
+            target_dir = root / "trained"
+            target = target_dir / build_root_table.ROOT_TABLE_FILENAME
+
+            def fresh_audit(*_args: object, **_kwargs: object) -> dict[str, object]:
+                return json.loads(audit_path.read_text(encoding="utf-8"))
+
+            with (
+                mock.patch.object(publish_verified_root_table, "TRAINED_DIR", target_dir),
+                mock.patch.object(
+                    publish_verified_root_table.audit_root_table_matches,
+                    "audit_match_results",
+                    side_effect=fresh_audit,
+                ),
+            ):
+                publication = publish_verified_root_table.publish_verified_root_table(
+                    audit_path, output=target
+                )
+            self.assertEqual(build_root_table.sha256_file(table), build_root_table.sha256_file(target))
+            self.assertEqual(1, publication["published_table"]["entries"])
+            publication_path = publish_verified_root_table.publication_path_for_root_table(target)
+            self.assertTrue(publication_path.is_file())
+
+            target.unlink()
+            build_root_table.manifest_path_for_root_table(target).unlink()
+            publication_path.unlink()
+            audit["eligible_for_adoption"] = False
+            audit_path.write_text(json.dumps(audit), encoding="utf-8", newline="\n")
+            with mock.patch.object(publish_verified_root_table, "TRAINED_DIR", target_dir):
+                with self.assertRaisesRegex(ValueError, "does not permit publication"):
+                    publish_verified_root_table.publish_verified_root_table(audit_path, output=target)
+            self.assertFalse(target.exists())
+
+            audit["eligible_for_adoption"] = True
+            audit_path.write_text(json.dumps(audit), encoding="utf-8", newline="\n")
+            with (
+                mock.patch.object(publish_verified_root_table, "TRAINED_DIR", target_dir),
+                mock.patch.object(
+                    publish_verified_root_table.audit_root_table_matches,
+                    "audit_match_results",
+                    return_value={**audit, "matches": 499},
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "differs from a fresh audit"):
+                    publish_verified_root_table.publish_verified_root_table(audit_path, output=target)
+            self.assertFalse(target.exists())
+
     def write_root_book(self, path: Path, move: str = "d3") -> None:
         path.write_text(
             "# contest_book_v1\n"

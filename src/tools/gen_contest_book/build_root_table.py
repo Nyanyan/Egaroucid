@@ -338,6 +338,12 @@ def main() -> int:
         help="Require exact D4-canonical coverage of every start in this directory",
     )
     args = parser.parse_args()
+    publication_target = (TRAINED_DIR / ROOT_TABLE_FILENAME).resolve()
+    if args.output.resolve() == publication_target:
+        parser.error(
+            "writing trained/contest_root_table.egcb directly is disabled; "
+            "use publish_verified_root_table.py after a passed match audit"
+        )
     if not args.books_dir and not args.root_results:
         args.books_dir = [TRAINED_DIR]
     required_starts = (
