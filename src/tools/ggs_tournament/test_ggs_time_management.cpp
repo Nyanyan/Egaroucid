@@ -54,6 +54,14 @@ void test_pair_boost_phase_scale() {
     require_near(time_management_ggs_pair_boost_phase_scale(40), 1.00, "late scale");
 }
 
+void test_extra_time_is_not_budgeted_for_normal_search() {
+    require_near(
+        TIME_MANAGEMENT_GGS_REMAINING_MOVES_EXTRA,
+        0.0,
+        "GGS extra time must not be added to the normal-search budget"
+    );
+}
+
 void test_cap_is_continuous_at_reserve() {
     constexpr double remaining_moves = 17.0;
     constexpr uint64_t reserve = 17400ULL;
@@ -228,6 +236,7 @@ int main() {
     try {
         test_cap_is_continuous_at_reserve();
         test_pair_boost_phase_scale();
+        test_extra_time_is_not_budgeted_for_normal_search();
         test_early_endgame_ramp();
         test_late_endgame_ramp();
         test_match_boundary_revalidation_gate();
