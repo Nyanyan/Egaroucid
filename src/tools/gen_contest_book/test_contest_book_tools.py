@@ -1177,29 +1177,14 @@ class GgsRootTeacherTests(unittest.TestCase):
         self.assertEqual((score_samples[2], score_samples[96]), intervals["score"])
         self.assertEqual((margin_samples[2], margin_samples[96]), intervals["margin"])
 
-    def test_benchmarks_two_root_teacher_methods_on_fixed_reference_positions(self) -> None:
+    def test_benchmarks_two_root_teacher_methods_on_fixed_population_positions(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             exe = root / "teacher.exe"
             exe.write_bytes(b"teacher executable")
-            reference = root / "reference.txt"
-            reference.write_text(
-                "# ggs_root_teacher_v1\n"
-                f"{GGS_ROOT} -15 f5:-15\n",
-                encoding="utf-8",
-                newline="\n",
-            )
-            reference.with_suffix(reference.suffix + ".manifest.json").write_text(
-                json.dumps(
-                    {
-                        "schema": "ggs_root_teacher_manifest_v10",
-                        "output": {
-                            "sha256": build_root_table.sha256_file(reference),
-                            "completed": 1,
-                        },
-                        "engine": {"sha256": build_root_table.sha256_file(exe)},
-                    }
-                ),
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)),
                 encoding="utf-8",
                 newline="\n",
             )
@@ -1221,8 +1206,10 @@ class GgsRootTeacherTests(unittest.TestCase):
                                 "sha256": build_root_table.sha256_file(output),
                                 "completed": 1,
                                 "rejected": 0,
+                                "processed": 1,
                             },
                             "results": {board: {"move": move}},
+                            "rejections": {},
                         }
                     ),
                     encoding="utf-8",
@@ -1236,16 +1223,53 @@ class GgsRootTeacherTests(unittest.TestCase):
                 side_effect=fake_generate,
             ):
                 payload = benchmark_root_teacher_methods.compare_methods(
-                    reference,
+                    coverage,
+                    [],
                     exe,
                     root / "benchmark",
                     1,
+                    620,
+                    621,
+                    622,
                 )
-            self.assertEqual(1, payload["comparison"]["same_move"])
-            self.assertEqual(0, payload["comparison"]["different_move"])
+            self.assertEqual(1, payload["comparison"]["same_accepted_move"])
+            self.assertEqual(0, payload["comparison"]["different_accepted_move"])
+            self.assertEqual(1, payload["population"]["count"])
             report = (root / "benchmark" / "README.md").read_text(encoding="utf-8")
             self.assertIn("60秒の持ち時間を与える探索", report)
-            self.assertIn("Level-30/31 check", report)
+            self.assertIn("level-30/level-31 check", report)
+
+    def test_forced_move_analysis_reads_played_score_at_requested_level(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"teacher executable")
+            analyzed = (
+                "|          Ply|       Player|       Played|        Depth|        Score|\n"
+                "|           11|        Black|           f5|       33@74%|           -6|\n"
+            )
+            completed = SimpleNamespace(returncode=0, stdout=analyzed, stderr="")
+            with mock.patch.object(
+                benchmark_root_teacher_methods.subprocess,
+                "run",
+                return_value=completed,
+            ) as run:
+                result = benchmark_root_teacher_methods.evaluate_forced_move_at_level(
+                    exe,
+                    GGS_ROOT,
+                    "f5",
+                    33,
+                    root / "forced_move.log",
+                )
+            self.assertEqual("f5", result["move"])
+            self.assertEqual(-6, result["score"])
+            self.assertEqual("33@74%", result["depth"])
+            self.assertTrue((root / "forced_move.log").is_file())
+            command = run.call_args.args[0]
+            self.assertIn("-l", command)
+            self.assertIn("33", command)
+            self.assertIn("-nobook", command)
+            self.assertIn("-nocontestbook", command)
 
     def test_search_root_accepts_console_result_on_stderr(self) -> None:
         table = (
@@ -1683,7 +1707,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
             }
             shallow_verification = {
-                "move": "f5", "score": -14, "level": "31", "depth": "29@74%",
+                "move": "f5", "score": -14, "level": "31", "depth": "30@74%",
                 "time": "000:00:02.000", "nodes": 2, "nps": 1,
             }
             with (
@@ -1693,7 +1717,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "search_root_at_level",
                     return_value=shallow_verification,
                 ),
-                self.assertRaisesRegex(ValueError, "below 30@74%"),
+                self.assertRaisesRegex(ValueError, "below 31@74%"),
             ):
                 generate_ggs_root_teacher.generate_teachers(
                     coverage,

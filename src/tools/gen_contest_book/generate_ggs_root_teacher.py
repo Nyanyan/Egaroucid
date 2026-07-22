@@ -562,7 +562,7 @@ def _generate_teachers_unlocked(
             continue
         if method == "hint":
             result = search_root_at_level(exe, board, teacher_level, threads, hash_level)
-            validate_quality(result, min_depth, min_selectivity)
+            validate_quality(result, max(min_depth, teacher_level), min_selectivity)
             result["method"] = f"hint_level_{teacher_level}"
         elif method == "time_then_hint":
             result = search_root(exe, board, time_seconds, threads, hash_level)
@@ -573,23 +573,25 @@ def _generate_teachers_unlocked(
                 if fallback_level == 0:
                     raise
                 result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
-                validate_quality(result, min_depth, min_selectivity)
+                validate_quality(result, max(min_depth, fallback_level), min_selectivity)
                 result["method"] = f"hint_level_{fallback_level}"
         elif method == "hint_then_verify":
             result = search_root_at_level(exe, board, teacher_level, threads, hash_level)
-            validate_quality(result, min_depth, min_selectivity)
+            validate_quality(result, max(min_depth, teacher_level), min_selectivity)
             result["method"] = (
                 f"hint_level_{teacher_level}_verified_hint_level_{verify_level}"
             )
             verification = search_root_at_level(
                 exe, board, verify_level, threads, hash_level
             )
-            validate_quality(verification, min_depth, min_selectivity)
+            validate_quality(verification, max(min_depth, verify_level), min_selectivity)
             if str(result["move"]) != str(verification["move"]):
                 verification_repeat = search_root_at_level(
                     exe, board, verify_level, threads, hash_level
                 )
-                validate_quality(verification_repeat, min_depth, min_selectivity)
+                validate_quality(
+                    verification_repeat, max(min_depth, verify_level), min_selectivity
+                )
                 if str(verification["move"]) == str(verification_repeat["move"]):
                     teacher = result
                     result = dict(verification_repeat)
@@ -638,24 +640,28 @@ def _generate_teachers_unlocked(
                 result["method"] = f"time_verified_hint_level_{verify_level}"
             except ValueError:
                 result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
-                validate_quality(result, min_depth, min_selectivity)
+                validate_quality(result, max(min_depth, fallback_level), min_selectivity)
                 result["method"] = (
                     f"time_fallback_hint_level_{fallback_level}_verified_hint_level_{verify_level}"
                 )
                 result["primary"] = primary
             verification = search_root_at_level(exe, board, verify_level, threads, hash_level)
-            validate_quality(verification, min_depth, min_selectivity)
+            validate_quality(verification, max(min_depth, verify_level), min_selectivity)
             verification_mode = f"level_{verify_level}_exact"
             if str(result["move"]) != str(verification["move"]):
                 tiebreak = search_root_at_level(
                     exe, board, fallback_level, threads, hash_level
                 )
-                validate_quality(tiebreak, min_depth, min_selectivity)
+                validate_quality(tiebreak, max(min_depth, fallback_level), min_selectivity)
                 if str(result["move"]) != str(tiebreak["move"]):
                     deep_tiebreak = search_root_at_level(
                         exe, board, DEEP_TIEBREAK_LEVEL, threads, hash_level
                     )
-                    validate_quality(deep_tiebreak, min_depth, min_selectivity)
+                    validate_quality(
+                        deep_tiebreak,
+                        max(min_depth, DEEP_TIEBREAK_LEVEL),
+                        min_selectivity,
+                    )
                     if str(tiebreak["move"]) != str(deep_tiebreak["move"]):
                         state["rejections"][board] = {
                             "reason": (
