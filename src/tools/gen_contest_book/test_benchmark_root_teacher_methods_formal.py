@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -72,6 +73,26 @@ def _deep_result(status: str, root: str = "a1", time_score: int = 0, level_score
 
 
 class FormalMethodComparisonTest(unittest.TestCase):
+    def test_console_command_and_log_must_confirm_the_seed_and_tournament_build(self) -> None:
+        command = formal._build_command(
+            Path("console.exe"), "fixed_level_search", 620, level=30
+        )
+        self.assertIn("-noise", command)
+        self.assertEqual("620", command[command.index("-seed") + 1])
+        with tempfile.TemporaryDirectory() as temporary:
+            log = Path(temporary) / "query.log"
+            completed = subprocess.CompletedProcess(command, 0, "", "")
+            with mock.patch.object(formal.subprocess, "run", return_value=completed):
+                with self.assertRaisesRegex(RuntimeError, "did not confirm random seed 620"):
+                    formal._run_console(
+                        Path("console.exe"),
+                        "fixture board",
+                        "fixed_level_search",
+                        620,
+                        log,
+                        level=30,
+                    )
+
     def test_seed_derivation_plan_size_and_reversed_repetition_order(self) -> None:
         boards = [f"board-{index:03d}" for index in range(600)]
         main_seeds = formal._derive_engine_seeds("a" * 64)

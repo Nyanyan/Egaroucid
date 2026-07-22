@@ -81,6 +81,8 @@ ANALYZE_RESULT_RE = re.compile(
     r"\|\s*(?P<depth>\d+@\d+%)\|\s*(?P<score>[+-]?\d+)\|",
     re.MULTILINE,
 )
+STARTUP_SEED_LOG_PREFIX = "random seed = "
+TOURNAMENT_BUILD_LOG = "ggs tournament build = true"
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
@@ -671,6 +673,8 @@ def _validate_query(
     for option in BOOK_DISABLED_ARGUMENTS:
         if option not in command:
             raise ValueError(f"saved Console query omitted {option}")
+    if "-noise" not in command:
+        raise ValueError("saved Console query omitted -noise required for start-up evidence")
     if kind == "time_limited_search":
         try:
             time_index = command.index("-time")
@@ -721,6 +725,13 @@ def _validate_query(
     if not _is_relative_to(path, pair_dir) or not path.is_file() or sha256_file(path) != digest:
         raise ValueError("saved Console raw log is missing or has a different SHA-256")
     text = path.read_text(encoding="utf-8", errors="replace")
+    startup = query.get("startup")
+    if startup != {"random_seed": engine_seed, "ggs_tournament_build": True}:
+        raise ValueError("saved Console query has different start-up evidence")
+    if f"{STARTUP_SEED_LOG_PREFIX}{engine_seed}" not in text:
+        raise ValueError("saved Console raw log does not confirm its random seed")
+    if TOURNAMENT_BUILD_LOG not in text:
+        raise ValueError("saved Console raw log does not confirm the tournament build")
     result = query.get("result")
     if not isinstance(result, dict):
         raise ValueError("saved Console query has no parsed result")
@@ -1173,6 +1184,8 @@ def _build_command(
         raise RuntimeError("the Console search command did not contain the planned -seed argument")
     if any(option not in command for option in BOOK_DISABLED_ARGUMENTS):
         raise RuntimeError("the Console search command did not disable both books")
+    if "-noise" not in command:
+        command.append("-noise")
     return command
 
 
@@ -1219,6 +1232,14 @@ def _run_console(
         raise RuntimeError(
             f"Console {kind} exited {completed.returncode} for {board}: {combined[-400:]}"
         )
+    if f"{STARTUP_SEED_LOG_PREFIX}{engine_seed}" not in combined:
+        raise RuntimeError(
+            f"Console {kind} did not confirm random seed {engine_seed} for {board}"
+        )
+    if TOURNAMENT_BUILD_LOG not in combined:
+        raise RuntimeError(
+            f"Console {kind} did not confirm a tournament build for {board}"
+        )
     if kind == "forced_move_analysis":
         matches = [match.groupdict() for match in ANALYZE_RESULT_RE.finditer(combined)]
         if len(matches) != 1:
@@ -1252,6 +1273,7 @@ def _run_console(
             "relative_path": relative,
             "sha256": sha256_file(log_path),
         },
+        "startup": {"random_seed": engine_seed, "ggs_tournament_build": True},
     }
     if kind == "forced_move_analysis":
         query["forced_move"] = forced_move
