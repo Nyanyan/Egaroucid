@@ -676,6 +676,25 @@ class RootTableTests(unittest.TestCase):
                     publish_verified_root_table.publish_verified_root_table(audit_path, output=target)
             self.assertFalse(target.exists())
 
+    def test_builder_cli_rejects_direct_tournament_publication(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            trained = Path(temporary) / "trained"
+            with (
+                mock.patch.object(build_root_table, "TRAINED_DIR", trained),
+                mock.patch.object(
+                    sys,
+                    "argv",
+                    [
+                        "build_root_table.py",
+                        "--output",
+                        str(trained / build_root_table.ROOT_TABLE_FILENAME),
+                    ],
+                ),
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    build_root_table.main()
+            self.assertEqual(2, raised.exception.code)
+
     def write_root_book(self, path: Path, move: str = "d3") -> None:
         path.write_text(
             "# contest_book_v1\n"
