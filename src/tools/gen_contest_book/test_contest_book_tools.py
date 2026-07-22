@@ -756,6 +756,39 @@ class GgsRootTeacherTests(unittest.TestCase):
             generate_ggs_root_teacher.select_teacher_roots(roots, 3, None),
         )
 
+    def test_excludes_previous_teacher_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            canonical_root, _ = canonicalize_board_key(GGS_ROOT)
+            excluded_rows = root / "earlier_teacher_rows.txt"
+            excluded_rows.write_text(
+                "# ggs_root_teacher_v1\n"
+                f"{GGS_ROOT} -15 f5:-15\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            self.assertEqual(
+                {canonical_root},
+                generate_ggs_root_teacher.load_excluded_roots([excluded_rows]),
+            )
+
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(canonical_root)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            with self.assertRaisesRegex(ValueError, "no uncovered 14-disc roots remain after exclusions"):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage,
+                    exe,
+                    root / "teacher_rows.txt",
+                    60.0,
+                    28,
+                    29,
+                    excluded_root_files=[excluded_rows],
+                )
+
     def test_generates_and_resumes_only_with_identical_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

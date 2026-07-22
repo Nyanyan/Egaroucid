@@ -21,11 +21,12 @@ from pathlib import Path
 from typing import Any
 
 from audit_r14_corpus import CORPUS_REPORT_SCHEMA
+from build_root_table import load_root_rows
 from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v8"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v9"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 DEEP_TIEBREAK_LEVEL = 31
 RESULT_RE = re.compile(
@@ -81,6 +82,26 @@ def load_uncovered_roots(coverage_path: Path) -> list[str]:
     if not result:
         raise ValueError(f"{coverage_path}: no uncovered 14-disc roots")
     return sorted(result)
+
+
+def load_excluded_roots(paths: list[Path]) -> set[str]:
+    """Read canonical 14-disc positions that must not be selected again.
+
+    Accepted teacher output and the published table share a data-row format.
+    ``load_root_rows`` also verifies that each stored move is legal before the
+    associated starting position is excluded from a later teacher run.
+    """
+    excluded: set[str] = set()
+    for path in paths:
+        excluded.update(entry.board for entry in load_root_rows(path, 14))
+    return excluded
+
+
+def root_file_provenance(paths: list[Path]) -> list[dict[str, str]]:
+    return [
+        {"path": path.resolve().as_posix(), "sha256": sha256_file(path)}
+        for path in paths
+    ]
 
 
 def select_teacher_roots(
@@ -233,6 +254,7 @@ def _new_state(
     teacher_level: int,
     verify_level: int,
     cohort_seed: int | None,
+    excluded_root_files: list[Path],
 ) -> dict[str, Any]:
     return {
         "schema": TEACHER_SCHEMA,
@@ -254,6 +276,7 @@ def _new_state(
         "teacher_level": teacher_level,
         "verify_level": verify_level,
         "cohort_seed": cohort_seed,
+        "excluded_root_files": root_file_provenance(excluded_root_files),
         "deep_tiebreak_level": DEEP_TIEBREAK_LEVEL,
         "roots": roots,
         "results": {},
@@ -272,7 +295,7 @@ def _load_state(
     for key in (
         "schema", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
-        "verify_level", "cohort_seed", "deep_tiebreak_level", "roots",
+        "verify_level", "cohort_seed", "excluded_root_files", "deep_tiebreak_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -310,6 +333,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# teacher_level {state['teacher_level']}",
             f"# verify_level {state['verify_level']}",
             f"# cohort_seed {state['cohort_seed']}",
+            f"# excluded_root_files {len(state['excluded_root_files'])}",
             f"# deep_tiebreak_level {state['deep_tiebreak_level']}",
             f"# accepted {len(rows)}/{len(roots)}",
             f"# rejected {len(rejections)}/{len(roots)}",
@@ -324,7 +348,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v8",
+        "schema": "ggs_root_teacher_manifest_v9",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
@@ -345,6 +369,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "teacher_level": state["teacher_level"],
         "verify_level": state["verify_level"],
         "cohort_seed": state["cohort_seed"],
+        "excluded_root_files": state["excluded_root_files"],
         "deep_tiebreak_level": state["deep_tiebreak_level"],
         "results": {board: results[board] for board in sorted(results)},
         "rejections": {board: rejections[board] for board in sorted(rejections)},
@@ -371,6 +396,7 @@ def generate_teachers(
     resume: bool = False,
     limit: int | None = None,
     cohort_seed: int | None = None,
+    excluded_root_files: list[Path] | None = None,
 ) -> dict[str, int]:
     if not exe.is_file():
         raise FileNotFoundError(f"engine executable not found: {exe}")
@@ -391,10 +417,22 @@ def generate_teachers(
             "time_then_verify requires fallback_level at least min_depth "
             "so a shallow time search cannot lower teacher quality"
         )
-    roots = select_teacher_roots(load_uncovered_roots(coverage_path), limit, cohort_seed)
+    if excluded_root_files is None:
+        excluded_root_files = []
+    excluded_root_files = sorted(
+        {path.resolve() for path in excluded_root_files}, key=lambda path: path.as_posix()
+    )
+    excluded_roots = load_excluded_roots(excluded_root_files)
+    roots = select_teacher_roots(
+        [board for board in load_uncovered_roots(coverage_path) if board not in excluded_roots],
+        limit,
+        cohort_seed,
+    )
+    if not roots:
+        raise ValueError("no uncovered 14-disc roots remain after exclusions")
     expected = _new_state(
         coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
-        fallback_level, method, teacher_level, verify_level, cohort_seed,
+        fallback_level, method, teacher_level, verify_level, cohort_seed, excluded_root_files,
     )
     state_path = _state_path(output)
     if resume:
@@ -507,6 +545,13 @@ def main() -> int:
         type=int,
         help="Hash-sort uncovered roots by this fixed seed before applying --limit",
     )
+    parser.add_argument(
+        "--exclude-root-results",
+        type=Path,
+        action="append",
+        default=[],
+        help="Teacher rows or a published table whose positions are excluded (repeatable)",
+    )
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     result = generate_teachers(
@@ -525,6 +570,7 @@ def main() -> int:
         args.resume,
         args.limit,
         args.cohort_seed,
+        args.exclude_root_results,
     )
     print(f"teacher roots complete {result['completed']}/{result['requested']}")
     return 0

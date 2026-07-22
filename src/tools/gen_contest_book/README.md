@@ -243,6 +243,20 @@ creating one file per root: pass repeatable `--root-results <file>` inputs with
 data rows in the same `<board> <side> <value> <move>:<score> ...` format. Its
 hash is recorded in the root-table manifest alongside deep-book sources.
 
+To generate a new, disjoint batch of verified starting moves, pass every
+previous accepted teacher file or published root table with repeatable
+`--exclude-root-results`. The generator canonicalizes those rows before
+selection, records each exclusion file's SHA-256 in its state and manifest, and
+refuses to resume if that list changes. For example:
+
+```powershell
+python src/tools/gen_contest_book/generate_ggs_root_teacher.py --coverage ignored/ggs_620_progress/r14_corpus_coverage_reaudit_20260722.json --exe bin/Egaroucid_for_Console_clang.exe --output ignored/ggs_620_progress/new_teacher_rows.txt --method time_then_verify --time-seconds 60 --threads 28 --hash 29 --min-depth 30 --min-selectivity 74 --fallback-level 31 --verify-level 30 --cohort-seed 623 --limit 50 --exclude-root-results ignored/ggs_620_progress/r14_seed622_50_t60_verified.txt
+```
+
+The new rows remain outside `trained` until a fixed-start color-swapped
+comparison against the same executable with no book has a valid audit and does
+not include a neutral value in its pre-specified confidence intervals.
+
 ## Testing
 
 Start with a small test for one start position. Use one line from `data/records321_14_random_setup` as `<initial board>`.
