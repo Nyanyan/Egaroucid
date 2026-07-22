@@ -59,8 +59,18 @@ int main(int argc, char* argv[]) {
     }
     if (options.random_seed_specified) {
         raw_myrandom.seed(options.random_seed);
-        if (options.show_log)
+    }
+    if (options.show_log) {
+        if (options.random_seed_specified) {
             std::cerr << "random seed = " << options.random_seed << std::endl;
+        } else {
+            std::cerr << "random seed = unspecified" << std::endl;
+        }
+        #if IS_GGS_TOURNAMENT
+            std::cerr << "ggs tournament build = true" << std::endl;
+        #else
+            std::cerr << "ggs tournament build = false" << std::endl;
+        #endif
     }
     print_special_commandline_options(commandline_options);
     init_console(options, binary_path);

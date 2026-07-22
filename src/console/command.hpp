@@ -15,6 +15,7 @@
 #include <sstream>
 #include <cctype>
 #include <algorithm>
+#include <limits>
 #include "./../engine/engine_all.hpp"
 #include "board_info.hpp"
 #include "option.hpp"
@@ -575,6 +576,32 @@ void generate_problems(Options *options, std::string arg) {
     }
 }
 
+bool set_remaining_time_msec(State *state, Options *options, const std::string &color, uint64_t time_msec) {
+    if (color.empty()) {
+        std::cerr << "[ERROR] can't recognize color: " << color << std::endl;
+        return false;
+    }
+    if (is_black_like_char(color[0])) {
+        // ``go`` uses time control whenever this value is allocated.  Keep
+        // the existing settime behavior when a caller sets a clock without
+        // having supplied -time on the command line.
+        if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+            options->time_allocated_seconds = 0;
+        }
+        state->remaining_time_msec_black = time_msec;
+        return true;
+    }
+    if (is_white_like_char(color[0])) {
+        if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+            options->time_allocated_seconds = 0;
+        }
+        state->remaining_time_msec_white = time_msec;
+        return true;
+    }
+    std::cerr << "[ERROR] can't recognize color: " << color << std::endl;
+    return false;
+}
+
 void settime(State *state, Options *options, std::string arg) {
     int pos = arg.find(' ');
     if (pos == std::string::npos) {
@@ -584,24 +611,43 @@ void settime(State *state, Options *options, std::string arg) {
         std::string time_sec_str = arg.substr(pos + 1);
         try{
             uint64_t time_msec = 1000ULL * (uint64_t)std::stoi(time_sec_str);
-            if (is_black_like_char(color[0])) {
-                if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
-                    options->time_allocated_seconds = 0;
-                }
-                state->remaining_time_msec_black = time_msec;
-            } else if (is_white_like_char(color[0])) {
-                if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
-                    options->time_allocated_seconds = 0;
-                }
-                state->remaining_time_msec_white = time_msec;
-            } else {
-                std::cerr << "[ERROR] can't recognize color: " << color << std::endl;
-            }
+            set_remaining_time_msec(state, options, color, time_msec);
         } catch (const std::invalid_argument& e) {
             std::cerr << "[ERROR] invalid argument" << std::endl;
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] out of range" << std::endl;
         }
+    }
+}
+
+void settimems(State *state, Options *options, std::string arg) {
+    std::istringstream input(arg);
+    std::string color;
+    std::string time_msec_str;
+    std::string trailing;
+    if (!(input >> color >> time_msec_str) || (input >> trailing)) {
+        std::cerr << "[ERROR] please input <color> <milliseconds>" << std::endl;
+        return;
+    }
+    if (
+        time_msec_str.empty() ||
+        !std::all_of(time_msec_str.begin(), time_msec_str.end(), [](unsigned char c) {
+            return c >= '0' && c <= '9';
+        })
+    ) {
+        std::cerr << "[ERROR] invalid milliseconds" << std::endl;
+        return;
+    }
+    try {
+        unsigned long long parsed = std::stoull(time_msec_str);
+        if (parsed > std::numeric_limits<uint64_t>::max()) {
+            throw std::out_of_range("milliseconds exceed uint64_t");
+        }
+        set_remaining_time_msec(state, options, color, static_cast<uint64_t>(parsed));
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "[ERROR] invalid milliseconds" << std::endl;
+    } catch (const std::out_of_range& e) {
+        std::cerr << "[ERROR] milliseconds out of range" << std::endl;
     }
 }
 
@@ -683,6 +729,9 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_ADVISE:
             print_advice(board);
+            break;
+        case CMD_ID_SETTIMEMS:
+            settimems(state, options, arg);
             break;
         default:
             break;
