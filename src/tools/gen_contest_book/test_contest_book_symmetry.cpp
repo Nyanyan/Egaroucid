@@ -264,6 +264,22 @@ int main() {
         Contest_root_table invalid_root_table;
         require(!invalid_root_table.init(invalid_root_dir.string(), false), "root table accepted a wrong entry count");
 
+        std::filesystem::path oversized_root_dir = temporary_directory.path() / "oversized_root";
+        require(std::filesystem::create_directory(oversized_root_dir), "could not create oversized root-table directory");
+        {
+            std::ofstream ofs(oversized_root_dir / CONTEST_ROOT_TABLE_FILENAME);
+            require(static_cast<bool>(ofs), "could not create oversized root-table test file");
+            ofs << "# contest_root_table_v1\n";
+            ofs << "# root_discs 14\n";
+            ofs << "# entries 999999999\n";
+            ofs << root_representative.to_str() << " 8 " << idx_to_coord(root_policy) << ":8\n";
+        }
+        Contest_root_table oversized_root_table;
+        require(
+            !oversized_root_table.init(oversized_root_dir.string(), false),
+            "root table accepted an entry count that exceeds its file size"
+        );
+
         std::filesystem::path non_root_dir = temporary_directory.path() / "non_root";
         require(std::filesystem::create_directory(non_root_dir), "could not create non-root table directory");
         {

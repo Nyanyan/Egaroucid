@@ -13,6 +13,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -204,6 +205,21 @@ class Contest_book {
             return true;
         }
 
+        bool reserve_entries(uint64_t expected_entries) {
+            if (
+                expected_entries > std::numeric_limits<size_t>::max() ||
+                static_cast<size_t>(expected_entries) > entries.max_size()
+            ) {
+                return false;
+            }
+            try {
+                entries.reserve(static_cast<size_t>(expected_entries));
+            } catch (const std::exception&) {
+                return false;
+            }
+            return true;
+        }
+
     public:
         Contest_book()
             : loaded(false) {}
@@ -214,8 +230,16 @@ class Contest_book {
             entries.clear();
         }
 
-        bool init(const std::string &file, bool show_log) {
+        bool init(const std::string &file, bool show_log, uint64_t expected_entries = 0) {
             clear();
+            if (expected_entries > 0 && !reserve_entries(expected_entries)) {
+                if (show_log) {
+                    std::cerr << "contest book cannot reserve " << expected_entries
+                              << " entries: " << file << std::endl;
+                }
+                clear();
+                return false;
+            }
             std::ifstream ifs(file);
             if (!ifs) {
                 if (show_log) {
@@ -417,7 +441,17 @@ class Contest_root_table {
                 clear();
                 return false;
             }
-            if (!book.init(path.string(), show_log)) {
+            std::error_code file_size_error;
+            const uintmax_t file_bytes = std::filesystem::file_size(path, file_size_error);
+            if (file_size_error || expected_entries > file_bytes) {
+                if (show_log) {
+                    std::cerr << "[WARNING] contest root table invalid entry count: "
+                              << path.string() << std::endl;
+                }
+                clear();
+                return false;
+            }
+            if (!book.init(path.string(), show_log, expected_entries)) {
                 clear();
                 return false;
             }
