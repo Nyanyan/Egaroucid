@@ -26,10 +26,16 @@ from book_artifact import file_lock
 from build_root_table import load_root_rows
 from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
+from r14_random_setup_probability import (
+    R14_RANDOM_SETUP_PROBABILITY_MODEL,
+    load_r14_random_setup_priority_manifest,
+    order_r14_random_setup_boards,
+    priority_manifest_provenance,
+)
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v13"
-TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v13"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v15"
+TEACHER_MANIFEST_SCHEMA = "ggs_root_teacher_manifest_v15"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
 TEACHER_UPDATE_SCHEMA = "ggs_root_teacher_update_v1"
 CALCULATION_PROVENANCE_SCHEMA = "ggs_root_teacher_calculation_provenance_v3"
@@ -40,6 +46,9 @@ RESOURCE_SPECS = (
     ("evaluation", Path("eval.egev2")),
     ("endgame_move_ordering", Path("eval_move_ordering_end.egev")),
 )
+ROOT_ORDER_HASH = "hash"
+ROOT_ORDER_GGS_R14_PROBABILITY = "ggs-r14-probability"
+ROOT_ORDER_CHOICES = (ROOT_ORDER_HASH, ROOT_ORDER_GGS_R14_PROBABILITY)
 TIME_SEARCH_COMMAND_TEMPLATE = [
     "{executable}",
     "-time",
@@ -677,11 +686,43 @@ def root_file_provenance(paths: list[Path]) -> list[dict[str, str]]:
 
 
 def select_teacher_roots(
-    roots: list[str], limit: int | None, cohort_seed: int | None
+    roots: list[str],
+    limit: int | None,
+    cohort_seed: int | None,
+    root_order: str = ROOT_ORDER_HASH,
+    priority_tie_seed: int | None = None,
+    priority_boards: list[str] | None = None,
 ) -> list[str]:
-    """Freeze a bounded cohort without relying on source-file ordering."""
-    selected = sorted(set(roots))
-    if cohort_seed is not None:
+    """Freeze a bounded teacher input without source-file-order dependence.
+
+    ``hash`` preserves the original uniform hashed order.  ``ggs-r14-probability``
+    instead orders the complete primary r14 corpus by its exact GGS generation
+    probability.  ``cohort_seed`` applies only to ``hash``.  The separately
+    named ``priority_tie_seed`` applies only within an equal-probability group
+    in ``ggs-r14-probability``.  The selected board list is saved in the state
+    file and is the authoritative future resume input.
+    """
+    if root_order not in ROOT_ORDER_CHOICES:
+        raise ValueError(f"root_order must be one of {ROOT_ORDER_CHOICES}")
+    available = set(roots)
+    if priority_boards is not None:
+        if root_order != ROOT_ORDER_GGS_R14_PROBABILITY:
+            raise ValueError("priority_boards requires root_order='ggs-r14-probability'")
+        if cohort_seed is not None or priority_tie_seed is not None:
+            raise ValueError("a frozen priority file cannot be combined with a selection seed")
+        selected = [board for board in priority_boards if board in available]
+        if set(selected) != available:
+            raise ValueError(
+                "the frozen priority file does not contain every teacher-population root"
+            )
+    elif root_order == ROOT_ORDER_GGS_R14_PROBABILITY:
+        selected = sorted(available)
+        if cohort_seed is not None:
+            raise ValueError("cohort_seed is only valid with root_order='hash'")
+        selected = order_r14_random_setup_boards(selected, priority_tie_seed)
+    else:
+        selected = sorted(available)
+    if root_order == ROOT_ORDER_HASH and cohort_seed is not None:
         selected = sorted(
             selected,
             key=lambda board: (
@@ -689,6 +730,8 @@ def select_teacher_roots(
                 board,
             ),
         )
+    elif root_order == ROOT_ORDER_HASH and priority_tie_seed is not None:
+        raise ValueError("priority_tie_seed requires root_order='ggs-r14-probability'")
     if limit is not None:
         selected = selected[:limit]
     return selected
@@ -1053,8 +1096,13 @@ def _new_state(
     cohort_seed: int | None,
     excluded_root_files: list[Path],
     random_seed: int = 620,
+    root_order: str = ROOT_ORDER_HASH,
+    priority_tie_seed: int | None = None,
+    priority_manifest: dict[str, object] | None = None,
 ) -> dict[str, Any]:
     random_seed = _validate_random_seed(random_seed)
+    if root_order not in ROOT_ORDER_CHOICES:
+        raise ValueError(f"root_order must be one of {ROOT_ORDER_CHOICES}")
     return {
         "schema": TEACHER_SCHEMA,
         "calculation_provenance": _new_calculation_provenance(
@@ -1079,6 +1127,14 @@ def _new_state(
         "teacher_level": teacher_level,
         "verify_level": verify_level,
         "cohort_seed": cohort_seed,
+        "root_order": root_order,
+        "priority_tie_seed": priority_tie_seed,
+        "priority_manifest": priority_manifest,
+        "r14_probability_model": (
+            R14_RANDOM_SETUP_PROBABILITY_MODEL
+            if root_order == ROOT_ORDER_GGS_R14_PROBABILITY
+            else None
+        ),
         "excluded_root_files": root_file_provenance(excluded_root_files),
         "deep_tiebreak_level": DEEP_TIEBREAK_LEVEL,
         "roots": roots,
@@ -1098,7 +1154,8 @@ def _load_state(
     for key in (
         "schema", "random_seed", "calculation_provenance", "coverage", "engine", "time_seconds", "threads", "hash_level",
         "min_depth", "min_selectivity", "fallback_level", "method", "teacher_level",
-        "verify_level", "cohort_seed", "excluded_root_files", "deep_tiebreak_level", "roots",
+        "verify_level", "cohort_seed", "root_order", "priority_tie_seed", "priority_manifest",
+        "r14_probability_model", "excluded_root_files", "deep_tiebreak_level", "roots",
     ):
         if state.get(key) != expected.get(key):
             raise ValueError(f"{path}: resume mismatch for {key}")
@@ -1153,6 +1210,10 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
             f"# teacher_level {state['teacher_level']}",
             f"# verify_level {state['verify_level']}",
             f"# cohort_seed {state['cohort_seed']}",
+            f"# root_order {state['root_order']}",
+            f"# priority_tie_seed {state['priority_tie_seed']}",
+            f"# priority_manifest_sha256 "
+            f"{state['priority_manifest']['sha256'] if state['priority_manifest'] else '-'}",
             f"# excluded_root_files {len(state['excluded_root_files'])}",
             f"# deep_tiebreak_level {state['deep_tiebreak_level']}",
             f"# accepted {len(rows)}/{len(roots)}",
@@ -1191,6 +1252,10 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         "teacher_level": state["teacher_level"],
         "verify_level": state["verify_level"],
         "cohort_seed": state["cohort_seed"],
+        "root_order": state["root_order"],
+        "priority_tie_seed": state["priority_tie_seed"],
+        "priority_manifest": state["priority_manifest"],
+        "r14_probability_model": state["r14_probability_model"],
         "excluded_root_files": state["excluded_root_files"],
         "deep_tiebreak_level": state["deep_tiebreak_level"],
         "results": {board: results[board] for board in sorted(results)},
@@ -1222,6 +1287,10 @@ def _generate_teachers_unlocked(
     checkpoint_every: int = 1,
     compact_only: bool = False,
     random_seed: int = 620,
+    root_order: str = ROOT_ORDER_HASH,
+    priority_tie_seed: int | None = None,
+    priority_manifest_path: Path | None = None,
+    max_new_positions: int | None = None,
 ) -> dict[str, int]:
     if not exe.is_file():
         raise FileNotFoundError(f"engine executable not found: {exe}")
@@ -1229,6 +1298,8 @@ def _generate_teachers_unlocked(
         raise ValueError("limit must be positive")
     if checkpoint_every <= 0:
         raise ValueError("checkpoint_every must be positive")
+    if max_new_positions is not None and max_new_positions <= 0:
+        raise ValueError("max_new_positions must be positive")
     if compact_only and not resume:
         raise ValueError("compact_only requires resume")
     random_seed = _validate_random_seed(random_seed)
@@ -1259,17 +1330,43 @@ def _generate_teachers_unlocked(
         {path.resolve() for path in excluded_root_files}, key=lambda path: path.as_posix()
     )
     excluded_roots = load_excluded_roots(excluded_root_files)
+    priority_boards: list[str] | None = None
+    priority_manifest: dict[str, object] | None = None
+    if priority_manifest_path is not None:
+        priority_boards, _priority_metadata = load_r14_random_setup_priority_manifest(
+            priority_manifest_path
+        )
+        priority_manifest = priority_manifest_provenance(priority_manifest_path)
     roots = select_teacher_roots(
         [board for board in load_uncovered_roots(coverage_path) if board not in excluded_roots],
         limit,
         cohort_seed,
+        root_order,
+        priority_tie_seed,
+        priority_boards,
     )
     if not roots:
         raise ValueError("no uncovered 14-disc roots remain after exclusions")
     expected = _new_state(
-        output, coverage_path, exe, roots, time_seconds, threads, hash_level, min_depth, min_selectivity,
-        fallback_level, method, teacher_level, verify_level, cohort_seed, excluded_root_files,
+        output,
+        coverage_path,
+        exe,
+        roots,
+        time_seconds,
+        threads,
+        hash_level,
+        min_depth,
+        min_selectivity,
+        fallback_level,
+        method,
+        teacher_level,
+        verify_level,
+        cohort_seed,
+        excluded_root_files,
         random_seed,
+        root_order,
+        priority_tie_seed,
+        priority_manifest,
     )
     state_path = _state_path(output)
     if resume:
@@ -1300,6 +1397,7 @@ def _generate_teachers_unlocked(
         _write_outputs(output, state)
 
     completed_since_checkpoint = _completed_since_checkpoint(state, checkpoint_every)
+    newly_processed = 0
     if compact_only:
         # The resume branch has already replayed and republished every durable row.
         return {"completed": len(state["results"]), "requested": len(roots)}
@@ -1375,6 +1473,7 @@ def _generate_teachers_unlocked(
                         output, board, "rejections", state["rejections"][board]
                     )
                     completed_since_checkpoint += 1
+                    newly_processed += 1
                     if completed_since_checkpoint >= checkpoint_every:
                         _write_outputs(output, state)
                         _clear_pending_updates(output)
@@ -1383,6 +1482,10 @@ def _generate_teachers_unlocked(
                         f"rejected {len(state['rejections'])} {board}",
                         flush=True,
                     )
+                    if max_new_positions is not None and newly_processed >= max_new_positions:
+                        _write_outputs(output, state)
+                        _clear_pending_updates(output)
+                        return {"completed": len(state["results"]), "requested": len(roots)}
                     continue
             else:
                 result["verification"] = verification
@@ -1434,8 +1537,11 @@ def _generate_teachers_unlocked(
                             "tiebreak": tiebreak,
                             "deep_tiebreak": deep_tiebreak,
                         }
-                        _append_pending_update(output, board, "rejections", state["rejections"][board])
+                        _append_pending_update(
+                            output, board, "rejections", state["rejections"][board]
+                        )
                         completed_since_checkpoint += 1
+                        newly_processed += 1
                         if completed_since_checkpoint >= checkpoint_every:
                             _write_outputs(output, state)
                             _clear_pending_updates(output)
@@ -1444,6 +1550,10 @@ def _generate_teachers_unlocked(
                             f"rejected {len(state['rejections'])} {board}",
                             flush=True,
                         )
+                        if max_new_positions is not None and newly_processed >= max_new_positions:
+                            _write_outputs(output, state)
+                            _clear_pending_updates(output)
+                            return {"completed": len(state["results"]), "requested": len(roots)}
                         continue
                     deep_tiebreak["method"] = (
                         f"time_disagreement_tiebreak_levels_{fallback_level}_{DEEP_TIEBREAK_LEVEL}"
@@ -1462,11 +1572,16 @@ def _generate_teachers_unlocked(
         state["results"][board] = result
         _append_pending_update(output, board, "results", result)
         completed_since_checkpoint += 1
+        newly_processed += 1
         if completed_since_checkpoint >= checkpoint_every:
             _write_outputs(output, state)
             _clear_pending_updates(output)
             completed_since_checkpoint = 0
         print(f"completed {len(state['results'])}/{len(roots)} {board}", flush=True)
+        if max_new_positions is not None and newly_processed >= max_new_positions:
+            _write_outputs(output, state)
+            _clear_pending_updates(output)
+            return {"completed": len(state["results"]), "requested": len(roots)}
     if completed_since_checkpoint:
         _write_outputs(output, state)
         _clear_pending_updates(output)
@@ -1493,6 +1608,10 @@ def generate_teachers(
     checkpoint_every: int = 1,
     compact_only: bool = False,
     random_seed: int = 620,
+    root_order: str = ROOT_ORDER_HASH,
+    priority_tie_seed: int | None = None,
+    priority_manifest_path: Path | None = None,
+    max_new_positions: int | None = None,
 ) -> dict[str, int]:
     """Generate one output while holding its OS-owned exclusive lock."""
     with file_lock(_lock_path(output)):
@@ -1516,6 +1635,10 @@ def generate_teachers(
             checkpoint_every,
             compact_only,
             random_seed,
+            root_order,
+            priority_tie_seed,
+            priority_manifest_path,
+            max_new_positions,
         )
 
 
@@ -1547,7 +1670,32 @@ def main() -> int:
     parser.add_argument(
         "--cohort-seed",
         type=int,
-        help="Hash-sort uncovered roots by this fixed seed before applying --limit",
+        help="With --root-order hash, hash-sort uncovered roots by this seed before --limit",
+    )
+    parser.add_argument(
+        "--root-order",
+        choices=ROOT_ORDER_CHOICES,
+        default=ROOT_ORDER_HASH,
+        help=(
+            "hash preserves the existing uniform order; ggs-r14-probability orders the "
+            "primary r14 corpus by its exact GGS occurrence probability"
+        ),
+    )
+    parser.add_argument(
+        "--priority-tie-seed",
+        type=int,
+        help=(
+            "With --root-order ggs-r14-probability, use this seed only to order "
+            "equal-probability positions before --limit"
+        ),
+    )
+    parser.add_argument(
+        "--priority-manifest",
+        type=Path,
+        help=(
+            "With --root-order ggs-r14-probability, use this validated frozen "
+            "JSON Lines priority file instead of recomputing an order"
+        ),
     )
     parser.add_argument(
         "--exclude-root-results",
@@ -1561,6 +1709,14 @@ def main() -> int:
         type=int,
         default=1,
         help="Compact durable per-position updates after this many completed positions",
+    )
+    parser.add_argument(
+        "--max-new-positions",
+        type=int,
+        help=(
+            "Process at most this many previously unprocessed positions in this "
+            "invocation, then compact durable output and stop"
+        ),
     )
     parser.add_argument("--resume", action="store_true")
     parser.add_argument(
@@ -1589,6 +1745,10 @@ def main() -> int:
         args.checkpoint_every,
         args.compact_only,
         args.random_seed,
+        args.root_order,
+        args.priority_tie_seed,
+        args.priority_manifest,
+        args.max_new_positions,
     )
     print(f"teacher roots complete {result['completed']}/{result['requested']}")
     return 0
