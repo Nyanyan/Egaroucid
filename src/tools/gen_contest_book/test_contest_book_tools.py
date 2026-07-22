@@ -789,6 +789,55 @@ class GgsRootTeacherTests(unittest.TestCase):
                     excluded_root_files=[excluded_rows],
                 )
 
+    def test_replays_durable_position_update_before_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            output = root / "teacher_rows.txt"
+            expected = generate_ggs_root_teacher._new_state(
+                coverage,
+                exe,
+                [GGS_ROOT],
+                60.0,
+                28,
+                29,
+                33,
+                74,
+                33,
+                "hint",
+                33,
+                0,
+                None,
+                [],
+            )
+            generate_ggs_root_teacher._write_outputs(output, expected)
+            entry = {
+                "move": "f5",
+                "score": -15,
+                "level": "33",
+                "depth": "33@74%",
+                "time": "000:00:02.000",
+                "nodes": 1,
+                "nps": 1,
+                "method": "hint_level_33",
+            }
+            generate_ggs_root_teacher._append_pending_update(
+                output, GGS_ROOT, "results", entry
+            )
+            resumed = generate_ggs_root_teacher._load_state(
+                generate_ggs_root_teacher._state_path(output), expected
+            )
+            self.assertTrue(generate_ggs_root_teacher._apply_pending_updates(output, resumed))
+            self.assertEqual(entry, resumed["results"][GGS_ROOT])
+            generate_ggs_root_teacher._write_outputs(output, resumed)
+            generate_ggs_root_teacher._clear_pending_updates(output)
+            self.assertFalse(generate_ggs_root_teacher._pending_updates_path(output).exists())
+
     def test_generates_and_resumes_only_with_identical_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

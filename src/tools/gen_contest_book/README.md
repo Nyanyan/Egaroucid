@@ -257,6 +257,13 @@ The new rows remain outside `trained` until a fixed-start color-swapped
 comparison against the same executable with no book has a valid audit and does
 not include a neutral value in its pre-specified confidence intervals.
 
+For a long calculation, use `--checkpoint-every 500`. Each completed position
+is first written and flushed to a small companion file. After 500 positions,
+the generator atomically rewrites the complete output, state, and manifest,
+then removes the companion file. On `--resume`, any companion-file entries are
+replayed before the next search. This avoids rewriting the complete result set
+after every position while retaining completed positions after an interruption.
+
 ## Testing
 
 Start with a small test for one start position. Use one line from `data/records321_14_random_setup` as `<initial board>`.

@@ -2,9 +2,10 @@
 
 Input is an immutable JSON report produced either by ``collect_ggs_roots.py``
 from actual GGS starts or by ``audit_r14_corpus.py`` from the complete standard
-r14 corpus. Every teacher search disables both ordinary and contest books,
-uses one engine process per root, and checkpoints after each completed root.
-The output data rows are accepted directly by ``build_root_table.py
+r14 corpus. Every teacher search disables both ordinary and contest books and
+uses one engine process per root. A durable per-position journal is written
+after each completed root; complete output files are compacted at the selected
+interval. The output data rows are accepted directly by ``build_root_table.py
 --root-results``.
 """
 
@@ -26,8 +27,9 @@ from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
 
 
-TEACHER_SCHEMA = "ggs_root_teacher_state_v9"
+TEACHER_SCHEMA = "ggs_root_teacher_state_v10"
 TEACHER_FORMAT = "# ggs_root_teacher_v1"
+TEACHER_UPDATE_SCHEMA = "ggs_root_teacher_update_v1"
 DEEP_TIEBREAK_LEVEL = 31
 RESULT_RE = re.compile(
     r"^\|\s*(?P<level>[^|]+)\|\s*(?P<depth>[^|]+)\|\s*"
@@ -55,6 +57,81 @@ def _state_path(output: Path) -> Path:
 
 def _manifest_path(output: Path) -> Path:
     return output.with_suffix(output.suffix + ".manifest.json")
+
+
+def _pending_updates_path(output: Path) -> Path:
+    return output.with_suffix(output.suffix + ".pending.jsonl")
+
+
+def _append_pending_update(
+    output: Path,
+    board: str,
+    field: str,
+    entry: dict[str, Any],
+) -> None:
+    if field not in {"results", "rejections"}:
+        raise ValueError(f"invalid pending-update field: {field}")
+    path = _pending_updates_path(output)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "schema": TEACHER_UPDATE_SCHEMA,
+        "board": board,
+        "field": field,
+        "entry": entry,
+    }
+    with path.open("a", encoding="utf-8", newline="\n") as stream:
+        stream.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def _apply_pending_updates(output: Path, state: dict[str, Any]) -> bool:
+    """Replay durable per-position updates not yet compacted into the state."""
+    path = _pending_updates_path(output)
+    if not path.exists():
+        return False
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as error:
+        raise ValueError(f"cannot read pending updates {path}: {error}") from error
+    changed = False
+    expected_roots = set(state["roots"])
+    for line_number, line in enumerate(lines, start=1):
+        if not line:
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"{path}:{line_number}: invalid JSON") from error
+        if (
+            not isinstance(record, dict)
+            or record.get("schema") != TEACHER_UPDATE_SCHEMA
+            or record.get("field") not in {"results", "rejections"}
+            or not isinstance(record.get("board"), str)
+            or not isinstance(record.get("entry"), dict)
+        ):
+            raise ValueError(f"{path}:{line_number}: invalid pending update")
+        board = record["board"]
+        field = record["field"]
+        entry = record["entry"]
+        if board not in expected_roots:
+            raise ValueError(f"{path}:{line_number}: pending update has an unexpected root")
+        other_field = "rejections" if field == "results" else "results"
+        if board in state[other_field]:
+            raise ValueError(f"{path}:{line_number}: root is both accepted and rejected")
+        previous = state[field].get(board)
+        if previous is None:
+            state[field][board] = entry
+            changed = True
+        elif previous != entry:
+            raise ValueError(f"{path}:{line_number}: conflicting pending update")
+    return changed
+
+
+def _clear_pending_updates(output: Path) -> None:
+    path = _pending_updates_path(output)
+    if path.exists():
+        path.unlink()
 
 
 def load_uncovered_roots(coverage_path: Path) -> list[str]:
@@ -348,7 +425,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
         json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     )
     manifest = {
-        "schema": "ggs_root_teacher_manifest_v9",
+        "schema": "ggs_root_teacher_manifest_v10",
         "output": {
             "path": output.resolve().as_posix(),
             "sha256": sha256_file(output),
@@ -397,11 +474,14 @@ def generate_teachers(
     limit: int | None = None,
     cohort_seed: int | None = None,
     excluded_root_files: list[Path] | None = None,
+    checkpoint_every: int = 1,
 ) -> dict[str, int]:
     if not exe.is_file():
         raise FileNotFoundError(f"engine executable not found: {exe}")
     if limit is not None and limit <= 0:
         raise ValueError("limit must be positive")
+    if checkpoint_every <= 0:
+        raise ValueError("checkpoint_every must be positive")
     if fallback_level < 0:
         raise ValueError("fallback_level must not be negative")
     if method not in {"hint", "time_then_hint", "time_then_verify"}:
@@ -439,12 +519,17 @@ def generate_teachers(
         if not state_path.is_file():
             raise FileNotFoundError(f"resume state not found: {state_path}")
         state = _load_state(state_path, expected)
+        if _pending_updates_path(output).exists():
+            _apply_pending_updates(output, state)
+            _write_outputs(output, state)
+            _clear_pending_updates(output)
     else:
         if state_path.exists() or output.exists():
             raise FileExistsError(f"output exists; use --resume or choose a new output: {output}")
         state = expected
         _write_outputs(output, state)
 
+    completed_since_checkpoint = 0
     for board in roots:
         if board in state["results"] or board in state["rejections"]:
             continue
@@ -499,7 +584,12 @@ def generate_teachers(
                             "tiebreak": tiebreak,
                             "deep_tiebreak": deep_tiebreak,
                         }
-                        _write_outputs(output, state)
+                        _append_pending_update(output, board, "rejections", state["rejections"][board])
+                        completed_since_checkpoint += 1
+                        if completed_since_checkpoint >= checkpoint_every:
+                            _write_outputs(output, state)
+                            _clear_pending_updates(output)
+                            completed_since_checkpoint = 0
                         print(
                             f"rejected {len(state['rejections'])} {board}",
                             flush=True,
@@ -520,8 +610,16 @@ def generate_teachers(
             result["verification"] = verification
             result["verification_mode"] = verification_mode
         state["results"][board] = result
-        _write_outputs(output, state)
+        _append_pending_update(output, board, "results", result)
+        completed_since_checkpoint += 1
+        if completed_since_checkpoint >= checkpoint_every:
+            _write_outputs(output, state)
+            _clear_pending_updates(output)
+            completed_since_checkpoint = 0
         print(f"completed {len(state['results'])}/{len(roots)} {board}", flush=True)
+    if completed_since_checkpoint:
+        _write_outputs(output, state)
+        _clear_pending_updates(output)
     return {"completed": len(state["results"]), "requested": len(roots)}
 
 
@@ -552,6 +650,12 @@ def main() -> int:
         default=[],
         help="Teacher rows or a published table whose positions are excluded (repeatable)",
     )
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=1,
+        help="Compact durable per-position updates after this many completed positions",
+    )
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     result = generate_teachers(
@@ -571,6 +675,7 @@ def main() -> int:
         args.limit,
         args.cohort_seed,
         args.exclude_root_results,
+        args.checkpoint_every,
     )
     print(f"teacher roots complete {result['completed']}/{result['requested']}")
     return 0
