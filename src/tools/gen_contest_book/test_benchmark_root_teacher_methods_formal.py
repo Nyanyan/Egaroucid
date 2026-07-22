@@ -93,6 +93,22 @@ class FormalMethodComparisonTest(unittest.TestCase):
                         level=30,
                     )
 
+    def test_saved_console_inputs_use_a_short_path_with_hashes_kept_in_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            executable = root / "Egaroucid_for_Console_clang.exe"
+            executable.write_bytes(b"fixture Console")
+            resources = root / "resources"
+            resources.mkdir()
+            (resources / "eval.egev2").write_bytes(b"fixture evaluation")
+            (resources / "eval_move_ordering_end.egev").write_bytes(b"fixture ordering")
+            output = root / "formal-output"
+            environment = formal._new_execution_environment(output, executable)
+            self.assertEqual((output / "inputs").resolve().as_posix(), environment["directory"])
+            snapshot = formal._validate_and_materialize_environment(output, environment)
+            self.assertTrue(snapshot.is_file())
+            self.assertEqual((output / "inputs" / executable.name).resolve(), snapshot)
+
     def test_seed_derivation_plan_size_and_reversed_repetition_order(self) -> None:
         boards = [f"board-{index:03d}" for index in range(600)]
         main_seeds = formal._derive_engine_seeds("a" * 64)

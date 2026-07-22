@@ -230,7 +230,10 @@ def _new_execution_environment(output_dir: Path, exe: Path) -> dict[str, Any]:
             }
         )
     identifier = _environment_identifier(source_exe, source_resources)
-    directory = (output_dir / "saved_console_inputs" / f"console-{identifier}").resolve()
+    # The content identifier is retained in immutable state, not expanded into
+    # the directory name.  On Windows the former full-SHA directory name made
+    # the temporary executable-copy path exceed the usual path-length limit.
+    directory = (output_dir / "inputs").resolve()
     resources: list[dict[str, Any]] = []
     for item in source_resources:
         relative = Path(str(item["relative_path"]))
@@ -270,7 +273,7 @@ def _validate_and_materialize_environment(output_dir: Path, environment: object)
     identifier = environment.get("identifier")
     if not isinstance(identifier, str) or re.fullmatch(r"[0-9a-f]{64}", identifier) is None:
         raise ValueError("saved Console environment has an invalid identifier")
-    expected_root = (output_dir / "saved_console_inputs" / f"console-{identifier}").resolve()
+    expected_root = (output_dir / "inputs").resolve()
     if Path(str(environment.get("directory", ""))).resolve() != expected_root:
         raise ValueError("saved Console environment is outside the expected directory")
     executable = environment.get("executable")
