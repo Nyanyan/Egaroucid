@@ -762,7 +762,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             destination = root / "prepared"
             result = prepare_root_table_match.prepare_match_input(
-                teacher, destination, minimum_processed=1
+                teacher, destination, minimum_processed=1, minimum_accepted=1
             )
             self.assertEqual(1, result["accepted"])
             self.assertEqual(1, result["table_entries"])
@@ -777,15 +777,33 @@ class GgsRootTeacherTests(unittest.TestCase):
                 f"{GGS_ROOT}\n",
                 (destination / "openings" / "roots.txt").read_text(encoding="utf-8"),
             )
+            prepared = json.loads(
+                (destination / "prepared_match_input.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual("prepared_root_table_match_input_v2", prepared["schema"])
+            self.assertEqual(
+                build_root_table.sha256_file(destination / "teacher_manifest.json"),
+                prepared["teacher_manifest"]["sha256"],
+            )
+            self.assertEqual(1, prepared["selection"]["minimum_accepted"])
             report = (destination / "README.md").read_text(encoding="utf-8")
             self.assertIn("受理局面", report)
             self.assertIn("Every accepted position", report)
             too_small = root / "too_small"
             with self.assertRaisesRegex(ValueError, "below required 2"):
                 prepare_root_table_match.prepare_match_input(
-                    teacher, too_small, minimum_processed=2
+                    teacher, too_small, minimum_processed=2, minimum_accepted=1
                 )
             self.assertFalse(too_small.exists())
+            too_few_accepted = root / "too_few_accepted"
+            with self.assertRaisesRegex(ValueError, "accepted 1, below required 2"):
+                prepare_root_table_match.prepare_match_input(
+                    teacher,
+                    too_few_accepted,
+                    minimum_processed=1,
+                    minimum_accepted=2,
+                )
+            self.assertFalse(too_few_accepted.exists())
 
     def test_audits_color_swapped_root_table_match(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

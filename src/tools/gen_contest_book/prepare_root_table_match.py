@@ -26,7 +26,7 @@ from build_root_table import (
 from othello import normalize_board_text
 
 
-PREPARED_SCHEMA = "prepared_root_table_match_input_v1"
+PREPARED_SCHEMA = "prepared_root_table_match_input_v2"
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
@@ -55,14 +55,15 @@ def _manifest_path(teacher_results: Path) -> Path:
     return teacher_results.with_suffix(teacher_results.suffix + ".manifest.json")
 
 
-def _load_manifest(path: Path) -> dict[str, Any]:
+def _load_manifest_bytes(path: Path) -> tuple[bytes, dict[str, Any]]:
     try:
-        manifest = json.loads(path.read_text(encoding="utf-8"))
+        content = path.read_bytes()
+        manifest = json.loads(content.decode("utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ValueError(f"cannot read teacher manifest {path}: {error}") from error
     if not isinstance(manifest, dict) or not isinstance(manifest.get("output"), dict):
         raise ValueError(f"{path}: invalid teacher manifest")
-    return manifest
+    return content, manifest
 
 
 def _accepted_start_boards(teacher_results: Path) -> list[str]:
@@ -81,9 +82,11 @@ def _accepted_start_boards(teacher_results: Path) -> list[str]:
     return boards
 
 
-def _read_coherent_teacher_results(teacher_results: Path) -> tuple[bytes, str, dict[str, Any]]:
+def _read_coherent_teacher_results(
+    teacher_results: Path,
+) -> tuple[bytes, str, bytes, str, dict[str, Any]]:
     manifest_path = _manifest_path(teacher_results)
-    manifest = _load_manifest(manifest_path)
+    manifest_content, manifest = _load_manifest_bytes(manifest_path)
     try:
         content = teacher_results.read_bytes()
     except OSError as error:
@@ -96,20 +99,35 @@ def _read_coherent_teacher_results(teacher_results: Path) -> tuple[bytes, str, d
         )
     if sha256_file(teacher_results) != content_sha256:
         raise ValueError(f"{teacher_results}: changed while it was being copied")
-    return content, content_sha256, manifest
+    return (
+        content,
+        content_sha256,
+        manifest_content,
+        _sha256_bytes(manifest_content),
+        manifest,
+    )
 
 
 def prepare_match_input(
     teacher_results: Path,
     output_dir: Path,
     minimum_processed: int,
+    minimum_accepted: int,
 ) -> dict[str, int | str]:
     if minimum_processed < 1:
         raise ValueError("minimum_processed must be positive")
+    if minimum_accepted < 1:
+        raise ValueError("minimum_accepted must be positive")
     if output_dir.exists():
         raise FileExistsError(f"output directory already exists: {output_dir}")
 
-    teacher_content, teacher_sha256, teacher_manifest = _read_coherent_teacher_results(teacher_results)
+    (
+        teacher_content,
+        teacher_sha256,
+        teacher_manifest_content,
+        teacher_manifest_sha256,
+        teacher_manifest,
+    ) = _read_coherent_teacher_results(teacher_results)
     output_metadata = teacher_manifest["output"]
     processed = output_metadata.get("processed")
     completed = output_metadata.get("completed")
@@ -122,11 +140,19 @@ def prepare_match_input(
         )
     if processed != completed + rejected:
         raise ValueError(f"{_manifest_path(teacher_results)}: inconsistent output counts")
+    if completed < minimum_accepted:
+        raise ValueError(
+            f"{teacher_results}: accepted {completed}, below required {minimum_accepted}"
+        )
 
     snapshot = output_dir / "teacher_rows.txt"
     _atomic_write_bytes(snapshot, teacher_content)
     if sha256_file(snapshot) != teacher_sha256:
         raise RuntimeError(f"{snapshot}: copied SHA-256 mismatch")
+    manifest_snapshot = output_dir / "teacher_manifest.json"
+    _atomic_write_bytes(manifest_snapshot, teacher_manifest_content)
+    if sha256_file(manifest_snapshot) != teacher_manifest_sha256:
+        raise RuntimeError(f"{manifest_snapshot}: copied SHA-256 mismatch")
 
     entries = load_root_rows(snapshot, 14)
     boards = _accepted_start_boards(snapshot)
@@ -146,8 +172,6 @@ def prepare_match_input(
     if table_validation["entries"] != completed:
         raise RuntimeError("built table has an unexpected accepted-root count")
 
-    source_manifest_path = _manifest_path(teacher_results)
-    source_manifest_sha256 = sha256_file(source_manifest_path)
     prepared = {
         "schema": PREPARED_SCHEMA,
         "teacher_results": {
@@ -156,8 +180,10 @@ def prepare_match_input(
             "processed": processed,
             "accepted": completed,
             "rejected": rejected,
-            "source_manifest_path": source_manifest_path.resolve().as_posix(),
-            "source_manifest_sha256": source_manifest_sha256,
+        },
+        "teacher_manifest": {
+            "path": manifest_snapshot.resolve().as_posix(),
+            "sha256": sha256_file(manifest_snapshot),
         },
         "snapshot": {
             "path": snapshot.resolve().as_posix(),
@@ -173,6 +199,11 @@ def prepare_match_input(
             "sha256": str(table_result["output_sha256"]),
             "entries": int(table_result["entries"]),
             "manifest_sha256": sha256_file(table.with_suffix(table.suffix + ".manifest.json")),
+        },
+        "selection": {
+            "minimum_processed": minimum_processed,
+            "minimum_accepted": minimum_accepted,
+            "all_accepted_positions_used": True,
         },
     }
     _atomic_write_text(
@@ -208,11 +239,13 @@ def main() -> int:
     parser.add_argument("--teacher-results", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--minimum-processed", type=int, default=500)
+    parser.add_argument("--minimum-accepted", type=int, default=500)
     args = parser.parse_args()
     result = prepare_match_input(
         args.teacher_results,
         args.output_dir,
         args.minimum_processed,
+        args.minimum_accepted,
     )
     print(
         f"prepared processed={result['processed']} accepted={result['accepted']} "
