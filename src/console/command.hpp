@@ -695,7 +695,11 @@ void check_command(Board_info *board, State *state, Options *options) {
             redo(board, calc_remain(arg));
             break;
         case CMD_ID_GO:
-            go(board, options, state, start_time);
+            // The side that searches owns only the calculation after its
+            // command arrives.  In particular, do not charge it for time
+            // spent waiting for an interactive user or an external match
+            // manager to send `go`.
+            go(board, options, state, tim());
             break;
         case CMD_ID_SETBOARD:
             setboard(board, options, state, arg);
