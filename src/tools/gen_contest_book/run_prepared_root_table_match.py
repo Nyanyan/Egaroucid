@@ -47,13 +47,51 @@ from othello import Board, coord_to_index, normalize_board_text
 
 
 PREPARED_INPUT_SCHEMA = "prepared_root_table_match_input_v5"
-METADATA_SCHEMA_VERSION = 3
+METADATA_SCHEMA_VERSION = 4
+MATCH_PROTOCOL_SCHEMA = "root_table_match_protocol_v2"
 MATCH_OPENING_SEED = 624
 ENGINE_RANDOM_SEED = 620
 GAME_TIME_SECONDS = 60
 GAME_THREADS = 8
 GAME_HASH_LEVEL = 29
 GAME_WORKERS = 1
+INITIAL_REMAINING_MSEC = GAME_TIME_SECONDS * 1000
+
+# These are the source files whose contents define the formal local-match
+# procedure.  The saved executable remains the authoritative program that
+# played a game; this list records the runner, its direct Python helpers, and
+# the Console source that implements the protocol-specific command and log
+# lines.  The metadata records every path relative to the clean worktree root
+# together with its SHA-256.
+RUNNER_DEPENDENT_SOURCE_FILES = (
+    "src/Egaroucid_for_Console.cpp",
+    "src/engine/setting.hpp",
+    "src/console/command.hpp",
+    "src/console/command_definition.hpp",
+    "src/console/commandline_option.hpp",
+    "src/console/commandline_option_definition.hpp",
+    "src/console/console_common.hpp",
+    "src/console/console_all.hpp",
+    "src/console/option.hpp",
+    "src/console/print.hpp",
+    "src/console/state.hpp",
+    "src/tools/gen_contest_book/audit_root_table_matches.py",
+    "src/tools/gen_contest_book/build_book.py",
+    "src/tools/gen_contest_book/othello.py",
+    "src/tools/gen_contest_book/run_prepared_root_table_match.py",
+)
+
+EXPECTED_RANDOM_SEED_LOG_LINE = f"random seed = {ENGINE_RANDOM_SEED}"
+EXPECTED_GGS_TOURNAMENT_BUILD_LOG_LINE = "ggs tournament build = true"
+
+# The tournament build uses CRC32C for board-table indexing.  It still tries
+# to load this legacy initialization file before falling back to a seeded
+# random array, so the two lines are expected for every saved environment
+# that intentionally contains only Console and its evaluation files.
+EXPECTED_HASH29_INITIALIZATION_ERROR_LINES = (
+    "[ERROR] can't open hash29.eghs",
+    "[ERROR] can't get hash. you can ignore this error",
+)
 
 MOVE_RE = re.compile(r"([a-h][1-8])$", re.IGNORECASE)
 CLOCK_RE = re.compile(
@@ -61,6 +99,10 @@ CLOCK_RE = re.compile(
     r"(\d+):(\d+):(\d+(?:\.\d+)?)\s*/\s*"
     r"(\d+):(\d+):(\d+(?:\.\d+)?)",
     re.IGNORECASE,
+)
+SETTIMEMS_COMMAND_RE = re.compile(
+    r"^(?:>\s*)?received cmd: settimems (?P<color>[XO]) (?P<remaining_msec>\d+)\r?$",
+    re.MULTILINE,
 )
 
 
@@ -113,6 +155,48 @@ def _file_snapshot(path: Path) -> dict[str, Any]:
         "bytes": path.stat().st_size,
         "sha256": sha256_file(path),
     }
+
+
+def ordered_starting_positions_path_for(output: Path) -> Path:
+    """Return the immutable sidecar containing the actual game-board order."""
+    return output.with_suffix(output.suffix + ".openings.txt")
+
+
+def _ordered_starting_positions_text(boards: list[str]) -> str:
+    return "".join(board + "\n" for board in boards)
+
+
+def ensure_immutable_starting_positions(
+    output: Path,
+    boards: list[str],
+) -> dict[str, Any]:
+    """Write once, then verify, the exact transformed starting-board order.
+
+    The prepared input stores the pool.  This separate sidecar stores the
+    order and the rotation/reflection that the runner will actually use.  A
+    resume never rewrites it, so an interrupted run cannot silently switch to
+    a different board sequence.
+    """
+    path = ordered_starting_positions_path_for(output).resolve()
+    expected = _ordered_starting_positions_text(boards)
+    if path.exists():
+        if not path.is_file():
+            raise RuntimeError(f"starting-position sidecar is not a file: {path}")
+        try:
+            actual = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise RuntimeError(f"cannot read starting-position sidecar {path}: {error}") from error
+        if actual != expected:
+            raise RuntimeError(
+                "refusing to use a different immutable starting-position order: "
+                f"{path}"
+            )
+    else:
+        _atomic_write_text(path, expected)
+    snapshot = _file_snapshot(path)
+    if snapshot["sha256"] != _sha256_lines(boards):
+        raise RuntimeError("starting-position sidecar SHA-256 does not match its board lines")
+    return snapshot
 
 
 def _directory_snapshot(path: Path) -> dict[str, Any]:
@@ -368,30 +452,67 @@ def engine_command(
 
 
 def _git_provenance() -> dict[str, Any]:
-    root = Path(__file__).resolve().parents[3]
+    source_root = Path(__file__).resolve().parents[3]
 
     def run_git(*arguments: str) -> subprocess.CompletedProcess[bytes]:
         return subprocess.run(
             ["git", *arguments],
-            cwd=root,
+            cwd=source_root,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
         )
 
+    root_result = run_git("rev-parse", "--show-toplevel")
     commit_result = run_git("rev-parse", "HEAD")
     status_result = run_git("status", "--porcelain", "--untracked-files=no")
-    commit = (
-        commit_result.stdout.decode("ascii", errors="replace").strip()
-        if commit_result.returncode == 0
-        else None
-    )
-    status = status_result.stdout if status_result.returncode == 0 else b""
+    if root_result.returncode != 0 or commit_result.returncode != 0 or status_result.returncode != 0:
+        raise RuntimeError("cannot obtain Git provenance for the formal local match")
+    root = Path(root_result.stdout.decode("utf-8", errors="replace").strip()).resolve()
+    if root != source_root:
+        raise RuntimeError(
+            "the runner source is not located at the Git worktree root reported by Git"
+        )
+    commit = commit_result.stdout.decode("ascii", errors="replace").strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise RuntimeError("Git did not return a full commit SHA-1")
+    status = status_result.stdout
     return {
+        "repository_root": str(root),
         "commit": commit,
         "tracked_worktree_dirty": bool(status),
         "tracked_status_sha256": hashlib.sha256(status).hexdigest(),
     }
+
+
+def _runner_source_snapshots(repository_root: Path) -> list[dict[str, Any]]:
+    """Fingerprint the exact source files that define this match protocol."""
+    result: list[dict[str, Any]] = []
+    for relative_text in RUNNER_DEPENDENT_SOURCE_FILES:
+        relative = Path(relative_text)
+        path = (repository_root / relative).resolve()
+        try:
+            path.relative_to(repository_root)
+        except ValueError as error:
+            raise RuntimeError(f"runner source path escapes worktree: {relative_text}") from error
+        snapshot = _file_snapshot(path)
+        snapshot["relative_path"] = relative.as_posix()
+        result.append(snapshot)
+    return result
+
+
+def _fixed_run_provenance() -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Require a clean tracked worktree before writing formal game results."""
+    provenance = _git_provenance()
+    if provenance.get("tracked_worktree_dirty") is not False:
+        raise RuntimeError(
+            "refusing to run formal matches from a tracked-dirty worktree; "
+            "commit or revert the tracked changes first"
+        )
+    root_text = provenance.get("repository_root")
+    if not isinstance(root_text, str):
+        raise RuntimeError("Git provenance has no repository root")
+    return provenance, _runner_source_snapshots(Path(root_text).resolve())
 
 
 def build_run_spec(
@@ -403,6 +524,8 @@ def build_run_spec(
     """Create the immutable metadata that the match auditor consumes."""
     if move_timeout <= 0:
         raise ValueError("move timeout must be positive")
+    git_provenance, runner_sources = _fixed_run_provenance()
+    ordered_starting_positions = ensure_immutable_starting_positions(output, boards)
     table_dir = prepared.table.parent.resolve()
     selected_canonical = sorted(_d4_representative(board) for board in boards)
     pool_canonical = sorted(_d4_representative(board) for board in prepared.openings)
@@ -413,7 +536,23 @@ def build_run_spec(
             "python_version": sys.version,
             "platform": sys.platform,
         },
-        "git": _git_provenance(),
+        "git": git_provenance,
+        "runner_protocol": {
+            "schema": MATCH_PROTOCOL_SCHEMA,
+            "clean_tracked_worktree_required": True,
+            "source_files": runner_sources,
+            "external_clock": {
+                "command": "settimems",
+                "initial_remaining_msec": INITIAL_REMAINING_MSEC,
+                "measurement": "ceil(monotonic go wall time in milliseconds)",
+                "only_go_commands_decrement_time": True,
+            },
+            "noise_log_lines": {
+                "random_seed": EXPECTED_RANDOM_SEED_LOG_LINE,
+                "ggs_tournament_build": EXPECTED_GGS_TOURNAMENT_BUILD_LOG_LINE,
+            },
+            "process_launch_order": "candidate-first when (match id + game id) is even",
+        },
         "harness": _file_snapshot(Path(__file__)),
         "argv": list(sys.argv[1:]),
         "parsed_args": {
@@ -436,6 +575,7 @@ def build_run_spec(
             "candidate_extra": "",
             "baseline_extra": "",
             "matches": len(boards),
+            "external_clock_control": True,
         },
         "engine_commands": {
             "candidate": engine_command(prepared, table_enabled=True),
@@ -449,6 +589,7 @@ def build_run_spec(
             "candidate_contestbook": _directory_snapshot(table_dir),
             "baseline_contestbook": None,
             "prepared_input": _file_snapshot(prepared.input_path),
+            "ordered_starting_positions": ordered_starting_positions,
         },
         "openings": {
             "raw_count": len(pool_canonical),
@@ -457,6 +598,7 @@ def build_run_spec(
             "canonical_pool_sha256": _sha256_lines(pool_canonical),
             "selected_count": len(boards),
             "ordered_sha256": _sha256_lines(boards),
+            "ordered_file": ordered_starting_positions,
             "d4_canonical_set_sha256": _sha256_lines(selected_canonical),
         },
     }
@@ -519,6 +661,50 @@ def _send(proc: subprocess.Popen[bytes], command: str) -> None:
     assert proc.stdin is not None
     proc.stdin.write((command + "\n").encode("ascii"))
     proc.stdin.flush()
+
+
+def _send_commands(proc: subprocess.Popen[bytes], commands: list[str]) -> None:
+    """Write an ordered command batch without an idle interval between lines."""
+    assert proc.stdin is not None
+    proc.stdin.write("".join(command + "\n" for command in commands).encode("ascii"))
+    proc.stdin.flush()
+
+
+def _set_external_clocks(proc: subprocess.Popen[bytes], remaining_msec: dict[str, int]) -> None:
+    _send_commands(
+        proc,
+        [
+            f"settimems X {remaining_msec['X']}",
+            f"settimems O {remaining_msec['O']}",
+        ],
+    )
+
+
+def _set_external_clocks_and_go(
+    proc: subprocess.Popen[bytes],
+    remaining_msec: dict[str, int],
+) -> None:
+    """Queue both exact clocks and ``go`` together for the active Console.
+
+    Console measures a command from the time it starts waiting for that input.
+    Keeping these three lines in one pipe write means the active process has
+    already received ``go`` when it finishes the two clock assignments.  The
+    separate game-manager clock records the elapsed wall time only from the
+    ``go`` write onward.
+    """
+    _send_commands(
+        proc,
+        [
+            f"settimems X {remaining_msec['X']}",
+            f"settimems O {remaining_msec['O']}",
+            "go",
+        ],
+    )
+
+
+def _ceil_elapsed_msec(started_ns: int) -> int:
+    elapsed_ns = time.monotonic_ns() - started_ns
+    return max(1, (elapsed_ns + 999_999) // 1_000_000)
 
 
 def _read_move(proc: subprocess.Popen[bytes], timeout_seconds: float) -> str:
@@ -595,7 +781,24 @@ def _audit_engine_log(
         black_msec = _clock_text_to_msec(*match.groups()[0:3])
         white_msec = _clock_text_to_msec(*match.groups()[3:6])
         own_clock_samples.append(black_msec if own_color == "X" else white_msec)
-    error_lines = [line for line in text.splitlines() if "[ERROR]" in line]
+    error_lines = [line.strip() for line in text.splitlines() if "[ERROR]" in line]
+    expected_hash_error_lines = [
+        line
+        for line in error_lines
+        if line in EXPECTED_HASH29_INITIALIZATION_ERROR_LINES
+    ]
+    unexpected_error_lines = [
+        line
+        for line in error_lines
+        if line not in EXPECTED_HASH29_INITIALIZATION_ERROR_LINES
+    ]
+    settimems_commands = [
+        {
+            "color": match.group("color"),
+            "remaining_msec": int(match.group("remaining_msec")),
+        }
+        for match in SETTIMEMS_COMMAND_RE.finditer(text)
+    ]
     total_go_msec = sum(go_durations_msec)
     harness_overrun_msec = max(0, total_go_msec - GAME_TIME_SECONDS * 1000)
     zero_clock_seen = any(value <= 0 for value in own_clock_samples)
@@ -605,7 +808,7 @@ def _audit_engine_log(
         or zero_clock_seen
         or harness_overrun_msec > 1000
         or fatal_count
-        or error_lines
+        or unexpected_error_lines
     )
     return {
         "log": str(log_path.resolve()),
@@ -626,8 +829,13 @@ def _audit_engine_log(
         "terminated_search_markers": len(
             re.findall(r"\bterminated(?:\s+\d+)?\s*(?:ms)?", text, re.IGNORECASE)
         ),
-        "expected_hash_error_lines": 0,
-        "unexpected_error_lines": error_lines[:20],
+        "expected_hash_error_lines": len(expected_hash_error_lines),
+        "unexpected_error_lines": unexpected_error_lines[:20],
+        "random_seed_log_lines": text.splitlines().count(EXPECTED_RANDOM_SEED_LOG_LINE),
+        "ggs_tournament_build_log_lines": text.splitlines().count(
+            EXPECTED_GGS_TOURNAMENT_BUILD_LOG_LINE
+        ),
+        "settimems_commands": settimems_commands,
         "fatal_markers": fatal_count,
         "timeout_suspected": timeout_suspected,
     }
@@ -657,6 +865,17 @@ def _other_color(color: str) -> str:
     return "O" if color == "X" else "X"
 
 
+def process_launch_order(match_id: int, game_id: int) -> list[str]:
+    """Cancel first-process effects within each two-game match.
+
+    The two game identifiers have opposite parity, so every match launches the
+    table-using process first once and the no-book process first once.
+    """
+    if (match_id + game_id) % 2 == 0:
+        return ["candidate", "baseline"]
+    return ["baseline", "candidate"]
+
+
 def _close_process(proc: subprocess.Popen[bytes]) -> int | None:
     if proc.poll() is None:
         try:
@@ -682,15 +901,17 @@ def play_game(
         "candidate": engine_command(prepared, table_enabled=True),
         "baseline": engine_command(prepared, table_enabled=False),
     }
-    # Alternate the process launch order by match.  Both programs are the same
-    # saved executable; this prevents a permanent first-launch advantage.
-    role_order = ["candidate", "baseline"] if match_id % 2 == 0 else ["baseline", "candidate"]
+    # The two games of a match have opposite game-id parity, so this order is
+    # intentionally reversed once inside every match.
+    role_order = process_launch_order(match_id, game_id)
     log_paths: dict[str, Path] = {}
     log_files: dict[str, Any] = {}
     processes: dict[str, subprocess.Popen[bytes]] = {}
     exit_codes: dict[str, int | None] = {"candidate": None, "baseline": None}
     startup_wall_msec: dict[str, int | None] = {"candidate": None, "baseline": None}
     go_durations_msec: dict[str, list[int]] = {"candidate": [], "baseline": []}
+    remaining_msec: dict[str, int] = {"X": INITIAL_REMAINING_MSEC, "O": INITIAL_REMAINING_MSEC}
+    external_clock_records: list[dict[str, Any]] = []
     game_result: dict[str, Any] | None = None
     started = time.monotonic()
     try:
@@ -726,15 +947,42 @@ def play_game(
                 continue
             active = "candidate" if side_to_move == table_color else "baseline"
             passive = "baseline" if active == "candidate" else "candidate"
-            move_started = time.monotonic()
-            _send(processes[active], "go")
-            move = _read_move(processes[active], move_timeout)
-            go_durations_msec[active].append(round((time.monotonic() - move_started) * 1000))
+            before_msec = dict(remaining_msec)
+            # Both programs receive the same X/O clock state.  Queue the
+            # active program's assignments and go in one write so its next
+            # command begins without an input-wait interval.
+            _set_external_clocks(processes[passive], before_msec)
+            go_started_ns = time.monotonic_ns()
+            _set_external_clocks_and_go(processes[active], before_msec)
+            read_timeout = min(move_timeout, before_msec[side_to_move] / 1000.0 + 0.250)
+            move = _read_move(processes[active], read_timeout)
+            go_wall_msec = _ceil_elapsed_msec(go_started_ns)
+            if go_wall_msec >= before_msec[side_to_move]:
+                raise TimeoutError(
+                    "external game clock expired for "
+                    f"{side_to_move}: go used {go_wall_msec} ms with "
+                    f"{before_msec[side_to_move]} ms remaining"
+                )
+            after_msec = dict(before_msec)
+            after_msec[side_to_move] -= go_wall_msec
+            go_durations_msec[active].append(go_wall_msec)
             try:
                 position.play(coord_to_index(move))
             except ValueError as error:
                 raise RuntimeError(f"illegal move {move} after {transcript} on {board}") from error
             transcript += move
+            external_clock_records.append(
+                {
+                    "move_number": len(external_clock_records) + 1,
+                    "side": side_to_move,
+                    "role": active,
+                    "move": move,
+                    "before_remaining_msec": before_msec,
+                    "go_wall_msec": go_wall_msec,
+                    "after_remaining_msec": after_msec,
+                }
+            )
+            remaining_msec = after_msec
             _send(processes[passive], "play " + move)
             side_to_move = _other_color(side_to_move)
 
@@ -746,6 +994,11 @@ def play_game(
             "candidate_disc_diff": _disc_difference(black_discs, white_discs, table_color),
             "final_discs": [black_discs, white_discs],
             "record": transcript,
+            "external_clock": {
+                "initial_remaining_msec": {"X": INITIAL_REMAINING_MSEC, "O": INITIAL_REMAINING_MSEC},
+                "records": external_clock_records,
+                "final_remaining_msec": remaining_msec,
+            },
             "elapsed_seconds": round(time.monotonic() - started, 3),
         }
     finally:
@@ -800,6 +1053,9 @@ def play_match(
         for game_id, table_color in game_specs
     ]
     games.sort(key=lambda game: int(game["game"]))
+    launch_orders = {tuple(game["process_launch_order"]) for game in games}
+    if launch_orders != {("candidate", "baseline"), ("baseline", "candidate")}:
+        raise RuntimeError(f"match {match_id} did not cancel process launch order")
     margin = sum(int(game["candidate_disc_diff"]) for game in games)
     return {
         "match": match_id,
@@ -830,6 +1086,18 @@ def validate_resume_result(result: object, boards: list[str], seen: set[int]) ->
         raise RuntimeError(f"resumed match {match_id} is not a table-side X/O color swap")
     if {game.get("game") for game in games if isinstance(game, dict)} != {0, 1}:
         raise RuntimeError(f"resumed match {match_id} does not contain game identifiers 0 and 1")
+    for game in games:
+        assert isinstance(game, dict)
+        game_id = game["game"]
+        if game.get("process_launch_order") != process_launch_order(match_id, game_id):
+            raise RuntimeError(f"resumed match {match_id} has an invalid process launch order")
+        clock = game.get("external_clock")
+        if not isinstance(clock, dict) or not isinstance(clock.get("records"), list):
+            raise RuntimeError(f"resumed match {match_id} lacks external-clock records")
+        if clock.get("initial_remaining_msec") != {"X": INITIAL_REMAINING_MSEC, "O": INITIAL_REMAINING_MSEC}:
+            raise RuntimeError(f"resumed match {match_id} has an invalid external-clock initial state")
+        if not isinstance(game.get("record"), str) or len(clock["records"]) != len(game["record"]) // 2:
+            raise RuntimeError(f"resumed match {match_id} external-clock count does not match moves")
     differences = [game.get("candidate_disc_diff") for game in games if isinstance(game, dict)]
     if not all(isinstance(value, int) and not isinstance(value, bool) for value in differences):
         raise RuntimeError(f"resumed match {match_id} has an invalid table-side disc difference")

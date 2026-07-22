@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import random
 import subprocess
 import sys
@@ -1069,6 +1070,22 @@ class GgsRootTeacherTests(unittest.TestCase):
             binary_sha256 = build_root_table.sha256_file(engine)
             harness = root / "run_root_table_matches.py"
             harness.write_text("# fixed runner\n", encoding="utf-8", newline="\n")
+            protocol_root = root / "protocol_worktree"
+            protocol_sources: list[dict[str, object]] = []
+            for relative in audit_root_table_matches.RUNNER_DEPENDENT_SOURCE_FILES:
+                source = protocol_root / relative
+                source.parent.mkdir(parents=True, exist_ok=True)
+                source.write_text(f"// {relative}\n", encoding="utf-8", newline="\n")
+                protocol_sources.append(
+                    {
+                        "path": source.resolve().as_posix(),
+                        "kind": "file",
+                        "files": 1,
+                        "bytes": source.stat().st_size,
+                        "sha256": build_root_table.sha256_file(source),
+                        "relative_path": relative,
+                    }
+                )
             teacher = root / "teacher_rows.txt"
             teacher.write_text(
                 "# ggs_root_teacher_v1\n"
@@ -1118,6 +1135,12 @@ class GgsRootTeacherTests(unittest.TestCase):
                 return record
 
             record = complete_record(expected_move)
+            hash_initialization_log = (
+                "[ERROR] can't open hash29.eghs\n"
+                "[ERROR] can't get hash. you can ignore this error\n"
+                "random seed = 620\n"
+                "ggs tournament build = true\n"
+            )
 
             def replayed_game(color: str, game_id: int) -> dict[str, object]:
                 replay, replay_failures = audit_root_table_matches._replay_game(
@@ -1131,17 +1154,65 @@ class GgsRootTeacherTests(unittest.TestCase):
                 )
                 self.assertTrue(replay)
                 self.assertTrue(replay_failures)
+                remaining = {"X": 60000, "O": 60000}
+                clock_records: list[dict[str, object]] = []
+                for move_number, (side, move) in enumerate(
+                    zip(replay["move_sides"], (record[offset:offset + 2] for offset in range(0, len(record), 2))),
+                    start=1,
+                ):
+                    before = dict(remaining)
+                    after = dict(before)
+                    after[side] -= 1
+                    clock_records.append(
+                        {
+                            "move_number": move_number,
+                            "side": side,
+                            "role": "candidate" if color == side else "baseline",
+                            "move": move,
+                            "before_remaining_msec": before,
+                            "go_wall_msec": 1,
+                            "after_remaining_msec": after,
+                        }
+                    )
+                    remaining = after
                 return {
                     "game": game_id,
                     "candidate_color": color,
+                    "process_launch_order": (
+                        ["candidate", "baseline"]
+                        if game_id == 0
+                        else ["baseline", "candidate"]
+                    ),
                     "candidate_disc_diff": replay["candidate_difference"],
                     "final_discs": replay["final_discs"],
                     "record": record,
+                    "external_clock": {
+                        "initial_remaining_msec": {"X": 60000, "O": 60000},
+                        "records": clock_records,
+                        "final_remaining_msec": remaining,
+                    },
                 }
+
+            def clock_log(game: dict[str, object]) -> str:
+                clock = game["external_clock"]
+                self.assertIsInstance(clock, dict)
+                lines: list[str] = []
+                for entry in clock["records"]:
+                    self.assertIsInstance(entry, dict)
+                    before = entry["before_remaining_msec"]
+                    self.assertIsInstance(before, dict)
+                    lines.append(f"received cmd: settimems X {before['X']}\n")
+                    lines.append(f"received cmd: settimems O {before['O']}\n")
+                return "".join(lines)
+
+            first_game = replayed_game("X", 0)
+            second_game = replayed_game("O", 1)
 
             table_log_first = root / "table_first.log"
             table_log_first.write_text(
-                "contest root table loaded 1 roots\n"
+                hash_initialization_log
+                + clock_log(first_game)
+                + "contest root table loaded 1 roots\n"
                 f"contest root table selected {expected_move} value -15 roots 1 "
                 f"{canonicalize_board_key(played_board)[0]}\n"
                 f"level Book depth - {expected_move} -15 elapsed 000:00:00.000 nodes 0 nps 0\n",
@@ -1150,14 +1221,29 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             table_log_second = root / "table_second.log"
             table_log_second.write_text(
-                "contest root table loaded 1 roots\n", encoding="utf-8", newline="\n"
+                hash_initialization_log + clock_log(second_game) + "contest root table loaded 1 roots\n",
+                encoding="utf-8",
+                newline="\n",
             )
             no_book_first = root / "no_book_first.log"
-            no_book_first.write_text("", encoding="utf-8", newline="\n")
+            no_book_first.write_text(
+                hash_initialization_log + clock_log(first_game),
+                encoding="utf-8",
+                newline="\n",
+            )
             no_book_second = root / "no_book_second.log"
-            no_book_second.write_text("", encoding="utf-8", newline="\n")
+            no_book_second.write_text(
+                hash_initialization_log + clock_log(second_game),
+                encoding="utf-8",
+                newline="\n",
+            )
 
             def engine_audit(path: Path) -> dict[str, object]:
+                content = path.read_text(encoding="utf-8")
+                settimems = [
+                    {"color": match.group("color"), "remaining_msec": int(match.group("remaining_msec"))}
+                    for match in audit_root_table_matches.SETTIMEMS_COMMAND_RE.finditer(content)
+                ]
                 return {
                     "log": path.resolve().as_posix(),
                     "log_sha256": build_root_table.sha256_file(path),
@@ -1165,12 +1251,14 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "timeout_suspected": False,
                     "zero_clock_seen": False,
                     "harness_clock_overrun_msec": 0,
-                "unexpected_error_lines": [],
-            }
+                    "expected_hash_error_lines": 2,
+                    "unexpected_error_lines": [],
+                    "random_seed_log_lines": 1,
+                    "ggs_tournament_build_log_lines": 1,
+                    "settimems_commands": settimems,
+                }
 
             results = root / "matches.jsonl"
-            first_game = replayed_game("X", 0)
-            second_game = replayed_game("O", 1)
             first_game["engine_audit"] = {
                 "candidate": engine_audit(table_log_first),
                 "baseline": engine_audit(no_book_first),
@@ -1188,6 +1276,15 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "games": [first_game, second_game],
             }
             results.write_text(json.dumps(row) + "\n", encoding="utf-8", newline="\n")
+            ordered_positions = results.with_suffix(results.suffix + ".openings.txt")
+            ordered_positions.write_text(played_board + "\n", encoding="utf-8", newline="\n")
+            ordered_positions_snapshot = {
+                "path": ordered_positions.resolve().as_posix(),
+                "kind": "file",
+                "files": 1,
+                "bytes": ordered_positions.stat().st_size,
+                "sha256": build_root_table.sha256_file(ordered_positions),
+            }
             common_command = [
                 str(engine.resolve()),
                 "-quiet",
@@ -1213,6 +1310,29 @@ class GgsRootTeacherTests(unittest.TestCase):
                 for board in [GGS_ROOT]
             )
             run_spec = {
+                "schema_version": audit_root_table_matches.METADATA_SCHEMA_VERSION,
+                "git": {
+                    "repository_root": protocol_root.resolve().as_posix(),
+                    "commit": "a" * 40,
+                    "tracked_worktree_dirty": False,
+                    "tracked_status_sha256": hashlib.sha256(b"").hexdigest(),
+                },
+                "runner_protocol": {
+                    "schema": audit_root_table_matches.MATCH_PROTOCOL_SCHEMA,
+                    "clean_tracked_worktree_required": True,
+                    "source_files": protocol_sources,
+                    "external_clock": {
+                        "command": "settimems",
+                        "initial_remaining_msec": 60000,
+                        "measurement": "ceil(monotonic go wall time in milliseconds)",
+                        "only_go_commands_decrement_time": True,
+                    },
+                    "noise_log_lines": {
+                        "random_seed": "random seed = 620",
+                        "ggs_tournament_build": "ggs tournament build = true",
+                    },
+                    "process_launch_order": "candidate-first when (match id + game id) is even",
+                },
                 "parsed_args": {
                     "time": 60,
                     "threads": 8,
@@ -1230,6 +1350,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "baseline_contestbook": None,
                     "candidate_extra": "",
                     "baseline_extra": "",
+                    "external_clock_control": True,
                 },
                 "artifacts": {
                     "candidate_binary": {
@@ -1248,6 +1369,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                         "path": endgame_move_ordering.resolve().as_posix(),
                         "sha256": build_root_table.sha256_file(endgame_move_ordering),
                     },
+                    "ordered_starting_positions": ordered_positions_snapshot,
                 },
                 "engine_commands": {
                     "candidate": [*common_command, "-contestbook", str(table_dir.resolve())],
@@ -1264,6 +1386,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                     "canonical_pool_sha256": audit_root_table_matches._sha256_lines(pool_canonical),
                     "selected_count": 1,
                     "ordered_sha256": audit_root_table_matches._sha256_lines([played_board]),
+                    "ordered_file": ordered_positions_snapshot,
                     "d4_canonical_set_sha256": audit_root_table_matches._sha256_lines(selected_canonical),
                 },
             }
@@ -1292,6 +1415,29 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertIn("表を使う側の勝ち", text)
             self.assertIn("Table-using side W/D/L", text)
             self.assertIn("Ordinary book during teacher calculation", text)
+
+            altered_clock_row = json.loads(json.dumps(row))
+            altered_clock_row["games"][0]["external_clock"]["records"][0][
+                "after_remaining_msec"
+            ]["X"] += 1
+            results.write_text(
+                json.dumps(altered_clock_row) + "\n", encoding="utf-8", newline="\n"
+            )
+            altered_clock = audit_root_table_matches.audit_match_results(
+                results,
+                prepared_path,
+                metadata_path,
+                root / "altered_clock.md",
+                bootstrap_seed=620,
+                bootstrap_repetitions=100,
+                minimum_processed=1,
+                minimum_accepted=1,
+            )
+            self.assertFalse(altered_clock["valid"])
+            self.assertTrue(
+                any("does not subtract only its go time" in failure for failure in altered_clock["failures"])
+            )
+            results.write_text(json.dumps(row) + "\n", encoding="utf-8", newline="\n")
 
             original_prepared = prepared_path.read_bytes()
             strict_selection = json.loads(original_prepared.decode("utf-8"))
@@ -1388,7 +1534,9 @@ class GgsRootTeacherTests(unittest.TestCase):
                 if index_to_coord(index) != expected_move
             )
             table_log_first.write_text(
-                "contest root table loaded 1 roots\n"
+                hash_initialization_log
+                + clock_log(first_game)
+                + "contest root table loaded 1 roots\n"
                 f"contest root table selected {other_move} value -15 roots 1 "
                 f"{canonicalize_board_key(played_board)[0]}\n"
                 f"level Book depth - {other_move} -15 elapsed 000:00:00.000 nodes 0 nps 0\n",

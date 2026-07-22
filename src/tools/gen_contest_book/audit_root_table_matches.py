@@ -32,6 +32,14 @@ from prepare_root_table_match import (
     _validate_level_verified_manifest_results,
     _validate_manifest_results,
 )
+from run_prepared_root_table_match import (
+    EXPECTED_GGS_TOURNAMENT_BUILD_LOG_LINE,
+    EXPECTED_RANDOM_SEED_LOG_LINE,
+    INITIAL_REMAINING_MSEC,
+    MATCH_PROTOCOL_SCHEMA,
+    METADATA_SCHEMA_VERSION,
+    RUNNER_DEPENDENT_SOURCE_FILES,
+)
 
 
 AUDIT_SCHEMA = "root_table_match_audit_v1"
@@ -52,6 +60,14 @@ REQUIRED_VERIFY_LEVEL = 31
 REQUIRED_MATCH_SEED = 624
 REQUIRED_ENGINE_RANDOM_SEED = 620
 REQUIRED_TEACHER_RANDOM_SEED = 620
+SETTIMEMS_COMMAND_RE = re.compile(
+    r"^(?:>\s*)?received cmd: settimems (?P<color>[XO]) (?P<remaining_msec>\d+)\r?$",
+    re.MULTILINE,
+)
+EXPECTED_HASH29_INITIALIZATION_ERROR_LINES = (
+    "[ERROR] can't open hash29.eghs",
+    "[ERROR] can't get hash. you can ignore this error",
+)
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
@@ -151,6 +167,93 @@ def _snapshot_file_is_current(snapshot: Any) -> bool:
         return False
     path = Path(path_text)
     return path.is_file() and sha256_file(path) == expected_sha256
+
+
+def _snapshot_file_with_size_is_current(snapshot: Any) -> bool:
+    if not _snapshot_file_is_current(snapshot) or not isinstance(snapshot, dict):
+        return False
+    size = snapshot.get("bytes")
+    path_text = snapshot.get("path")
+    return (
+        isinstance(size, int)
+        and not isinstance(size, bool)
+        and size >= 0
+        and isinstance(path_text, str)
+        and Path(path_text).stat().st_size == size
+    )
+
+
+def _validate_runner_protocol_sources(
+    git: object,
+    protocol: object,
+) -> list[str]:
+    """Validate the clean-worktree and source-fingerprint contract."""
+    failures: list[str] = []
+    if not isinstance(git, dict):
+        return ["match metadata has no Git provenance"]
+    root_text = git.get("repository_root")
+    commit = git.get("commit")
+    if not isinstance(root_text, str) or not Path(root_text).is_dir():
+        failures.append("match metadata has no existing Git worktree root")
+        root = None
+    else:
+        root = Path(root_text).resolve()
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        failures.append("match metadata does not record a full Git commit SHA-1")
+    if git.get("tracked_worktree_dirty") is not False:
+        failures.append("formal match was not started from a clean tracked worktree")
+    if git.get("tracked_status_sha256") != hashlib.sha256(b"").hexdigest():
+        failures.append("clean tracked-worktree status SHA-256 is invalid")
+    if not isinstance(protocol, dict):
+        return failures + ["match metadata has no runner protocol"]
+    if protocol.get("schema") != MATCH_PROTOCOL_SCHEMA:
+        failures.append("match metadata has an unsupported runner protocol")
+    if protocol.get("clean_tracked_worktree_required") is not True:
+        failures.append("match metadata does not require a clean tracked worktree")
+    clock = protocol.get("external_clock")
+    if not isinstance(clock, dict) or (
+        clock.get("command") != "settimems"
+        or clock.get("initial_remaining_msec") != INITIAL_REMAINING_MSEC
+        or clock.get("only_go_commands_decrement_time") is not True
+    ):
+        failures.append("match metadata has an invalid external-clock protocol")
+    noise_lines = protocol.get("noise_log_lines")
+    if not isinstance(noise_lines, dict) or (
+        noise_lines.get("random_seed") != EXPECTED_RANDOM_SEED_LOG_LINE
+        or noise_lines.get("ggs_tournament_build") != EXPECTED_GGS_TOURNAMENT_BUILD_LOG_LINE
+    ):
+        failures.append("match metadata has invalid required -noise log lines")
+    if protocol.get("process_launch_order") != "candidate-first when (match id + game id) is even":
+        failures.append("match metadata has an invalid process-launch-order rule")
+
+    records = protocol.get("source_files")
+    if not isinstance(records, list):
+        return failures + ["match metadata has no runner source fingerprints"]
+    by_relative: dict[str, dict[str, Any]] = {}
+    for record in records:
+        if not isinstance(record, dict) or not isinstance(record.get("relative_path"), str):
+            failures.append("match metadata has an invalid runner source fingerprint")
+            continue
+        relative = record["relative_path"]
+        if relative in by_relative:
+            failures.append("match metadata repeats a runner source fingerprint")
+        else:
+            by_relative[relative] = record
+    if set(by_relative) != set(RUNNER_DEPENDENT_SOURCE_FILES):
+        failures.append("match metadata has a different runner source-file set")
+    if root is not None:
+        for relative in RUNNER_DEPENDENT_SOURCE_FILES:
+            record = by_relative.get(relative)
+            if record is None:
+                continue
+            path_text = record.get("path")
+            expected_path = (root / relative).resolve()
+            if not isinstance(path_text, str) or Path(path_text).resolve() != expected_path:
+                failures.append(f"runner source fingerprint has an unexpected path: {relative}")
+                continue
+            if not _snapshot_file_with_size_is_current(record):
+                failures.append(f"runner source file does not match its SHA-256: {relative}")
+    return failures
 
 
 def _expected_table_move(board: str, entries: dict[str, Any]) -> str:
@@ -484,6 +587,7 @@ def _validate_prepared_input(
 
 def _validate_metadata(
     metadata_path: Path,
+    results_path: Path,
     prepared: dict[str, Any],
     openings_input: list[str],
     expected_game_boards: list[str],
@@ -496,13 +600,17 @@ def _validate_metadata(
     expected_sha = payload.get("run_spec_sha256")
     if not isinstance(run_spec, dict) or expected_sha != _canonical_json_sha256(run_spec):
         return ["match metadata checksum is invalid"]
+    if run_spec.get("schema_version") != METADATA_SCHEMA_VERSION:
+        return ["match metadata has an unsupported schema version"]
     parsed = run_spec.get("parsed_args")
     artifacts = run_spec.get("artifacts")
     commands = run_spec.get("engine_commands")
     openings = run_spec.get("openings")
     if not all(isinstance(value, dict) for value in (parsed, artifacts, commands, openings)):
         return ["match metadata is missing required sections"]
-    failures: list[str] = []
+    failures: list[str] = _validate_runner_protocol_sources(
+        run_spec.get("git"), run_spec.get("runner_protocol")
+    )
     for key, expected in (
         ("time", REQUIRED_TIME_SECONDS),
         ("threads", REQUIRED_GAME_THREADS),
@@ -518,6 +626,8 @@ def _validate_metadata(
         failures.append("game metadata must use exactly one simultaneous game")
     if parsed.get("random_symmetry") is not True:
         failures.append("game metadata does not enable the fixed rotation/reflection procedure")
+    if parsed.get("external_clock_control") is not True:
+        failures.append("game metadata does not enable the external millisecond clock")
     selection = prepared.get("selection")
     required_level_verification = (
         selection.get("level_31_verification_required")
@@ -556,6 +666,7 @@ def _validate_metadata(
     no_book_binary = artifacts.get("baseline_binary")
     evaluation = artifacts.get("evaluation")
     endgame_move_ordering = artifacts.get("endgame_move_ordering")
+    ordered_starting_positions = artifacts.get("ordered_starting_positions")
     harness = run_spec.get("harness")
     for label, snapshot in (
         ("table-using executable", table_binary),
@@ -566,6 +677,26 @@ def _validate_metadata(
     ):
         if not _snapshot_file_is_current(snapshot):
             failures.append(f"{label} does not match its recorded SHA-256")
+    if not _snapshot_file_with_size_is_current(ordered_starting_positions):
+        failures.append("actual starting-position order file does not match its recorded SHA-256")
+    elif isinstance(ordered_starting_positions, dict):
+        expected_order_path = results_path.with_suffix(results_path.suffix + ".openings.txt").resolve()
+        path_text = ordered_starting_positions.get("path")
+        if not isinstance(path_text, str) or Path(path_text).resolve() != expected_order_path:
+            failures.append("actual starting-position order file has an unexpected path")
+        else:
+            expected_order_text = "".join(board + "\n" for board in expected_game_boards)
+            try:
+                actual_order_text = expected_order_path.read_text(encoding="utf-8")
+            except (OSError, UnicodeError) as error:
+                failures.append(f"cannot read actual starting-position order file: {error}")
+            else:
+                if actual_order_text != expected_order_text:
+                    failures.append("actual starting-position order file differs from the fixed sequence")
+            if ordered_starting_positions.get("sha256") != _sha256_lines(expected_game_boards):
+                failures.append("actual starting-position order SHA-256 differs from the fixed sequence")
+        if openings.get("ordered_file") != ordered_starting_positions:
+            failures.append("opening metadata does not repeat the immutable order-file fingerprint")
     if not isinstance(table_binary, dict) or not isinstance(no_book_binary, dict):
         failures.append("game metadata lacks executable fingerprints")
         return failures
@@ -689,6 +820,7 @@ def _replay_game(
     if not isinstance(record, str) or len(record) % 2:
         return {}, ["game has an invalid move record"]
     first_move: str | None = None
+    move_sides: list[str] = []
     for offset in range(0, len(record), 2):
         while not position.legal_moves():
             if position.is_end():
@@ -704,6 +836,7 @@ def _replay_game(
             return {}, failures
         if first_move is None:
             first_move = move
+        move_sides.append(side_to_move)
         side_to_move = "O" if side_to_move == "X" else "X"
     if not position.is_end():
         failures.append("move record ends before the game ended")
@@ -731,6 +864,7 @@ def _replay_game(
     return {
         "first_move": first_move,
         "starting_side": board[65],
+        "move_sides": move_sides,
         "candidate_difference": candidate_difference,
         "final_discs": [black_discs, white_discs],
     }, failures
@@ -738,6 +872,104 @@ def _replay_game(
 
 def _selection_matches(log_text: str) -> list[re.Match[str]]:
     return list(TABLE_SELECTION_RE.finditer(log_text))
+
+
+def _clock_pair(value: object) -> dict[str, int] | None:
+    if not isinstance(value, dict) or set(value) != {"X", "O"}:
+        return None
+    result: dict[str, int] = {}
+    for color in ("X", "O"):
+        remaining = value.get(color)
+        if (
+            isinstance(remaining, bool)
+            or not isinstance(remaining, int)
+            or not 0 <= remaining <= INITIAL_REMAINING_MSEC
+        ):
+            return None
+        result[color] = remaining
+    return result
+
+
+def _settimems_commands_from_log(log_text: str) -> list[tuple[str, int]]:
+    return [
+        (match.group("color"), int(match.group("remaining_msec")))
+        for match in SETTIMEMS_COMMAND_RE.finditer(log_text)
+    ]
+
+
+def _validate_external_clock(
+    game: dict[str, Any],
+    replay: dict[str, Any],
+) -> tuple[list[str], list[tuple[str, int]]]:
+    """Replay the external clock; only recorded ``go`` wall time may reduce it."""
+    failures: list[str] = []
+    clock = game.get("external_clock")
+    if not isinstance(clock, dict):
+        return ["game lacks external-clock data"], []
+    initial = _clock_pair(clock.get("initial_remaining_msec"))
+    if initial != {"X": INITIAL_REMAINING_MSEC, "O": INITIAL_REMAINING_MSEC}:
+        failures.append("game has an invalid external-clock initial state")
+        return failures, []
+    records = clock.get("records")
+    if not isinstance(records, list):
+        return failures + ["game external-clock records are not a list"], []
+    move_sides = replay.get("move_sides")
+    record_text = game.get("record")
+    candidate_color = game.get("candidate_color")
+    if (
+        not isinstance(move_sides, list)
+        or not isinstance(record_text, str)
+        or candidate_color not in {"X", "O"}
+    ):
+        return failures + ["game cannot be replayed for external-clock validation"], []
+    if len(records) != len(move_sides):
+        failures.append("external-clock record count does not equal the move count")
+    current = dict(initial)
+    expected_commands: list[tuple[str, int]] = []
+    for index, (side, move) in enumerate(
+        zip(move_sides, (record_text[offset:offset + 2].lower() for offset in range(0, len(record_text), 2)))
+    ):
+        if index >= len(records):
+            break
+        entry = records[index]
+        if not isinstance(entry, dict):
+            failures.append(f"external-clock record {index + 1} is not an object")
+            continue
+        if entry.get("move_number") != index + 1:
+            failures.append(f"external-clock record {index + 1} has a wrong move number")
+        if entry.get("side") != side:
+            failures.append(f"external-clock record {index + 1} has a wrong side")
+        expected_role = "candidate" if candidate_color == side else "baseline"
+        if entry.get("role") != expected_role:
+            failures.append(f"external-clock record {index + 1} has a wrong process role")
+        if entry.get("move") != move:
+            failures.append(f"external-clock record {index + 1} has a wrong move")
+        before = _clock_pair(entry.get("before_remaining_msec"))
+        if before != current:
+            failures.append(f"external-clock record {index + 1} has a wrong pre-go clock")
+            continue
+        expected_commands.extend([("X", current["X"]), ("O", current["O"])])
+        go_wall_msec = entry.get("go_wall_msec")
+        if (
+            isinstance(go_wall_msec, bool)
+            or not isinstance(go_wall_msec, int)
+            or go_wall_msec < 1
+            or go_wall_msec >= current[side]
+        ):
+            failures.append(f"external-clock record {index + 1} has an invalid go wall time")
+            continue
+        expected_after = dict(current)
+        expected_after[side] -= go_wall_msec
+        after = _clock_pair(entry.get("after_remaining_msec"))
+        if after != expected_after:
+            failures.append(f"external-clock record {index + 1} does not subtract only its go time")
+            continue
+        current = expected_after
+    if len(records) > len(move_sides):
+        failures.append("external-clock has records after the game ended")
+    if _clock_pair(clock.get("final_remaining_msec")) != current:
+        failures.append("external-clock final state does not match its move records")
+    return failures, expected_commands
 
 
 def _audit_rows(
@@ -795,6 +1027,20 @@ def _audit_rows(
             expected_selection = bool(replay and color == replay["starting_side"])
             if expected_selection:
                 expected_selections += 1
+            if isinstance(game_id, int) and game_id in {0, 1}:
+                expected_launch_order = (
+                    ["candidate", "baseline"]
+                    if (match + game_id) % 2 == 0
+                    else ["baseline", "candidate"]
+                )
+                if game.get("process_launch_order") != expected_launch_order:
+                    failures.append(f"match {match} game {game_id} has an invalid process launch order")
+            if replay:
+                clock_failures, expected_settimems = _validate_external_clock(game, replay)
+                for failure in clock_failures:
+                    failures.append(f"match {match}: {failure}")
+            else:
+                expected_settimems = []
             engine_audit = game.get("engine_audit")
             if not isinstance(engine_audit, dict) or not isinstance(engine_audit.get("candidate"), dict) or not isinstance(engine_audit.get("baseline"), dict):
                 failures.append(f"match {match} is missing engine audit data")
@@ -819,6 +1065,46 @@ def _audit_rows(
                 content = log_path.read_text(encoding="utf-8", errors="replace")
                 log_contents[role] = content
                 logs.append(content)
+                expected_hash_errors = sum(
+                    content.count(line)
+                    for line in EXPECTED_HASH29_INITIALIZATION_ERROR_LINES
+                )
+                if audit.get("expected_hash_error_lines") != expected_hash_errors:
+                    failures.append(
+                        f"match {match} {role} expected-hash-error count does not match its log"
+                    )
+                if expected_hash_errors != len(EXPECTED_HASH29_INITIALIZATION_ERROR_LINES):
+                    failures.append(
+                        f"match {match} {role} lacks the expected hash-29 initialization record"
+                    )
+                random_seed_lines = content.splitlines().count(EXPECTED_RANDOM_SEED_LOG_LINE)
+                if random_seed_lines != 1 or audit.get("random_seed_log_lines") != random_seed_lines:
+                    failures.append(
+                        f"match {match} {role} lacks the required deterministic random-seed log"
+                    )
+                tournament_build_lines = content.splitlines().count(
+                    EXPECTED_GGS_TOURNAMENT_BUILD_LOG_LINE
+                )
+                if (
+                    tournament_build_lines != 1
+                    or audit.get("ggs_tournament_build_log_lines") != tournament_build_lines
+                ):
+                    failures.append(
+                        f"match {match} {role} lacks the required GGS-tournament-build log"
+                    )
+                actual_settimems = _settimems_commands_from_log(content)
+                saved_settimems = [
+                    {"color": color, "remaining_msec": remaining_msec}
+                    for color, remaining_msec in actual_settimems
+                ]
+                if actual_settimems != expected_settimems:
+                    failures.append(
+                        f"match {match} {role} settimems commands do not match the external-clock timeline"
+                    )
+                if audit.get("settimems_commands") != saved_settimems:
+                    failures.append(
+                        f"match {match} {role} saved settimems commands do not match its log"
+                    )
             table_log = log_contents.get("table")
             no_book_log = log_contents.get("no-book")
             if table_log is not None:
@@ -854,6 +1140,15 @@ def _audit_rows(
             failures.append(f"match {match} did not exchange colors")
         if game_identifiers != {0, 1}:
             failures.append(f"match {match} does not contain game identifiers 0 and 1")
+        launch_orders = {
+            tuple(game.get("process_launch_order"))
+            if isinstance(game.get("process_launch_order"), list)
+            else ()
+            for game in games
+            if isinstance(game, dict)
+        }
+        if launch_orders != {("candidate", "baseline"), ("baseline", "candidate")}:
+            failures.append(f"match {match} did not cancel process launch order across its two games")
         if len(differences) == 2:
             calculated_margin = sum(differences)
             if not isinstance(row.get("margin"), (int, float)) or abs(calculated_margin - float(row["margin"])) > 1e-9:
@@ -872,6 +1167,20 @@ def _audit_rows(
         "zero_clock": sum(bool(audit.get("zero_clock_seen")) for audit in engine_audits),
         "clock_overrun": sum(audit.get("harness_clock_overrun_msec", 0) != 0 for audit in engine_audits),
         "unexpected_engine_errors": sum(bool(audit.get("unexpected_error_lines")) for audit in engine_audits),
+        "expected_hash_initialization_errors": sum(
+            audit.get("expected_hash_error_lines", 0) for audit in engine_audits
+        ),
+        "deterministic_seed_logs": sum(
+            audit.get("random_seed_log_lines") == 1 for audit in engine_audits
+        ),
+        "tournament_build_logs": sum(
+            audit.get("ggs_tournament_build_log_lines") == 1 for audit in engine_audits
+        ),
+        "settimems_commands": sum(
+            len(audit.get("settimems_commands", []))
+            for audit in engine_audits
+            if isinstance(audit.get("settimems_commands", []), list)
+        ),
         "table_loaded": joined_table_logs.count("contest root table loaded "),
         "table_selected": joined_table_logs.count("contest root table selected "),
         "table_zero_nodes": len(BOOK_ZERO_NODES_RE.findall(joined_table_logs)),
@@ -889,6 +1198,16 @@ def _audit_rows(
         failures.append(f"{checks['clock_overrun']} game-manager clock overrun(s)")
     if checks["unexpected_engine_errors"]:
         failures.append(f"{checks['unexpected_engine_errors']} engine audit(s) with unexpected errors")
+    if checks["deterministic_seed_logs"] != len(engine_audits):
+        failures.append("one or more engine logs lack exactly one deterministic random-seed record")
+    if checks["tournament_build_logs"] != len(engine_audits):
+        failures.append("one or more engine logs lack exactly one GGS-tournament-build record")
+    expected_hash_errors = len(engine_audits) * len(EXPECTED_HASH29_INITIALIZATION_ERROR_LINES)
+    if checks["expected_hash_initialization_errors"] != expected_hash_errors:
+        failures.append(
+            "hash-29 initialization records: "
+            f"{checks['expected_hash_initialization_errors']}, expected {expected_hash_errors}"
+        )
     expected_loads = 2 * len(rows)
     for key, expected, description in (
         ("table_loaded", expected_loads, "temporary-table loads"),
@@ -941,6 +1260,7 @@ def audit_match_results(
     failures.extend(
         _validate_metadata(
             metadata_path,
+            results_path,
             prepared,
             openings,
             expected_game_boards,
@@ -1045,6 +1365,10 @@ def audit_match_results(
 - 得点率の95%区間: {intervals['score'][0]:.2%} から {intervals['score'][1]:.2%}
 - 平均石差の95%区間: {intervals['margin'][0]:+.3f} から {intervals['margin'][1]:+.3f}石
 - エンジン実行数: {checks['engine_executions']}
+- `random seed = 620` を1回出したエンジン: {checks['deterministic_seed_logs']}台
+- `ggs tournament build = true` を1回出したエンジン: {checks['tournament_build_logs']}台
+- `settimems` の記録済みコマンド数: {checks['settimems_commands']}回
+- `-hash 29` の期待どおりの初期化エラー記録: {checks['expected_hash_initialization_errors']}行
 - 表の読込み: {checks['table_loaded']}回、表の選択: {checks['table_selected']}回、探索ノード0での表選択: {checks['table_zero_nodes']}回
 - 表を使わない側での表の読込み・表の選択: {checks['no_book_table_loaded']}回・{checks['no_book_table_selected']}回
 - 教師計算時の通常book: {ordinary_book_ja}
@@ -1060,6 +1384,38 @@ def audit_match_results(
 
 この報告は、ローカルのConsoleで両側へ60秒の持ち時間を与えた対局を対象にする。GGSの延長時間30秒を再現した結果ではない。
 
+### この報告で新たに使う用語
+
+#### 外部時計
+
+- 出典: この監査に対応する対局実行スクリプト `root_table_match_protocol_v2`。
+- 目的: Consoleが入力待ち時間を内部時計へ加える挙動から、持ち時間の比較を切り離す。
+- 具体対象: 各実手の直前・直後のX/O残りミリ秒、およびその手の`go`要求から応答までの実測時間。
+- 役割: `go`の実測時間だけを手番側から減算し、次の`go`直前に両Consoleへ`settimems`で同じ値を設定する。
+- 前後関係: `setboard`の後、各`go`の直前に設定し、`go`応答後に残時間を更新してから次の手へ進む。
+- 候補語: 外部時計、対局管理時計、計測時計。
+- 初出定義: 本節の「外部時計」は、上記のJSON時系列と`settimems`受信記録で再生可能な対局管理側の残時間を指す。
+
+#### 実際の開始局面順ファイル
+
+- 出典: 同じ対局実行スクリプト。
+- 目的: seedから再計算するだけではなく、実際に使った回転・反射後の開始局面順を固定する。
+- 具体対象: 結果JSONLと同じ名前に `.openings.txt` を付けたUTF-8ファイル。
+- 役割: 各match番号と開始局面を一意に結び、再開時の順序変更を拒否する。
+- 前後関係: 結果・メタデータの作成前に一度だけ書き、監査時に内容とSHA-256を照合する。
+- 候補語: 実際の開始局面順ファイル、開始局面順固定ファイル、局面順側carファイル。
+- 初出定義: 本節では先頭の表記を用い、結果JSONLに記録されたmatch順と同じ行順の局面列を意味する。
+
+#### プロセス起動順の相殺
+
+- 出典: 同じ対局実行スクリプト。
+- 目的: 先に起動したConsoleだけが受ける初期化・資源確保の差を、1 match内で片側へ偏らせない。
+- 具体対象: 表を使うConsoleと表を使わないConsoleを起動する順番。
+- 役割: 2局のうち一方は表を使うConsoleを先、他方は表を使わないConsoleを先に起動する。
+- 前後関係: 各局のConsole起動時に決め、2局を含むmatchの監査時に両順が一度ずつあることを確認する。
+- 候補語: プロセス起動順の相殺、起動順交替、先起動効果の相殺。
+- 初出定義: 本節では先頭の表記を用い、同一matchの2局で`candidate, baseline`と`baseline, candidate`を一度ずつ使うことを指す。
+
 ## English
 
 - Matches: {len(rows)}
@@ -1072,6 +1428,10 @@ def audit_match_results(
 - 95% score-rate interval: {intervals['score'][0]:.2%} to {intervals['score'][1]:.2%}
 - 95% mean-margin interval: {intervals['margin'][0]:+.3f} to {intervals['margin'][1]:+.3f} discs
 - Engine executions: {checks['engine_executions']}
+- Engines with exactly one `random seed = 620` line: {checks['deterministic_seed_logs']}
+- Engines with exactly one `ggs tournament build = true` line: {checks['tournament_build_logs']}
+- Recorded `settimems` commands: {checks['settimems_commands']}
+- Expected `-hash 29` initialization-error records: {checks['expected_hash_initialization_errors']}
 - Temporary-table loads: {checks['table_loaded']}; selections: {checks['table_selected']}; zero-node selections: {checks['table_zero_nodes']}
 - Temporary-table loads and selections by the no-book side: {checks['no_book_table_loaded']}; {checks['no_book_table_selected']}
 - Ordinary book during teacher calculation: {ordinary_book_en}
@@ -1086,6 +1446,38 @@ def audit_match_results(
 Decision: {decision_en}
 
 This report covers local Console games with a 60-second time allocation for each side. It does not reproduce GGS's 30-second extension time.
+
+### Terms newly used in this report
+
+#### External clock
+
+- Source: `root_table_match_protocol_v2`, the game runner paired with this audit.
+- Purpose: separate the comparison clock from Console's input-wait accounting.
+- Concrete subject: X/O milliseconds before and after each played move and the measured `go` request duration.
+- Role: subtract only that measured duration from the side to move, then send both values through `settimems` before the next `go`.
+- Sequence: after `setboard`, before every `go`, then after its response before the next move.
+- Candidate terms: external clock, game-manager clock, measurement clock.
+- First definition: in this report, it means the game-manager time sequence reproducible from JSON and `settimems` receive records.
+
+#### Actual starting-position order file
+
+- Source: the same game runner.
+- Purpose: freeze the transformed board sequence actually used, rather than only the seed used to derive it.
+- Concrete subject: the UTF-8 `.openings.txt` sidecar beside the results JSONL.
+- Role: bind each match number to one board and reject a changed order on resume.
+- Sequence: written once before results and metadata, then content and SHA-256 are audited.
+- Candidate terms: actual starting-position order file, frozen opening-order file, opening-order sidecar.
+- First definition: here it means the board lines in exactly the same order as match records in the results JSONL.
+
+#### Process-launch-order cancellation
+
+- Source: the same game runner.
+- Purpose: prevent first Console startup effects from consistently favoring one side inside a match.
+- Concrete subject: the launch order of the table-using and no-book Console processes.
+- Role: launch the table-using process first in one game and the no-book process first in the other game.
+- Sequence: chosen when each game starts and checked across the two games of a match.
+- Candidate terms: process-launch-order cancellation, alternating launch order, first-launch-effect cancellation.
+- First definition: here it means using `candidate, baseline` once and `baseline, candidate` once within one match.
 """
     _atomic_write_text(report_path, text)
     _atomic_write_text(
