@@ -280,6 +280,14 @@ without selecting rows by game results:
 python src/tools/gen_contest_book/prepare_root_table_match.py --teacher-results ignored/ggs_620_progress/new_teacher_rows.txt --output-dir ignored/ggs_620_progress/new_root_table_match_input --minimum-processed 500
 ```
 
+After the color-swapped games are complete, audit the complete match set,
+the prepared table, the run metadata, and the engine logs before considering
+any addition to `trained`:
+
+```powershell
+python src/tools/gen_contest_book/audit_root_table_matches.py --results ignored/ggs_620_progress/root_table_matches.jsonl --prepared-input ignored/ggs_620_progress/new_root_table_match_input/prepared_match_input.json --metadata ignored/ggs_620_progress/root_table_matches.jsonl.meta.json --output ignored/ggs_620_progress/root_table_match_audit.md --bootstrap-seed 624 --minimum-processed 500
+```
+
 ## Testing
 
 Start with a small test for one start position. Use one line from `data/records321_14_random_setup` as `<initial board>`.

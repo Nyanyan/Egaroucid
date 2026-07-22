@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import subprocess
 import sys
 import tempfile
@@ -18,6 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import generate_all_records
 import generate_records
+import audit_root_table_matches
 import book_artifact
 import audit_r14_corpus
 import build_root_table
@@ -767,6 +769,147 @@ class GgsRootTeacherTests(unittest.TestCase):
                     teacher, too_small, minimum_processed=2
                 )
             self.assertFalse(too_small.exists())
+
+    def test_audits_color_swapped_root_table_match(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            openings = root / "roots.txt"
+            openings.write_text(f"{GGS_ROOT}\n", encoding="utf-8", newline="\n")
+            table_dir = root / "table"
+            table_dir.mkdir()
+            table = table_dir / build_root_table.ROOT_TABLE_FILENAME
+            table.write_text("# temporary table\n", encoding="utf-8", newline="\n")
+            prepared = {
+                "schema": "prepared_root_table_match_input_v1",
+                "teacher_results": {"processed": 1},
+                "openings": {
+                    "path": openings.resolve().as_posix(),
+                    "sha256": build_root_table.sha256_file(openings),
+                    "entries": 1,
+                },
+                "table": {"sha256": build_root_table.sha256_file(table)},
+            }
+            prepared_path = root / "prepared.json"
+            prepared_path.write_text(
+                json.dumps(prepared), encoding="utf-8", newline="\n"
+            )
+            table_log_first = root / "table_first.log"
+            table_log_first.write_text(
+                "contest root table loaded 1 roots\n"
+                "contest root table selected f5 value 2 roots 1\n"
+                "level Book depth - f5 2 elapsed 000:00:00.000 nodes 0 nps 0\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            table_log_second = root / "table_second.log"
+            table_log_second.write_text(
+                "contest root table loaded 1 roots\n", encoding="utf-8", newline="\n"
+            )
+            no_book_first = root / "no_book_first.log"
+            no_book_first.write_text("", encoding="utf-8", newline="\n")
+            no_book_second = root / "no_book_second.log"
+            no_book_second.write_text("", encoding="utf-8", newline="\n")
+
+            def engine_audit(path: Path) -> dict[str, object]:
+                return {
+                    "log": path.resolve().as_posix(),
+                    "log_sha256": build_root_table.sha256_file(path),
+                    "exit_code": 0,
+                    "timeout_suspected": False,
+                    "zero_clock_seen": False,
+                    "harness_clock_overrun_msec": 0,
+                    "unexpected_error_lines": [],
+                }
+
+            results = root / "matches.jsonl"
+            row = {
+                "match": 0,
+                "board": GGS_ROOT,
+                "margin": 2,
+                "result": "W",
+                "games": [
+                    {
+                        "candidate_color": "X",
+                        "candidate_disc_diff": 2,
+                        "engine_audit": {
+                            "candidate": engine_audit(table_log_first),
+                            "baseline": engine_audit(no_book_first),
+                        },
+                    },
+                    {
+                        "candidate_color": "O",
+                        "candidate_disc_diff": 0,
+                        "engine_audit": {
+                            "candidate": engine_audit(table_log_second),
+                            "baseline": engine_audit(no_book_second),
+                        },
+                    },
+                ],
+            }
+            results.write_text(json.dumps(row) + "\n", encoding="utf-8", newline="\n")
+            binary_sha256 = "a" * 64
+            run_spec = {
+                "parsed_args": {
+                    "time": 60,
+                    "threads": 8,
+                    "hash": 29,
+                    "matches": 1,
+                    "candidate_contestbook": table_dir.resolve().as_posix(),
+                    "baseline_contestbook": None,
+                },
+                "artifacts": {
+                    "candidate_binary": {"sha256": binary_sha256},
+                    "baseline_binary": {"sha256": binary_sha256},
+                },
+                "engine_commands": {
+                    "candidate": ["engine", "-nobook", "-contestbook", str(table_dir)],
+                    "baseline": ["engine", "-nobook"],
+                },
+                "openings": {"selected_count": 1},
+            }
+            metadata = {
+                "run_spec": run_spec,
+                "run_spec_sha256": audit_root_table_matches._canonical_json_sha256(run_spec),
+            }
+            metadata_path = root / "matches.meta.json"
+            metadata_path.write_text(json.dumps(metadata), encoding="utf-8", newline="\n")
+            report = root / "report.md"
+            payload = audit_root_table_matches.audit_match_results(
+                results,
+                prepared_path,
+                metadata_path,
+                report,
+                bootstrap_seed=620,
+                bootstrap_repetitions=100,
+                minimum_processed=1,
+            )
+            self.assertTrue(payload["valid"])
+            self.assertTrue(payload["eligible_for_adoption"])
+            text = report.read_text(encoding="utf-8")
+            self.assertIn("表を使う側の勝ち", text)
+            self.assertIn("Table-using side W/D/L", text)
+
+    def test_match_bootstrap_sorts_score_and_margin_independently(self) -> None:
+        rows = [
+            {"result": "W", "margin": -8},
+            {"result": "L", "margin": 8},
+            {"result": "D", "margin": 0},
+        ]
+        repetitions = 100
+        seed = 621
+        intervals = audit_root_table_matches._bootstrap_intervals(rows, seed, repetitions)
+        generator = random.Random(seed)
+        score_samples = []
+        margin_samples = []
+        points = [(1.0, -8.0), (0.0, 8.0), (0.5, 0.0)]
+        for _ in range(repetitions):
+            selected = [points[generator.randrange(len(points))] for _ in points]
+            score_samples.append(sum(point[0] for point in selected) / len(selected))
+            margin_samples.append(sum(point[1] for point in selected) / len(selected))
+        score_samples.sort()
+        margin_samples.sort()
+        self.assertEqual((score_samples[2], score_samples[96]), intervals["score"])
+        self.assertEqual((margin_samples[2], margin_samples[96]), intervals["margin"])
 
     def test_search_root_accepts_console_result_on_stderr(self) -> None:
         table = (
