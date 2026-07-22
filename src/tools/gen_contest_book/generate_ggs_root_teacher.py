@@ -137,6 +137,11 @@ def _clear_pending_updates(output: Path) -> None:
         path.unlink()
 
 
+def _completed_since_checkpoint(state: dict[str, Any], checkpoint_every: int) -> int:
+    """Keep every compaction aligned to the total number of completed roots."""
+    return (len(state["results"]) + len(state["rejections"])) % checkpoint_every
+
+
 def load_uncovered_roots(coverage_path: Path) -> list[str]:
     try:
         report = json.loads(coverage_path.read_text(encoding="utf-8"))
@@ -532,7 +537,7 @@ def generate_teachers(
         state = expected
         _write_outputs(output, state)
 
-    completed_since_checkpoint = 0
+    completed_since_checkpoint = _completed_since_checkpoint(state, checkpoint_every)
     for board in roots:
         if board in state["results"] or board in state["rejections"]:
             continue

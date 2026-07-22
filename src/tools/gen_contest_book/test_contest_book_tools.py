@@ -700,6 +700,20 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual("verified\n", output.read_text(encoding="utf-8"))
             fsync.assert_called_once()
 
+    def test_checkpoint_counter_uses_total_completed_roots_after_resume(self) -> None:
+        state = {
+            "results": {"one": {}, "two": {}, "three": {}},
+            "rejections": {"four": {}},
+        }
+        self.assertEqual(
+            4,
+            generate_ggs_root_teacher._completed_since_checkpoint(state, 500),
+        )
+        self.assertEqual(
+            0,
+            generate_ggs_root_teacher._completed_since_checkpoint(state, 2),
+        )
+
     def test_search_root_accepts_console_result_on_stderr(self) -> None:
         table = (
             "|             27|         27@74%|             f5|            -15|  000:00:02.786|      239460993|       85951540|\n"
