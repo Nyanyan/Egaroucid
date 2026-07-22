@@ -1,7 +1,7 @@
 """Write a compact bilingual progress report for root-move precomputation.
 
 The generator keeps every completed position in a durable JSON-lines companion
-file until the selected compaction interval.  This tool reads both that file
+file until the selected compaction interval. This tool reads both that file
 and the last compacted state, without modifying either, so its counts remain
 accurate between compactions.
 """
@@ -92,23 +92,23 @@ def write_progress_report(state_path: Path, report_path: Path) -> dict[str, int 
     counts = progress_counts(state_path)
     output_path = output_path_from_state(state_path)
     pending_path = generate_ggs_root_teacher._pending_updates_path(output_path)
-    text = f"""# 開始局面の最初の一手の事前計算: 進捗
+    text = f"""# 開始局面の最初の手の事前計算：進捗報告
 
 ## 日本語
 
-- 要求局面数: {counts['requested']}
-- 受理済み局面数（追記保存分を含む）: {counts['accepted']}
-- 不採用局面数（追記保存分を含む）: {counts['rejected']}
-- 処理済み局面数（追記保存分を含む）: {counts['processed']}/{counts['requested']}
+- 対象局面数: {counts['requested']}
+- 採用局面数（品質検査を通過し、最初の手を記録できた局面）: {counts['accepted']}
+- 不採用局面数（品質検査を通過しなかった局面）: {counts['rejected']}
+- 処理済み局面数: {counts['processed']}/{counts['requested']}
 - 未処理局面数: {counts['remaining']}
-- 状態ファイルへまとめ済みの受理局面数: {counts['compacted_accepted']}
-- 状態ファイルへまとめ済みの不採用局面数: {counts['compacted_rejected']}
-- 追記保存ファイルの記録数: {counts['pending_records']}
+- 状態ファイルへ統合済みの採用局面数: {counts['compacted_accepted']}
+- 状態ファイルへ統合済みの不採用局面数: {counts['compacted_rejected']}
+- 状態ファイルへの統合待ちとして安全に追記済みの記録数: {counts['pending_records']}
 - 状態ファイル形式: `{counts['state_schema']}`
 
-状態ファイルへまとめ済みの数には、直近のまとめ保存後に完了した局面は含まれない。追記保存ファイル `{pending_path.name}` の記録は各局面の完了時に保存され、`--resume` 時に先に状態ファイルへ反映される。ここに示す「追記保存分を含む」数が、再開可能な実際の処理済み局面数である。
+状態ファイルへ統合済みの件数には、直近の統合以降に完了した局面は含まれない。一方、追記ファイル `{pending_path.name}` の各記録は局面の完了時点で安全に保存される。`--resume` を指定して再開すると、この追記ファイルの内容を最初に状態ファイルへ反映する。したがって、「採用局面数」「不採用局面数」「処理済み局面数」は、統合待ちの安全な追記記録も含む実際に再開可能な件数である。
 
-この報告は読み取りだけを行い、探索結果、状態ファイル、大会用の開始局面用の手の表を変更しない。
+この報告書は進捗ファイルを読むだけであり、探索結果、状態ファイル、大会用の開始局面の手の表を変更しない。
 
 ## English
 

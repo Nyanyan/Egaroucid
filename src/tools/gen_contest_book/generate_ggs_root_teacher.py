@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from audit_r14_corpus import CORPUS_REPORT_SCHEMA
+from book_artifact import file_lock
 from build_root_table import load_root_rows
 from collect_ggs_roots import REPORT_SCHEMA, sha256_file
 from othello import Board, coord_to_index
@@ -64,6 +65,11 @@ def _manifest_path(output: Path) -> Path:
 
 def _pending_updates_path(output: Path) -> Path:
     return output.with_suffix(output.suffix + ".pending.jsonl")
+
+
+def _lock_path(output: Path) -> Path:
+    """Return the OS-lock path guarding all state for one teacher output."""
+    return output.with_suffix(output.suffix + ".lock")
 
 
 def _append_pending_update(
@@ -241,6 +247,7 @@ def search_root(
         "-t", str(threads),
         "-hash", str(hash_level),
         "-nobook",
+        "-nocontestbook",
     ]
     commands = f"setboard {board}\ngo\nquit\n"
     try:
@@ -283,6 +290,7 @@ def search_root_at_level(
         "-t", str(threads),
         "-hash", str(hash_level),
         "-nobook",
+        "-nocontestbook",
     ]
     commands = f"setboard {board}\nhint 1\nquit\n"
     try:
@@ -465,7 +473,7 @@ def _write_outputs(output: Path, state: dict[str, Any]) -> None:
     )
 
 
-def generate_teachers(
+def _generate_teachers_unlocked(
     coverage_path: Path,
     exe: Path,
     output: Path,
@@ -492,18 +500,24 @@ def generate_teachers(
         raise ValueError("checkpoint_every must be positive")
     if fallback_level < 0:
         raise ValueError("fallback_level must not be negative")
-    if method not in {"hint", "time_then_hint", "time_then_verify"}:
-        raise ValueError("method must be hint, time_then_hint, or time_then_verify")
+    if method not in {"hint", "time_then_hint", "time_then_verify", "hint_then_verify"}:
+        raise ValueError(
+            "method must be hint, time_then_hint, time_then_verify, or hint_then_verify"
+        )
     if teacher_level < 1:
         raise ValueError("teacher_level must be positive")
     if verify_level < 0:
         raise ValueError("verify_level must not be negative")
-    if method == "time_then_verify" and verify_level < 1:
-        raise ValueError("time_then_verify requires a positive verify_level")
+    if method in {"time_then_verify", "hint_then_verify"} and verify_level < 1:
+        raise ValueError(f"{method} requires a positive verify_level")
     if method == "time_then_verify" and fallback_level < min_depth:
         raise ValueError(
             "time_then_verify requires fallback_level at least min_depth "
             "so a shallow time search cannot lower teacher quality"
+        )
+    if method == "hint_then_verify" and teacher_level < min_depth:
+        raise ValueError(
+            "hint_then_verify requires teacher_level at least min_depth"
         )
     if excluded_root_files is None:
         excluded_root_files = []
@@ -556,6 +570,61 @@ def generate_teachers(
                 result = search_root_at_level(exe, board, fallback_level, threads, hash_level)
                 validate_quality(result, min_depth, min_selectivity)
                 result["method"] = f"hint_level_{fallback_level}"
+        elif method == "hint_then_verify":
+            result = search_root_at_level(exe, board, teacher_level, threads, hash_level)
+            validate_quality(result, min_depth, min_selectivity)
+            result["method"] = (
+                f"hint_level_{teacher_level}_verified_hint_level_{verify_level}"
+            )
+            verification = search_root_at_level(
+                exe, board, verify_level, threads, hash_level
+            )
+            validate_quality(verification, min_depth, min_selectivity)
+            if str(result["move"]) != str(verification["move"]):
+                verification_repeat = search_root_at_level(
+                    exe, board, verify_level, threads, hash_level
+                )
+                validate_quality(verification_repeat, min_depth, min_selectivity)
+                if str(verification["move"]) == str(verification_repeat["move"]):
+                    teacher = result
+                    result = dict(verification_repeat)
+                    result["method"] = (
+                        f"hint_level_{teacher_level}_overridden_by_repeated_"
+                        f"hint_level_{verify_level}"
+                    )
+                    result["teacher"] = teacher
+                    result["verification"] = verification
+                    result["verification_repeat"] = verification_repeat
+                    result["verification_mode"] = (
+                        f"level_{verify_level}_repeated_after_disagreement"
+                    )
+                else:
+                    state["rejections"][board] = {
+                        "reason": (
+                            f"level-{verify_level} verification {verification['move']} does not "
+                            f"match repeated level-{verify_level} verification "
+                            f"{verification_repeat['move']}"
+                        ),
+                        "teacher": result,
+                        "verification": verification,
+                        "verification_repeat": verification_repeat,
+                    }
+                    _append_pending_update(
+                        output, board, "rejections", state["rejections"][board]
+                    )
+                    completed_since_checkpoint += 1
+                    if completed_since_checkpoint >= checkpoint_every:
+                        _write_outputs(output, state)
+                        _clear_pending_updates(output)
+                        completed_since_checkpoint = 0
+                    print(
+                        f"rejected {len(state['rejections'])} {board}",
+                        flush=True,
+                    )
+                    continue
+            else:
+                result["verification"] = verification
+                result["verification_mode"] = f"level_{verify_level}_exact"
         else:
             result = search_root(exe, board, time_seconds, threads, hash_level)
             primary = result
@@ -570,6 +639,7 @@ def generate_teachers(
                 )
                 result["primary"] = primary
             verification = search_root_at_level(exe, board, verify_level, threads, hash_level)
+            validate_quality(verification, min_depth, min_selectivity)
             verification_mode = f"level_{verify_level}_exact"
             if str(result["move"]) != str(verification["move"]):
                 tiebreak = search_root_at_level(
@@ -631,6 +701,48 @@ def generate_teachers(
     return {"completed": len(state["results"]), "requested": len(roots)}
 
 
+def generate_teachers(
+    coverage_path: Path,
+    exe: Path,
+    output: Path,
+    time_seconds: float,
+    threads: int,
+    hash_level: int,
+    min_depth: int = 33,
+    min_selectivity: int = 74,
+    fallback_level: int = 33,
+    method: str = "hint",
+    teacher_level: int = 33,
+    verify_level: int = 0,
+    resume: bool = False,
+    limit: int | None = None,
+    cohort_seed: int | None = None,
+    excluded_root_files: list[Path] | None = None,
+    checkpoint_every: int = 1,
+) -> dict[str, int]:
+    """Generate one output while holding its OS-owned exclusive lock."""
+    with file_lock(_lock_path(output)):
+        return _generate_teachers_unlocked(
+            coverage_path,
+            exe,
+            output,
+            time_seconds,
+            threads,
+            hash_level,
+            min_depth,
+            min_selectivity,
+            fallback_level,
+            method,
+            teacher_level,
+            verify_level,
+            resume,
+            limit,
+            cohort_seed,
+            excluded_root_files,
+            checkpoint_every,
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--coverage", type=Path, required=True)
@@ -642,7 +754,11 @@ def main() -> int:
     parser.add_argument("--min-depth", type=int, default=33)
     parser.add_argument("--min-selectivity", type=int, default=74)
     parser.add_argument("--fallback-level", type=int, default=33)
-    parser.add_argument("--method", choices=("hint", "time_then_hint", "time_then_verify"), default="hint")
+    parser.add_argument(
+        "--method",
+        choices=("hint", "time_then_hint", "time_then_verify", "hint_then_verify"),
+        default="hint",
+    )
     parser.add_argument("--teacher-level", type=int, default=33)
     parser.add_argument("--verify-level", type=int, default=0)
     parser.add_argument("--limit", type=int)

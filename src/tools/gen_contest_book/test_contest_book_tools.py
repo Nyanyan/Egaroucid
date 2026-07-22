@@ -717,6 +717,23 @@ class GgsRootTeacherTests(unittest.TestCase):
             generate_ggs_root_teacher._completed_since_checkpoint(state, 2),
         )
 
+    def test_root_teacher_holds_an_output_lock_for_the_whole_generation(self) -> None:
+        output = Path("C:/temporary/teacher_rows.txt")
+        with (
+            mock.patch.object(generate_ggs_root_teacher, "file_lock") as lock,
+            mock.patch.object(
+                generate_ggs_root_teacher,
+                "_generate_teachers_unlocked",
+                return_value={"completed": 1, "requested": 1},
+            ) as unlocked,
+        ):
+            result = generate_ggs_root_teacher.generate_teachers(
+                Path("coverage.json"), Path("teacher.exe"), output, 60.0, 28, 29
+            )
+        self.assertEqual({"completed": 1, "requested": 1}, result)
+        lock.assert_called_once_with(output.with_suffix(output.suffix + ".lock"))
+        unlocked.assert_called_once()
+
     def test_prepares_match_input_from_all_compacted_accepted_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -916,12 +933,16 @@ class GgsRootTeacherTests(unittest.TestCase):
             "|             27|         27@74%|             f5|            -15|  000:00:02.786|      239460993|       85951540|\n"
         )
         completed = SimpleNamespace(returncode=0, stdout="", stderr=table)
-        with mock.patch.object(generate_ggs_root_teacher.subprocess, "run", return_value=completed):
+        with mock.patch.object(
+            generate_ggs_root_teacher.subprocess, "run", return_value=completed
+        ) as search:
             result = generate_ggs_root_teacher.search_root(
                 Path("C:/teacher.exe"), GGS_ROOT, 60.0, 28, 29
             )
         self.assertEqual("f5", result["move"])
         self.assertEqual(-15, result["score"])
+        self.assertIn("-nobook", search.call_args.args[0])
+        self.assertIn("-nocontestbook", search.call_args.args[0])
 
     def test_rejects_teacher_below_minimum_depth(self) -> None:
         with self.assertRaisesRegex(ValueError, "below 33@74%"):
@@ -1107,7 +1128,7 @@ class GgsRootTeacherTests(unittest.TestCase):
             self.assertEqual(0, counts["compacted_accepted"])
             self.assertEqual(1, counts["pending_records"])
             text = report.read_text(encoding="utf-8")
-            self.assertIn("受理済み局面数", text)
+            self.assertIn("採用局面数（品質検査を通過し、最初の手を記録できた局面）", text)
             self.assertIn("Accepted positions", text)
 
     def test_generates_and_resumes_only_with_identical_provenance(self) -> None:
@@ -1183,6 +1204,190 @@ class GgsRootTeacherTests(unittest.TestCase):
             )
             self.assertEqual("hint_level_33", manifest["results"][GGS_ROOT]["method"])
 
+    def test_hint_then_verify_uses_two_levels_without_time_search(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            teacher = {
+                "move": "f5", "score": -15, "level": "30", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            verification = {
+                "move": "f5", "score": -14, "level": "31", "depth": "31@74%",
+                "time": "000:00:08.000", "nodes": 2, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root") as time_search,
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_at_level",
+                    side_effect=[teacher, verification],
+                ) as level_search,
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage,
+                    exe,
+                    root / "teacher_rows.txt",
+                    60.0,
+                    28,
+                    29,
+                    min_depth=30,
+                    method="hint_then_verify",
+                    teacher_level=30,
+                    verify_level=31,
+                )
+            time_search.assert_not_called()
+            self.assertEqual(
+                [
+                    mock.call(exe, GGS_ROOT, 30, 28, 29),
+                    mock.call(exe, GGS_ROOT, 31, 28, 29),
+                ],
+                level_search.call_args_list,
+            )
+            manifest = json.loads(
+                (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
+            )
+            saved = manifest["results"][GGS_ROOT]
+            self.assertEqual("hint_level_30_verified_hint_level_31", saved["method"])
+            self.assertEqual("level_31_exact", saved["verification_mode"])
+
+    def test_hint_then_verify_uses_repeated_deeper_search_on_disagreement(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            teacher = {
+                "move": "f5", "score": -15, "level": "30", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            verification = {
+                "move": "d3", "score": -14, "level": "31", "depth": "31@74%",
+                "time": "000:00:08.000", "nodes": 2, "nps": 1,
+            }
+            verification_repeat = {
+                "move": "d3", "score": -13, "level": "31", "depth": "31@74%",
+                "time": "000:00:09.000", "nodes": 3, "nps": 1,
+            }
+            with mock.patch.object(
+                generate_ggs_root_teacher,
+                "search_root_at_level",
+                side_effect=[teacher, verification, verification_repeat],
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage,
+                    exe,
+                    root / "teacher_rows.txt",
+                    60.0,
+                    28,
+                    29,
+                    min_depth=30,
+                    method="hint_then_verify",
+                    teacher_level=30,
+                    verify_level=31,
+                )
+            manifest = json.loads(
+                (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
+            )
+            saved = manifest["results"][GGS_ROOT]
+            self.assertEqual("d3", saved["move"])
+            self.assertEqual("f5", saved["teacher"]["move"])
+            self.assertEqual("d3", saved["verification"]["move"])
+            self.assertEqual(
+                "level_31_repeated_after_disagreement", saved["verification_mode"]
+            )
+
+    def test_hint_then_verify_rejects_conflicting_repeated_deeper_search(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            teacher = {
+                "move": "f5", "score": -15, "level": "30", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            first = {
+                "move": "d3", "score": -14, "level": "31", "depth": "31@74%",
+                "time": "000:00:08.000", "nodes": 2, "nps": 1,
+            }
+            second = {
+                "move": "b4", "score": -13, "level": "31", "depth": "31@74%",
+                "time": "000:00:09.000", "nodes": 3, "nps": 1,
+            }
+            with mock.patch.object(
+                generate_ggs_root_teacher,
+                "search_root_at_level",
+                side_effect=[teacher, first, second],
+            ):
+                result = generate_ggs_root_teacher.generate_teachers(
+                    coverage,
+                    exe,
+                    root / "teacher_rows.txt",
+                    60.0,
+                    28,
+                    29,
+                    min_depth=30,
+                    method="hint_then_verify",
+                    teacher_level=30,
+                    verify_level=31,
+                )
+            self.assertEqual({"completed": 0, "requested": 1}, result)
+            manifest = json.loads(
+                (root / "teacher_rows.txt.manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(1, manifest["output"]["rejected"])
+            self.assertIn("repeated level-31", manifest["rejections"][GGS_ROOT]["reason"])
+
+    def test_time_teacher_rejects_shallow_verification_result(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            coverage = root / "coverage.json"
+            coverage.write_text(
+                json.dumps(self.coverage_report(GGS_ROOT)), encoding="utf-8", newline="\n"
+            )
+            exe = root / "teacher.exe"
+            exe.write_bytes(b"test teacher")
+            primary = {
+                "move": "f5", "score": -15, "level": "-", "depth": "30@74%",
+                "time": "000:00:07.000", "nodes": 1, "nps": 1,
+            }
+            shallow_verification = {
+                "move": "f5", "score": -14, "level": "31", "depth": "29@74%",
+                "time": "000:00:02.000", "nodes": 2, "nps": 1,
+            }
+            with (
+                mock.patch.object(generate_ggs_root_teacher, "search_root", return_value=primary),
+                mock.patch.object(
+                    generate_ggs_root_teacher,
+                    "search_root_at_level",
+                    return_value=shallow_verification,
+                ),
+                self.assertRaisesRegex(ValueError, "below 30@74%"),
+            ):
+                generate_ggs_root_teacher.generate_teachers(
+                    coverage,
+                    exe,
+                    root / "teacher_rows.txt",
+                    60.0,
+                    28,
+                    29,
+                    min_depth=30,
+                    method="time_then_verify",
+                    verify_level=31,
+                )
+
     def test_time_teacher_requires_matching_level_27_hint(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -1198,7 +1403,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
             }
             verification = {
-                "move": "f5", "score": -14, "level": "27", "depth": "27@74%",
+                "move": "f5", "score": -14, "level": "27", "depth": "30@74%",
                 "time": "000:00:02.000", "nodes": 2, "nps": 1,
             }
             with (
@@ -1237,7 +1442,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "time": "000:00:06.000", "nodes": 2, "nps": 1,
             }
             verification = {
-                "move": "f5", "score": -13, "level": "27", "depth": "27@74%",
+                "move": "f5", "score": -13, "level": "27", "depth": "30@74%",
                 "time": "000:00:02.000", "nodes": 3, "nps": 1,
             }
             with (
@@ -1283,7 +1488,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
             }
             first_tied = {
-                "move": "f5", "score": -15, "level": "27", "depth": "27@74%",
+                "move": "f5", "score": -15, "level": "27", "depth": "30@74%",
                 "time": "000:00:02.000", "nodes": 2, "nps": 1,
             }
             tiebreak = {
@@ -1323,7 +1528,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
             }
             verification = {
-                "move": "b4", "score": -12, "level": "27", "depth": "27@74%",
+                "move": "b4", "score": -12, "level": "27", "depth": "30@74%",
                 "time": "000:00:02.000", "nodes": 2, "nps": 1,
             }
             tiebreak = {
@@ -1386,7 +1591,7 @@ class GgsRootTeacherTests(unittest.TestCase):
                 "time": "000:00:07.000", "nodes": 1, "nps": 1,
             }
             mismatch = {
-                "move": "d3", "score": -15, "level": "27", "depth": "27@74%",
+                "move": "d3", "score": -15, "level": "27", "depth": "30@74%",
                 "time": "000:00:02.000", "nodes": 2, "nps": 1,
             }
             tiebreak_mismatch = {
