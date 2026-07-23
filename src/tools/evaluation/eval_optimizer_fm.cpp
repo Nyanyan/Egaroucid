@@ -51,6 +51,12 @@ struct TargetClipStats {
     float max_abs_after = 0.0f;
 };
 
+struct ScoreClipStats {
+    uint64_t clipped = 0;
+    int max_abs_before = 0;
+    int max_abs_after = 0;
+};
+
 uint64_t fm_optimizer_tim() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch()
@@ -160,12 +166,27 @@ bool fm_feature_active(int feature_idx, uint32_t active_pattern_mask) {
     return active_pattern_mask == 0 || (active_pattern_mask & (1U << (feature_idx >> 2))) != 0;
 }
 
+int apply_score_clip(int score, int score_clip, ScoreClipStats *stats) {
+    stats->max_abs_before = std::max(stats->max_abs_before, std::abs(score));
+    if (score_clip > 0) {
+        const int clipped = std::clamp(score, -score_clip, score_clip);
+        if (clipped != score) {
+            ++stats->clipped;
+            score = clipped;
+        }
+    }
+    stats->max_abs_after = std::max(stats->max_abs_after, std::abs(score));
+    return score;
+}
+
 void append_samples_from_raw_file(
     const std::string &file,
     const std::vector<int16_t> &linear,
     const std::array<int, ADJ_N_FEATURES> &starts,
     int n_fm_phases,
     size_t max_records,
+    int score_clip,
+    ScoreClipStats *score_clip_stats,
     std::vector<Sample> *samples
 ) {
     FILE *fp = nullptr;
@@ -196,7 +217,8 @@ void append_samples_from_raw_file(
         }
         sample.phase = (uint16_t)phase;
         sample.fm_phase = fm_phase_from_phase(phase, n_fm_phases);
-        sample.target = (float)rec.score * ADJ_STEP - predict_linear(linear, starts, features, phase);
+        const int teacher_score = apply_score_clip((int)rec.score, score_clip, score_clip_stats);
+        sample.target = (float)teacher_score * ADJ_STEP - predict_linear(linear, starts, features, phase);
         samples->emplace_back(sample);
     }
     fclose(fp);
@@ -209,6 +231,8 @@ void append_samples_from_index_file(
     int phase,
     int n_fm_phases,
     size_t max_records,
+    int score_clip,
+    ScoreClipStats *score_clip_stats,
     std::vector<Sample> *samples
 ) {
     FILE *fp = nullptr;
@@ -238,7 +262,8 @@ void append_samples_from_index_file(
         }
         sample.phase = (uint16_t)phase;
         sample.fm_phase = fm_phase_from_phase(phase, n_fm_phases);
-        sample.target = (float)score * ADJ_STEP - predict_linear(linear, starts, features, phase);
+        const int teacher_score = apply_score_clip((int)score, score_clip, score_clip_stats);
+        sample.target = (float)teacher_score * ADJ_STEP - predict_linear(linear, starts, features, phase);
         samples->emplace_back(sample);
     }
     fclose(fp);
@@ -251,7 +276,9 @@ std::vector<Sample> load_samples(
     const std::vector<int16_t> &linear,
     const std::array<int, ADJ_N_FEATURES> &starts,
     int n_fm_phases,
-    size_t max_records
+    size_t max_records,
+    int score_clip,
+    ScoreClipStats *score_clip_stats
 ) {
     std::vector<Sample> samples;
     if (max_records > 0) {
@@ -264,9 +291,9 @@ std::vector<Sample> load_samples(
         const bool indexed_exists = std::filesystem::exists(indexed_file);
         const size_t before = samples.size();
         if (raw_exists) {
-            append_samples_from_raw_file(file, linear, starts, n_fm_phases, max_records, &samples);
+            append_samples_from_raw_file(file, linear, starts, n_fm_phases, max_records, score_clip, score_clip_stats, &samples);
         } else if (indexed_exists) {
-            append_samples_from_index_file(indexed_file, linear, starts, i, n_fm_phases, max_records, &samples);
+            append_samples_from_index_file(indexed_file, linear, starts, i, n_fm_phases, max_records, score_clip, score_clip_stats, &samples);
         } else {
             std::cerr << "[WARN] can't find data " << file << " or " << indexed_file << std::endl;
         }
@@ -437,7 +464,9 @@ bool write_fm_file(
     float vector_clip,
     float init_std,
     float target_clip,
-    const TargetClipStats &target_clip_stats
+    const TargetClipStats &target_clip_stats,
+    int score_clip,
+    const ScoreClipStats &score_clip_stats
 ) {
     std::filesystem::path out_path(out_file);
     if (out_path.has_parent_path()) {
@@ -504,6 +533,10 @@ bool write_fm_file(
         summary << "target_clip_count " << target_clip_stats.clipped << "\n";
         summary << "target_max_abs_before_disc " << target_clip_stats.max_abs_before / ADJ_STEP << "\n";
         summary << "target_max_abs_after_disc " << target_clip_stats.max_abs_after / ADJ_STEP << "\n";
+        summary << "score_clip " << score_clip << "\n";
+        summary << "score_clip_count " << score_clip_stats.clipped << "\n";
+        summary << "score_max_abs_before_disc " << score_clip_stats.max_abs_before << "\n";
+        summary << "score_max_abs_after_disc " << score_clip_stats.max_abs_after << "\n";
         summary << "initialized_fm_rows " << initialized_rows << "\n";
         summary << "nonzero_quantized " << nonzero << "\n";
         summary << "max_abs_quantized " << max_abs << "\n";
@@ -587,7 +620,7 @@ int main(int argc, char **argv) {
             << "usage: eval_optimizer_fm [base_eval.egev2] [board_data_dir] [start_file] [n_files] [out_file] "
             << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] "
             << "[active_pattern_mask=0] [center_phase_target=0] [l2=0.00001] [error_clip=4096] [vector_clip=7.5] "
-            << "[init_std=0.02] [target_clip=0]\n";
+            << "[init_std=0.02] [target_clip=0] [score_clip=0]\n";
         return 1;
     }
     const std::string base_eval = argv[1];
@@ -609,11 +642,12 @@ int main(int argc, char **argv) {
     const float vector_clip = argc >= 18 ? (float)std::atof(argv[17]) : 7.5f;
     const float init_std = argc >= 19 ? (float)std::atof(argv[18]) : 0.02f;
     const float target_clip = argc >= 20 ? (float)std::atof(argv[19]) : 0.0f;
+    const int score_clip = argc >= 21 ? std::atoi(argv[20]) : 0;
 
     if (dim <= 0 || dim > 64 || n_fm_phases <= 0 || n_fm_phases > ADJ_N_PHASES || epochs < 0 || scale <= 0 ||
         (active_pattern_mask & 0xFFFF0000U) != 0 || l2 < 0.0f || error_clip <= 0.0f || vector_clip <= 0.0f ||
-        init_std <= 0.0f || target_clip < 0.0f) {
-        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std/target_clip" << std::endl;
+        init_std <= 0.0f || target_clip < 0.0f || score_clip < 0 || score_clip > HW2) {
+        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std/target_clip/score_clip" << std::endl;
         return 1;
     }
 
@@ -634,7 +668,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto samples = load_samples(data_dir, start_file, n_files, linear, starts, n_fm_phases, max_records);
+    ScoreClipStats score_clip_stats;
+    auto samples = load_samples(data_dir, start_file, n_files, linear, starts, n_fm_phases, max_records, score_clip, &score_clip_stats);
     if (samples.empty()) {
         std::cerr << "[ERROR] no samples loaded" << std::endl;
         return 1;
@@ -648,7 +683,15 @@ int main(int argc, char **argv) {
               << " vector_clip " << vector_clip
               << " init_std " << init_std
               << " target_clip " << target_clip
+              << " score_clip " << score_clip
               << std::endl;
+    if (score_clip > 0) {
+        std::cerr << "score_clip " << score_clip
+                  << " clipped " << score_clip_stats.clipped
+                  << " max_abs_before_disc " << score_clip_stats.max_abs_before
+                  << " max_abs_after_disc " << score_clip_stats.max_abs_after
+                  << std::endl;
+    }
 
     std::vector<size_t> indices(samples.size());
     std::iota(indices.begin(), indices.end(), 0);
@@ -710,7 +753,7 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std, target_clip, target_clip_stats)) {
+    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std, target_clip, target_clip_stats, score_clip, score_clip_stats)) {
         return 1;
     }
     return 0;
