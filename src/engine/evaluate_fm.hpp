@@ -19,14 +19,20 @@
 constexpr char EVAL_FM_FILE_MAGIC[8] = {'E', 'G', 'F', 'M', '0', '0', '1', '\0'};
 constexpr uint32_t EVAL_FM_FILE_VERSION = 1;
 constexpr int EVAL_FM_MAX_DIM = 64;
+constexpr uint32_t EVAL_FM_FLAG_PHASE_RANGE = 0x80000000U;
+constexpr uint32_t EVAL_FM_PHASE_START_SHIFT = 16;
+constexpr uint32_t EVAL_FM_PHASE_END_SHIFT = 22;
+constexpr uint32_t EVAL_FM_PHASE_FLAG_MASK = 0x3FU;
 
 bool eval_fm_enabled = false;
+bool eval_fm_has_phase_range = false;
 uint32_t eval_fm_n_phases = 0;
 uint32_t eval_fm_dim = 0;
 int32_t eval_fm_scale = 1;
 int64_t eval_fm_score_denom = 2;
 uint64_t eval_fm_total_vectors = 0;
 std::array<uint8_t, N_PHASES> eval_fm_phase_table;
+std::array<uint8_t, N_PHASES> eval_fm_phase_enabled;
 std::array<uint64_t, N_PHASES> eval_fm_phase_vector_offsets;
 uint32_t eval_fm_active_pattern_mask = 0;
 std::vector<int8_t> eval_fm_vectors;
@@ -47,12 +53,14 @@ inline bool eval_fm_read_scalar(FILE *fp, T *v) {
 
 inline void eval_fm_disable() {
     eval_fm_enabled = false;
+    eval_fm_has_phase_range = false;
     eval_fm_n_phases = 0;
     eval_fm_dim = 0;
     eval_fm_scale = 1;
     eval_fm_score_denom = 2;
     eval_fm_total_vectors = 0;
     eval_fm_phase_table.fill(0);
+    eval_fm_phase_enabled.fill(0);
     eval_fm_phase_vector_offsets.fill(0);
     eval_fm_active_pattern_mask = 0;
     eval_fm_n_active_features = 0;
@@ -79,6 +87,17 @@ inline uint64_t eval_fm_phase_vector_offset(const int phase_idx) {
 
 inline bool eval_fm_feature_active(const int feature_idx) {
     return eval_fm_active_pattern_mask == 0 || (eval_fm_active_pattern_mask & (1U << (feature_idx >> 2))) != 0;
+}
+
+inline bool eval_fm_parse_phase_range(const uint32_t flags, uint32_t *start_phase, uint32_t *end_phase) {
+    if ((flags & EVAL_FM_FLAG_PHASE_RANGE) == 0) {
+        *start_phase = 0;
+        *end_phase = N_PHASES - 1;
+        return true;
+    }
+    *start_phase = (flags >> EVAL_FM_PHASE_START_SHIFT) & EVAL_FM_PHASE_FLAG_MASK;
+    *end_phase = (flags >> EVAL_FM_PHASE_END_SHIFT) & EVAL_FM_PHASE_FLAG_MASK;
+    return *start_phase <= *end_phase && *end_phase < N_PHASES;
 }
 
 inline void eval_fm_init_active_features() {
@@ -156,6 +175,9 @@ inline bool load_eval_fm_file(
     const uint64_t expected_linear_count = (uint64_t)N_PHASES * expected_linear_params_per_phase;
     eval_fm_init_feature_offsets();
     const uint64_t expected_fm_count = (uint64_t)n_fm_phases * eval_fm_total_vectors * fm_dim;
+    uint32_t apply_start_phase = 0;
+    uint32_t apply_end_phase = N_PHASES - 1;
+    const bool phase_range_ok = eval_fm_parse_phase_range(flags, &apply_start_phase, &apply_end_phase);
 
     ok = ok &&
         version == EVAL_FM_FILE_VERSION &&
@@ -167,7 +189,8 @@ inline bool load_eval_fm_file(
         fm_dim <= EVAL_FM_MAX_DIM &&
         fm_scale > 0 &&
         linear_count == expected_linear_count &&
-        fm_count == expected_fm_count;
+        fm_count == expected_fm_count &&
+        phase_range_ok;
 
     if (!ok) {
         std::cerr << "[ERROR] [FATAL] evaluation FM file header invalid: " << file << std::endl;
@@ -193,6 +216,7 @@ inline bool load_eval_fm_file(
     fclose(fp);
 
     eval_fm_enabled = true;
+    eval_fm_has_phase_range = (flags & EVAL_FM_FLAG_PHASE_RANGE) != 0;
     eval_fm_n_phases = n_fm_phases;
     eval_fm_dim = fm_dim;
     eval_fm_scale = fm_scale;
@@ -202,6 +226,7 @@ inline bool load_eval_fm_file(
             eval_fm_n_phases - 1,
             (uint32_t)((phase * (int)eval_fm_n_phases) / N_PHASES)
         );
+        eval_fm_phase_enabled[phase] = apply_start_phase <= (uint32_t)phase && (uint32_t)phase <= apply_end_phase;
         eval_fm_phase_vector_offsets[phase] = (uint64_t)eval_fm_phase_table[phase] * eval_fm_total_vectors * eval_fm_dim;
     }
     eval_fm_active_pattern_mask = flags & 0xFFFFU;
@@ -212,6 +237,7 @@ inline bool load_eval_fm_file(
                   << " fm_phases " << eval_fm_n_phases
                   << " dim " << eval_fm_dim
                   << " scale " << eval_fm_scale
+                  << " apply_phase_range " << apply_start_phase << "-" << apply_end_phase
                   << " active_pattern_mask 0x" << std::hex << eval_fm_active_pattern_mask << std::dec
                   << " flags " << flags << std::endl;
     }
@@ -381,7 +407,7 @@ inline int eval_fm_calc_dim4_unrolled(const int phase_idx, const uint16_t active
 }
 
 inline int eval_fm_calc_from_active_raw_features(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
-    if (!eval_fm_enabled) {
+    if (!eval_fm_enabled || (eval_fm_has_phase_range && !eval_fm_phase_enabled[phase_idx])) {
         return 0;
     }
     if (eval_fm_dim == 1) {
@@ -423,7 +449,7 @@ inline int eval_fm_calc_from_active_raw_features(const int phase_idx, const uint
 
 #if USE_SIMD_EVALUATION
 inline int eval_fm_calc(const int phase_idx, Eval_features *features) {
-    if (!eval_fm_enabled) {
+    if (!eval_fm_enabled || (eval_fm_has_phase_range && !eval_fm_phase_enabled[phase_idx])) {
         return 0;
     }
     alignas(32) uint16_t lanes[N_PATTERN_FEATURES];
@@ -443,7 +469,7 @@ inline int eval_fm_calc(const int phase_idx, Eval_features *features) {
 }
 #else
 inline int eval_fm_calc(const int phase_idx, Eval_search *eval) {
-    if (!eval_fm_enabled) {
+    if (!eval_fm_enabled || (eval_fm_has_phase_range && !eval_fm_phase_enabled[phase_idx])) {
         return 0;
     }
     if (eval_fm_dim == 1) {
