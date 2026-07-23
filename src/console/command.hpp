@@ -218,7 +218,7 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         iterative_deepening_search_time_limit(
             board->board, -SCORE_MAX, SCORE_MAX, options->show_log, clogs,
             board->board.get_legal(), true, THREAD_ID_NONE, &result,
-            options->fixed_move_time_msec, &searching
+            options->fixed_move_time_msec, &searching, true
         );
         result.level = MAX_LEVEL;
     } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {

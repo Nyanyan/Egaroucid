@@ -451,7 +451,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
 #endif
 }
 
-void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, Search_result *result, uint64_t time_limit, bool *searching) {
+void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, Search_result *result, uint64_t time_limit, bool *searching, bool conservative_start = false) {
     const int n_usable_threads = thread_pool.get_max_thread_size(thread_id);
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
@@ -473,7 +473,17 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     }
     int before_raw_value = -100;
     bool policy_changed_before = true;
+    uint64_t previous_iteration_time = 0;
     while (global_searching && (*searching) && ((tim() - strt < time_limit) || main_depth <= 1)) {
+        uint64_t elapsed_before_iteration = tim() - strt;
+        if (conservative_start && main_depth > 1 && elapsed_before_iteration < time_limit) {
+            const uint64_t remaining = time_limit - elapsed_before_iteration;
+            const uint64_t min_remaining = std::max<uint64_t>(50ULL, previous_iteration_time * 2ULL + 10ULL);
+            if (elapsed_before_iteration * 4ULL >= time_limit * 3ULL || remaining <= min_remaining) {
+                break;
+            }
+        }
+        const uint64_t iteration_start = tim();
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
             main_is_end_search = true;
@@ -511,6 +521,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         result->nodes += main_search.n_nodes;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
+        previous_iteration_time = std::max<uint64_t>(1ULL, tim() - iteration_start);
         if (search_success) {
             bool verify_timeout = false;
             std::string verify_log;
