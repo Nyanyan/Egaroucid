@@ -34,6 +34,7 @@ std::array<uint16_t, N_PATTERN_FEATURES> eval_fm_active_pack_offsets;
 std::array<uint16_t, N_PATTERN_FEATURES> eval_fm_active_feature_limits;
 std::array<uint32_t, N_PATTERN_FEATURES> eval_fm_active_vector_offsets;
 uint32_t eval_fm_n_active_features = 0;
+uint32_t eval_fm_active_feature_vector_mask = 0;
 
 template<typename T>
 inline bool eval_fm_read_scalar(FILE *fp, T *v) {
@@ -48,6 +49,7 @@ inline void eval_fm_disable() {
     eval_fm_total_vectors = 0;
     eval_fm_active_pattern_mask = 0;
     eval_fm_n_active_features = 0;
+    eval_fm_active_feature_vector_mask = 0;
     eval_fm_vectors.clear();
 }
 
@@ -74,9 +76,11 @@ inline bool eval_fm_feature_active(const int feature_idx) {
 
 inline void eval_fm_init_active_features() {
     eval_fm_n_active_features = 0;
+    eval_fm_active_feature_vector_mask = 0;
     for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
         if (eval_fm_feature_active(i)) {
             const uint32_t active_idx = eval_fm_n_active_features++;
+            eval_fm_active_feature_vector_mask |= 1U << (i / 16);
             eval_fm_active_feature_indices[active_idx] = (uint8_t)i;
             eval_fm_active_lane_indices[active_idx] = (uint8_t)((i / 16) * 16 + (15 - (i & 15)));
             eval_fm_active_pack_offsets[active_idx] = (uint16_t)(i < 32 ? pattern_starts[i >> 2] : 0);
@@ -212,16 +216,14 @@ inline int eval_fm_hsum_epi32(const __m256i x) {
     return _mm_cvtsi128_si32(sum128) + _mm_extract_epi32(sum128, 1);
 }
 
-inline int eval_fm_calc_dim8_avx2(const int phase_idx, const uint16_t raw_features[N_PATTERN_FEATURES]) {
+inline int eval_fm_calc_dim8_avx2(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
     __m256i sum_acc = _mm256_setzero_si256();
     __m256i sq_sum_acc = _mm256_setzero_si256();
     const uint64_t phase_offset = (uint64_t)eval_fm_phase(phase_idx) * eval_fm_total_vectors * eval_fm_dim;
     const int8_t *base = eval_fm_vectors.data() + phase_offset;
     for (uint32_t j = 0; j < eval_fm_n_active_features; j += 2) {
-        const int i0 = eval_fm_active_feature_indices[j];
-        const int i1 = eval_fm_active_feature_indices[j + 1];
-        const uint16_t raw0 = raw_features[i0];
-        const uint16_t raw1 = raw_features[i1];
+        const uint16_t raw0 = active_raw_features[j];
+        const uint16_t raw1 = active_raw_features[j + 1];
         if (raw0 >= eval_fm_active_feature_limits[j] || raw1 >= eval_fm_active_feature_limits[j + 1]) {
             return 0;
         }
@@ -245,14 +247,13 @@ inline int eval_fm_calc_dim8_avx2(const int phase_idx, const uint16_t raw_featur
 }
 #endif
 
-inline int eval_fm_calc_dim1_unrolled(const int phase_idx, const uint16_t raw_features[N_PATTERN_FEATURES]) {
+inline int eval_fm_calc_dim1_unrolled(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
     int32_t sum0 = 0;
     int32_t square_sum0 = 0;
     const uint64_t phase_offset = (uint64_t)eval_fm_phase(phase_idx) * eval_fm_total_vectors;
     const int8_t *base = eval_fm_vectors.data() + phase_offset;
     for (uint32_t j = 0; j < eval_fm_n_active_features; ++j) {
-        const int i = eval_fm_active_feature_indices[j];
-        const uint16_t raw = raw_features[i];
+        const uint16_t raw = active_raw_features[j];
         if (raw >= eval_fm_active_feature_limits[j]) {
             return 0;
         }
@@ -263,7 +264,7 @@ inline int eval_fm_calc_dim1_unrolled(const int phase_idx, const uint16_t raw_fe
     return eval_fm_finalize_score((int64_t)sum0 * sum0 - square_sum0);
 }
 
-inline int eval_fm_calc_dim2_unrolled(const int phase_idx, const uint16_t raw_features[N_PATTERN_FEATURES]) {
+inline int eval_fm_calc_dim2_unrolled(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
     int32_t sum0 = 0;
     int32_t sum1 = 0;
     int32_t square_sum0 = 0;
@@ -271,8 +272,7 @@ inline int eval_fm_calc_dim2_unrolled(const int phase_idx, const uint16_t raw_fe
     const uint64_t phase_offset = (uint64_t)eval_fm_phase(phase_idx) * eval_fm_total_vectors * 2;
     const int8_t *base = eval_fm_vectors.data() + phase_offset;
     for (uint32_t j = 0; j < eval_fm_n_active_features; ++j) {
-        const int i = eval_fm_active_feature_indices[j];
-        const uint16_t raw = raw_features[i];
+        const uint16_t raw = active_raw_features[j];
         if (raw >= eval_fm_active_feature_limits[j]) {
             return 0;
         }
@@ -288,7 +288,7 @@ inline int eval_fm_calc_dim2_unrolled(const int phase_idx, const uint16_t raw_fe
     return eval_fm_finalize_score(diff);
 }
 
-inline int eval_fm_calc_dim4_unrolled(const int phase_idx, const uint16_t raw_features[N_PATTERN_FEATURES]) {
+inline int eval_fm_calc_dim4_unrolled(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
     int32_t sum0 = 0;
     int32_t sum1 = 0;
     int32_t sum2 = 0;
@@ -300,8 +300,7 @@ inline int eval_fm_calc_dim4_unrolled(const int phase_idx, const uint16_t raw_fe
     const uint64_t phase_offset = (uint64_t)eval_fm_phase(phase_idx) * eval_fm_total_vectors * 4;
     const int8_t *base = eval_fm_vectors.data() + phase_offset;
     for (uint32_t j = 0; j < eval_fm_n_active_features; ++j) {
-        const int i = eval_fm_active_feature_indices[j];
-        const uint16_t raw = raw_features[i];
+        const uint16_t raw = active_raw_features[j];
         if (raw >= eval_fm_active_feature_limits[j]) {
             return 0;
         }
@@ -325,30 +324,29 @@ inline int eval_fm_calc_dim4_unrolled(const int phase_idx, const uint16_t raw_fe
     return eval_fm_finalize_score(diff);
 }
 
-inline int eval_fm_calc_from_raw_features(const int phase_idx, const uint16_t raw_features[N_PATTERN_FEATURES]) {
+inline int eval_fm_calc_from_active_raw_features(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
     if (!eval_fm_enabled) {
         return 0;
     }
     if (eval_fm_dim == 1) {
-        return eval_fm_calc_dim1_unrolled(phase_idx, raw_features);
+        return eval_fm_calc_dim1_unrolled(phase_idx, active_raw_features);
     }
     if (eval_fm_dim == 2) {
-        return eval_fm_calc_dim2_unrolled(phase_idx, raw_features);
+        return eval_fm_calc_dim2_unrolled(phase_idx, active_raw_features);
     }
     if (eval_fm_dim == 4) {
-        return eval_fm_calc_dim4_unrolled(phase_idx, raw_features);
+        return eval_fm_calc_dim4_unrolled(phase_idx, active_raw_features);
     }
 #if USE_SIMD_EVALUATION
     if (eval_fm_dim == 8) {
-        return eval_fm_calc_dim8_avx2(phase_idx, raw_features);
+        return eval_fm_calc_dim8_avx2(phase_idx, active_raw_features);
     }
 #endif
     int32_t sum[EVAL_FM_MAX_DIM] = {};
     int32_t square_sum[EVAL_FM_MAX_DIM] = {};
     const uint64_t phase_offset = (uint64_t)eval_fm_phase(phase_idx) * eval_fm_total_vectors * eval_fm_dim;
     for (uint32_t j = 0; j < eval_fm_n_active_features; ++j) {
-        const int i = eval_fm_active_feature_indices[j];
-        const uint16_t raw = raw_features[i];
+        const uint16_t raw = active_raw_features[j];
         if (raw >= eval_fm_active_feature_limits[j]) {
             return 0;
         }
@@ -374,27 +372,28 @@ inline int eval_fm_calc(const int phase_idx, Eval_features *features) {
     }
     alignas(32) uint16_t lanes[N_PATTERN_FEATURES];
     for (int v = 0; v < N_EVAL_VECTORS; ++v) {
-        _mm256_store_si256((__m256i*)(lanes + v * 16), features->f256[v]);
+        if (eval_fm_active_feature_vector_mask & (1U << v)) {
+            _mm256_store_si256((__m256i*)(lanes + v * 16), features->f256[v]);
+        }
     }
-    uint16_t raw_features[N_PATTERN_FEATURES];
+    uint16_t active_raw_features[N_PATTERN_FEATURES];
     for (uint32_t j = 0; j < eval_fm_n_active_features; ++j) {
-        const int i = eval_fm_active_feature_indices[j];
-        raw_features[i] = lanes[eval_fm_active_lane_indices[j]] - eval_fm_active_pack_offsets[j];
+        active_raw_features[j] = lanes[eval_fm_active_lane_indices[j]] - eval_fm_active_pack_offsets[j];
     }
-    return eval_fm_calc_from_raw_features(phase_idx, raw_features);
+    return eval_fm_calc_from_active_raw_features(phase_idx, active_raw_features);
 }
 #else
 inline int eval_fm_calc(const int phase_idx, Eval_search *eval) {
     if (!eval_fm_enabled) {
         return 0;
     }
-    uint16_t raw_features[N_PATTERN_FEATURES];
+    uint16_t active_raw_features[N_PATTERN_FEATURES];
     const bool reversed = eval->reversed[eval->feature_idx];
     for (uint32_t j = 0; j < eval_fm_n_active_features; ++j) {
         const int i = eval_fm_active_feature_indices[j];
         const uint16_t feature = eval->features[eval->feature_idx][i];
-        raw_features[i] = reversed ? swap_player_idx(feature, pattern_sizes[i >> 2]) : feature;
+        active_raw_features[j] = reversed ? swap_player_idx(feature, pattern_sizes[i >> 2]) : feature;
     }
-    return eval_fm_calc_from_raw_features(phase_idx, raw_features);
+    return eval_fm_calc_from_active_raw_features(phase_idx, active_raw_features);
 }
 #endif
