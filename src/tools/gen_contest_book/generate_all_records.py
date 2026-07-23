@@ -5,6 +5,7 @@ from pathlib import Path
 
 from config import (
     CONSOLE_EXE,
+    DATA_DIR,
     DEFAULT_BOOK_MAX_LOSS,
     DEFAULT_CUT_EMPTY,
     DEFAULT_GAMES_PER_START,
@@ -19,6 +20,12 @@ from config import (
 )
 from generate_records import count_unique_records, ensure_generation_manifest
 from othello import normalize_board_text
+from r14_random_setup_probability import load_r14_random_setup_priority_manifest
+
+
+DEFAULT_R14_PRIORITY_MANIFEST = (
+    DATA_DIR / "r14_random_setup_probability_priority_20260722.jsonl"
+)
 
 
 def find_start_index(boards: list[str], start_board: str) -> int:
@@ -27,6 +34,21 @@ def find_start_index(boards: list[str], start_board: str) -> int:
         if normalize_board_text(board) == normalized_start:
             return idx
     raise ValueError(f"--start-board not found in start list: {normalized_start}")
+
+
+def load_generation_boards(priority_manifest: Path | None) -> list[str]:
+    """Return the requested generation order.
+
+    A priority manifest is validated, including its sidecar metadata, before
+    any engine process is launched.  Without one, retain the historical order
+    of the ordinary start-position files.
+    """
+    if priority_manifest is None:
+        return list(iter_start_boards())
+    boards, _metadata, _provenance = load_r14_random_setup_priority_manifest(
+        priority_manifest
+    )
+    return boards
 
 
 def main() -> int:
@@ -38,6 +60,22 @@ def main() -> int:
         help="target total number of unique records per start (default: %(default)s)",
     )
     parser.add_argument("--batch-size", type=int, default=DEFAULT_RECORD_BATCH_SIZE)
+    generation_order = parser.add_mutually_exclusive_group()
+    generation_order.add_argument(
+        "--priority-manifest",
+        type=Path,
+        default=DEFAULT_R14_PRIORITY_MANIFEST,
+        help=(
+            "validated r14 probability-priority JSON Lines file; process its "
+            "boards from highest to lowest recorded probability "
+            f"(default: {DEFAULT_R14_PRIORITY_MANIFEST})"
+        ),
+    )
+    generation_order.add_argument(
+        "--start-list-order",
+        action="store_true",
+        help="use the historical records321_14_random_setup file order instead",
+    )
     parser.add_argument("--start-board")
     parser.add_argument("--skip", type=int, default=0)
     parser.add_argument("--limit", type=int)
@@ -77,7 +115,8 @@ def main() -> int:
     if args.limit is not None and args.limit < 0:
         raise ValueError("--limit must be non-negative")
 
-    boards = list(iter_start_boards())
+    priority_manifest = None if args.start_list_order else args.priority_manifest
+    boards = load_generation_boards(priority_manifest)
     start_idx = 0
     if args.start_board:
         start_idx = find_start_index(boards, args.start_board)

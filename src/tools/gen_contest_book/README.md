@@ -22,10 +22,16 @@ clang++ -O3 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console_clang
 python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 512 --threads 1
 ```
 
-開始局面一覧を上から順に処理して棋譜を生成します。
+既定では、`data/r14_random_setup_probability_priority_20260722.jsonl` の上から順、すなわちリポジトリ内の `random_setup(14)` 実装における発生確率が高い開始局面から棋譜を生成します。
 
 ```powershell
 python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1
+```
+
+`--resume` と併用すると、目標棋譜数に達した局面はEgaroucidを起動せずに飛ばします。`--skip` と `--limit` は、この優先度順の位置を基準にします。従来の `records321_14_random_setup` のファイル順を使う場合だけ、`--start-list-order` を指定してください。
+
+```powershell
+python src/tools/gen_contest_book/generate_all_records.py --games 256 --threads 28 --resume --skip 534
 ```
 
 `--games` は再実行のたびに追加する棋譜数ではなく、開始局面ごとのユニーク棋譜の目標総数です。既に一部の棋譜がある状態で `--games 512` を再実行すると合計512件まで生成し、既に512件以上あれば棋譜生成を行いません。
@@ -133,10 +139,22 @@ Generate records for one start:
 python src/tools/gen_contest_book/generate_records.py "<initial board>" --games 512 --threads 1
 ```
 
-Generate records for starts in list order:
+By default, generate records in the order recorded in
+`data/r14_random_setup_probability_priority_20260722.jsonl`: higher occurrence
+probability under the repository-local `random_setup(14)` implementation comes
+first.
 
 ```powershell
 python src/tools/gen_contest_book/generate_all_records.py --games 512 --threads 1
+```
+
+Combined with `--resume`, a position that already has the target record count
+is skipped without launching Egaroucid.  `--skip` and `--limit` refer to this
+priority order.  Specify `--start-list-order` only when the historical
+`records321_14_random_setup` file order is needed.
+
+```powershell
+python src/tools/gen_contest_book/generate_all_records.py --games 256 --threads 28 --resume --skip 534
 ```
 
 `--games` is a target total of unique records for each start, not an amount to

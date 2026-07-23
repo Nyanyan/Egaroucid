@@ -233,7 +233,9 @@ class GenerateRecordsTests(unittest.TestCase):
             build.assert_not_called()
 
     def test_generate_all_resume_skips_completed_start(self) -> None:
-        argv = ["generate_all_records.py", "--games", "3", "--resume"]
+        argv = [
+            "generate_all_records.py", "--games", "3", "--resume", "--start-list-order"
+        ]
         with (
             mock.patch.object(sys, "argv", argv),
             mock.patch.object(generate_all_records, "iter_start_boards", return_value=[INITIAL_BOARD]),
@@ -245,12 +247,44 @@ class GenerateRecordsTests(unittest.TestCase):
         run.assert_not_called()
         ensure_manifest.assert_called_once()
 
+    def test_generate_all_priority_manifest_uses_its_order_and_resume(self) -> None:
+        second_board = GGS_ROOT
+        manifest = Path("priority.jsonl")
+        argv = [
+            "generate_all_records.py",
+            "--games", "3",
+            "--resume",
+            "--priority-manifest", str(manifest),
+        ]
+        with (
+            mock.patch.object(sys, "argv", argv),
+            mock.patch.object(
+                generate_all_records,
+                "load_r14_random_setup_priority_manifest",
+                return_value=([INITIAL_BOARD, second_board], {}, {}),
+            ) as load_priority,
+            mock.patch.object(
+                generate_all_records,
+                "count_unique_records",
+                side_effect=[3, 1],
+            ),
+            mock.patch.object(generate_all_records, "ensure_generation_manifest") as ensure_manifest,
+            mock.patch.object(generate_all_records.subprocess, "run") as run,
+        ):
+            self.assertEqual(0, generate_all_records.main())
+
+        load_priority.assert_called_once_with(manifest)
+        ensure_manifest.assert_called_once()
+        command = run.call_args.args[0]
+        self.assertEqual(second_board, command[2])
+
     def test_generate_all_forwards_executable_override(self) -> None:
         requested_exe = Path("C:/custom/egaroucid.exe")
         argv = [
             "generate_all_records.py",
             "--games", "1",
             "--limit", "1",
+            "--start-list-order",
             "--exe", str(requested_exe),
         ]
         with (
