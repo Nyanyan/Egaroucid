@@ -149,7 +149,7 @@ bool fm_feature_active(int feature_idx, uint32_t active_pattern_mask) {
     return active_pattern_mask == 0 || (active_pattern_mask & (1U << (feature_idx >> 2))) != 0;
 }
 
-void append_samples_from_file(
+void append_samples_from_raw_file(
     const std::string &file,
     const std::vector<int16_t> &linear,
     const std::array<int, ADJ_N_FEATURES> &starts,
@@ -191,6 +191,48 @@ void append_samples_from_file(
     fclose(fp);
 }
 
+void append_samples_from_index_file(
+    const std::string &file,
+    const std::vector<int16_t> &linear,
+    const std::array<int, ADJ_N_FEATURES> &starts,
+    int phase,
+    int n_fm_phases,
+    size_t max_records,
+    std::vector<Sample> *samples
+) {
+    FILE *fp = nullptr;
+    if (fopen_s(&fp, file.c_str(), "rb") != 0) {
+        std::cerr << "[WARN] can't open indexed data " << file << std::endl;
+        return;
+    }
+    int16_t n_discs = 0;
+    int16_t player = 0;
+    int16_t score = 0;
+    uint16_t features[ADJ_N_FEATURES];
+    while (max_records == 0 || samples->size() < max_records) {
+        if (fread(&n_discs, sizeof(int16_t), 1, fp) < 1) {
+            break;
+        }
+        if (fread(&player, sizeof(int16_t), 1, fp) < 1 ||
+            fread(features, sizeof(uint16_t), ADJ_N_FEATURES, fp) < ADJ_N_FEATURES ||
+            fread(&score, sizeof(int16_t), 1, fp) < 1) {
+            break;
+        }
+        if (phase < 0 || phase >= ADJ_N_PHASES || n_discs < 0 || n_discs > HW2 || player < 0 || player > 1) {
+            continue;
+        }
+        Sample sample;
+        for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
+            sample.features[i] = features[i];
+        }
+        sample.phase = (uint16_t)phase;
+        sample.fm_phase = fm_phase_from_phase(phase, n_fm_phases);
+        sample.target = (float)score * ADJ_STEP - predict_linear(linear, starts, features, phase);
+        samples->emplace_back(sample);
+    }
+    fclose(fp);
+}
+
 std::vector<Sample> load_samples(
     const std::string &data_dir,
     int start_file,
@@ -206,10 +248,19 @@ std::vector<Sample> load_samples(
     }
     for (int i = start_file; i < start_file + n_files; ++i) {
         const std::string file = data_dir + "/" + std::to_string(i) + ".dat";
+        const std::string indexed_file = data_dir + "/" + std::to_string(i) + "/teacher_0.dat";
+        const bool raw_exists = std::filesystem::exists(file);
+        const bool indexed_exists = std::filesystem::exists(indexed_file);
         const size_t before = samples.size();
-        append_samples_from_file(file, linear, starts, n_fm_phases, max_records, &samples);
+        if (raw_exists) {
+            append_samples_from_raw_file(file, linear, starts, n_fm_phases, max_records, &samples);
+        } else if (indexed_exists) {
+            append_samples_from_index_file(indexed_file, linear, starts, i, n_fm_phases, max_records, &samples);
+        } else {
+            std::cerr << "[WARN] can't find data " << file << " or " << indexed_file << std::endl;
+        }
         if (samples.size() > before) {
-            std::cerr << file << " samples " << samples.size() << std::endl;
+            std::cerr << (raw_exists ? file : indexed_file) << " samples " << samples.size() << std::endl;
         }
         if (max_records > 0 && samples.size() >= max_records) {
             break;
