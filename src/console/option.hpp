@@ -32,6 +32,7 @@ struct Options {
     bool gtp;
     bool quiet;
     int time_allocated_seconds; // -1 (TIME_NOT_ALLOCATED): not allocated
+    uint64_t fixed_move_time_msec; // 0: not allocated
     bool ponder;
     bool noboard;
     bool log_to_file;
@@ -143,6 +144,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     res.gtp = find_commandline_option(commandline_options, ID_GTP);
     res.quiet = find_commandline_option(commandline_options, ID_QUIET);
     res.time_allocated_seconds = TIME_NOT_ALLOCATED;
+    res.fixed_move_time_msec = 0;
     if (find_commandline_option(commandline_options, ID_TIME_ALLOCATE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_TIME_ALLOCATE);
         try {
@@ -155,6 +157,20 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] invalid time allocation" << std::endl;
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] time allocation argument out of range" << std::endl;
+        }
+    }
+    if (find_commandline_option(commandline_options, ID_MOVE_TIME)) {
+        std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_MOVE_TIME);
+        try {
+            res.fixed_move_time_msec = std::stoull(arg[0]);
+            if (res.fixed_move_time_msec < 1) {
+                res.fixed_move_time_msec = 0;
+                std::cerr << "[ERROR] fixed move time argument out of range" << std::endl;
+            }
+        } catch (const std::invalid_argument& e) {
+            std::cerr << "[ERROR] invalid fixed move time" << std::endl;
+        } catch (const std::out_of_range& e) {
+            std::cerr << "[ERROR] fixed move time argument out of range" << std::endl;
         }
     }
     res.ponder = find_commandline_option(commandline_options, ID_PONDER);

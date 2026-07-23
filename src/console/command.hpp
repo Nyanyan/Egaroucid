@@ -212,7 +212,16 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
         }
     }
     Search_result result;
-    if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
+    if (options->fixed_move_time_msec > 0) {
+        bool searching = true;
+        std::vector<Clog_result> clogs;
+        iterative_deepening_search_time_limit(
+            board->board, -SCORE_MAX, SCORE_MAX, options->show_log, clogs,
+            board->board.get_legal(), true, THREAD_ID_NONE, &result,
+            options->fixed_move_time_msec, &searching
+        );
+        result.level = MAX_LEVEL;
+    } else if (options->time_allocated_seconds == TIME_NOT_ALLOCATED) {
         if (options->play_loss && myrandom() < options->play_loss_ratio) { // play with loss
             result = ai_loss(board->board, options->level, true, 0, true, options->show_log, options->play_loss_max);
         } else { // normal search
