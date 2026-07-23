@@ -45,6 +45,12 @@ struct Sample {
     uint16_t fm_phase;
 };
 
+struct TargetClipStats {
+    uint64_t clipped = 0;
+    float max_abs_before = 0.0f;
+    float max_abs_after = 0.0f;
+};
+
 uint64_t fm_optimizer_tim() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch()
@@ -429,7 +435,9 @@ bool write_fm_file(
     float l2,
     float error_clip,
     float vector_clip,
-    float init_std
+    float init_std,
+    float target_clip,
+    const TargetClipStats &target_clip_stats
 ) {
     std::filesystem::path out_path(out_file);
     if (out_path.has_parent_path()) {
@@ -492,6 +500,10 @@ bool write_fm_file(
         summary << "error_clip " << error_clip << "\n";
         summary << "vector_clip " << vector_clip << "\n";
         summary << "init_std " << init_std << "\n";
+        summary << "target_clip " << target_clip << "\n";
+        summary << "target_clip_count " << target_clip_stats.clipped << "\n";
+        summary << "target_max_abs_before_disc " << target_clip_stats.max_abs_before / ADJ_STEP << "\n";
+        summary << "target_max_abs_after_disc " << target_clip_stats.max_abs_after / ADJ_STEP << "\n";
         summary << "initialized_fm_rows " << initialized_rows << "\n";
         summary << "nonzero_quantized " << nonzero << "\n";
         summary << "max_abs_quantized " << max_abs << "\n";
@@ -552,12 +564,30 @@ void center_targets_by_train_phase_mean(
     }
 }
 
+TargetClipStats clip_sample_targets(std::vector<Sample> *samples, float target_clip) {
+    TargetClipStats stats;
+    for (Sample &sample: *samples) {
+        const float before_abs = std::fabs(sample.target);
+        stats.max_abs_before = std::max(stats.max_abs_before, before_abs);
+        if (target_clip > 0.0f) {
+            const float clipped = std::clamp(sample.target, -target_clip, target_clip);
+            if (clipped != sample.target) {
+                ++stats.clipped;
+                sample.target = clipped;
+            }
+        }
+        stats.max_abs_after = std::max(stats.max_abs_after, std::fabs(sample.target));
+    }
+    return stats;
+}
+
 int main(int argc, char **argv) {
     if (argc < 6) {
         std::cerr
             << "usage: eval_optimizer_fm [base_eval.egev2] [board_data_dir] [start_file] [n_files] [out_file] "
             << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] "
-            << "[active_pattern_mask=0] [center_phase_target=0] [l2=0.00001] [error_clip=4096] [vector_clip=7.5] [init_std=0.02]\n";
+            << "[active_pattern_mask=0] [center_phase_target=0] [l2=0.00001] [error_clip=4096] [vector_clip=7.5] "
+            << "[init_std=0.02] [target_clip=0]\n";
         return 1;
     }
     const std::string base_eval = argv[1];
@@ -578,10 +608,12 @@ int main(int argc, char **argv) {
     const float error_clip = argc >= 17 ? (float)std::atof(argv[16]) : 4096.0f;
     const float vector_clip = argc >= 18 ? (float)std::atof(argv[17]) : 7.5f;
     const float init_std = argc >= 19 ? (float)std::atof(argv[18]) : 0.02f;
+    const float target_clip = argc >= 20 ? (float)std::atof(argv[19]) : 0.0f;
 
     if (dim <= 0 || dim > 64 || n_fm_phases <= 0 || n_fm_phases > ADJ_N_PHASES || epochs < 0 || scale <= 0 ||
-        (active_pattern_mask & 0xFFFF0000U) != 0 || l2 < 0.0f || error_clip <= 0.0f || vector_clip <= 0.0f || init_std <= 0.0f) {
-        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std" << std::endl;
+        (active_pattern_mask & 0xFFFF0000U) != 0 || l2 < 0.0f || error_clip <= 0.0f || vector_clip <= 0.0f ||
+        init_std <= 0.0f || target_clip < 0.0f) {
+        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std/target_clip" << std::endl;
         return 1;
     }
 
@@ -615,6 +647,7 @@ int main(int argc, char **argv) {
               << " error_clip " << error_clip
               << " vector_clip " << vector_clip
               << " init_std " << init_std
+              << " target_clip " << target_clip
               << std::endl;
 
     std::vector<size_t> indices(samples.size());
@@ -631,6 +664,14 @@ int main(int argc, char **argv) {
     std::array<int, ADJ_N_PHASES> phase_target_corrections = {};
     if (center_phase_target) {
         center_targets_by_train_phase_mean(&samples, train_indices, starts, &output_linear, &phase_target_corrections);
+    }
+    const TargetClipStats target_clip_stats = clip_sample_targets(&samples, target_clip);
+    if (target_clip > 0.0f) {
+        std::cerr << "target_clip " << target_clip
+                  << " clipped " << target_clip_stats.clipped
+                  << " max_abs_before_disc " << target_clip_stats.max_abs_before / ADJ_STEP
+                  << " max_abs_after_disc " << target_clip_stats.max_abs_after / ADJ_STEP
+                  << std::endl;
     }
 
     std::vector<float> vec((size_t)n_fm_phases * total_vectors * dim, 0.0f);
@@ -669,7 +710,7 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std)) {
+    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std, target_clip, target_clip_stats)) {
         return 1;
     }
     return 0;
