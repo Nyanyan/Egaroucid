@@ -381,9 +381,10 @@ uint64_t init_touched_fm_rows(
     const std::vector<size_t> &train_indices,
     int dim,
     uint32_t active_pattern_mask,
+    float init_std,
     std::mt19937 *rng
 ) {
-    std::normal_distribution<float> init_dist(0.0f, 0.02f);
+    std::normal_distribution<float> init_dist(0.0f, init_std);
     std::vector<uint8_t> touched((size_t)((uint64_t)vec->size() / dim), 0);
     uint64_t n_touched = 0;
     for (const size_t idx: train_indices) {
@@ -424,7 +425,11 @@ bool write_fm_file(
     uint32_t active_pattern_mask,
     uint64_t initialized_rows,
     bool center_phase_target,
-    const std::array<int, ADJ_N_PHASES> &phase_target_corrections
+    const std::array<int, ADJ_N_PHASES> &phase_target_corrections,
+    float l2,
+    float error_clip,
+    float vector_clip,
+    float init_std
 ) {
     std::filesystem::path out_path(out_file);
     if (out_path.has_parent_path()) {
@@ -483,6 +488,10 @@ bool write_fm_file(
         summary << "fm_values " << fm_count << "\n";
         summary << "active_pattern_mask 0x" << std::hex << flags << std::dec << "\n";
         summary << "center_phase_target " << (center_phase_target ? 1 : 0) << "\n";
+        summary << "l2 " << l2 << "\n";
+        summary << "error_clip " << error_clip << "\n";
+        summary << "vector_clip " << vector_clip << "\n";
+        summary << "init_std " << init_std << "\n";
         summary << "initialized_fm_rows " << initialized_rows << "\n";
         summary << "nonzero_quantized " << nonzero << "\n";
         summary << "max_abs_quantized " << max_abs << "\n";
@@ -547,7 +556,8 @@ int main(int argc, char **argv) {
     if (argc < 6) {
         std::cerr
             << "usage: eval_optimizer_fm [base_eval.egev2] [board_data_dir] [start_file] [n_files] [out_file] "
-            << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] [active_pattern_mask=0] [center_phase_target=0]\n";
+            << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] "
+            << "[active_pattern_mask=0] [center_phase_target=0] [l2=0.00001] [error_clip=4096] [vector_clip=7.5] [init_std=0.02]\n";
         return 1;
     }
     const std::string base_eval = argv[1];
@@ -564,12 +574,14 @@ int main(int argc, char **argv) {
     const uint32_t seed = argc >= 13 ? (uint32_t)std::strtoul(argv[12], nullptr, 10) : 20260723U;
     const uint32_t active_pattern_mask = argc >= 14 ? (uint32_t)std::strtoul(argv[13], nullptr, 0) : 0U;
     const bool center_phase_target = argc >= 15 ? std::atoi(argv[14]) != 0 : false;
-    const float l2 = 0.00001f;
-    const float error_clip = 4096.0f;
-    const float vector_clip = 7.5f;
+    const float l2 = argc >= 16 ? (float)std::atof(argv[15]) : 0.00001f;
+    const float error_clip = argc >= 17 ? (float)std::atof(argv[16]) : 4096.0f;
+    const float vector_clip = argc >= 18 ? (float)std::atof(argv[17]) : 7.5f;
+    const float init_std = argc >= 19 ? (float)std::atof(argv[18]) : 0.02f;
 
-    if (dim <= 0 || dim > 64 || n_fm_phases <= 0 || n_fm_phases > ADJ_N_PHASES || epochs < 0 || scale <= 0 || (active_pattern_mask & 0xFFFF0000U) != 0) {
-        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask" << std::endl;
+    if (dim <= 0 || dim > 64 || n_fm_phases <= 0 || n_fm_phases > ADJ_N_PHASES || epochs < 0 || scale <= 0 ||
+        (active_pattern_mask & 0xFFFF0000U) != 0 || l2 < 0.0f || error_clip <= 0.0f || vector_clip <= 0.0f || init_std <= 0.0f) {
+        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std" << std::endl;
         return 1;
     }
 
@@ -598,7 +610,12 @@ int main(int argc, char **argv) {
     std::cerr << "samples " << samples.size() << " dim " << dim
               << " fm_phases " << n_fm_phases << " epochs " << epochs
               << " lr " << lr << " scale " << scale
-              << " active_pattern_mask 0x" << std::hex << active_pattern_mask << std::dec << std::endl;
+              << " active_pattern_mask 0x" << std::hex << active_pattern_mask << std::dec
+              << " l2 " << l2
+              << " error_clip " << error_clip
+              << " vector_clip " << vector_clip
+              << " init_std " << init_std
+              << std::endl;
 
     std::vector<size_t> indices(samples.size());
     std::iota(indices.begin(), indices.end(), 0);
@@ -618,7 +635,7 @@ int main(int argc, char **argv) {
 
     std::vector<float> vec((size_t)n_fm_phases * total_vectors * dim, 0.0f);
     const uint64_t initialized_rows = init_touched_fm_rows(
-        &vec, offsets, total_vectors, samples, train_indices, dim, active_pattern_mask, &rng
+        &vec, offsets, total_vectors, samples, train_indices, dim, active_pattern_mask, init_std, &rng
     );
     std::cerr << "initialized_fm_rows " << initialized_rows << std::endl;
 
@@ -652,7 +669,7 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections)) {
+    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std)) {
         return 1;
     }
     return 0;
