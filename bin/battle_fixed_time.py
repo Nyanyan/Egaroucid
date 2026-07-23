@@ -114,6 +114,7 @@ def main():
     n_openings = int(sys.argv[2]) if len(sys.argv) >= 3 else 1
     n_threads = int(sys.argv[3]) if len(sys.argv) >= 4 else 1
     progress_interval = int(sys.argv[6]) if len(sys.argv) >= 7 else 0
+    opening_start = int(sys.argv[7]) if len(sys.argv) >= 8 else 0
     cmd0, cmd1 = default_cmds(script_dir)
     if len(sys.argv) >= 5:
         cmd0 = sys.argv[4]
@@ -128,14 +129,14 @@ def main():
 
     print('player0', cmd0, flush=True)
     print('player1', cmd1, flush=True)
-    print('move_time_msec', move_time_msec, 'openings', n_openings, 'threads', n_threads, 'progress_interval', progress_interval, flush=True)
+    print('move_time_msec', move_time_msec, 'openings', n_openings, 'threads', n_threads, 'progress_interval', progress_interval, 'opening_start', opening_start, flush=True)
     procs = [start_engine(cmd0, move_time_msec, n_threads), start_engine(cmd1, move_time_msec, n_threads)]
     try:
         wins = draws = losses = 0
         sum_diff = 0
         n_games = 0
         for i in range(n_openings):
-            opening = openings[i % len(openings)]
+            opening = openings[(opening_start + i) % len(openings)]
             for p0_black in [True, False]:
                 diff, record = play_game(procs, p0_black, opening, progress_interval)
                 n_games += 1
