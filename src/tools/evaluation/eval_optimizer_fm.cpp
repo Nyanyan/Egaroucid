@@ -368,6 +368,44 @@ void train_one_sample(
     }
 }
 
+uint64_t init_touched_fm_rows(
+    std::vector<float> *vec,
+    const std::array<int, FM_N_PATTERN_FEATURES> &offsets,
+    uint64_t total_vectors,
+    const std::vector<Sample> &samples,
+    const std::vector<size_t> &train_indices,
+    int dim,
+    uint32_t active_pattern_mask,
+    std::mt19937 *rng
+) {
+    std::normal_distribution<float> init_dist(0.0f, 0.02f);
+    std::vector<uint8_t> touched((size_t)((uint64_t)vec->size() / dim), 0);
+    uint64_t n_touched = 0;
+    for (const size_t idx: train_indices) {
+        const Sample &sample = samples[idx];
+        const uint64_t phase_offset = (uint64_t)sample.fm_phase * total_vectors;
+        for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
+            if (!fm_feature_active(i, active_pattern_mask)) {
+                continue;
+            }
+            if (sample.features[i] >= adj_eval_sizes[i >> 2]) {
+                continue;
+            }
+            const uint64_t row = phase_offset + (uint64_t)offsets[i] + sample.features[i];
+            if (touched[(size_t)row]) {
+                continue;
+            }
+            touched[(size_t)row] = 1;
+            ++n_touched;
+            const uint64_t vec_offset = row * dim;
+            for (int d = 0; d < dim; ++d) {
+                (*vec)[(size_t)vec_offset + d] = init_dist(*rng);
+            }
+        }
+    }
+    return n_touched;
+}
+
 bool write_fm_file(
     const std::string &out_file,
     const std::vector<int16_t> &linear,
@@ -378,7 +416,8 @@ bool write_fm_file(
     int scale,
     int best_epoch,
     float best_val_mae,
-    uint32_t active_pattern_mask
+    uint32_t active_pattern_mask,
+    uint64_t initialized_rows
 ) {
     std::filesystem::path out_path(out_file);
     if (out_path.has_parent_path()) {
@@ -436,6 +475,7 @@ bool write_fm_file(
         summary << "total_vectors_per_fm_phase " << total_vectors << "\n";
         summary << "fm_values " << fm_count << "\n";
         summary << "active_pattern_mask 0x" << std::hex << flags << std::dec << "\n";
+        summary << "initialized_fm_rows " << initialized_rows << "\n";
         summary << "nonzero_quantized " << nonzero << "\n";
         summary << "max_abs_quantized " << max_abs << "\n";
         summary << "best_epoch " << best_epoch << "\n";
@@ -511,23 +551,11 @@ int main(int argc, char **argv) {
         train_indices = val_indices;
     }
 
-    std::normal_distribution<float> init_dist(0.0f, 0.02f);
     std::vector<float> vec((size_t)n_fm_phases * total_vectors * dim, 0.0f);
-    for (int fm_phase = 0; fm_phase < n_fm_phases; ++fm_phase) {
-        const uint64_t phase_offset = (uint64_t)fm_phase * total_vectors * dim;
-        for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-            if (!fm_feature_active(i, active_pattern_mask)) {
-                continue;
-            }
-            const uint64_t n_rows = (uint64_t)adj_eval_sizes[i >> 2];
-            const uint64_t row_offset = phase_offset + (uint64_t)offsets[i] * dim;
-            for (uint64_t row = 0; row < n_rows; ++row) {
-                for (int d = 0; d < dim; ++d) {
-                    vec[(size_t)(row_offset + row * dim + d)] = init_dist(rng);
-                }
-            }
-        }
-    }
+    const uint64_t initialized_rows = init_touched_fm_rows(
+        &vec, offsets, total_vectors, samples, train_indices, dim, active_pattern_mask, &rng
+    );
+    std::cerr << "initialized_fm_rows " << initialized_rows << std::endl;
 
     float best_val_mae = calc_mae(vec, offsets, total_vectors, samples, val_indices, dim, 20000, active_pattern_mask);
     int best_epoch = 0;
@@ -559,7 +587,7 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    if (!write_fm_file(out_file, linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask)) {
+    if (!write_fm_file(out_file, linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows)) {
         return 1;
     }
     return 0;

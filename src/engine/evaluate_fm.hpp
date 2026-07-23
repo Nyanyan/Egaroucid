@@ -25,6 +25,7 @@ uint32_t eval_fm_n_phases = 0;
 uint32_t eval_fm_dim = 0;
 int32_t eval_fm_scale = 1;
 uint64_t eval_fm_total_vectors = 0;
+std::array<uint8_t, N_PHASES> eval_fm_phase_table;
 uint32_t eval_fm_active_pattern_mask = 0;
 std::vector<int8_t> eval_fm_vectors;
 std::array<int, N_PATTERN_FEATURES> eval_fm_feature_offsets;
@@ -47,6 +48,7 @@ inline void eval_fm_disable() {
     eval_fm_dim = 0;
     eval_fm_scale = 1;
     eval_fm_total_vectors = 0;
+    eval_fm_phase_table.fill(0);
     eval_fm_active_pattern_mask = 0;
     eval_fm_n_active_features = 0;
     eval_fm_active_feature_vector_mask = 0;
@@ -63,11 +65,7 @@ inline void eval_fm_init_feature_offsets() {
 }
 
 inline uint32_t eval_fm_phase(const int phase_idx) {
-    if (eval_fm_n_phases <= 1) {
-        return 0;
-    }
-    int phase = std::clamp(phase_idx, 0, N_PHASES - 1);
-    return std::min<uint32_t>(eval_fm_n_phases - 1, (uint32_t)((phase * (int)eval_fm_n_phases) / N_PHASES));
+    return eval_fm_phase_table[phase_idx];
 }
 
 inline bool eval_fm_feature_active(const int feature_idx) {
@@ -187,6 +185,12 @@ inline bool load_eval_fm_file(
     eval_fm_n_phases = n_fm_phases;
     eval_fm_dim = fm_dim;
     eval_fm_scale = fm_scale;
+    for (int phase = 0; phase < N_PHASES; ++phase) {
+        eval_fm_phase_table[phase] = (uint8_t)std::min<uint32_t>(
+            eval_fm_n_phases - 1,
+            (uint32_t)((phase * (int)eval_fm_n_phases) / N_PHASES)
+        );
+    }
     eval_fm_active_pattern_mask = flags & 0xFFFFU;
     eval_fm_init_active_features();
     if (show_log) {
