@@ -11,6 +11,7 @@
 #include <array>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -45,6 +46,7 @@ struct PhaseStats {
     uint64_t elapsed_ms = 0;
     int64_t raw_score_sum = 0;
     int64_t search_score_sum = 0;
+    int64_t blended_score_sum = 0;
 };
 
 uint64_t search_teacher_tim() {
@@ -122,12 +124,17 @@ bool write_phase_file(const std::string &out_dir, const int phase, const std::ve
     return (bool)out;
 }
 
+int blend_score(const int raw_score, const int search_score, const int blend_num, const int blend_den) {
+    const double blended = (double)raw_score + (double)blend_num * (double)(search_score - raw_score) / (double)blend_den;
+    return std::clamp((int)std::lround(blended), -SCORE_MAX, SCORE_MAX);
+}
+
 int main(int argc, char **argv) {
     if (argc < 11) {
         std::cerr
             << "usage: sample_board_to_indexed_search_teacher [input_dir] [start_file] [n_files] [out_dir]"
             << " [start_phase] [end_phase] [max_per_phase] [level] [eval_file] [mo_file]"
-            << " [seed=20260724] [hash_level=18]\n";
+            << " [seed=20260724] [hash_level=18] [blend_num=1] [blend_den=1]\n";
         return 1;
     }
     const std::string input_dir = argv[1];
@@ -142,10 +149,13 @@ int main(int argc, char **argv) {
     const std::string mo_file = argv[10];
     const uint64_t seed = argc >= 12 ? std::strtoull(argv[11], nullptr, 10) : 20260724ULL;
     const int hash_level = argc >= 13 ? std::atoi(argv[12]) : 18;
+    const int blend_num = argc >= 14 ? std::atoi(argv[13]) : 1;
+    const int blend_den = argc >= 15 ? std::atoi(argv[14]) : 1;
 
     if (start_file < 0 || n_files <= 0 || start_phase < 0 || end_phase < start_phase ||
         end_phase >= ADJ_N_PHASES || max_per_phase == 0 || level <= 0 || level > MAX_LEVEL ||
-        hash_level <= 0 || hash_level >= N_HASH_LEVEL) {
+        hash_level <= 0 || hash_level >= N_HASH_LEVEL ||
+        blend_den <= 0 || blend_num < 0 || blend_num > blend_den) {
         std::cerr << "[ERROR] invalid arguments\n";
         return 1;
     }
@@ -219,11 +229,13 @@ int main(int argc, char **argv) {
             for (int i = 0; i < ADJ_N_FEATURES; ++i) {
                 datum.features[(size_t)i] = features[i];
             }
-            datum.score = (int16_t)search_result.value;
+            const int blended_score = blend_score(raw.raw_score, search_result.value, blend_num, blend_den);
+            datum.score = (int16_t)blended_score;
             indexed.emplace_back(datum);
             stats[(size_t)phase].searched += 1;
             stats[(size_t)phase].nodes += search_result.nodes;
             stats[(size_t)phase].search_score_sum += search_result.value;
+            stats[(size_t)phase].blended_score_sum += blended_score;
         }
         stats[(size_t)phase].sampled = reservoirs[(size_t)phase].size();
         stats[(size_t)phase].elapsed_ms = search_teacher_tim() - phase_start;
@@ -249,16 +261,19 @@ int main(int argc, char **argv) {
         summary << "mo_file " << mo_file << "\n";
         summary << "seed " << seed << "\n";
         summary << "hash_level " << hash_level << "\n";
+        summary << "blend_num " << blend_num << "\n";
+        summary << "blend_den " << blend_den << "\n";
         summary << "total_records " << total_records << "\n";
         summary << "broken_records " << broken_records << "\n";
-        summary << "phase seen sampled searched elapsed_ms nodes raw_score_avg search_score_avg\n";
+        summary << "phase seen sampled searched elapsed_ms nodes raw_score_avg search_score_avg blended_score_avg\n";
         for (int phase = start_phase; phase <= end_phase; ++phase) {
             const PhaseStats &s = stats[(size_t)phase];
             const double raw_avg = s.seen ? (double)s.raw_score_sum / (double)s.seen : 0.0;
             const double search_avg = s.searched ? (double)s.search_score_sum / (double)s.searched : 0.0;
+            const double blended_avg = s.searched ? (double)s.blended_score_sum / (double)s.searched : 0.0;
             summary << phase << " " << s.seen << " " << s.sampled << " " << s.searched
                     << " " << s.elapsed_ms << " " << s.nodes
-                    << " " << raw_avg << " " << search_avg << "\n";
+                    << " " << raw_avg << " " << search_avg << " " << blended_avg << "\n";
         }
     }
 
