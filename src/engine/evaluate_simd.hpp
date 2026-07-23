@@ -220,6 +220,13 @@ constexpr int pattern_starts[N_PATTERNS] = {
     376165, 435214, 494263, 553312      // features[3] (from 0)
 };
 
+constexpr int pattern_sizes[N_PATTERNS] = {
+    8, 9, 8, 9,
+    8, 9, 7, 10,
+    10, 10, 10, 10,
+    10, 10, 10, 10
+};
+
 /*
     @brief constants used for evaluation function with SIMD
 */
@@ -241,14 +248,25 @@ int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 // move ordering evaluation
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
 
+#include "evaluate_fm.hpp"
+
 inline bool load_eval_file(const char* file, bool show_log) {
     if (show_log) {
         std::cerr << "evaluation file " << file << std::endl;
     }
     bool failed = false;
-    std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
+    bool fm_file = false;
+    std::vector<int16_t> unzipped_params;
+    load_eval_fm_file(file, show_log, &unzipped_params, &failed, &fm_file);
     if (failed) {
         return false;
+    }
+    if (!fm_file) {
+        unzipped_params = load_unzip_egev2(file, show_log, &failed);
+        eval_fm_disable();
+        if (failed) {
+            return false;
+        }
     }
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
@@ -513,7 +531,7 @@ inline int mid_evaluate(Board *board) {
     int phase_idx, num0;
     phase_idx = search.phase();
     num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) + eval_num_arr[phase_idx][num0] + eval_fm_calc(phase_idx, &search.eval.features[search.eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -530,7 +548,7 @@ inline int mid_evaluate_diff(Search *search) {
     int phase_idx, num0;
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][num0];
+    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][num0] + eval_fm_calc(phase_idx, &search->eval.features[search->eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
