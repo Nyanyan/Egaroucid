@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <numeric>
 #include <random>
 #include <string>
@@ -121,6 +122,10 @@ int linear_params_per_phase() {
         res += adj_eval_sizes[i];
     }
     return res;
+}
+
+int stone_count_feature_start(const std::array<int, ADJ_N_FEATURES> &starts) {
+    return starts[FM_N_PATTERN_FEATURES];
 }
 
 float predict_linear(
@@ -417,7 +422,9 @@ bool write_fm_file(
     int best_epoch,
     float best_val_mae,
     uint32_t active_pattern_mask,
-    uint64_t initialized_rows
+    uint64_t initialized_rows,
+    bool center_phase_target,
+    const std::array<int, ADJ_N_PHASES> &phase_target_corrections
 ) {
     std::filesystem::path out_path(out_file);
     if (out_path.has_parent_path()) {
@@ -475,21 +482,72 @@ bool write_fm_file(
         summary << "total_vectors_per_fm_phase " << total_vectors << "\n";
         summary << "fm_values " << fm_count << "\n";
         summary << "active_pattern_mask 0x" << std::hex << flags << std::dec << "\n";
+        summary << "center_phase_target " << (center_phase_target ? 1 : 0) << "\n";
         summary << "initialized_fm_rows " << initialized_rows << "\n";
         summary << "nonzero_quantized " << nonzero << "\n";
         summary << "max_abs_quantized " << max_abs << "\n";
         summary << "best_epoch " << best_epoch << "\n";
         summary << "best_val_mae_disc " << best_val_mae << "\n";
+        if (center_phase_target) {
+            summary << "phase_target_corrections";
+            for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
+                summary << " " << phase_target_corrections[(size_t)phase];
+            }
+            summary << "\n";
+        }
     }
     std::cerr << "wrote " << out_file << " nonzero_quantized " << nonzero << " max_abs_quantized " << max_abs << std::endl;
     return true;
+}
+
+void center_targets_by_train_phase_mean(
+    std::vector<Sample> *samples,
+    const std::vector<size_t> &train_indices,
+    const std::array<int, ADJ_N_FEATURES> &starts,
+    std::vector<int16_t> *linear,
+    std::array<int, ADJ_N_PHASES> *phase_target_corrections
+) {
+    std::array<double, ADJ_N_PHASES> phase_sum = {};
+    std::array<uint64_t, ADJ_N_PHASES> phase_count = {};
+    for (const size_t idx: train_indices) {
+        const Sample &sample = (*samples)[idx];
+        phase_sum[(size_t)sample.phase] += sample.target;
+        ++phase_count[(size_t)sample.phase];
+    }
+
+    const int per_phase = linear_params_per_phase();
+    const int stone_start = stone_count_feature_start(starts);
+    for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
+        if (phase_count[(size_t)phase] == 0) {
+            continue;
+        }
+        const int correction = (int)std::lrint(phase_sum[(size_t)phase] / (double)phase_count[(size_t)phase]);
+        (*phase_target_corrections)[(size_t)phase] = correction;
+        if (correction == 0) {
+            continue;
+        }
+        for (Sample &sample: *samples) {
+            if (sample.phase == phase) {
+                sample.target -= (float)correction;
+            }
+        }
+        const size_t base = (size_t)phase * per_phase + stone_start;
+        for (int n_player = 0; n_player < ADJ_MAX_STONE_NUM; ++n_player) {
+            int value = (*linear)[base + (size_t)n_player] + correction;
+            value = std::clamp(value, (int)std::numeric_limits<int16_t>::min(), (int)std::numeric_limits<int16_t>::max());
+            (*linear)[base + (size_t)n_player] = (int16_t)value;
+        }
+        std::cerr << "center_phase_target phase " << phase
+                  << " count " << phase_count[(size_t)phase]
+                  << " correction " << correction << std::endl;
+    }
 }
 
 int main(int argc, char **argv) {
     if (argc < 6) {
         std::cerr
             << "usage: eval_optimizer_fm [base_eval.egev2] [board_data_dir] [start_file] [n_files] [out_file] "
-            << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] [active_pattern_mask=0]\n";
+            << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] [active_pattern_mask=0] [center_phase_target=0]\n";
         return 1;
     }
     const std::string base_eval = argv[1];
@@ -505,6 +563,7 @@ int main(int argc, char **argv) {
     const int scale = argc >= 12 ? std::atoi(argv[11]) : 16;
     const uint32_t seed = argc >= 13 ? (uint32_t)std::strtoul(argv[12], nullptr, 10) : 20260723U;
     const uint32_t active_pattern_mask = argc >= 14 ? (uint32_t)std::strtoul(argv[13], nullptr, 0) : 0U;
+    const bool center_phase_target = argc >= 15 ? std::atoi(argv[14]) != 0 : false;
     const float l2 = 0.00001f;
     const float error_clip = 4096.0f;
     const float vector_clip = 7.5f;
@@ -522,6 +581,7 @@ int main(int argc, char **argv) {
                   << " expected " << expected_linear << std::endl;
         return 1;
     }
+    std::vector<int16_t> output_linear = linear;
     const auto starts = make_linear_starts();
     uint64_t total_vectors = 0;
     const auto offsets = make_fm_feature_offsets(&total_vectors);
@@ -549,6 +609,11 @@ int main(int argc, char **argv) {
     std::vector<size_t> train_indices(indices.begin() + n_val, indices.end());
     if (train_indices.empty()) {
         train_indices = val_indices;
+    }
+
+    std::array<int, ADJ_N_PHASES> phase_target_corrections = {};
+    if (center_phase_target) {
+        center_targets_by_train_phase_mean(&samples, train_indices, starts, &output_linear, &phase_target_corrections);
     }
 
     std::vector<float> vec((size_t)n_fm_phases * total_vectors * dim, 0.0f);
@@ -587,7 +652,7 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    if (!write_fm_file(out_file, linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows)) {
+    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections)) {
         return 1;
     }
     return 0;
