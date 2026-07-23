@@ -1,12 +1,13 @@
 import os
 import random
+import re
 import subprocess
 import sys
 from othello_py import *
 
 
 def default_cmds(script_dir):
-    baseline = os.path.join(script_dir, 'Egaroucid_for_Console.out.exe') + ' -quiet -nobook'
+    baseline = os.path.join(script_dir, 'Egaroucid_for_Console.out.exe') + ' -noboard -nobook'
     candidate = baseline
     return baseline, candidate
 
@@ -25,16 +26,28 @@ def board_command(o):
     return grid_str
 
 
+def parse_engine_move(line):
+    stripped = line.strip()
+    if stripped == 'ps' or re.fullmatch(r'[a-h][1-8]', stripped.lower()):
+        return stripped.lower()
+    if stripped.startswith('|'):
+        cols = [elem.strip() for elem in stripped.split('|')]
+        if len(cols) >= 5 and re.fullmatch(r'[a-h][1-8]|ps', cols[3].lower()):
+            return cols[3].lower()
+    return None
+
+
 def send_and_read(proc, cmd):
     proc.stdin.write(cmd.encode('utf-8'))
     proc.stdin.flush()
-    line = ''
-    while line == '' or line == '>':
+    while True:
         raw = proc.stdout.readline()
         if raw == b'':
             raise RuntimeError('engine terminated while waiting for response')
         line = raw.decode(errors='replace').replace('\r', '').replace('\n', '')
-    return line
+        move = parse_engine_move(line)
+        if move is not None:
+            return move
 
 
 def start_engine(cmd, move_time_msec, n_threads):
@@ -69,8 +82,7 @@ def play_game(procs, p0_black, opening, progress_interval):
         proc = procs[player_idx]
         proc.stdin.write(board_command(o).encode('utf-8'))
         proc.stdin.flush()
-        line = send_and_read(proc, 'go\n')
-        coord = line[-2:].lower()
+        coord = send_and_read(proc, 'go\n')
         try:
             y = int(coord[1]) - 1
             x = ord(coord[0]) - ord('a')

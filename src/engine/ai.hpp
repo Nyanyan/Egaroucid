@@ -478,8 +478,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         uint64_t elapsed_before_iteration = tim() - strt;
         if (conservative_start && main_depth > 1 && elapsed_before_iteration < time_limit) {
             const uint64_t remaining = time_limit - elapsed_before_iteration;
-            const uint64_t min_remaining = std::max<uint64_t>(50ULL, previous_iteration_time * 2ULL + 10ULL);
-            if (elapsed_before_iteration * 4ULL >= time_limit * 3ULL || remaining <= min_remaining) {
+            const uint64_t min_remaining = std::max<uint64_t>(75ULL, previous_iteration_time * 3ULL + 20ULL);
+            if (elapsed_before_iteration * 5ULL >= time_limit * 3ULL || remaining <= min_remaining) {
                 break;
             }
         }
