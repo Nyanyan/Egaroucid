@@ -48,6 +48,83 @@ std::array<uint32_t, N_PATTERN_FEATURES> eval_fm_active_lane_to_vector_offsets;
 uint32_t eval_fm_n_active_features = 0;
 uint32_t eval_fm_active_feature_vector_mask = 0;
 
+#ifndef EVAL_FM_DISABLE_DIM2_ALL_PATTERNS_FAST_PATH
+#define EVAL_FM_DIM2_ALL_PATTERNS_FAST_PATH
+#endif
+
+#ifdef EVAL_FM_DIM2_ALL_PATTERNS_FAST_PATH
+#if USE_SIMD_EVALUATION
+inline constexpr uint32_t eval_fm_const_feature_offset(const uint32_t feature_idx) {
+    uint32_t offset = 0;
+    for (uint32_t i = 0; i < feature_idx; ++i) {
+        offset += pow3[pattern_sizes[i >> 2]];
+    }
+    return offset;
+}
+
+template<uint32_t FeatureIdx>
+inline constexpr uint8_t eval_fm_dim2_all_lane_idx() {
+    return (uint8_t)((FeatureIdx / 16) * 16 + (15 - (FeatureIdx & 15)));
+}
+
+template<uint32_t FeatureIdx>
+inline constexpr uint16_t eval_fm_dim2_all_pack_offset() {
+    return (uint16_t)(FeatureIdx < 32 ? pattern_starts[FeatureIdx >> 2] : 0);
+}
+
+template<uint32_t FeatureIdx>
+inline constexpr int32_t eval_fm_dim2_all_signed_lane_to_vector_offset() {
+    return (int32_t)eval_fm_const_feature_offset(FeatureIdx) - (int32_t)eval_fm_dim2_all_pack_offset<FeatureIdx>();
+}
+
+template<uint32_t FeatureIdx>
+inline constexpr uint32_t eval_fm_dim2_all_lane_to_vector_offset() {
+    return (uint32_t)eval_fm_dim2_all_signed_lane_to_vector_offset<FeatureIdx>();
+}
+
+alignas(32) __m256i eval_fm_dim2_all_gather_offsets[N_PATTERN_FEATURES / 8];
+
+template<uint32_t GroupIdx>
+inline __m256i eval_fm_dim2_make_gather_offsets() {
+    constexpr uint32_t base_idx = (GroupIdx / 2) * 16;
+    if constexpr ((GroupIdx & 1) == 0) {
+        return _mm256_set_epi32(
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 8>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 9>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 10>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 11>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 12>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 13>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 14>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 15>()
+        );
+    } else {
+        return _mm256_set_epi32(
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 1>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 2>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 3>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 4>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 5>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 6>(),
+            eval_fm_dim2_all_signed_lane_to_vector_offset<base_idx + 7>()
+        );
+    }
+}
+
+inline void eval_fm_init_dim2_all_gather_offsets() {
+    eval_fm_dim2_all_gather_offsets[0] = eval_fm_dim2_make_gather_offsets<0>();
+    eval_fm_dim2_all_gather_offsets[1] = eval_fm_dim2_make_gather_offsets<1>();
+    eval_fm_dim2_all_gather_offsets[2] = eval_fm_dim2_make_gather_offsets<2>();
+    eval_fm_dim2_all_gather_offsets[3] = eval_fm_dim2_make_gather_offsets<3>();
+    eval_fm_dim2_all_gather_offsets[4] = eval_fm_dim2_make_gather_offsets<4>();
+    eval_fm_dim2_all_gather_offsets[5] = eval_fm_dim2_make_gather_offsets<5>();
+    eval_fm_dim2_all_gather_offsets[6] = eval_fm_dim2_make_gather_offsets<6>();
+    eval_fm_dim2_all_gather_offsets[7] = eval_fm_dim2_make_gather_offsets<7>();
+}
+#endif
+#endif
+
 template<typename T>
 inline bool eval_fm_read_scalar(FILE *fp, T *v) {
     return fread(v, sizeof(T), 1, fp) == 1;
@@ -126,13 +203,23 @@ inline void eval_fm_init_active_features() {
             eval_fm_active_feature_vector_mask |= 1U << (i / 16);
             eval_fm_active_feature_indices[active_idx] = (uint8_t)i;
             eval_fm_active_lane_indices[active_idx] = (uint8_t)((i / 16) * 16 + (15 - (i & 15)));
-            eval_fm_active_pack_offsets[active_idx] = (uint16_t)(i < 32 ? pattern_starts[i >> 2] : 0);
+#if USE_SIMD_EVALUATION
+            const uint16_t pack_offset = (uint16_t)(i < 32 ? pattern_starts[i >> 2] : 0);
+#else
+            const uint16_t pack_offset = 0;
+#endif
+            eval_fm_active_pack_offsets[active_idx] = pack_offset;
             eval_fm_active_feature_limits[active_idx] = (uint16_t)pow3[pattern_sizes[i >> 2]];
             eval_fm_active_vector_offsets[active_idx] = (uint32_t)eval_fm_feature_offsets[i];
             eval_fm_active_lane_to_vector_offsets[active_idx] =
                 eval_fm_active_vector_offsets[active_idx] - eval_fm_active_pack_offsets[active_idx];
         }
     }
+#if USE_SIMD_EVALUATION
+#ifdef EVAL_FM_DIM2_ALL_PATTERNS_FAST_PATH
+    eval_fm_init_dim2_all_gather_offsets();
+#endif
+#endif
 }
 
 inline bool load_eval_fm_file(
@@ -234,12 +321,13 @@ inline bool load_eval_fm_file(
 
     if (fm_dim == 2) {
         const size_t n_rows = (size_t)(fm_count / 2);
-        eval_fm_vectors_dim2_packed.resize(n_rows);
+        eval_fm_vectors_dim2_packed.resize(n_rows + 1);
         for (size_t i = 0; i < n_rows; ++i) {
             const uint16_t x0 = (uint16_t)(uint8_t)eval_fm_vectors[i * 2];
             const uint16_t x1 = (uint16_t)(uint8_t)eval_fm_vectors[i * 2 + 1];
             eval_fm_vectors_dim2_packed[i] = (uint16_t)(x0 | (x1 << 8));
         }
+        eval_fm_vectors_dim2_packed[n_rows] = 0;
     }
 
     eval_fm_enabled = true;
@@ -297,6 +385,51 @@ inline int eval_fm_hsum_epi32(const __m256i x) {
     sum128 = _mm_hadd_epi32(sum128, sum128);
     return _mm_cvtsi128_si32(sum128) + _mm_extract_epi32(sum128, 1);
 }
+
+#ifdef EVAL_FM_DIM2_ALL_PATTERNS_FAST_PATH
+inline void eval_fm_dim2_accumulate_8_avx2(
+    const uint16_t *base,
+    const __m128i features,
+    const int group_idx,
+    __m256i &sum0,
+    __m256i &sum1,
+    __m256i &square_sum0,
+    __m256i &square_sum1
+) {
+    const __m256i idx = _mm256_add_epi32(_mm256_cvtepu16_epi32(features), eval_fm_dim2_all_gather_offsets[group_idx]);
+    const __m256i packed = _mm256_and_si256(_mm256_i32gather_epi32((const int*)base, idx, 2), eval_lower_mask);
+    const __m256i x0 = _mm256_srai_epi32(_mm256_slli_epi32(packed, 24), 24);
+    const __m256i x1 = _mm256_srai_epi32(_mm256_slli_epi32(packed, 16), 24);
+    sum0 = _mm256_add_epi32(sum0, x0);
+    sum1 = _mm256_add_epi32(sum1, x1);
+    square_sum0 = _mm256_add_epi32(square_sum0, _mm256_mullo_epi32(x0, x0));
+    square_sum1 = _mm256_add_epi32(square_sum1, _mm256_mullo_epi32(x1, x1));
+}
+
+inline int eval_fm_calc_dim2_all_patterns_avx2(const int phase_idx, const Eval_features *features) {
+    const uint16_t *base = eval_fm_vectors_dim2_packed.data() + (eval_fm_phase_vector_offset(phase_idx) >> 1);
+    __m256i sum0 = _mm256_setzero_si256();
+    __m256i sum1 = _mm256_setzero_si256();
+    __m256i square_sum0 = _mm256_setzero_si256();
+    __m256i square_sum1 = _mm256_setzero_si256();
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[0], 0, sum0, sum1, square_sum0, square_sum1);
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[1], 1, sum0, sum1, square_sum0, square_sum1);
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[2], 2, sum0, sum1, square_sum0, square_sum1);
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[3], 3, sum0, sum1, square_sum0, square_sum1);
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[4], 4, sum0, sum1, square_sum0, square_sum1);
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[5], 5, sum0, sum1, square_sum0, square_sum1);
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[6], 6, sum0, sum1, square_sum0, square_sum1);
+    eval_fm_dim2_accumulate_8_avx2(base, features->f128[7], 7, sum0, sum1, square_sum0, square_sum1);
+    const int32_t total_sum0 = eval_fm_hsum_epi32(sum0);
+    const int32_t total_sum1 = eval_fm_hsum_epi32(sum1);
+    const int64_t diff =
+        (int64_t)total_sum0 * total_sum0 +
+        (int64_t)total_sum1 * total_sum1 -
+        eval_fm_hsum_epi32(square_sum0) -
+        eval_fm_hsum_epi32(square_sum1);
+    return eval_fm_finalize_score(diff);
+}
+#endif
 
 inline int eval_fm_calc_dim8_avx2(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
     __m256i sum_acc = _mm256_setzero_si256();
@@ -603,6 +736,11 @@ inline int eval_fm_calc(const int phase_idx, Eval_features *features) {
     if (!eval_fm_enabled || (eval_fm_has_phase_range && !eval_fm_phase_enabled[phase_idx])) {
         return 0;
     }
+#ifdef EVAL_FM_DIM2_ALL_PATTERNS_FAST_PATH
+    if (eval_fm_dim == 2 && eval_fm_active_pattern_mask == 0 && eval_fm_n_active_features == N_PATTERN_FEATURES) {
+        return eval_fm_calc_dim2_all_patterns_avx2(phase_idx, features);
+    }
+#endif
     alignas(32) uint16_t lanes[N_PATTERN_FEATURES];
     for (int v = 0; v < N_EVAL_VECTORS; ++v) {
         if (eval_fm_active_feature_vector_mask & (1U << v)) {
