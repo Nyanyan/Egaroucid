@@ -498,15 +498,53 @@ void deterministic_shuffle(std::vector<T> *values, const uint64_t seed) {
     }
 }
 
-uint64_t estimate_host_memory_bytes(const Options &opt, const uint64_t linear_count, const uint64_t fm_count) {
+struct HostMemoryEstimate {
+    uint64_t request_generation_bytes = 0;
+    uint64_t sample_loading_bytes = 0;
+    uint64_t training_bytes = 0;
+    uint64_t peak_bytes = 0;
+    uint64_t bulk_buffer_bytes = 0;
+};
+
+uint64_t manifest_max_file_records(const std::vector<FileEntry> &entries) {
+    uint64_t res = 0;
+    for (const FileEntry &entry: entries) {
+        res = std::max<uint64_t>(res, entry.records);
+    }
+    return res;
+}
+
+HostMemoryEstimate estimate_host_memory_bytes(
+    const Options &opt,
+    const uint64_t linear_count,
+    const uint64_t fm_count,
+    const std::vector<FileEntry> &manifest
+) {
     const uint64_t sample_count = opt.train_samples + opt.val_samples;
-    long double bytes = 0.0L;
-    bytes += (long double)sample_count * (long double)sizeof(Sample);
-    bytes += (long double)sample_count * (long double)sizeof(SampleRequest);
-    bytes += (long double)sample_count * 40.0L;
-    bytes += (long double)(linear_count + fm_count) * sizeof(float);
-    bytes += 512.0L * 1024.0L * 1024.0L;
-    return (uint64_t)bytes;
+    const uint64_t max_file_records = manifest_max_file_records(manifest);
+    HostMemoryEstimate res;
+    res.bulk_buffer_bytes = opt.read_mode == "bulk"
+        ? max_file_records * INDEXED_PHASE_RECORD_BYTES * (uint64_t)std::max(1, opt.read_threads)
+        : 0;
+    const long double base_eval_bytes = (long double)linear_count * sizeof(int16_t);
+    const long double request_bytes = (long double)sample_count * sizeof(SampleRequest);
+    const long double sample_bytes = (long double)sample_count * sizeof(Sample);
+    const long double params_bytes = (long double)(linear_count + fm_count) * sizeof(float);
+    const long double overhead_bytes = 512.0L * 1024.0L * 1024.0L;
+    const long double request_generation_work_bytes = std::max(
+        (long double)sample_count * (40.0L + (long double)sizeof(uint64_t)),
+        (long double)sample_count * (sizeof(std::pair<uint64_t, uint64_t>) + sizeof(SampleRequest))
+    );
+    const long double max_group_duplicate_bytes = (long double)max_file_records * sizeof(Sample);
+
+    res.request_generation_bytes = (uint64_t)(base_eval_bytes + request_generation_work_bytes + overhead_bytes);
+    res.sample_loading_bytes = (uint64_t)(
+        base_eval_bytes + request_bytes + sample_bytes +
+        (long double)res.bulk_buffer_bytes + max_group_duplicate_bytes + overhead_bytes
+    );
+    res.training_bytes = (uint64_t)(base_eval_bytes + sample_bytes + params_bytes + overhead_bytes);
+    res.peak_bytes = std::max(res.request_generation_bytes, std::max(res.sample_loading_bytes, res.training_bytes));
+    return res;
 }
 
 uint64_t estimate_device_memory_bytes(const Options &opt, const uint64_t linear_count, const uint64_t fm_count) {
@@ -591,14 +629,6 @@ bool validate_features(const IndexedDatum &datum) {
         }
     }
     return true;
-}
-
-uint64_t manifest_max_file_bytes(const std::vector<FileEntry> &entries) {
-    uint64_t res = 0;
-    for (const FileEntry &entry: entries) {
-        res = std::max<uint64_t>(res, entry.records * INDEXED_PHASE_RECORD_BYTES);
-    }
-    return res;
 }
 
 bool decode_indexed_record(const char *ptr, IndexedDatum *datum) {
@@ -1403,12 +1433,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const uint64_t bulk_buffer_bytes = opt.read_mode == "bulk"
-        ? manifest_max_file_bytes(manifest) * (uint64_t)std::max(1, opt.read_threads)
-        : 0;
-    const double estimated_host_gib = bytes_to_gib(
-        (long double)(estimate_host_memory_bytes(opt, linear_count, fm_count) + bulk_buffer_bytes)
-    );
+    const HostMemoryEstimate host_memory = estimate_host_memory_bytes(opt, linear_count, fm_count, manifest);
+    const double estimated_host_gib = bytes_to_gib((long double)host_memory.peak_bytes);
     const double estimated_device_gib = bytes_to_gib((long double)estimate_device_memory_bytes(opt, linear_count, fm_count));
     std::cerr << std::setprecision(6)
               << "manifest_files " << manifest.size()
@@ -1419,8 +1445,11 @@ int main(int argc, char **argv) {
               << " linear_params " << linear_count
               << " fm_values " << fm_count
               << " estimated_host_memory_gib " << estimated_host_gib
+              << " estimated_request_generation_gib " << bytes_to_gib((long double)host_memory.request_generation_bytes)
+              << " estimated_sample_loading_gib " << bytes_to_gib((long double)host_memory.sample_loading_bytes)
+              << " estimated_training_gib " << bytes_to_gib((long double)host_memory.training_bytes)
               << " estimated_device_memory_gib " << estimated_device_gib
-              << " estimated_bulk_buffer_gib " << bytes_to_gib((long double)bulk_buffer_bytes)
+              << " estimated_bulk_buffer_gib " << bytes_to_gib((long double)host_memory.bulk_buffer_bytes)
               << " max_memory_gib " << opt.max_memory_gib << "\n";
     if (estimated_host_gib > opt.max_memory_gib) {
         std::cerr << "[ERROR] estimated host memory exceeds limit\n";
