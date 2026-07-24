@@ -189,6 +189,9 @@ union Eval_features {
 
 struct Eval_search {
     Eval_features features[HW2 - 4];
+    int32_t fm_sum0[HW2 - 4];
+    int32_t fm_sum1[HW2 - 4];
+    int32_t fm_square_sum[HW2 - 4];
     uint_fast8_t feature_idx;
 };
 #else

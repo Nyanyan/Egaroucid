@@ -518,6 +518,7 @@ inline int calc_pattern_move_ordering_end(Eval_features *features) {
 }
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
+inline void calc_eval_features(Board *board, Eval_search *eval, const bool init_fm_accumulator);
 
 /*
     @brief midgame evaluation function
@@ -526,12 +527,12 @@ inline void calc_eval_features(Board *board, Eval_search *eval);
     @return evaluation value
 */
 inline int mid_evaluate(Board *board) {
-    Search search(board);
-    calc_eval_features(&(search.board), &(search.eval));
+    Eval_search eval;
+    calc_eval_features(board, &eval, false);
     int phase_idx, num0;
-    phase_idx = search.phase();
-    num0 = pop_count_ull(search.board.player);
-    int res = calc_pattern(phase_idx, &search.eval.features[search.eval.feature_idx]) + eval_num_arr[phase_idx][num0] + eval_fm_calc(phase_idx, &search.eval.features[search.eval.feature_idx]);
+    phase_idx = (board->n_discs() - 4) / PHASE_N_DISCS;
+    num0 = pop_count_ull(board->player);
+    int res = calc_pattern(phase_idx, &eval.features[eval.feature_idx]) + eval_num_arr[phase_idx][num0] + eval_fm_calc(phase_idx, &eval.features[eval.feature_idx]);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -548,7 +549,7 @@ inline int mid_evaluate_diff(Search *search) {
     int phase_idx, num0;
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
-    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][num0] + eval_fm_calc(phase_idx, &search->eval.features[search->eval.feature_idx]);
+    int res = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][num0] + eval_fm_calc(phase_idx, &search->eval);
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -585,6 +586,10 @@ inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, c
     @param search               search information
 */
 inline void calc_eval_features(Board *board, Eval_search *eval) {
+    calc_eval_features(board, eval, true);
+}
+
+inline void calc_eval_features(Board *board, Eval_search *eval, const bool init_fm_accumulator) {
     int b_arr_int[HW2 + 1];
     board->translate_to_arr_player_rev(b_arr_int);
     b_arr_int[COORD_NO] = 0;
@@ -595,6 +600,14 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     eval->feature_idx = 0;
     eval->features[eval->feature_idx].f256[0] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[0], eval_simd_offsets_simple[0]); // global index
     eval->features[eval->feature_idx].f256[1] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[1], eval_simd_offsets_simple[1]); // global index
+    if (init_fm_accumulator && eval_fm_dim2_all_patterns_incremental_available()) {
+        eval_fm_dim2_init_accumulator_from_features_avx2(
+            &eval->features[eval->feature_idx],
+            &eval->fm_sum0[eval->feature_idx],
+            &eval->fm_sum1[eval->feature_idx],
+            &eval->fm_square_sum[eval->feature_idx]
+        );
+    }
 }
 
 /*
@@ -635,11 +648,24 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
         f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[unflipped_o][i][2]);
         f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[unflipped_o][i][3]);
     }
+    const uint_fast8_t prev_feature_idx = eval->feature_idx;
     ++eval->feature_idx;
     eval->features[eval->feature_idx].f256[0] = f0;
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
+    if (eval_fm_dim2_all_patterns_incremental_available()) {
+        eval_fm_dim2_update_accumulator_from_features(
+            &eval->features[prev_feature_idx],
+            &eval->features[eval->feature_idx],
+            eval->fm_sum0[prev_feature_idx],
+            eval->fm_sum1[prev_feature_idx],
+            eval->fm_square_sum[prev_feature_idx],
+            &eval->fm_sum0[eval->feature_idx],
+            &eval->fm_sum1[eval->feature_idx],
+            &eval->fm_square_sum[eval->feature_idx]
+        );
+    }
 }
 
 /*
@@ -663,10 +689,12 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
     const uint16_t *player_group = (uint16_t*)&(board->player);
     const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
     __m256i f0, f1, f2, f3;
-    f0 = eval->features[eval->feature_idx].f256[0];
-    f1 = eval->features[eval->feature_idx].f256[1];
-    f2 = eval->features[eval->feature_idx].f256[2];
-    f3 = eval->features[eval->feature_idx].f256[3];
+    const uint_fast8_t feature_idx = eval->feature_idx;
+    const Eval_features old_features = eval->features[feature_idx];
+    f0 = old_features.f256[0];
+    f1 = old_features.f256[1];
+    f2 = old_features.f256[2];
+    f3 = old_features.f256[3];
     for (int i = 0; i < HW2 / 16; ++i) { // 64 bit / 16 bit = 4
         f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[player_group[i]][i][0]);
         f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
@@ -677,10 +705,22 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
         f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
         f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[opponent_group[i]][i][3]);
     }
-    eval->features[eval->feature_idx].f256[0] = f0;
-    eval->features[eval->feature_idx].f256[1] = f1;
-    eval->features[eval->feature_idx].f256[2] = f2;
-    eval->features[eval->feature_idx].f256[3] = f3;
+    eval->features[feature_idx].f256[0] = f0;
+    eval->features[feature_idx].f256[1] = f1;
+    eval->features[feature_idx].f256[2] = f2;
+    eval->features[feature_idx].f256[3] = f3;
+    if (eval_fm_dim2_all_patterns_incremental_available()) {
+        eval_fm_dim2_update_accumulator_from_features(
+            &old_features,
+            &eval->features[feature_idx],
+            eval->fm_sum0[feature_idx],
+            eval->fm_sum1[feature_idx],
+            eval->fm_square_sum[feature_idx],
+            &eval->fm_sum0[feature_idx],
+            &eval->fm_sum1[feature_idx],
+            &eval->fm_square_sum[feature_idx]
+        );
+    }
 }
 
 
