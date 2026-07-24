@@ -38,6 +38,9 @@ std::array<uint64_t, N_PHASES> eval_fm_phase_vector_offsets;
 uint32_t eval_fm_active_pattern_mask = 0;
 std::vector<int8_t> eval_fm_vectors;
 std::vector<uint16_t> eval_fm_vectors_dim2_packed;
+#ifdef EVAL_FM_DIM2_PACKED32
+std::vector<uint32_t> eval_fm_vectors_dim2_packed32;
+#endif
 #ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
 std::vector<uint32_t> eval_fm_vectors_dim2_packed_sq;
 #endif
@@ -150,6 +153,9 @@ inline void eval_fm_disable() {
     eval_fm_active_feature_vector_mask = 0;
     eval_fm_vectors.clear();
     eval_fm_vectors_dim2_packed.clear();
+#ifdef EVAL_FM_DIM2_PACKED32
+    eval_fm_vectors_dim2_packed32.clear();
+#endif
 #ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
     eval_fm_vectors_dim2_packed_sq.clear();
 #endif
@@ -328,6 +334,9 @@ inline bool load_eval_fm_file(
     if (fm_dim == 2) {
         const size_t n_rows = (size_t)(fm_count / 2);
         eval_fm_vectors_dim2_packed.resize(n_rows + 1);
+#ifdef EVAL_FM_DIM2_PACKED32
+        eval_fm_vectors_dim2_packed32.resize(n_rows + 1);
+#endif
 #ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
         eval_fm_vectors_dim2_packed_sq.resize(n_rows + 1);
 #endif
@@ -340,11 +349,17 @@ inline bool load_eval_fm_file(
             const uint32_t square_sum = (uint32_t)(sx0 * sx0 + sx1 * sx1);
 #endif
             eval_fm_vectors_dim2_packed[i] = (uint16_t)(x0 | (x1 << 8));
+#ifdef EVAL_FM_DIM2_PACKED32
+            eval_fm_vectors_dim2_packed32[i] = (uint32_t)(x0 | (x1 << 8));
+#endif
 #ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
             eval_fm_vectors_dim2_packed_sq[i] = (uint32_t)(x0 | (x1 << 8) | (square_sum << 16));
 #endif
         }
         eval_fm_vectors_dim2_packed[n_rows] = 0;
+#ifdef EVAL_FM_DIM2_PACKED32
+        eval_fm_vectors_dim2_packed32[n_rows] = 0;
+#endif
 #ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
         eval_fm_vectors_dim2_packed_sq[n_rows] = 0;
 #endif
@@ -410,6 +425,8 @@ inline int eval_fm_hsum_epi32(const __m256i x) {
 inline void eval_fm_dim2_accumulate_8_avx2(
 #ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
     const uint32_t *base,
+#elif defined(EVAL_FM_DIM2_PACKED32)
+    const uint32_t *base,
 #else
     const uint16_t *base,
 #endif
@@ -423,6 +440,8 @@ inline void eval_fm_dim2_accumulate_8_avx2(
     const __m256i idx = _mm256_add_epi32(_mm256_cvtepu16_epi32(features), eval_fm_dim2_all_gather_offsets[group_idx]);
 #ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
     const __m256i packed = _mm256_i32gather_epi32((const int*)base, idx, 4);
+#elif defined(EVAL_FM_DIM2_PACKED32)
+    const __m256i packed = _mm256_and_si256(_mm256_i32gather_epi32((const int*)base, idx, 4), eval_lower_mask);
 #else
     const __m256i packed = _mm256_and_si256(_mm256_i32gather_epi32((const int*)base, idx, 2), eval_lower_mask);
 #endif
@@ -438,12 +457,8 @@ inline void eval_fm_dim2_accumulate_8_avx2(
 #endif
 }
 
-inline int eval_fm_calc_dim2_all_patterns_avx2(const int phase_idx, const Eval_features *features) {
-#ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
-    const uint32_t *base = eval_fm_vectors_dim2_packed_sq.data() + (eval_fm_phase_vector_offset(phase_idx) >> 1);
-#else
-    const uint16_t *base = eval_fm_vectors_dim2_packed.data() + (eval_fm_phase_vector_offset(phase_idx) >> 1);
-#endif
+template<typename PackedT>
+inline int eval_fm_calc_dim2_all_patterns_avx2_base(const PackedT *base, const Eval_features *features) {
     __m256i sum0 = _mm256_setzero_si256();
     __m256i sum1 = _mm256_setzero_si256();
     __m256i square_sum0 = _mm256_setzero_si256();
@@ -464,6 +479,17 @@ inline int eval_fm_calc_dim2_all_patterns_avx2(const int phase_idx, const Eval_f
         eval_fm_hsum_epi32(square_sum0) -
         eval_fm_hsum_epi32(square_sum1);
     return eval_fm_finalize_score(diff);
+}
+
+inline int eval_fm_calc_dim2_all_patterns_avx2(const int phase_idx, const Eval_features *features) {
+#ifdef EVAL_FM_DIM2_PRECOMPUTED_SQUARE_SUM
+    const uint32_t *base = eval_fm_vectors_dim2_packed_sq.data() + (eval_fm_phase_vector_offset(phase_idx) >> 1);
+#elif defined(EVAL_FM_DIM2_PACKED32)
+    const uint32_t *base = eval_fm_vectors_dim2_packed32.data() + (eval_fm_phase_vector_offset(phase_idx) >> 1);
+#else
+    const uint16_t *base = eval_fm_vectors_dim2_packed.data() + (eval_fm_phase_vector_offset(phase_idx) >> 1);
+#endif
+    return eval_fm_calc_dim2_all_patterns_avx2_base(base, features);
 }
 
 #endif
