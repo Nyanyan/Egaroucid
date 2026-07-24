@@ -518,7 +518,9 @@ bool write_fm_file(
     int start_file,
     int n_files,
     int fixed_data_phase,
-    size_t n_samples
+    size_t n_samples,
+    int early_stop_patience,
+    int stopped_epoch
 ) {
     std::filesystem::path out_path(out_file);
     if (out_path.has_parent_path()) {
@@ -599,6 +601,8 @@ bool write_fm_file(
         summary << "n_files " << n_files << "\n";
         summary << "fixed_data_phase " << fixed_data_phase << "\n";
         summary << "samples " << n_samples << "\n";
+        summary << "early_stop_patience " << early_stop_patience << "\n";
+        summary << "stopped_epoch " << stopped_epoch << "\n";
         if (center_phase_target) {
             summary << "phase_target_corrections";
             for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
@@ -680,7 +684,7 @@ int main(int argc, char **argv) {
             << "usage: eval_optimizer_fm [base_eval.egev2] [board_data_dir] [start_file] [n_files] [out_file] "
             << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] "
             << "[active_pattern_mask=0] [center_phase_target=0] [l2=0.00001] [error_clip=4096] [vector_clip=7.5] "
-            << "[init_std=0.02] [target_clip=0] [score_clip=0] [fixed_data_phase=-1]\n";
+            << "[init_std=0.02] [target_clip=0] [score_clip=0] [fixed_data_phase=-1] [early_stop_patience=0]\n";
         return 1;
     }
     const std::string base_eval = argv[1];
@@ -704,12 +708,13 @@ int main(int argc, char **argv) {
     const float target_clip = argc >= 20 ? (float)std::atof(argv[19]) : 0.0f;
     const int score_clip = argc >= 21 ? std::atoi(argv[20]) : 0;
     const int fixed_data_phase = argc >= 22 ? std::atoi(argv[21]) : -1;
+    const int early_stop_patience = argc >= 23 ? std::atoi(argv[22]) : 0;
 
     if (dim <= 0 || dim > 64 || n_fm_phases <= 0 || n_fm_phases > ADJ_N_PHASES || epochs < 0 || scale <= 0 ||
         (active_pattern_mask & 0xFFFF0000U) != 0 || l2 < 0.0f || error_clip <= 0.0f || vector_clip <= 0.0f ||
         init_std <= 0.0f || target_clip < 0.0f || score_clip < 0 || score_clip > HW2 ||
-        fixed_data_phase < -1 || fixed_data_phase >= ADJ_N_PHASES) {
-        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std/target_clip/score_clip/fixed_data_phase" << std::endl;
+        fixed_data_phase < -1 || fixed_data_phase >= ADJ_N_PHASES || early_stop_patience < 0) {
+        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std/target_clip/score_clip/fixed_data_phase/early_stop_patience" << std::endl;
         return 1;
     }
 
@@ -747,6 +752,7 @@ int main(int argc, char **argv) {
               << " target_clip " << target_clip
               << " score_clip " << score_clip
               << " fixed_data_phase " << fixed_data_phase
+              << " early_stop_patience " << early_stop_patience
               << std::endl;
     if (score_clip > 0) {
         std::cerr << "score_clip " << score_clip
@@ -791,6 +797,8 @@ int main(int argc, char **argv) {
 
     float best_val_mae = calc_mae(vec, offsets, total_vectors, samples, indices, val_begin, val_end, dim, 20000, active_pattern_mask);
     int best_epoch = 0;
+    int stopped_epoch = 0;
+    int no_improve_epochs = 0;
     std::vector<float> best_vec = vec;
     std::cerr << "initial train_mae "
               << calc_mae(vec, offsets, total_vectors, samples, indices, train_begin, train_end, dim, 20000, active_pattern_mask)
@@ -810,6 +818,9 @@ int main(int argc, char **argv) {
             best_val_mae = val_mae;
             best_epoch = epoch + 1;
             best_vec = vec;
+            no_improve_epochs = 0;
+        } else {
+            ++no_improve_epochs;
         }
         std::cerr << "epoch " << (epoch + 1)
                   << " elapsed_ms " << elapsed
@@ -818,9 +829,18 @@ int main(int argc, char **argv) {
                   << " best_epoch " << best_epoch
                   << " best_val_mae " << best_val_mae
                   << std::endl;
+        stopped_epoch = epoch + 1;
+        if (early_stop_patience > 0 && no_improve_epochs >= early_stop_patience) {
+            std::cerr << "early_stop epoch " << stopped_epoch
+                      << " best_epoch " << best_epoch
+                      << " best_val_mae " << best_val_mae
+                      << " patience " << early_stop_patience
+                      << std::endl;
+            break;
+        }
     }
 
-    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std, target_clip, target_clip_stats, score_clip, score_clip_stats, data_dir, start_file, n_files, fixed_data_phase, samples.size())) {
+    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std, target_clip, target_clip_stats, score_clip, score_clip_stats, data_dir, start_file, n_files, fixed_data_phase, samples.size(), early_stop_patience, stopped_epoch)) {
         return 1;
     }
     return 0;

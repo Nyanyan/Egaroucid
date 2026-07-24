@@ -151,9 +151,12 @@ def parse_training_logs(log_dir: Path, out_dir: Path, phase_start: int, phase_en
     epoch_re = re.compile(
         r"epoch\s+(\d+)\s+elapsed_ms\s+(\d+)\s+train_mae\s+([0-9.eE+-]+)\s+val_mae\s+([0-9.eE+-]+)\s+best_epoch\s+(\d+)\s+best_val_mae\s+([0-9.eE+-]+)"
     )
+    early_stop_re = re.compile(
+        r"early_stop\s+epoch\s+(\d+)\s+best_epoch\s+(\d+)\s+best_val_mae\s+([0-9.eE+-]+)\s+patience\s+(\d+)"
+    )
     wrote_re = re.compile(r"wrote\s+.+\s+nonzero_quantized\s+(\d+)\s+max_abs_quantized\s+(\d+)")
     lines = [
-        "phase\tsamples\tdim\tinitial_train_mae\tinitial_val_mae\tlast_epoch\tlast_elapsed_ms\tlast_train_mae\tlast_val_mae\tbest_epoch\tbest_val_mae\tnonzero_quantized\tmax_abs_quantized"
+        "phase\tsamples\tdim\tinitial_train_mae\tinitial_val_mae\tlast_epoch\tlast_elapsed_ms\tlast_train_mae\tlast_val_mae\tbest_epoch\tbest_val_mae\tearly_stop_epoch\tearly_stop_patience\tnonzero_quantized\tmax_abs_quantized"
     ]
     for phase in range(phase_start, phase_end + 1):
         log_path = log_dir / f"phase_{phase:02d}.stderr.log"
@@ -168,6 +171,8 @@ def parse_training_logs(log_dir: Path, out_dir: Path, phase_start: int, phase_en
         last_val = ""
         best_epoch = ""
         best_val = ""
+        early_stop_epoch = ""
+        early_stop_patience = ""
         nonzero = ""
         max_abs = ""
         for line in text.splitlines():
@@ -188,6 +193,13 @@ def parse_training_logs(log_dir: Path, out_dir: Path, phase_start: int, phase_en
                 best_epoch = match.group(5)
                 best_val = match.group(6)
                 continue
+            match = early_stop_re.search(line)
+            if match:
+                early_stop_epoch = match.group(1)
+                best_epoch = match.group(2)
+                best_val = match.group(3)
+                early_stop_patience = match.group(4)
+                continue
             match = wrote_re.search(line)
             if match:
                 nonzero, max_abs = match.group(1), match.group(2)
@@ -205,6 +217,8 @@ def parse_training_logs(log_dir: Path, out_dir: Path, phase_start: int, phase_en
                     last_val,
                     best_epoch,
                     best_val,
+                    early_stop_epoch,
+                    early_stop_patience,
                     nonzero,
                     max_abs,
                 ]
@@ -243,6 +257,7 @@ def main() -> int:
     parser.add_argument("--init-std", type=float, default=0.02)
     parser.add_argument("--target-clip", type=float, default=0.0)
     parser.add_argument("--score-clip", type=int, default=0)
+    parser.add_argument("--early-stop-patience", type=int, default=0)
     parser.add_argument("--max-estimated-memory-gib", type=float, default=0.0)
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--no-merge", action="store_true")
@@ -255,6 +270,8 @@ def main() -> int:
         raise ValueError("invalid record-start")
     if args.record_end is not None and args.record_end < args.record_start:
         raise ValueError("invalid record-end")
+    if args.early_stop_patience < 0:
+        raise ValueError("invalid early-stop-patience")
 
     base_eval = resolve_path(root, args.base_eval)
     data_root = resolve_path(root, args.data_root)
@@ -310,6 +327,7 @@ def main() -> int:
         "init_std": args.init_std,
         "target_clip": args.target_clip,
         "score_clip": args.score_clip,
+        "early_stop_patience": args.early_stop_patience,
         "commands": [],
     }
 
@@ -349,6 +367,7 @@ def main() -> int:
             format_float(args.target_clip),
             str(args.score_clip),
             str(phase),
+            str(args.early_stop_patience),
         ]
         manifest["commands"].append({"phase": phase, "records": count, "estimated_memory_gib": estimated_gib, "cmd": cmd})
         if args.skip_existing and phase_file.exists():
