@@ -189,7 +189,7 @@ def main() -> int:
     parser.add_argument("--record-end", type=int, default=None)
     parser.add_argument("--dim", type=int, default=2)
     parser.add_argument("--fm-phases", type=int, default=60)
-    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1.0e-5)
     parser.add_argument("--max-records", type=int, default=0)
     parser.add_argument("--scale", type=int, default=16)
