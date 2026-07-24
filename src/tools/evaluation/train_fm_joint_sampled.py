@@ -190,7 +190,6 @@ def main() -> int:
     parser.add_argument("--record-end", type=int, default=-1)
     parser.add_argument("--phase-start", type=int, default=0)
     parser.add_argument("--phase-end", type=int, default=59)
-    parser.add_argument("--active-pattern-mask", type=lambda x: int(x, 0), default=0)
     parser.add_argument("--early-stop-patience", type=int, default=100)
     parser.add_argument("--max-memory-gib", type=float, default=100.0)
     parser.add_argument("--train-metric-limit", type=int, default=1_000_000)
@@ -207,8 +206,6 @@ def main() -> int:
         raise ValueError("record-end must be -1 or greater than or equal to record-start")
     if args.phase_start < 0 or args.phase_end < args.phase_start or args.phase_end >= 60:
         raise ValueError("invalid phase range")
-    if args.active_pattern_mask & 0xFFFF0000:
-        raise ValueError("active-pattern-mask must fit in 16 bits")
     if args.progress_interval_sec < 0:
         raise ValueError("progress-interval-sec must be non-negative")
 
@@ -298,8 +295,6 @@ def main() -> int:
         str(args.phase_start),
         "--phase-end",
         str(args.phase_end),
-        "--active-pattern-mask",
-        f"0x{args.active_pattern_mask:04x}",
         "--early-stop-patience",
         str(args.early_stop_patience),
         "--max-memory-gib",
@@ -323,6 +318,7 @@ def main() -> int:
             "FM term has 1 shared phase",
             "linear and FM parameters are optimized together",
             "samples are drawn uniformly from all indexed records in the selected range",
+            "all pattern features are used for the FM term",
         ],
         "out_dir": str(out_dir),
         "out_file": str(out_file),

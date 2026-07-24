@@ -65,7 +65,6 @@ struct Options {
     int record_end = -1;
     int phase_start = 0;
     int phase_end = ADJ_N_PHASES - 1;
-    uint32_t active_pattern_mask = 0U;
     int early_stop_patience = 100;
     double max_memory_gib = 100.0;
     uint64_t train_metric_limit = 1000000;
@@ -211,8 +210,6 @@ bool parse_args(int argc, char **argv, Options *opt) {
             const char *v = need_value(); if (!v) return false; opt->phase_start = std::atoi(v);
         } else if (key == "--phase-end") {
             const char *v = need_value(); if (!v) return false; opt->phase_end = std::atoi(v);
-        } else if (key == "--active-pattern-mask") {
-            const char *v = need_value(); if (!v) return false; opt->active_pattern_mask = (uint32_t)std::strtoul(v, nullptr, 0);
         } else if (key == "--early-stop-patience") {
             const char *v = need_value(); if (!v) return false; opt->early_stop_patience = std::atoi(v);
         } else if (key == "--max-memory-gib") {
@@ -254,7 +251,7 @@ bool validate_options(const Options &opt) {
         opt.beta2 < 0.0 || opt.beta2 >= 1.0 || opt.adam_eps <= 0.0 || opt.init_std <= 0.0 ||
         opt.linear_l2 < 0.0 || opt.fm_l2 < 0.0 || opt.grad_clip_raw < 0.0 ||
         opt.linear_param_clip <= 0.0 || opt.fm_vector_clip <= 0.0 || opt.max_memory_gib <= 0.0 ||
-        opt.early_stop_patience < 0 || (opt.active_pattern_mask & 0xFFFF0000U) != 0) {
+        opt.early_stop_patience < 0) {
         std::cerr << "[ERROR] invalid optimizer option\n";
         return false;
     }
@@ -331,10 +328,6 @@ int linear_params_per_phase() {
         res += adj_eval_sizes[i];
     }
     return res;
-}
-
-bool feature_active(int feature_idx, uint32_t active_pattern_mask) {
-    return active_pattern_mask == 0 || (active_pattern_mask & (1U << (feature_idx >> 2))) != 0;
 }
 
 bool parse_record_number(const std::filesystem::path &path, int *record) {
@@ -786,14 +779,10 @@ FmCache predict_fm(
     const std::vector<float> &fm,
     const std::array<int, FM_N_PATTERN_FEATURES> &offsets,
     const Sample &sample,
-    const int dim,
-    const uint32_t active_pattern_mask
+    const int dim
 ) {
     FmCache cache;
     for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-        if (!feature_active(i, active_pattern_mask)) {
-            continue;
-        }
         const uint64_t row = (uint64_t)(offsets[(size_t)i] + sample.features[(size_t)i]) * (uint64_t)dim;
         for (int d = 0; d < dim; ++d) {
             const float x = fm[(size_t)row + (size_t)d];
@@ -814,7 +803,6 @@ Loss calc_loss(
     const std::array<int, FM_N_PATTERN_FEATURES> &fm_offsets,
     const std::vector<Sample> &samples,
     const int dim,
-    const uint32_t active_pattern_mask,
     const uint64_t limit
 ) {
     Loss loss;
@@ -822,7 +810,7 @@ Loss calc_loss(
     for (uint64_t i = 0; i < n; ++i) {
         const Sample &sample = samples[(size_t)i];
         const float pred_raw = predict_linear(linear, linear_starts, sample) +
-            predict_fm(fm, fm_offsets, sample, dim, active_pattern_mask).pred;
+            predict_fm(fm, fm_offsets, sample, dim).pred;
         const double err_disc = ((double)pred_raw - (double)sample.score * ADJ_STEP) / (double)ADJ_STEP;
         loss.mse += err_disc * err_disc;
         loss.mae += std::fabs(err_disc);
@@ -842,13 +830,12 @@ void accumulate_sample_grad(
     const std::array<int, FM_N_PATTERN_FEATURES> &fm_offsets,
     const Sample &sample,
     const int dim,
-    const uint32_t active_pattern_mask,
     const double grad_clip_raw,
     SparseGrad *linear_grad,
     SparseGrad *fm_grad
 ) {
     const float linear_pred = predict_linear(linear, linear_starts, sample);
-    const FmCache fm_cache = predict_fm(fm, fm_offsets, sample, dim, active_pattern_mask);
+    const FmCache fm_cache = predict_fm(fm, fm_offsets, sample, dim);
     const double target_raw = (double)sample.score * ADJ_STEP;
     double err_raw = (double)linear_pred + (double)fm_cache.pred - target_raw;
     if (grad_clip_raw > 0.0) {
@@ -861,9 +848,6 @@ void accumulate_sample_grad(
     }
 
     for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-        if (!feature_active(i, active_pattern_mask)) {
-            continue;
-        }
         const uint64_t row = (uint64_t)(fm_offsets[(size_t)i] + sample.features[(size_t)i]) * (uint64_t)dim;
         for (int d = 0; d < dim; ++d) {
             const size_t idx = (size_t)row + (size_t)d;
@@ -936,7 +920,6 @@ void train_epoch(
                 fm_offsets,
                 (*train_samples)[(size_t)i],
                 opt.dim,
-                opt.active_pattern_mask,
                 opt.grad_clip_raw,
                 linear_grad,
                 fm_grad
@@ -1024,7 +1007,7 @@ bool write_fm_file(
     const uint32_t n_features = FM_N_PATTERN_FEATURES;
     const uint32_t dim = (uint32_t)opt.dim;
     const int32_t scale = opt.scale;
-    const uint32_t flags = opt.active_pattern_mask & 0xFFFFU;
+    const uint32_t flags = 0U;
     const uint64_t linear_count = (uint64_t)linear.size();
     const uint64_t fm_count = total_vectors * (uint64_t)opt.dim;
 
@@ -1079,7 +1062,7 @@ bool write_fm_file(
         summary << "linear_params " << linear_count << "\n";
         summary << "total_vectors_per_fm_phase " << total_vectors << "\n";
         summary << "fm_values " << fm_count << "\n";
-        summary << "active_pattern_mask 0x" << std::hex << flags << std::dec << "\n";
+        summary << "fm_pattern_features all\n";
         summary << "epochs_requested " << opt.epochs << "\n";
         summary << "batch_size " << opt.batch_size << "\n";
         summary << "linear_lr " << opt.linear_lr << "\n";
@@ -1225,8 +1208,8 @@ int main(int argc, char **argv) {
     std::vector<float> best_linear = linear;
     std::vector<float> best_fm = fm;
 
-    Loss best_train_loss = calc_loss(linear, fm, linear_starts, fm_offsets, train_samples, opt.dim, opt.active_pattern_mask, opt.train_metric_limit);
-    Loss best_val_loss = calc_loss(linear, fm, linear_starts, fm_offsets, val_samples, opt.dim, opt.active_pattern_mask, opt.val_metric_limit);
+    Loss best_train_loss = calc_loss(linear, fm, linear_starts, fm_offsets, train_samples, opt.dim, opt.train_metric_limit);
+    Loss best_val_loss = calc_loss(linear, fm, linear_starts, fm_offsets, val_samples, opt.dim, opt.val_metric_limit);
     int best_epoch = 0;
     int no_improve_epochs = 0;
     uint64_t adam_step = 0;
@@ -1255,8 +1238,8 @@ int main(int argc, char **argv) {
             epoch,
             &adam_step
         );
-        const Loss train_loss = calc_loss(linear, fm, linear_starts, fm_offsets, train_samples, opt.dim, opt.active_pattern_mask, opt.train_metric_limit);
-        const Loss val_loss = calc_loss(linear, fm, linear_starts, fm_offsets, val_samples, opt.dim, opt.active_pattern_mask, opt.val_metric_limit);
+        const Loss train_loss = calc_loss(linear, fm, linear_starts, fm_offsets, train_samples, opt.dim, opt.train_metric_limit);
+        const Loss val_loss = calc_loss(linear, fm, linear_starts, fm_offsets, val_samples, opt.dim, opt.val_metric_limit);
         if (val_loss.mse < best_val_loss.mse) {
             best_val_loss = val_loss;
             best_train_loss = train_loss;

@@ -86,7 +86,6 @@ struct Options {
     int record_end = -1;
     int phase_start = 0;
     int phase_end = ADJ_N_PHASES - 1;
-    uint32_t active_pattern_mask = 0U;
     int early_stop_patience = 100;
     double max_memory_gib = 100.0;
     uint64_t train_metric_limit = 1000000;
@@ -234,8 +233,6 @@ bool parse_args(int argc, char **argv, Options *opt) {
             const char *v = need_value(); if (!v) return false; opt->phase_start = std::atoi(v);
         } else if (key == "--phase-end") {
             const char *v = need_value(); if (!v) return false; opt->phase_end = std::atoi(v);
-        } else if (key == "--active-pattern-mask") {
-            const char *v = need_value(); if (!v) return false; opt->active_pattern_mask = (uint32_t)std::strtoul(v, nullptr, 0);
         } else if (key == "--early-stop-patience") {
             const char *v = need_value(); if (!v) return false; opt->early_stop_patience = std::atoi(v);
         } else if (key == "--max-memory-gib") {
@@ -277,8 +274,7 @@ bool validate_options(const Options &opt) {
         opt.beta2 < 0.0 || opt.beta2 >= 1.0 || opt.adam_eps <= 0.0 || opt.init_std <= 0.0 ||
         opt.linear_l2 < 0.0 || opt.fm_l2 < 0.0 || opt.grad_clip_raw < 0.0 ||
         opt.linear_param_clip <= 0.0 || opt.fm_vector_clip <= 0.0 || opt.max_memory_gib <= 0.0 ||
-        opt.early_stop_patience < 0 || opt.progress_interval_sec < 0 ||
-        (opt.active_pattern_mask & 0xFFFF0000U) != 0) {
+        opt.early_stop_patience < 0 || opt.progress_interval_sec < 0) {
         std::cerr << "[ERROR] invalid optimizer option\n";
         return false;
     }
@@ -723,10 +719,6 @@ bool load_samples(
     return true;
 }
 
-__device__ inline bool gpu_feature_active(const int feature_idx, const uint32_t active_pattern_mask) {
-    return active_pattern_mask == 0 || (active_pattern_mask & (1U << (feature_idx >> 2))) != 0;
-}
-
 __global__ void accumulate_grad_kernel(
     const Sample *samples,
     const uint64_t n_samples,
@@ -734,7 +726,6 @@ __global__ void accumulate_grad_kernel(
     const float *fm,
     const int linear_per_phase,
     const int dim,
-    const uint32_t active_pattern_mask,
     const double grad_clip_raw,
     float *linear_grad,
     float *fm_grad
@@ -757,9 +748,6 @@ __global__ void accumulate_grad_kernel(
         square_sum[d] = 0.0f;
     }
     for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-        if (!gpu_feature_active(i, active_pattern_mask)) {
-            continue;
-        }
         const uint64_t row = (uint64_t)(c_fm_offsets[i] + sample.features[i]) * (uint64_t)dim;
         for (int d = 0; d < dim; ++d) {
             const float x = fm[row + (uint64_t)d];
@@ -783,9 +771,6 @@ __global__ void accumulate_grad_kernel(
         atomicAdd(&linear_grad[row], common);
     }
     for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-        if (!gpu_feature_active(i, active_pattern_mask)) {
-            continue;
-        }
         const uint64_t row = (uint64_t)(c_fm_offsets[i] + sample.features[i]) * (uint64_t)dim;
         for (int d = 0; d < dim; ++d) {
             const uint64_t fm_idx = row + (uint64_t)d;
@@ -836,7 +821,6 @@ __global__ void loss_kernel(
     const float *fm,
     const int linear_per_phase,
     const int dim,
-    const uint32_t active_pattern_mask,
     double *loss_sum
 ) {
     const uint64_t idx = (uint64_t)blockIdx.x * blockDim.x + threadIdx.x;
@@ -856,9 +840,6 @@ __global__ void loss_kernel(
         square_sum[d] = 0.0f;
     }
     for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-        if (!gpu_feature_active(i, active_pattern_mask)) {
-            continue;
-        }
         const uint64_t row = (uint64_t)(c_fm_offsets[i] + sample.features[i]) * (uint64_t)dim;
         for (int d = 0; d < dim; ++d) {
             const float x = fm[row + (uint64_t)d];
@@ -907,7 +888,7 @@ bool calc_loss_gpu(
         CUDA_CHECK(cudaMemset(d_loss, 0, sizeof(double) * 2));
         const uint64_t blocks = (chunk + CUDA_BLOCK_SIZE - 1) / CUDA_BLOCK_SIZE;
         loss_kernel<<<(unsigned int)blocks, CUDA_BLOCK_SIZE>>>(
-            d_batch, chunk, d_linear, d_fm, linear_per_phase, opt.dim, opt.active_pattern_mask, d_loss
+            d_batch, chunk, d_linear, d_fm, linear_per_phase, opt.dim, d_loss
         );
         CUDA_CHECK(cudaGetLastError());
         double partial[2] = {0.0, 0.0};
@@ -950,8 +931,8 @@ bool train_epoch_gpu(
         CUDA_CHECK(cudaMemset(d_fm_grad, 0, sizeof(float) * (size_t)fm_count));
         const uint64_t sample_blocks = (chunk + CUDA_BLOCK_SIZE - 1) / CUDA_BLOCK_SIZE;
         accumulate_grad_kernel<<<(unsigned int)sample_blocks, CUDA_BLOCK_SIZE>>>(
-            d_batch, chunk, d_linear, d_fm, linear_per_phase, opt.dim, opt.active_pattern_mask,
-            opt.grad_clip_raw, d_linear_grad, d_fm_grad
+            d_batch, chunk, d_linear, d_fm, linear_per_phase, opt.dim, opt.grad_clip_raw,
+            d_linear_grad, d_fm_grad
         );
         CUDA_CHECK(cudaGetLastError());
         ++(*adam_step);
@@ -1027,7 +1008,7 @@ bool write_fm_file(
     const uint32_t n_features = FM_N_PATTERN_FEATURES;
     const uint32_t dim = (uint32_t)opt.dim;
     const int32_t scale = opt.scale;
-    const uint32_t flags = opt.active_pattern_mask & 0xFFFFU;
+    const uint32_t flags = 0U;
     const uint64_t linear_count = (uint64_t)linear.size();
     const uint64_t fm_count = total_vectors * (uint64_t)opt.dim;
 
@@ -1082,7 +1063,7 @@ bool write_fm_file(
         summary << "linear_params " << linear_count << "\n";
         summary << "total_vectors_per_fm_phase " << total_vectors << "\n";
         summary << "fm_values " << fm_count << "\n";
-        summary << "active_pattern_mask 0x" << std::hex << flags << std::dec << "\n";
+        summary << "fm_pattern_features all\n";
         summary << "epochs_requested " << opt.epochs << "\n";
         summary << "batch_size " << opt.batch_size << "\n";
         summary << "linear_lr " << opt.linear_lr << "\n";
