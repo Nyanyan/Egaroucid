@@ -30,6 +30,8 @@ constexpr char FM_FILE_MAGIC[8] = {'E', 'G', 'F', 'M', '0', '0', '1', '\0'};
 constexpr uint32_t FM_FILE_VERSION = 1;
 constexpr int N_ZEROS_PLUS_LOCAL = 1 << 12;
 constexpr int FM_N_PATTERN_FEATURES = ADJ_N_FEATURES - 1;
+constexpr uint64_t INDEXED_PHASE_RECORD_BYTES =
+    sizeof(int16_t) + sizeof(int16_t) + sizeof(uint16_t) * ADJ_N_FEATURES + sizeof(int16_t);
 
 struct RawRecord {
     Board board;
@@ -278,10 +280,45 @@ std::vector<Sample> load_samples(
     int n_fm_phases,
     size_t max_records,
     int score_clip,
-    ScoreClipStats *score_clip_stats
+    ScoreClipStats *score_clip_stats,
+    int fixed_data_phase
 ) {
     std::vector<Sample> samples;
-    if (max_records > 0) {
+    if (fixed_data_phase >= 0) {
+        uint64_t expected_records = 0;
+        int bad_sized_files = 0;
+        for (int i = start_file; i < start_file + n_files; ++i) {
+            const std::string file = data_dir + "/" + std::to_string(i) + ".dat";
+            const std::string indexed_file = data_dir + "/" + std::to_string(i) + "/teacher_0.dat";
+            std::string target_file;
+            if (std::filesystem::exists(file)) {
+                target_file = file;
+            } else if (std::filesystem::exists(indexed_file)) {
+                target_file = indexed_file;
+            } else {
+                continue;
+            }
+            std::error_code ec;
+            const uint64_t bytes = (uint64_t)std::filesystem::file_size(target_file, ec);
+            if (ec) {
+                continue;
+            }
+            if (bytes % INDEXED_PHASE_RECORD_BYTES != 0) {
+                ++bad_sized_files;
+            }
+            expected_records += bytes / INDEXED_PHASE_RECORD_BYTES;
+            if (max_records > 0 && expected_records >= max_records) {
+                expected_records = max_records;
+                break;
+            }
+        }
+        if (expected_records > 0) {
+            samples.reserve((size_t)expected_records);
+            std::cerr << "reserve_samples " << expected_records
+                      << " fixed_data_phase " << fixed_data_phase
+                      << " bad_sized_files " << bad_sized_files << std::endl;
+        }
+    } else if (max_records > 0) {
         samples.reserve(max_records);
     }
     for (int i = start_file; i < start_file + n_files; ++i) {
@@ -290,7 +327,11 @@ std::vector<Sample> load_samples(
         const bool raw_exists = std::filesystem::exists(file);
         const bool indexed_exists = std::filesystem::exists(indexed_file);
         const size_t before = samples.size();
-        if (raw_exists) {
+        if (fixed_data_phase >= 0 && raw_exists) {
+            append_samples_from_index_file(file, linear, starts, fixed_data_phase, n_fm_phases, max_records, score_clip, score_clip_stats, &samples);
+        } else if (fixed_data_phase >= 0 && indexed_exists) {
+            append_samples_from_index_file(indexed_file, linear, starts, fixed_data_phase, n_fm_phases, max_records, score_clip, score_clip_stats, &samples);
+        } else if (raw_exists) {
             append_samples_from_raw_file(file, linear, starts, n_fm_phases, max_records, score_clip, score_clip_stats, &samples);
         } else if (indexed_exists) {
             append_samples_from_index_file(indexed_file, linear, starts, i, n_fm_phases, max_records, score_clip, score_clip_stats, &samples);
@@ -342,17 +383,20 @@ float calc_mae(
     uint64_t total_vectors,
     const std::vector<Sample> &samples,
     const std::vector<size_t> &indices,
+    size_t begin,
+    size_t end,
     int dim,
     size_t limit,
     uint32_t active_pattern_mask
 ) {
-    if (indices.empty()) {
+    if (begin >= end || end > indices.size()) {
         return 0.0f;
     }
-    const size_t n = std::min(limit == 0 ? indices.size() : limit, indices.size());
+    const size_t n_available = end - begin;
+    const size_t n = std::min(limit == 0 ? n_available : limit, n_available);
     double mae = 0.0;
     for (size_t i = 0; i < n; ++i) {
-        const Sample &sample = samples[indices[i]];
+        const Sample &sample = samples[indices[begin + i]];
         mae += std::fabs(sample.target - predict_fm(vec, offsets, total_vectors, sample, dim, active_pattern_mask)) / ADJ_STEP;
     }
     return (float)(mae / n);
@@ -411,7 +455,9 @@ uint64_t init_touched_fm_rows(
     const std::array<int, FM_N_PATTERN_FEATURES> &offsets,
     uint64_t total_vectors,
     const std::vector<Sample> &samples,
-    const std::vector<size_t> &train_indices,
+    const std::vector<size_t> &indices,
+    size_t begin,
+    size_t end,
     int dim,
     uint32_t active_pattern_mask,
     float init_std,
@@ -420,7 +466,8 @@ uint64_t init_touched_fm_rows(
     std::normal_distribution<float> init_dist(0.0f, init_std);
     std::vector<uint8_t> touched((size_t)((uint64_t)vec->size() / dim), 0);
     uint64_t n_touched = 0;
-    for (const size_t idx: train_indices) {
+    for (size_t k = begin; k < end; ++k) {
+        const size_t idx = indices[k];
         const Sample &sample = samples[idx];
         const uint64_t phase_offset = (uint64_t)sample.fm_phase * total_vectors;
         for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
@@ -466,7 +513,12 @@ bool write_fm_file(
     float target_clip,
     const TargetClipStats &target_clip_stats,
     int score_clip,
-    const ScoreClipStats &score_clip_stats
+    const ScoreClipStats &score_clip_stats,
+    const std::string &data_dir,
+    int start_file,
+    int n_files,
+    int fixed_data_phase,
+    size_t n_samples
 ) {
     std::filesystem::path out_path(out_file);
     if (out_path.has_parent_path()) {
@@ -542,6 +594,11 @@ bool write_fm_file(
         summary << "max_abs_quantized " << max_abs << "\n";
         summary << "best_epoch " << best_epoch << "\n";
         summary << "best_val_mae_disc " << best_val_mae << "\n";
+        summary << "data_dir " << data_dir << "\n";
+        summary << "start_file " << start_file << "\n";
+        summary << "n_files " << n_files << "\n";
+        summary << "fixed_data_phase " << fixed_data_phase << "\n";
+        summary << "samples " << n_samples << "\n";
         if (center_phase_target) {
             summary << "phase_target_corrections";
             for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
@@ -556,14 +613,17 @@ bool write_fm_file(
 
 void center_targets_by_train_phase_mean(
     std::vector<Sample> *samples,
-    const std::vector<size_t> &train_indices,
+    const std::vector<size_t> &indices,
+    size_t begin,
+    size_t end,
     const std::array<int, ADJ_N_FEATURES> &starts,
     std::vector<int16_t> *linear,
     std::array<int, ADJ_N_PHASES> *phase_target_corrections
 ) {
     std::array<double, ADJ_N_PHASES> phase_sum = {};
     std::array<uint64_t, ADJ_N_PHASES> phase_count = {};
-    for (const size_t idx: train_indices) {
+    for (size_t k = begin; k < end; ++k) {
+        const size_t idx = indices[k];
         const Sample &sample = (*samples)[idx];
         phase_sum[(size_t)sample.phase] += sample.target;
         ++phase_count[(size_t)sample.phase];
@@ -620,7 +680,7 @@ int main(int argc, char **argv) {
             << "usage: eval_optimizer_fm [base_eval.egev2] [board_data_dir] [start_file] [n_files] [out_file] "
             << "[dim=8] [fm_phases=1] [epochs=3] [lr=0.0002] [max_records=100000] [scale=16] [seed=20260723] "
             << "[active_pattern_mask=0] [center_phase_target=0] [l2=0.00001] [error_clip=4096] [vector_clip=7.5] "
-            << "[init_std=0.02] [target_clip=0] [score_clip=0]\n";
+            << "[init_std=0.02] [target_clip=0] [score_clip=0] [fixed_data_phase=-1]\n";
         return 1;
     }
     const std::string base_eval = argv[1];
@@ -643,11 +703,13 @@ int main(int argc, char **argv) {
     const float init_std = argc >= 19 ? (float)std::atof(argv[18]) : 0.02f;
     const float target_clip = argc >= 20 ? (float)std::atof(argv[19]) : 0.0f;
     const int score_clip = argc >= 21 ? std::atoi(argv[20]) : 0;
+    const int fixed_data_phase = argc >= 22 ? std::atoi(argv[21]) : -1;
 
     if (dim <= 0 || dim > 64 || n_fm_phases <= 0 || n_fm_phases > ADJ_N_PHASES || epochs < 0 || scale <= 0 ||
         (active_pattern_mask & 0xFFFF0000U) != 0 || l2 < 0.0f || error_clip <= 0.0f || vector_clip <= 0.0f ||
-        init_std <= 0.0f || target_clip < 0.0f || score_clip < 0 || score_clip > HW2) {
-        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std/target_clip/score_clip" << std::endl;
+        init_std <= 0.0f || target_clip < 0.0f || score_clip < 0 || score_clip > HW2 ||
+        fixed_data_phase < -1 || fixed_data_phase >= ADJ_N_PHASES) {
+        std::cerr << "[ERROR] invalid dim/fm_phases/epochs/scale/active_pattern_mask/l2/error_clip/vector_clip/init_std/target_clip/score_clip/fixed_data_phase" << std::endl;
         return 1;
     }
 
@@ -669,7 +731,7 @@ int main(int argc, char **argv) {
     }
 
     ScoreClipStats score_clip_stats;
-    auto samples = load_samples(data_dir, start_file, n_files, linear, starts, n_fm_phases, max_records, score_clip, &score_clip_stats);
+    auto samples = load_samples(data_dir, start_file, n_files, linear, starts, n_fm_phases, max_records, score_clip, &score_clip_stats, fixed_data_phase);
     if (samples.empty()) {
         std::cerr << "[ERROR] no samples loaded" << std::endl;
         return 1;
@@ -684,6 +746,7 @@ int main(int argc, char **argv) {
               << " init_std " << init_std
               << " target_clip " << target_clip
               << " score_clip " << score_clip
+              << " fixed_data_phase " << fixed_data_phase
               << std::endl;
     if (score_clip > 0) {
         std::cerr << "score_clip " << score_clip
@@ -697,16 +760,19 @@ int main(int argc, char **argv) {
     std::iota(indices.begin(), indices.end(), 0);
     std::mt19937 rng(seed);
     std::shuffle(indices.begin(), indices.end(), rng);
-    const size_t n_val = std::max<size_t>(1, samples.size() / 10);
-    std::vector<size_t> val_indices(indices.begin(), indices.begin() + n_val);
-    std::vector<size_t> train_indices(indices.begin() + n_val, indices.end());
-    if (train_indices.empty()) {
-        train_indices = val_indices;
+    const size_t n_val = std::min(samples.size(), std::max<size_t>(1, samples.size() / 10));
+    const size_t val_begin = 0;
+    const size_t val_end = n_val;
+    size_t train_begin = n_val;
+    size_t train_end = samples.size();
+    if (train_begin >= train_end) {
+        train_begin = val_begin;
+        train_end = val_end;
     }
 
     std::array<int, ADJ_N_PHASES> phase_target_corrections = {};
     if (center_phase_target) {
-        center_targets_by_train_phase_mean(&samples, train_indices, starts, &output_linear, &phase_target_corrections);
+        center_targets_by_train_phase_mean(&samples, indices, train_begin, train_end, starts, &output_linear, &phase_target_corrections);
     }
     const TargetClipStats target_clip_stats = clip_sample_targets(&samples, target_clip);
     if (target_clip > 0.0f) {
@@ -719,26 +785,27 @@ int main(int argc, char **argv) {
 
     std::vector<float> vec((size_t)n_fm_phases * total_vectors * dim, 0.0f);
     const uint64_t initialized_rows = init_touched_fm_rows(
-        &vec, offsets, total_vectors, samples, train_indices, dim, active_pattern_mask, init_std, &rng
+        &vec, offsets, total_vectors, samples, indices, train_begin, train_end, dim, active_pattern_mask, init_std, &rng
     );
     std::cerr << "initialized_fm_rows " << initialized_rows << std::endl;
 
-    float best_val_mae = calc_mae(vec, offsets, total_vectors, samples, val_indices, dim, 20000, active_pattern_mask);
+    float best_val_mae = calc_mae(vec, offsets, total_vectors, samples, indices, val_begin, val_end, dim, 20000, active_pattern_mask);
     int best_epoch = 0;
     std::vector<float> best_vec = vec;
     std::cerr << "initial train_mae "
-              << calc_mae(vec, offsets, total_vectors, samples, train_indices, dim, 20000, active_pattern_mask)
+              << calc_mae(vec, offsets, total_vectors, samples, indices, train_begin, train_end, dim, 20000, active_pattern_mask)
               << " val_mae " << best_val_mae << std::endl;
 
     for (int epoch = 0; epoch < epochs; ++epoch) {
-        std::shuffle(train_indices.begin(), train_indices.end(), rng);
+        std::shuffle(indices.begin() + (std::ptrdiff_t)train_begin, indices.begin() + (std::ptrdiff_t)train_end, rng);
         const uint64_t start_ms = fm_optimizer_tim();
-        for (const size_t idx: train_indices) {
+        for (size_t k = train_begin; k < train_end; ++k) {
+            const size_t idx = indices[k];
             train_one_sample(&vec, offsets, total_vectors, samples[idx], dim, lr, l2, error_clip, vector_clip, active_pattern_mask);
         }
         const uint64_t elapsed = fm_optimizer_tim() - start_ms;
-        const float train_mae = calc_mae(vec, offsets, total_vectors, samples, train_indices, dim, 20000, active_pattern_mask);
-        const float val_mae = calc_mae(vec, offsets, total_vectors, samples, val_indices, dim, 20000, active_pattern_mask);
+        const float train_mae = calc_mae(vec, offsets, total_vectors, samples, indices, train_begin, train_end, dim, 20000, active_pattern_mask);
+        const float val_mae = calc_mae(vec, offsets, total_vectors, samples, indices, val_begin, val_end, dim, 20000, active_pattern_mask);
         if (val_mae < best_val_mae) {
             best_val_mae = val_mae;
             best_epoch = epoch + 1;
@@ -753,7 +820,7 @@ int main(int argc, char **argv) {
                   << std::endl;
     }
 
-    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std, target_clip, target_clip_stats, score_clip, score_clip_stats)) {
+    if (!write_fm_file(out_file, output_linear, best_vec, total_vectors, n_fm_phases, dim, scale, best_epoch, best_val_mae, active_pattern_mask, initialized_rows, center_phase_target, phase_target_corrections, l2, error_clip, vector_clip, init_std, target_clip, target_clip_stats, score_clip, score_clip_stats, data_dir, start_file, n_files, fixed_data_phase, samples.size())) {
         return 1;
     }
     return 0;
