@@ -68,6 +68,8 @@ struct Options {
     double max_memory_gib = 100.0;
     uint64_t train_metric_limit = 1000000;
     uint64_t val_metric_limit = 0;
+    int progress_interval_sec = 30;
+    std::string read_mode = "scan";
     bool dry_run = false;
 };
 
@@ -135,6 +137,7 @@ void usage() {
         << " --dim 2 --epochs 10 --train-samples N --val-samples N"
         << " [--batch-size 1000000] [--linear-lr 0.1] [--fm-lr 0.01]"
         << " [--record-start 223] [--record-end -1] [--scale 128]"
+        << " [--read-mode scan] [--progress-interval-sec 30]"
         << " [--max-memory-gib 100] [--dry-run 0]\n";
 }
 
@@ -216,6 +219,10 @@ bool parse_args(int argc, char **argv, Options *opt) {
             const char *v = need_value(); if (!v) return false; opt->train_metric_limit = std::strtoull(v, nullptr, 10);
         } else if (key == "--val-metric-limit") {
             const char *v = need_value(); if (!v) return false; opt->val_metric_limit = std::strtoull(v, nullptr, 10);
+        } else if (key == "--progress-interval-sec") {
+            const char *v = need_value(); if (!v) return false; opt->progress_interval_sec = std::atoi(v);
+        } else if (key == "--read-mode") {
+            const char *v = need_value(); if (!v) return false; opt->read_mode = v;
         } else if (key == "--dry-run") {
             const char *v = need_value(); if (!v) return false; opt->dry_run = parse_bool(v);
         } else {
@@ -247,6 +254,14 @@ bool validate_options(const Options &opt) {
         opt.linear_param_clip <= 0.0 || opt.fm_vector_clip <= 0.0 || opt.max_memory_gib <= 0.0 ||
         opt.early_stop_patience < 0 || (opt.active_pattern_mask & 0xFFFF0000U) != 0) {
         std::cerr << "[ERROR] invalid optimizer option\n";
+        return false;
+    }
+    if (opt.progress_interval_sec < 0) {
+        std::cerr << "[ERROR] progress-interval-sec must be non-negative\n";
+        return false;
+    }
+    if (opt.read_mode != "scan" && opt.read_mode != "seek") {
+        std::cerr << "[ERROR] read-mode must be scan or seek\n";
         return false;
     }
     return true;
@@ -431,16 +446,30 @@ std::vector<SampleRequest> generate_requests(
     const uint64_t total_records,
     const uint64_t train_samples,
     const uint64_t val_samples,
-    const uint64_t seed
+    const uint64_t seed,
+    const int progress_interval_sec
 ) {
     const uint64_t need = train_samples + val_samples;
+    const uint64_t start_ms = tim_ms();
+    uint64_t next_log_ms = start_ms + (uint64_t)progress_interval_sec * 1000ULL;
     std::unordered_set<uint64_t> chosen;
     chosen.reserve((size_t)(need * 13 / 10 + 1024));
     std::mt19937_64 rng(seed);
     std::uniform_int_distribution<uint64_t> dist(0, total_records - 1);
     while ((uint64_t)chosen.size() < need) {
         chosen.insert(dist(rng));
+        const uint64_t now = tim_ms();
+        if (progress_interval_sec > 0 && now >= next_log_ms) {
+            std::cerr << "sample_request_generation chosen " << chosen.size()
+                      << " / " << need
+                      << " elapsed_ms " << (now - start_ms) << "\n";
+            next_log_ms = now + (uint64_t)progress_interval_sec * 1000ULL;
+        }
     }
+    std::cerr << "sample_request_generation chosen " << chosen.size()
+              << " / " << need
+              << " elapsed_ms " << (tim_ms() - start_ms)
+              << " sorting 1\n";
 
     std::vector<uint64_t> positions;
     positions.reserve((size_t)need);
@@ -459,11 +488,14 @@ std::vector<SampleRequest> generate_requests(
     std::sort(requests.begin(), requests.end(), [](const SampleRequest &a, const SampleRequest &b) {
         return a.global_index < b.global_index;
     });
+    std::cerr << "sample_request_generation sorted " << requests.size()
+              << " elapsed_ms " << (tim_ms() - start_ms) << "\n";
     return requests;
 }
 
-bool read_indexed_at(std::ifstream *in, const uint64_t local_index, IndexedDatum *datum) {
+bool read_indexed_seek(std::ifstream *in, const uint64_t local_index, IndexedDatum *datum) {
     const uint64_t offset = local_index * INDEXED_PHASE_RECORD_BYTES;
+    in->clear();
     in->seekg((std::streamoff)offset, std::ios::beg);
     if (!(*in)) {
         return false;
@@ -473,6 +505,43 @@ bool read_indexed_at(std::ifstream *in, const uint64_t local_index, IndexedDatum
     in->read((char*)datum->features.data(), sizeof(uint16_t) * ADJ_N_FEATURES);
     in->read((char*)&datum->score, sizeof(int16_t));
     return (bool)(*in);
+}
+
+bool skip_bytes_scan(std::ifstream *in, uint64_t bytes) {
+    constexpr uint64_t MAX_IGNORE_BYTES = 64ULL * 1024ULL * 1024ULL;
+    while (bytes > 0) {
+        const uint64_t step = std::min<uint64_t>(bytes, MAX_IGNORE_BYTES);
+        in->ignore((std::streamsize)step);
+        if (!(*in)) {
+            return false;
+        }
+        bytes -= step;
+    }
+    return true;
+}
+
+bool read_indexed_scan(
+    std::ifstream *in,
+    const uint64_t local_index,
+    uint64_t *next_local_index,
+    IndexedDatum *datum
+) {
+    if (local_index < *next_local_index) {
+        return false;
+    }
+    const uint64_t skip_records = local_index - *next_local_index;
+    if (skip_records != 0 && !skip_bytes_scan(in, skip_records * INDEXED_PHASE_RECORD_BYTES)) {
+        return false;
+    }
+    in->read((char*)&datum->n_discs, sizeof(int16_t));
+    in->read((char*)&datum->player, sizeof(int16_t));
+    in->read((char*)datum->features.data(), sizeof(uint16_t) * ADJ_N_FEATURES);
+    in->read((char*)&datum->score, sizeof(int16_t));
+    if (!(*in)) {
+        return false;
+    }
+    *next_local_index = local_index + 1;
+    return true;
 }
 
 bool validate_features(const IndexedDatum &datum) {
@@ -490,13 +559,18 @@ bool load_samples(
     const std::vector<SampleRequest> &requests,
     std::vector<Sample> *train,
     std::vector<Sample> *val,
-    SampleStats *stats
+    SampleStats *stats,
+    const Options &opt
 ) {
     train->clear();
     val->clear();
     size_t entry_idx = 0;
     std::ifstream in;
     std::filesystem::path open_path;
+    uint64_t next_local_index = 0;
+    const uint64_t start_ms = tim_ms();
+    uint64_t next_log_ms = start_ms + (uint64_t)opt.progress_interval_sec * 1000ULL;
+    uint64_t processed = 0;
 
     for (const SampleRequest &request: requests) {
         while (entry_idx + 1 < entries.size() &&
@@ -522,15 +596,32 @@ bool load_samples(
                 std::cerr << "[ERROR] can't open indexed data " << open_path.string() << "\n";
                 return false;
             }
+            next_local_index = 0;
+            const uint64_t now = tim_ms();
+            if (opt.progress_interval_sec > 0 && now >= next_log_ms) {
+                std::cerr << "sample_loading mode " << opt.read_mode
+                          << " processed " << processed
+                          << " / " << requests.size()
+                          << " train " << train->size()
+                          << " val " << val->size()
+                          << " phase " << entry.phase
+                          << " record " << entry.record
+                          << " elapsed_ms " << (now - start_ms) << "\n";
+                next_log_ms = now + (uint64_t)opt.progress_interval_sec * 1000ULL;
+            }
         }
 
         IndexedDatum datum;
         const uint64_t local_index = request.global_index - entry.begin;
-        if (!read_indexed_at(&in, local_index, &datum)) {
+        const bool read_ok = opt.read_mode == "scan"
+            ? read_indexed_scan(&in, local_index, &next_local_index, &datum)
+            : read_indexed_seek(&in, local_index, &datum);
+        if (!read_ok) {
             std::cerr << "[ERROR] can't read indexed record " << entry.path.string()
                       << " local_index " << local_index << "\n";
             return false;
         }
+        ++processed;
         if (!validate_features(datum)) {
             ++stats->bad_feature_count;
             continue;
@@ -552,6 +643,12 @@ bool load_samples(
             ++stats->train_phase_counts[(size_t)entry.phase];
         }
     }
+    std::cerr << "sample_loading mode " << opt.read_mode
+              << " processed " << processed
+              << " / " << requests.size()
+              << " train " << train->size()
+              << " val " << val->size()
+              << " elapsed_ms " << (tim_ms() - start_ms) << "\n";
     return true;
 }
 
@@ -755,6 +852,8 @@ void train_epoch(
     std::mt19937_64 *rng,
     uint64_t *adam_step
 ) {
+    const uint64_t start_ms = tim_ms();
+    uint64_t next_log_ms = start_ms + (uint64_t)opt.progress_interval_sec * 1000ULL;
     std::shuffle(train_samples->begin(), train_samples->end(), *rng);
     for (uint64_t begin = 0; begin < (uint64_t)train_samples->size(); begin += opt.batch_size) {
         const uint64_t end = std::min<uint64_t>(begin + opt.batch_size, (uint64_t)train_samples->size());
@@ -802,6 +901,14 @@ void train_epoch(
             opt.fm_vector_clip,
             *adam_step
         );
+        const uint64_t now = tim_ms();
+        if (opt.progress_interval_sec > 0 && now >= next_log_ms) {
+            std::cerr << "epoch_training processed " << end
+                      << " / " << train_samples->size()
+                      << " adam_step " << *adam_step
+                      << " elapsed_ms " << (now - start_ms) << "\n";
+            next_log_ms = now + (uint64_t)opt.progress_interval_sec * 1000ULL;
+        }
     }
 }
 
@@ -918,6 +1025,8 @@ bool write_fm_file(
         summary << "fm_vector_clip " << opt.fm_vector_clip << "\n";
         summary << "init_std " << opt.init_std << "\n";
         summary << "seed " << opt.seed << "\n";
+        summary << "read_mode " << opt.read_mode << "\n";
+        summary << "progress_interval_sec " << opt.progress_interval_sec << "\n";
         summary << "early_stop_patience " << opt.early_stop_patience << "\n";
         summary << "stopped_epoch " << stopped_epoch << "\n";
         summary << "best_epoch " << best_epoch << "\n";
@@ -992,6 +1101,7 @@ int main(int argc, char **argv) {
               << " total_records " << total_records
               << " train_samples " << opt.train_samples
               << " val_samples " << opt.val_samples
+              << " read_mode " << opt.read_mode
               << " linear_params " << linear_count
               << " fm_values " << fm_count
               << " estimated_peak_memory_gib " << estimated_gib
@@ -1010,14 +1120,15 @@ int main(int argc, char **argv) {
         total_records,
         opt.train_samples,
         opt.val_samples,
-        opt.seed
+        opt.seed,
+        opt.progress_interval_sec
     );
     std::vector<Sample> train_samples;
     std::vector<Sample> val_samples;
     train_samples.reserve((size_t)opt.train_samples);
     val_samples.reserve((size_t)opt.val_samples);
     SampleStats sample_stats;
-    if (!load_samples(manifest, requests, &train_samples, &val_samples, &sample_stats)) {
+    if (!load_samples(manifest, requests, &train_samples, &val_samples, &sample_stats, opt)) {
         return 1;
     }
     requests.clear();

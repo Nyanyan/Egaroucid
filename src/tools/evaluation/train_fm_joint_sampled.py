@@ -126,6 +126,8 @@ def main() -> int:
     parser.add_argument("--max-memory-gib", type=float, default=100.0)
     parser.add_argument("--train-metric-limit", type=int, default=1_000_000)
     parser.add_argument("--val-metric-limit", type=int, default=0)
+    parser.add_argument("--read-mode", choices=("scan", "seek"), default="scan")
+    parser.add_argument("--progress-interval-sec", type=int, default=30)
     args = parser.parse_args()
 
     if args.dim <= 0 or args.epochs < 0 or args.train_samples <= 0 or args.val_samples <= 0:
@@ -138,6 +140,8 @@ def main() -> int:
         raise ValueError("invalid phase range")
     if args.active_pattern_mask & 0xFFFF0000:
         raise ValueError("active-pattern-mask must fit in 16 bits")
+    if args.progress_interval_sec < 0:
+        raise ValueError("progress-interval-sec must be non-negative")
 
     optimizer_source = resolve_path(root, args.optimizer_source)
     optimizer_exe = resolve_path(root, args.optimizer_exe)
@@ -220,6 +224,10 @@ def main() -> int:
         str(args.train_metric_limit),
         "--val-metric-limit",
         str(args.val_metric_limit),
+        "--read-mode",
+        args.read_mode,
+        "--progress-interval-sec",
+        str(args.progress_interval_sec),
         "--dry-run",
         "1" if args.dry_run else "0",
     ]
