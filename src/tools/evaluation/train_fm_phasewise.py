@@ -10,6 +10,7 @@ from typing import Optional
 
 INDEXED_RECORD_BYTES = 136
 N_PHASES = 60
+MODEL_DIR_RE = re.compile(r"^\d{8}_\d+_.+")
 
 
 def repo_root() -> Path:
@@ -21,6 +22,45 @@ def resolve_path(root: Path, value: str) -> Path:
     if path.is_absolute():
         return path
     return root / path
+
+
+def path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def sanitize_model_name(value: str) -> str:
+    sanitized = re.sub(r"[^A-Za-z0-9_.+-]+", "_", value).strip("_")
+    if not sanitized:
+        raise ValueError("model name is empty after sanitizing")
+    return sanitized
+
+
+def make_numbered_model_dir(root: Path, suffix: str) -> Path:
+    model_dir = root / "model"
+    date = datetime.now().strftime("%Y%m%d")
+    max_index = 0
+    if model_dir.is_dir():
+        pattern = re.compile(rf"^{date}_(\d+)_")
+        for child in model_dir.iterdir():
+            if not child.is_dir():
+                continue
+            match = pattern.match(child.name)
+            if match:
+                max_index = max(max_index, int(match.group(1)))
+    return model_dir / f"{date}_{max_index + 1}_{sanitize_model_name(suffix)}"
+
+
+def validate_model_out_dir(root: Path, out_dir: Path) -> None:
+    model_dir = root / "model"
+    if path_is_relative_to(out_dir, model_dir) and not MODEL_DIR_RE.match(out_dir.name):
+        raise ValueError(
+            "model folder names must be formatted like YYYYMMDD_N_description, "
+            f"but got: {out_dir}"
+        )
 
 
 def parse_record_ranges(info_path: Path) -> dict[int, tuple[int, int]]:
@@ -180,7 +220,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Train Dim2 FM evaluation phase by phase from records223+ indexed data.")
     parser.add_argument("--base-eval", default="bin/resources/eval.egev2")
     parser.add_argument("--data-root", default=str(default_data_root))
-    parser.add_argument("--out-dir", default="model/20260724_fm_records223_phasewise_dim2")
+    parser.add_argument("--out-dir", default=None)
+    parser.add_argument("--model-name", default=None)
     parser.add_argument("--optimizer-exe", default="src/tools/evaluation/eval_optimizer_fm_records223.exe")
     parser.add_argument("--merge-exe", default="src/tools/evaluation/util/merge_egevfm_phases.exe")
     parser.add_argument("--phase-start", type=int, default=0)
@@ -189,7 +230,7 @@ def main() -> int:
     parser.add_argument("--record-end", type=int, default=None)
     parser.add_argument("--dim", type=int, default=2)
     parser.add_argument("--fm-phases", type=int, default=60)
-    parser.add_argument("--epochs", type=int, default=5)
+    parser.add_argument("--epochs", type=int, required=True)
     parser.add_argument("--lr", type=float, default=1.0e-5)
     parser.add_argument("--max-records", type=int, default=0)
     parser.add_argument("--scale", type=int, default=16)
@@ -217,7 +258,12 @@ def main() -> int:
 
     base_eval = resolve_path(root, args.base_eval)
     data_root = resolve_path(root, args.data_root)
-    out_dir = resolve_path(root, args.out_dir)
+    if args.out_dir is None:
+        suffix = args.model_name or f"fm_records{args.record_start}_phasewise_dim{args.dim}_e{args.epochs}"
+        out_dir = make_numbered_model_dir(root, suffix)
+    else:
+        out_dir = resolve_path(root, args.out_dir)
+    validate_model_out_dir(root, out_dir)
     optimizer_exe = resolve_path(root, args.optimizer_exe)
     merge_exe = resolve_path(root, args.merge_exe)
     log_dir = out_dir / "logs"
@@ -267,9 +313,10 @@ def main() -> int:
         "commands": [],
     }
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    log_dir.mkdir(parents=True, exist_ok=True)
-    phase_out_dir.mkdir(parents=True, exist_ok=True)
+    if args.execute:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        phase_out_dir.mkdir(parents=True, exist_ok=True)
 
     for phase in range(args.phase_start, args.phase_end + 1):
         count = phase_counts[phase]
@@ -323,7 +370,12 @@ def main() -> int:
     if args.execute:
         parse_training_logs(log_dir, out_dir, args.phase_start, args.phase_end)
 
-    manifest_path = out_dir / "manifest.json"
+    if args.execute:
+        manifest_path = out_dir / "manifest.json"
+    else:
+        dryrun_dir = root / "src" / "tools" / "evaluation" / "report"
+        dryrun_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path = dryrun_dir / f"{datetime.now().strftime('%Y%m%d')}_train_fm_phasewise_dryrun_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"wrote manifest: {manifest_path}")
     if not args.execute:
