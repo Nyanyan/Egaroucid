@@ -194,7 +194,8 @@ def main() -> int:
     parser.add_argument("--max-memory-gib", type=float, default=100.0)
     parser.add_argument("--train-metric-limit", type=int, default=1_000_000)
     parser.add_argument("--val-metric-limit", type=int, default=0)
-    parser.add_argument("--read-mode", choices=("scan", "seek"), default="scan")
+    parser.add_argument("--read-mode", choices=("bulk", "scan", "seek"), default="bulk")
+    parser.add_argument("--read-threads", type=int, default=4)
     parser.add_argument("--progress-interval-sec", type=int, default=30)
     args = parser.parse_args()
 
@@ -208,6 +209,8 @@ def main() -> int:
         raise ValueError("invalid phase range")
     if args.progress_interval_sec < 0:
         raise ValueError("progress-interval-sec must be non-negative")
+    if args.read_threads <= 0:
+        raise ValueError("read-threads must be positive")
 
     if args.backend == "cuda" and args.optimizer_source == "src/tools/evaluation/eval_optimizer_fm_joint.cpp":
         args.optimizer_source = "src/tools/evaluation/eval_optimizer_fm_joint_cuda.cu"
@@ -305,6 +308,8 @@ def main() -> int:
         str(args.val_metric_limit),
         "--read-mode",
         args.read_mode,
+        "--read-threads",
+        str(args.read_threads),
         "--progress-interval-sec",
         str(args.progress_interval_sec),
         "--dry-run",

@@ -19,10 +19,14 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <limits>
+#include <atomic>
+#include <mutex>
 #include <numeric>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -70,7 +74,8 @@ struct Options {
     uint64_t train_metric_limit = 1000000;
     uint64_t val_metric_limit = 0;
     int progress_interval_sec = 30;
-    std::string read_mode = "scan";
+    std::string read_mode = "bulk";
+    int read_threads = 4;
     bool dry_run = false;
 };
 
@@ -138,7 +143,7 @@ void usage() {
         << " --dim 2 --epochs 10 --train-samples N --val-samples N"
         << " [--batch-size 1000000] [--linear-lr 0.1] [--fm-lr 0.01]"
         << " [--record-start 223] [--record-end -1] [--scale 128]"
-        << " [--read-mode scan] [--progress-interval-sec 30]"
+        << " [--read-mode bulk] [--read-threads 4] [--progress-interval-sec 30]"
         << " [--max-memory-gib 100] [--dry-run 0]\n";
 }
 
@@ -222,6 +227,8 @@ bool parse_args(int argc, char **argv, Options *opt) {
             const char *v = need_value(); if (!v) return false; opt->progress_interval_sec = std::atoi(v);
         } else if (key == "--read-mode") {
             const char *v = need_value(); if (!v) return false; opt->read_mode = v;
+        } else if (key == "--read-threads") {
+            const char *v = need_value(); if (!v) return false; opt->read_threads = std::atoi(v);
         } else if (key == "--dry-run") {
             const char *v = need_value(); if (!v) return false; opt->dry_run = parse_bool(v);
         } else {
@@ -255,12 +262,12 @@ bool validate_options(const Options &opt) {
         std::cerr << "[ERROR] invalid optimizer option\n";
         return false;
     }
-    if (opt.progress_interval_sec < 0) {
-        std::cerr << "[ERROR] progress-interval-sec must be non-negative\n";
+    if (opt.progress_interval_sec < 0 || opt.read_threads <= 0) {
+        std::cerr << "[ERROR] progress-interval-sec must be non-negative and read-threads must be positive\n";
         return false;
     }
-    if (opt.read_mode != "scan" && opt.read_mode != "seek") {
-        std::cerr << "[ERROR] read-mode must be scan or seek\n";
+    if (opt.read_mode != "bulk" && opt.read_mode != "scan" && opt.read_mode != "seek") {
+        std::cerr << "[ERROR] read-mode must be bulk, scan or seek\n";
         return false;
     }
     return true;
@@ -616,6 +623,270 @@ bool validate_features(const IndexedDatum &datum) {
     return true;
 }
 
+uint64_t manifest_max_file_bytes(const std::vector<FileEntry> &entries) {
+    uint64_t res = 0;
+    for (const FileEntry &entry: entries) {
+        res = std::max<uint64_t>(res, entry.records * INDEXED_PHASE_RECORD_BYTES);
+    }
+    return res;
+}
+
+bool decode_indexed_record(const char *ptr, IndexedDatum *datum) {
+    std::memcpy(&datum->n_discs, ptr, sizeof(int16_t));
+    ptr += sizeof(int16_t);
+    std::memcpy(&datum->player, ptr, sizeof(int16_t));
+    ptr += sizeof(int16_t);
+    std::memcpy(datum->features.data(), ptr, sizeof(uint16_t) * ADJ_N_FEATURES);
+    ptr += sizeof(uint16_t) * ADJ_N_FEATURES;
+    std::memcpy(&datum->score, ptr, sizeof(int16_t));
+    return true;
+}
+
+bool read_file_span(
+    const std::filesystem::path &path,
+    const uint64_t offset,
+    const uint64_t bytes,
+    std::vector<char> *buffer
+) {
+    constexpr uint64_t READ_CHUNK_BYTES = 256ULL * 1024ULL * 1024ULL;
+    buffer->resize((size_t)bytes);
+    std::ifstream in(path, std::ios::binary);
+    if (!in) {
+        std::cerr << "[ERROR] can't open indexed data " << path.string() << "\n";
+        return false;
+    }
+    in.seekg((std::streamoff)offset, std::ios::beg);
+    if (!in) {
+        std::cerr << "[ERROR] can't seek indexed data " << path.string()
+                  << " offset " << offset << "\n";
+        return false;
+    }
+    uint64_t done = 0;
+    while (done < bytes) {
+        const uint64_t step = std::min<uint64_t>(bytes - done, READ_CHUNK_BYTES);
+        in.read(buffer->data() + (size_t)done, (std::streamsize)step);
+        if (!in) {
+            std::cerr << "[ERROR] can't bulk-read indexed data " << path.string()
+                      << " offset " << (offset + done)
+                      << " bytes " << step << "\n";
+            return false;
+        }
+        done += step;
+    }
+    return true;
+}
+
+void append_loaded_sample(
+    const IndexedDatum &datum,
+    const FileEntry &entry,
+    const bool validation,
+    std::vector<Sample> *train,
+    std::vector<Sample> *val,
+    SampleStats *stats
+) {
+    if (!validate_features(datum)) {
+        ++stats->bad_feature_count;
+        return;
+    }
+    const int expected_phase_from_disc_count = (int)datum.n_discs - 4;
+    if (expected_phase_from_disc_count != entry.phase) {
+        ++stats->phase_mismatch_count;
+    }
+
+    Sample sample;
+    sample.features = datum.features;
+    sample.score = datum.score;
+    sample.phase = (uint16_t)entry.phase;
+    if (validation) {
+        val->emplace_back(sample);
+        ++stats->val_phase_counts[(size_t)entry.phase];
+    } else {
+        train->emplace_back(sample);
+        ++stats->train_phase_counts[(size_t)entry.phase];
+    }
+}
+
+struct SampleRequestGroup {
+    size_t entry_idx = 0;
+    size_t first_request = 0;
+    size_t last_request = 0;
+    uint64_t first_local = 0;
+    uint64_t last_local = 0;
+};
+
+struct SampleRequestGroupResult {
+    std::vector<Sample> train;
+    std::vector<Sample> val;
+    SampleStats stats;
+    uint64_t processed = 0;
+    uint64_t bytes_read = 0;
+    bool ok = true;
+};
+
+std::vector<SampleRequestGroup> build_sample_request_groups(
+    const std::vector<FileEntry> &entries,
+    const std::vector<SampleRequest> &requests
+) {
+    std::vector<SampleRequestGroup> groups;
+    size_t request_idx = 0;
+    for (size_t entry_idx = 0; entry_idx < entries.size(); ++entry_idx) {
+        const FileEntry &entry = entries[entry_idx];
+        const uint64_t entry_end = entry.begin + entry.records;
+        while (request_idx < requests.size() && requests[request_idx].global_index < entry.begin) {
+            return {};
+        }
+        const size_t first_request = request_idx;
+        while (request_idx < requests.size() && requests[request_idx].global_index < entry_end) {
+            ++request_idx;
+        }
+        const size_t last_request = request_idx;
+        if (first_request == last_request) {
+            continue;
+        }
+        SampleRequestGroup group;
+        group.entry_idx = entry_idx;
+        group.first_request = first_request;
+        group.last_request = last_request;
+        group.first_local = requests[first_request].global_index - entry.begin;
+        group.last_local = requests[last_request - 1].global_index - entry.begin;
+        groups.emplace_back(group);
+    }
+    if (request_idx != requests.size()) {
+        groups.clear();
+    }
+    return groups;
+}
+
+bool load_sample_request_group(
+    const FileEntry &entry,
+    const SampleRequestGroup &group,
+    const std::vector<SampleRequest> &requests,
+    std::vector<char> *file_span,
+    SampleRequestGroupResult *result
+) {
+    const uint64_t first_offset = group.first_local * INDEXED_PHASE_RECORD_BYTES;
+    const uint64_t span_records = group.last_local - group.first_local + 1;
+    const uint64_t span_bytes = span_records * INDEXED_PHASE_RECORD_BYTES;
+    if (!read_file_span(entry.path, first_offset, span_bytes, file_span)) {
+        result->ok = false;
+        return false;
+    }
+    result->bytes_read = span_bytes;
+    result->train.reserve(group.last_request - group.first_request);
+    result->val.reserve(group.last_request - group.first_request);
+    for (size_t i = group.first_request; i < group.last_request; ++i) {
+        const uint64_t local_index = requests[i].global_index - entry.begin;
+        const uint64_t offset_records = local_index - group.first_local;
+        const char *ptr = file_span->data() + (size_t)(offset_records * INDEXED_PHASE_RECORD_BYTES);
+        IndexedDatum datum;
+        decode_indexed_record(ptr, &datum);
+        append_loaded_sample(datum, entry, requests[i].validation, &result->train, &result->val, &result->stats);
+        ++result->processed;
+    }
+    return true;
+}
+
+bool load_samples_bulk(
+    const std::vector<FileEntry> &entries,
+    const std::vector<SampleRequest> &requests,
+    std::vector<Sample> *train,
+    std::vector<Sample> *val,
+    SampleStats *stats,
+    const Options &opt
+) {
+    train->clear();
+    val->clear();
+    const uint64_t start_ms = tim_ms();
+    uint64_t next_log_ms = start_ms + (uint64_t)opt.progress_interval_sec * 1000ULL;
+    const std::vector<SampleRequestGroup> groups = build_sample_request_groups(entries, requests);
+    if (groups.empty() && !requests.empty()) {
+        std::cerr << "[ERROR] failed to group sample requests by indexed data file\n";
+        return false;
+    }
+
+    const int n_threads = std::max(1, std::min<int>(opt.read_threads, (int)groups.size()));
+    std::vector<SampleRequestGroupResult> results(groups.size());
+    std::atomic<size_t> next_group(0);
+    std::atomic<uint64_t> processed_atomic(0);
+    std::atomic<uint64_t> files_read_atomic(0);
+    std::atomic<uint64_t> bytes_read_atomic(0);
+    std::atomic<bool> failed(false);
+    std::mutex log_mutex;
+
+    auto worker = [&]() {
+        std::vector<char> file_span;
+        while (!failed.load(std::memory_order_relaxed)) {
+            const size_t group_idx = next_group.fetch_add(1);
+            if (group_idx >= groups.size()) {
+                break;
+            }
+            const SampleRequestGroup &group = groups[group_idx];
+            SampleRequestGroupResult &result = results[group_idx];
+            const FileEntry &entry = entries[group.entry_idx];
+            if (!load_sample_request_group(entry, group, requests, &file_span, &result)) {
+                failed.store(true, std::memory_order_relaxed);
+                break;
+            }
+            const uint64_t processed_now = processed_atomic.fetch_add(result.processed) + result.processed;
+            const uint64_t files_now = files_read_atomic.fetch_add(1) + 1;
+            const uint64_t bytes_now = bytes_read_atomic.fetch_add(result.bytes_read) + result.bytes_read;
+            if (opt.progress_interval_sec > 0) {
+                std::lock_guard<std::mutex> lock(log_mutex);
+                const uint64_t now = tim_ms();
+                if (now >= next_log_ms) {
+                    std::cerr << "sample_loading mode bulk"
+                              << " processed " << processed_now
+                              << " / " << requests.size()
+                              << " files_read " << files_now
+                              << " / " << groups.size()
+                              << " read_gib " << bytes_to_gib((long double)bytes_now)
+                              << " phase " << entry.phase
+                              << " record " << entry.record
+                              << " threads " << n_threads
+                              << " elapsed_ms " << (now - start_ms) << "\n";
+                    next_log_ms = now + (uint64_t)opt.progress_interval_sec * 1000ULL;
+                }
+            }
+        }
+    };
+
+    std::vector<std::thread> threads;
+    threads.reserve((size_t)n_threads);
+    for (int i = 0; i < n_threads; ++i) {
+        threads.emplace_back(worker);
+    }
+    for (std::thread &thread: threads) {
+        thread.join();
+    }
+    if (failed.load(std::memory_order_relaxed)) {
+        std::cerr << "[ERROR] failed during bulk sample loading\n";
+        return false;
+    }
+
+    for (SampleRequestGroupResult &result: results) {
+        train->insert(train->end(), std::make_move_iterator(result.train.begin()), std::make_move_iterator(result.train.end()));
+        val->insert(val->end(), std::make_move_iterator(result.val.begin()), std::make_move_iterator(result.val.end()));
+        stats->bad_feature_count += result.stats.bad_feature_count;
+        stats->phase_mismatch_count += result.stats.phase_mismatch_count;
+        for (int phase = 0; phase < ADJ_N_PHASES; ++phase) {
+            stats->train_phase_counts[(size_t)phase] += result.stats.train_phase_counts[(size_t)phase];
+            stats->val_phase_counts[(size_t)phase] += result.stats.val_phase_counts[(size_t)phase];
+        }
+        std::vector<Sample>().swap(result.train);
+        std::vector<Sample>().swap(result.val);
+    }
+    std::cerr << "sample_loading mode bulk"
+              << " processed " << processed_atomic.load()
+              << " / " << requests.size()
+              << " train " << train->size()
+              << " val " << val->size()
+              << " files_read " << files_read_atomic.load()
+              << " read_gib " << bytes_to_gib((long double)bytes_read_atomic.load())
+              << " threads " << n_threads
+              << " elapsed_ms " << (tim_ms() - start_ms) << "\n";
+    return true;
+}
+
 bool load_samples(
     const std::vector<FileEntry> &entries,
     const std::vector<SampleRequest> &requests,
@@ -624,6 +895,9 @@ bool load_samples(
     SampleStats *stats,
     const Options &opt
 ) {
+    if (opt.read_mode == "bulk") {
+        return load_samples_bulk(entries, requests, train, val, stats, opt);
+    }
     train->clear();
     val->clear();
     size_t entry_idx = 0;
@@ -684,26 +958,7 @@ bool load_samples(
             return false;
         }
         ++processed;
-        if (!validate_features(datum)) {
-            ++stats->bad_feature_count;
-            continue;
-        }
-        const int expected_phase_from_disc_count = (int)datum.n_discs - 4;
-        if (expected_phase_from_disc_count != entry.phase) {
-            ++stats->phase_mismatch_count;
-        }
-
-        Sample sample;
-        sample.features = datum.features;
-        sample.score = datum.score;
-        sample.phase = (uint16_t)entry.phase;
-        if (request.validation) {
-            val->emplace_back(sample);
-            ++stats->val_phase_counts[(size_t)entry.phase];
-        } else {
-            train->emplace_back(sample);
-            ++stats->train_phase_counts[(size_t)entry.phase];
-        }
+        append_loaded_sample(datum, entry, request.validation, train, val, stats);
     }
     std::cerr << "sample_loading mode " << opt.read_mode
               << " processed " << processed
@@ -1078,6 +1333,7 @@ bool write_fm_file(
         summary << "init_std " << opt.init_std << "\n";
         summary << "seed " << opt.seed << "\n";
         summary << "read_mode " << opt.read_mode << "\n";
+        summary << "read_threads " << opt.read_threads << "\n";
         summary << "progress_interval_sec " << opt.progress_interval_sec << "\n";
         summary << "early_stop_patience " << opt.early_stop_patience << "\n";
         summary << "stopped_epoch " << stopped_epoch << "\n";
@@ -1146,7 +1402,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const uint64_t estimated_memory = estimate_peak_memory_bytes(opt, linear_count, fm_count);
+    const uint64_t bulk_buffer_bytes = opt.read_mode == "bulk"
+        ? manifest_max_file_bytes(manifest) * (uint64_t)std::max(1, opt.read_threads)
+        : 0;
+    const uint64_t estimated_memory = estimate_peak_memory_bytes(opt, linear_count, fm_count) + bulk_buffer_bytes;
     const double estimated_gib = bytes_to_gib((long double)estimated_memory);
     std::cerr << std::setprecision(6)
               << "manifest_files " << manifest.size()
@@ -1157,6 +1416,7 @@ int main(int argc, char **argv) {
               << " linear_params " << linear_count
               << " fm_values " << fm_count
               << " estimated_peak_memory_gib " << estimated_gib
+              << " estimated_bulk_buffer_gib " << bytes_to_gib((long double)bulk_buffer_bytes)
               << " max_memory_gib " << opt.max_memory_gib << "\n";
     if (estimated_gib > opt.max_memory_gib) {
         std::cerr << "[ERROR] estimated memory exceeds limit\n";
