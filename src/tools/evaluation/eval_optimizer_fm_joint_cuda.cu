@@ -1,12 +1,15 @@
 /*
     Egaroucid Project
 
-    @file eval_optimizer_fm_joint.cpp
-        Sampled joint optimizer for a linear + Factorization Machine evaluation
+    @file eval_optimizer_fm_joint_cuda.cu
+        CUDA joint optimizer for a linear + shared Factorization Machine evaluation
     @date 2026
     @author Takuto Yamana
     @license GPL-3.0-or-later
 */
+
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 #include <algorithm>
 #include <array>
@@ -21,7 +24,6 @@
 #include <iostream>
 #include <limits>
 #include <numeric>
-#include <sstream>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -36,8 +38,27 @@ constexpr int N_ZEROS_PLUS_LOCAL = 1 << 12;
 constexpr int FM_N_PATTERN_FEATURES = ADJ_N_FEATURES - 1;
 constexpr uint64_t INDEXED_PHASE_RECORD_BYTES =
     sizeof(int16_t) + sizeof(int16_t) + sizeof(uint16_t) * ADJ_N_FEATURES + sizeof(int16_t);
+constexpr int CUDA_BLOCK_SIZE = 256;
 constexpr uint64_t SPLITMIX64_INCREMENT = 0x9E3779B97F4A7C15ULL;
 constexpr double TWO_PI = 6.283185307179586476925286766559;
+
+#define CUDA_CHECK(call) do { \
+    cudaError_t err__ = (call); \
+    if (err__ != cudaSuccess) { \
+        std::cerr << "[CUDA ERROR] " << cudaGetErrorString(err__) \
+                  << " at " << __FILE__ << ":" << __LINE__ << "\n"; \
+        return false; \
+    } \
+} while (0)
+
+#define CUDA_CHECK_MAIN(call) do { \
+    cudaError_t err__ = (call); \
+    if (err__ != cudaSuccess) { \
+        std::cerr << "[CUDA ERROR] " << cudaGetErrorString(err__) \
+                  << " at " << __FILE__ << ":" << __LINE__ << "\n"; \
+        return 1; \
+    } \
+} while (0)
 
 struct Options {
     std::string base_eval;
@@ -78,12 +99,12 @@ struct Options {
 struct IndexedDatum {
     int16_t n_discs = 0;
     int16_t player = 0;
-    std::array<uint16_t, ADJ_N_FEATURES> features = {};
+    uint16_t features[ADJ_N_FEATURES] = {};
     int16_t score = 0;
 };
 
 struct Sample {
-    std::array<uint16_t, ADJ_N_FEATURES> features;
+    uint16_t features[ADJ_N_FEATURES];
     int16_t score;
     uint16_t phase;
 };
@@ -114,6 +135,9 @@ struct SampleStats {
     std::array<uint64_t, ADJ_N_PHASES> val_phase_counts = {};
 };
 
+__constant__ int c_linear_starts[ADJ_N_FEATURES];
+__constant__ int c_fm_offsets[FM_N_PATTERN_FEATURES];
+
 uint64_t tim_ms() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch()
@@ -132,7 +156,7 @@ void write_scalar(std::ofstream &out, const T &v) {
 
 void usage() {
     std::cerr
-        << "usage: eval_optimizer_fm_joint"
+        << "usage: eval_optimizer_fm_joint_cuda"
         << " --base-eval bin/resources/eval.egev2"
         << " --data-root E:/egaroucid_data/train_data/bin_data/20241125_1"
         << " --out-file model/.../eval.egevfm"
@@ -157,7 +181,6 @@ bool parse_args(int argc, char **argv, Options *opt) {
             }
             return argv[++i];
         };
-
         if (key == "--help" || key == "-h") {
             usage();
             std::exit(0);
@@ -254,12 +277,9 @@ bool validate_options(const Options &opt) {
         opt.beta2 < 0.0 || opt.beta2 >= 1.0 || opt.adam_eps <= 0.0 || opt.init_std <= 0.0 ||
         opt.linear_l2 < 0.0 || opt.fm_l2 < 0.0 || opt.grad_clip_raw < 0.0 ||
         opt.linear_param_clip <= 0.0 || opt.fm_vector_clip <= 0.0 || opt.max_memory_gib <= 0.0 ||
-        opt.early_stop_patience < 0 || (opt.active_pattern_mask & 0xFFFF0000U) != 0) {
+        opt.early_stop_patience < 0 || opt.progress_interval_sec < 0 ||
+        (opt.active_pattern_mask & 0xFFFF0000U) != 0) {
         std::cerr << "[ERROR] invalid optimizer option\n";
-        return false;
-    }
-    if (opt.progress_interval_sec < 0) {
-        std::cerr << "[ERROR] progress-interval-sec must be non-negative\n";
         return false;
     }
     if (opt.read_mode != "scan" && opt.read_mode != "seek") {
@@ -270,8 +290,7 @@ bool validate_options(const Options &opt) {
 }
 
 std::vector<int16_t> load_unzip_egev2_local(const std::string &file) {
-    FILE *fp = nullptr;
-    fp = std::fopen(file.c_str(), "rb");
+    FILE *fp = std::fopen(file.c_str(), "rb");
     if (fp == nullptr) {
         std::cerr << "[ERROR] can't open base eval " << file << "\n";
         return {};
@@ -331,10 +350,6 @@ int linear_params_per_phase() {
         res += adj_eval_sizes[i];
     }
     return res;
-}
-
-bool feature_active(int feature_idx, uint32_t active_pattern_mask) {
-    return active_pattern_mask == 0 || (active_pattern_mask & (1U << (feature_idx >> 2))) != 0;
 }
 
 bool parse_record_number(const std::filesystem::path &path, int *record) {
@@ -398,16 +413,15 @@ std::vector<FileEntry> build_manifest(const Options &opt, std::array<uint64_t, A
             }
             int record = 0;
             parse_record_number(file, &record);
-            const uint64_t n_records = bytes / INDEXED_PHASE_RECORD_BYTES;
             FileEntry entry;
             entry.path = file;
             entry.phase = phase;
             entry.record = record;
-            entry.records = n_records;
+            entry.records = bytes / INDEXED_PHASE_RECORD_BYTES;
             entry.begin = total;
             entries.emplace_back(entry);
-            total += n_records;
-            (*phase_counts)[(size_t)phase] += n_records;
+            total += entry.records;
+            (*phase_counts)[(size_t)phase] += entry.records;
         }
     }
     if (bad_size_files != 0) {
@@ -481,19 +495,23 @@ void deterministic_shuffle(std::vector<T> *values, const uint64_t seed) {
     }
 }
 
-uint64_t estimate_peak_memory_bytes(
-    const Options &opt,
-    const uint64_t linear_count,
-    const uint64_t fm_count
-) {
+uint64_t estimate_host_memory_bytes(const Options &opt, const uint64_t linear_count, const uint64_t fm_count) {
     const uint64_t sample_count = opt.train_samples + opt.val_samples;
     long double bytes = 0.0L;
     bytes += (long double)sample_count * (long double)sizeof(Sample);
     bytes += (long double)sample_count * (long double)sizeof(SampleRequest);
-    bytes += (long double)sample_count * 40.0L; // unordered_set node/bucket rough estimate
-    bytes += (long double)linear_count * (5.0L * sizeof(float) + sizeof(uint32_t));
-    bytes += (long double)fm_count * (5.0L * sizeof(float) + sizeof(uint32_t));
+    bytes += (long double)sample_count * 40.0L;
+    bytes += (long double)(linear_count + fm_count) * sizeof(float);
     bytes += 512.0L * 1024.0L * 1024.0L;
+    return (uint64_t)bytes;
+}
+
+uint64_t estimate_device_memory_bytes(const Options &opt, const uint64_t linear_count, const uint64_t fm_count) {
+    long double bytes = 0.0L;
+    bytes += (long double)linear_count * 5.0L * sizeof(float);
+    bytes += (long double)fm_count * 5.0L * sizeof(float);
+    bytes += (long double)opt.batch_size * sizeof(Sample);
+    bytes += 256.0L * 1024.0L * 1024.0L;
     return (uint64_t)bytes;
 }
 
@@ -562,6 +580,16 @@ std::vector<SampleRequest> generate_requests(
     return requests;
 }
 
+bool validate_features(const IndexedDatum &datum) {
+    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
+        const int eval_idx = adj_feature_to_eval_idx[i];
+        if (datum.features[i] >= adj_eval_sizes[eval_idx]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool read_indexed_seek(std::ifstream *in, const uint64_t local_index, IndexedDatum *datum) {
     const uint64_t offset = local_index * INDEXED_PHASE_RECORD_BYTES;
     in->clear();
@@ -571,7 +599,7 @@ bool read_indexed_seek(std::ifstream *in, const uint64_t local_index, IndexedDat
     }
     in->read((char*)&datum->n_discs, sizeof(int16_t));
     in->read((char*)&datum->player, sizeof(int16_t));
-    in->read((char*)datum->features.data(), sizeof(uint16_t) * ADJ_N_FEATURES);
+    in->read((char*)datum->features, sizeof(uint16_t) * ADJ_N_FEATURES);
     in->read((char*)&datum->score, sizeof(int16_t));
     return (bool)(*in);
 }
@@ -589,12 +617,7 @@ bool skip_bytes_scan(std::ifstream *in, uint64_t bytes) {
     return true;
 }
 
-bool read_indexed_scan(
-    std::ifstream *in,
-    const uint64_t local_index,
-    uint64_t *next_local_index,
-    IndexedDatum *datum
-) {
+bool read_indexed_scan(std::ifstream *in, const uint64_t local_index, uint64_t *next_local_index, IndexedDatum *datum) {
     if (local_index < *next_local_index) {
         return false;
     }
@@ -604,22 +627,12 @@ bool read_indexed_scan(
     }
     in->read((char*)&datum->n_discs, sizeof(int16_t));
     in->read((char*)&datum->player, sizeof(int16_t));
-    in->read((char*)datum->features.data(), sizeof(uint16_t) * ADJ_N_FEATURES);
+    in->read((char*)datum->features, sizeof(uint16_t) * ADJ_N_FEATURES);
     in->read((char*)&datum->score, sizeof(int16_t));
     if (!(*in)) {
         return false;
     }
     *next_local_index = local_index + 1;
-    return true;
-}
-
-bool validate_features(const IndexedDatum &datum) {
-    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
-        const int eval_idx = adj_feature_to_eval_idx[i];
-        if (datum.features[(size_t)i] >= adj_eval_sizes[eval_idx]) {
-            return false;
-        }
-    }
     return true;
 }
 
@@ -646,15 +659,7 @@ bool load_samples(
                entries[entry_idx + 1].begin <= request.global_index) {
             ++entry_idx;
         }
-        if (entry_idx >= entries.size()) {
-            std::cerr << "[ERROR] request out of manifest range\n";
-            return false;
-        }
         const FileEntry &entry = entries[entry_idx];
-        if (request.global_index < entry.begin || request.global_index >= entry.begin + entry.records) {
-            std::cerr << "[ERROR] broken manifest lookup\n";
-            return false;
-        }
         if (!in.is_open() || open_path != entry.path) {
             if (in.is_open()) {
                 in.close();
@@ -679,13 +684,12 @@ bool load_samples(
                 next_log_ms = now + (uint64_t)opt.progress_interval_sec * 1000ULL;
             }
         }
-
-        IndexedDatum datum;
         const uint64_t local_index = request.global_index - entry.begin;
-        const bool read_ok = opt.read_mode == "scan"
+        IndexedDatum datum;
+        const bool ok = opt.read_mode == "scan"
             ? read_indexed_scan(&in, local_index, &next_local_index, &datum)
             : read_indexed_seek(&in, local_index, &datum);
-        if (!read_ok) {
+        if (!ok) {
             std::cerr << "[ERROR] can't read indexed record " << entry.path.string()
                       << " local_index " << local_index << "\n";
             return false;
@@ -695,20 +699,18 @@ bool load_samples(
             ++stats->bad_feature_count;
             continue;
         }
-        const int expected_phase_from_disc_count = (int)datum.n_discs - 4;
-        if (expected_phase_from_disc_count != entry.phase) {
+        if ((int)datum.n_discs - 4 != entry.phase) {
             ++stats->phase_mismatch_count;
         }
-
         Sample sample;
-        sample.features = datum.features;
+        std::memcpy(sample.features, datum.features, sizeof(uint16_t) * ADJ_N_FEATURES);
         sample.score = datum.score;
         sample.phase = (uint16_t)entry.phase;
         if (request.validation) {
-            val->emplace_back(sample);
+            val->push_back(sample);
             ++stats->val_phase_counts[(size_t)entry.phase];
         } else {
-            train->emplace_back(sample);
+            train->push_back(sample);
             ++stats->train_phase_counts[(size_t)entry.phase];
         }
     }
@@ -721,264 +723,266 @@ bool load_samples(
     return true;
 }
 
-struct SparseGrad {
-    std::vector<float> grad;
-    std::vector<uint32_t> stamp;
-    std::vector<uint32_t> touched;
-    uint32_t batch_id = 1;
-
-    explicit SparseGrad(size_t n = 0): grad(n, 0.0f), stamp(n, 0) {}
-
-    void next_batch() {
-        touched.clear();
-        ++batch_id;
-        if (batch_id == 0) {
-            std::fill(stamp.begin(), stamp.end(), 0);
-            batch_id = 1;
-        }
-    }
-
-    void add(const uint32_t idx, const float value) {
-        if (stamp[(size_t)idx] != batch_id) {
-            stamp[(size_t)idx] = batch_id;
-            grad[(size_t)idx] = 0.0f;
-            touched.emplace_back(idx);
-        }
-        grad[(size_t)idx] += value;
-    }
-};
-
-struct AdamState {
-    std::vector<float> m;
-    std::vector<float> v;
-
-    explicit AdamState(size_t n = 0): m(n, 0.0f), v(n, 0.0f) {}
-};
-
-struct FmCache {
-    std::array<float, 64> sum = {};
-    std::array<float, 64> square_sum = {};
-    float pred = 0.0f;
-};
-
-uint64_t linear_index(
-    const std::array<int, ADJ_N_FEATURES> &starts,
-    const Sample &sample,
-    const int feature_idx
-) {
-    const uint64_t phase_offset = (uint64_t)sample.phase * (uint64_t)linear_params_per_phase();
-    return phase_offset + (uint64_t)starts[(size_t)feature_idx] + sample.features[(size_t)feature_idx];
+__device__ inline bool gpu_feature_active(const int feature_idx, const uint32_t active_pattern_mask) {
+    return active_pattern_mask == 0 || (active_pattern_mask & (1U << (feature_idx >> 2))) != 0;
 }
 
-float predict_linear(
-    const std::vector<float> &linear,
-    const std::array<int, ADJ_N_FEATURES> &starts,
-    const Sample &sample
-) {
-    float res = 0.0f;
-    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
-        res += linear[(size_t)linear_index(starts, sample, i)];
-    }
-    return res;
-}
-
-FmCache predict_fm(
-    const std::vector<float> &fm,
-    const std::array<int, FM_N_PATTERN_FEATURES> &offsets,
-    const Sample &sample,
-    const int dim,
-    const uint32_t active_pattern_mask
-) {
-    FmCache cache;
-    for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-        if (!feature_active(i, active_pattern_mask)) {
-            continue;
-        }
-        const uint64_t row = (uint64_t)(offsets[(size_t)i] + sample.features[(size_t)i]) * (uint64_t)dim;
-        for (int d = 0; d < dim; ++d) {
-            const float x = fm[(size_t)row + (size_t)d];
-            cache.sum[(size_t)d] += x;
-            cache.square_sum[(size_t)d] += x * x;
-        }
-    }
-    for (int d = 0; d < dim; ++d) {
-        cache.pred += 0.5f * (cache.sum[(size_t)d] * cache.sum[(size_t)d] - cache.square_sum[(size_t)d]);
-    }
-    return cache;
-}
-
-Loss calc_loss(
-    const std::vector<float> &linear,
-    const std::vector<float> &fm,
-    const std::array<int, ADJ_N_FEATURES> &linear_starts,
-    const std::array<int, FM_N_PATTERN_FEATURES> &fm_offsets,
-    const std::vector<Sample> &samples,
-    const int dim,
-    const uint32_t active_pattern_mask,
-    const uint64_t limit
-) {
-    Loss loss;
-    const uint64_t n = limit == 0 ? (uint64_t)samples.size() : std::min<uint64_t>(limit, (uint64_t)samples.size());
-    for (uint64_t i = 0; i < n; ++i) {
-        const Sample &sample = samples[(size_t)i];
-        const float pred_raw = predict_linear(linear, linear_starts, sample) +
-            predict_fm(fm, fm_offsets, sample, dim, active_pattern_mask).pred;
-        const double err_disc = ((double)pred_raw - (double)sample.score * ADJ_STEP) / (double)ADJ_STEP;
-        loss.mse += err_disc * err_disc;
-        loss.mae += std::fabs(err_disc);
-    }
-    loss.n = n;
-    if (n != 0) {
-        loss.mse /= (double)n;
-        loss.mae /= (double)n;
-    }
-    return loss;
-}
-
-void accumulate_sample_grad(
-    const std::vector<float> &linear,
-    const std::vector<float> &fm,
-    const std::array<int, ADJ_N_FEATURES> &linear_starts,
-    const std::array<int, FM_N_PATTERN_FEATURES> &fm_offsets,
-    const Sample &sample,
+__global__ void accumulate_grad_kernel(
+    const Sample *samples,
+    const uint64_t n_samples,
+    const float *linear,
+    const float *fm,
+    const int linear_per_phase,
     const int dim,
     const uint32_t active_pattern_mask,
     const double grad_clip_raw,
-    SparseGrad *linear_grad,
-    SparseGrad *fm_grad
+    float *linear_grad,
+    float *fm_grad
 ) {
-    const float linear_pred = predict_linear(linear, linear_starts, sample);
-    const FmCache fm_cache = predict_fm(fm, fm_offsets, sample, dim, active_pattern_mask);
-    const double target_raw = (double)sample.score * ADJ_STEP;
-    double err_raw = (double)linear_pred + (double)fm_cache.pred - target_raw;
+    const uint64_t idx = (uint64_t)blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= n_samples) {
+        return;
+    }
+    const Sample &sample = samples[idx];
+    float linear_pred = 0.0f;
+    const uint64_t phase_offset = (uint64_t)sample.phase * (uint64_t)linear_per_phase;
+    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
+        linear_pred += linear[phase_offset + (uint64_t)c_linear_starts[i] + sample.features[i]];
+    }
+
+    float sum[64];
+    float square_sum[64];
+    for (int d = 0; d < dim; ++d) {
+        sum[d] = 0.0f;
+        square_sum[d] = 0.0f;
+    }
+    for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
+        if (!gpu_feature_active(i, active_pattern_mask)) {
+            continue;
+        }
+        const uint64_t row = (uint64_t)(c_fm_offsets[i] + sample.features[i]) * (uint64_t)dim;
+        for (int d = 0; d < dim; ++d) {
+            const float x = fm[row + (uint64_t)d];
+            sum[d] += x;
+            square_sum[d] += x * x;
+        }
+    }
+    float fm_pred = 0.0f;
+    for (int d = 0; d < dim; ++d) {
+        fm_pred += 0.5f * (sum[d] * sum[d] - square_sum[d]);
+    }
+
+    double err_raw = (double)linear_pred + (double)fm_pred - (double)sample.score * (double)ADJ_STEP;
     if (grad_clip_raw > 0.0) {
-        err_raw = std::clamp(err_raw, -grad_clip_raw, grad_clip_raw);
+        err_raw = fmin(fmax(err_raw, -grad_clip_raw), grad_clip_raw);
     }
     const float common = (float)(2.0 * err_raw / ((double)ADJ_STEP * (double)ADJ_STEP));
 
     for (int i = 0; i < ADJ_N_FEATURES; ++i) {
-        linear_grad->add((uint32_t)linear_index(linear_starts, sample, i), common);
+        const uint64_t row = phase_offset + (uint64_t)c_linear_starts[i] + sample.features[i];
+        atomicAdd(&linear_grad[row], common);
     }
-
     for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
-        if (!feature_active(i, active_pattern_mask)) {
+        if (!gpu_feature_active(i, active_pattern_mask)) {
             continue;
         }
-        const uint64_t row = (uint64_t)(fm_offsets[(size_t)i] + sample.features[(size_t)i]) * (uint64_t)dim;
+        const uint64_t row = (uint64_t)(c_fm_offsets[i] + sample.features[i]) * (uint64_t)dim;
         for (int d = 0; d < dim; ++d) {
-            const size_t idx = (size_t)row + (size_t)d;
-            const float grad = common * (fm_cache.sum[(size_t)d] - fm[idx]);
-            fm_grad->add((uint32_t)idx, grad);
+            const uint64_t fm_idx = row + (uint64_t)d;
+            atomicAdd(&fm_grad[fm_idx], common * (sum[d] - fm[fm_idx]));
         }
     }
 }
 
-void apply_adam(
-    std::vector<float> *params,
-    AdamState *state,
-    const SparseGrad &grad,
-    const uint64_t batch_n,
+__global__ void adam_update_kernel(
+    float *param,
+    float *m,
+    float *v,
+    const float *grad_sum,
+    const uint64_t n_param,
+    const double inv_batch_n,
     const double lr,
     const double beta1,
     const double beta2,
-    const double eps,
+    const double adam_eps,
+    const double bias1,
+    const double bias2,
     const double l2,
-    const double param_clip,
-    const uint64_t step
+    const double clip_abs
 ) {
-    const float inv_n = batch_n == 0 ? 0.0f : (float)(1.0 / (double)batch_n);
-    const double bias1 = 1.0 - std::pow(beta1, (double)step);
-    const double bias2 = 1.0 - std::pow(beta2, (double)step);
-    for (const uint32_t idx_u32: grad.touched) {
-        const size_t idx = (size_t)idx_u32;
-        float g = grad.grad[idx] * inv_n;
-        if (l2 > 0.0) {
-            g += (float)(l2 * (*params)[idx]);
-        }
-        float &m = state->m[idx];
-        float &v = state->v[idx];
-        m = (float)(beta1 * m + (1.0 - beta1) * g);
-        v = (float)(beta2 * v + (1.0 - beta2) * g * g);
-        const double m_hat = (double)m / bias1;
-        const double v_hat = (double)v / bias2;
-        double next = (double)(*params)[idx] - lr * m_hat / (std::sqrt(v_hat) + eps);
-        next = std::clamp(next, -param_clip, param_clip);
-        (*params)[idx] = (float)next;
+    const uint64_t idx = (uint64_t)blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= n_param) {
+        return;
     }
+    float g = (float)((double)grad_sum[idx] * inv_batch_n);
+    if (l2 > 0.0) {
+        g += (float)(l2 * (double)param[idx]);
+    } else if (g == 0.0f) {
+        return;
+    }
+    float mt = (float)(beta1 * (double)m[idx] + (1.0 - beta1) * (double)g);
+    float vt = (float)(beta2 * (double)v[idx] + (1.0 - beta2) * (double)g * (double)g);
+    m[idx] = mt;
+    v[idx] = vt;
+    double next = (double)param[idx] - lr * ((double)mt / bias1) / (sqrt((double)vt / bias2) + adam_eps);
+    next = fmin(fmax(next, -clip_abs), clip_abs);
+    param[idx] = (float)next;
 }
 
-void train_epoch(
-    std::vector<float> *linear,
-    std::vector<float> *fm,
-    AdamState *linear_adam,
-    AdamState *fm_adam,
-    SparseGrad *linear_grad,
-    SparseGrad *fm_grad,
-    const std::array<int, ADJ_N_FEATURES> &linear_starts,
-    const std::array<int, FM_N_PATTERN_FEATURES> &fm_offsets,
-    std::vector<Sample> *train_samples,
+__global__ void loss_kernel(
+    const Sample *samples,
+    const uint64_t n_samples,
+    const float *linear,
+    const float *fm,
+    const int linear_per_phase,
+    const int dim,
+    const uint32_t active_pattern_mask,
+    double *loss_sum
+) {
+    const uint64_t idx = (uint64_t)blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= n_samples) {
+        return;
+    }
+    const Sample &sample = samples[idx];
+    float linear_pred = 0.0f;
+    const uint64_t phase_offset = (uint64_t)sample.phase * (uint64_t)linear_per_phase;
+    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
+        linear_pred += linear[phase_offset + (uint64_t)c_linear_starts[i] + sample.features[i]];
+    }
+    float sum[64];
+    float square_sum[64];
+    for (int d = 0; d < dim; ++d) {
+        sum[d] = 0.0f;
+        square_sum[d] = 0.0f;
+    }
+    for (int i = 0; i < FM_N_PATTERN_FEATURES; ++i) {
+        if (!gpu_feature_active(i, active_pattern_mask)) {
+            continue;
+        }
+        const uint64_t row = (uint64_t)(c_fm_offsets[i] + sample.features[i]) * (uint64_t)dim;
+        for (int d = 0; d < dim; ++d) {
+            const float x = fm[row + (uint64_t)d];
+            sum[d] += x;
+            square_sum[d] += x * x;
+        }
+    }
+    float fm_pred = 0.0f;
+    for (int d = 0; d < dim; ++d) {
+        fm_pred += 0.5f * (sum[d] * sum[d] - square_sum[d]);
+    }
+    const double err_disc = ((double)linear_pred + (double)fm_pred - (double)sample.score * (double)ADJ_STEP) / (double)ADJ_STEP;
+    atomicAdd(&loss_sum[0], err_disc * err_disc);
+    atomicAdd(&loss_sum[1], fabs(err_disc));
+}
+
+bool cuda_alloc_zero(float **ptr, const uint64_t n) {
+    CUDA_CHECK(cudaMalloc(ptr, sizeof(float) * (size_t)n));
+    CUDA_CHECK(cudaMemset(*ptr, 0, sizeof(float) * (size_t)n));
+    return true;
+}
+
+bool copy_vec_to_device(float **device, const std::vector<float> &host) {
+    CUDA_CHECK(cudaMalloc(device, sizeof(float) * host.size()));
+    CUDA_CHECK(cudaMemcpy(*device, host.data(), sizeof(float) * host.size(), cudaMemcpyHostToDevice));
+    return true;
+}
+
+bool calc_loss_gpu(
+    const std::vector<Sample> &samples,
+    const uint64_t limit,
+    Sample *d_batch,
+    const uint64_t batch_capacity,
+    const float *d_linear,
+    const float *d_fm,
+    const int linear_per_phase,
+    const Options &opt,
+    double *d_loss,
+    Loss *out
+) {
+    const uint64_t n = limit == 0 ? (uint64_t)samples.size() : std::min<uint64_t>(limit, (uint64_t)samples.size());
+    double total[2] = {0.0, 0.0};
+    for (uint64_t begin = 0; begin < n; begin += batch_capacity) {
+        const uint64_t chunk = std::min<uint64_t>(batch_capacity, n - begin);
+        CUDA_CHECK(cudaMemcpy(d_batch, samples.data() + begin, sizeof(Sample) * (size_t)chunk, cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemset(d_loss, 0, sizeof(double) * 2));
+        const uint64_t blocks = (chunk + CUDA_BLOCK_SIZE - 1) / CUDA_BLOCK_SIZE;
+        loss_kernel<<<(unsigned int)blocks, CUDA_BLOCK_SIZE>>>(
+            d_batch, chunk, d_linear, d_fm, linear_per_phase, opt.dim, opt.active_pattern_mask, d_loss
+        );
+        CUDA_CHECK(cudaGetLastError());
+        double partial[2] = {0.0, 0.0};
+        CUDA_CHECK(cudaMemcpy(partial, d_loss, sizeof(double) * 2, cudaMemcpyDeviceToHost));
+        total[0] += partial[0];
+        total[1] += partial[1];
+    }
+    out->n = n;
+    out->mse = n == 0 ? 0.0 : total[0] / (double)n;
+    out->mae = n == 0 ? 0.0 : total[1] / (double)n;
+    return true;
+}
+
+bool train_epoch_gpu(
+    std::vector<Sample> *train,
+    Sample *d_batch,
+    const uint64_t batch_capacity,
+    float *d_linear,
+    float *d_fm,
+    float *d_linear_m,
+    float *d_linear_v,
+    float *d_fm_m,
+    float *d_fm_v,
+    float *d_linear_grad,
+    float *d_fm_grad,
+    const uint64_t linear_count,
+    const uint64_t fm_count,
+    const int linear_per_phase,
     const Options &opt,
     const int epoch,
     uint64_t *adam_step
 ) {
     const uint64_t start_ms = tim_ms();
     uint64_t next_log_ms = start_ms + (uint64_t)opt.progress_interval_sec * 1000ULL;
-    deterministic_shuffle(train_samples, opt.seed ^ (0xC001CAFEULL + (uint64_t)epoch));
-    for (uint64_t begin = 0; begin < (uint64_t)train_samples->size(); begin += opt.batch_size) {
-        const uint64_t end = std::min<uint64_t>(begin + opt.batch_size, (uint64_t)train_samples->size());
-        linear_grad->next_batch();
-        fm_grad->next_batch();
-        for (uint64_t i = begin; i < end; ++i) {
-            accumulate_sample_grad(
-                *linear,
-                *fm,
-                linear_starts,
-                fm_offsets,
-                (*train_samples)[(size_t)i],
-                opt.dim,
-                opt.active_pattern_mask,
-                opt.grad_clip_raw,
-                linear_grad,
-                fm_grad
-            );
-        }
+    deterministic_shuffle(train, opt.seed ^ (0xC001CAFEULL + (uint64_t)epoch));
+    for (uint64_t begin = 0; begin < (uint64_t)train->size(); begin += batch_capacity) {
+        const uint64_t chunk = std::min<uint64_t>(batch_capacity, (uint64_t)train->size() - begin);
+        CUDA_CHECK(cudaMemcpy(d_batch, train->data() + begin, sizeof(Sample) * (size_t)chunk, cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemset(d_linear_grad, 0, sizeof(float) * (size_t)linear_count));
+        CUDA_CHECK(cudaMemset(d_fm_grad, 0, sizeof(float) * (size_t)fm_count));
+        const uint64_t sample_blocks = (chunk + CUDA_BLOCK_SIZE - 1) / CUDA_BLOCK_SIZE;
+        accumulate_grad_kernel<<<(unsigned int)sample_blocks, CUDA_BLOCK_SIZE>>>(
+            d_batch, chunk, d_linear, d_fm, linear_per_phase, opt.dim, opt.active_pattern_mask,
+            opt.grad_clip_raw, d_linear_grad, d_fm_grad
+        );
+        CUDA_CHECK(cudaGetLastError());
         ++(*adam_step);
-        const uint64_t batch_n = end - begin;
-        apply_adam(
-            linear,
-            linear_adam,
-            *linear_grad,
-            batch_n,
-            opt.linear_lr,
-            opt.beta1,
-            opt.beta2,
-            opt.adam_eps,
-            opt.linear_l2,
-            opt.linear_param_clip,
-            *adam_step
+        const double bias1 = 1.0 - std::pow(opt.beta1, (double)*adam_step);
+        const double bias2 = 1.0 - std::pow(opt.beta2, (double)*adam_step);
+        const double inv_batch_n = 1.0 / (double)chunk;
+        const uint64_t linear_blocks = (linear_count + CUDA_BLOCK_SIZE - 1) / CUDA_BLOCK_SIZE;
+        adam_update_kernel<<<(unsigned int)linear_blocks, CUDA_BLOCK_SIZE>>>(
+            d_linear, d_linear_m, d_linear_v, d_linear_grad, linear_count, inv_batch_n,
+            opt.linear_lr, opt.beta1, opt.beta2, opt.adam_eps, bias1, bias2,
+            opt.linear_l2, opt.linear_param_clip
         );
-        apply_adam(
-            fm,
-            fm_adam,
-            *fm_grad,
-            batch_n,
-            opt.fm_lr,
-            opt.beta1,
-            opt.beta2,
-            opt.adam_eps,
-            opt.fm_l2,
-            opt.fm_vector_clip,
-            *adam_step
+        CUDA_CHECK(cudaGetLastError());
+        const uint64_t fm_blocks = (fm_count + CUDA_BLOCK_SIZE - 1) / CUDA_BLOCK_SIZE;
+        adam_update_kernel<<<(unsigned int)fm_blocks, CUDA_BLOCK_SIZE>>>(
+            d_fm, d_fm_m, d_fm_v, d_fm_grad, fm_count, inv_batch_n,
+            opt.fm_lr, opt.beta1, opt.beta2, opt.adam_eps, bias1, bias2,
+            opt.fm_l2, opt.fm_vector_clip
         );
+        CUDA_CHECK(cudaGetLastError());
+        CUDA_CHECK(cudaDeviceSynchronize());
         const uint64_t now = tim_ms();
         if (opt.progress_interval_sec > 0 && now >= next_log_ms) {
-            std::cerr << "epoch_training processed " << end
-                      << " / " << train_samples->size()
+            std::cerr << "epoch_training_cuda processed " << (begin + chunk)
+                      << " / " << train->size()
                       << " adam_step " << *adam_step
                       << " elapsed_ms " << (now - start_ms) << "\n";
             next_log_ms = now + (uint64_t)opt.progress_interval_sec * 1000ULL;
         }
     }
+    return true;
 }
 
 std::vector<int16_t> quantize_linear(const std::vector<float> &linear, const double clip_abs) {
@@ -1016,7 +1020,6 @@ bool write_fm_file(
         std::cerr << "[ERROR] can't open output " << out_file << "\n";
         return false;
     }
-
     const uint32_t version = FM_FILE_VERSION;
     const uint32_t n_phases = ADJ_N_PHASES;
     const uint32_t linear_per_phase = (uint32_t)linear_params_per_phase();
@@ -1058,7 +1061,7 @@ bool write_fm_file(
         summary << std::setprecision(12);
         summary << "created_at_ms " << tim_ms() << "\n";
         summary << "definition " << EVAL_DEFINITION_NAME << "\n";
-        summary << "learning_method joint_linear_fm_adam_sampled_mse\n";
+        summary << "learning_method joint_linear_fm_adam_sampled_mse_cuda\n";
         summary << "base_eval " << opt.base_eval << "\n";
         summary << "data_root " << opt.data_root << "\n";
         summary << "record_start " << opt.record_start << "\n";
@@ -1139,16 +1142,16 @@ int main(int argc, char **argv) {
     const auto linear_starts = make_linear_starts();
     uint64_t total_vectors = 0;
     const auto fm_offsets = make_fm_feature_offsets(&total_vectors);
+    const int linear_per_phase = linear_params_per_phase();
+    const uint64_t linear_count = (uint64_t)ADJ_N_PHASES * (uint64_t)linear_per_phase;
+    const uint64_t fm_count = total_vectors * (uint64_t)opt.dim;
 
     const std::vector<int16_t> base_linear_i16 = load_unzip_egev2_local(opt.base_eval);
-    const uint64_t linear_count = (uint64_t)ADJ_N_PHASES * (uint64_t)linear_params_per_phase();
     if ((uint64_t)base_linear_i16.size() != linear_count) {
         std::cerr << "[ERROR] invalid base eval element count " << base_linear_i16.size()
                   << " expected " << linear_count << "\n";
         return 1;
     }
-    const uint64_t fm_count = total_vectors * (uint64_t)opt.dim;
-
     std::array<uint64_t, ADJ_N_PHASES> manifest_phase_counts = {};
     std::vector<FileEntry> manifest = build_manifest(opt, &manifest_phase_counts);
     const uint64_t total_records = manifest_total_count(manifest);
@@ -1163,8 +1166,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const uint64_t estimated_memory = estimate_peak_memory_bytes(opt, linear_count, fm_count);
-    const double estimated_gib = bytes_to_gib((long double)estimated_memory);
+    const double estimated_host_gib = bytes_to_gib((long double)estimate_host_memory_bytes(opt, linear_count, fm_count));
+    const double estimated_device_gib = bytes_to_gib((long double)estimate_device_memory_bytes(opt, linear_count, fm_count));
     std::cerr << std::setprecision(6)
               << "manifest_files " << manifest.size()
               << " total_records " << total_records
@@ -1173,10 +1176,11 @@ int main(int argc, char **argv) {
               << " read_mode " << opt.read_mode
               << " linear_params " << linear_count
               << " fm_values " << fm_count
-              << " estimated_peak_memory_gib " << estimated_gib
+              << " estimated_host_memory_gib " << estimated_host_gib
+              << " estimated_device_memory_gib " << estimated_device_gib
               << " max_memory_gib " << opt.max_memory_gib << "\n";
-    if (estimated_gib > opt.max_memory_gib) {
-        std::cerr << "[ERROR] estimated memory exceeds limit\n";
+    if (estimated_host_gib > opt.max_memory_gib) {
+        std::cerr << "[ERROR] estimated host memory exceeds limit\n";
         return 1;
     }
     if (opt.dry_run) {
@@ -1184,13 +1188,15 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    cudaDeviceProp prop;
+    CUDA_CHECK_MAIN(cudaGetDeviceProperties(&prop, 0));
+    std::cerr << "cuda_device " << prop.name
+              << " global_mem_gib " << bytes_to_gib((long double)prop.totalGlobalMem)
+              << " compute_capability " << prop.major << "." << prop.minor << "\n";
+
     const uint64_t load_start_ms = tim_ms();
     std::vector<SampleRequest> requests = generate_requests(
-        total_records,
-        opt.train_samples,
-        opt.val_samples,
-        opt.seed,
-        opt.progress_interval_sec
+        total_records, opt.train_samples, opt.val_samples, opt.seed, opt.progress_interval_sec
     );
     std::vector<Sample> train_samples;
     std::vector<Sample> val_samples;
@@ -1212,26 +1218,44 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    std::vector<float> linear(base_linear_i16.begin(), base_linear_i16.end());
-    std::vector<float> fm((size_t)fm_count, 0.0f);
-    for (uint64_t i = 0; i < (uint64_t)fm.size(); ++i) {
-        fm[(size_t)i] = deterministic_normal(opt.seed + 1, i, opt.init_std);
+    CUDA_CHECK_MAIN(cudaMemcpyToSymbol(c_linear_starts, linear_starts.data(), sizeof(int) * ADJ_N_FEATURES));
+    CUDA_CHECK_MAIN(cudaMemcpyToSymbol(c_fm_offsets, fm_offsets.data(), sizeof(int) * FM_N_PATTERN_FEATURES));
+
+    std::vector<float> host_linear(base_linear_i16.begin(), base_linear_i16.end());
+    std::vector<float> host_fm((size_t)fm_count, 0.0f);
+    for (uint64_t i = 0; i < (uint64_t)host_fm.size(); ++i) {
+        host_fm[(size_t)i] = deterministic_normal(opt.seed + 1, i, opt.init_std);
     }
 
-    AdamState linear_adam(linear.size());
-    AdamState fm_adam(fm.size());
-    SparseGrad linear_grad(linear.size());
-    SparseGrad fm_grad(fm.size());
-    std::vector<float> best_linear = linear;
-    std::vector<float> best_fm = fm;
+    float *d_linear = nullptr, *d_fm = nullptr;
+    float *d_linear_m = nullptr, *d_linear_v = nullptr, *d_fm_m = nullptr, *d_fm_v = nullptr;
+    float *d_linear_grad = nullptr, *d_fm_grad = nullptr;
+    float *d_best_linear = nullptr, *d_best_fm = nullptr;
+    Sample *d_batch = nullptr;
+    double *d_loss = nullptr;
 
-    Loss best_train_loss = calc_loss(linear, fm, linear_starts, fm_offsets, train_samples, opt.dim, opt.active_pattern_mask, opt.train_metric_limit);
-    Loss best_val_loss = calc_loss(linear, fm, linear_starts, fm_offsets, val_samples, opt.dim, opt.active_pattern_mask, opt.val_metric_limit);
+    if (!copy_vec_to_device(&d_linear, host_linear) || !copy_vec_to_device(&d_fm, host_fm) ||
+        !cuda_alloc_zero(&d_linear_m, linear_count) || !cuda_alloc_zero(&d_linear_v, linear_count) ||
+        !cuda_alloc_zero(&d_fm_m, fm_count) || !cuda_alloc_zero(&d_fm_v, fm_count) ||
+        !cuda_alloc_zero(&d_linear_grad, linear_count) || !cuda_alloc_zero(&d_fm_grad, fm_count) ||
+        !cuda_alloc_zero(&d_best_linear, linear_count) || !cuda_alloc_zero(&d_best_fm, fm_count)) {
+        return 1;
+    }
+    CUDA_CHECK_MAIN(cudaMemcpy(d_best_linear, d_linear, sizeof(float) * (size_t)linear_count, cudaMemcpyDeviceToDevice));
+    CUDA_CHECK_MAIN(cudaMemcpy(d_best_fm, d_fm, sizeof(float) * (size_t)fm_count, cudaMemcpyDeviceToDevice));
+    CUDA_CHECK_MAIN(cudaMalloc(&d_batch, sizeof(Sample) * (size_t)opt.batch_size));
+    CUDA_CHECK_MAIN(cudaMalloc(&d_loss, sizeof(double) * 2));
+
+    Loss best_train_loss;
+    Loss best_val_loss;
+    if (!calc_loss_gpu(train_samples, opt.train_metric_limit, d_batch, opt.batch_size, d_linear, d_fm, linear_per_phase, opt, d_loss, &best_train_loss) ||
+        !calc_loss_gpu(val_samples, opt.val_metric_limit, d_batch, opt.batch_size, d_linear, d_fm, linear_per_phase, opt, d_loss, &best_val_loss)) {
+        return 1;
+    }
     int best_epoch = 0;
     int no_improve_epochs = 0;
     uint64_t adam_step = 0;
     uint64_t stopped_epoch = 0;
-
     std::cerr << "initial train_mse " << best_train_loss.mse
               << " train_mae " << best_train_loss.mae
               << " train_metric_samples " << best_train_loss.n
@@ -1241,29 +1265,26 @@ int main(int argc, char **argv) {
 
     for (int epoch = 1; epoch <= opt.epochs; ++epoch) {
         const uint64_t epoch_start_ms = tim_ms();
-        train_epoch(
-            &linear,
-            &fm,
-            &linear_adam,
-            &fm_adam,
-            &linear_grad,
-            &fm_grad,
-            linear_starts,
-            fm_offsets,
-            &train_samples,
-            opt,
-            epoch,
-            &adam_step
-        );
-        const Loss train_loss = calc_loss(linear, fm, linear_starts, fm_offsets, train_samples, opt.dim, opt.active_pattern_mask, opt.train_metric_limit);
-        const Loss val_loss = calc_loss(linear, fm, linear_starts, fm_offsets, val_samples, opt.dim, opt.active_pattern_mask, opt.val_metric_limit);
+        if (!train_epoch_gpu(
+                &train_samples, d_batch, opt.batch_size, d_linear, d_fm,
+                d_linear_m, d_linear_v, d_fm_m, d_fm_v,
+                d_linear_grad, d_fm_grad, linear_count, fm_count,
+                linear_per_phase, opt, epoch, &adam_step)) {
+            return 1;
+        }
+        Loss train_loss;
+        Loss val_loss;
+        if (!calc_loss_gpu(train_samples, opt.train_metric_limit, d_batch, opt.batch_size, d_linear, d_fm, linear_per_phase, opt, d_loss, &train_loss) ||
+            !calc_loss_gpu(val_samples, opt.val_metric_limit, d_batch, opt.batch_size, d_linear, d_fm, linear_per_phase, opt, d_loss, &val_loss)) {
+            return 1;
+        }
         if (val_loss.mse < best_val_loss.mse) {
             best_val_loss = val_loss;
             best_train_loss = train_loss;
-            best_linear = linear;
-            best_fm = fm;
             best_epoch = epoch;
             no_improve_epochs = 0;
+            CUDA_CHECK_MAIN(cudaMemcpy(d_best_linear, d_linear, sizeof(float) * (size_t)linear_count, cudaMemcpyDeviceToDevice));
+            CUDA_CHECK_MAIN(cudaMemcpy(d_best_fm, d_fm, sizeof(float) * (size_t)fm_count, cudaMemcpyDeviceToDevice));
         } else {
             ++no_improve_epochs;
         }
@@ -1285,18 +1306,27 @@ int main(int argc, char **argv) {
         }
     }
 
-    return write_fm_file(
-        opt.out_file,
-        best_linear,
-        best_fm,
-        total_vectors,
-        opt,
-        total_records,
-        manifest_phase_counts,
-        sample_stats,
-        best_epoch,
-        best_train_loss,
-        best_val_loss,
-        stopped_epoch
-    ) ? 0 : 1;
+    host_linear.resize((size_t)linear_count);
+    host_fm.resize((size_t)fm_count);
+    CUDA_CHECK_MAIN(cudaMemcpy(host_linear.data(), d_best_linear, sizeof(float) * (size_t)linear_count, cudaMemcpyDeviceToHost));
+    CUDA_CHECK_MAIN(cudaMemcpy(host_fm.data(), d_best_fm, sizeof(float) * (size_t)fm_count, cudaMemcpyDeviceToHost));
+
+    const bool write_ok = write_fm_file(
+        opt.out_file, host_linear, host_fm, total_vectors, opt, total_records,
+        manifest_phase_counts, sample_stats, best_epoch, best_train_loss, best_val_loss, stopped_epoch
+    );
+
+    cudaFree(d_linear);
+    cudaFree(d_fm);
+    cudaFree(d_linear_m);
+    cudaFree(d_linear_v);
+    cudaFree(d_fm_m);
+    cudaFree(d_fm_v);
+    cudaFree(d_linear_grad);
+    cudaFree(d_fm_grad);
+    cudaFree(d_best_linear);
+    cudaFree(d_best_fm);
+    cudaFree(d_batch);
+    cudaFree(d_loss);
+    return write_ok ? 0 : 1;
 }

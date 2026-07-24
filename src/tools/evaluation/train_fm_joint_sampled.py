@@ -5,6 +5,8 @@ import re
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from shutil import which
+from typing import Optional
 
 
 MODEL_DIR_RE = re.compile(r"^\d{8}_\d+_.+")
@@ -77,6 +79,69 @@ def build_optimizer(root: Path, compiler: str, source: Path, exe: Path) -> list[
     ]
 
 
+def find_existing_path(candidates: list[str]) -> Optional[Path]:
+    for candidate in candidates:
+        path = Path(candidate)
+        if path.exists():
+            return path
+    return None
+
+
+def find_nvcc(value: str) -> str:
+    if value:
+        return value
+    candidates = [
+        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.1\bin\nvcc.exe",
+        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\bin\nvcc.exe",
+        r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5\bin\nvcc.exe",
+    ]
+    path = find_existing_path(candidates)
+    if path is not None:
+        return str(path)
+    found = which("nvcc")
+    return found or "nvcc"
+
+
+def find_msvc_ccbin(value: str) -> Optional[str]:
+    if value:
+        return value
+    base = Path(r"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC")
+    if not base.is_dir():
+        return None
+    versions = sorted(base.iterdir(), reverse=True)
+    for version in versions:
+        candidate = version / "bin" / "HostX64" / "x64"
+        if (candidate / "cl.exe").exists():
+            return str(candidate)
+    return None
+
+
+def build_cuda_optimizer(
+    root: Path,
+    nvcc: str,
+    ccbin: Optional[str],
+    source: Path,
+    exe: Path,
+    arch: str,
+) -> list[str]:
+    exe.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        nvcc,
+        "-std=c++17",
+        "-O3",
+        "-DNDEBUG",
+        "-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
+        f"-arch={arch}",
+        "-allow-unsupported-compiler",
+        "-o",
+        str(exe),
+        str(source),
+    ]
+    if ccbin:
+        cmd[1:1] = ["-ccbin", ccbin]
+    return cmd
+
+
 def main() -> int:
     root = repo_root()
     default_data_root = (
@@ -92,7 +157,11 @@ def main() -> int:
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--build", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--backend", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--compiler", default="g++")
+    parser.add_argument("--nvcc", default="")
+    parser.add_argument("--cuda-ccbin", default="")
+    parser.add_argument("--cuda-arch", default="sm_86")
     parser.add_argument("--optimizer-source", default="src/tools/evaluation/eval_optimizer_fm_joint.cpp")
     parser.add_argument("--optimizer-exe", default="src/tools/evaluation/eval_optimizer_fm_joint.exe")
     parser.add_argument("--base-eval", default="bin/resources/eval.egev2")
@@ -143,6 +212,11 @@ def main() -> int:
     if args.progress_interval_sec < 0:
         raise ValueError("progress-interval-sec must be non-negative")
 
+    if args.backend == "cuda" and args.optimizer_source == "src/tools/evaluation/eval_optimizer_fm_joint.cpp":
+        args.optimizer_source = "src/tools/evaluation/eval_optimizer_fm_joint_cuda.cu"
+    if args.backend == "cuda" and args.optimizer_exe == "src/tools/evaluation/eval_optimizer_fm_joint.exe":
+        args.optimizer_exe = "src/tools/evaluation/eval_optimizer_fm_joint_cuda.exe"
+
     optimizer_source = resolve_path(root, args.optimizer_source)
     optimizer_exe = resolve_path(root, args.optimizer_exe)
     base_eval = resolve_path(root, args.base_eval)
@@ -161,7 +235,17 @@ def main() -> int:
         f"eval_dim{args.dim}_fmphase1_records{args.record_start}plus_joint_sampled.egevfm"
     )
 
-    build_cmd = build_optimizer(root, args.compiler, optimizer_source, optimizer_exe)
+    if args.backend == "cuda":
+        build_cmd = build_cuda_optimizer(
+            root,
+            find_nvcc(args.nvcc),
+            find_msvc_ccbin(args.cuda_ccbin),
+            optimizer_source,
+            optimizer_exe,
+            args.cuda_arch,
+        )
+    else:
+        build_cmd = build_optimizer(root, args.compiler, optimizer_source, optimizer_exe)
     train_cmd = [
         str(optimizer_exe),
         "--base-eval",
@@ -233,7 +317,7 @@ def main() -> int:
     ]
 
     manifest = {
-        "method": "joint_linear_fm_adam_sampled_mse",
+        "method": "joint_linear_fm_adam_sampled_mse_cuda" if args.backend == "cuda" else "joint_linear_fm_adam_sampled_mse",
         "notes": [
             "linear term has 60 phases",
             "FM term has 1 shared phase",
@@ -244,6 +328,7 @@ def main() -> int:
         "out_file": str(out_file),
         "optimizer_source": str(optimizer_source),
         "optimizer_exe": str(optimizer_exe),
+        "backend": args.backend,
         "build_cmd": build_cmd,
         "train_cmd": train_cmd,
         "args": vars(args),
