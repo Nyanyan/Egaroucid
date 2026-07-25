@@ -28,11 +28,8 @@ INPUT_FEATURES = 128
 STEP = 32
 ACTIVATION_SCALE = 16
 FT_SCALE = 256
-LAYER_WEIGHT_SCALE = 16
-LAYER_ACC_SCALE = ACTIVATION_SCALE * LAYER_WEIGHT_SCALE
+DEFAULT_LAYER_WEIGHT_SCALE = 16
 FT_SHIFT = 4
-HIDDEN_SHIFT = 4
-OUTPUT_SHIFT = 3
 ACTIVATION_CLIP_FLOAT = 127.0 / ACTIVATION_SCALE
 
 ARCHES = {
@@ -114,6 +111,8 @@ class QuantizedNNUE:
     post_padded: int
     hidden1_padded: int
     hidden2_padded: int
+    hidden_shift: int
+    output_shift: int
 
 
 def next_model_dir(root: Path, date: str, name: str) -> Path:
@@ -411,22 +410,42 @@ def quantize_to_int8(values: torch.Tensor, scale: float, clip: int = 127) -> np.
     return np.clip(np.rint(arr * scale), -clip, clip).astype("i1")
 
 
-def quantize_model(model: OthelloNNUE) -> QuantizedNNUE:
+def int_log2_power_of_two(value: int, name: str) -> int:
+    if value <= 0 or value & (value - 1):
+        raise ValueError(f"{name} must be a positive power of two: {value}")
+    return value.bit_length() - 1
+
+
+def make_quantization_shifts(layer_weight_scale: int) -> tuple[int, int]:
+    hidden_shift = int_log2_power_of_two(layer_weight_scale, "layer_weight_scale")
+    output_scale_divisor = ACTIVATION_SCALE * layer_weight_scale
+    if output_scale_divisor % STEP != 0:
+        raise ValueError(
+            f"ACTIVATION_SCALE * layer_weight_scale must be divisible by STEP: "
+            f"{ACTIVATION_SCALE} * {layer_weight_scale}"
+        )
+    output_shift = int_log2_power_of_two(output_scale_divisor // STEP, "output_scale_divisor / STEP")
+    return hidden_shift, output_shift
+
+
+def quantize_model(model: OthelloNNUE, layer_weight_scale: int) -> QuantizedNNUE:
     ft_dim = model.ft_dim
     hidden1 = model.hidden1_dim
     hidden2 = model.hidden2_dim
     post_padded = math.ceil((ft_dim * 2) / 32) * 32
     hidden1_padded = math.ceil(hidden1 / 32) * 32
     hidden2_padded = math.ceil(hidden2 / 32) * 32
+    hidden_shift, output_shift = make_quantization_shifts(layer_weight_scale)
+    layer_acc_scale = ACTIVATION_SCALE * layer_weight_scale
 
     ft_bias = quantize_to_int16(model.ft_bias, FT_SCALE)
     ft_weight = quantize_to_int16(model.ft_weight, FT_SCALE)
-    h1_bias = np.rint(model.hidden1.bias.detach().cpu().numpy() * LAYER_ACC_SCALE).astype("<i4")
-    h1_weight = pad_int8_matrix(quantize_to_int8(model.hidden1.weight, LAYER_WEIGHT_SCALE), post_padded)
-    h2_bias = np.rint(model.hidden2.bias.detach().cpu().numpy() * LAYER_ACC_SCALE).astype("<i4")
-    h2_weight = pad_int8_matrix(quantize_to_int8(model.hidden2.weight, LAYER_WEIGHT_SCALE), hidden1_padded)
-    out_bias = np.rint(model.output_bias.detach().cpu().numpy() * LAYER_ACC_SCALE).astype("<i4")
-    out_weight = pad_int8_matrix(quantize_to_int8(model.output_weight, LAYER_WEIGHT_SCALE), hidden2_padded)
+    h1_bias = np.rint(model.hidden1.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
+    h1_weight = pad_int8_matrix(quantize_to_int8(model.hidden1.weight, layer_weight_scale), post_padded)
+    h2_bias = np.rint(model.hidden2.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
+    h2_weight = pad_int8_matrix(quantize_to_int8(model.hidden2.weight, layer_weight_scale), hidden1_padded)
+    out_bias = np.rint(model.output_bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
+    out_weight = pad_int8_matrix(quantize_to_int8(model.output_weight, layer_weight_scale), hidden2_padded)
     return QuantizedNNUE(
         ft_bias=ft_bias,
         ft_weight=ft_weight,
@@ -439,12 +458,14 @@ def quantize_model(model: OthelloNNUE) -> QuantizedNNUE:
         post_padded=post_padded,
         hidden1_padded=hidden1_padded,
         hidden2_padded=hidden2_padded,
+        hidden_shift=hidden_shift,
+        output_shift=output_shift,
     )
 
 
-def export_model(model: OthelloNNUE, out_file: Path) -> None:
+def export_model(model: OthelloNNUE, out_file: Path, layer_weight_scale: int) -> None:
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    q = quantize_model(model)
+    q = quantize_model(model, layer_weight_scale)
     ft_dim = model.ft_dim
     hidden1 = model.hidden1_dim
     hidden2 = model.hidden2_dim
@@ -458,9 +479,9 @@ def export_model(model: OthelloNNUE, out_file: Path) -> None:
             hidden2,
             N_PHASES,
             FT_SHIFT,
-            HIDDEN_SHIFT,
-            HIDDEN_SHIFT,
-            OUTPUT_SHIFT,
+            q.hidden_shift,
+            q.hidden_shift,
+            q.output_shift,
         ], dtype="<u4")
         header.tofile(f)
         np.zeros(8, dtype="<u4").tofile(f)
@@ -504,26 +525,26 @@ def quantized_forward(q: QuantizedNNUE, player: np.ndarray, opponent: np.ndarray
         post_input.astype(np.int32, copy=False) @ q.hidden1_weight.astype(np.int32, copy=False).T
     )
     hidden1 = np.zeros((features.shape[0], q.hidden1_padded), dtype=np.uint8)
-    hidden1[:, :q.hidden1_bias.shape[0]] = clamp_u8_shifted(h1_raw, HIDDEN_SHIFT)
+    hidden1[:, :q.hidden1_bias.shape[0]] = clamp_u8_shifted(h1_raw, q.hidden_shift)
 
     h2_raw = q.hidden2_bias.astype(np.int32, copy=False)[None, :] + (
         hidden1.astype(np.int32, copy=False) @ q.hidden2_weight.astype(np.int32, copy=False).T
     )
     hidden2 = np.zeros((features.shape[0], q.hidden2_padded), dtype=np.uint8)
-    hidden2[:, :q.hidden2_bias.shape[0]] = clamp_u8_shifted(h2_raw, HIDDEN_SHIFT)
+    hidden2[:, :q.hidden2_bias.shape[0]] = clamp_u8_shifted(h2_raw, q.hidden_shift)
 
     output_weights = q.output_weight[phases.astype(np.int64, copy=False)].astype(np.int32, copy=False)
     raw = q.output_bias[phases.astype(np.int64, copy=False)].astype(np.int32, copy=False)
     raw = raw + (hidden2.astype(np.int32, copy=False) * output_weights).sum(axis=1)
-    raw = rounded_shift_signed(raw, OUTPUT_SHIFT)
+    raw = rounded_shift_signed(raw, q.output_shift)
     raw = raw + np.where(raw >= 0, STEP // 2, -(STEP // 2))
     values = np.trunc(raw.astype(np.float64) / float(STEP)).astype(np.int32)
     return np.clip(values, -64, 64).astype(np.float32)
 
 
 @torch.no_grad()
-def evaluate_quantized_loss(model: OthelloNNUE, samples: dict[str, np.ndarray], prefix: str, batch_size: int, limit: int) -> tuple[float, float, int]:
-    q = quantize_model(model)
+def evaluate_quantized_loss(model: OthelloNNUE, samples: dict[str, np.ndarray], prefix: str, batch_size: int, limit: int, layer_weight_scale: int) -> tuple[float, float, int]:
+    q = quantize_model(model, layer_weight_scale)
     n = len(samples[f"{prefix}_score"])
     if limit > 0:
         n = min(n, limit)
@@ -563,6 +584,7 @@ def write_summary(out_dir: Path, args: argparse.Namespace, entries: list[FileEnt
         "batch_size": args.batch_size,
         "lr": args.lr,
         "weight_decay": args.weight_decay,
+        "layer_weight_scale": args.layer_weight_scale,
         "seed": args.seed,
         "best": best,
     }
@@ -587,6 +609,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=65536)
     parser.add_argument("--lr", type=float, default=1.0e-3)
     parser.add_argument("--weight-decay", type=float, default=1.0e-6)
+    parser.add_argument("--layer-weight-scale", type=int, default=DEFAULT_LAYER_WEIGHT_SCALE)
     parser.add_argument("--seed", type=int, default=20260725)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--model-root", default="model")
@@ -596,6 +619,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quantized-metric-limit", type=int, default=1_000_000)
     parser.add_argument("--progress-interval-files", type=int, default=20)
     parser.add_argument("--sample-cache", default="")
+    parser.add_argument("--no-save-float-model", action="store_true")
+    parser.add_argument("--load-state", default="")
+    parser.add_argument("--export-only", action="store_true")
     parser.add_argument("--init-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -607,6 +633,7 @@ def main() -> int:
     args.ft_dim = args.ft_dim or arch_dims[0]
     args.hidden1 = args.hidden1 or arch_dims[1]
     args.hidden2 = args.hidden2 or arch_dims[2]
+    make_quantization_shifts(args.layer_weight_scale)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed & 0xFFFFFFFF)
 
@@ -625,9 +652,42 @@ def main() -> int:
 
     model = OthelloNNUE(args.ft_dim, args.hidden1, args.hidden2)
     best = {"epoch": 0, "val_mse": float("inf"), "val_mae": float("inf")}
-    if args.init_only or args.epochs == 0:
-        export_model(model, out_file)
+    if args.load_state:
+        checkpoint = torch.load(args.load_state, map_location="cpu")
+        state_dict = checkpoint["state_dict"] if isinstance(checkpoint, dict) and "state_dict" in checkpoint else checkpoint
+        model.load_state_dict(state_dict)
+        if isinstance(checkpoint, dict) and "best" in checkpoint:
+            best = checkpoint["best"]
+
+    if args.init_only:
+        export_model(model, out_file, args.layer_weight_scale)
         write_summary(out_dir, args, entries, None, best)
+        print(f"wrote {out_file}", flush=True)
+        return 0
+
+    if args.export_only or args.epochs == 0:
+        export_model(model, out_file, args.layer_weight_scale)
+        samples = None
+        if args.sample_cache and Path(args.sample_cache).exists():
+            print(f"loading_sample_cache {args.sample_cache}", flush=True)
+            samples = load_sample_cache(Path(args.sample_cache))
+            q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
+                model,
+                samples,
+                "val",
+                args.batch_size,
+                args.quantized_metric_limit,
+                args.layer_weight_scale,
+            )
+            best["quantized_val_mse"] = q_val_mse
+            best["quantized_val_mae"] = q_val_mae
+            best["quantized_val_metric_samples"] = q_val_n
+            print(
+                f"quantized_export val_mse {q_val_mse:.6f} val_mae {q_val_mae:.6f} "
+                f"val_metric_samples {q_val_n}",
+                flush=True,
+            )
+        write_summary(out_dir, args, entries, samples, best)
         print(f"wrote {out_file}", flush=True)
         return 0
 
@@ -667,7 +727,7 @@ def main() -> int:
         if val_mse < best["val_mse"]:
             best = {"epoch": epoch, "val_mse": val_mse, "val_mae": val_mae}
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-            export_model(model, out_file)
+            export_model(model, out_file, args.layer_weight_scale)
         print(
             f"epoch {epoch} train_epoch_mse {running_loss / max(1, seen):.6f} "
             f"train_mse {train_mse:.6f} train_mae {train_mae:.6f} "
@@ -679,13 +739,27 @@ def main() -> int:
     if best_state is not None:
         model.load_state_dict(best_state)
         model.to(device)
-        export_model(model, out_file)
+        export_model(model, out_file, args.layer_weight_scale)
+        if not args.no_save_float_model:
+            torch.save(
+                {
+                    "state_dict": best_state,
+                    "arch": args.arch,
+                    "ft_dim": args.ft_dim,
+                    "hidden1": args.hidden1,
+                    "hidden2": args.hidden2,
+                    "layer_weight_scale": args.layer_weight_scale,
+                    "best": best,
+                },
+                out_dir / "model_state.pt",
+            )
         q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
             model,
             samples,
             "val",
             args.batch_size,
             args.quantized_metric_limit,
+            args.layer_weight_scale,
         )
         best["quantized_val_mse"] = q_val_mse
         best["quantized_val_mae"] = q_val_mae

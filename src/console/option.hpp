@@ -115,7 +115,11 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             std::cerr << "[ERROR] hash argument out of range" << std::endl;
         }
     }
-    res.eval_file = binary_path + "resources/eval_dim8_fm.egevfm";
+    #if defined(USE_NNUE_EVALUATION)
+        res.eval_file = binary_path + "resources/eval_nnue.egevnnue";
+    #else
+        res.eval_file = binary_path + "resources/eval_dim8_fm.egevfm";
+    #endif
     if (find_commandline_option(commandline_options, ID_EVAL_FILE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_EVAL_FILE);
         try {
