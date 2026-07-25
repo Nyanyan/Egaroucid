@@ -38,6 +38,7 @@ MATCH_END_MARKER = "match end!"
 TIME_CONTROL_PATTERN = re.compile(r"^\d+:\d{2}/(?:\d+:\d{2})?/(?:\d+:\d{2})?$")
 ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 GGS_MATCH_RESULT_MARKER = "/os: - match "
+PLAYER_NOT_ACCEPTING_MARKER = "server error: /os: ERR Player is not accepting new matches."
 SCORE_EPSILON = 1.0e-9
 
 
@@ -125,10 +126,18 @@ def make_request(game_type: str, time_control: str, opponent: str) -> str:
     return f"ts ask {game_type} {time_control} {opponent}"
 
 
+def clean_console_line(line: str) -> str:
+    return ANSI_ESCAPE_PATTERN.sub("", line)
+
+
+def is_player_not_accepting_error(line: str) -> bool:
+    return PLAYER_NOT_ACCEPTING_MARKER in clean_console_line(line)
+
+
 def parse_ggs_match_result(
     line: str, own_player: str, expected_opponent: str
 ) -> MatchResult | None:
-    clean_line = ANSI_ESCAPE_PATTERN.sub("", line)
+    clean_line = clean_console_line(line)
     marker_index = clean_line.find(GGS_MATCH_RESULT_MARKER)
     if marker_index < 0:
         return None
@@ -255,6 +264,7 @@ def run(args: argparse.Namespace) -> int:
 
     initialized = False
     match_active = False
+    waiting_for_match = False
     completed_matches = 0
     statistics = MatchStatistics()
     pending_match_result: MatchResult | None = None
@@ -268,11 +278,28 @@ def run(args: argparse.Namespace) -> int:
             if not initialized and INITIALIZED_MARKER in line:
                 initialized = True
                 send_request(process, request, log)
+                waiting_for_match = True
                 continue
             if initialized and MATCH_START_MARKER in line:
                 match_active = True
+                waiting_for_match = False
                 pending_match_result = None
                 log.write("match started")
+                continue
+            if (
+                initialized
+                and waiting_for_match
+                and not match_active
+                and is_player_not_accepting_error(line)
+            ):
+                if args.retry_delay:
+                    log.write(
+                        f"opponent is not accepting new matches; "
+                        f"waiting {args.retry_delay:g} seconds before retry"
+                    )
+                    time.sleep(args.retry_delay)
+                send_request(process, request, log)
+                waiting_for_match = True
                 continue
             parsed_match_result = parse_ggs_match_result(
                 line, args.ggs_user, args.opponent
@@ -303,6 +330,7 @@ def run(args: argparse.Namespace) -> int:
                     log.write(f"waiting {args.request_delay:g} seconds before the next request")
                     time.sleep(args.request_delay)
                 send_request(process, request, log)
+                waiting_for_match = True
         return_code = process.poll()
         if return_code is not None and return_code != 0:
             raise RuntimeError(f"Egaroucid exited with status {return_code}")
@@ -339,6 +367,12 @@ def parse_args() -> argparse.Namespace:
         help="seconds to wait after a match ends before requesting the next one",
     )
     parser.add_argument(
+        "--retry-delay",
+        type=float,
+        default=30.0,
+        help="seconds to wait before retrying when the opponent is not accepting matches",
+    )
+    parser.add_argument(
         "--max-matches",
         type=int,
         default=0,
@@ -367,6 +401,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("--hash must be non-negative")
     if args.request_delay < 0:
         parser.error("--request-delay must be non-negative")
+    if args.retry_delay < 0:
+        parser.error("--retry-delay must be non-negative")
     if args.max_matches < 0:
         parser.error("--max-matches must be non-negative")
     args.engine = args.engine.resolve()

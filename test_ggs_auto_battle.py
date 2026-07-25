@@ -45,6 +45,19 @@ class GgsAutoBattleStatisticsTest(unittest.TestCase):
 
         self.assertIsNone(result)
 
+    def test_detects_player_not_accepting_error(self):
+        line = (
+            "\x1b[33mGGS INFO> server error: /os: "
+            "ERR Player is not accepting new matches."
+        )
+
+        self.assertTrue(ggs_auto_battle.is_player_not_accepting_error(line))
+
+    def test_ignores_other_server_errors_for_retry(self):
+        line = "GGS INFO> server error: /os: ERR Rated game request already exists."
+
+        self.assertFalse(ggs_auto_battle.is_player_not_accepting_error(line))
+
     def test_statistics_treat_draw_as_half_win(self):
         statistics = ggs_auto_battle.MatchStatistics()
 
