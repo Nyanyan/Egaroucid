@@ -577,6 +577,172 @@ inline int eval_fm_calc_dim8_from_active_lanes(const int phase_idx, const uint16
     const int32_t square_sum = eval_fm_hsum_epi32(sq_sum_acc);
     return eval_fm_finalize_score((int64_t)sum_square - square_sum);
 }
+
+inline void eval_fm_dim16_accumulate_row(
+    const int8_t *row,
+    __m256i &sum_acc,
+    __m256i &sq_sum_acc
+) {
+    const __m128i r = _mm_loadu_si128((const __m128i*)row);
+    const __m256i v16 = _mm256_cvtepi8_epi16(r);
+    sum_acc = _mm256_add_epi16(sum_acc, v16);
+    sq_sum_acc = _mm256_add_epi32(sq_sum_acc, _mm256_madd_epi16(v16, v16));
+}
+
+inline int eval_fm_dim16_finalize(
+    const __m256i sum_acc0,
+    const __m256i sum_acc1,
+    const __m256i sum_acc2,
+    const __m256i sum_acc3,
+    const __m256i sq_sum_acc0,
+    const __m256i sq_sum_acc1,
+    const __m256i sq_sum_acc2,
+    const __m256i sq_sum_acc3
+) {
+    const __m256i sum_acc = _mm256_add_epi16(
+        _mm256_add_epi16(sum_acc0, sum_acc1),
+        _mm256_add_epi16(sum_acc2, sum_acc3)
+    );
+    const __m256i sq_sum_acc = _mm256_add_epi32(
+        _mm256_add_epi32(sq_sum_acc0, sq_sum_acc1),
+        _mm256_add_epi32(sq_sum_acc2, sq_sum_acc3)
+    );
+    const int32_t sum_square = eval_fm_hsum_epi32(_mm256_madd_epi16(sum_acc, sum_acc));
+    const int32_t square_sum = eval_fm_hsum_epi32(sq_sum_acc);
+    return eval_fm_finalize_score((int64_t)sum_square - square_sum);
+}
+
+inline int eval_fm_calc_dim16_avx2(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
+    __m256i sum_acc0 = _mm256_setzero_si256();
+    __m256i sum_acc1 = _mm256_setzero_si256();
+    __m256i sum_acc2 = _mm256_setzero_si256();
+    __m256i sum_acc3 = _mm256_setzero_si256();
+    __m256i sq_sum_acc0 = _mm256_setzero_si256();
+    __m256i sq_sum_acc1 = _mm256_setzero_si256();
+    __m256i sq_sum_acc2 = _mm256_setzero_si256();
+    __m256i sq_sum_acc3 = _mm256_setzero_si256();
+    const int8_t *base = eval_fm_vectors.data() + eval_fm_phase_vector_offset(phase_idx);
+    uint32_t j = 0;
+    for (; j + 3 < eval_fm_n_active_features; j += 4) {
+        const uint16_t raw0 = active_raw_features[j];
+        const uint16_t raw1 = active_raw_features[j + 1];
+        const uint16_t raw2 = active_raw_features[j + 2];
+        const uint16_t raw3 = active_raw_features[j + 3];
+        if (
+            raw0 >= eval_fm_active_feature_limits[j] ||
+            raw1 >= eval_fm_active_feature_limits[j + 1] ||
+            raw2 >= eval_fm_active_feature_limits[j + 2] ||
+            raw3 >= eval_fm_active_feature_limits[j + 3]
+        ) {
+            return 0;
+        }
+        eval_fm_dim16_accumulate_row(
+            base + ((uint64_t)(eval_fm_active_vector_offsets[j] + raw0) << 4),
+            sum_acc0,
+            sq_sum_acc0
+        );
+        eval_fm_dim16_accumulate_row(
+            base + ((uint64_t)(eval_fm_active_vector_offsets[j + 1] + raw1) << 4),
+            sum_acc1,
+            sq_sum_acc1
+        );
+        eval_fm_dim16_accumulate_row(
+            base + ((uint64_t)(eval_fm_active_vector_offsets[j + 2] + raw2) << 4),
+            sum_acc2,
+            sq_sum_acc2
+        );
+        eval_fm_dim16_accumulate_row(
+            base + ((uint64_t)(eval_fm_active_vector_offsets[j + 3] + raw3) << 4),
+            sum_acc3,
+            sq_sum_acc3
+        );
+    }
+    for (; j < eval_fm_n_active_features; ++j) {
+        const uint16_t raw = active_raw_features[j];
+        if (raw >= eval_fm_active_feature_limits[j]) {
+            return 0;
+        }
+        eval_fm_dim16_accumulate_row(
+            base + ((uint64_t)(eval_fm_active_vector_offsets[j] + raw) << 4),
+            sum_acc0,
+            sq_sum_acc0
+        );
+    }
+    return eval_fm_dim16_finalize(
+        sum_acc0,
+        sum_acc1,
+        sum_acc2,
+        sum_acc3,
+        sq_sum_acc0,
+        sq_sum_acc1,
+        sq_sum_acc2,
+        sq_sum_acc3
+    );
+}
+
+inline bool eval_fm_dim16_accumulate_lane(
+    const uint16_t lanes[N_PATTERN_FEATURES],
+    const int8_t *base,
+    const uint32_t j,
+    __m256i &sum_acc,
+    __m256i &sq_sum_acc
+) {
+    const uint16_t lane = lanes[eval_fm_active_lane_indices[j]];
+#ifndef NDEBUG
+    const uint16_t raw = lane - eval_fm_active_pack_offsets[j];
+    if (raw >= eval_fm_active_feature_limits[j]) {
+        return false;
+    }
+#endif
+    eval_fm_dim16_accumulate_row(
+        base + ((uint64_t)(eval_fm_active_lane_to_vector_offsets[j] + lane) << 4),
+        sum_acc,
+        sq_sum_acc
+    );
+    return true;
+}
+
+inline int eval_fm_calc_dim16_from_active_lanes(const int phase_idx, const uint16_t lanes[N_PATTERN_FEATURES]) {
+    __m256i sum_acc0 = _mm256_setzero_si256();
+    __m256i sum_acc1 = _mm256_setzero_si256();
+    __m256i sum_acc2 = _mm256_setzero_si256();
+    __m256i sum_acc3 = _mm256_setzero_si256();
+    __m256i sq_sum_acc0 = _mm256_setzero_si256();
+    __m256i sq_sum_acc1 = _mm256_setzero_si256();
+    __m256i sq_sum_acc2 = _mm256_setzero_si256();
+    __m256i sq_sum_acc3 = _mm256_setzero_si256();
+    const int8_t *base = eval_fm_vectors.data() + eval_fm_phase_vector_offset(phase_idx);
+    uint32_t j = 0;
+    for (; j + 3 < eval_fm_n_active_features; j += 4) {
+        if (!eval_fm_dim16_accumulate_lane(lanes, base, j, sum_acc0, sq_sum_acc0)) {
+            return 0;
+        }
+        if (!eval_fm_dim16_accumulate_lane(lanes, base, j + 1, sum_acc1, sq_sum_acc1)) {
+            return 0;
+        }
+        if (!eval_fm_dim16_accumulate_lane(lanes, base, j + 2, sum_acc2, sq_sum_acc2)) {
+            return 0;
+        }
+        if (!eval_fm_dim16_accumulate_lane(lanes, base, j + 3, sum_acc3, sq_sum_acc3)) {
+            return 0;
+        }
+    }
+    for (; j < eval_fm_n_active_features; ++j) {
+        if (!eval_fm_dim16_accumulate_lane(lanes, base, j, sum_acc0, sq_sum_acc0)) {
+            return 0;
+        }
+    }
+    return eval_fm_dim16_finalize(
+        sum_acc0,
+        sum_acc1,
+        sum_acc2,
+        sum_acc3,
+        sq_sum_acc0,
+        sq_sum_acc1,
+        sq_sum_acc2,
+        sq_sum_acc3
+    );
+}
 #endif
 
 inline int eval_fm_calc_dim1_unrolled(const int phase_idx, const uint16_t active_raw_features[N_PATTERN_FEATURES]) {
@@ -824,6 +990,9 @@ inline int eval_fm_calc_from_active_raw_features(const int phase_idx, const uint
     if (eval_fm_dim == 8) {
         return eval_fm_calc_dim8_avx2(phase_idx, active_raw_features);
     }
+    if (eval_fm_dim == 16) {
+        return eval_fm_calc_dim16_avx2(phase_idx, active_raw_features);
+    }
 #endif
     int32_t sum[EVAL_FM_MAX_DIM] = {};
     int32_t square_sum[EVAL_FM_MAX_DIM] = {};
@@ -872,6 +1041,9 @@ inline int eval_fm_calc(const int phase_idx, Eval_features *features) {
     }
     if (eval_fm_dim == 8) {
         return eval_fm_calc_dim8_from_active_lanes(phase_idx, lanes);
+    }
+    if (eval_fm_dim == 16) {
+        return eval_fm_calc_dim16_from_active_lanes(phase_idx, lanes);
     }
     uint16_t active_raw_features[N_PATTERN_FEATURES];
     for (uint32_t j = 0; j < eval_fm_n_active_features; ++j) {
