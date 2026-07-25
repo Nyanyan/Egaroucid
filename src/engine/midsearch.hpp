@@ -93,7 +93,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
-                g = -mid_evaluate_diff(search);
+                g = -(search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
             search->undo(&flip);
             if (v < g) {
                 if (alpha < g) {
@@ -202,7 +202,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         }
         if (depth == 0) {
             ++search->n_nodes;
-            return mid_evaluate_diff(search);
+            return search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
         }
     }
     ++search->n_nodes;
@@ -358,7 +358,7 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
         }
 #endif
     }
-    if (*searching && global_searching) {
+    if (!search->use_dim0_mpc_eval && *searching && global_searching) {
         transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
     }
     return v;
@@ -654,7 +654,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         }
 #endif
     }
-    if (*searching && global_searching && is_all_legal) {
+    if (!search->use_dim0_mpc_eval && *searching && global_searching && is_all_legal) {
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return std::make_pair(v, best_move);
@@ -812,7 +812,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         res.alt_depth = -1;
         res.alt_probability = 0;
     }
-    if (*searching && global_searching) {
+    if (!search->use_dim0_mpc_eval && *searching && global_searching) {
         int v, best_move;
         if (res.played_score >= res.alt_score) {
             v = res.played_score;

@@ -601,6 +601,10 @@ inline int mid_evaluate_move_ordering_dim0(Search *search) {
     return res;
 }
 
+inline int mid_evaluate_dim0(Search *search) {
+    return mid_evaluate_move_ordering_dim0(search);
+}
+
 /*
     @brief midgame evaluation function
 

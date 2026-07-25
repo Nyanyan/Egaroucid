@@ -245,7 +245,7 @@ __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
 // normal
 int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
-// Dim0 static evaluation used only as a move-ordering fallback.
+// Dim0 static evaluation used only for move ordering.
 int16_t pattern_move_ordering_mid_dim0_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_move_ordering_mid_dim0_num_arr[N_PHASES][MAX_STONE_NUM];
 // move ordering evaluation
@@ -620,6 +620,10 @@ inline int mid_evaluate_move_ordering_dim0(Search *search) {
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
+}
+
+inline int mid_evaluate_dim0(Search *search) {
+    return mid_evaluate_move_ordering_dim0(search);
 }
 
 /*

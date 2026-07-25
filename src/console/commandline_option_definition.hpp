@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS_BASE 32
+#define N_COMMANDLINE_OPTIONS_BASE 33
 
 #ifdef INCLUDE_GGS
     #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
@@ -55,6 +55,7 @@
 #define ID_SOLVE_RANDOM 29
 #define ID_LOGDIR 30
 #define ID_MOVE_TIME 31
+#define ID_FM_MPC_DIM0 32
 
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
@@ -110,6 +111,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_SOLVE_RANDOM,       {"-sr", "-solverandom"},                            2, "<n> <m>",           "Solve <n> boards (play randomly first <m> moves)"},
     {ID_LOGDIR,             {"-logdir"},                                        1, "<dir>",             "Save search log to file in <dir> (-logfile is prioritized)"},
     {ID_MOVE_TIME,          {"-movetime", "-mt"},                               1, "<milliseconds>",    "Use fixed milliseconds for each move. -level and -time will be ignored"},
+    {ID_FM_MPC_DIM0,        {"-fm-mpc-dim0"},                                   0, "",                  "Use Dim0 evaluation in shallow MPC searches for FM evaluation"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},

@@ -249,6 +249,7 @@ class Search {
         uint64_t n_nodes_discs[HW2];
 #endif
         bool is_presearch;
+        bool use_dim0_mpc_eval = false;
         int lazy_smp_worker_idx = 0;
 
 #if USE_KILLER_MOVE_MO

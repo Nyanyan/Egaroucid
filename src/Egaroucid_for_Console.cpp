@@ -37,6 +37,7 @@ void init_console(Options options, std::string binary_path) {
     //std::string mo_mid_file = binary_path + "resources/eval_move_ordering_mid.egev"; // filename fixed
     if (!evaluate_init(options.eval_file, mo_end_file, options.show_log))
         std::exit(0);
+    eval_fm_use_dim0_mpc_search = options.fm_mpc_dim0;
     if (!options.nobook)
         book_init(options.book_file, options.show_log);
     if (options.show_log)

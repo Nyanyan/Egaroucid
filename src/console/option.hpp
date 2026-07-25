@@ -39,6 +39,7 @@ struct Options {
     std::string log_file;
     bool noautopass;
     bool show_value;
+    bool fm_mpc_dim0;
     bool play_loss;
     double play_loss_ratio;
     int play_loss_max;
@@ -192,6 +193,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     }
     res.noautopass = find_commandline_option(commandline_options, ID_NOAUTOPASS);
     res.show_value = find_commandline_option(commandline_options, ID_SHOWVALUE);
+    res.fm_mpc_dim0 = find_commandline_option(commandline_options, ID_FM_MPC_DIM0);
     res.play_loss = find_commandline_option(commandline_options, ID_PLAY_LOSS);
     if (res.play_loss) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_PLAY_LOSS);

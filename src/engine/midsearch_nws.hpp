@@ -65,7 +65,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
-                g = -mid_evaluate_diff(search);
+                g = -(search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
             search->undo(&flip);
             if (v < g) {
                 if (alpha < g) {
@@ -194,7 +194,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     }
     if (depth == 0) {
         ++search->n_nodes;
-        return mid_evaluate_diff(search);
+        return search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
     }
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
@@ -305,7 +305,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
             }
         }
     }
-    if (*searching && global_searching) {
+    if (!search->use_dim0_mpc_eval && *searching && global_searching) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
     return v;
@@ -469,7 +469,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         }
 #endif
     }
-    if (global_searching && is_searching(searchings)) {
+    if (!search->use_dim0_mpc_eval && global_searching && is_searching(searchings)) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
     return v;

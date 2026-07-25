@@ -100,7 +100,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, 
 inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings) {
     int search_depth = ((depth * MPC_DEPTH_NUMERATOR / MPC_DEPTH_DENOMINATOR) & 0b11111110) + (depth & 1);
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
-    int d0value = mid_evaluate_diff(search);
+    const bool use_dim0_mpc_eval = eval_fm_enabled && eval_fm_use_dim0_mpc_search;
+    int d0value = use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
     /*
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD && depth >= 20 && search_depth < depth - 2) {
         search_depth += 2; // if value is near [alpha, beta], increase search_depth
@@ -158,6 +159,8 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         // }
         int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
         search->mpc_level = MPC_100_LEVEL;
+        const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
+        search->use_dim0_mpc_eval = use_dim0_mpc_eval;
         if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;
             if (pc_beta <= SCORE_MAX) {
@@ -166,6 +169,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                     if (is_end_search) {
                         *v += beta & 1;
                     }
+                    search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
                     search->mpc_level = mpc_level;
                     return true;
                 }
@@ -179,11 +183,13 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                     if (is_end_search) {
                         *v -= alpha & 1;
                     }
+                    search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
                     search->mpc_level = mpc_level;
                     return true;
                 }
             }
         }
+        search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
         search->mpc_level = mpc_level;
     }
     return false;
@@ -218,13 +224,18 @@ inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t lega
         error_0 = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
     }
 #endif
-    int d0value = mid_evaluate_diff(search);
+    const bool use_dim0_mpc_eval = eval_fm_enabled && eval_fm_use_dim0_mpc_search;
+    int d0value = use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
     if (d0value <= alpha - (error_search + error_0) / 2) {
         int pc_alpha = alpha - error_search;
         if (pc_alpha > -SCORE_MAX) {
+            const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
+            search->use_dim0_mpc_eval = use_dim0_mpc_eval;
             if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha) {
+                search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
                 return true;
             }
+            search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
         }
     }
     return false;

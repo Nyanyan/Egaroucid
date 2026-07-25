@@ -25,6 +25,7 @@ constexpr uint32_t EVAL_FM_PHASE_END_SHIFT = 22;
 constexpr uint32_t EVAL_FM_PHASE_FLAG_MASK = 0x3FU;
 
 bool eval_fm_enabled = false;
+bool eval_fm_use_dim0_mpc_search = false;
 bool eval_fm_has_phase_range = false;
 uint32_t eval_fm_n_phases = 0;
 uint32_t eval_fm_dim = 0;
