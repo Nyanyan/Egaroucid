@@ -451,6 +451,7 @@ class PatternNNUE(nn.Module):
 class QuantizedPatternNNUE:
     ft_bias: np.ndarray
     ft_weight: np.ndarray
+    ft_weight_bits: int
     hidden1_bias: np.ndarray
     hidden1_weight: np.ndarray
     hidden2_bias: np.ndarray
@@ -542,7 +543,7 @@ def make_quantization_shifts(layer_weight_scale: int) -> tuple[int, int]:
     return hidden_shift, output_shift
 
 
-def quantize_model(model: PatternNNUE, layer_weight_scale: int) -> QuantizedPatternNNUE:
+def quantize_model(model: PatternNNUE, layer_weight_scale: int, ft_weight_bits: int = 16) -> QuantizedPatternNNUE:
     ft_dim = model.ft_dim
     hidden1 = model.hidden1_dim
     hidden2 = model.hidden2_dim
@@ -553,7 +554,12 @@ def quantize_model(model: PatternNNUE, layer_weight_scale: int) -> QuantizedPatt
     layer_acc_scale = ACTIVATION_SCALE * layer_weight_scale
 
     ft_bias = quantize_to_int16(model.ft_bias, FT_SCALE)
-    ft_weight = quantize_to_int16(model.ft_weight.weight, FT_SCALE)
+    if ft_weight_bits == 8:
+        ft_weight = quantize_to_int8(model.ft_weight.weight, FT_SCALE)
+    elif ft_weight_bits == 16:
+        ft_weight = quantize_to_int16(model.ft_weight.weight, FT_SCALE)
+    else:
+        raise ValueError(f"ft_weight_bits must be 8 or 16: {ft_weight_bits}")
     h1_bias = np.rint(model.hidden1.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
     h1_weight = pad_int8_matrix(quantize_to_int8(model.hidden1.weight, layer_weight_scale), post_padded)
     h2_bias = np.rint(model.hidden2.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
@@ -563,6 +569,7 @@ def quantize_model(model: PatternNNUE, layer_weight_scale: int) -> QuantizedPatt
     return QuantizedPatternNNUE(
         ft_bias=ft_bias,
         ft_weight=ft_weight,
+        ft_weight_bits=ft_weight_bits,
         hidden1_bias=h1_bias,
         hidden1_weight=h1_weight,
         hidden2_bias=h2_bias,
@@ -577,9 +584,9 @@ def quantize_model(model: PatternNNUE, layer_weight_scale: int) -> QuantizedPatt
     )
 
 
-def export_model(model: PatternNNUE, out_file: Path, layer_weight_scale: int) -> None:
+def export_model(model: PatternNNUE, out_file: Path, layer_weight_scale: int, ft_weight_bits: int) -> None:
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    q = quantize_model(model, layer_weight_scale)
+    q = quantize_model(model, layer_weight_scale, ft_weight_bits)
     with out_file.open("wb") as f:
         f.write(b"EGNNUE1\0")
         version = 3 if model.perspectives == 2 else 2
@@ -608,6 +615,7 @@ def export_model(model: PatternNNUE, out_file: Path, layer_weight_scale: int) ->
         reserved[3] = active_mask & 0xFFFFFFFF
         reserved[4] = (active_mask >> 32) & 0xFFFFFFFF
         reserved[5] = (active_mask >> 64) & 0xFFFFFFFF
+        reserved[6] = q.ft_weight_bits
         reserved.tofile(f)
         q.ft_bias.tofile(f)
         q.ft_weight.tofile(f)
@@ -703,8 +711,9 @@ def evaluate_quantized_loss(
     batch_size: int,
     limit: int,
     layer_weight_scale: int,
+    ft_weight_bits: int,
 ) -> tuple[float, float, int]:
-    q = quantize_model(model, layer_weight_scale)
+    q = quantize_model(model, layer_weight_scale, ft_weight_bits)
     active_columns = np.array(model.active_columns, dtype=np.int64)
     n = len(samples[f"{prefix}_score"])
     if limit > 0:
@@ -763,6 +772,7 @@ def write_summary(
         "lr": args.lr,
         "dense_weight_decay": args.dense_weight_decay,
         "layer_weight_scale": args.layer_weight_scale,
+        "ft_weight_bits": args.ft_weight_bits,
         "seed": args.seed,
         "best": best,
     }
@@ -790,6 +800,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=1.0e-3)
     parser.add_argument("--dense-weight-decay", type=float, default=1.0e-6)
     parser.add_argument("--layer-weight-scale", type=int, default=DEFAULT_LAYER_WEIGHT_SCALE)
+    parser.add_argument("--ft-weight-bits", type=int, choices=[8, 16], default=16)
     parser.add_argument("--seed", type=int, default=20260726)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--model-root", default="model")
@@ -800,6 +811,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--progress-interval-sec", type=int, default=30)
     parser.add_argument("--full-read-ratio", type=float, default=0.10)
     parser.add_argument("--sample-cache", default="")
+    parser.add_argument("--load-state", default="")
+    parser.add_argument("--export-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -831,7 +844,11 @@ def main() -> int:
         f"input_feature_columns {N_FEATURE_COLUMNS} total_input_features {TOTAL_INPUT_FEATURES}",
         flush=True,
     )
-    print(f"arch {args.arch} ft_dim {args.ft_dim} hidden1 {args.hidden1} hidden2 {args.hidden2}", flush=True)
+    print(
+        f"arch {args.arch} ft_dim {args.ft_dim} hidden1 {args.hidden1} hidden2 {args.hidden2} "
+        f"ft_weight_bits {args.ft_weight_bits}",
+        flush=True,
+    )
     print(
         f"active_eval_types {args.active_eval_types} "
         f"active_feature_column_count {len(args.active_columns)} "
@@ -873,6 +890,45 @@ def main() -> int:
 
     device = torch.device(args.device if args.device == "cpu" or torch.cuda.is_available() else "cpu")
     model = PatternNNUE(args.ft_dim, args.hidden1, args.hidden2, samples["perspectives"], args.active_columns).to(device)
+    if args.load_state:
+        print(f"loading_state {args.load_state}", flush=True)
+        try:
+            checkpoint = torch.load(args.load_state, map_location=device, weights_only=False)
+        except TypeError:
+            checkpoint = torch.load(args.load_state, map_location=device)
+        state_dict = checkpoint["state_dict"] if isinstance(checkpoint, dict) and "state_dict" in checkpoint else checkpoint
+        model.load_state_dict(state_dict)
+        model.to(device)
+        if args.export_only:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits)
+            val_mse, val_mae, val_n = evaluate_loss(model, samples, "val", args.batch_size, device, args.metric_limit)
+            q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
+                model,
+                samples,
+                "val",
+                args.batch_size,
+                args.quantized_metric_limit,
+                args.layer_weight_scale,
+                args.ft_weight_bits,
+            )
+            best = {
+                "epoch": int(checkpoint.get("best", {}).get("epoch", 0)) if isinstance(checkpoint, dict) else 0,
+                "val_mse": val_mse,
+                "val_mae": val_mae,
+                "quantized_val_mse": q_val_mse,
+                "quantized_val_mae": q_val_mae,
+                "quantized_val_metric_samples": q_val_n,
+            }
+            print(
+                f"export_only val_mse {val_mse:.6f} val_mae {val_mae:.6f} val_metric_samples {val_n} "
+                f"quantized_val_mse {q_val_mse:.6f} quantized_val_mae {q_val_mae:.6f} "
+                f"quantized_val_metric_samples {q_val_n}",
+                flush=True,
+            )
+            write_summary(out_dir, args, entries, manifest_phase_counts, samples, best)
+            print(f"wrote {out_file}", flush=True)
+            return 0
     sparse_optimizer = torch.optim.SparseAdam([model.ft_weight.weight], lr=args.lr)
     dense_params = [
         model.ft_bias,
@@ -928,7 +984,7 @@ def main() -> int:
         out_dir.mkdir(parents=True, exist_ok=True)
         model.load_state_dict(best_state)
         model.to(device)
-        export_model(model, out_file, args.layer_weight_scale)
+        export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits)
         q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
             model,
             samples,
@@ -936,6 +992,7 @@ def main() -> int:
             args.batch_size,
             args.quantized_metric_limit,
             args.layer_weight_scale,
+            args.ft_weight_bits,
         )
         best["quantized_val_mse"] = q_val_mse
         best["quantized_val_mae"] = q_val_mae
@@ -959,6 +1016,7 @@ def main() -> int:
                 "total_input_features": TOTAL_INPUT_FEATURES,
                 "feature_starts": FEATURE_STARTS,
                 "layer_weight_scale": args.layer_weight_scale,
+                "ft_weight_bits": args.ft_weight_bits,
                 "best": best,
             },
             out_dir / "model_state.pt",
