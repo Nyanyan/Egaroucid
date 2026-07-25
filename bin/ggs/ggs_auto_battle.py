@@ -21,6 +21,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -35,6 +36,68 @@ INITIALIZED_MARKER = "GGS initialization completed; entering main loop"
 MATCH_START_MARKER = "match start!"
 MATCH_END_MARKER = "match end!"
 TIME_CONTROL_PATTERN = re.compile(r"^\d+:\d{2}/(?:\d+:\d{2})?/(?:\d+:\d{2})?$")
+ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+GGS_MATCH_RESULT_MARKER = "/os: - match "
+SCORE_EPSILON = 1.0e-9
+
+
+@dataclass(frozen=True)
+class MatchResult:
+    match_id: str
+    disc_difference: float
+
+
+@dataclass
+class MatchStatistics:
+    wins: int = 0
+    draws: int = 0
+    losses: int = 0
+    disc_difference_sum: float = 0.0
+
+    @property
+    def completed_matches(self) -> int:
+        return self.wins + self.draws + self.losses
+
+    def record(self, result: MatchResult) -> None:
+        if result.disc_difference > SCORE_EPSILON:
+            self.wins += 1
+        elif result.disc_difference < -SCORE_EPSILON:
+            self.losses += 1
+        else:
+            self.draws += 1
+        self.disc_difference_sum += result.disc_difference
+
+    def win_rate(self) -> float:
+        if self.completed_matches == 0:
+            return 0.0
+        return (self.wins + 0.5 * self.draws) / self.completed_matches
+
+    def average_disc_difference(self) -> float:
+        if self.completed_matches == 0:
+            return 0.0
+        return self.disc_difference_sum / self.completed_matches
+
+    def format_summary(
+        self,
+        label: str,
+        max_matches: int = 0,
+        latest_result: MatchResult | None = None,
+    ) -> str:
+        matches = str(self.completed_matches)
+        if max_matches:
+            matches = f"{matches}/{max_matches}"
+        latest_text = ""
+        if latest_result is not None:
+            latest_text = (
+                f" 直近match={latest_result.match_id}"
+                f" 直近石差={format_signed_score(latest_result.disc_difference)}"
+            )
+        return (
+            f"{label}: match={matches} 勝ち={self.wins} 引き分け={self.draws} "
+            f"負け={self.losses} 勝率={self.win_rate() * 100.0:.1f}% "
+            f"平均獲得石差={format_signed_score(self.average_disc_difference())}"
+            f"{latest_text}"
+        )
 
 
 def validate_single_token(value: str, option: str) -> str:
@@ -52,8 +115,49 @@ def validate_time_control(value: str) -> str:
     return value
 
 
+def format_signed_score(value: float) -> str:
+    if abs(value) <= SCORE_EPSILON:
+        value = 0.0
+    return f"{value:+.2f}"
+
+
 def make_request(game_type: str, time_control: str, opponent: str) -> str:
     return f"ts ask {game_type} {time_control} {opponent}"
+
+
+def parse_ggs_match_result(
+    line: str, own_player: str, expected_opponent: str
+) -> MatchResult | None:
+    clean_line = ANSI_ESCAPE_PATTERN.sub("", line)
+    marker_index = clean_line.find(GGS_MATCH_RESULT_MARKER)
+    if marker_index < 0:
+        return None
+
+    tokens = clean_line[marker_index:].split()
+    if len(tokens) < 11:
+        return None
+    if tokens[0:3] != ["/os:", "-", "match"]:
+        return None
+
+    player1 = tokens[5]
+    player2 = tokens[7]
+    expected_players = {own_player.casefold(), expected_opponent.casefold()}
+    actual_players = {player1.casefold(), player2.casefold()}
+    if actual_players != expected_players:
+        return None
+
+    try:
+        disc_difference = float(tokens[10])
+    except ValueError:
+        return None
+
+    if player2.casefold() == own_player.casefold():
+        disc_difference = -disc_difference
+    elif player1.casefold() != own_player.casefold():
+        return None
+    if abs(disc_difference) <= SCORE_EPSILON:
+        disc_difference = 0.0
+    return MatchResult(match_id=tokens[3], disc_difference=disc_difference)
 
 
 def build_engine_command(args: argparse.Namespace) -> list[str]:
@@ -152,6 +256,8 @@ def run(args: argparse.Namespace) -> int:
     initialized = False
     match_active = False
     completed_matches = 0
+    statistics = MatchStatistics()
+    pending_match_result: MatchResult | None = None
     try:
         if process.stdout is None:
             raise RuntimeError("the Egaroucid process has no standard output")
@@ -165,14 +271,33 @@ def run(args: argparse.Namespace) -> int:
                 continue
             if initialized and MATCH_START_MARKER in line:
                 match_active = True
+                pending_match_result = None
                 log.write("match started")
+                continue
+            parsed_match_result = parse_ggs_match_result(
+                line, args.ggs_user, args.opponent
+            )
+            if initialized and parsed_match_result is not None:
+                pending_match_result = parsed_match_result
                 continue
             if initialized and MATCH_END_MARKER in line and match_active:
                 match_active = False
                 completed_matches += 1
+                if pending_match_result is not None:
+                    statistics.record(pending_match_result)
+                    log.write(
+                        statistics.format_summary(
+                            "対戦結果",
+                            args.max_matches,
+                            latest_result=pending_match_result,
+                        )
+                    )
+                else:
+                    log.write("対戦結果を読み取れませんでした。集計は更新していません。")
                 log.write(f"match completed: {completed_matches}")
                 if args.max_matches and completed_matches >= args.max_matches:
                     log.write("requested match limit reached")
+                    log.write(statistics.format_summary("最終結果", args.max_matches))
                     break
                 if args.request_delay:
                     log.write(f"waiting {args.request_delay:g} seconds before the next request")
@@ -186,6 +311,8 @@ def run(args: argparse.Namespace) -> int:
         return 0
     except KeyboardInterrupt:
         log.write("interrupted by user")
+        if statistics.completed_matches:
+            log.write(statistics.format_summary("現在結果", args.max_matches))
         return 130
     finally:
         terminate_process(process, log)
