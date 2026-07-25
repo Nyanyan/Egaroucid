@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "./../../../engine/evaluate.hpp"
+#include "./../../../engine/search.hpp"
 
 uint64_t speed_tim() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(

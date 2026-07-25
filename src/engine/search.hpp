@@ -678,3 +678,7 @@ struct Flip_value {
         return value > another.value;
     }
 };
+
+#if defined(USE_NNUE_EVALUATION)
+#include "./../tools/evaluation/nnue/evaluate_nnue_search_impl.hpp"
+#endif
