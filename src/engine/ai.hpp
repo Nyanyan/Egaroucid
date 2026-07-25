@@ -2546,6 +2546,16 @@ constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BONUS = 6500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS = 22000ULL;
 constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 2.20;
 constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BEST_ABS_VALUE = 4.0;
+constexpr int AI_TL_GGS_AMBIGUITY_EARLY_CAP_MIN_N_EMPTY = 49;
+constexpr uint64_t AI_TL_GGS_AMBIGUITY_EARLY_MAX_BONUS = 6000ULL;
+
+inline uint64_t ai_time_limit_ggs_cap_early_ambiguity_time(const Board &board, uint64_t time_limit, uint64_t boosted_time_limit) {
+    const int n_empties = HW2 - board.n_discs();
+    if (n_empties >= AI_TL_GGS_AMBIGUITY_EARLY_CAP_MIN_N_EMPTY) {
+        return std::min<uint64_t>(boosted_time_limit, time_limit + AI_TL_GGS_AMBIGUITY_EARLY_MAX_BONUS);
+    }
+    return boosted_time_limit;
+}
 
 inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
@@ -2625,7 +2635,11 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS_COE));
             const int n_empties = HW2 - board.n_discs();
             const double remaining_moves = (double)(n_empties + 1) / 2.0;
-            const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+            const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+                board,
+                time_limit,
+                time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+            );
             if (show_log) {
                 std::cerr << "ggs ambiguity defensive best " << best_value
                           << " second_gap " << second_gap
@@ -2646,7 +2660,11 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_DEEP_BAD_MAX_BONUS_COE));
             const int n_empties = HW2 - board.n_discs();
             const double remaining_moves = (double)(n_empties + 1) / 2.0;
-            const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+            const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+                board,
+                time_limit,
+                time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+            );
             if (show_log) {
                 std::cerr << "ggs ambiguity deep-bad best " << best_value
                           << " second_gap " << second_gap
@@ -2666,7 +2684,11 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             );
             const int n_empties = HW2 - board.n_discs();
             const double remaining_moves = (double)(n_empties + 1) / 2.0;
-            const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+            const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+                board,
+                time_limit,
+                time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+            );
             if (show_log) {
                 std::cerr << "ggs ambiguity narrow best " << best_value
                           << " second_gap " << second_gap
@@ -2696,7 +2718,11 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
 
         const int n_empties = HW2 - board.n_discs();
         const double remaining_moves = (double)(n_empties + 1) / 2.0;
-        const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+        const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+            board,
+            time_limit,
+            time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+        );
         if (show_log) {
             std::cerr << "ggs ambiguity unreliable close_moves " << close_moves << "/" << valid_moves
                       << " reliable " << reliable_close_moves
@@ -2723,7 +2749,11 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
 
     const int n_empties = HW2 - board.n_discs();
     const double remaining_moves = (double)(n_empties + 1) / 2.0;
-    const uint64_t boosted_time_limit = time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves);
+    const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+        board,
+        time_limit,
+        time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+    );
     if (show_log) {
         std::cerr << "ggs ambiguity close_moves " << close_moves << "/" << valid_moves
                   << " reliable " << reliable_close_moves
