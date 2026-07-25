@@ -470,13 +470,23 @@ inline void pre_calculate_eval_constant() {
     @param show_log             debug information?
     @return evaluation function conpletely initialized?
 */
+inline std::string get_eval_move_ordering_mid_dim0_file(const char* mo_end_nws_file) {
+    const std::string mo_end_file(mo_end_nws_file);
+    const size_t separator_pos = mo_end_file.find_last_of("/\\");
+    if (separator_pos == std::string::npos) {
+        return "eval.egev2";
+    }
+    return mo_end_file.substr(0, separator_pos + 1) + "eval.egev2";
+}
+
 inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log) {
     bool eval_loaded = load_eval_file(file, show_log);
     if (!eval_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
         return false;
     }
-    bool eval_move_ordering_mid_dim0_loaded = load_eval_move_ordering_mid_dim0_file((EXE_DIRECTORY_PATH + "resources/eval.egev2").c_str(), show_log);
+    const std::string eval_move_ordering_mid_dim0_file = get_eval_move_ordering_mid_dim0_file(mo_end_nws_file);
+    bool eval_move_ordering_mid_dim0_loaded = load_eval_move_ordering_mid_dim0_file(eval_move_ordering_mid_dim0_file.c_str(), show_log);
     if (!eval_move_ordering_mid_dim0_loaded) {
         std::cerr << "[ERROR] [FATAL] Dim0 evaluation file for move ordering not loaded" << std::endl;
         return false;
@@ -509,7 +519,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log) {
-    return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval.egev2", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
+    return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval_dim8_fm.egevfm", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
 }
 
 /*
