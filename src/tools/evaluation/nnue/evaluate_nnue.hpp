@@ -52,6 +52,8 @@ inline int eval_nnue_output_shift = 0;
 inline int eval_nnue_input_kind = EVAL_NNUE_INPUT_KIND_STONE;
 inline int eval_nnue_input_features = EVAL_NNUE_INPUT_FEATURES;
 inline int eval_nnue_pattern_feature_columns = 0;
+inline uint64_t eval_nnue_active_pattern_mask_lo = UINT64_MAX;
+inline uint64_t eval_nnue_active_pattern_mask_hi = UINT64_MAX;
 inline bool eval_nnue_enabled = false;
 
 struct EvalNnueCoordFeature {
@@ -107,6 +109,13 @@ inline int eval_nnue_pattern_feature_start(const int feature_idx) {
     return start;
 }
 
+inline bool eval_nnue_pattern_feature_active(const int feature_idx) {
+    if (feature_idx < 64) {
+        return ((eval_nnue_active_pattern_mask_lo >> feature_idx) & 1ULL) != 0;
+    }
+    return ((eval_nnue_active_pattern_mask_hi >> (feature_idx - 64)) & 1ULL) != 0;
+}
+
 inline void eval_nnue_init_pattern_tables() {
     if (eval_nnue_pattern_tables_initialized) {
         return;
@@ -122,6 +131,9 @@ inline void eval_nnue_init_pattern_tables() {
         entry.n_features = 0;
     }
     for (int feature = 0; feature < ADJ_N_SYMMETRY_PATTERNS; ++feature) {
+        if (!eval_nnue_pattern_feature_active(feature)) {
+            continue;
+        }
         const int n_cells = adj_feature_to_coord[feature].n_cells;
         for (int digit = 0; digit < n_cells; ++digit) {
             const int coord = adj_feature_to_coord[feature].cells[digit];
@@ -216,6 +228,9 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
     in.read(reinterpret_cast<char*>(reserved), sizeof(reserved));
     const uint32_t input_kind = version >= 2 ? reserved[0] : EVAL_NNUE_INPUT_KIND_STONE;
     const uint32_t pattern_feature_columns = version >= 2 ? reserved[1] : 0;
+    const uint64_t active_mask_lo_header =
+        (uint64_t)reserved[3] | ((uint64_t)reserved[4] << 32);
+    const uint64_t active_mask_hi_header = (uint64_t)reserved[5];
     const bool stone_header_ok =
         version == 1 &&
         input_kind == EVAL_NNUE_INPUT_KIND_STONE &&
@@ -258,6 +273,15 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
     eval_nnue_input_kind = (int)input_kind;
     eval_nnue_input_features = (int)input_features;
     eval_nnue_pattern_feature_columns = (int)pattern_feature_columns;
+    if ((eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
+         eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) &&
+        (active_mask_lo_header != 0 || active_mask_hi_header != 0)) {
+        eval_nnue_active_pattern_mask_lo = active_mask_lo_header;
+        eval_nnue_active_pattern_mask_hi = active_mask_hi_header;
+    } else {
+        eval_nnue_active_pattern_mask_lo = UINT64_MAX;
+        eval_nnue_active_pattern_mask_hi = UINT64_MAX;
+    }
     eval_nnue_post_input_padded_value = eval_nnue_round_up(eval_nnue_post_input_dim(), EVAL_NNUE_SIMD_WIDTH);
     eval_nnue_hidden1_padded_value = eval_nnue_round_up(eval_nnue_hidden1_dim, EVAL_NNUE_SIMD_WIDTH);
     eval_nnue_hidden2_padded_value = eval_nnue_round_up(eval_nnue_hidden2_dim, EVAL_NNUE_SIMD_WIDTH);
@@ -284,6 +308,7 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
     eval_nnue_enabled = true;
     if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
         eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
+        eval_nnue_pattern_tables_initialized = false;
         eval_nnue_init_pattern_tables();
     }
     if (show_log) {
@@ -293,6 +318,8 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
                   << " ft_dim " << eval_nnue_ft_dim
                   << " hidden1 " << eval_nnue_hidden1_dim
                   << " hidden2 " << eval_nnue_hidden2_dim
+                  << " active_pattern_mask_lo " << eval_nnue_active_pattern_mask_lo
+                  << " active_pattern_mask_hi " << eval_nnue_active_pattern_mask_hi
                   << " shifts " << eval_nnue_ft_shift << " "
                   << eval_nnue_hidden1_shift << " "
                   << eval_nnue_hidden2_shift << " "
@@ -500,6 +527,9 @@ inline void eval_nnue_calc_pattern_accumulator(Board *board, Eval_search *eval, 
     adj_calc_features(board, features);
     for (int i = 0; i < ADJ_N_FEATURES; ++i) {
         eval->pattern_features[idx][perspective][i] = features[i];
+        if (!eval_nnue_pattern_feature_active(i)) {
+            continue;
+        }
         const int feature = eval_nnue_pattern_global_feature(i, features[i]);
         eval_nnue_add_feature(acc, feature);
     }
@@ -686,16 +716,108 @@ inline void eval_nnue_pattern_flush_touched(
     }
 }
 
+inline void eval_nnue_pattern_flush_touched_pair(
+    Eval_search *eval,
+    const int prev,
+    const int next,
+    const uint8_t *touched_features,
+    const int n_touched
+) {
+#if USE_SIMD
+    if (eval_nnue_ft_dim == 32) {
+        __m256i delta0_lo = _mm256_setzero_si256();
+        __m256i delta0_hi = _mm256_setzero_si256();
+        __m256i delta1_lo = _mm256_setzero_si256();
+        __m256i delta1_hi = _mm256_setzero_si256();
+        for (int i = 0; i < n_touched; ++i) {
+            const int feature_idx = touched_features[i];
+            const int old_feature0 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[prev][1][feature_idx]
+            );
+            const int new_feature0 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[next][0][feature_idx]
+            );
+            if (old_feature0 != new_feature0) {
+                const int16_t *old_w = eval_nnue_feature_weight(old_feature0);
+                const int16_t *new_w = eval_nnue_feature_weight(new_feature0);
+                delta0_lo = _mm256_add_epi16(
+                    delta0_lo,
+                    _mm256_sub_epi16(
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(new_w)),
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(old_w))
+                    )
+                );
+                delta0_hi = _mm256_add_epi16(
+                    delta0_hi,
+                    _mm256_sub_epi16(
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(new_w + 16)),
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(old_w + 16))
+                    )
+                );
+            }
+
+            const int old_feature1 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[prev][0][feature_idx]
+            );
+            const int new_feature1 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[next][1][feature_idx]
+            );
+            if (old_feature1 != new_feature1) {
+                const int16_t *old_w = eval_nnue_feature_weight(old_feature1);
+                const int16_t *new_w = eval_nnue_feature_weight(new_feature1);
+                delta1_lo = _mm256_add_epi16(
+                    delta1_lo,
+                    _mm256_sub_epi16(
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(new_w)),
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(old_w))
+                    )
+                );
+                delta1_hi = _mm256_add_epi16(
+                    delta1_hi,
+                    _mm256_sub_epi16(
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(new_w + 16)),
+                        _mm256_loadu_si256(reinterpret_cast<const __m256i*>(old_w + 16))
+                    )
+                );
+            }
+        }
+        int16_t *acc0 = eval->accumulator[next][0];
+        int16_t *acc1 = eval->accumulator[next][1];
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(acc0),
+            _mm256_add_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc0)), delta0_lo)
+        );
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(acc0 + 16),
+            _mm256_add_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc0 + 16)), delta0_hi)
+        );
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(acc1),
+            _mm256_add_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc1)), delta1_lo)
+        );
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(acc1 + 16),
+            _mm256_add_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc1 + 16)), delta1_hi)
+        );
+        return;
+    }
+#endif
+    eval_nnue_pattern_flush_touched(eval, prev, 1, next, 0, touched_features, n_touched);
+    eval_nnue_pattern_flush_touched(eval, prev, 0, next, 1, touched_features, n_touched);
+}
+
 inline void calc_eval_features(Board *board, Eval_search *eval) {
     if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
         eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
         eval->feature_idx = 0;
         eval_nnue_calc_pattern_accumulator(board, eval, 0, 0);
-        if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
-            Board opponent_view = *board;
-            opponent_view.pass();
-            eval_nnue_calc_pattern_accumulator(&opponent_view, eval, 0, 1);
-        }
+        Board opponent_view = *board;
+        opponent_view.pass();
+        eval_nnue_calc_pattern_accumulator(&opponent_view, eval, 0, 1);
         return;
     }
     eval->feature_idx = 0;
@@ -717,36 +839,8 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
 }
 
 inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN) {
-        const int prev = (int)eval->feature_idx;
-        const int next = (int)eval->feature_idx + 1;
-        eval_nnue_copy_accumulator(eval->accumulator[next][0], eval->accumulator[prev][0]);
-        std::memcpy(
-            eval->pattern_features[next][0],
-            eval->pattern_features[prev][0],
-            sizeof(uint16_t) * (size_t)ADJ_N_FEATURES
-        );
-
-        eval_nnue_pattern_apply_cell_delta(eval, next, 0, (int)flip->pos, -1);
-        uint64_t bits = board->player & ~flip->flip;
-        for (uint_fast8_t cell = first_bit(&bits); bits; cell = next_bit(&bits)) {
-            eval_nnue_pattern_apply_cell_delta(eval, next, 0, (int)cell, 1);
-        }
-        bits = board->opponent & ~flip->flip;
-        for (uint_fast8_t cell = first_bit(&bits); bits; cell = next_bit(&bits)) {
-            eval_nnue_pattern_apply_cell_delta(eval, next, 0, (int)cell, -1);
-        }
-        eval_nnue_pattern_set_feature(
-            eval,
-            next,
-            0,
-            ADJ_N_FEATURES - 1,
-            (uint16_t)pop_count_ull(board->opponent & ~flip->flip)
-        );
-        eval->feature_idx = (uint_fast8_t)next;
-        return;
-    }
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
+    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
+        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
         const int prev = (int)eval->feature_idx;
         const int next = prev + 1;
         eval_nnue_copy_accumulator(eval->accumulator[next][0], eval->accumulator[prev][1]);
@@ -777,11 +871,12 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
             );
         }
         const int n_flipped = pop_count_ull(flip->flip);
-        eval_nnue_pattern_add_delta_pair_local(
-            eval, next, ADJ_N_FEATURES - 1, -n_flipped, n_flipped + 1, &touched_lo, &touched_hi, touched_features, &n_touched
-        );
-        eval_nnue_pattern_flush_touched(eval, prev, 1, next, 0, touched_features, n_touched);
-        eval_nnue_pattern_flush_touched(eval, prev, 0, next, 1, touched_features, n_touched);
+        if (eval_nnue_pattern_feature_active(ADJ_N_FEATURES - 1)) {
+            eval_nnue_pattern_add_delta_pair_local(
+                eval, next, ADJ_N_FEATURES - 1, -n_flipped, n_flipped + 1, &touched_lo, &touched_hi, touched_features, &n_touched
+            );
+        }
+        eval_nnue_pattern_flush_touched_pair(eval, prev, next, touched_features, n_touched);
         eval->feature_idx = (uint_fast8_t)next;
         return;
     }
@@ -813,26 +908,8 @@ inline void eval_undo(Eval_search *eval) {
 }
 
 inline void eval_pass(Eval_search *eval, const Board *board) {
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN) {
-        const int idx = (int)eval->feature_idx;
-        uint64_t bits = board->player;
-        for (uint_fast8_t cell = first_bit(&bits); bits; cell = next_bit(&bits)) {
-            eval_nnue_pattern_apply_cell_delta(eval, idx, 0, (int)cell, 1);
-        }
-        bits = board->opponent;
-        for (uint_fast8_t cell = first_bit(&bits); bits; cell = next_bit(&bits)) {
-            eval_nnue_pattern_apply_cell_delta(eval, idx, 0, (int)cell, -1);
-        }
-        eval_nnue_pattern_set_feature(
-            eval,
-            idx,
-            0,
-            ADJ_N_FEATURES - 1,
-            (uint16_t)pop_count_ull(board->opponent)
-        );
-        return;
-    }
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
+    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
+        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
         const int idx = (int)eval->feature_idx;
         alignas(32) int16_t tmp_acc[EVAL_NNUE_MAX_FT_DIM];
         uint16_t tmp_features[ADJ_N_FEATURES];

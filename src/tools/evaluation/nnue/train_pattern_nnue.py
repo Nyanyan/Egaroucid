@@ -385,13 +385,29 @@ def load_sample_cache(path: Path) -> dict[str, np.ndarray]:
     }
 
 
+def make_active_feature_columns(active_eval_types: int) -> np.ndarray:
+    if active_eval_types <= 0 or active_eval_types > int(ADJ_EVAL_SIZES.size - 1):
+        raise ValueError(f"active_eval_types must be in [1, {int(ADJ_EVAL_SIZES.size - 1)}]")
+    columns = [i for i in range(N_FEATURE_COLUMNS - 1) if int(ADJ_FEATURE_TO_EVAL_IDX[i]) < active_eval_types]
+    columns.append(N_FEATURE_COLUMNS - 1)
+    return np.array(columns, dtype=np.int64)
+
+
+def feature_columns_to_mask(columns: np.ndarray) -> int:
+    mask = 0
+    for col in columns.tolist():
+        mask |= 1 << int(col)
+    return mask
+
+
 class PatternNNUE(nn.Module):
-    def __init__(self, ft_dim: int, hidden1: int, hidden2: int, perspectives: int):
+    def __init__(self, ft_dim: int, hidden1: int, hidden2: int, perspectives: int, active_columns: np.ndarray):
         super().__init__()
         self.ft_dim = ft_dim
         self.hidden1_dim = hidden1
         self.hidden2_dim = hidden2
         self.perspectives = perspectives
+        self.active_columns = tuple(int(x) for x in active_columns.tolist())
         self.ft_weight = nn.Embedding(TOTAL_INPUT_FEATURES, ft_dim, sparse=True)
         self.ft_bias = nn.Parameter(torch.zeros(ft_dim))
         self.hidden1 = nn.Linear(ft_dim * perspectives, hidden1)
@@ -419,10 +435,10 @@ class PatternNNUE(nn.Module):
         phases: torch.Tensor,
         opponent_features: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        x = self.ft_bias + self.ft_weight(features).sum(dim=1)
+        x = self.ft_bias + self.ft_weight(features[:, self.active_columns]).sum(dim=1)
         if self.perspectives == 2:
             assert opponent_features is not None
-            y = self.ft_bias + self.ft_weight(opponent_features).sum(dim=1)
+            y = self.ft_bias + self.ft_weight(opponent_features[:, self.active_columns]).sum(dim=1)
             x = torch.cat([self.clipped_relu(x), self.clipped_relu(y)], dim=1)
         else:
             x = self.clipped_relu(x)
@@ -588,6 +604,10 @@ def export_model(model: PatternNNUE, out_file: Path, layer_weight_scale: int) ->
         reserved[0] = input_kind
         reserved[1] = N_FEATURE_COLUMNS
         reserved[2] = model.perspectives
+        active_mask = feature_columns_to_mask(np.array(model.active_columns, dtype=np.int64))
+        reserved[3] = active_mask & 0xFFFFFFFF
+        reserved[4] = (active_mask >> 32) & 0xFFFFFFFF
+        reserved[5] = (active_mask >> 64) & 0xFFFFFFFF
         reserved.tofile(f)
         q.ft_bias.tofile(f)
         q.ft_weight.tofile(f)
@@ -619,14 +639,15 @@ def quantized_forward(
     features: np.ndarray,
     phases: np.ndarray,
     perspectives: int,
+    active_columns: np.ndarray,
 ) -> np.ndarray:
     ft = q.ft_weight.astype(np.int32, copy=False)
-    stm = q.ft_bias.astype(np.int32, copy=False)[None, :] + ft[features].sum(axis=1)
+    stm = q.ft_bias.astype(np.int32, copy=False)[None, :] + ft[features[:, active_columns]].sum(axis=1)
     post_input = np.zeros((features.shape[0], q.post_padded), dtype=np.uint8)
     post_input[:, : q.ft_bias.shape[0]] = clamp_u8_shifted(stm, FT_SHIFT)
     if perspectives == 2:
         opponent_features = make_opponent_features(features, phases)
-        non_stm = q.ft_bias.astype(np.int32, copy=False)[None, :] + ft[opponent_features].sum(axis=1)
+        non_stm = q.ft_bias.astype(np.int32, copy=False)[None, :] + ft[opponent_features[:, active_columns]].sum(axis=1)
         post_input[:, q.ft_bias.shape[0] : q.ft_bias.shape[0] * 2] = clamp_u8_shifted(non_stm, FT_SHIFT)
     h1_raw = q.hidden1_bias.astype(np.int32, copy=False)[None, :] + (
         post_input.astype(np.int32, copy=False) @ q.hidden1_weight.astype(np.int32, copy=False).T
@@ -684,6 +705,7 @@ def evaluate_quantized_loss(
     layer_weight_scale: int,
 ) -> tuple[float, float, int]:
     q = quantize_model(model, layer_weight_scale)
+    active_columns = np.array(model.active_columns, dtype=np.int64)
     n = len(samples[f"{prefix}_score"])
     if limit > 0:
         n = min(n, limit)
@@ -696,6 +718,7 @@ def evaluate_quantized_loss(
             samples[f"{prefix}_features"][idx],
             samples[f"{prefix}_phase"][idx],
             model.perspectives,
+            active_columns,
         )
         target = samples[f"{prefix}_score"][idx]
         err = pred - target
@@ -730,6 +753,9 @@ def write_summary(
         "hidden1": args.hidden1,
         "hidden2": args.hidden2,
         "perspectives": args.perspectives,
+        "active_eval_types": args.active_eval_types,
+        "active_feature_columns": [int(x) for x in args.active_columns],
+        "active_feature_column_count": int(len(args.active_columns)),
         "input_feature_columns": N_FEATURE_COLUMNS,
         "total_input_features": TOTAL_INPUT_FEATURES,
         "epochs": args.epochs,
@@ -756,6 +782,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hidden1", type=int, default=0)
     parser.add_argument("--hidden2", type=int, default=0)
     parser.add_argument("--perspectives", choices=["single", "dual"], default="dual")
+    parser.add_argument("--active-eval-types", type=int, default=16)
     parser.add_argument("--train-samples", type=int, default=1_000_000)
     parser.add_argument("--val-samples", type=int, default=100_000)
     parser.add_argument("--epochs", type=int, default=10)
@@ -783,6 +810,7 @@ def main() -> int:
     args.ft_dim = args.ft_dim or arch_dims[0]
     args.hidden1 = args.hidden1 or arch_dims[1]
     args.hidden2 = args.hidden2 or arch_dims[2]
+    args.active_columns = make_active_feature_columns(args.active_eval_types)
     make_quantization_shifts(args.layer_weight_scale)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed & 0xFFFFFFFF)
@@ -804,6 +832,12 @@ def main() -> int:
         flush=True,
     )
     print(f"arch {args.arch} ft_dim {args.ft_dim} hidden1 {args.hidden1} hidden2 {args.hidden2}", flush=True)
+    print(
+        f"active_eval_types {args.active_eval_types} "
+        f"active_feature_column_count {len(args.active_columns)} "
+        f"active_feature_columns {','.join(str(int(x)) for x in args.active_columns)}",
+        flush=True,
+    )
     if args.dry_run:
         write_summary(out_dir, args, entries, manifest_phase_counts, None, {})
         return 0
@@ -838,7 +872,7 @@ def main() -> int:
     samples["perspectives"] = 2 if args.perspectives == "dual" else 1
 
     device = torch.device(args.device if args.device == "cpu" or torch.cuda.is_available() else "cpu")
-    model = PatternNNUE(args.ft_dim, args.hidden1, args.hidden2, samples["perspectives"]).to(device)
+    model = PatternNNUE(args.ft_dim, args.hidden1, args.hidden2, samples["perspectives"], args.active_columns).to(device)
     sparse_optimizer = torch.optim.SparseAdam([model.ft_weight.weight], lr=args.lr)
     dense_params = [
         model.ft_bias,
@@ -919,6 +953,8 @@ def main() -> int:
                 "hidden1": args.hidden1,
                 "hidden2": args.hidden2,
                 "perspectives": samples["perspectives"],
+                "active_eval_types": args.active_eval_types,
+                "active_feature_columns": args.active_columns,
                 "input_feature_columns": N_FEATURE_COLUMNS,
                 "total_input_features": TOTAL_INPUT_FEATURES,
                 "feature_starts": FEATURE_STARTS,
