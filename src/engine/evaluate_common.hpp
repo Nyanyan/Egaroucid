@@ -183,11 +183,15 @@ struct Coord_to_feature {
 
 #if defined(USE_NNUE_EVALUATION)
 #ifndef EVAL_NNUE_MAX_FT_DIM
-#define EVAL_NNUE_MAX_FT_DIM 384
+#define EVAL_NNUE_MAX_FT_DIM 128
+#endif
+#ifndef EVAL_NNUE_MAX_PATTERN_FEATURES
+#define EVAL_NNUE_MAX_PATTERN_FEATURES 65
 #endif
 
 struct alignas(32) Eval_search {
     int16_t accumulator[HW2 - 4][2][EVAL_NNUE_MAX_FT_DIM];
+    uint16_t pattern_features[HW2 - 4][2][EVAL_NNUE_MAX_PATTERN_FEATURES];
     uint_fast8_t feature_idx;
 };
 #elif USE_SIMD
