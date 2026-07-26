@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import html
 import json
 import math
 import struct
@@ -641,6 +642,155 @@ def write_summary_csv(path: Path, rows: list[dict[str, object]]) -> None:
             writer.writerow(row)
 
 
+def model_color(model: str) -> str:
+    colors = {
+        "dim0": "#1f2937",
+        "dim8_fm": "#2563eb",
+        "nnue_first12_shared": "#dc2626",
+        "nnue_first12_phase60": "#16a34a",
+    }
+    return colors.get(model, "#7c3aed")
+
+
+def write_line_chart_svg(
+    path: Path,
+    title: str,
+    series: dict[str, dict[int, float]],
+    y_label: str,
+    zero_baseline: bool = True,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    width = 1100
+    height = 640
+    left = 82
+    right = 250
+    top = 58
+    bottom = 74
+    plot_w = width - left - right
+    plot_h = height - top - bottom
+    phases = list(range(N_PHASES))
+    values = [v for points in series.values() for v in points.values()]
+    if not values:
+        return
+    y_min = min(values)
+    y_max = max(values)
+    if zero_baseline:
+        y_min = min(0.0, y_min)
+    if y_min == y_max:
+        y_min -= 1.0
+        y_max += 1.0
+    padding = (y_max - y_min) * 0.06
+    y_min -= padding
+    y_max += padding
+
+    def x_of(phase: int) -> float:
+        return left + plot_w * (phase / 59.0)
+
+    def y_of(value: float) -> float:
+        return top + plot_h * ((y_max - value) / (y_max - y_min))
+
+    def fmt(value: float) -> str:
+        if abs(value) >= 100:
+            return f"{value:.0f}"
+        if abs(value) >= 10:
+            return f"{value:.1f}"
+        return f"{value:.2f}"
+
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        '<rect width="100%" height="100%" fill="#ffffff"/>',
+        f'<text x="{left}" y="34" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">{html.escape(title)}</text>',
+        f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="#ffffff" stroke="#d1d5db"/>',
+    ]
+    for i in range(6):
+        value = y_min + (y_max - y_min) * i / 5
+        y = y_of(value)
+        parts.append(f'<line x1="{left}" y1="{y:.2f}" x2="{left + plot_w}" y2="{y:.2f}" stroke="#e5e7eb"/>')
+        parts.append(
+            f'<text x="{left - 10}" y="{y + 4:.2f}" font-family="Arial, sans-serif" font-size="12" '
+            f'text-anchor="end" fill="#374151">{fmt(value)}</text>'
+        )
+    for phase in range(0, N_PHASES, 10):
+        x = x_of(phase)
+        parts.append(f'<line x1="{x:.2f}" y1="{top}" x2="{x:.2f}" y2="{top + plot_h}" stroke="#f3f4f6"/>')
+        parts.append(
+            f'<text x="{x:.2f}" y="{top + plot_h + 24}" font-family="Arial, sans-serif" font-size="12" '
+            f'text-anchor="middle" fill="#374151">{phase}</text>'
+        )
+    if y_min < 0 < y_max:
+        y = y_of(0.0)
+        parts.append(f'<line x1="{left}" y1="{y:.2f}" x2="{left + plot_w}" y2="{y:.2f}" stroke="#6b7280" stroke-dasharray="5,4"/>')
+    parts.append(
+        f'<text x="{left + plot_w / 2:.2f}" y="{height - 22}" font-family="Arial, sans-serif" '
+        f'font-size="14" text-anchor="middle" fill="#111827">phase</text>'
+    )
+    parts.append(
+        f'<text x="22" y="{top + plot_h / 2:.2f}" transform="rotate(-90 22 {top + plot_h / 2:.2f})" '
+        f'font-family="Arial, sans-serif" font-size="14" text-anchor="middle" fill="#111827">{html.escape(y_label)}</text>'
+    )
+
+    legend_x = left + plot_w + 28
+    legend_y = top + 8
+    for idx, (model, points) in enumerate(series.items()):
+        color = model_color(model)
+        ordered = [(phase, points[phase]) for phase in phases if phase in points]
+        if len(ordered) >= 2:
+            polyline = " ".join(f"{x_of(phase):.2f},{y_of(value):.2f}" for phase, value in ordered)
+            parts.append(f'<polyline points="{polyline}" fill="none" stroke="{color}" stroke-width="2.4"/>')
+            for phase, value in ordered[::5]:
+                parts.append(f'<circle cx="{x_of(phase):.2f}" cy="{y_of(value):.2f}" r="2.2" fill="{color}"/>')
+        y = legend_y + idx * 26
+        parts.append(f'<line x1="{legend_x}" y1="{y}" x2="{legend_x + 24}" y2="{y}" stroke="{color}" stroke-width="3"/>')
+        parts.append(
+            f'<text x="{legend_x + 34}" y="{y + 4}" font-family="Arial, sans-serif" font-size="13" '
+            f'fill="#111827">{html.escape(model)}</text>'
+        )
+    parts.append("</svg>")
+    path.write_text("\n".join(parts), encoding="utf-8")
+
+
+def write_graphs(out_dir: Path, phase_rows: list[dict[str, object]]) -> list[str]:
+    by_dataset: dict[str, list[dict[str, object]]] = {}
+    for row in phase_rows:
+        by_dataset.setdefault(str(row["dataset"]), []).append(row)
+    written: list[str] = []
+    for dataset, rows in sorted(by_dataset.items()):
+        for metric in ("mae", "mse"):
+            series: dict[str, dict[int, float]] = {}
+            for row in rows:
+                series.setdefault(str(row["model"]), {})[int(row["phase"])] = float(row[metric])
+            filename = f"{dataset}_{metric}_by_phase.svg"
+            write_line_chart_svg(
+                out_dir / filename,
+                f"{dataset}: {metric.upper()} by phase",
+                series,
+                metric.upper(),
+                zero_baseline=True,
+            )
+            written.append(filename)
+        if any(str(row["model"]) == "dim0" for row in rows):
+            dim0 = {int(row["phase"]): float(row["mae"]) for row in rows if str(row["model"]) == "dim0"}
+            delta_series: dict[str, dict[int, float]] = {}
+            for row in rows:
+                model = str(row["model"])
+                if model == "dim0":
+                    continue
+                phase = int(row["phase"])
+                if phase in dim0:
+                    delta_series.setdefault(model, {})[phase] = float(row["mae"]) - dim0[phase]
+            filename = f"{dataset}_mae_delta_vs_dim0.svg"
+            write_line_chart_svg(
+                out_dir / filename,
+                f"{dataset}: MAE difference from dim0",
+                delta_series,
+                "MAE - dim0 MAE",
+                zero_baseline=False,
+            )
+            written.append(filename)
+    return written
+
+
 def write_markdown_report(path: Path, phase_rows: list[dict[str, object]], summary: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     summary_rows = summary["summary"]
@@ -664,6 +814,11 @@ def write_markdown_report(path: Path, phase_rows: list[dict[str, object]], summa
         f.write("## 評価対象\n")
         for model in metadata["models"]:
             f.write(f"- `{model['name']}`: `{model['path']}` ({model['type']})\n")
+        graphs = summary.get("graphs", [])
+        if graphs:
+            f.write("\n## グラフ\n")
+            for graph in graphs:
+                f.write(f"![{graph}]({graph})\n\n")
         f.write("\n## 全体集計\n")
         f.write("| データ集合 | 評価関数 | 局面数 | MSE | MAE |\n")
         f.write("|---|---:|---:|---:|---:|\n")
@@ -719,6 +874,7 @@ def main() -> int:
     out_dir = Path(args.out_dir)
     write_csv(out_dir / "phase_metrics.csv", rows)
     write_summary_csv(out_dir / "summary_metrics.csv", summary["summary"])
+    summary["graphs"] = write_graphs(out_dir, rows)
     with (out_dir / "metrics.json").open("w", encoding="utf-8") as f:
         json.dump({"phase_metrics": rows, **summary}, f, ensure_ascii=False, indent=2)
     write_markdown_report(out_dir / "README.md", rows, summary)
