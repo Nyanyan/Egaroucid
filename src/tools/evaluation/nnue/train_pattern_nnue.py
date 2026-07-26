@@ -131,6 +131,7 @@ for _feature_idx in range(N_FEATURE_COLUMNS):
 
 ARCHES = {
     "pft16": (16, 16, 16),
+    "pft24": (24, 24, 24),
     "pft32": (32, 32, 32),
     "pft64": (64, 32, 32),
     "pft128": (128, 32, 32),
