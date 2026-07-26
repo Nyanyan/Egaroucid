@@ -32,10 +32,10 @@ from train_pattern_nnue import (
     N_FEATURE_COLUMNS,
     N_PHASES,
     STEP,
-    batch_iter,
     build_manifest,
     int_log2_power_of_two,
     load_sample_cache,
+    load_selected_from_file,
     load_samples,
     next_model_dir,
     save_sample_cache,
@@ -67,6 +67,39 @@ PATTERN_NAMES = [
 
 def now_ms() -> int:
     return int(time.time() * 1000)
+
+
+def iter_index_batches(
+    n: int,
+    batch_size: int,
+    shuffle: bool,
+    seed: int,
+    shuffle_block_size: int = 0,
+) -> Iterable[np.ndarray]:
+    if n <= 0:
+        return
+    if not shuffle:
+        for start in range(0, n, batch_size):
+            yield np.arange(start, min(n, start + batch_size), dtype=np.int64)
+        return
+
+    rng = np.random.default_rng(seed)
+    if shuffle_block_size > 0 and n > shuffle_block_size:
+        n_blocks = (n + shuffle_block_size - 1) // shuffle_block_size
+        block_order = np.arange(n_blocks, dtype=np.int64)
+        rng.shuffle(block_order)
+        for block_idx in block_order:
+            block_start = int(block_idx) * shuffle_block_size
+            block_end = min(n, block_start + shuffle_block_size)
+            order = np.arange(block_start, block_end, dtype=np.int64)
+            rng.shuffle(order)
+            for start in range(0, order.size, batch_size):
+                yield order[start:start + batch_size]
+        return
+
+    order = rng.permutation(n)
+    for start in range(0, n, batch_size):
+        yield order[start:start + batch_size]
 
 
 def make_columnwise_starts() -> np.ndarray:
@@ -132,6 +165,212 @@ def pattern_score_ids_from_global(features: np.ndarray, active: np.ndarray) -> n
 def shrink_samples_to_pattern_score_ids(samples: dict[str, np.ndarray], active_columns: np.ndarray) -> None:
     samples["train_features"] = pattern_score_ids_from_global(samples["train_features"], active_columns)
     samples["val_features"] = pattern_score_ids_from_global(samples["val_features"], active_columns)
+
+
+def prepare_samples_for_pattern_score(samples: dict[str, np.ndarray], active_columns: np.ndarray) -> None:
+    train_features = samples["train_features"]
+    if train_features.shape[1] == N_FEATURE_COLUMNS:
+        shrink_samples_to_pattern_score_ids(samples, active_columns)
+        samples["pattern_score_local_features"] = False
+    elif train_features.shape[1] == active_columns.size:
+        samples["pattern_score_local_features"] = train_features.dtype == np.uint16
+    else:
+        raise ValueError(
+            f"unexpected sample feature shape {train_features.shape}; "
+            f"expected {N_FEATURE_COLUMNS} or {active_columns.size} columns"
+        )
+    samples["active_columns"] = active_columns.astype(np.int64, copy=True)
+    samples["active_column_starts"] = COLUMNWISE_FEATURE_STARTS[active_columns].astype(np.uint32, copy=True)
+
+
+def batch_pattern_score_ids(samples: dict[str, np.ndarray], prefix: str, idx: np.ndarray) -> np.ndarray:
+    features = samples[f"{prefix}_features"][idx]
+    if samples.get("pattern_score_local_features", False):
+        return features.astype(np.uint32, copy=False) + samples["active_column_starts"][None, :]
+    return features
+
+
+def load_pattern_score_samples(
+    entries,
+    train_samples: int,
+    val_samples: int,
+    seed: int,
+    progress_interval_sec: int,
+    full_read_ratio: float,
+    active_columns: np.ndarray,
+) -> dict[str, np.ndarray]:
+    total = entries[-1].begin + entries[-1].records if entries else 0
+    need = train_samples + val_samples
+    chosen, validation = sample_indices_with_progress(total, need, train_samples, seed, progress_interval_sec)
+    input_dim = int(active_columns.size)
+
+    train_features = np.empty((train_samples, input_dim), dtype=np.uint16)
+    val_features = np.empty((val_samples, input_dim), dtype=np.uint16)
+    train_phase = np.empty(train_samples, dtype=np.uint8)
+    val_phase = np.empty(val_samples, dtype=np.uint8)
+    train_score = np.empty(train_samples, dtype=np.int8)
+    val_score = np.empty(val_samples, dtype=np.int8)
+    train_phase_counts = np.zeros(N_PHASES, dtype=np.uint64)
+    val_phase_counts = np.zeros(N_PHASES, dtype=np.uint64)
+
+    req_pos = 0
+    train_pos = 0
+    val_pos = 0
+    files_read = 0
+    bad_features = 0
+    phase_mismatches = 0
+    start_ms = now_ms()
+    next_log_ms = start_ms + progress_interval_sec * 1000
+    max_allowed = ADJ_EVAL_SIZES[ADJ_FEATURE_TO_EVAL_IDX[active_columns]]
+
+    for entry in entries:
+        lo = entry.begin
+        hi = entry.begin + entry.records
+        start = req_pos
+        while req_pos < chosen.size and chosen[req_pos] < hi:
+            req_pos += 1
+        if req_pos == start:
+            continue
+
+        local_indices = chosen[start:req_pos] - lo
+        selected = load_selected_from_file(entry.path, local_indices, full_read_ratio)
+        local_validation = validation[start:req_pos]
+        local_phase = np.full(selected.shape[0], entry.phase, dtype=np.uint8)
+        expected_phase = selected["n_discs"].astype(np.int16, copy=False) - 4
+        phase_mismatches += int(np.count_nonzero(expected_phase != entry.phase))
+        local_features = selected["features"][:, active_columns]
+        bad_mask = np.any(local_features >= max_allowed[None, :], axis=1)
+        bad_features += int(np.count_nonzero(bad_mask))
+        if np.any(bad_mask):
+            keep = ~bad_mask
+            local_features = local_features[keep]
+            local_phase = local_phase[keep]
+            local_validation = local_validation[keep]
+            selected = selected[keep]
+
+        scores = selected["score"].astype(np.int16, copy=False)
+        if scores.size and (int(scores.min()) < -128 or int(scores.max()) > 127):
+            raise ValueError("score is outside int8 range")
+        is_val = local_validation
+        is_train = ~is_val
+        n_train = int(is_train.sum())
+        n_val = int(is_val.sum())
+        if n_train:
+            sl = slice(train_pos, train_pos + n_train)
+            train_features[sl] = local_features[is_train]
+            train_phase[sl] = local_phase[is_train]
+            train_score[sl] = scores[is_train].astype(np.int8, copy=False)
+            train_phase_counts += np.bincount(train_phase[sl], minlength=N_PHASES).astype(np.uint64)
+            train_pos += n_train
+        if n_val:
+            sl = slice(val_pos, val_pos + n_val)
+            val_features[sl] = local_features[is_val]
+            val_phase[sl] = local_phase[is_val]
+            val_score[sl] = scores[is_val].astype(np.int8, copy=False)
+            val_phase_counts += np.bincount(val_phase[sl], minlength=N_PHASES).astype(np.uint64)
+            val_pos += n_val
+
+        files_read += 1
+        current_ms = now_ms()
+        if progress_interval_sec > 0 and current_ms >= next_log_ms:
+            print(
+                f"sample_loading_compact files_read {files_read} train {train_pos}/{train_samples} "
+                f"val {val_pos}/{val_samples} phase {entry.phase} record {entry.record_num} "
+                f"elapsed_ms {current_ms - start_ms}",
+                flush=True,
+            )
+            next_log_ms = current_ms + progress_interval_sec * 1000
+
+    if train_pos != train_samples or val_pos != val_samples:
+        raise RuntimeError(
+            f"loaded train {train_pos}/{train_samples} val {val_pos}/{val_samples} "
+            f"bad_features {bad_features}"
+        )
+    print(
+        f"loaded_compact train {train_pos} val {val_pos} bad_features {bad_features} "
+        f"phase_mismatches {phase_mismatches} elapsed_ms {now_ms() - start_ms}",
+        flush=True,
+    )
+    return {
+        "train_features": train_features,
+        "train_phase": train_phase,
+        "train_score": train_score,
+        "val_features": val_features,
+        "val_phase": val_phase,
+        "val_score": val_score,
+        "train_phase_counts": train_phase_counts,
+        "val_phase_counts": val_phase_counts,
+        "pattern_score_local_features": True,
+        "active_columns": active_columns.astype(np.int64, copy=True),
+        "active_column_starts": COLUMNWISE_FEATURE_STARTS[active_columns].astype(np.uint32, copy=True),
+    }
+
+
+def sample_indices_with_progress(
+    total: int,
+    need: int,
+    train_samples: int,
+    seed: int,
+    progress_interval_sec: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    if need > total:
+        raise ValueError(f"requested samples {need} exceeds available records {total}")
+    rng = np.random.default_rng(seed)
+    start_ms = now_ms()
+    if need == total:
+        chosen = np.arange(total, dtype=np.uint64)
+    elif need == 0:
+        chosen = np.empty(0, dtype=np.uint64)
+    else:
+        target_unique = min(total, max(need, int(math.ceil(need * 1.05))))
+        draw = int(math.ceil(-float(total) * math.log1p(-float(target_unique) / float(total))))
+        draw = min(total, max(draw, need))
+        while True:
+            print(
+                f"sample_request_generation draw {draw} target_unique {target_unique} "
+                f"need {need} total {total}",
+                flush=True,
+            )
+            drawn = np.empty(draw, dtype=np.uint64)
+            chunk = min(200_000_000, draw)
+            for begin in range(0, draw, chunk):
+                end = min(draw, begin + chunk)
+                drawn[begin:end] = rng.integers(0, total, size=end - begin, dtype=np.uint64)
+                current_ms = now_ms()
+                if progress_interval_sec > 0:
+                    print(
+                        f"sample_request_generation generated {end}/{draw} elapsed_ms {current_ms - start_ms}",
+                        flush=True,
+                    )
+            print(
+                f"sample_request_generation unique_start drawn {draw} elapsed_ms {now_ms() - start_ms}",
+                flush=True,
+            )
+            unique = np.unique(drawn)
+            del drawn
+            print(
+                f"sample_request_generation unique_done unique {unique.size}/{need} "
+                f"elapsed_ms {now_ms() - start_ms}",
+                flush=True,
+            )
+            if unique.size >= need:
+                rng.shuffle(unique)
+                chosen = unique[:need].copy()
+                del unique
+                break
+            del unique
+            target_unique = min(total, max(need, int(math.ceil(target_unique * 1.10))))
+            draw = int(math.ceil(-float(total) * math.log1p(-float(target_unique) / float(total))))
+            draw = min(total, max(draw, need))
+    print(f"sample_request_generation sort_start chosen {chosen.size} elapsed_ms {now_ms() - start_ms}", flush=True)
+    chosen.sort(kind="stable")
+    validation = np.zeros(need, dtype=np.bool_)
+    val_samples = need - train_samples
+    if val_samples > 0:
+        validation_positions = rng.choice(need, size=val_samples, replace=False)
+        validation[validation_positions] = True
+    print(f"sample_request_generation done chosen {chosen.size} elapsed_ms {now_ms() - start_ms}", flush=True)
+    return chosen, validation
 
 
 class PatternScoreNNUE(nn.Module):
@@ -384,10 +623,11 @@ def make_batch(
     idx: np.ndarray,
     device: torch.device,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    features_np = batch_pattern_score_ids(samples, prefix, idx)
     return (
-        torch.from_numpy(samples[f"{prefix}_features"][idx].astype(np.int64, copy=False)).to(device=device, non_blocking=True),
+        torch.from_numpy(features_np.astype(np.int64, copy=False)).to(device=device, non_blocking=True),
         torch.from_numpy(samples[f"{prefix}_phase"][idx].astype(np.int64, copy=False)).to(device=device, non_blocking=True),
-        torch.from_numpy(samples[f"{prefix}_score"][idx]).to(device=device, non_blocking=True),
+        torch.from_numpy(samples[f"{prefix}_score"][idx].astype(np.float32, copy=False)).to(device=device, non_blocking=True),
     )
 
 
@@ -434,7 +674,7 @@ def evaluate_loss(
     se = 0.0
     ae = 0.0
     seen = 0
-    for idx in batch_iter(n, batch_size, False, 0):
+    for idx in iter_index_batches(n, batch_size, False, 0):
         features, phases, target = make_batch(samples, prefix, idx, device)
         pred = model(features, phases)
         err = pred - target
@@ -461,9 +701,9 @@ def evaluate_quantized_loss(
     se = 0.0
     ae = 0.0
     seen = 0
-    for idx in batch_iter(n, batch_size, False, 0):
-        pred = quantized_forward(q, samples[f"{prefix}_features"][idx], samples[f"{prefix}_phase"][idx])
-        target = samples[f"{prefix}_score"][idx]
+    for idx in iter_index_batches(n, batch_size, False, 0):
+        pred = quantized_forward(q, batch_pattern_score_ids(samples, prefix, idx), samples[f"{prefix}_phase"][idx])
+        target = samples[f"{prefix}_score"][idx].astype(np.float32, copy=False)
         err = pred - target
         se += float(np.dot(err, err))
         ae += float(np.abs(err).sum())
@@ -511,10 +751,15 @@ def write_summary(
         "layer_weight_scale": args.layer_weight_scale,
         "ft_weight_bits": args.ft_weight_bits,
         "seed": args.seed,
+        "legacy_full_feature_storage": args.legacy_full_feature_storage,
+        "shuffle_block_size": args.shuffle_block_size,
         "manifest_phase_counts": [int(x) for x in manifest_phase_counts],
         "best": best,
     }
     if samples is not None:
+        summary["pattern_score_local_features"] = bool(samples.get("pattern_score_local_features", False))
+        summary["feature_storage_dtype"] = str(samples["train_features"].dtype)
+        summary["score_storage_dtype"] = str(samples["train_score"].dtype)
         summary["train_phase_counts"] = [int(x) for x in samples["train_phase_counts"]]
         summary["val_phase_counts"] = [int(x) for x in samples["val_phase_counts"]]
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
@@ -547,6 +792,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quantized-metric-limit", type=int, default=1_000_000)
     parser.add_argument("--progress-interval-sec", type=int, default=30)
     parser.add_argument("--full-read-ratio", type=float, default=0.10)
+    parser.add_argument("--shuffle-block-size", type=int, default=0)
+    parser.add_argument("--legacy-full-feature-storage", action="store_true")
     parser.add_argument("--sample-cache", default="")
     parser.add_argument("--load-state", default="")
     parser.add_argument("--init-shared-state", default="")
@@ -598,16 +845,28 @@ def main() -> int:
     if args.sample_cache and Path(args.sample_cache).exists():
         print(f"loading_sample_cache {args.sample_cache}", flush=True)
         samples = load_sample_cache(Path(args.sample_cache))
-        shrink_samples_to_pattern_score_ids(samples, active_columns)
+        prepare_samples_for_pattern_score(samples, active_columns)
     else:
-        samples = load_samples(
-            entries,
-            args.train_samples,
-            args.val_samples,
-            args.seed,
-            args.progress_interval_sec,
-            args.full_read_ratio,
-        )
+        if args.legacy_full_feature_storage:
+            samples = load_samples(
+                entries,
+                args.train_samples,
+                args.val_samples,
+                args.seed,
+                args.progress_interval_sec,
+                args.full_read_ratio,
+            )
+            prepare_samples_for_pattern_score(samples, active_columns)
+        else:
+            samples = load_pattern_score_samples(
+                entries,
+                args.train_samples,
+                args.val_samples,
+                args.seed,
+                args.progress_interval_sec,
+                args.full_read_ratio,
+                active_columns,
+            )
         if args.sample_cache:
             meta = {
                 "data_root": str(data_root.resolve()),
@@ -620,10 +879,12 @@ def main() -> int:
                 "input_feature_columns": N_FEATURE_COLUMNS,
                 "active_feature_columns": active_columns.tolist(),
                 "pattern_set": args.pattern_set,
+                "pattern_score_local_features": bool(samples.get("pattern_score_local_features", False)),
+                "feature_storage_dtype": str(samples["train_features"].dtype),
+                "score_storage_dtype": str(samples["train_score"].dtype),
             }
             print(f"writing_sample_cache {args.sample_cache}", flush=True)
             save_sample_cache(Path(args.sample_cache), samples, meta)
-        shrink_samples_to_pattern_score_ids(samples, active_columns)
 
     device = torch.device(args.device if args.device == "cpu" or torch.cuda.is_available() else "cpu")
     model = PatternScoreNNUE(input_dim, args.hidden1, args.hidden2, args.phase_specific_score_table).to(device)
@@ -695,7 +956,14 @@ def main() -> int:
         seen = 0
         running_loss = 0.0
         start_ms = now_ms()
-        for idx in batch_iter(args.train_samples, args.batch_size, True, args.seed + epoch):
+        next_log_ms = start_ms + args.progress_interval_sec * 1000
+        for idx in iter_index_batches(
+            args.train_samples,
+            args.batch_size,
+            True,
+            args.seed + epoch,
+            args.shuffle_block_size,
+        ):
             features, phases, target = make_batch(samples, "train", idx, device)
             pred = model(features, phases)
             loss = torch.mean((pred - target) ** 2)
@@ -707,6 +975,15 @@ def main() -> int:
             batch_n = int(target.numel())
             seen += batch_n
             running_loss += float(loss.detach().cpu()) * batch_n
+            current_ms = now_ms()
+            if args.progress_interval_sec > 0 and current_ms >= next_log_ms:
+                print(
+                    f"epoch_training epoch {epoch} processed {seen}/{args.train_samples} "
+                    f"train_epoch_mse {running_loss / max(1, seen):.6f} "
+                    f"elapsed_ms {current_ms - start_ms}",
+                    flush=True,
+                )
+                next_log_ms = current_ms + args.progress_interval_sec * 1000
         train_mse, train_mae, train_n = evaluate_loss(model, samples, "train", args.batch_size, device, args.metric_limit)
         val_mse, val_mae, val_n = evaluate_loss(model, samples, "val", args.batch_size, device, args.metric_limit)
         if val_mse < best["val_mse"]:
