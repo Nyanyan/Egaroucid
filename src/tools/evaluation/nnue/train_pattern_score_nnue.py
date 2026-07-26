@@ -43,6 +43,7 @@ from train_pattern_nnue import (
 
 
 PATTERN_SCORE_INPUT_KIND = 4
+PATTERN_SCORE_PHASED_INPUT_KIND = 5
 DEFAULT_LAYER_WEIGHT_SCALE = 32
 PATTERN_NAMES = [
     "hv2",
@@ -134,12 +135,14 @@ def shrink_samples_to_pattern_score_ids(samples: dict[str, np.ndarray], active_c
 
 
 class PatternScoreNNUE(nn.Module):
-    def __init__(self, input_dim: int, hidden1: int, hidden2: int):
+    def __init__(self, input_dim: int, hidden1: int, hidden2: int, phase_specific_score_table: bool):
         super().__init__()
         self.ft_dim = input_dim
         self.hidden1_dim = hidden1
         self.hidden2_dim = hidden2
-        self.score_table = nn.Embedding(COLUMNWISE_TOTAL_INPUT_FEATURES, 1, sparse=True)
+        self.phase_specific_score_table = phase_specific_score_table
+        n_score_embeddings = COLUMNWISE_TOTAL_INPUT_FEATURES * N_PHASES if phase_specific_score_table else COLUMNWISE_TOTAL_INPUT_FEATURES
+        self.score_table = nn.Embedding(n_score_embeddings, 1, sparse=True)
         self.input_bias = nn.Parameter(torch.full((input_dim,), 2.0))
         self.hidden1 = nn.Linear(input_dim, hidden1)
         self.hidden2 = nn.Linear(hidden1, hidden2)
@@ -174,7 +177,10 @@ class PatternScoreNNUE(nn.Module):
             self.output_bias.copy_(torch.from_numpy(means.astype(np.float32)))
 
     def forward(self, features: torch.Tensor, phases: torch.Tensor) -> torch.Tensor:
-        x = self.input_bias + self.score_table(features).squeeze(-1)
+        score_ids = features
+        if self.phase_specific_score_table:
+            score_ids = score_ids + phases[:, None] * COLUMNWISE_TOTAL_INPUT_FEATURES
+        x = self.input_bias + self.score_table(score_ids).squeeze(-1)
         x = self.clipped_relu(x)
         x = self.clipped_relu(self.hidden1(x))
         x = self.clipped_relu(self.hidden2(x))
@@ -196,6 +202,7 @@ class QuantizedPatternScoreNNUE:
     hidden_shift: int
     output_shift: int
     ft_weight_bits: int
+    phase_specific_score_table: bool
 
 
 def pad_int8_matrix(matrix: np.ndarray, padded_cols: int) -> np.ndarray:
@@ -263,6 +270,7 @@ def quantize_model(
         hidden_shift=hidden_shift,
         output_shift=output_shift,
         ft_weight_bits=ft_weight_bits,
+        phase_specific_score_table=model.phase_specific_score_table,
     )
 
 
@@ -282,7 +290,10 @@ def rounded_shift_signed(values: np.ndarray, shift: int) -> np.ndarray:
 
 
 def quantized_forward(q: QuantizedPatternScoreNNUE, features: np.ndarray, phases: np.ndarray) -> np.ndarray:
-    acc = q.ft_bias.astype(np.int32, copy=False)[None, :] + q.score_table[features].astype(np.int32, copy=False)
+    score_ids = features
+    if q.phase_specific_score_table:
+        score_ids = score_ids + phases[:, None].astype(np.uint32, copy=False) * np.uint32(COLUMNWISE_TOTAL_INPUT_FEATURES)
+    acc = q.ft_bias.astype(np.int32, copy=False)[None, :] + q.score_table[score_ids].astype(np.int32, copy=False)
     post_padded = math.ceil(acc.shape[1] / 32) * 32
     post_input = np.zeros((features.shape[0], post_padded), dtype=np.uint8)
     post_input[:, : acc.shape[1]] = clamp_u8_shifted(acc, FT_SHIFT)
@@ -315,20 +326,25 @@ def export_model(
 ) -> None:
     out_file.parent.mkdir(parents=True, exist_ok=True)
     q = quantize_model(model, layer_weight_scale, ft_weight_bits)
-    if ft_weight_bits == 8:
-        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, model.ft_dim), dtype=np.int8)
+    if model.phase_specific_score_table:
+        ft_weight = q.score_table
     else:
-        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, model.ft_dim), dtype="<i2")
-    for slot, col in enumerate(active_columns.tolist()):
-        start = int(COLUMNWISE_FEATURE_STARTS[col])
-        size = int(ADJ_EVAL_SIZES[int(ADJ_FEATURE_TO_EVAL_IDX[col])])
-        ft_weight[start:start + size, slot] = q.score_table[start:start + size]
+        if ft_weight_bits == 8:
+            ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, model.ft_dim), dtype=np.int8)
+        else:
+            ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, model.ft_dim), dtype="<i2")
+        for slot, col in enumerate(active_columns.tolist()):
+            start = int(COLUMNWISE_FEATURE_STARTS[col])
+            size = int(ADJ_EVAL_SIZES[int(ADJ_FEATURE_TO_EVAL_IDX[col])])
+            ft_weight[start:start + size, slot] = q.score_table[start:start + size]
 
     with out_file.open("wb") as f:
         f.write(b"EGNNUE1\0")
+        version = 5 if model.phase_specific_score_table else 4
+        input_kind = PATTERN_SCORE_PHASED_INPUT_KIND if model.phase_specific_score_table else PATTERN_SCORE_INPUT_KIND
         header = np.array(
             [
-                4,
+                version,
                 COLUMNWISE_TOTAL_INPUT_FEATURES,
                 model.ft_dim,
                 model.hidden1_dim,
@@ -344,7 +360,7 @@ def export_model(
         header.tofile(f)
         mask_lo, mask_hi = feature_columns_to_mask(active_columns)
         reserved = np.zeros(8, dtype="<u4")
-        reserved[0] = PATTERN_SCORE_INPUT_KIND
+        reserved[0] = input_kind
         reserved[1] = N_FEATURE_COLUMNS
         reserved[2] = 1
         reserved[3] = mask_lo & 0xFFFFFFFF
@@ -373,6 +389,33 @@ def make_batch(
         torch.from_numpy(samples[f"{prefix}_phase"][idx].astype(np.int64, copy=False)).to(device=device, non_blocking=True),
         torch.from_numpy(samples[f"{prefix}_score"][idx]).to(device=device, non_blocking=True),
     )
+
+
+def initialize_from_shared_state(model: PatternScoreNNUE, shared_state_path: Path, device: torch.device) -> None:
+    if not model.phase_specific_score_table:
+        raise ValueError("--init-shared-state is only valid with --phase-specific-score-table")
+    print(f"initializing_from_shared_state {shared_state_path}", flush=True)
+    try:
+        checkpoint = torch.load(shared_state_path, map_location=device, weights_only=False)
+    except TypeError:
+        checkpoint = torch.load(shared_state_path, map_location=device)
+    shared_state = checkpoint["state_dict"] if isinstance(checkpoint, dict) and "state_dict" in checkpoint else checkpoint
+    shared_score = shared_state["score_table.weight"].to(device=device)
+    if shared_score.shape[0] != COLUMNWISE_TOTAL_INPUT_FEATURES or shared_score.shape[1] != 1:
+        raise ValueError(f"incompatible shared score_table shape: {tuple(shared_score.shape)}")
+    with torch.no_grad():
+        model.score_table.weight.view(N_PHASES, COLUMNWISE_TOTAL_INPUT_FEATURES, 1).copy_(shared_score[None, :, :])
+        for key in [
+            "input_bias",
+            "hidden1.weight",
+            "hidden1.bias",
+            "hidden2.weight",
+            "hidden2.bias",
+            "output_weight",
+            "output_bias",
+        ]:
+            if key in shared_state and key in model.state_dict() and shared_state[key].shape == model.state_dict()[key].shape:
+                model.state_dict()[key].copy_(shared_state[key].to(device=device))
 
 
 @torch.no_grad()
@@ -456,12 +499,14 @@ def write_summary(
         "arch": args.arch,
         "hidden1": args.hidden1,
         "hidden2": args.hidden2,
-        "input_kind": PATTERN_SCORE_INPUT_KIND,
+        "input_kind": PATTERN_SCORE_PHASED_INPUT_KIND if args.phase_specific_score_table else PATTERN_SCORE_INPUT_KIND,
         "input_dim": input_dim,
         "input_feature_columns": N_FEATURE_COLUMNS,
         "active_feature_columns": active_columns.tolist(),
         "active_feature_column_names": active_column_names,
         "pattern_set": args.pattern_set,
+        "phase_specific_score_table": args.phase_specific_score_table,
+        "init_shared_state": args.init_shared_state,
         "columnwise_total_input_features": COLUMNWISE_TOTAL_INPUT_FEATURES,
         "layer_weight_scale": args.layer_weight_scale,
         "ft_weight_bits": args.ft_weight_bits,
@@ -482,6 +527,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--record-end", type=int, default=-1)
     parser.add_argument("--arch", choices=sorted(ARCHES), default="ps16")
     parser.add_argument("--pattern-set", choices=["mo_end4", "first12"], default="mo_end4")
+    parser.add_argument("--phase-specific-score-table", action="store_true")
     parser.add_argument("--hidden1", type=int, default=0)
     parser.add_argument("--hidden2", type=int, default=0)
     parser.add_argument("--train-samples", type=int, default=10_000_000)
@@ -503,6 +549,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--full-read-ratio", type=float, default=0.10)
     parser.add_argument("--sample-cache", default="")
     parser.add_argument("--load-state", default="")
+    parser.add_argument("--init-shared-state", default="")
     parser.add_argument("--export-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -520,12 +567,13 @@ def main() -> int:
     np.random.seed(args.seed & 0xFFFFFFFF)
 
     date = datetime.now().strftime("%Y%m%d")
+    score_table_scope = "phase60" if args.phase_specific_score_table else "shared"
     model_name = args.model_name or (
-        f"nnue_pattern_score_{args.pattern_set}_{args.arch}_records{args.record_start}plus_"
+        f"nnue_pattern_score_{args.pattern_set}_{score_table_scope}_{args.arch}_records{args.record_start}plus_"
         f"train{args.train_samples}_val{args.val_samples}_e{args.epochs}"
     )
     out_dir = next_model_dir(Path(args.model_root), date, model_name)
-    out_file = Path(args.out_file) if args.out_file else out_dir / f"eval_nnue_pattern_score_{args.pattern_set}_{args.arch}.egevnnue"
+    out_file = Path(args.out_file) if args.out_file else out_dir / f"eval_nnue_pattern_score_{args.pattern_set}_{score_table_scope}_{args.arch}.egevnnue"
 
     data_root = Path(args.data_root)
     entries, manifest_phase_counts = build_manifest(data_root, args.record_start, args.record_end)
@@ -539,7 +587,8 @@ def main() -> int:
     )
     print(
         f"arch {args.arch} input_dim {input_dim} hidden1 {args.hidden1} "
-        f"hidden2 {args.hidden2} ft_weight_bits {args.ft_weight_bits}",
+        f"hidden2 {args.hidden2} ft_weight_bits {args.ft_weight_bits} "
+        f"phase_specific_score_table {int(args.phase_specific_score_table)}",
         flush=True,
     )
     if args.dry_run:
@@ -577,9 +626,11 @@ def main() -> int:
         shrink_samples_to_pattern_score_ids(samples, active_columns)
 
     device = torch.device(args.device if args.device == "cpu" or torch.cuda.is_available() else "cpu")
-    model = PatternScoreNNUE(input_dim, args.hidden1, args.hidden2).to(device)
+    model = PatternScoreNNUE(input_dim, args.hidden1, args.hidden2, args.phase_specific_score_table).to(device)
     model.initialize_output_bias(samples["train_phase"], samples["train_score"])
     model.to(device)
+    if args.init_shared_state:
+        initialize_from_shared_state(model, Path(args.init_shared_state), device)
     if args.load_state:
         print(f"loading_state {args.load_state}", flush=True)
         try:
@@ -702,6 +753,8 @@ def main() -> int:
                 "active_feature_columns": active_columns,
                 "active_feature_column_names": active_column_names,
                 "pattern_set": args.pattern_set,
+                "phase_specific_score_table": args.phase_specific_score_table,
+                "init_shared_state": args.init_shared_state,
                 "columnwise_feature_starts": COLUMNWISE_FEATURE_STARTS,
                 "columnwise_total_input_features": COLUMNWISE_TOTAL_INPUT_FEATURES,
                 "layer_weight_scale": args.layer_weight_scale,

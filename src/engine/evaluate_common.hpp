@@ -192,6 +192,7 @@ struct Coord_to_feature {
 struct alignas(32) Eval_search {
     int16_t accumulator[HW2 - 4][2][EVAL_NNUE_MAX_FT_DIM];
     uint16_t pattern_features[HW2 - 4][2][EVAL_NNUE_MAX_PATTERN_FEATURES];
+    uint8_t nnue_phase[HW2 - 4];
     uint_fast8_t feature_idx;
 };
 #elif USE_SIMD

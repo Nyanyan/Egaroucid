@@ -38,6 +38,7 @@ constexpr int EVAL_NNUE_INPUT_KIND_STONE = 1;
 constexpr int EVAL_NNUE_INPUT_KIND_PATTERN = 2;
 constexpr int EVAL_NNUE_INPUT_KIND_PATTERN_PAIR = 3;
 constexpr int EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR = 4;
+constexpr int EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR_PHASED = 5;
 constexpr int EVAL_NNUE_MAX_HIDDEN1 = 64;
 constexpr int EVAL_NNUE_MAX_HIDDEN2 = 64;
 constexpr int EVAL_NNUE_MAX_POST_INPUT = EVAL_NNUE_MAX_FT_DIM * 2;
@@ -70,6 +71,7 @@ struct EvalNnueCoordFeatures {
 
 inline std::array<EvalNnueCoordFeatures, HW2> eval_nnue_coord_to_feature;
 inline std::array<int, ADJ_N_FEATURES> eval_nnue_pattern_feature_starts;
+inline std::array<int, ADJ_N_FEATURES> eval_nnue_pattern_feature_slots;
 inline bool eval_nnue_pattern_tables_initialized = false;
 
 // These names are referenced by shared search code. In an NNUE-only build they
@@ -80,6 +82,8 @@ inline bool eval_fm_use_dim0_mpc_search = false;
 inline std::vector<int16_t> eval_nnue_ft_bias;
 inline std::vector<int16_t> eval_nnue_ft_weight;
 inline std::vector<int8_t> eval_nnue_ft_weight_i8;
+inline std::vector<int16_t> eval_nnue_phase_scalar_weight;
+inline std::vector<int8_t> eval_nnue_phase_scalar_weight_i8;
 inline std::vector<int32_t> eval_nnue_hidden1_bias;
 inline std::vector<int8_t> eval_nnue_hidden1_weight;
 inline std::vector<int32_t> eval_nnue_hidden2_bias;
@@ -113,7 +117,17 @@ inline int eval_nnue_pattern_columnwise_total_input_features() {
 inline bool eval_nnue_uses_pattern_features() {
     return eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
         eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR ||
-        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR;
+        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR ||
+        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR_PHASED;
+}
+
+inline bool eval_nnue_uses_columnwise_pattern_features() {
+    return eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR ||
+        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR_PHASED;
+}
+
+inline bool eval_nnue_uses_phase_scalar_table() {
+    return eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR_PHASED;
 }
 
 inline int eval_nnue_pattern_feature_start(const int feature_idx) {
@@ -138,8 +152,9 @@ inline void eval_nnue_init_pattern_tables() {
         return;
     }
     int feature_start = 0;
+    int feature_slot = 0;
     for (int i = 0; i < ADJ_N_FEATURES; ++i) {
-        if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR) {
+        if (eval_nnue_uses_columnwise_pattern_features()) {
             if (i > 0) {
                 feature_start += adj_eval_sizes[adj_feature_to_eval_idx[i - 1]];
             }
@@ -147,6 +162,15 @@ inline void eval_nnue_init_pattern_tables() {
             feature_start += adj_eval_sizes[adj_feature_to_eval_idx[i - 1]];
         }
         eval_nnue_pattern_feature_starts[(size_t)i] = feature_start;
+        eval_nnue_pattern_feature_slots[(size_t)i] = -1;
+        if (eval_nnue_pattern_feature_active(i)) {
+            eval_nnue_pattern_feature_slots[(size_t)i] = feature_slot++;
+        }
+    }
+    if (eval_nnue_uses_columnwise_pattern_features() && feature_slot != eval_nnue_ft_dim) {
+        std::cerr << "[ERROR] [FATAL] NNUE active pattern feature count mismatch. active "
+                  << feature_slot << " ft_dim " << eval_nnue_ft_dim << std::endl;
+        std::exit(1);
     }
     for (EvalNnueCoordFeatures &entry: eval_nnue_coord_to_feature) {
         entry.n_features = 0;
@@ -272,8 +296,13 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
         input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR &&
         pattern_feature_columns == ADJ_N_FEATURES &&
         input_features == (uint32_t)eval_nnue_pattern_columnwise_total_input_features();
+    const bool pattern_scalar_phased_header_ok =
+        version == 5 &&
+        input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR_PHASED &&
+        pattern_feature_columns == ADJ_N_FEATURES &&
+        input_features == (uint32_t)eval_nnue_pattern_columnwise_total_input_features();
     if (in.fail() ||
-        (!stone_header_ok && !pattern_header_ok && !pattern_pair_header_ok && !pattern_scalar_header_ok) ||
+        (!stone_header_ok && !pattern_header_ok && !pattern_pair_header_ok && !pattern_scalar_header_ok && !pattern_scalar_phased_header_ok) ||
         ft_dim == 0 || ft_dim > EVAL_NNUE_MAX_FT_DIM ||
         hidden1_dim == 0 || hidden1_dim > EVAL_NNUE_MAX_HIDDEN1 ||
         hidden2_dim == 0 || hidden2_dim > EVAL_NNUE_MAX_HIDDEN2 ||
@@ -319,11 +348,26 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
 
     bool ok = true;
     ok = ok && eval_nnue_read_vector(in, &eval_nnue_ft_bias, eval_nnue_ft_dim);
-    if (eval_nnue_ft_weight_bits == 8) {
+    if (eval_nnue_uses_phase_scalar_table()) {
         eval_nnue_ft_weight.clear();
+        eval_nnue_ft_weight_i8.clear();
+        const size_t scalar_count = (size_t)N_PHASES * (size_t)eval_nnue_input_features;
+        if (eval_nnue_ft_weight_bits == 8) {
+            eval_nnue_phase_scalar_weight.clear();
+            ok = ok && eval_nnue_read_vector(in, &eval_nnue_phase_scalar_weight_i8, scalar_count);
+        } else {
+            eval_nnue_phase_scalar_weight_i8.clear();
+            ok = ok && eval_nnue_read_vector(in, &eval_nnue_phase_scalar_weight, scalar_count);
+        }
+    } else if (eval_nnue_ft_weight_bits == 8) {
+        eval_nnue_ft_weight.clear();
+        eval_nnue_phase_scalar_weight.clear();
+        eval_nnue_phase_scalar_weight_i8.clear();
         ok = ok && eval_nnue_read_vector(in, &eval_nnue_ft_weight_i8, (size_t)eval_nnue_input_features * (size_t)eval_nnue_ft_dim);
     } else {
         eval_nnue_ft_weight_i8.clear();
+        eval_nnue_phase_scalar_weight.clear();
+        eval_nnue_phase_scalar_weight_i8.clear();
         ok = ok && eval_nnue_read_vector(in, &eval_nnue_ft_weight, (size_t)eval_nnue_input_features * (size_t)eval_nnue_ft_dim);
     }
     ok = ok && eval_nnue_read_vector(in, &eval_nnue_hidden1_bias, eval_nnue_hidden1_dim);
@@ -389,6 +433,24 @@ inline const int8_t* eval_nnue_feature_weight_i8(const int feature) {
 
 inline int eval_nnue_pattern_global_feature(const int feature_idx, const uint16_t local_value) {
     return eval_nnue_pattern_feature_starts[(size_t)feature_idx] + (int)local_value;
+}
+
+inline int eval_nnue_board_phase(const Board *board) {
+    const int n_discs = pop_count_ull(board->player | board->opponent);
+    return std::clamp((n_discs - 4) / PHASE_N_DISCS, 0, N_PHASES - 1);
+}
+
+inline int eval_nnue_board_phase_after_move(const Board *board) {
+    const int n_discs = pop_count_ull(board->player | board->opponent) + 1;
+    return std::clamp((n_discs - 4) / PHASE_N_DISCS, 0, N_PHASES - 1);
+}
+
+inline int16_t eval_nnue_phase_scalar_weight_value(const int phase, const int feature) {
+    const size_t idx = (size_t)phase * (size_t)eval_nnue_input_features + (size_t)feature;
+    if (eval_nnue_ft_weight_bits == 8) {
+        return (int16_t)eval_nnue_phase_scalar_weight_i8[idx];
+    }
+    return eval_nnue_phase_scalar_weight[idx];
 }
 
 inline void eval_nnue_copy_accumulator(int16_t *dst, const int16_t *src) {
@@ -700,13 +762,45 @@ inline void eval_nnue_replace_feature(int16_t *acc, const int old_feature, const
 #endif
 }
 
+inline void eval_nnue_rebuild_phase_scalar_accumulator(
+    Eval_search *eval,
+    const int idx,
+    const int perspective,
+    const int phase
+) {
+    int16_t *acc = eval->accumulator[idx][perspective];
+    std::memcpy(acc, eval_nnue_ft_bias.data(), sizeof(int16_t) * (size_t)eval_nnue_ft_dim);
+    for (int feature_idx = 0; feature_idx < ADJ_N_FEATURES; ++feature_idx) {
+        if (!eval_nnue_pattern_feature_active(feature_idx)) {
+            continue;
+        }
+        const int slot = eval_nnue_pattern_feature_slots[(size_t)feature_idx];
+        if (slot < 0 || slot >= eval_nnue_ft_dim) {
+            continue;
+        }
+        const int feature = eval_nnue_pattern_global_feature(
+            feature_idx,
+            eval->pattern_features[idx][perspective][feature_idx]
+        );
+        acc[slot] = (int16_t)(acc[slot] + eval_nnue_phase_scalar_weight_value(phase, feature));
+    }
+}
+
 inline void eval_nnue_calc_pattern_accumulator(Board *board, Eval_search *eval, const int idx, const int perspective) {
     int16_t *acc = eval->accumulator[idx][perspective];
     std::memcpy(acc, eval_nnue_ft_bias.data(), sizeof(int16_t) * (size_t)eval_nnue_ft_dim);
     uint16_t features[ADJ_N_FEATURES];
     adj_calc_features(board, features);
+    const int phase = eval_nnue_board_phase(board);
+    eval->nnue_phase[idx] = (uint8_t)phase;
     for (int i = 0; i < ADJ_N_FEATURES; ++i) {
         eval->pattern_features[idx][perspective][i] = features[i];
+    }
+    if (eval_nnue_uses_phase_scalar_table()) {
+        eval_nnue_rebuild_phase_scalar_accumulator(eval, idx, perspective, phase);
+        return;
+    }
+    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
         if (!eval_nnue_pattern_feature_active(i)) {
             continue;
         }
@@ -1240,8 +1334,10 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     if (eval_nnue_uses_pattern_features()) {
         const int prev = (int)eval->feature_idx;
         const int next = prev + 1;
-        eval_nnue_copy_accumulator(eval->accumulator[next][0], eval->accumulator[prev][1]);
-        eval_nnue_copy_accumulator(eval->accumulator[next][1], eval->accumulator[prev][0]);
+        if (!eval_nnue_uses_phase_scalar_table()) {
+            eval_nnue_copy_accumulator(eval->accumulator[next][0], eval->accumulator[prev][1]);
+            eval_nnue_copy_accumulator(eval->accumulator[next][1], eval->accumulator[prev][0]);
+        }
         std::memcpy(
             eval->pattern_features[next][0],
             eval->pattern_features[prev][1],
@@ -1273,7 +1369,17 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
                 eval, next, ADJ_N_FEATURES - 1, -n_flipped, n_flipped + 1, &touched_lo, &touched_hi, touched_features, &n_touched
             );
         }
-        eval_nnue_pattern_flush_touched_pair(eval, prev, next, touched_features, n_touched);
+        if (eval_nnue_uses_phase_scalar_table()) {
+            const int phase = board != nullptr
+                ? eval_nnue_board_phase_after_move(board)
+                : std::min<int>((int)eval->nnue_phase[prev] + 1, N_PHASES - 1);
+            eval->nnue_phase[next] = (uint8_t)phase;
+            eval_nnue_rebuild_phase_scalar_accumulator(eval, next, 0, phase);
+            eval_nnue_rebuild_phase_scalar_accumulator(eval, next, 1, phase);
+        } else {
+            eval->nnue_phase[next] = (uint8_t)std::min<int>((int)eval->nnue_phase[prev] + 1, N_PHASES - 1);
+            eval_nnue_pattern_flush_touched_pair(eval, prev, next, touched_features, n_touched);
+        }
         eval->feature_idx = (uint_fast8_t)next;
         return;
     }
