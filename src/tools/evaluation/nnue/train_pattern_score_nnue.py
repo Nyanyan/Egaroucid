@@ -1,0 +1,684 @@
+#!/usr/bin/env python3
+"""Train a small NN from 16 learned pattern scores.
+
+This model uses the 16 pattern feature columns used by endgame move ordering.
+Each column has its own table that maps a local pattern arrangement to one
+learned scalar.  The 16 scalars are then passed to a very small neural network.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import os
+import time
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Iterable
+
+import numpy as np
+import torch
+from torch import nn
+
+from train_pattern_nnue import (
+    ACTIVATION_SCALE,
+    ADJ_EVAL_SIZES,
+    ADJ_FEATURE_TO_EVAL_IDX,
+    FEATURE_STARTS,
+    FT_SCALE,
+    FT_SHIFT,
+    N_FEATURE_COLUMNS,
+    N_PHASES,
+    STEP,
+    batch_iter,
+    build_manifest,
+    int_log2_power_of_two,
+    load_sample_cache,
+    load_samples,
+    next_model_dir,
+    save_sample_cache,
+)
+
+
+PATTERN_SCORE_ACTIVE_COLUMNS = np.arange(32, 48, dtype=np.int64)
+PATTERN_SCORE_COLUMN_NAMES = [
+    "edge+2x/0",
+    "edge+2x/1",
+    "edge+2x/2",
+    "edge+2x/3",
+    "triangle/0",
+    "triangle/1",
+    "triangle/2",
+    "triangle/3",
+    "corner+block/0",
+    "corner+block/1",
+    "corner+block/2",
+    "corner+block/3",
+    "cross/0",
+    "cross/1",
+    "cross/2",
+    "cross/3",
+]
+
+PATTERN_SCORE_INPUT_KIND = 4
+PATTERN_SCORE_INPUT_DIM = 16
+DEFAULT_LAYER_WEIGHT_SCALE = 32
+
+
+def now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def make_columnwise_starts() -> np.ndarray:
+    starts = np.zeros(N_FEATURE_COLUMNS, dtype=np.uint32)
+    offset = 0
+    for col in range(N_FEATURE_COLUMNS):
+        starts[col] = offset
+        offset += int(ADJ_EVAL_SIZES[int(ADJ_FEATURE_TO_EVAL_IDX[col])])
+    return starts
+
+
+COLUMNWISE_FEATURE_STARTS = make_columnwise_starts()
+COLUMNWISE_TOTAL_INPUT_FEATURES = int(
+    COLUMNWISE_FEATURE_STARTS[-1] + ADJ_EVAL_SIZES[int(ADJ_FEATURE_TO_EVAL_IDX[-1])]
+)
+
+
+ARCHES = {
+    "ps16": (16, 16),
+    "ps24": (24, 24),
+    "ps32": (32, 32),
+    "ps16_8": (16, 8),
+}
+
+
+def feature_columns_to_mask(columns: np.ndarray) -> tuple[int, int]:
+    mask = 0
+    for col in columns.tolist():
+        mask |= 1 << int(col)
+    return mask & ((1 << 64) - 1), mask >> 64
+
+
+def pattern_score_ids_from_global(features: np.ndarray) -> np.ndarray:
+    active = PATTERN_SCORE_ACTIVE_COLUMNS
+    local = features[:, active].astype(np.uint32, copy=False) - FEATURE_STARTS[active][None, :]
+    return local + COLUMNWISE_FEATURE_STARTS[active][None, :]
+
+
+def shrink_samples_to_pattern_score_ids(samples: dict[str, np.ndarray]) -> None:
+    samples["train_features"] = pattern_score_ids_from_global(samples["train_features"])
+    samples["val_features"] = pattern_score_ids_from_global(samples["val_features"])
+
+
+class PatternScoreNNUE(nn.Module):
+    def __init__(self, hidden1: int, hidden2: int):
+        super().__init__()
+        self.ft_dim = PATTERN_SCORE_INPUT_DIM
+        self.hidden1_dim = hidden1
+        self.hidden2_dim = hidden2
+        self.score_table = nn.Embedding(COLUMNWISE_TOTAL_INPUT_FEATURES, 1, sparse=True)
+        self.input_bias = nn.Parameter(torch.full((PATTERN_SCORE_INPUT_DIM,), 2.0))
+        self.hidden1 = nn.Linear(PATTERN_SCORE_INPUT_DIM, hidden1)
+        self.hidden2 = nn.Linear(hidden1, hidden2)
+        self.output_weight = nn.Parameter(torch.empty(N_PHASES, hidden2))
+        self.output_bias = nn.Parameter(torch.zeros(N_PHASES))
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        nn.init.normal_(self.score_table.weight, mean=0.0, std=0.05)
+        nn.init.zeros_(self.hidden1.weight)
+        with torch.no_grad():
+            for i in range(min(PATTERN_SCORE_INPUT_DIM, self.hidden1_dim)):
+                self.hidden1.weight[i, i] = 1.0
+        nn.init.zeros_(self.hidden1.bias)
+        nn.init.zeros_(self.hidden2.weight)
+        with torch.no_grad():
+            for i in range(min(self.hidden1_dim, self.hidden2_dim)):
+                self.hidden2.weight[i, i] = 1.0
+        nn.init.zeros_(self.hidden2.bias)
+        nn.init.normal_(self.output_weight, mean=0.0, std=0.10)
+        nn.init.zeros_(self.output_bias)
+
+    @staticmethod
+    def clipped_relu(x: torch.Tensor) -> torch.Tensor:
+        return torch.clamp(x, 0.0, 127.0 / 16.0)
+
+    def initialize_output_bias(self, phases: np.ndarray, scores: np.ndarray) -> None:
+        counts = np.bincount(phases.astype(np.int64, copy=False), minlength=N_PHASES)
+        sums = np.bincount(phases.astype(np.int64, copy=False), weights=scores, minlength=N_PHASES)
+        means = np.divide(sums, np.maximum(counts, 1), out=np.zeros_like(sums, dtype=np.float64), where=counts > 0)
+        with torch.no_grad():
+            self.output_bias.copy_(torch.from_numpy(means.astype(np.float32)))
+
+    def forward(self, features: torch.Tensor, phases: torch.Tensor) -> torch.Tensor:
+        x = self.input_bias + self.score_table(features).squeeze(-1)
+        x = self.clipped_relu(x)
+        x = self.clipped_relu(self.hidden1(x))
+        x = self.clipped_relu(self.hidden2(x))
+        return (x * self.output_weight[phases]).sum(dim=1) + self.output_bias[phases]
+
+
+@dataclass
+class QuantizedPatternScoreNNUE:
+    ft_bias: np.ndarray
+    score_table: np.ndarray
+    hidden1_bias: np.ndarray
+    hidden1_weight: np.ndarray
+    hidden2_bias: np.ndarray
+    hidden2_weight: np.ndarray
+    output_bias: np.ndarray
+    output_weight: np.ndarray
+    hidden1_padded: int
+    hidden2_padded: int
+    hidden_shift: int
+    output_shift: int
+    ft_weight_bits: int
+
+
+def pad_int8_matrix(matrix: np.ndarray, padded_cols: int) -> np.ndarray:
+    out = np.zeros((matrix.shape[0], padded_cols), dtype=np.int8)
+    out[:, : matrix.shape[1]] = matrix
+    return out
+
+
+def quantize_to_int16(values: torch.Tensor, scale: float, clip: int = 32767) -> np.ndarray:
+    arr = values.detach().cpu().numpy()
+    return np.clip(np.rint(arr * scale), -clip, clip).astype("<i2")
+
+
+def quantize_to_int8(values: torch.Tensor, scale: float, clip: int = 127) -> np.ndarray:
+    arr = values.detach().cpu().numpy()
+    return np.clip(np.rint(arr * scale), -clip, clip).astype("i1")
+
+
+def make_quantization_shifts(layer_weight_scale: int) -> tuple[int, int]:
+    hidden_shift = int_log2_power_of_two(layer_weight_scale, "layer_weight_scale")
+    output_scale_divisor = ACTIVATION_SCALE * layer_weight_scale
+    if output_scale_divisor % STEP != 0:
+        raise ValueError(
+            "ACTIVATION_SCALE * layer_weight_scale must be divisible by STEP: "
+            f"{ACTIVATION_SCALE} * {layer_weight_scale}"
+        )
+    output_shift = int_log2_power_of_two(output_scale_divisor // STEP, "output_scale_divisor / STEP")
+    return hidden_shift, output_shift
+
+
+def quantize_model(
+    model: PatternScoreNNUE,
+    layer_weight_scale: int,
+    ft_weight_bits: int,
+) -> QuantizedPatternScoreNNUE:
+    hidden1_padded = math.ceil(model.hidden1_dim / 32) * 32
+    hidden2_padded = math.ceil(model.hidden2_dim / 32) * 32
+    hidden_shift, output_shift = make_quantization_shifts(layer_weight_scale)
+    layer_acc_scale = ACTIVATION_SCALE * layer_weight_scale
+    ft_bias = quantize_to_int16(model.input_bias, FT_SCALE)
+    if ft_weight_bits == 8:
+        score_table = quantize_to_int8(model.score_table.weight[:, 0], FT_SCALE)
+    elif ft_weight_bits == 16:
+        score_table = quantize_to_int16(model.score_table.weight[:, 0], FT_SCALE)
+    else:
+        raise ValueError(f"ft_weight_bits must be 8 or 16: {ft_weight_bits}")
+    h1_bias = np.rint(model.hidden1.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
+    h1_weight = pad_int8_matrix(quantize_to_int8(model.hidden1.weight, layer_weight_scale), 32)
+    h2_bias = np.rint(model.hidden2.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
+    h2_weight = pad_int8_matrix(quantize_to_int8(model.hidden2.weight, layer_weight_scale), hidden1_padded)
+    out_bias = np.rint(model.output_bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
+    out_weight = pad_int8_matrix(quantize_to_int8(model.output_weight, layer_weight_scale), hidden2_padded)
+    return QuantizedPatternScoreNNUE(
+        ft_bias=ft_bias,
+        score_table=score_table,
+        hidden1_bias=h1_bias,
+        hidden1_weight=h1_weight,
+        hidden2_bias=h2_bias,
+        hidden2_weight=h2_weight,
+        output_bias=out_bias,
+        output_weight=out_weight,
+        hidden1_padded=hidden1_padded,
+        hidden2_padded=hidden2_padded,
+        hidden_shift=hidden_shift,
+        output_shift=output_shift,
+        ft_weight_bits=ft_weight_bits,
+    )
+
+
+def clamp_u8_shifted(values: np.ndarray, shift: int) -> np.ndarray:
+    shifted = values >> shift if shift > 0 else values
+    return np.clip(shifted, 0, 127).astype(np.uint8)
+
+
+def rounded_shift_signed(values: np.ndarray, shift: int) -> np.ndarray:
+    if shift <= 0:
+        return values
+    rounded = np.empty_like(values)
+    non_negative = values >= 0
+    rounded[non_negative] = (values[non_negative] + (1 << (shift - 1))) >> shift
+    rounded[~non_negative] = -(((-values[~non_negative]) + (1 << (shift - 1))) >> shift)
+    return rounded
+
+
+def quantized_forward(q: QuantizedPatternScoreNNUE, features: np.ndarray, phases: np.ndarray) -> np.ndarray:
+    acc = q.ft_bias.astype(np.int32, copy=False)[None, :] + q.score_table[features].astype(np.int32, copy=False)
+    post_input = np.zeros((features.shape[0], 32), dtype=np.uint8)
+    post_input[:, :PATTERN_SCORE_INPUT_DIM] = clamp_u8_shifted(acc, FT_SHIFT)
+    h1_raw = q.hidden1_bias.astype(np.int32, copy=False)[None, :] + (
+        post_input.astype(np.int32, copy=False) @ q.hidden1_weight.astype(np.int32, copy=False).T
+    )
+    hidden1 = np.zeros((features.shape[0], q.hidden1_padded), dtype=np.uint8)
+    hidden1[:, : q.hidden1_bias.shape[0]] = clamp_u8_shifted(h1_raw, q.hidden_shift)
+    h2_raw = q.hidden2_bias.astype(np.int32, copy=False)[None, :] + (
+        hidden1.astype(np.int32, copy=False) @ q.hidden2_weight.astype(np.int32, copy=False).T
+    )
+    hidden2 = np.zeros((features.shape[0], q.hidden2_padded), dtype=np.uint8)
+    hidden2[:, : q.hidden2_bias.shape[0]] = clamp_u8_shifted(h2_raw, q.hidden_shift)
+    phase_idx = phases.astype(np.int64, copy=False)
+    output_weights = q.output_weight[phase_idx].astype(np.int32, copy=False)
+    raw = q.output_bias[phase_idx].astype(np.int32, copy=False)
+    raw = raw + (hidden2.astype(np.int32, copy=False) * output_weights).sum(axis=1)
+    raw = rounded_shift_signed(raw, q.output_shift)
+    raw = raw + np.where(raw >= 0, STEP // 2, -(STEP // 2))
+    values = np.trunc(raw.astype(np.float64) / float(STEP)).astype(np.int32)
+    return np.clip(values, -64, 64).astype(np.float32)
+
+
+def export_model(
+    model: PatternScoreNNUE,
+    out_file: Path,
+    layer_weight_scale: int,
+    ft_weight_bits: int,
+) -> None:
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    q = quantize_model(model, layer_weight_scale, ft_weight_bits)
+    if ft_weight_bits == 8:
+        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, PATTERN_SCORE_INPUT_DIM), dtype=np.int8)
+    else:
+        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, PATTERN_SCORE_INPUT_DIM), dtype="<i2")
+    for slot, col in enumerate(PATTERN_SCORE_ACTIVE_COLUMNS.tolist()):
+        start = int(COLUMNWISE_FEATURE_STARTS[col])
+        size = int(ADJ_EVAL_SIZES[int(ADJ_FEATURE_TO_EVAL_IDX[col])])
+        ft_weight[start:start + size, slot] = q.score_table[start:start + size]
+
+    with out_file.open("wb") as f:
+        f.write(b"EGNNUE1\0")
+        header = np.array(
+            [
+                4,
+                COLUMNWISE_TOTAL_INPUT_FEATURES,
+                PATTERN_SCORE_INPUT_DIM,
+                model.hidden1_dim,
+                model.hidden2_dim,
+                N_PHASES,
+                FT_SHIFT,
+                q.hidden_shift,
+                q.hidden_shift,
+                q.output_shift,
+            ],
+            dtype="<u4",
+        )
+        header.tofile(f)
+        mask_lo, mask_hi = feature_columns_to_mask(PATTERN_SCORE_ACTIVE_COLUMNS)
+        reserved = np.zeros(8, dtype="<u4")
+        reserved[0] = PATTERN_SCORE_INPUT_KIND
+        reserved[1] = N_FEATURE_COLUMNS
+        reserved[2] = 1
+        reserved[3] = mask_lo & 0xFFFFFFFF
+        reserved[4] = (mask_lo >> 32) & 0xFFFFFFFF
+        reserved[5] = mask_hi & 0xFFFFFFFF
+        reserved[6] = ft_weight_bits
+        reserved.tofile(f)
+        q.ft_bias.tofile(f)
+        ft_weight.tofile(f)
+        q.hidden1_bias.tofile(f)
+        q.hidden1_weight.tofile(f)
+        q.hidden2_bias.tofile(f)
+        q.hidden2_weight.tofile(f)
+        q.output_bias.tofile(f)
+        q.output_weight.tofile(f)
+
+
+def make_batch(
+    samples: dict[str, np.ndarray],
+    prefix: str,
+    idx: np.ndarray,
+    device: torch.device,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    return (
+        torch.from_numpy(samples[f"{prefix}_features"][idx].astype(np.int64, copy=False)).to(device=device, non_blocking=True),
+        torch.from_numpy(samples[f"{prefix}_phase"][idx].astype(np.int64, copy=False)).to(device=device, non_blocking=True),
+        torch.from_numpy(samples[f"{prefix}_score"][idx]).to(device=device, non_blocking=True),
+    )
+
+
+@torch.no_grad()
+def evaluate_loss(
+    model: PatternScoreNNUE,
+    samples: dict[str, np.ndarray],
+    prefix: str,
+    batch_size: int,
+    device: torch.device,
+    limit: int,
+) -> tuple[float, float, int]:
+    model.eval()
+    n = len(samples[f"{prefix}_score"])
+    if limit > 0:
+        n = min(n, limit)
+    se = 0.0
+    ae = 0.0
+    seen = 0
+    for idx in batch_iter(n, batch_size, False, 0):
+        features, phases, target = make_batch(samples, prefix, idx, device)
+        pred = model(features, phases)
+        err = pred - target
+        se += float((err * err).sum().detach().cpu())
+        ae += float(err.abs().sum().detach().cpu())
+        seen += int(target.numel())
+    return se / max(1, seen), ae / max(1, seen), seen
+
+
+@torch.no_grad()
+def evaluate_quantized_loss(
+    model: PatternScoreNNUE,
+    samples: dict[str, np.ndarray],
+    prefix: str,
+    batch_size: int,
+    limit: int,
+    layer_weight_scale: int,
+    ft_weight_bits: int,
+) -> tuple[float, float, int]:
+    q = quantize_model(model, layer_weight_scale, ft_weight_bits)
+    n = len(samples[f"{prefix}_score"])
+    if limit > 0:
+        n = min(n, limit)
+    se = 0.0
+    ae = 0.0
+    seen = 0
+    for idx in batch_iter(n, batch_size, False, 0):
+        pred = quantized_forward(q, samples[f"{prefix}_features"][idx], samples[f"{prefix}_phase"][idx])
+        target = samples[f"{prefix}_score"][idx]
+        err = pred - target
+        se += float(np.dot(err, err))
+        ae += float(np.abs(err).sum())
+        seen += int(target.size)
+    return se / max(1, seen), ae / max(1, seen), seen
+
+
+def write_summary(
+    out_dir: Path,
+    args: argparse.Namespace,
+    total_records: int,
+    manifest_phase_counts: np.ndarray,
+    samples: dict[str, np.ndarray] | None,
+    best: dict[str, float],
+) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    summary = {
+        "kind": "pattern_score_nnue",
+        "description": "16 learned scalar pattern scores followed by a small MLP",
+        "data_root": str(Path(args.data_root).resolve()),
+        "record_start": args.record_start,
+        "record_end": args.record_end,
+        "available_records": int(total_records),
+        "train_samples": args.train_samples,
+        "val_samples": args.val_samples,
+        "epochs": args.epochs,
+        "batch_size": args.batch_size,
+        "lr": args.lr,
+        "dense_weight_decay": args.dense_weight_decay,
+        "arch": args.arch,
+        "hidden1": args.hidden1,
+        "hidden2": args.hidden2,
+        "input_kind": PATTERN_SCORE_INPUT_KIND,
+        "input_dim": PATTERN_SCORE_INPUT_DIM,
+        "input_feature_columns": N_FEATURE_COLUMNS,
+        "active_feature_columns": PATTERN_SCORE_ACTIVE_COLUMNS.tolist(),
+        "active_feature_column_names": PATTERN_SCORE_COLUMN_NAMES,
+        "columnwise_total_input_features": COLUMNWISE_TOTAL_INPUT_FEATURES,
+        "layer_weight_scale": args.layer_weight_scale,
+        "ft_weight_bits": args.ft_weight_bits,
+        "seed": args.seed,
+        "manifest_phase_counts": [int(x) for x in manifest_phase_counts],
+        "best": best,
+    }
+    if samples is not None:
+        summary["train_phase_counts"] = [int(x) for x in samples["train_phase_counts"]]
+        summary["val_phase_counts"] = [int(x) for x in samples["val_phase_counts"]]
+    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-root", default=os.environ.get("EGAROUCID_INDEXED_DATA", "E:/egaroucid_data/train_data/bin_data/20241125_1"))
+    parser.add_argument("--record-start", type=int, default=223)
+    parser.add_argument("--record-end", type=int, default=-1)
+    parser.add_argument("--arch", choices=sorted(ARCHES), default="ps16")
+    parser.add_argument("--hidden1", type=int, default=0)
+    parser.add_argument("--hidden2", type=int, default=0)
+    parser.add_argument("--train-samples", type=int, default=10_000_000)
+    parser.add_argument("--val-samples", type=int, default=1_000_000)
+    parser.add_argument("--epochs", type=int, default=80)
+    parser.add_argument("--batch-size", type=int, default=262144)
+    parser.add_argument("--lr", type=float, default=1.0e-3)
+    parser.add_argument("--dense-weight-decay", type=float, default=1.0e-6)
+    parser.add_argument("--layer-weight-scale", type=int, default=DEFAULT_LAYER_WEIGHT_SCALE)
+    parser.add_argument("--ft-weight-bits", type=int, choices=[8, 16], default=8)
+    parser.add_argument("--seed", type=int, default=20260726)
+    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--model-root", default="model")
+    parser.add_argument("--model-name", default="")
+    parser.add_argument("--out-file", default="")
+    parser.add_argument("--metric-limit", type=int, default=1_000_000)
+    parser.add_argument("--quantized-metric-limit", type=int, default=1_000_000)
+    parser.add_argument("--progress-interval-sec", type=int, default=30)
+    parser.add_argument("--full-read-ratio", type=float, default=0.10)
+    parser.add_argument("--sample-cache", default="")
+    parser.add_argument("--load-state", default="")
+    parser.add_argument("--export-only", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    arch_dims = ARCHES[args.arch]
+    args.hidden1 = args.hidden1 or arch_dims[0]
+    args.hidden2 = args.hidden2 or arch_dims[1]
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed & 0xFFFFFFFF)
+
+    date = datetime.now().strftime("%Y%m%d")
+    model_name = args.model_name or (
+        f"nnue_pattern_score_{args.arch}_records{args.record_start}plus_"
+        f"train{args.train_samples}_val{args.val_samples}_e{args.epochs}"
+    )
+    out_dir = next_model_dir(Path(args.model_root), date, model_name)
+    out_file = Path(args.out_file) if args.out_file else out_dir / f"eval_nnue_pattern_score_{args.arch}.egevnnue"
+
+    data_root = Path(args.data_root)
+    entries, manifest_phase_counts = build_manifest(data_root, args.record_start, args.record_end)
+    total_records = entries[-1].begin + entries[-1].records if entries else 0
+    print(
+        f"manifest_files {len(entries)} total_records {total_records} data_root {data_root} "
+        f"active_feature_columns {','.join(str(int(x)) for x in PATTERN_SCORE_ACTIVE_COLUMNS)} "
+        f"columnwise_total_input_features {COLUMNWISE_TOTAL_INPUT_FEATURES}",
+        flush=True,
+    )
+    print(
+        f"arch {args.arch} input_dim {PATTERN_SCORE_INPUT_DIM} hidden1 {args.hidden1} "
+        f"hidden2 {args.hidden2} ft_weight_bits {args.ft_weight_bits}",
+        flush=True,
+    )
+    if args.dry_run:
+        write_summary(out_dir, args, total_records, manifest_phase_counts, None, {})
+        return 0
+
+    if args.sample_cache and Path(args.sample_cache).exists():
+        print(f"loading_sample_cache {args.sample_cache}", flush=True)
+        samples = load_sample_cache(Path(args.sample_cache))
+        shrink_samples_to_pattern_score_ids(samples)
+    else:
+        samples = load_samples(
+            entries,
+            args.train_samples,
+            args.val_samples,
+            args.seed,
+            args.progress_interval_sec,
+            args.full_read_ratio,
+        )
+        if args.sample_cache:
+            meta = {
+                "data_root": str(data_root.resolve()),
+                "record_start": args.record_start,
+                "record_end": args.record_end,
+                "available_records": int(total_records),
+                "train_samples": args.train_samples,
+                "val_samples": args.val_samples,
+                "seed": args.seed,
+                "input_feature_columns": N_FEATURE_COLUMNS,
+                "active_feature_columns": PATTERN_SCORE_ACTIVE_COLUMNS.tolist(),
+            }
+            print(f"writing_sample_cache {args.sample_cache}", flush=True)
+            save_sample_cache(Path(args.sample_cache), samples, meta)
+        shrink_samples_to_pattern_score_ids(samples)
+
+    device = torch.device(args.device if args.device == "cpu" or torch.cuda.is_available() else "cpu")
+    model = PatternScoreNNUE(args.hidden1, args.hidden2).to(device)
+    model.initialize_output_bias(samples["train_phase"], samples["train_score"])
+    model.to(device)
+    if args.load_state:
+        print(f"loading_state {args.load_state}", flush=True)
+        try:
+            checkpoint = torch.load(args.load_state, map_location=device, weights_only=False)
+        except TypeError:
+            checkpoint = torch.load(args.load_state, map_location=device)
+        state_dict = checkpoint["state_dict"] if isinstance(checkpoint, dict) and "state_dict" in checkpoint else checkpoint
+        model.load_state_dict(state_dict)
+        model.to(device)
+        if args.export_only:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits)
+            val_mse, val_mae, val_n = evaluate_loss(model, samples, "val", args.batch_size, device, args.metric_limit)
+            q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
+                model,
+                samples,
+                "val",
+                args.batch_size,
+                args.quantized_metric_limit,
+                args.layer_weight_scale,
+                args.ft_weight_bits,
+            )
+            best = {
+                "epoch": int(checkpoint.get("best", {}).get("epoch", 0)) if isinstance(checkpoint, dict) else 0,
+                "val_mse": val_mse,
+                "val_mae": val_mae,
+                "quantized_val_mse": q_val_mse,
+                "quantized_val_mae": q_val_mae,
+                "quantized_val_metric_samples": q_val_n,
+            }
+            print(
+                f"export_only val_mse {val_mse:.6f} val_mae {val_mae:.6f} val_metric_samples {val_n} "
+                f"quantized_val_mse {q_val_mse:.6f} quantized_val_mae {q_val_mae:.6f} "
+                f"quantized_val_metric_samples {q_val_n}",
+                flush=True,
+            )
+            write_summary(out_dir, args, total_records, manifest_phase_counts, samples, best)
+            print(f"wrote {out_file}", flush=True)
+            return 0
+    sparse_optimizer = torch.optim.SparseAdam([model.score_table.weight], lr=args.lr)
+    dense_params = [
+        model.input_bias,
+        *model.hidden1.parameters(),
+        *model.hidden2.parameters(),
+        model.output_weight,
+        model.output_bias,
+    ]
+    dense_optimizer = torch.optim.AdamW(dense_params, lr=args.lr, weight_decay=args.dense_weight_decay)
+
+    train_mse, train_mae, train_n = evaluate_loss(model, samples, "train", args.batch_size, device, args.metric_limit)
+    val_mse, val_mae, val_n = evaluate_loss(model, samples, "val", args.batch_size, device, args.metric_limit)
+    print(
+        f"initial train_mse {train_mse:.6f} train_mae {train_mae:.6f} train_metric_samples {train_n} "
+        f"val_mse {val_mse:.6f} val_mae {val_mae:.6f} val_metric_samples {val_n}",
+        flush=True,
+    )
+
+    best: dict[str, float] = {"epoch": 0, "val_mse": float("inf"), "val_mae": float("inf")}
+    best_state: dict[str, torch.Tensor] | None = None
+    for epoch in range(1, args.epochs + 1):
+        model.train()
+        seen = 0
+        running_loss = 0.0
+        start_ms = now_ms()
+        for idx in batch_iter(args.train_samples, args.batch_size, True, args.seed + epoch):
+            features, phases, target = make_batch(samples, "train", idx, device)
+            pred = model(features, phases)
+            loss = torch.mean((pred - target) ** 2)
+            sparse_optimizer.zero_grad(set_to_none=True)
+            dense_optimizer.zero_grad(set_to_none=True)
+            loss.backward()
+            sparse_optimizer.step()
+            dense_optimizer.step()
+            batch_n = int(target.numel())
+            seen += batch_n
+            running_loss += float(loss.detach().cpu()) * batch_n
+        train_mse, train_mae, train_n = evaluate_loss(model, samples, "train", args.batch_size, device, args.metric_limit)
+        val_mse, val_mae, val_n = evaluate_loss(model, samples, "val", args.batch_size, device, args.metric_limit)
+        if val_mse < best["val_mse"]:
+            best = {"epoch": epoch, "val_mse": val_mse, "val_mae": val_mae}
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        print(
+            f"epoch {epoch} elapsed_ms {now_ms() - start_ms} "
+            f"train_epoch_mse {running_loss / max(1, seen):.6f} "
+            f"train_mse {train_mse:.6f} train_mae {train_mae:.6f} "
+            f"val_mse {val_mse:.6f} val_mae {val_mae:.6f} "
+            f"best_epoch {best['epoch']} best_val_mse {best['val_mse']:.6f}",
+            flush=True,
+        )
+
+    if best_state is not None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        model.load_state_dict(best_state)
+        model.to(device)
+        export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits)
+        q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
+            model,
+            samples,
+            "val",
+            args.batch_size,
+            args.quantized_metric_limit,
+            args.layer_weight_scale,
+            args.ft_weight_bits,
+        )
+        best["quantized_val_mse"] = q_val_mse
+        best["quantized_val_mae"] = q_val_mae
+        best["quantized_val_metric_samples"] = q_val_n
+        print(
+            f"quantized_best val_mse {q_val_mse:.6f} val_mae {q_val_mae:.6f} "
+            f"val_metric_samples {q_val_n}",
+            flush=True,
+        )
+        torch.save(
+            {
+                "state_dict": best_state,
+                "arch": args.arch,
+                "input_dim": PATTERN_SCORE_INPUT_DIM,
+                "hidden1": args.hidden1,
+                "hidden2": args.hidden2,
+                "active_feature_columns": PATTERN_SCORE_ACTIVE_COLUMNS,
+                "active_feature_column_names": PATTERN_SCORE_COLUMN_NAMES,
+                "columnwise_feature_starts": COLUMNWISE_FEATURE_STARTS,
+                "columnwise_total_input_features": COLUMNWISE_TOTAL_INPUT_FEATURES,
+                "layer_weight_scale": args.layer_weight_scale,
+                "ft_weight_bits": args.ft_weight_bits,
+                "best": best,
+            },
+            out_dir / "model_state.pt",
+        )
+    write_summary(out_dir, args, total_records, manifest_phase_counts, samples, best)
+    print(f"wrote {out_file}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -37,6 +37,7 @@ constexpr int EVAL_NNUE_INPUT_FEATURES = 128;
 constexpr int EVAL_NNUE_INPUT_KIND_STONE = 1;
 constexpr int EVAL_NNUE_INPUT_KIND_PATTERN = 2;
 constexpr int EVAL_NNUE_INPUT_KIND_PATTERN_PAIR = 3;
+constexpr int EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR = 4;
 constexpr int EVAL_NNUE_MAX_HIDDEN1 = 64;
 constexpr int EVAL_NNUE_MAX_HIDDEN2 = 64;
 constexpr int EVAL_NNUE_MAX_POST_INPUT = EVAL_NNUE_MAX_FT_DIM * 2;
@@ -101,6 +102,20 @@ inline int eval_nnue_pattern_total_input_features() {
     return res;
 }
 
+inline int eval_nnue_pattern_columnwise_total_input_features() {
+    int res = 0;
+    for (int i = 0; i < ADJ_N_FEATURES; ++i) {
+        res += adj_eval_sizes[adj_feature_to_eval_idx[i]];
+    }
+    return res;
+}
+
+inline bool eval_nnue_uses_pattern_features() {
+    return eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
+        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR ||
+        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR;
+}
+
 inline int eval_nnue_pattern_feature_start(const int feature_idx) {
     int start = 0;
     for (int i = 1; i <= feature_idx; ++i) {
@@ -124,7 +139,11 @@ inline void eval_nnue_init_pattern_tables() {
     }
     int feature_start = 0;
     for (int i = 0; i < ADJ_N_FEATURES; ++i) {
-        if (i > 0 && adj_feature_to_eval_idx[i] > adj_feature_to_eval_idx[i - 1]) {
+        if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR) {
+            if (i > 0) {
+                feature_start += adj_eval_sizes[adj_feature_to_eval_idx[i - 1]];
+            }
+        } else if (i > 0 && adj_feature_to_eval_idx[i] > adj_feature_to_eval_idx[i - 1]) {
             feature_start += adj_eval_sizes[adj_feature_to_eval_idx[i - 1]];
         }
         eval_nnue_pattern_feature_starts[(size_t)i] = feature_start;
@@ -157,7 +176,7 @@ inline void eval_nnue_init_pattern_tables() {
 }
 
 inline int eval_nnue_post_input_dim() {
-    return eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ? eval_nnue_ft_dim : eval_nnue_ft_dim * 2;
+    return eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR ? eval_nnue_ft_dim * 2 : eval_nnue_ft_dim;
 }
 
 inline int eval_nnue_post_input_padded() {
@@ -248,8 +267,13 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
         input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR &&
         pattern_feature_columns == ADJ_N_FEATURES &&
         input_features == (uint32_t)eval_nnue_pattern_total_input_features();
+    const bool pattern_scalar_header_ok =
+        version == 4 &&
+        input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_SCALAR &&
+        pattern_feature_columns == ADJ_N_FEATURES &&
+        input_features == (uint32_t)eval_nnue_pattern_columnwise_total_input_features();
     if (in.fail() ||
-        (!stone_header_ok && !pattern_header_ok && !pattern_pair_header_ok) ||
+        (!stone_header_ok && !pattern_header_ok && !pattern_pair_header_ok && !pattern_scalar_header_ok) ||
         ft_dim == 0 || ft_dim > EVAL_NNUE_MAX_FT_DIM ||
         hidden1_dim == 0 || hidden1_dim > EVAL_NNUE_MAX_HIDDEN1 ||
         hidden2_dim == 0 || hidden2_dim > EVAL_NNUE_MAX_HIDDEN2 ||
@@ -277,8 +301,7 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
     eval_nnue_input_features = (int)input_features;
     eval_nnue_pattern_feature_columns = (int)pattern_feature_columns;
     eval_nnue_ft_weight_bits = (int)ft_weight_bits_header;
-    if ((eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
-         eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) &&
+    if (eval_nnue_uses_pattern_features() &&
         (active_mask_lo_header != 0 || active_mask_hi_header != 0)) {
         eval_nnue_active_pattern_mask_lo = active_mask_lo_header;
         eval_nnue_active_pattern_mask_hi = active_mask_hi_header;
@@ -316,8 +339,7 @@ inline bool eval_nnue_load(const char *file, bool show_log) {
     }
 
     eval_nnue_enabled = true;
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
-        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
+    if (eval_nnue_uses_pattern_features()) {
         eval_nnue_pattern_tables_initialized = false;
         eval_nnue_init_pattern_tables();
     }
@@ -1188,8 +1210,7 @@ inline void eval_nnue_pattern_flush_touched_pair(
 }
 
 inline void calc_eval_features(Board *board, Eval_search *eval) {
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
-        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
+    if (eval_nnue_uses_pattern_features()) {
         eval->feature_idx = 0;
         eval_nnue_calc_pattern_accumulator(board, eval, 0, 0);
         Board opponent_view = *board;
@@ -1216,8 +1237,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
 }
 
 inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
-        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
+    if (eval_nnue_uses_pattern_features()) {
         const int prev = (int)eval->feature_idx;
         const int next = prev + 1;
         eval_nnue_copy_accumulator(eval->accumulator[next][0], eval->accumulator[prev][1]);
@@ -1285,8 +1305,7 @@ inline void eval_undo(Eval_search *eval) {
 }
 
 inline void eval_pass(Eval_search *eval, const Board *board) {
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN ||
-        eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
+    if (eval_nnue_uses_pattern_features()) {
         const int idx = (int)eval->feature_idx;
         alignas(32) int16_t tmp_acc[EVAL_NNUE_MAX_FT_DIM];
         uint16_t tmp_features[ADJ_N_FEATURES];
@@ -1363,11 +1382,11 @@ inline void eval_nnue_clamp_i16_to_u8_shifted(const int16_t *in, uint8_t *out, c
 }
 
 inline void eval_nnue_make_post_input(const int16_t acc[2][EVAL_NNUE_MAX_FT_DIM], uint8_t *out) {
-    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN) {
-        eval_nnue_clamp_i16_to_u8_shifted(acc[0], out, eval_nnue_ft_dim, eval_nnue_ft_shift);
-    } else {
+    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR) {
         eval_nnue_clamp_i16_to_u8_shifted(acc[0], out, eval_nnue_ft_dim, eval_nnue_ft_shift);
         eval_nnue_clamp_i16_to_u8_shifted(acc[1], out + eval_nnue_ft_dim, eval_nnue_ft_dim, eval_nnue_ft_shift);
+    } else {
+        eval_nnue_clamp_i16_to_u8_shifted(acc[0], out, eval_nnue_ft_dim, eval_nnue_ft_shift);
     }
     const int padded = eval_nnue_post_input_padded();
     for (int i = eval_nnue_post_input_dim(); i < padded; ++i) {
