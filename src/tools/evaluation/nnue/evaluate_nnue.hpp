@@ -378,6 +378,12 @@ inline __m128i eval_nnue_load_i8x8_to_i16(const int8_t *w) {
     return _mm_cvtepi8_epi16(_mm_loadl_epi64(reinterpret_cast<const __m128i*>(w)));
 }
 
+inline void eval_nnue_add_feature_i8_16(int16_t *acc, const int8_t *w) {
+    const __m256i a = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc));
+    const __m256i b = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(w)));
+    _mm256_storeu_si256(reinterpret_cast<__m256i*>(acc), _mm256_add_epi16(a, b));
+}
+
 inline void eval_nnue_add_feature_i8_24(int16_t *acc, const int8_t *w) {
     __m256i a0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc));
     const __m256i b0 = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(w)));
@@ -388,6 +394,12 @@ inline void eval_nnue_add_feature_i8_24(int16_t *acc, const int8_t *w) {
     _mm_storeu_si128(reinterpret_cast<__m128i*>(acc + 16), _mm_add_epi16(a1, b1));
 }
 
+inline void eval_nnue_sub_feature_i8_16(int16_t *acc, const int8_t *w) {
+    const __m256i a = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc));
+    const __m256i b = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(w)));
+    _mm256_storeu_si256(reinterpret_cast<__m256i*>(acc), _mm256_sub_epi16(a, b));
+}
+
 inline void eval_nnue_sub_feature_i8_24(int16_t *acc, const int8_t *w) {
     __m256i a0 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc));
     const __m256i b0 = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(w)));
@@ -396,6 +408,14 @@ inline void eval_nnue_sub_feature_i8_24(int16_t *acc, const int8_t *w) {
     __m128i a1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(acc + 16));
     const __m128i b1 = eval_nnue_load_i8x8_to_i16(w + 16);
     _mm_storeu_si128(reinterpret_cast<__m128i*>(acc + 16), _mm_sub_epi16(a1, b1));
+}
+
+inline void eval_nnue_replace_feature_i8_16(int16_t *acc, const int8_t *old_w, const int8_t *new_w) {
+    __m256i a = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc));
+    const __m256i old_v = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(old_w)));
+    const __m256i new_v = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(new_w)));
+    a = _mm256_add_epi16(_mm256_sub_epi16(a, old_v), new_v);
+    _mm256_storeu_si256(reinterpret_cast<__m256i*>(acc), a);
 }
 
 inline void eval_nnue_replace_feature_i8_24(int16_t *acc, const int8_t *old_w, const int8_t *new_w) {
@@ -428,6 +448,10 @@ inline void eval_nnue_add_feature(int16_t *acc, const int feature) {
         }
         if (eval_nnue_ft_dim == 24) {
             eval_nnue_add_feature_i8_24(acc, w);
+            return;
+        }
+        if (eval_nnue_ft_dim == 16) {
+            eval_nnue_add_feature_i8_16(acc, w);
             return;
         }
 #endif
@@ -507,6 +531,10 @@ inline void eval_nnue_sub_feature(int16_t *acc, const int feature) {
         }
         if (eval_nnue_ft_dim == 24) {
             eval_nnue_sub_feature_i8_24(acc, w);
+            return;
+        }
+        if (eval_nnue_ft_dim == 16) {
+            eval_nnue_sub_feature_i8_16(acc, w);
             return;
         }
 #endif
@@ -594,6 +622,10 @@ inline void eval_nnue_replace_feature(int16_t *acc, const int old_feature, const
         }
         if (eval_nnue_ft_dim == 24) {
             eval_nnue_replace_feature_i8_24(acc, old_w, new_w);
+            return;
+        }
+        if (eval_nnue_ft_dim == 16) {
+            eval_nnue_replace_feature_i8_16(acc, old_w, new_w);
             return;
         }
 #endif
@@ -850,6 +882,63 @@ inline void eval_nnue_pattern_flush_touched_pair(
     const int n_touched
 ) {
 #if USE_SIMD
+    if (eval_nnue_ft_weight_bits == 8 && eval_nnue_ft_dim == 16) {
+        __m256i delta0 = _mm256_setzero_si256();
+        __m256i delta1 = _mm256_setzero_si256();
+        for (int i = 0; i < n_touched; ++i) {
+            const int feature_idx = touched_features[i];
+            const int old_feature0 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[prev][1][feature_idx]
+            );
+            const int new_feature0 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[next][0][feature_idx]
+            );
+            if (old_feature0 != new_feature0) {
+                const int8_t *old_w = eval_nnue_feature_weight_i8(old_feature0);
+                const int8_t *new_w = eval_nnue_feature_weight_i8(new_feature0);
+                delta0 = _mm256_add_epi16(
+                    delta0,
+                    _mm256_sub_epi16(
+                        _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(new_w))),
+                        _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(old_w)))
+                    )
+                );
+            }
+
+            const int old_feature1 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[prev][0][feature_idx]
+            );
+            const int new_feature1 = eval_nnue_pattern_global_feature(
+                feature_idx,
+                eval->pattern_features[next][1][feature_idx]
+            );
+            if (old_feature1 != new_feature1) {
+                const int8_t *old_w = eval_nnue_feature_weight_i8(old_feature1);
+                const int8_t *new_w = eval_nnue_feature_weight_i8(new_feature1);
+                delta1 = _mm256_add_epi16(
+                    delta1,
+                    _mm256_sub_epi16(
+                        _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(new_w))),
+                        _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i*>(old_w)))
+                    )
+                );
+            }
+        }
+        int16_t *acc0 = eval->accumulator[next][0];
+        int16_t *acc1 = eval->accumulator[next][1];
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(acc0),
+            _mm256_add_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc0)), delta0)
+        );
+        _mm256_storeu_si256(
+            reinterpret_cast<__m256i*>(acc1),
+            _mm256_add_epi16(_mm256_loadu_si256(reinterpret_cast<const __m256i*>(acc1)), delta1)
+        );
+        return;
+    }
     if (eval_nnue_ft_weight_bits == 8 && eval_nnue_ft_dim == 24) {
         __m256i delta0_lo = _mm256_setzero_si256();
         __m256i delta1_lo = _mm256_setzero_si256();
@@ -1517,6 +1606,42 @@ inline int eval_nnue_forward_24_24_24_pair_avx2(const int phase_idx, const int16
     return eval_nnue_finalize_output(raw);
 }
 
+inline int eval_nnue_forward_16_16_16_pair_avx2(const int phase_idx, const int16_t acc[2][EVAL_NNUE_MAX_FT_DIM]) {
+    alignas(32) uint8_t post_input[32] = {};
+    alignas(32) uint8_t hidden1[32] = {};
+    alignas(32) uint8_t hidden2[32] = {};
+
+    eval_nnue_clamp_i16_to_u8_shifted(acc[0], post_input, 16, eval_nnue_ft_shift);
+    eval_nnue_clamp_i16_to_u8_shifted(acc[1], post_input + 16, 16, eval_nnue_ft_shift);
+
+    eval_nnue_layer_outputs_avx2(
+        post_input,
+        eval_nnue_hidden1_weight.data(),
+        32,
+        32,
+        eval_nnue_hidden1_bias.data(),
+        hidden1,
+        16,
+        eval_nnue_hidden1_shift
+    );
+    eval_nnue_layer_outputs_avx2(
+        hidden1,
+        eval_nnue_hidden2_weight.data(),
+        32,
+        32,
+        eval_nnue_hidden2_bias.data(),
+        hidden2,
+        16,
+        eval_nnue_hidden2_shift
+    );
+    const int32_t raw = eval_nnue_dot_u8s8_32_avx2(
+        hidden2,
+        &eval_nnue_output_weight[(size_t)phase_idx * 32],
+        eval_nnue_output_bias[(size_t)phase_idx]
+    );
+    return eval_nnue_finalize_output(raw);
+}
+
 inline int eval_nnue_forward_64_32_32_avx2(const int phase_idx, const int16_t acc[2][EVAL_NNUE_MAX_FT_DIM]) {
     alignas(32) uint8_t post_input[64];
     alignas(32) uint8_t hidden1[32];
@@ -1569,6 +1694,10 @@ inline int eval_nnue_forward_from_accumulator(const int phase_idx, const int16_t
     if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR &&
         eval_nnue_ft_dim == 24 && eval_nnue_hidden1_dim == 24 && eval_nnue_hidden2_dim == 24) {
         return eval_nnue_forward_24_24_24_pair_avx2(phase_idx, acc);
+    }
+    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR &&
+        eval_nnue_ft_dim == 16 && eval_nnue_hidden1_dim == 16 && eval_nnue_hidden2_dim == 16) {
+        return eval_nnue_forward_16_16_16_pair_avx2(phase_idx, acc);
     }
 #endif
     alignas(32) uint8_t post_input[EVAL_NNUE_MAX_POST_INPUT];
