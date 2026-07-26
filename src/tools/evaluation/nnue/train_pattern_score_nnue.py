@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Train a small NN from 16 learned pattern scores.
+"""Train a small NN from learned scalar pattern scores.
 
-This model uses the 16 pattern feature columns used by endgame move ordering.
-Each column has its own table that maps a local pattern arrangement to one
-learned scalar.  The 16 scalars are then passed to a very small neural network.
+Each selected pattern feature column has its own table that maps a local
+pattern arrangement to one learned scalar.  These scalars are then passed to a
+very small neural network.
 """
 
 from __future__ import annotations
@@ -42,29 +42,26 @@ from train_pattern_nnue import (
 )
 
 
-PATTERN_SCORE_ACTIVE_COLUMNS = np.arange(32, 48, dtype=np.int64)
-PATTERN_SCORE_COLUMN_NAMES = [
-    "edge+2x/0",
-    "edge+2x/1",
-    "edge+2x/2",
-    "edge+2x/3",
-    "triangle/0",
-    "triangle/1",
-    "triangle/2",
-    "triangle/3",
-    "corner+block/0",
-    "corner+block/1",
-    "corner+block/2",
-    "corner+block/3",
-    "cross/0",
-    "cross/1",
-    "cross/2",
-    "cross/3",
-]
-
 PATTERN_SCORE_INPUT_KIND = 4
-PATTERN_SCORE_INPUT_DIM = 16
 DEFAULT_LAYER_WEIGHT_SCALE = 32
+PATTERN_NAMES = [
+    "hv2",
+    "d6+2C+X",
+    "hv3",
+    "d7+2corner",
+    "hv4",
+    "corner9",
+    "d5+2X",
+    "d8+2C",
+    "edge+2x",
+    "triangle",
+    "corner+block",
+    "cross",
+    "edge+y",
+    "narrow_triangle",
+    "fish",
+    "anvil",
+]
 
 
 def now_ms() -> int:
@@ -90,8 +87,33 @@ ARCHES = {
     "ps16": (16, 16),
     "ps24": (24, 24),
     "ps32": (32, 32),
+    "ps48_32": (32, 32),
+    "ps48_48": (48, 48),
     "ps16_8": (16, 8),
 }
+
+
+def make_pattern_columns(pattern_start: int, pattern_count: int) -> np.ndarray:
+    first_col = pattern_start * 4
+    return np.arange(first_col, first_col + pattern_count * 4, dtype=np.int64)
+
+
+def make_pattern_column_names(columns: np.ndarray) -> list[str]:
+    names = []
+    for col in columns.tolist():
+        pattern_idx = int(col) // 4
+        symmetry_idx = int(col) % 4
+        pattern_name = PATTERN_NAMES[pattern_idx] if pattern_idx < len(PATTERN_NAMES) else f"pattern{pattern_idx}"
+        names.append(f"{pattern_name}/{symmetry_idx}")
+    return names
+
+
+def select_active_columns(pattern_set: str) -> np.ndarray:
+    if pattern_set == "mo_end4":
+        return make_pattern_columns(8, 4)
+    if pattern_set == "first12":
+        return make_pattern_columns(0, 12)
+    raise ValueError(f"unknown pattern_set: {pattern_set}")
 
 
 def feature_columns_to_mask(columns: np.ndarray) -> tuple[int, int]:
@@ -101,26 +123,25 @@ def feature_columns_to_mask(columns: np.ndarray) -> tuple[int, int]:
     return mask & ((1 << 64) - 1), mask >> 64
 
 
-def pattern_score_ids_from_global(features: np.ndarray) -> np.ndarray:
-    active = PATTERN_SCORE_ACTIVE_COLUMNS
+def pattern_score_ids_from_global(features: np.ndarray, active: np.ndarray) -> np.ndarray:
     local = features[:, active].astype(np.uint32, copy=False) - FEATURE_STARTS[active][None, :]
     return local + COLUMNWISE_FEATURE_STARTS[active][None, :]
 
 
-def shrink_samples_to_pattern_score_ids(samples: dict[str, np.ndarray]) -> None:
-    samples["train_features"] = pattern_score_ids_from_global(samples["train_features"])
-    samples["val_features"] = pattern_score_ids_from_global(samples["val_features"])
+def shrink_samples_to_pattern_score_ids(samples: dict[str, np.ndarray], active_columns: np.ndarray) -> None:
+    samples["train_features"] = pattern_score_ids_from_global(samples["train_features"], active_columns)
+    samples["val_features"] = pattern_score_ids_from_global(samples["val_features"], active_columns)
 
 
 class PatternScoreNNUE(nn.Module):
-    def __init__(self, hidden1: int, hidden2: int):
+    def __init__(self, input_dim: int, hidden1: int, hidden2: int):
         super().__init__()
-        self.ft_dim = PATTERN_SCORE_INPUT_DIM
+        self.ft_dim = input_dim
         self.hidden1_dim = hidden1
         self.hidden2_dim = hidden2
         self.score_table = nn.Embedding(COLUMNWISE_TOTAL_INPUT_FEATURES, 1, sparse=True)
-        self.input_bias = nn.Parameter(torch.full((PATTERN_SCORE_INPUT_DIM,), 2.0))
-        self.hidden1 = nn.Linear(PATTERN_SCORE_INPUT_DIM, hidden1)
+        self.input_bias = nn.Parameter(torch.full((input_dim,), 2.0))
+        self.hidden1 = nn.Linear(input_dim, hidden1)
         self.hidden2 = nn.Linear(hidden1, hidden2)
         self.output_weight = nn.Parameter(torch.empty(N_PHASES, hidden2))
         self.output_bias = nn.Parameter(torch.zeros(N_PHASES))
@@ -130,7 +151,7 @@ class PatternScoreNNUE(nn.Module):
         nn.init.normal_(self.score_table.weight, mean=0.0, std=0.05)
         nn.init.zeros_(self.hidden1.weight)
         with torch.no_grad():
-            for i in range(min(PATTERN_SCORE_INPUT_DIM, self.hidden1_dim)):
+            for i in range(min(self.ft_dim, self.hidden1_dim)):
                 self.hidden1.weight[i, i] = 1.0
         nn.init.zeros_(self.hidden1.bias)
         nn.init.zeros_(self.hidden2.weight)
@@ -212,6 +233,7 @@ def quantize_model(
 ) -> QuantizedPatternScoreNNUE:
     hidden1_padded = math.ceil(model.hidden1_dim / 32) * 32
     hidden2_padded = math.ceil(model.hidden2_dim / 32) * 32
+    post_input_padded = math.ceil(model.ft_dim / 32) * 32
     hidden_shift, output_shift = make_quantization_shifts(layer_weight_scale)
     layer_acc_scale = ACTIVATION_SCALE * layer_weight_scale
     ft_bias = quantize_to_int16(model.input_bias, FT_SCALE)
@@ -222,7 +244,7 @@ def quantize_model(
     else:
         raise ValueError(f"ft_weight_bits must be 8 or 16: {ft_weight_bits}")
     h1_bias = np.rint(model.hidden1.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
-    h1_weight = pad_int8_matrix(quantize_to_int8(model.hidden1.weight, layer_weight_scale), 32)
+    h1_weight = pad_int8_matrix(quantize_to_int8(model.hidden1.weight, layer_weight_scale), post_input_padded)
     h2_bias = np.rint(model.hidden2.bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
     h2_weight = pad_int8_matrix(quantize_to_int8(model.hidden2.weight, layer_weight_scale), hidden1_padded)
     out_bias = np.rint(model.output_bias.detach().cpu().numpy() * layer_acc_scale).astype("<i4")
@@ -261,8 +283,9 @@ def rounded_shift_signed(values: np.ndarray, shift: int) -> np.ndarray:
 
 def quantized_forward(q: QuantizedPatternScoreNNUE, features: np.ndarray, phases: np.ndarray) -> np.ndarray:
     acc = q.ft_bias.astype(np.int32, copy=False)[None, :] + q.score_table[features].astype(np.int32, copy=False)
-    post_input = np.zeros((features.shape[0], 32), dtype=np.uint8)
-    post_input[:, :PATTERN_SCORE_INPUT_DIM] = clamp_u8_shifted(acc, FT_SHIFT)
+    post_padded = math.ceil(acc.shape[1] / 32) * 32
+    post_input = np.zeros((features.shape[0], post_padded), dtype=np.uint8)
+    post_input[:, : acc.shape[1]] = clamp_u8_shifted(acc, FT_SHIFT)
     h1_raw = q.hidden1_bias.astype(np.int32, copy=False)[None, :] + (
         post_input.astype(np.int32, copy=False) @ q.hidden1_weight.astype(np.int32, copy=False).T
     )
@@ -288,14 +311,15 @@ def export_model(
     out_file: Path,
     layer_weight_scale: int,
     ft_weight_bits: int,
+    active_columns: np.ndarray,
 ) -> None:
     out_file.parent.mkdir(parents=True, exist_ok=True)
     q = quantize_model(model, layer_weight_scale, ft_weight_bits)
     if ft_weight_bits == 8:
-        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, PATTERN_SCORE_INPUT_DIM), dtype=np.int8)
+        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, model.ft_dim), dtype=np.int8)
     else:
-        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, PATTERN_SCORE_INPUT_DIM), dtype="<i2")
-    for slot, col in enumerate(PATTERN_SCORE_ACTIVE_COLUMNS.tolist()):
+        ft_weight = np.zeros((COLUMNWISE_TOTAL_INPUT_FEATURES, model.ft_dim), dtype="<i2")
+    for slot, col in enumerate(active_columns.tolist()):
         start = int(COLUMNWISE_FEATURE_STARTS[col])
         size = int(ADJ_EVAL_SIZES[int(ADJ_FEATURE_TO_EVAL_IDX[col])])
         ft_weight[start:start + size, slot] = q.score_table[start:start + size]
@@ -306,7 +330,7 @@ def export_model(
             [
                 4,
                 COLUMNWISE_TOTAL_INPUT_FEATURES,
-                PATTERN_SCORE_INPUT_DIM,
+                model.ft_dim,
                 model.hidden1_dim,
                 model.hidden2_dim,
                 N_PHASES,
@@ -318,7 +342,7 @@ def export_model(
             dtype="<u4",
         )
         header.tofile(f)
-        mask_lo, mask_hi = feature_columns_to_mask(PATTERN_SCORE_ACTIVE_COLUMNS)
+        mask_lo, mask_hi = feature_columns_to_mask(active_columns)
         reserved = np.zeros(8, dtype="<u4")
         reserved[0] = PATTERN_SCORE_INPUT_KIND
         reserved[1] = N_FEATURE_COLUMNS
@@ -411,11 +435,14 @@ def write_summary(
     manifest_phase_counts: np.ndarray,
     samples: dict[str, np.ndarray] | None,
     best: dict[str, float],
+    active_columns: np.ndarray,
+    active_column_names: list[str],
+    input_dim: int,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     summary = {
         "kind": "pattern_score_nnue",
-        "description": "16 learned scalar pattern scores followed by a small MLP",
+        "description": "learned scalar pattern scores followed by a small MLP",
         "data_root": str(Path(args.data_root).resolve()),
         "record_start": args.record_start,
         "record_end": args.record_end,
@@ -430,10 +457,11 @@ def write_summary(
         "hidden1": args.hidden1,
         "hidden2": args.hidden2,
         "input_kind": PATTERN_SCORE_INPUT_KIND,
-        "input_dim": PATTERN_SCORE_INPUT_DIM,
+        "input_dim": input_dim,
         "input_feature_columns": N_FEATURE_COLUMNS,
-        "active_feature_columns": PATTERN_SCORE_ACTIVE_COLUMNS.tolist(),
-        "active_feature_column_names": PATTERN_SCORE_COLUMN_NAMES,
+        "active_feature_columns": active_columns.tolist(),
+        "active_feature_column_names": active_column_names,
+        "pattern_set": args.pattern_set,
         "columnwise_total_input_features": COLUMNWISE_TOTAL_INPUT_FEATURES,
         "layer_weight_scale": args.layer_weight_scale,
         "ft_weight_bits": args.ft_weight_bits,
@@ -453,6 +481,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--record-start", type=int, default=223)
     parser.add_argument("--record-end", type=int, default=-1)
     parser.add_argument("--arch", choices=sorted(ARCHES), default="ps16")
+    parser.add_argument("--pattern-set", choices=["mo_end4", "first12"], default="mo_end4")
     parser.add_argument("--hidden1", type=int, default=0)
     parser.add_argument("--hidden2", type=int, default=0)
     parser.add_argument("--train-samples", type=int, default=10_000_000)
@@ -481,6 +510,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    active_columns = select_active_columns(args.pattern_set)
+    active_column_names = make_pattern_column_names(active_columns)
+    input_dim = int(active_columns.size)
     arch_dims = ARCHES[args.arch]
     args.hidden1 = args.hidden1 or arch_dims[0]
     args.hidden2 = args.hidden2 or arch_dims[1]
@@ -489,34 +521,35 @@ def main() -> int:
 
     date = datetime.now().strftime("%Y%m%d")
     model_name = args.model_name or (
-        f"nnue_pattern_score_{args.arch}_records{args.record_start}plus_"
+        f"nnue_pattern_score_{args.pattern_set}_{args.arch}_records{args.record_start}plus_"
         f"train{args.train_samples}_val{args.val_samples}_e{args.epochs}"
     )
     out_dir = next_model_dir(Path(args.model_root), date, model_name)
-    out_file = Path(args.out_file) if args.out_file else out_dir / f"eval_nnue_pattern_score_{args.arch}.egevnnue"
+    out_file = Path(args.out_file) if args.out_file else out_dir / f"eval_nnue_pattern_score_{args.pattern_set}_{args.arch}.egevnnue"
 
     data_root = Path(args.data_root)
     entries, manifest_phase_counts = build_manifest(data_root, args.record_start, args.record_end)
     total_records = entries[-1].begin + entries[-1].records if entries else 0
     print(
         f"manifest_files {len(entries)} total_records {total_records} data_root {data_root} "
-        f"active_feature_columns {','.join(str(int(x)) for x in PATTERN_SCORE_ACTIVE_COLUMNS)} "
+        f"pattern_set {args.pattern_set} "
+        f"active_feature_columns {','.join(str(int(x)) for x in active_columns)} "
         f"columnwise_total_input_features {COLUMNWISE_TOTAL_INPUT_FEATURES}",
         flush=True,
     )
     print(
-        f"arch {args.arch} input_dim {PATTERN_SCORE_INPUT_DIM} hidden1 {args.hidden1} "
+        f"arch {args.arch} input_dim {input_dim} hidden1 {args.hidden1} "
         f"hidden2 {args.hidden2} ft_weight_bits {args.ft_weight_bits}",
         flush=True,
     )
     if args.dry_run:
-        write_summary(out_dir, args, total_records, manifest_phase_counts, None, {})
+        write_summary(out_dir, args, total_records, manifest_phase_counts, None, {}, active_columns, active_column_names, input_dim)
         return 0
 
     if args.sample_cache and Path(args.sample_cache).exists():
         print(f"loading_sample_cache {args.sample_cache}", flush=True)
         samples = load_sample_cache(Path(args.sample_cache))
-        shrink_samples_to_pattern_score_ids(samples)
+        shrink_samples_to_pattern_score_ids(samples, active_columns)
     else:
         samples = load_samples(
             entries,
@@ -536,14 +569,15 @@ def main() -> int:
                 "val_samples": args.val_samples,
                 "seed": args.seed,
                 "input_feature_columns": N_FEATURE_COLUMNS,
-                "active_feature_columns": PATTERN_SCORE_ACTIVE_COLUMNS.tolist(),
+                "active_feature_columns": active_columns.tolist(),
+                "pattern_set": args.pattern_set,
             }
             print(f"writing_sample_cache {args.sample_cache}", flush=True)
             save_sample_cache(Path(args.sample_cache), samples, meta)
-        shrink_samples_to_pattern_score_ids(samples)
+        shrink_samples_to_pattern_score_ids(samples, active_columns)
 
     device = torch.device(args.device if args.device == "cpu" or torch.cuda.is_available() else "cpu")
-    model = PatternScoreNNUE(args.hidden1, args.hidden2).to(device)
+    model = PatternScoreNNUE(input_dim, args.hidden1, args.hidden2).to(device)
     model.initialize_output_bias(samples["train_phase"], samples["train_score"])
     model.to(device)
     if args.load_state:
@@ -557,7 +591,7 @@ def main() -> int:
         model.to(device)
         if args.export_only:
             out_dir.mkdir(parents=True, exist_ok=True)
-            export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits)
+            export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits, active_columns)
             val_mse, val_mae, val_n = evaluate_loss(model, samples, "val", args.batch_size, device, args.metric_limit)
             q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
                 model,
@@ -582,7 +616,7 @@ def main() -> int:
                 f"quantized_val_metric_samples {q_val_n}",
                 flush=True,
             )
-            write_summary(out_dir, args, total_records, manifest_phase_counts, samples, best)
+            write_summary(out_dir, args, total_records, manifest_phase_counts, samples, best, active_columns, active_column_names, input_dim)
             print(f"wrote {out_file}", flush=True)
             return 0
     sparse_optimizer = torch.optim.SparseAdam([model.score_table.weight], lr=args.lr)
@@ -640,7 +674,7 @@ def main() -> int:
         out_dir.mkdir(parents=True, exist_ok=True)
         model.load_state_dict(best_state)
         model.to(device)
-        export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits)
+        export_model(model, out_file, args.layer_weight_scale, args.ft_weight_bits, active_columns)
         q_val_mse, q_val_mae, q_val_n = evaluate_quantized_loss(
             model,
             samples,
@@ -662,11 +696,12 @@ def main() -> int:
             {
                 "state_dict": best_state,
                 "arch": args.arch,
-                "input_dim": PATTERN_SCORE_INPUT_DIM,
+                "input_dim": input_dim,
                 "hidden1": args.hidden1,
                 "hidden2": args.hidden2,
-                "active_feature_columns": PATTERN_SCORE_ACTIVE_COLUMNS,
-                "active_feature_column_names": PATTERN_SCORE_COLUMN_NAMES,
+                "active_feature_columns": active_columns,
+                "active_feature_column_names": active_column_names,
+                "pattern_set": args.pattern_set,
                 "columnwise_feature_starts": COLUMNWISE_FEATURE_STARTS,
                 "columnwise_total_input_features": COLUMNWISE_TOTAL_INPUT_FEATURES,
                 "layer_weight_scale": args.layer_weight_scale,
@@ -675,7 +710,7 @@ def main() -> int:
             },
             out_dir / "model_state.pt",
         )
-    write_summary(out_dir, args, total_records, manifest_phase_counts, samples, best)
+    write_summary(out_dir, args, total_records, manifest_phase_counts, samples, best, active_columns, active_column_names, input_dim)
     print(f"wrote {out_file}", flush=True)
     return 0
 
