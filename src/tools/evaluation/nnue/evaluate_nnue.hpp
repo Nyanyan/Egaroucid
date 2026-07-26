@@ -1642,6 +1642,40 @@ inline int eval_nnue_forward_16_16_16_pair_avx2(const int phase_idx, const int16
     return eval_nnue_finalize_output(raw);
 }
 
+inline int eval_nnue_forward_16_32_32_pair_avx2(const int phase_idx, const int16_t acc[2][EVAL_NNUE_MAX_FT_DIM]) {
+    alignas(32) uint8_t post_input[32];
+    alignas(32) uint8_t hidden1[32];
+    alignas(32) uint8_t hidden2[32];
+
+    eval_nnue_clamp_i16_to_u8_shifted(acc[0], post_input, 16, eval_nnue_ft_shift);
+    eval_nnue_clamp_i16_to_u8_shifted(acc[1], post_input + 16, 16, eval_nnue_ft_shift);
+
+    eval_nnue_layer_32_outputs_avx2(
+        post_input,
+        eval_nnue_hidden1_weight.data(),
+        32,
+        32,
+        eval_nnue_hidden1_bias.data(),
+        hidden1,
+        eval_nnue_hidden1_shift
+    );
+    eval_nnue_layer_32_outputs_avx2(
+        hidden1,
+        eval_nnue_hidden2_weight.data(),
+        32,
+        32,
+        eval_nnue_hidden2_bias.data(),
+        hidden2,
+        eval_nnue_hidden2_shift
+    );
+    const int32_t raw = eval_nnue_dot_u8s8_32_avx2(
+        hidden2,
+        &eval_nnue_output_weight[(size_t)phase_idx * 32],
+        eval_nnue_output_bias[(size_t)phase_idx]
+    );
+    return eval_nnue_finalize_output(raw);
+}
+
 inline int eval_nnue_forward_64_32_32_avx2(const int phase_idx, const int16_t acc[2][EVAL_NNUE_MAX_FT_DIM]) {
     alignas(32) uint8_t post_input[64];
     alignas(32) uint8_t hidden1[32];
@@ -1698,6 +1732,10 @@ inline int eval_nnue_forward_from_accumulator(const int phase_idx, const int16_t
     if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR &&
         eval_nnue_ft_dim == 16 && eval_nnue_hidden1_dim == 16 && eval_nnue_hidden2_dim == 16) {
         return eval_nnue_forward_16_16_16_pair_avx2(phase_idx, acc);
+    }
+    if (eval_nnue_input_kind == EVAL_NNUE_INPUT_KIND_PATTERN_PAIR &&
+        eval_nnue_ft_dim == 16 && eval_nnue_hidden1_dim == 32 && eval_nnue_hidden2_dim == 32) {
+        return eval_nnue_forward_16_32_32_pair_avx2(phase_idx, acc);
     }
 #endif
     alignas(32) uint8_t post_input[EVAL_NNUE_MAX_POST_INPUT];
