@@ -24,9 +24,6 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
     #ifndef GGS_TOURNAMENT_MPC_ERROR_SCALE
         #define GGS_TOURNAMENT_MPC_ERROR_SCALE 1.16
     #endif
-    #ifndef GGS_TOURNAMENT_MPC_ERROR0_OFFSET
-        #define GGS_TOURNAMENT_MPC_ERROR0_OFFSET 3
-    #endif
     #ifndef GGS_TOURNAMENT_MPC_DEPTH_NUMERATOR
         #define GGS_TOURNAMENT_MPC_DEPTH_NUMERATOR 3
     #endif
@@ -34,12 +31,10 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
         #define GGS_TOURNAMENT_MPC_DEPTH_DENOMINATOR 8
     #endif
 constexpr double MPC_ERROR_SCALE = GGS_TOURNAMENT_MPC_ERROR_SCALE;
-constexpr int MPC_ERROR0_OFFSET = GGS_TOURNAMENT_MPC_ERROR0_OFFSET;
 constexpr int MPC_DEPTH_NUMERATOR = GGS_TOURNAMENT_MPC_DEPTH_NUMERATOR;
 constexpr int MPC_DEPTH_DENOMINATOR = GGS_TOURNAMENT_MPC_DEPTH_DENOMINATOR;
 #else
 constexpr double MPC_ERROR_SCALE = 1.0;
-constexpr int MPC_ERROR0_OFFSET = 4;
 constexpr int MPC_DEPTH_NUMERATOR = 2;
 constexpr int MPC_DEPTH_DENOMINATOR = 5;
 #endif
@@ -150,18 +145,19 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
         uint_fast8_t mpc_level = search->mpc_level;
 #if USE_MPC_PRE_CALCULATION
         int error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
+        int eval_error = (mpc_error[mpc_level][search->n_discs][0][depth] + error_search + 1) / 2;
 #else
         double mpct = SELECTIVITY_MPCT[mpc_level];
         int error_search = ceil(MPC_ERROR_SCALE * mpct * probcut_sigma(search->n_discs, search_depth, depth));
+        int eval_error = ceil(MPC_ERROR_SCALE * mpct * 0.5 * (probcut_sigma(search->n_discs, 0, depth) + probcut_sigma(search->n_discs, search_depth, depth)));
 #endif
         // if (is_end_search) {
         //     error_search += 1.5;
         // }
-        int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
         search->mpc_level = MPC_100_LEVEL;
         const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
         search->use_dim0_mpc_eval = use_dim0_mpc_eval;
-        if (d0value >= beta + error_0) {
+        if (d0value >= beta - eval_error) {
             int pc_beta = beta + error_search;
             if (pc_beta <= SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, false, legal, false, searchings) >= pc_beta) {
@@ -175,7 +171,7 @@ inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, 
                 }
             }
         }
-        if (d0value <= alpha - error_0) {
+        if (d0value <= alpha + eval_error) {
             int pc_alpha = alpha - error_search;
             if (pc_alpha >= -SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searchings) <= pc_alpha) {
