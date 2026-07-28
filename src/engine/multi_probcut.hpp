@@ -38,6 +38,9 @@ constexpr double MPC_ERROR_SCALE = 1.0;
 constexpr int MPC_DEPTH_NUMERATOR = 2;
 constexpr int MPC_DEPTH_DENOMINATOR = 5;
 #endif
+#ifndef MPC_SIGMA_SCALE
+    #define MPC_SIGMA_SCALE 1.0
+#endif
 
 // constants from standard normal distribution table
 // two-sided test                                         74.0  88.0  93.0  98.0  99.0  99.9 100 (%)
@@ -70,7 +73,7 @@ int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
 inline double probcut_sigma(int n_discs, int depth1, int depth2) {
     double res = probcut_a * ((double)n_discs / 64.0) + probcut_b * ((double)depth1 / 60.0) + probcut_c * ((double)depth2 / 60.0);
     res = probcut_d * res * res * res + probcut_e * res * res + probcut_f * res + probcut_g;
-    return res;
+    return MPC_SIGMA_SCALE * res;
 }
 
 inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
