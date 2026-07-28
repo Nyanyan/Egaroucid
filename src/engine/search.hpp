@@ -46,6 +46,19 @@ constexpr int MOVE_PASS = 64;
 constexpr int SEARCH_BOOK = -1;
 constexpr int MAX_N_BRANCHES = 35;
 
+enum Search_node_type : uint_fast8_t {
+    SEARCH_NODE_PV,
+    SEARCH_NODE_NONPV
+};
+
+inline bool is_pv_node(const Search_node_type node_type) {
+    return node_type == SEARCH_NODE_PV;
+}
+
+inline Search_node_type search_child_node_type(const Search_node_type parent_node_type) {
+    return is_pv_node(parent_node_type) ? SEARCH_NODE_PV : SEARCH_NODE_NONPV;
+}
+
 /*
     @brief Stability cutoff threshold
     from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/search.c#L108 and modified
