@@ -44,7 +44,7 @@ constexpr int MO_OFFSET_L_PM = 38;
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         10, 6, 3, 35, 17, 485, 269, 94, 
         5, 3, 1, 17, 204, 7, 25, 
-        40, 12, 
+        40, 20, 
         18, 17, 300
     };
 
@@ -96,7 +96,7 @@ constexpr int MO_OFFSET_L_PM = 38;
 
     // endgame null window search
     constexpr int W_END_NWS_MOBILITY = 40;
-    constexpr int W_END_NWS_VALUE = 12;
+    constexpr int W_END_NWS_VALUE = 20;
 
     // endgame simple null window search
     constexpr int W_END_NWS_SIMPLE_MOBILITY = 18;
@@ -372,22 +372,20 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->undo(&flip_value->flip);
 }
 
-// /*
-//     @brief Evaluate a move in endgame NWS
+/*
+    @brief Evaluate a move in endgame NWS
 
-//     @param search               search information
-//     @param flip_value           flip with value
-//     @return true if wipeout found else false
-// */
-// inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
-//     flip_value->value = 0;
-//     // flip_value->value += search->get_killer_bonus(flip_value->flip.pos);
-//     search->move_endsearch(&flip_value->flip);
-//         flip_value->n_legal = search->board.get_legal();
-//         flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-//         flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
-//     search->undo_endsearch(&flip_value->flip);
-// }
+    @param search               search information
+    @param flip_value           flip with value
+*/
+inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
+    flip_value->value = 0;
+    search->move_endsearch(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
+    search->undo_endsearch(&flip_value->flip);
+}
 
 // /*
 //     @brief Evaluate a move in endgame NWS (simple)
@@ -653,26 +651,56 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
     return false;
 }
 
-// /*
-//     @brief Evaluate all legal moves for endgame NWS
+/*
+    @brief Evaluate all legal moves for endgame NWS
 
-//     @param search               search information
-//     @param move_list            list of moves
-// */
-// inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], bool *searching) {
-//     if (move_list.size() <= 1) {
-//         return;
-//     }
-//     for (Flip_value &flip_value: move_list) {
-//         if (flip_value.flip.pos == moves[0]) {
-//             flip_value.value = W_1ST_MOVE;
-//         } else if (flip_value.flip.pos == moves[1]) {
-//             flip_value.value = W_2ND_MOVE;
-//         } else{
-//             move_evaluate_end_nws(search, &flip_value);
-//         }
-//     }
-// }
+    @param search               search information
+    @param move_list            list of moves
+    @param moves                list of moves in transposition table
+*/
+inline bool move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], bool *searching) {
+    if (move_list.size() <= 1) {
+        return false;
+    }
+    for (Flip_value &flip_value: move_list) {
+        if (flip_value.flip.flip) {
+            if (flip_value.flip.pos == moves[0]) {
+                flip_value.value = W_1ST_MOVE;
+            } else if (flip_value.flip.pos == moves[1]) {
+                flip_value.value = W_2ND_MOVE;
+            } else {
+                move_evaluate_end_nws(search, &flip_value);
+            }
+        }
+    }
+    return false;
+}
+
+/*
+    @brief Evaluate all legal moves for endgame NWS
+
+    @param search               search information
+    @param move_list            list of moves
+    @param canput               number of legal moves
+    @param moves                list of moves in transposition table
+*/
+inline bool move_list_evaluate_end_nws(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], bool *searching) {
+    if (canput <= 1) {
+        return false;
+    }
+    for (int i = 0; i < canput; ++i) {
+        if (move_list[i].flip.flip) {
+            if (move_list[i].flip.pos == moves[0]) {
+                move_list[i].value = W_1ST_MOVE;
+            } else if (move_list[i].flip.pos == moves[1]) {
+                move_list[i].value = W_2ND_MOVE;
+            } else {
+                move_evaluate_end_nws(search, &move_list[i]);
+            }
+        }
+    }
+    return false;
+}
 
 // /*
 //     @brief Evaluate all legal moves for endgame NWS (simple)

@@ -431,7 +431,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         move_list[tt_moves_idx0].value = -INF;
     }
     if (v <= alpha) {
-        move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, is_end_search, searchings.back());
+        if (is_end_search) {
+            move_list_evaluate_end_nws(search, move_list, canput, moves, searchings.back());
+        } else {
+            move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searchings.back());
+        }
 #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 
