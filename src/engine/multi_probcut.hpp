@@ -268,7 +268,7 @@ void get_data_probcut_mid() {
     bool searching = true;
     for (int i = 0; i < 10000; ++i) {
         // for (int depth = 18; depth <= 18; ++depth) {
-        for (int depth = 4; depth <= 16; ++depth) {
+        for (int depth = 4; depth <= 14; ++depth) {
             for (int n_discs = 4; n_discs < HW2 - depth - 2; ++n_discs) {
                 board.reset();
                 for (int j = 4; j < n_discs && board.check_pass(); ++j) { // random move
@@ -314,7 +314,7 @@ void get_data_probcut_end() {
     Search_result short_ans, long_ans;
     bool searching = true;
     for (int i = 0; i < 10000; ++i) {
-        for (int depth = 2; depth <= 26; ++depth) {
+        for (int depth = 2; depth <= 24; ++depth) {
             board.reset();
             for (int j = 0; j < HW2 - 4 - depth && board.check_pass(); ++j) { // random move
                 uint64_t legal = board.get_legal();

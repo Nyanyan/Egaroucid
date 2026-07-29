@@ -16,7 +16,8 @@ import math
 #data_files = ['data/20240925_1_7_4/probcut_end0.txt']
 #data_files = ['data/20241118_1_7_5/probcut_end0.txt']
 #data_files = ['data/20241128_1_7_5/probcut_end0.txt']
-data_files = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt', 'data/20241130_1_7_5/probcut_end2.txt']
+# data_files = ['data/20241130_1_7_5/probcut_end0.txt', 'data/20241130_1_7_5/probcut_end1.txt', 'data/20241130_1_7_5/probcut_end2.txt']
+data_files = ['data/20260728_7_9_20260621_1_afterrand16/probcut_end1.txt', 'data/20260728_7_9_20260621_1_afterrand16/probcut_end2.txt']
 
 
 probcut_mid_param = [0.93740805837003, -7.340323137961951, 1.1401695320187872, 0.700567733735339, 2.662003673678691, 3.0554301965778063, 2.0942574977708674]
@@ -82,8 +83,8 @@ for n_discs in range(1):
     for depth in range(1):
         x_n_discs_sd.append(n_discs)
         y_depth_sd.append(depth)
-        z_sd.append(10.0 - n_discs / 60 * 1.0 - depth * 0.05)
-        weight_sd.append(0.01)
+        z_sd.append(12.0 - n_discs / 60 * 1.0 - depth * 0.05)
+        weight_sd.append(0.001)
 
 def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f):
     x, y = xy
@@ -94,7 +95,7 @@ def f(xy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f):
     return res
 
 def f_max(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f):
-    return np.minimum(10.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f)))
+    return np.minimum(15.0, np.maximum(-0.5, f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f)))
 
 def plot_fit_result(x, y, z, params):
     fig = plt.figure()
@@ -103,7 +104,7 @@ def plot_fit_result(x, y, z, params):
     #ax.plot(xs, ys, zs, ms=3, marker="o",linestyle='None')
     #ax.plot(sdxs, sdys, sdzs, ms=3, marker="o",linestyle='None')
     ax.plot(x, y, z, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(65), range(16))
+    mx, my = np.meshgrid(range(65), range(30))
     ax.plot_wireframe(mx, my, f_max((mx, my), *params), rstride=5, cstride=5)
     # midgame MPC
     x_mid_mpc = []
@@ -121,7 +122,7 @@ def plot_fit_result(x, y, z, params):
     ax.set_ylabel('search_depth')
     ax.set_zlabel('error')
     ax.set_xlim(0, 64)
-    ax.set_ylim(0, 16)
+    ax.set_ylim(0, 30)
     plt.show()
 
 popt_sd, pcov_sd = curve_fit(f, (x_n_discs_sd, y_depth_sd), z_sd, np.ones(6), sigma=weight_sd, absolute_sigma=True)
