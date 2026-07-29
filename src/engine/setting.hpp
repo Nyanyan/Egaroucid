@@ -143,6 +143,9 @@
 // use parallel clog search
 #define USE_PARALLEL_CLOG_SEARCH true
 
+// use only Dim0 evaluation
+#define USE_DIM0_ONLY_EVALUATION true
+
 // MPC pre calculation
 #define USE_MPC_PRE_CALCULATION true
 

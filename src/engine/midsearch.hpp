@@ -93,7 +93,11 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
+#if USE_DIM0_ONLY_EVALUATION
+                g = -mid_evaluate_diff(search);
+#else
                 g = -(search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
+#endif
             search->undo(&flip);
             if (v < g) {
                 if (alpha < g) {
@@ -202,7 +206,11 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
         }
         if (depth == 0) {
             ++search->n_nodes;
+#if USE_DIM0_ONLY_EVALUATION
+            return mid_evaluate_diff(search);
+#else
             return search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
+#endif
         }
     }
     ++search->n_nodes;
@@ -266,7 +274,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
 #endif
 #if USE_MID_MPC
     if (!is_pv_node(node_type) && search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
-        if (mpc(search, alpha, beta, depth, legal, is_end_search, &v, searching)) {
+        if (is_end_search ? mpc_end(search, alpha, beta, depth, legal, &v, searching) : mpc_mid(search, alpha, beta, depth, legal, &v, searching)) {
             return v;
         }
     }
@@ -360,7 +368,12 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
         }
 #endif
     }
-    if (!search->use_dim0_mpc_eval && *searching && global_searching) {
+    if (
+#if !USE_DIM0_ONLY_EVALUATION
+        !search->use_dim0_mpc_eval &&
+#endif
+        *searching && global_searching
+    ) {
         transposition_table.reg(search, hash_code, depth, first_alpha, first_beta, v, best_move);
     }
     return v;
@@ -660,7 +673,12 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         }
 #endif
     }
-    if (!search->use_dim0_mpc_eval && *searching && global_searching && is_all_legal) {
+    if (
+#if !USE_DIM0_ONLY_EVALUATION
+        !search->use_dim0_mpc_eval &&
+#endif
+        *searching && global_searching && is_all_legal
+    ) {
         transposition_table.reg(search, hash_code, depth, first_alpha, beta, v, best_move);
     }
     return std::make_pair(v, best_move);
@@ -818,7 +836,12 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         res.alt_depth = -1;
         res.alt_probability = 0;
     }
-    if (!search->use_dim0_mpc_eval && *searching && global_searching) {
+    if (
+#if !USE_DIM0_ONLY_EVALUATION
+        !search->use_dim0_mpc_eval &&
+#endif
+        *searching && global_searching
+    ) {
         int v, best_move;
         if (res.played_score >= res.alt_score) {
             v = res.played_score;

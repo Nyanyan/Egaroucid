@@ -28,8 +28,10 @@
 #include "util.hpp"
 #include "stability_cutoff.hpp"
 
-inline bool mpc(Search* search, int alpha, int beta, int depth, uint64_t legal, const bool is_end_search, int* v, std::vector<bool*> &searchings);
-inline bool mpc(Search* search, int alpha, int beta, const int depth, uint64_t legal, const bool is_end_search, int* v, const bool* searching);
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings);
+inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings);
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
+inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
 
 /*
     @brief Get a value with last move with Nega-Alpha algorithm (NWS)
@@ -65,7 +67,11 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
+#if USE_DIM0_ONLY_EVALUATION
+                g = -mid_evaluate_diff(search);
+#else
                 g = -(search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
+#endif
             search->undo(&flip);
             if (v < g) {
                 if (alpha < g) {
@@ -194,7 +200,11 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     }
     if (depth == 0) {
         ++search->n_nodes;
+#if USE_DIM0_ONLY_EVALUATION
+        return mid_evaluate_diff(search);
+#else
         return search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
+#endif
     }
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
@@ -221,7 +231,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     }
 #if USE_MID_MPC && MID_MPC_MIN_DEPTH <= MID_SIMPLE_ORDERING_DEPTH
     if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
-        if (mpc(search, alpha, alpha + 1, depth, legal, false, &v, searching)) {
+        if (mpc_mid(search, alpha, alpha + 1, depth, legal, &v, searching)) {
             return v;
         }
     }
@@ -305,7 +315,12 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
             }
         }
     }
-    if (!search->use_dim0_mpc_eval && *searching && global_searching) {
+    if (
+#if !USE_DIM0_ONLY_EVALUATION
+        !search->use_dim0_mpc_eval &&
+#endif
+        *searching && global_searching
+    ) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
     return v;
@@ -372,7 +387,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     }
 #if USE_MID_MPC
     if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
-        if (mpc(search, alpha, alpha + 1, depth, legal, is_end_search, &v, searchings)) {
+        if (is_end_search ? mpc_end(search, alpha, alpha + 1, depth, legal, &v, searchings) : mpc_mid(search, alpha, alpha + 1, depth, legal, &v, searchings)) {
             return v;
         }
     }
@@ -469,7 +484,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         }
 #endif
     }
-    if (!search->use_dim0_mpc_eval && global_searching && is_searching(searchings)) {
+    if (
+#if !USE_DIM0_ONLY_EVALUATION
+        !search->use_dim0_mpc_eval &&
+#endif
+        global_searching && is_searching(searchings)
+    ) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
     return v;
