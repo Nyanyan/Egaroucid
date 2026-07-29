@@ -32,8 +32,8 @@
 #include "endsearch_nws_last_generic.hpp"
 #endif
 
-constexpr int LOCAL_TT_SIZE = 1024;
-constexpr int LOCAL_TT_SIZE_BIT = 10;
+constexpr int LOCAL_TT_SIZE = 2048;
+constexpr int LOCAL_TT_SIZE_BIT = 11;
 
 /*
     @brief Get a final score with few empties (NWS)

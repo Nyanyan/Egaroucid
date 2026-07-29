@@ -105,7 +105,7 @@
             #define USE_CRC32C_HASH_LTT true
         #else
             #define USE_CRC32C_HASH false
-            #define USE_CRC32C_HASH_LTT false
+            #define USE_CRC32C_HASH_LTT true
         #endif
 
         // TT init with SIMD
