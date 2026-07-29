@@ -367,6 +367,14 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
 #endif
+#if USE_END_SC
+    if (is_end_search && !skipped) {
+        int stab_res = stability_cut_nws(search, alpha);
+        if (stab_res != SCORE_UNDEFINED) {
+            return stab_res;
+        }
+    }
+#endif
     if (legal == LEGAL_UNDEFINED) {
         legal = search->board.get_legal();
     }
