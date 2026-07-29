@@ -33,10 +33,6 @@ inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t leg
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
 inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
 
-inline uint64_t midsearch_nws_legal_after_pass(const Search *search) {
-    return calc_legal(search->board.opponent, search->board.player);
-}
-
 /*
     @brief Get a value with last move with Nega-Alpha algorithm (NWS)
 
@@ -58,16 +54,9 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
         if (skipped) {
             return end_evaluate(&search->board);
         }
-        const uint64_t next_legal = midsearch_nws_legal_after_pass(search);
-        if (next_legal == 0ULL) {
-            search->pass_noeval();
-                v = -nega_alpha_eval1_nws(search, -alpha - 1, true);
-            search->pass_noeval();
-        } else {
-            search->pass();
-                v = -nega_alpha_eval1_nws(search, -alpha - 1, true);
-            search->pass();
-        }
+        search->pass();
+            v = -nega_alpha_eval1_nws(search, -alpha - 1, true);
+        search->pass();
         return v;
     }
     int g;
@@ -127,16 +116,9 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
         if (skipped) {
             return end_evaluate(&search->board);
         }
-        const uint64_t next_legal = midsearch_nws_legal_after_pass(search);
-        if (next_legal == 0ULL) {
-            search->pass_noeval();
-                v = -nega_alpha_eval2_nws(search, -alpha - 1, true, next_legal, searching);
-            search->pass_noeval();
-        } else {
-            search->pass();
-                v = -nega_alpha_eval2_nws(search, -alpha - 1, true, next_legal, searching);
-            search->pass();
-        }
+        search->pass();
+            v = -nega_alpha_eval2_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
+        search->pass();
         return v;
     }
     uint32_t hash_code = search->board.hash();
@@ -236,16 +218,9 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         if (skipped) {
             return end_evaluate(&search->board);
         }
-        const uint64_t next_legal = midsearch_nws_legal_after_pass(search);
-        if (next_legal == 0ULL) {
-            search->pass_noeval();
-                v = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth, true, next_legal, searching);
-            search->pass_noeval();
-        } else {
-            search->pass();
-                v = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth, true, next_legal, searching);
-            search->pass();
-        }
+        search->pass();
+            v = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, searching);
+        search->pass();
         return v;
     }
     uint32_t hash_code = search->board.hash();
@@ -399,16 +374,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
         if (skipped) {
             return end_evaluate(&search->board);
         }
-        const uint64_t next_legal = midsearch_nws_legal_after_pass(search);
-        if (next_legal == 0ULL) {
-            search->pass_noeval();
-                v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, next_legal, is_end_search, searchings);
-            search->pass_noeval();
-        } else {
-            search->pass();
-                v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, next_legal, is_end_search, searchings);
-            search->pass();
-        }
+        search->pass();
+            v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, is_end_search, searchings);
+        search->pass();
         return v;
     }
     uint32_t hash_code = search->board.hash();
