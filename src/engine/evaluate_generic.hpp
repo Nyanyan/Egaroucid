@@ -632,10 +632,8 @@ inline int mid_evaluate_diff(Search *search) {
     return res;
 }
 
+#if !USE_DIM0_ONLY_EVALUATION
 inline int mid_evaluate_move_ordering_dim0(Search *search) {
-#if USE_DIM0_ONLY_EVALUATION
-    return mid_evaluate_diff(search);
-#else
     const int phase_idx = search->phase();
     const int num0 = pop_count_ull(search->board.player);
     int res = calc_pattern_move_ordering_mid_dim0(phase_idx, &search->eval) + eval_num_arr_move_ordering_mid_dim0[phase_idx][num0];
@@ -643,8 +641,8 @@ inline int mid_evaluate_move_ordering_dim0(Search *search) {
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
-#endif
 }
+#endif
 
 inline int mid_evaluate_dim0(Search *search) {
 #if USE_DIM0_ONLY_EVALUATION
