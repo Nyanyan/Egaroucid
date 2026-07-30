@@ -15,6 +15,7 @@
 #include "thread_pool.hpp"
 #include "spinlock.hpp"
 #include "search.hpp"
+#include "level.hpp"
 #include <future>
 #include <functional>
 
@@ -29,6 +30,9 @@ constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL]
 #endif
 constexpr int N_TRANSPOSITION_MOVES = 2;
 constexpr double TT_REGISTER_THRESHOLD_RATE = 0.4;
+#ifndef TT_MOVE_REUSE_DEPTH_MARGIN
+    #define TT_MOVE_REUSE_DEPTH_MARGIN 8
+#endif
 
 constexpr int TRANSPOSITION_TABLE_HAS_NODE = 100;
 constexpr int TRANSPOSITION_TABLE_NOT_HAS_NODE = -100;
@@ -41,6 +45,11 @@ inline uint32_t get_level_common(uint8_t depth, uint8_t mpc_level) {
 
 inline uint32_t get_level_common(int depth, uint_fast8_t mpc_level) {
     return ((uint32_t)depth << 8) | mpc_level;
+}
+
+inline void clear_transposition_moves(uint_fast8_t moves[]) {
+    moves[0] = MOVE_UNDEFINED;
+    moves[1] = MOVE_UNDEFINED;
 }
 
 /*
@@ -207,6 +216,16 @@ class Hash_data {
 
         inline bool is_usable(const int required_depth, const uint_fast8_t required_mpc_level) {
             return depth >= required_depth && mpc_level >= required_mpc_level;
+        }
+
+        inline bool is_move_usable(const int required_depth, const uint_fast8_t required_mpc_level) {
+            if (!importance) {
+                return false;
+            }
+            if (mpc_level == MPC_100_LEVEL && required_mpc_level < MPC_100_LEVEL && (int)depth + TT_MOVE_REUSE_DEPTH_MARGIN < required_depth) {
+                return false;
+            }
+            return true;
         }
 
         inline int get_window_width() {
@@ -656,6 +675,7 @@ class Transposition_table {
             @param moves                best moves to store
         */
         inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]) {
+            clear_transposition_moves(moves);
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
@@ -771,6 +791,27 @@ class Transposition_table {
                     node->lock.lock();
                         if (node->board.player == board->player && node->board.opponent == board->opponent) {
                             node->data.get_moves(moves);
+                            node->lock.unlock();
+                            return true;
+                        }
+                    node->lock.unlock();
+                }
+                ++hash;
+                node = get_node(hash);
+            }
+            return false;
+        }
+
+        inline bool get_moves(const Search *search, uint32_t hash, const int depth, uint_fast8_t moves[]) {
+            clear_transposition_moves(moves);
+            Hash_node *node = get_node(hash);
+            for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
+                if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                    node->lock.lock();
+                        if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
+                            if (node->data.is_move_usable(depth, search->mpc_level)) {
+                                node->data.get_moves(moves);
+                            }
                             node->lock.unlock();
                             return true;
                         }
