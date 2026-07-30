@@ -27,7 +27,7 @@ constexpr int MPC_DEPTH_DENOMINATOR = 5;
     #define MPC_SIGMA_SCALE 1.0
 #endif
 #ifndef MPC_PROBCUT_G_OFFSET
-    #define MPC_PROBCUT_G_OFFSET 0.0
+    #define MPC_PROBCUT_G_OFFSET 0.1
 #endif
 
 // constants from standard normal distribution table
