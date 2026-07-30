@@ -27,7 +27,7 @@ constexpr int MPC_DEPTH_DENOMINATOR = 5;
     #define MPC_SIGMA_SCALE 1.0
 #endif
 #ifndef MPC_PROBCUT_G_OFFSET
-    #define MPC_PROBCUT_G_OFFSET 0.1
+    #define MPC_PROBCUT_G_OFFSET 0.0
 #endif
 
 // constants from standard normal distribution table
@@ -37,13 +37,13 @@ constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32
 /*
     @brief constants for ProbCut error calculation
 */
-constexpr double probcut_a = 0.8335834703936896;
-constexpr double probcut_b = -4.71778909968251;
-constexpr double probcut_c = 1.1467905781538477;
-constexpr double probcut_d = -0.5274699259330169;
-constexpr double probcut_e = 6.5091001393587335;
-constexpr double probcut_f = 3.9546352081550378;
-constexpr double probcut_g = 1.5719077939546169 + MPC_PROBCUT_G_OFFSET;
+constexpr double probcut_a = 0.7308488452189136;
+constexpr double probcut_b = -4.5708322989025865;
+constexpr double probcut_c = 1.096319765006055;
+constexpr double probcut_d = -0.8362251801219095;
+constexpr double probcut_e = 4.610017383697701;
+constexpr double probcut_f = 3.818582623595395;
+constexpr double probcut_g = 2.2775013664098447 + MPC_PROBCUT_G_OFFSET;
 
 constexpr double probcut_end_a = -1.3182333120273682;
 constexpr double probcut_end_b = -6.99290557735024;
