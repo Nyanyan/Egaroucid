@@ -189,6 +189,9 @@
 // search statistics
 #define USE_SEARCH_STATISTICS false
 
+// Local TT statistics
+#define USE_LOCAL_TT_STATISTICS false
+
 // thread monitor
 #define USE_THREAD_MONITOR false
 
