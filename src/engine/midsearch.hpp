@@ -244,7 +244,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
     transposition_table.prefetch(hash_code);
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (is_pv_node(node_type)) {
-        transposition_table.get_moves(search, hash_code, depth, moves);
+        transposition_table.get_moves_any_level(&search->board, hash_code, moves);
     } else if (transposition_cutoff(search, hash_code, depth, &alpha, &beta, &v, moves)) {
         return v;
     }
@@ -612,7 +612,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
             ++idx;
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
-        transposition_table.get_moves(search, hash_code, depth, moves);
+        transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
         apply_lazy_smp_root_order_bias(search, move_list, canput, depth, is_end_search);
 #if USE_YBWC_NEGASCOUT
@@ -758,7 +758,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
             ++idx;
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
-        transposition_table.get_moves(search, hash_code, depth, moves);
+        transposition_table.get_moves_any_level(&search->board, hash_code, moves);
         move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
 #if USE_YBWC_NEGASCOUT_ANALYZE
         if (search->use_multi_thread && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) {
