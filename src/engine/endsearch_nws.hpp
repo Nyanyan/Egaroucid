@@ -11,6 +11,8 @@
 */
 
 #pragma once
+#include <atomic>
+#include <iostream>
 #include <vector>
 #include <functional>
 #include "setting.hpp"
@@ -32,8 +34,8 @@
 #include "endsearch_nws_last_generic.hpp"
 #endif
 
-constexpr int LOCAL_TT_SIZE = 1024;
-constexpr int LOCAL_TT_SIZE_BIT = 10;
+constexpr int LOCAL_TT_SIZE = 2048;
+constexpr int LOCAL_TT_SIZE_BIT = 11;
 
 /*
     @brief Get a final score with few empties (NWS)
@@ -145,6 +147,113 @@ struct LocalTTEntry {
 
 static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
+#if USE_LOCAL_TT_STATISTICS
+struct LocalTTStats {
+    std::atomic<uint64_t> probes{0};
+    std::atomic<uint64_t> hits{0};
+    std::atomic<uint64_t> lower_cuts{0};
+    std::atomic<uint64_t> upper_cuts{0};
+    std::atomic<uint64_t> lower_stores{0};
+    std::atomic<uint64_t> upper_stores{0};
+    std::atomic<uint64_t> overwrites{0};
+    std::atomic<uint64_t> occupied_misses{0};
+};
+
+inline LocalTTStats local_tt_stats[MID_TO_END_DEPTH - END_FAST_DEPTH];
+
+inline uint32_t local_tt_depth_index(uint32_t n_discs) {
+    return HW2 - n_discs - END_FAST_DEPTH;
+}
+
+inline bool local_tt_is_occupied(const LocalTTEntry *tt) {
+    return tt->player != 0ULL || tt->opponent != 0ULL || tt->lower != 0 || tt->upper != 0;
+}
+
+inline void local_tt_record_probe(uint32_t n_discs, LocalTTEntry *tt, Board *board) {
+    const uint32_t idx = local_tt_depth_index(n_discs);
+    local_tt_stats[idx].probes.fetch_add(1, std::memory_order_relaxed);
+    if (local_tt_is_occupied(tt) && !tt->cmp(board)) {
+        local_tt_stats[idx].occupied_misses.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
+inline void local_tt_record_hit(uint32_t n_discs) {
+    local_tt_stats[local_tt_depth_index(n_discs)].hits.fetch_add(1, std::memory_order_relaxed);
+}
+
+inline void local_tt_record_lower_cut(uint32_t n_discs) {
+    local_tt_stats[local_tt_depth_index(n_discs)].lower_cuts.fetch_add(1, std::memory_order_relaxed);
+}
+
+inline void local_tt_record_upper_cut(uint32_t n_discs) {
+    local_tt_stats[local_tt_depth_index(n_discs)].upper_cuts.fetch_add(1, std::memory_order_relaxed);
+}
+
+inline void local_tt_record_store(uint32_t n_discs, LocalTTEntry *tt, Board *board, const bool lower_store) {
+    const uint32_t idx = local_tt_depth_index(n_discs);
+    if (lower_store) {
+        local_tt_stats[idx].lower_stores.fetch_add(1, std::memory_order_relaxed);
+    } else {
+        local_tt_stats[idx].upper_stores.fetch_add(1, std::memory_order_relaxed);
+    }
+    if (local_tt_is_occupied(tt) && !tt->cmp(board)) {
+        local_tt_stats[idx].overwrites.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
+inline void local_tt_stats_print() {
+    uint64_t total_probes = 0;
+    uint64_t total_hits = 0;
+    uint64_t total_lower_cuts = 0;
+    uint64_t total_upper_cuts = 0;
+    uint64_t total_lower_stores = 0;
+    uint64_t total_upper_stores = 0;
+    uint64_t total_overwrites = 0;
+    uint64_t total_occupied_misses = 0;
+    std::cout << "LOCAL_TT_STATS_BEGIN\n";
+    std::cout << "empties\tprobes\thits\tlower_cuts\tupper_cuts\tlower_stores\tupper_stores\toverwrites\toccupied_misses\n";
+    for (int i = 0; i < MID_TO_END_DEPTH - END_FAST_DEPTH; ++i) {
+        const uint64_t probes = local_tt_stats[i].probes.load(std::memory_order_relaxed);
+        const uint64_t hits = local_tt_stats[i].hits.load(std::memory_order_relaxed);
+        const uint64_t lower_cuts = local_tt_stats[i].lower_cuts.load(std::memory_order_relaxed);
+        const uint64_t upper_cuts = local_tt_stats[i].upper_cuts.load(std::memory_order_relaxed);
+        const uint64_t lower_stores = local_tt_stats[i].lower_stores.load(std::memory_order_relaxed);
+        const uint64_t upper_stores = local_tt_stats[i].upper_stores.load(std::memory_order_relaxed);
+        const uint64_t overwrites = local_tt_stats[i].overwrites.load(std::memory_order_relaxed);
+        const uint64_t occupied_misses = local_tt_stats[i].occupied_misses.load(std::memory_order_relaxed);
+        if (probes || lower_stores || upper_stores) {
+            std::cout << (i + END_FAST_DEPTH) << '\t'
+                << probes << '\t'
+                << hits << '\t'
+                << lower_cuts << '\t'
+                << upper_cuts << '\t'
+                << lower_stores << '\t'
+                << upper_stores << '\t'
+                << overwrites << '\t'
+                << occupied_misses << '\n';
+        }
+        total_probes += probes;
+        total_hits += hits;
+        total_lower_cuts += lower_cuts;
+        total_upper_cuts += upper_cuts;
+        total_lower_stores += lower_stores;
+        total_upper_stores += upper_stores;
+        total_overwrites += overwrites;
+        total_occupied_misses += occupied_misses;
+    }
+    std::cout << "total\t"
+        << total_probes << '\t'
+        << total_hits << '\t'
+        << total_lower_cuts << '\t'
+        << total_upper_cuts << '\t'
+        << total_lower_stores << '\t'
+        << total_upper_stores << '\t'
+        << total_overwrites << '\t'
+        << total_occupied_misses << '\n';
+    std::cout << "LOCAL_TT_STATS_END\n";
+}
+#endif
+
 inline uint32_t hash_bb(Board *board) {
 #if USE_SIMD && USE_CRC32C_HASH_LTT
     uint64_t res = _mm_crc32_u64(0, board->player);
@@ -221,14 +330,27 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
             }
             search->move_noeval(&flip_value->flip);
                 Board nboard = search->board;
-                LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
+                const uint32_t child_n_discs = search->n_discs;
+                LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
+#if USE_LOCAL_TT_STATISTICS
+                local_tt_record_probe(child_n_discs, tt, &nboard);
+#endif
                 if (tt->cmp(&nboard)) {
+#if USE_LOCAL_TT_STATISTICS
+                    local_tt_record_hit(child_n_discs);
+#endif
                     if (alpha < tt->lower) {
+#if USE_LOCAL_TT_STATISTICS
+                        local_tt_record_lower_cut(child_n_discs);
+#endif
                         v = tt->lower;
                         search->undo_noeval(&flip_value->flip);
                         return v;
                     }
                     if (tt->upper <= alpha) {
+#if USE_LOCAL_TT_STATISTICS
+                        local_tt_record_upper_cut(child_n_discs);
+#endif
                         if (v < tt->upper) {
                             v = tt->upper;
                         }
@@ -245,10 +367,16 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
                     if (v < g) {
                         v = g;
                         if (alpha < v) {
+#if USE_LOCAL_TT_STATISTICS
+                            local_tt_record_store(child_n_discs, tt, &nboard, true);
+#endif
                             tt->set_score(&nboard, v, 64);
                             return v;
                         }
                     }
+#if USE_LOCAL_TT_STATISTICS
+                    local_tt_record_store(child_n_discs, tt, &nboard, false);
+#endif
                     tt->set_score(&nboard, -64, g);
                     done |= (1ULL << flip_value->flip.pos);
                     continue;
@@ -265,16 +393,23 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
         }
         search->move_noeval(&move_list[move_idx].flip);
             Board nboard = search->board;
-            LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
+            const uint32_t child_n_discs = search->n_discs;
+            LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
             g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal);
         search->undo_noeval(&move_list[move_idx].flip);
         if (v < g) {
             v = g;
             if (alpha < v) {
+#if USE_LOCAL_TT_STATISTICS
+                local_tt_record_store(child_n_discs, tt, &nboard, true);
+#endif
                 tt->set_score(&nboard, v, 64);
                 break;
             }
         }
+#if USE_LOCAL_TT_STATISTICS
+        local_tt_record_store(child_n_discs, tt, &nboard, false);
+#endif
         tt->set_score(&nboard, -64, g);
     }
     return v;
@@ -338,14 +473,27 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
             flip_value->value = 0;
             search->move_endsearch(&flip_value->flip);
                 Board nboard = search->board;
-                LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
+                const uint32_t child_n_discs = search->n_discs;
+                LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
+#if USE_LOCAL_TT_STATISTICS
+                local_tt_record_probe(child_n_discs, tt, &nboard);
+#endif
                 if (tt->cmp(&nboard)) {
+#if USE_LOCAL_TT_STATISTICS
+                    local_tt_record_hit(child_n_discs);
+#endif
                     if (alpha < tt->lower) {
+#if USE_LOCAL_TT_STATISTICS
+                        local_tt_record_lower_cut(child_n_discs);
+#endif
                         v = tt->lower;
                         search->undo_endsearch(&flip_value->flip);
                         return v;
                     }
                     if (tt->upper <= alpha) {
+#if USE_LOCAL_TT_STATISTICS
+                        local_tt_record_upper_cut(child_n_discs);
+#endif
                         if (v < tt->upper) {
                             v = tt->upper;
                         }
@@ -362,10 +510,16 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                     if (v < g) {
                         v = g;
                         if (alpha < v) {
+#if USE_LOCAL_TT_STATISTICS
+                            local_tt_record_store(child_n_discs, tt, &nboard, true);
+#endif
                             tt->set_score(&nboard, v, 64);
                             return v;
                         }
                     }
+#if USE_LOCAL_TT_STATISTICS
+                    local_tt_record_store(child_n_discs, tt, &nboard, false);
+#endif
                     tt->set_score(&nboard, -64, g);
                     done |= (1ULL << flip_value->flip.pos);
                     continue;
@@ -382,16 +536,23 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         }
         search->move_endsearch(&move_list[move_idx].flip);
             Board nboard = search->board;
-            LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
+            const uint32_t child_n_discs = search->n_discs;
+            LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
             g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal);
         search->undo_endsearch(&move_list[move_idx].flip);
         if (v < g) {
             v = g;
             if (alpha < v) {
+#if USE_LOCAL_TT_STATISTICS
+                local_tt_record_store(child_n_discs, tt, &nboard, true);
+#endif
                 tt->set_score(&nboard, v, 64);
                 break;
             }
         }
+#if USE_LOCAL_TT_STATISTICS
+        local_tt_record_store(child_n_discs, tt, &nboard, false);
+#endif
         tt->set_score(&nboard, -64, g);
     }
     return v;

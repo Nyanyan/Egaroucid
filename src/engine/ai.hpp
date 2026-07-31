@@ -742,7 +742,7 @@ void iterative_deepening_search(Board board, int alpha, int beta, int depth, uin
 #endif
 }
 
-void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, Search_result *result, uint64_t time_limit, bool *searching, AI_TL_Iteration_Diagnostics *diagnostics = nullptr) {
+void iterative_deepening_search_time_limit(Board board, int alpha, int beta, bool show_log, std::vector<Clog_result> clogs, uint64_t use_legal, bool use_multi_thread, thread_id_t thread_id, Search_result *result, uint64_t time_limit, bool *searching, AI_TL_Iteration_Diagnostics *diagnostics = nullptr, bool conservative_start = false) {
     const int n_usable_threads = thread_pool.get_max_thread_size(thread_id);
     uint64_t strt = tim();
     result->value = SCORE_UNDEFINED;
@@ -785,7 +785,17 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #else
     const uint64_t active_time_limit = time_limit;
 #endif
+    uint64_t previous_iteration_time = 0;
     while (global_searching && (*searching) && ((tim() - strt < active_time_limit) || main_depth <= 1)) {
+        uint64_t elapsed_before_iteration = tim() - strt;
+        if (conservative_start && main_depth > 1 && elapsed_before_iteration < active_time_limit) {
+            const uint64_t remaining = active_time_limit - elapsed_before_iteration;
+            const uint64_t min_remaining = std::max<uint64_t>(75ULL, previous_iteration_time * 3ULL + 20ULL);
+            if (elapsed_before_iteration * 5ULL >= active_time_limit * 3ULL || remaining <= min_remaining) {
+                break;
+            }
+        }
+        const uint64_t iteration_start = tim();
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
             main_is_end_search = true;
@@ -850,6 +860,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         result->nodes += main_search.n_nodes;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
+        previous_iteration_time = std::max<uint64_t>(1ULL, tim() - iteration_start);
 #if IS_GGS_TOURNAMENT
         if (!search_success && !conditional_match_reserve_released) {
             const bool hold_reserve = ai_tl_ggs_should_hold_match_reserve(

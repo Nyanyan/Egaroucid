@@ -17,7 +17,8 @@ import math
 #data_files = ['data/20240925_1_7_4/probcut_mid0.txt']
 #data_files = ['data/20241118_1_7_5/probcut_mid0.txt']
 #data_files = ['data/20241128_1_7_5/probcut_mid0.txt']
-data_files = ['data/20241130_1_7_5/probcut_mid0.txt']
+# data_files = ['data/20241130_1_7_5/probcut_mid0.txt']
+data_files = ['data/20260728_7_9_20260621_1_afterrand16/probcut_mid1.txt', 'data/20260728_7_9_20260621_1_afterrand16/probcut_mid2.txt', 'data/20260728_7_9_20260621_1_afterrand16/probcut_mid3.txt']
 
 
 data = [[[[] for _ in range(61)] for _ in range(61)] for _ in range(65)] # n_discs, depth1, depth2 (depth1 < depth2)
@@ -74,12 +75,12 @@ for n_discs in range(len(data)):
 for n_discs in range(61):
     for depth2 in range(30, 31):
         depth1 = 0
-        z = 3.0 + 12.0 * ((n_discs - 4) / 60)
+        z = 6.0 + 12.0 * ((n_discs - 4) / 60)
         w_n_discs_sd.append(n_discs)
         x_depth1_sd.append(depth1)
         y_depth2_sd.append(depth2)
         z_sd.append(z)
-        weight_sd.append(0.001)
+        weight_sd.append(0.0001)
 
 
 def f(wxy, probcut_a, probcut_b, probcut_c, probcut_d, probcut_e, probcut_f, probcut_g):
@@ -110,12 +111,12 @@ def plot_fit_result_onephase(w, x, y, z, n_discs, params):
             y_depth2_phase.append(yy)
             z_error_phase.append(zz)
     ax.plot(x_depth1_phase, y_depth2_phase, z_error_phase, ms=3, marker="o",linestyle='None')
-    mx, my = np.meshgrid(range(13), range(30))
+    mx, my = np.meshgrid(range(20), range(30))
     ax.plot_wireframe(mx, my, f_max((n_discs, mx, my), *params), rstride=4, cstride=2)
     ax.set_xlabel('depth1_short')
     ax.set_ylabel('depth2_long')
     ax.set_zlabel('error')
-    ax.set_xlim((0, 12))
+    ax.set_xlim((0, 20))
     ax.set_ylim((0, 30))
     ax.set_zlim((0, 12))
     plt.show()

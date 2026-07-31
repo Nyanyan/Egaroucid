@@ -13,6 +13,7 @@ level = 23
 n_threads = 32
 hash_level = 25
 exe = 'Egaroucid_for_Console.exe'
+eval_file = ''
 
 try:
     if len(sys.argv) >= 2:
@@ -23,8 +24,10 @@ try:
         hash_level = int(sys.argv[3])
     if len(sys.argv) >= 5:
         exe = sys.argv[4]
+    if len(sys.argv) >= 6:
+        eval_file = sys.argv[5]
 except:
-    print('usage: python midtest.py [level=23] [n_threads=32] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
+    print('usage: python midtest.py [level=23] [n_threads=32] [hash_level=25] [exe=Egaroucid_for_Console.exe] [eval_file=]')
     exit()
 
 
@@ -44,7 +47,10 @@ def strip_newlines(s):
 version = strip_newlines(version)
 print(version)
 
-cmd = exe + ' -l ' + str(level) + ' -nobook -thread ' + str(n_threads) + ' -hash ' + str(hash_level) + ' -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
+cmd = exe + ' -l ' + str(level) + ' -nobook -thread ' + str(n_threads) + ' -hash ' + str(hash_level)
+if eval_file != '':
+    cmd += ' -eval ' + eval_file
+cmd += ' -solve ' + os.path.join(script_dir, 'problem/midgame_test.txt')
 
 print(cmd.replace(script_dir, 'script_dir'))
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)

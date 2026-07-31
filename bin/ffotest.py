@@ -12,6 +12,7 @@ n_threads = 42
 hash_level = 25
 #exe = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
 exe = 'Egaroucid_for_Console.exe'
+eval_file = ''
 try:
     if len(sys.argv) >= 2:
         start = int(sys.argv[1])
@@ -23,8 +24,10 @@ try:
         hash_level = int(sys.argv[4])
     if len(sys.argv) >= 6:
         exe = sys.argv[5]
+    if len(sys.argv) >= 7:
+        eval_file = sys.argv[6]
 except:
-    print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe]')
+    print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe] [eval_file=]')
     exit()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -44,7 +47,10 @@ version = strip_newlines(version)
 print(version)
 
 
-cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook -solve ' + os.path.join(script_dir, 'problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads))
+cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook'
+if eval_file != '':
+    cmd += ' -eval ' + eval_file
+cmd += ' -solve ' + os.path.join(script_dir, 'problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads))
 
 print(cmd.replace(script_dir, 'script_dir'))
 egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)

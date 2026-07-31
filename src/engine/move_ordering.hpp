@@ -44,7 +44,7 @@ constexpr int MO_OFFSET_L_PM = 38;
     int move_ordering_param_array[N_MOVE_ORDERING_PARAM] = {
         10, 6, 3, 35, 17, 485, 269, 94, 
         5, 3, 1, 17, 204, 7, 25, 
-        40, 12, 
+        40, 20,
         18, 17, 300
     };
 
@@ -96,7 +96,7 @@ constexpr int MO_OFFSET_L_PM = 38;
 
     // endgame null window search
     constexpr int W_END_NWS_MOBILITY = 40;
-    constexpr int W_END_NWS_VALUE = 12;
+    constexpr int W_END_NWS_VALUE = 20;
 
     // endgame simple null window search
     constexpr int W_END_NWS_SIMPLE_MOBILITY = 18;
@@ -120,6 +120,9 @@ int nega_alpha_eval1(Search *search, int alpha, int beta, bool skipped);
 int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 inline bool transposition_table_get_value(Search *search, uint32_t hash, int *l, int *u);
 inline int mid_evaluate_diff(Search *search);
+#if !USE_DIM0_ONLY_EVALUATION
+inline int mid_evaluate_move_ordering_dim0(Search *search);
+#endif
 inline int mid_evaluate_move_ordering_end(Search *search);
 
 inline bool use_root_move_ordering_extension(const Search *search, int branch_count, bool is_end_search) {
@@ -273,14 +276,22 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         const bool has_tt_value = depth >= MOVE_ORDERING_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
+#if USE_DIM0_ONLY_EVALUATION
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
+#else
+                flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_VALUE;
+#endif
                 break;
             case 1:
                 if (has_tt_value) {
                     flip_value->value += W_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 } else {
-                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+#if USE_DIM0_ONLY_EVALUATION
+                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+#else
+                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+#endif
                 }
                 break;
             default:
@@ -288,10 +299,11 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                     flip_value->value += W_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                 } else {
-                    uint_fast8_t mpc_level = search->mpc_level;
-                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                        flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-                    search->mpc_level = mpc_level;
+#if USE_DIM0_ONLY_EVALUATION
+                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+#else
+                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+#endif
                 }
                 break;
         }
@@ -326,14 +338,22 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         const bool has_tt_value = depth >= MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
+#if USE_DIM0_ONLY_EVALUATION
                 flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
+#else
+                flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_NWS_VALUE;
+#endif
                 break;
             case 1:
                 if (has_tt_value) {
                     flip_value->value += W_NWS_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
-                    flip_value->value += (SCORE_MAX - nega_alpha_eval1(search, alpha, beta, false)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+#if USE_DIM0_ONLY_EVALUATION
+                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+#else
+                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+#endif
                 }
                 break;
             default:
@@ -341,32 +361,31 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                     flip_value->value += W_NWS_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
-                    uint_fast8_t mpc_level = search->mpc_level;
-                    search->mpc_level = MOVE_ORDERING_MPC_LEVEL;
-                        flip_value->value += (SCORE_MAX - nega_scout(search, alpha, beta, depth, false, flip_value->n_legal, false, searching)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-                    search->mpc_level = mpc_level;
+#if USE_DIM0_ONLY_EVALUATION
+                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+#else
+                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+#endif
                 }
                 break;
         }
     search->undo(&flip_value->flip);
 }
 
-// /*
-//     @brief Evaluate a move in endgame NWS
+/*
+    @brief Evaluate a move in endgame NWS
 
-//     @param search               search information
-//     @param flip_value           flip with value
-//     @return true if wipeout found else false
-// */
-// inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
-//     flip_value->value = 0;
-//     // flip_value->value += search->get_killer_bonus(flip_value->flip.pos);
-//     search->move_endsearch(&flip_value->flip);
-//         flip_value->n_legal = search->board.get_legal();
-//         flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
-//         flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
-//     search->undo_endsearch(&flip_value->flip);
-// }
+    @param search               search information
+    @param flip_value           flip with value
+*/
+inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
+    flip_value->value = 0;
+    search->move_endsearch(&flip_value->flip);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
+    search->undo_endsearch(&flip_value->flip);
+}
 
 // /*
 //     @brief Evaluate a move in endgame NWS (simple)
@@ -632,26 +651,56 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
     return false;
 }
 
-// /*
-//     @brief Evaluate all legal moves for endgame NWS
+/*
+    @brief Evaluate all legal moves for endgame NWS
 
-//     @param search               search information
-//     @param move_list            list of moves
-// */
-// inline void move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], bool *searching) {
-//     if (move_list.size() <= 1) {
-//         return;
-//     }
-//     for (Flip_value &flip_value: move_list) {
-//         if (flip_value.flip.pos == moves[0]) {
-//             flip_value.value = W_1ST_MOVE;
-//         } else if (flip_value.flip.pos == moves[1]) {
-//             flip_value.value = W_2ND_MOVE;
-//         } else{
-//             move_evaluate_end_nws(search, &flip_value);
-//         }
-//     }
-// }
+    @param search               search information
+    @param move_list            list of moves
+    @param moves                list of moves in transposition table
+*/
+inline bool move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &move_list, uint_fast8_t moves[], bool *searching) {
+    if (move_list.size() <= 1) {
+        return false;
+    }
+    for (Flip_value &flip_value: move_list) {
+        if (flip_value.flip.flip) {
+            if (flip_value.flip.pos == moves[0]) {
+                flip_value.value = W_1ST_MOVE;
+            } else if (flip_value.flip.pos == moves[1]) {
+                flip_value.value = W_2ND_MOVE;
+            } else {
+                move_evaluate_end_nws(search, &flip_value);
+            }
+        }
+    }
+    return false;
+}
+
+/*
+    @brief Evaluate all legal moves for endgame NWS
+
+    @param search               search information
+    @param move_list            list of moves
+    @param canput               number of legal moves
+    @param moves                list of moves in transposition table
+*/
+inline bool move_list_evaluate_end_nws(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], bool *searching) {
+    if (canput <= 1) {
+        return false;
+    }
+    for (int i = 0; i < canput; ++i) {
+        if (move_list[i].flip.flip) {
+            if (move_list[i].flip.pos == moves[0]) {
+                move_list[i].value = W_1ST_MOVE;
+            } else if (move_list[i].flip.pos == moves[1]) {
+                move_list[i].value = W_2ND_MOVE;
+            } else {
+                move_evaluate_end_nws(search, &move_list[i]);
+            }
+        }
+    }
+    return false;
+}
 
 // /*
 //     @brief Evaluate all legal moves for endgame NWS (simple)

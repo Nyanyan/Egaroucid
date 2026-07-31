@@ -10,7 +10,9 @@
 
 #pragma once
 #include "setting.hpp"
-#if USE_SIMD_EVALUATION
+#if defined(USE_NNUE_EVALUATION)
+#include "./../tools/evaluation/nnue/evaluate_nnue.hpp"
+#elif USE_SIMD_EVALUATION
 #include "evaluate_simd.hpp"
 #else
 #include "evaluate_generic.hpp"

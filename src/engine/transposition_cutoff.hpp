@@ -119,11 +119,11 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
     for (Flip_value &flip_value: move_list) {
         l = -SCORE_MAX;
         u = SCORE_MAX;
-        search->move(&flip_value.flip);
+        search->move_noeval(&flip_value.flip);
             if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
                 flip_value.value = W_TT_BONUS;
             }
-        search->undo(&flip_value.flip);
+        search->undo_noeval(&flip_value.flip);
         if (*beta <= -u) { // alpha < beta <= -u <= -l
             *v = -u;
             return true; // fail high
@@ -158,11 +158,11 @@ inline bool etc(Search *search, Flip_value move_list[], int canput, int depth, i
     for (int i = 0; i < canput; ++i) {
         l = -SCORE_MAX;
         u = SCORE_MAX;
-        search->move(&move_list[i].flip);
+        search->move_noeval(&move_list[i].flip);
             if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
                 move_list[i].value = W_TT_BONUS;
             }
-        search->undo(&move_list[i].flip);
+        search->undo_noeval(&move_list[i].flip);
         if (*beta <= -u) { // alpha < beta <= -u <= -l
             *v = -u;
             return true; // fail high
@@ -197,11 +197,11 @@ inline bool etc_nws(Search *search, std::vector<Flip_value> &move_list, int dept
     for (Flip_value &flip_value: move_list) {
         l = -SCORE_MAX;
         u = SCORE_MAX;
-        search->move(&flip_value.flip);
+        search->move_noeval(&flip_value.flip);
             if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
                 flip_value.value = W_NWS_TT_BONUS;
             }
-        search->undo(&flip_value.flip);
+        search->undo_noeval(&flip_value.flip);
         if (alpha < -u) { // fail high at parent node
             *v = -u;
             return true;
@@ -231,11 +231,11 @@ inline bool etc_nws(Search *search, Flip_value move_list[], int canput, int dept
     for (int i = 0; i < canput; ++i) {
         l = -SCORE_MAX;
         u = SCORE_MAX;
-        search->move(&move_list[i].flip);
+        search->move_noeval(&move_list[i].flip);
             if (transposition_table.has_node_any_level_get_bounds(search, search->board.hash(), depth - 1, &l, &u)) {
                 move_list[i].value = W_NWS_TT_BONUS;
             }
-        search->undo(&move_list[i].flip);
+        search->undo_noeval(&move_list[i].flip);
         if (alpha < -u) { // fail high at parent node
             *v = -u;
             return true;

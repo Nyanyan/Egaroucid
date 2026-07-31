@@ -105,7 +105,7 @@
             #define USE_CRC32C_HASH_LTT true
         #else
             #define USE_CRC32C_HASH false
-            #define USE_CRC32C_HASH_LTT false
+            #define USE_CRC32C_HASH_LTT true
         #endif
 
         // TT init with SIMD
@@ -142,6 +142,9 @@
 
 // use parallel clog search
 #define USE_PARALLEL_CLOG_SEARCH true
+
+// use only Dim0 evaluation
+#define USE_DIM0_ONLY_EVALUATION true
 
 // MPC pre calculation
 #define USE_MPC_PRE_CALCULATION true
@@ -185,6 +188,9 @@
 
 // search statistics
 #define USE_SEARCH_STATISTICS false
+
+// Local TT statistics
+#define USE_LOCAL_TT_STATISTICS false
 
 // thread monitor
 #define USE_THREAD_MONITOR false

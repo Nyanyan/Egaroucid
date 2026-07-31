@@ -23,6 +23,7 @@ constexpr int EVAL_IDX_START_MOVE_ORDERING_END = 32;
 constexpr int EVAL_IDX_END_MOVE_ORDERING_END = 48;
 constexpr int EVAL_FEATURE_START_MOVE_ORDERING_END = 8;
 constexpr int MAX_CELL_PATTERNS_MOVE_ORDERING_END = 6;
+constexpr int N_PATTERN_PARAMS_RAW = 612360;
 
 
 constexpr Feature_to_coord feature_to_coord[N_PATTERN_FEATURES] = {
@@ -291,6 +292,10 @@ constexpr int feature_to_pattern[N_PATTERN_FEATURES] = {
 */
 int16_t pattern_arr[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
+#if !USE_DIM0_ONLY_EVALUATION
+int16_t pattern_arr_move_ordering_mid_dim0[2][N_PHASES][N_PATTERNS][MAX_EVALUATE_IDX];
+int16_t eval_num_arr_move_ordering_mid_dim0[N_PHASES][MAX_STONE_NUM];
+#endif
 int16_t pattern_arr_move_ordering_end[2][N_PATTERNS][MAX_EVALUATE_IDX];
 
 /*
@@ -328,6 +333,19 @@ void init_pattern_arr_rev(int phase_idx, int pattern_idx, int siz) {
     }
 }
 
+#if !USE_DIM0_ONLY_EVALUATION
+void init_pattern_arr_move_ordering_mid_dim0_rev(int phase_idx, int pattern_idx, int siz) {
+    for (int i = 0; i < (int)pow3[siz]; ++i) {
+        int ri = swap_player_idx(i, siz);
+        pattern_arr_move_ordering_mid_dim0[1][phase_idx][pattern_idx][ri] = pattern_arr_move_ordering_mid_dim0[0][phase_idx][pattern_idx][i];
+    }
+}
+#endif
+
+#if !USE_DIM0_ONLY_EVALUATION
+#include "evaluate_fm.hpp"
+#endif
+
 /*
     @brief initialize the evaluation function
 
@@ -339,10 +357,26 @@ inline bool load_eval_file(const char* file, bool show_log) {
         std::cerr << "evaluation file " << file << std::endl;
     }
     bool failed = false;
+#if USE_DIM0_ONLY_EVALUATION
     std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
     if (failed) {
         return false;
     }
+#else
+    bool fm_file = false;
+    std::vector<int16_t> unzipped_params;
+    load_eval_fm_file(file, show_log, &unzipped_params, &failed, &fm_file);
+    if (failed) {
+        return false;
+    }
+    if (!fm_file) {
+        unzipped_params = load_unzip_egev2(file, show_log, &failed);
+        eval_fm_disable();
+        if (failed) {
+            return false;
+        }
+    }
+#endif
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
@@ -403,6 +437,51 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     return true;
 }
 
+#if !USE_DIM0_ONLY_EVALUATION
+inline bool load_eval_move_ordering_mid_dim0_file(const char* file, bool show_log) {
+    if (show_log) {
+        std::cerr << "Dim0 evaluation for move ordering file " << file << std::endl;
+    }
+    bool failed = false;
+    std::vector<int16_t> unzipped_params = load_unzip_egev2(file, show_log, &failed);
+    if (failed) {
+        return false;
+    }
+    size_t param_idx = 0;
+    for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+        for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
+            std::memcpy(pattern_arr_move_ordering_mid_dim0[0][phase_idx][pattern_idx], &unzipped_params[param_idx], sizeof(short) * pow3[pattern_sizes[pattern_idx]]);
+            param_idx += pow3[pattern_sizes[pattern_idx]];
+        }
+        std::memcpy(eval_num_arr_move_ordering_mid_dim0[phase_idx], &unzipped_params[param_idx], sizeof(short) * MAX_STONE_NUM);
+        param_idx += MAX_STONE_NUM;
+    }
+    if (thread_pool.size() >= 2) {
+        std::future<void> tasks[N_PHASES * N_PATTERNS];
+        int i = 0;
+        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
+                bool pushed = false;
+                while (!pushed) {
+                    tasks[i] = thread_pool.push(&pushed, std::bind(init_pattern_arr_move_ordering_mid_dim0_rev, phase_idx, pattern_idx, pattern_sizes[pattern_idx]));
+                }
+                ++i;
+            }
+        }
+        for (std::future<void> &task: tasks) {
+            task.get();
+        }
+    } else {
+        for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+            for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
+                init_pattern_arr_move_ordering_mid_dim0_rev(phase_idx, pattern_idx, pattern_sizes[pattern_idx]);
+            }
+        }
+    }
+    return true;
+}
+#endif
+
 /*
     @brief initialize the evaluation function
 
@@ -410,12 +489,31 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     @param show_log             debug information?
     @return evaluation function conpletely initialized?
 */
+#if !USE_DIM0_ONLY_EVALUATION
+inline std::string get_eval_move_ordering_mid_dim0_file(const char* mo_end_nws_file) {
+    const std::string mo_end_file(mo_end_nws_file);
+    const size_t separator_pos = mo_end_file.find_last_of("/\\");
+    if (separator_pos == std::string::npos) {
+        return "eval.egev2";
+    }
+    return mo_end_file.substr(0, separator_pos + 1) + "eval.egev2";
+}
+#endif
+
 inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool show_log) {
     bool eval_loaded = load_eval_file(file, show_log);
     if (!eval_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file not loaded" << std::endl;
         return false;
     }
+#if !USE_DIM0_ONLY_EVALUATION
+    const std::string eval_move_ordering_mid_dim0_file = get_eval_move_ordering_mid_dim0_file(mo_end_nws_file);
+    bool eval_move_ordering_mid_dim0_loaded = load_eval_move_ordering_mid_dim0_file(eval_move_ordering_mid_dim0_file.c_str(), show_log);
+    if (!eval_move_ordering_mid_dim0_loaded) {
+        std::cerr << "[ERROR] [FATAL] Dim0 evaluation file for move ordering not loaded" << std::endl;
+        return false;
+    }
+#endif
     bool eval_move_ordering_end_nws_loaded = load_eval_move_ordering_end_file(mo_end_nws_file, show_log);
     if (!eval_move_ordering_end_nws_loaded) {
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
@@ -443,7 +541,11 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
     @return evaluation function conpletely initialized?
 */
 bool evaluate_init(bool show_log) {
+#if USE_DIM0_ONLY_EVALUATION
     return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval.egev2", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
+#else
+    return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval_dim8_fm.egevfm", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
+#endif
 }
 
 /*
@@ -460,6 +562,16 @@ inline int calc_pattern(const int phase_idx, Eval_search *eval) {
     }
     return res;
 }
+
+#if !USE_DIM0_ONLY_EVALUATION
+inline int calc_pattern_move_ordering_mid_dim0(const int phase_idx, Eval_search *eval) {
+    int res = 0;
+    for (int i = 0; i < N_PATTERN_FEATURES; ++i) {
+        res += pattern_arr_move_ordering_mid_dim0[eval->reversed[eval->feature_idx]][phase_idx][feature_to_pattern[i]][eval->features[eval->feature_idx][i]];
+    }
+    return res;
+}
+#endif
 
 /*
     @brief pattern evaluation
@@ -491,6 +603,9 @@ inline int mid_evaluate(Board *board) {
     phase_idx = search.phase();
     num0 = pop_count_ull(search.board.player);
     int res = calc_pattern(phase_idx, &search.eval) + eval_num_arr[phase_idx][num0];
+#if !USE_DIM0_ONLY_EVALUATION
+    res += eval_fm_calc(phase_idx, &search.eval);
+#endif
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -508,10 +623,33 @@ inline int mid_evaluate_diff(Search *search) {
     phase_idx = search->phase();
     num0 = pop_count_ull(search->board.player);
     int res = calc_pattern(phase_idx, &search->eval) + eval_num_arr[phase_idx][num0];
+#if !USE_DIM0_ONLY_EVALUATION
+    res += eval_fm_calc(phase_idx, &search->eval);
+#endif
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
+}
+
+#if !USE_DIM0_ONLY_EVALUATION
+inline int mid_evaluate_move_ordering_dim0(Search *search) {
+    const int phase_idx = search->phase();
+    const int num0 = pop_count_ull(search->board.player);
+    int res = calc_pattern_move_ordering_mid_dim0(phase_idx, &search->eval) + eval_num_arr_move_ordering_mid_dim0[phase_idx][num0];
+    res += res >= 0 ? STEP_2 : -STEP_2;
+    res /= STEP;
+    res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
+    return res;
+}
+#endif
+
+inline int mid_evaluate_dim0(Search *search) {
+#if USE_DIM0_ONLY_EVALUATION
+    return mid_evaluate_diff(search);
+#else
+    return mid_evaluate_move_ordering_dim0(search);
+#endif
 }
 
 /*
