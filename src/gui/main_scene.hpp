@@ -417,9 +417,13 @@ public:
         }
 
         // graph drawing
-        const int graph_highlight_n_discs = get_marked_random_generated_position_n_discs();
-        const int graph_value_start_n_discs = get_graph_value_start_n_discs();
-        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_40_to_60, graph_highlight_n_discs, graph_value_start_n_discs);
+        const int random_generated_start_n_discs = get_marked_random_generated_position_n_discs();
+        const int xot_start_n_discs = getData().graph_resources.xot_start_n_discs;
+        const int graph_highlight_n_discs = std::max(random_generated_start_n_discs, xot_start_n_discs);
+        const int identified_xot_graph_start_n_discs = random_generated_start_n_discs == -1 ? xot_start_n_discs : -1;
+        const int graph_value_start_n_discs = std::max(get_graph_value_start_n_discs(), identified_xot_graph_start_n_discs);
+        const int current_error_start_n_discs = graph_highlight_n_discs;
+        graph.draw(getData().graph_resources.nodes[0], getData().graph_resources.nodes[1], getData().graph_resources.n_discs, getData().graph_resources.branch, getData().menu_elements.show_graph, getData().menu_elements.level, getData().fonts.font, getData().menu_elements.change_color_type, getData().menu_elements.show_graph_sum_of_loss, getData().menu_elements.show_endgame_error, getData().menu_elements.show_endgame_error_1_to_current, getData().menu_elements.show_endgame_error_40_to_60, graph_highlight_n_discs, graph_value_start_n_discs, current_error_start_n_discs);
 
         // info drawing
         int playing_mode = PLAYING_MODE_NONE;

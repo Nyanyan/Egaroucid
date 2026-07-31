@@ -50,6 +50,7 @@ struct Display_profile_values {
     int pv_length{ 7 };
     bool show_value_when_ai_calculating{ false };
     bool show_endgame_error{ false };
+    bool show_endgame_error_1_to_current{ false };
     bool show_endgame_error_40_to_60{ true };
     bool show_endgame_error_41_to_60{ false };
     bool hint_colorize{ false };
@@ -92,7 +93,8 @@ inline void normalize_display_profile_values(Display_profile_values* values) {
         values->show_graph_value = true;
         values->show_graph_sum_of_loss = false;
     }
-    if (values->show_endgame_error_40_to_60 == values->show_endgame_error_41_to_60) {
+    if ((int)values->show_endgame_error_1_to_current + (int)values->show_endgame_error_40_to_60 + (int)values->show_endgame_error_41_to_60 != 1) {
+        values->show_endgame_error_1_to_current = false;
         values->show_endgame_error_40_to_60 = true;
         values->show_endgame_error_41_to_60 = false;
     }
@@ -135,6 +137,7 @@ inline Display_profile_values to_display_profile_values(const Settings& settings
     values.pv_length = settings.pv_length;
     values.show_value_when_ai_calculating = settings.show_value_when_ai_calculating;
     values.show_endgame_error = settings.show_endgame_error;
+    values.show_endgame_error_1_to_current = settings.show_endgame_error_1_to_current;
     values.show_endgame_error_40_to_60 = settings.show_endgame_error_40_to_60;
     values.show_endgame_error_41_to_60 = settings.show_endgame_error_41_to_60;
     values.hint_colorize = settings.hint_colorize;
@@ -179,6 +182,7 @@ inline Display_profile_values to_display_profile_values(const Menu_elements& men
     values.pv_length = menu_elements.pv_length;
     values.show_value_when_ai_calculating = menu_elements.show_value_when_ai_calculating;
     values.show_endgame_error = menu_elements.show_endgame_error;
+    values.show_endgame_error_1_to_current = menu_elements.show_endgame_error_1_to_current;
     values.show_endgame_error_40_to_60 = menu_elements.show_endgame_error_40_to_60;
     values.show_endgame_error_41_to_60 = menu_elements.show_endgame_error_41_to_60;
     values.hint_colorize = menu_elements.hint_colorize;
@@ -224,6 +228,7 @@ inline void apply_display_profile_values(const Display_profile_values& values, S
     settings->pv_length = normalized_values.pv_length;
     settings->show_value_when_ai_calculating = normalized_values.show_value_when_ai_calculating;
     settings->show_endgame_error = normalized_values.show_endgame_error;
+    settings->show_endgame_error_1_to_current = normalized_values.show_endgame_error_1_to_current;
     settings->show_endgame_error_40_to_60 = normalized_values.show_endgame_error_40_to_60;
     settings->show_endgame_error_41_to_60 = normalized_values.show_endgame_error_41_to_60;
     settings->hint_colorize = normalized_values.hint_colorize;
@@ -267,6 +272,7 @@ inline void apply_display_profile_values(const Display_profile_values& values, M
     menu_elements->pv_length = normalized_values.pv_length;
     menu_elements->show_value_when_ai_calculating = normalized_values.show_value_when_ai_calculating;
     menu_elements->show_endgame_error = normalized_values.show_endgame_error;
+    menu_elements->show_endgame_error_1_to_current = normalized_values.show_endgame_error_1_to_current;
     menu_elements->show_endgame_error_40_to_60 = normalized_values.show_endgame_error_40_to_60;
     menu_elements->show_endgame_error_41_to_60 = normalized_values.show_endgame_error_41_to_60;
     menu_elements->hint_colorize = normalized_values.hint_colorize;
@@ -336,6 +342,7 @@ inline void export_display_profile_json(JSON& json, const Display_profile_values
     json[U"pv_length"] = normalized_values.pv_length;
     json[U"show_value_when_ai_calculating"] = normalized_values.show_value_when_ai_calculating;
     json[U"show_endgame_error"] = normalized_values.show_endgame_error;
+    json[U"show_endgame_error_1_to_current"] = normalized_values.show_endgame_error_1_to_current;
     json[U"show_endgame_error_40_to_60"] = normalized_values.show_endgame_error_40_to_60;
     json[U"show_endgame_error_41_to_60"] = normalized_values.show_endgame_error_41_to_60;
     json[U"hint_colorize"] = normalized_values.hint_colorize;
@@ -386,6 +393,7 @@ inline bool load_display_profile_values(const FilePath& path, Display_profile_va
     import_display_profile_int(json, U"pv_length", &values->pv_length);
     import_display_profile_bool(json, U"show_value_when_ai_calculating", &values->show_value_when_ai_calculating);
     import_display_profile_bool(json, U"show_endgame_error", &values->show_endgame_error);
+    import_display_profile_bool(json, U"show_endgame_error_1_to_current", &values->show_endgame_error_1_to_current);
     import_display_profile_bool(json, U"show_endgame_error_40_to_60", &values->show_endgame_error_40_to_60);
     import_display_profile_bool(json, U"show_endgame_error_41_to_60", &values->show_endgame_error_41_to_60);
     import_display_profile_bool(json, U"hint_colorize", &values->hint_colorize);
@@ -441,6 +449,7 @@ inline bool equals_display_profile_values(const Display_profile_values& lhs, con
     if (lhs.pv_length != rhs.pv_length) return false;
     if (lhs.show_value_when_ai_calculating != rhs.show_value_when_ai_calculating) return false;
     if (lhs.show_endgame_error != rhs.show_endgame_error) return false;
+    if (lhs.show_endgame_error_1_to_current != rhs.show_endgame_error_1_to_current) return false;
     if (lhs.show_endgame_error_40_to_60 != rhs.show_endgame_error_40_to_60) return false;
     if (lhs.show_endgame_error_41_to_60 != rhs.show_endgame_error_41_to_60) return false;
     if (lhs.hint_colorize != rhs.hint_colorize) return false;

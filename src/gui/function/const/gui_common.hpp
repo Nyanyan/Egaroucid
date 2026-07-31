@@ -618,6 +618,7 @@ struct Settings {
     int generate_random_board_score_range_max;
     bool show_hint_level;
     bool show_endgame_error;
+    bool show_endgame_error_1_to_current;
     bool show_endgame_error_40_to_60;
     bool show_endgame_error_41_to_60;
     bool hint_colorize;
@@ -759,6 +760,7 @@ struct Menu_elements {
     int pv_length;
     bool show_value_when_ai_calculating;
     bool show_endgame_error;
+    bool show_endgame_error_1_to_current;
     bool show_endgame_error_40_to_60;
     bool show_endgame_error_41_to_60;
     bool hint_colorize;
@@ -921,6 +923,7 @@ struct Menu_elements {
         pv_length = settings->pv_length;
         show_value_when_ai_calculating = settings->show_value_when_ai_calculating;
         show_endgame_error = settings->show_endgame_error;
+        show_endgame_error_1_to_current = settings->show_endgame_error_1_to_current;
         show_endgame_error_40_to_60 = settings->show_endgame_error_40_to_60;
         show_endgame_error_41_to_60 = settings->show_endgame_error_41_to_60;
         hint_colorize = settings->hint_colorize;
