@@ -30,16 +30,36 @@ std::string get_extension(std::string file) {
     return "";
 }
 
-inline void update_xot_start_n_discs(Graph_resources* graph_resources) {
-    graph_resources->xot_start_n_discs = -1;
-    for (const History_elem& history_elem : graph_resources->nodes[GRAPH_MODE_NORMAL]) {
-        if (history_elem.board.n_discs() == XOT_START_N_DISCS) {
-            if (is_xot_board_key(history_elem.board)) {
-                graph_resources->xot_start_n_discs = XOT_START_N_DISCS;
-            }
-            return;
-        }
+inline bool is_xot_opening_history(const std::vector<History_elem>& history) {
+    if (history.empty()) {
+        return false;
     }
+    Board initial_board;
+    initial_board.reset();
+    if (history.front().board != initial_board || history.front().player != BLACK) {
+        return false;
+    }
+    std::vector<int> moves;
+    moves.reserve(XOT_OPENING_N_MOVES);
+    int expected_n_discs = 4;
+    for (const History_elem& history_elem : history) {
+        if (history_elem.board.n_discs() != expected_n_discs) {
+            return false;
+        }
+        if (expected_n_discs == XOT_START_N_DISCS) {
+            return is_xot_opening_moves(moves);
+        }
+        if (!is_valid_policy(history_elem.next_policy)) {
+            return false;
+        }
+        moves.emplace_back(history_elem.next_policy);
+        ++expected_n_discs;
+    }
+    return false;
+}
+
+inline void update_xot_start_n_discs(Graph_resources* graph_resources) {
+    graph_resources->xot_start_n_discs = is_xot_opening_history(graph_resources->nodes[GRAPH_MODE_NORMAL]) ? XOT_START_N_DISCS : -1;
 }
 
 std::vector<int> get_put_order(Graph_resources graph_resources, History_elem current_history_elem) {

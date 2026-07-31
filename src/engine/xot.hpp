@@ -18,28 +18,43 @@
 #include "util.hpp"
 
 constexpr int XOT_START_N_DISCS = 12;
-
-struct XotBoardKey {
-    uint64_t player;
-    uint64_t opponent;
-};
-
-inline bool xot_board_key_less(const XotBoardKey& lhs, const XotBoardKey& rhs) {
-    return lhs.player < rhs.player || (lhs.player == rhs.player && lhs.opponent < rhs.opponent);
-}
-
-inline bool xot_board_key_equal(const XotBoardKey& lhs, const XotBoardKey& rhs) {
-    return lhs.player == rhs.player && lhs.opponent == rhs.opponent;
-}
-
-inline std::vector<XotBoardKey>& xot_board_keys() {
-    static std::vector<XotBoardKey> keys;
-    return keys;
-}
+constexpr int XOT_OPENING_N_MOVES = XOT_START_N_DISCS - 4;
 
 inline std::vector<std::string>& xot_opening_transcripts() {
     static std::vector<std::string> transcripts;
     return transcripts;
+}
+
+inline std::vector<std::string>& xot_opening_sequence_keys() {
+    static std::vector<std::string> keys;
+    return keys;
+}
+
+inline std::string normalize_xot_opening_moves(const std::vector<int>& moves) {
+    if ((int)moves.size() != XOT_OPENING_N_MOVES) {
+        return "";
+    }
+    std::string normalized;
+    for (int symmetry_idx = 0; symmetry_idx < 8; ++symmetry_idx) {
+        std::string candidate;
+        candidate.reserve(moves.size() * 2);
+        for (int move : moves) {
+            if (!is_valid_policy(move)) {
+                return "";
+            }
+            candidate += idx_to_coord(convert_coord_to_representative_board(move, symmetry_idx));
+        }
+        if (normalized.empty() || candidate < normalized) {
+            normalized = candidate;
+        }
+    }
+    return normalized;
+}
+
+inline bool is_xot_opening_moves(const std::vector<int>& moves) {
+    const std::string key = normalize_xot_opening_moves(moves);
+    const std::vector<std::string>& keys = xot_opening_sequence_keys();
+    return !key.empty() && std::binary_search(keys.begin(), keys.end(), key);
 }
 
 inline std::string normalize_xot_transcript_line(std::string line) {
@@ -87,17 +102,6 @@ inline bool xot_transcript_to_board(const std::string& transcript, Board* board,
     return true;
 }
 
-inline bool xot_transcript_to_board_key(const std::string& transcript, XotBoardKey* key) {
-    Board board;
-    if (!xot_transcript_to_board(transcript, &board)) {
-        return false;
-    }
-    board = representative_board(board);
-    key->player = board.player;
-    key->opponent = board.opponent;
-    return true;
-}
-
 inline std::vector<int> get_random_xot_moves() {
     const std::vector<std::string>& transcripts = xot_opening_transcripts();
     if (transcripts.empty()) {
@@ -120,10 +124,10 @@ inline bool xot_init(const std::string& xot_dir, bool show_log = true) {
     file_path += "openingslarge.txt";
 
     std::ifstream ifs(file_path);
-    std::vector<XotBoardKey>& keys = xot_board_keys();
     std::vector<std::string>& transcripts = xot_opening_transcripts();
-    keys.clear();
+    std::vector<std::string>& sequence_keys = xot_opening_sequence_keys();
     transcripts.clear();
+    sequence_keys.clear();
     if (!ifs) {
         if (show_log) {
             std::cerr << "[WARNING] XOT openings file not found: " << file_path << std::endl;
@@ -139,36 +143,26 @@ inline bool xot_init(const std::string& xot_dir, bool show_log = true) {
         if (transcript.empty()) {
             continue;
         }
-        XotBoardKey key{};
-        if (xot_transcript_to_board_key(transcript, &key)) {
-            keys.emplace_back(key);
+        Board board;
+        std::vector<int> moves;
+        if (xot_transcript_to_board(transcript, &board, &moves)) {
             transcripts.emplace_back(transcript);
+            sequence_keys.emplace_back(normalize_xot_opening_moves(moves));
             ++loaded;
         } else {
             ++skipped;
         }
     }
 
-    std::sort(keys.begin(), keys.end(), xot_board_key_less);
-    keys.erase(std::unique(keys.begin(), keys.end(), xot_board_key_equal), keys.end());
+    std::sort(sequence_keys.begin(), sequence_keys.end());
+    sequence_keys.erase(std::unique(sequence_keys.begin(), sequence_keys.end()), sequence_keys.end());
     if (show_log) {
-        std::cerr << "loaded XOT openings " << keys.size() << " unique positions from "
+        std::cerr << "loaded XOT openings " << sequence_keys.size() << " unique sequences from "
             << loaded << " lines";
         if (skipped) {
             std::cerr << " (" << skipped << " skipped)";
         }
         std::cerr << std::endl;
     }
-    return !keys.empty();
-}
-
-inline bool is_xot_board_key(Board board) {
-    const std::vector<XotBoardKey>& keys = xot_board_keys();
-    if (keys.empty()) {
-        return false;
-    }
-    board = representative_board(board);
-    const XotBoardKey target{ board.player, board.opponent };
-    const auto it = std::lower_bound(keys.begin(), keys.end(), target, xot_board_key_less);
-    return it != keys.end() && xot_board_key_equal(*it, target);
+    return !sequence_keys.empty();
 }
