@@ -21,7 +21,7 @@ constexpr int USE_MPC_MIN_DEPTH = 3;
 //constexpr int MPC_ADD_DEPTH_VALUE_THRESHOLD = 5;
 //constexpr int MPC_SUB_DEPTH_VALUE_THRESHOLD = 20;
 constexpr double MPC_ERROR_SCALE = 1.0;
-constexpr int MPC_ERROR0_OFFSET = 4;
+constexpr int MPC_ERROR0_OFFSET = 3;
 constexpr int MPC_DEPTH_NUMERATOR = 2;
 constexpr int MPC_DEPTH_DENOMINATOR = 5;
 #ifndef MPC_SIGMA_SCALE
