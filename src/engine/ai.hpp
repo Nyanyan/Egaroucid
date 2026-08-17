@@ -122,6 +122,9 @@ constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT = 2200ULL;
 constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MAX_TIME = 10000ULL;
 constexpr double AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE = 0.45;
 constexpr int AI_TL_GGS_ALT_VERIFY_RETRY_DEPTH_GAP = 3;
+// Temporarily disable match-boundary revalidation for GGS tournament play.
+// Keep the implementation available so it can be re-enabled after evaluation.
+constexpr bool AI_TL_GGS_MATCH_REVALIDATION_ENABLED = false;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_MIN_N_EMPTY = 36;
 constexpr int AI_TL_GGS_MATCH_REVALIDATE_MAX_N_EMPTY = 48;
 constexpr uint64_t AI_TL_GGS_MATCH_REVALIDATE_MIN_REMAINING_TIME = 25000ULL;
@@ -3320,7 +3323,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
 #if IS_GGS_TOURNAMENT
     const uint64_t allocated_time_limit = time_limit;
     AI_TL_Iteration_Diagnostics iteration_diagnostics;
-    if (ai_tl_ggs_match_revalidation_gate(board, allocated_time_limit, match_context)) {
+    if (
+        AI_TL_GGS_MATCH_REVALIDATION_ENABLED &&
+        ai_tl_ggs_match_revalidation_gate(board, allocated_time_limit, match_context)
+    ) {
         iteration_diagnostics.enable_match_revalidation = true;
         iteration_diagnostics.pair_value = match_context->pair_value;
     }
