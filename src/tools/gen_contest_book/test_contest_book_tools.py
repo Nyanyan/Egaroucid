@@ -56,6 +56,15 @@ def write_records(path: Path, transcripts: list[str]) -> None:
             f.write(f"transcript: {transcript}\n\n")
 
 
+def write_adversarial_records(path: Path, records: list[tuple[str, int]]) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as f:
+        for transcript, engine_parity in records:
+            f.write(f"generation mode: {generate_records.ADVERSARIAL_GENERATION_MODE}\n")
+            f.write(f"engine parity: {engine_parity}\n")
+            f.write(f"initial board: {INITIAL_BOARD}\n")
+            f.write(f"transcript: {transcript}\n\n")
+
+
 def valid_book_text(*, records_seen: int = 1, records_used: int = 1) -> str:
     return (
         "# contest_book_v1\n"
@@ -161,6 +170,12 @@ class GenerateRecordsTests(unittest.TestCase):
             max_book_loss=4,
             cut_empty=30,
             use_existing_book=False,
+            adversarial_games=4,
+            adversarial_batch_size=2,
+            adversarial_level=21,
+            adversarial_reply_margin=2,
+            adversarial_reply_width=3,
+            adversarial_engine_width=2,
         )
 
     def test_games_is_target_total_not_additional_count(self) -> None:
@@ -210,6 +225,127 @@ class GenerateRecordsTests(unittest.TestCase):
     def test_tournament_clang_binary_is_default(self) -> None:
         self.assertEqual("Egaroucid_for_Console_clang.exe", generate_records.CONSOLE_EXE.name)
 
+    def test_count_adversarial_records_separates_engine_parity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            records_dir = Path(temporary)
+            write_records(records_dir / "regular.txt", ["regular"])
+            write_adversarial_records(
+                records_dir / "adversarial.txt",
+                [("attack-a", 0), ("attack-b", 1), ("attack-c", 0)],
+            )
+
+            self.assertEqual(
+                3,
+                generate_records.count_adversarial_records(records_dir, INITIAL_BOARD),
+            )
+            self.assertEqual(
+                2,
+                generate_records.count_adversarial_records(records_dir, INITIAL_BOARD, 0),
+            )
+            self.assertEqual(
+                1,
+                generate_records.count_adversarial_records(records_dir, INITIAL_BOARD, 1),
+            )
+
+    def test_legacy_adversarial_records_do_not_satisfy_v2_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            records_dir = Path(temporary)
+            (records_dir / "legacy.txt").write_text(
+                "generation mode: adversarial\n"
+                "engine parity: 0\n"
+                f"initial board: {INITIAL_BOARD}\n"
+                "transcript: legacy-attack\n\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(
+                0,
+                generate_records.count_adversarial_records(records_dir, INITIAL_BOARD),
+            )
+
+    def test_adversarial_batch_uses_book_and_role_specific_command(self) -> None:
+        args = self.make_args(games=3)
+        with mock.patch.object(generate_records.subprocess, "run") as run:
+            generate_records.run_adversarial_record_batch(
+                args,
+                INITIAL_BOARD,
+                Path("records"),
+                2,
+                1,
+            )
+
+        command = run.call_args.args[0]
+        self.assertIn("-contestbook", command)
+        self.assertIn("-contestrecordadv", command)
+        option_idx = command.index("-contestrecordadv")
+        self.assertEqual(
+            [INITIAL_BOARD, "2", "records", "2", "3", "2", "30", "1"],
+            command[option_idx + 1:option_idx + 9],
+        )
+
+    def test_adversarial_generation_balances_parities_and_rebuilds(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            records_dir = root / "records"
+            output = root / "book.egcb"
+            args = self.make_args(games=3)
+            args.adversarial_batch_size = 1
+            counts = {0: 0, 1: 0}
+
+            def fake_count(_records_dir, _initial_board, parity=None):
+                if parity is None:
+                    return sum(counts.values())
+                return counts[parity]
+
+            def fake_batch(
+                _manifest,
+                _out_dir,
+                _initial_board,
+                _args,
+                _profile,
+                _output,
+                n_batch,
+                parity,
+                _target,
+                before,
+            ):
+                counts[parity] += n_batch
+                return before
+
+            locked = mock.MagicMock()
+            locked.return_value.__enter__.return_value = SimpleNamespace(current=True)
+            with (
+                mock.patch.object(
+                    generate_records,
+                    "prepare_generation_manifest",
+                    return_value=({"batches": [], "pending_batch": None}, {"unique_records": 3}),
+                ),
+                mock.patch.object(generate_records, "can_use_provisional_book", return_value=True),
+                mock.patch.object(generate_records, "count_adversarial_records", side_effect=fake_count),
+                mock.patch.object(generate_records, "locked_book_status", locked),
+                mock.patch.object(
+                    generate_records,
+                    "adversarial_record_generation_batch",
+                    side_effect=fake_batch,
+                ) as batch,
+                mock.patch.object(generate_records, "build_provisional_book") as build,
+            ):
+                result = generate_records.generate_adversarial_to_target(
+                    args,
+                    INITIAL_BOARD,
+                    records_dir,
+                    output,
+                )
+
+            self.assertEqual(4, result)
+            self.assertEqual({0: 2, 1: 2}, counts)
+            self.assertEqual(4, batch.call_count)
+            self.assertEqual(4, build.call_count)
+            self.assertEqual(
+                [1, 1, 0, 0],
+                [call.args[7] for call in batch.call_args_list],
+            )
+
     def test_satisfied_target_does_not_generate_or_build(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -240,6 +376,7 @@ class GenerateRecordsTests(unittest.TestCase):
             mock.patch.object(sys, "argv", argv),
             mock.patch.object(generate_all_records, "iter_start_boards", return_value=[INITIAL_BOARD]),
             mock.patch.object(generate_all_records, "count_unique_records", return_value=3),
+            mock.patch.object(generate_all_records, "count_adversarial_records", return_value=8),
             mock.patch.object(generate_all_records, "ensure_generation_manifest") as ensure_manifest,
             mock.patch.object(generate_all_records.subprocess, "run") as run,
         ):
@@ -268,6 +405,7 @@ class GenerateRecordsTests(unittest.TestCase):
                 "count_unique_records",
                 side_effect=[3, 1],
             ),
+            mock.patch.object(generate_all_records, "count_adversarial_records", return_value=8),
             mock.patch.object(generate_all_records, "ensure_generation_manifest") as ensure_manifest,
             mock.patch.object(generate_all_records.subprocess, "run") as run,
         ):
@@ -296,6 +434,30 @@ class GenerateRecordsTests(unittest.TestCase):
 
         command = run.call_args.args[0]
         self.assertEqual(str(requested_exe), command[command.index("--exe") + 1])
+        self.assertEqual("5", command[command.index("--adversarial-games") + 1])
+        self.assertEqual("19", command[command.index("--adversarial-level") + 1])
+        self.assertEqual("2", command[command.index("--adversarial-engine-width") + 1])
+
+    def test_generate_all_resume_runs_missing_adversarial_records(self) -> None:
+        argv = [
+            "generate_all_records.py",
+            "--games", "3",
+            "--adversarial-games", "4",
+            "--resume",
+            "--start-list-order",
+        ]
+        with (
+            mock.patch.object(sys, "argv", argv),
+            mock.patch.object(generate_all_records, "iter_start_boards", return_value=[INITIAL_BOARD]),
+            mock.patch.object(generate_all_records, "count_unique_records", return_value=3),
+            mock.patch.object(generate_all_records, "count_adversarial_records", return_value=1),
+            mock.patch.object(generate_all_records.subprocess, "run") as run,
+        ):
+            self.assertEqual(0, generate_all_records.main())
+
+        run.assert_called_once()
+        command = run.call_args.args[0]
+        self.assertEqual("4", command[command.index("--adversarial-games") + 1])
 
     def test_record_directory_lock_prevents_duplicate_target_work(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

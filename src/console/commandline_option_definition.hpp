@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS_BASE 37
+#define N_COMMANDLINE_OPTIONS_BASE 38
 
 #ifdef INCLUDE_GGS
     #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
@@ -60,6 +60,7 @@
 #define ID_RANDOM_SEED 34
 #define ID_MOVE_TIME 35
 #define ID_FM_MPC_DIM0 36
+#define ID_CONTEST_RECORD_ADVERSARIAL 37
 
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
@@ -120,6 +121,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_RANDOM_SEED,        {"-seed", "-randomseed"},                          1, "<0..4294967295>",   "Set the deterministic seed for internal randomized choices"},
     {ID_MOVE_TIME,          {"-movetime", "-mt"},                               1, "<milliseconds>",    "Use fixed milliseconds for each move. -level and -time will be ignored"},
     {ID_FM_MPC_DIM0,        {"-fm-mpc-dim0"},                                   0, "",                  "Use Dim0 evaluation in non-end MPC searches for FM evaluation (default)"},
+    {ID_CONTEST_RECORD_ADVERSARIAL, {"-contestrecordadv"},                     8, "<board> <n> <dir> <reply_margin> <reply_width> <engine_width> <cut_empty> <engine_parity>", "Generate adversarial contest book records"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},

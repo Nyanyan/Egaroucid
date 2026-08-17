@@ -1045,6 +1045,322 @@ std::string contest_record_play_one_game(
     return oss.str();
 }
 
+struct Contest_record_adversarial_line {
+    Board board;
+    std::string transcript;
+    int opponent_loss_sum;
+
+    Contest_record_adversarial_line(Board board_, std::string transcript_, int opponent_loss_sum_)
+        : board(board_), transcript(std::move(transcript_)), opponent_loss_sum(opponent_loss_sum_) {}
+};
+
+constexpr const char *CONTEST_RECORD_ADVERSARIAL_GENERATION_MODE = "adversarial_v2";
+
+std::vector<Contest_record_scored_move> contest_record_adversarial_book_candidates(
+    const Board &board,
+    const Contest_book *contest_book,
+    int reply_margin,
+    int engine_width
+) {
+    std::vector<Contest_record_scored_move> candidates;
+    if (contest_book == nullptr) {
+        return candidates;
+    }
+    Contest_book_entry entry;
+    if (!contest_book->get(board, &entry)) {
+        return candidates;
+    }
+    const uint64_t legal = board.get_legal();
+    for (const Contest_book_move &move: entry.moves) {
+        if (
+            is_valid_policy(move.policy) &&
+            (legal & (1ULL << move.policy)) &&
+            move.value != SCORE_UNDEFINED
+        ) {
+            candidates.emplace_back(move.policy, move.value);
+        }
+    }
+    std::sort(candidates.begin(), candidates.end(), [](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
+        if (a.value != b.value) {
+            return a.value > b.value;
+        }
+        return a.policy < b.policy;
+    });
+    if (!candidates.empty()) {
+        const int best_value = candidates[0].value;
+        candidates.erase(
+            std::remove_if(
+                candidates.begin(),
+                candidates.end(),
+                [&](const Contest_record_scored_move &move) {
+                    return best_value - move.value > reply_margin;
+                }
+            ),
+            candidates.end()
+        );
+    }
+    if ((int)candidates.size() > engine_width) {
+        candidates.erase(candidates.begin() + engine_width, candidates.end());
+    }
+    return candidates;
+}
+
+Contest_record_adversarial_line contest_record_play_adversarial_line(
+    Board board,
+    Options *options,
+    int reply_margin,
+    int reply_width,
+    int engine_width,
+    int cut_empty,
+    int engine_parity,
+    uint64_t variation_index,
+    Contest_record_score_cache *score_cache,
+    std::mutex *score_cache_mtx,
+    const Contest_book *contest_book
+) {
+    std::string transcript;
+    int opponent_loss_sum = 0;
+    bool engine_to_move = engine_parity == 0;
+    Flip flip;
+    while (HW2 - board.n_discs() > cut_empty && !board.is_end()) {
+        if (board.get_legal() == 0ULL) {
+            board.pass();
+            engine_to_move = !engine_to_move;
+            continue;
+        }
+
+        int policy = MOVE_UNDEFINED;
+        if (engine_to_move) {
+            std::vector<Contest_record_scored_move> book_candidates = contest_record_adversarial_book_candidates(
+                board,
+                contest_book,
+                reply_margin,
+                engine_width
+            );
+            if (!book_candidates.empty()) {
+                // Revalidate not only the current winner but also close book
+                // alternatives.  A newly added record can change their
+                // ordering, so following only the old winner leaves the new
+                // winner untested after the next rebuild.
+                const uint64_t selected_idx = variation_index % book_candidates.size();
+                variation_index /= book_candidates.size();
+                policy = book_candidates[selected_idx].policy;
+            }
+        }
+
+        if (!is_valid_policy(policy)) {
+            std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(
+                board,
+                options->level,
+                true,
+                THREAD_ID_NONE,
+                score_cache,
+                score_cache_mtx,
+                nullptr,
+                1,
+                nullptr
+            );
+            if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
+                break;
+            }
+            if (engine_to_move) {
+                policy = scored_moves[0].policy;
+            } else {
+                const int best_value = scored_moves[0].value;
+                std::vector<Contest_record_scored_move> candidates;
+                for (const Contest_record_scored_move &move: scored_moves) {
+                    if (move.value == SCORE_UNDEFINED || best_value - move.value > reply_margin) {
+                        continue;
+                    }
+                    candidates.emplace_back(move);
+                }
+                if (candidates.empty()) {
+                    candidates.emplace_back(scored_moves[0]);
+                }
+                // Strength is the primary ordering.  The previous generator
+                // put every book escape before a stronger in-book reply and
+                // therefore left the main line too early.  Only use book
+                // coverage as a tie-break between equally scored replies.
+                if (contest_book != nullptr) {
+                    std::unordered_map<int, bool> exits_contest_book;
+                    for (const Contest_record_scored_move &move: candidates) {
+                        Board next_board = board.copy();
+                        calc_flip(&flip, &next_board, move.policy);
+                        next_board.move_board(&flip);
+                        Search_result next_book_result;
+                        exits_contest_book[move.policy] =
+                            next_board.get_legal() != 0ULL &&
+                            !contest_book->get_search_result(next_board, &next_book_result);
+                    }
+                    std::stable_sort(
+                        candidates.begin(),
+                        candidates.end(),
+                        [&](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
+                            if (a.value != b.value) {
+                                return a.value > b.value;
+                            }
+                            if (exits_contest_book[a.policy] != exits_contest_book[b.policy]) {
+                                return exits_contest_book[a.policy];
+                            }
+                            return a.policy < b.policy;
+                        }
+                    );
+                }
+                if ((int)candidates.size() > reply_width) {
+                    candidates.erase(candidates.begin() + reply_width, candidates.end());
+                }
+                const uint64_t selected_idx = variation_index % candidates.size();
+                variation_index /= candidates.size();
+                policy = candidates[selected_idx].policy;
+                opponent_loss_sum += best_value - candidates[selected_idx].value;
+            }
+        }
+
+        if (!is_valid_policy(policy) || !(board.get_legal() & (1ULL << policy))) {
+            break;
+        }
+        transcript += idx_to_coord(policy);
+        calc_flip(&flip, &board, policy);
+        board.move_board(&flip);
+        engine_to_move = !engine_to_move;
+    }
+    return Contest_record_adversarial_line(board, transcript, opponent_loss_sum);
+}
+
+void contest_record_write_adversarial_record(
+    std::ofstream &ofs,
+    const std::string &initial_board,
+    const Contest_record_adversarial_line &line,
+    int leaf_value,
+    int record_idx,
+    int engine_parity,
+    int reply_margin,
+    int reply_width,
+    int engine_width,
+    uint64_t variation_index
+) {
+    ofs << "record: " << record_idx << '\n';
+    ofs << "generation mode: " << CONTEST_RECORD_ADVERSARIAL_GENERATION_MODE << '\n';
+    ofs << "engine parity: " << engine_parity << '\n';
+    ofs << "reply margin: " << reply_margin << '\n';
+    ofs << "reply width: " << reply_width << '\n';
+    ofs << "engine width: " << engine_width << '\n';
+    ofs << "variation: " << variation_index << '\n';
+    ofs << "initial board: " << initial_board << '\n';
+    ofs << "transcript: " << line.transcript << '\n';
+    ofs << "leaf board: " << line.board.to_str() << '\n';
+    ofs << "leaf empty: " << (HW2 - line.board.n_discs()) << '\n';
+    ofs << "leaf search depth: " << CONTEST_RECORD_LEAF_SEARCH_DEPTH << '\n';
+    ofs << "leaf search selectivity: " << SELECTIVITY_PERCENTAGE[CONTEST_RECORD_LEAF_SEARCH_MPC_LEVEL] << '\n';
+    ofs << "leaf value: " << leaf_value << '\n';
+    ofs << "loss sum: " << line.opponent_loss_sum << '\n';
+    ofs << '\n';
+}
+
+void contest_record_adversarial_commandline(std::vector<std::string> arg, Options *options) {
+    if (arg.size() < 8) {
+        std::cerr << "[ERROR] [FATAL] please input <board> <n> <dir> <reply_margin> <reply_width> <engine_width> <cut_empty> <engine_parity>" << std::endl;
+        std::exit(1);
+    }
+    int n_games = 0;
+    int reply_margin = 0;
+    int reply_width = 0;
+    int engine_width = 0;
+    int cut_empty = 0;
+    int engine_parity = 0;
+    try {
+        n_games = std::stoi(arg[1]);
+        reply_margin = std::stoi(arg[3]);
+        reply_width = std::stoi(arg[4]);
+        engine_width = std::stoi(arg[5]);
+        cut_empty = std::stoi(arg[6]);
+        engine_parity = std::stoi(arg[7]);
+    } catch (const std::exception&) {
+        std::cerr << "[ERROR] invalid adversarial contest record argument" << std::endl;
+        std::exit(1);
+    }
+    if (n_games <= 0 || reply_margin < 0 || reply_width <= 0 || engine_width <= 0 || cut_empty < 0 || HW2 <= cut_empty || engine_parity < 0 || 1 < engine_parity) {
+        std::cerr << "[ERROR] adversarial contest record argument out of range" << std::endl;
+        std::exit(1);
+    }
+
+    Board board_start;
+    std::string initial_board;
+    if (!contest_record_canonical_start(arg[0], &board_start, &initial_board)) {
+        std::exit(1);
+    }
+    if (!options->contest_book) {
+        std::cerr << "[ERROR] adversarial contest record generation requires -contestbook" << std::endl;
+        std::exit(1);
+    }
+    Contest_book contest_book;
+    std::filesystem::path contest_book_path = contest_book_path_for_start(options->contest_book_dir, initial_board);
+    if (!contest_book.init(contest_book_path.string(), true)) {
+        std::cerr << "[ERROR] adversarial contest book is unavailable for " << initial_board << std::endl;
+        std::exit(1);
+    }
+
+    std::filesystem::path out_dir(arg[2]);
+    std::filesystem::create_directories(out_dir);
+    std::unordered_set<std::string> seen_transcripts = contest_record_load_existing_transcripts(out_dir, initial_board);
+    std::filesystem::path out_file = out_dir / (get_current_datetime_for_file() + "_adversarial_" + std::to_string(engine_parity) + "_" + std::to_string(tim()) + ".txt");
+    std::ofstream ofs(out_file);
+    if (!ofs) {
+        std::cerr << "[ERROR] can't open adversarial contest record file " << out_file.string() << std::endl;
+        std::exit(1);
+    }
+
+    uint64_t strt = tim();
+    int n_generated = 0;
+    const uint64_t max_attempts = std::max<uint64_t>(256, (uint64_t)n_games * 256);
+    Contest_record_score_cache score_cache;
+    std::mutex score_cache_mtx;
+    for (uint64_t variation_index = 0; variation_index < max_attempts && n_generated < n_games; ++variation_index) {
+        Contest_record_adversarial_line line = contest_record_play_adversarial_line(
+            board_start,
+            options,
+            reply_margin,
+            reply_width,
+            engine_width,
+            cut_empty,
+            engine_parity,
+            variation_index,
+            &score_cache,
+            &score_cache_mtx,
+            &contest_book
+        );
+        if (line.transcript.empty() || seen_transcripts.find(line.transcript) != seen_transcripts.end()) {
+            continue;
+        }
+        int leaf_value = contest_record_leaf_value(line.board, true, THREAD_ID_NONE, nullptr, 1);
+        if (leaf_value == SCORE_UNDEFINED) {
+            continue;
+        }
+        contest_record_write_adversarial_record(
+            ofs,
+            initial_board,
+            line,
+            leaf_value,
+            n_generated,
+            engine_parity,
+            reply_margin,
+            reply_width,
+            engine_width,
+            variation_index
+        );
+        seen_transcripts.insert(line.transcript);
+        ++n_generated;
+        ofs.flush();
+    }
+    ofs.close();
+    if (n_generated == 0) {
+        std::error_code remove_error;
+        std::filesystem::remove(out_file, remove_error);
+    }
+    std::cerr << "adversarial contest record generation done " << n_generated << "/" << n_games
+              << " engine_parity " << engine_parity << " in " << tim() - strt << " ms" << std::endl;
+}
+
 void contest_record_commandline(std::vector<std::string> arg, Options *options) {
     if (arg.size() < 6) {
         std::cerr << "[ERROR] [FATAL] please input <board> <n> <dir> <per_move_loss> <total_loss> <cut_empty>" << std::endl;

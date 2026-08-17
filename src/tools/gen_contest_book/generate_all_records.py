@@ -6,6 +6,12 @@ from pathlib import Path
 from config import (
     CONSOLE_EXE,
     DATA_DIR,
+    DEFAULT_ADVERSARIAL_BATCH_SIZE,
+    DEFAULT_ADVERSARIAL_ENGINE_WIDTH,
+    DEFAULT_ADVERSARIAL_GAMES_PER_START,
+    DEFAULT_ADVERSARIAL_LEVEL,
+    DEFAULT_ADVERSARIAL_REPLY_MARGIN,
+    DEFAULT_ADVERSARIAL_REPLY_WIDTH,
     DEFAULT_BOOK_MAX_LOSS,
     DEFAULT_CUT_EMPTY,
     DEFAULT_GAMES_PER_START,
@@ -18,7 +24,12 @@ from config import (
     iter_start_boards,
     record_dir_for_start,
 )
-from generate_records import count_unique_records, ensure_generation_manifest
+from generate_records import (
+    adversarial_targets,
+    count_adversarial_records,
+    count_unique_records,
+    ensure_generation_manifest,
+)
 from othello import normalize_board_text
 from r14_random_setup_probability import load_r14_random_setup_priority_manifest
 
@@ -87,6 +98,45 @@ def main() -> int:
     parser.add_argument("--cut-empty", type=int, default=DEFAULT_CUT_EMPTY)
     parser.add_argument("--use-existing-book", action="store_true")
     parser.add_argument(
+        "--adversarial-games",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_GAMES_PER_START,
+        help=(
+            "minimum counterexample-oriented records per start, split across "
+            "both engine parities (default: %(default)s; use 0 to disable)"
+        ),
+    )
+    parser.add_argument(
+        "--adversarial-batch-size",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_BATCH_SIZE,
+        help="rebuild the book after this many adversarial records per parity",
+    )
+    parser.add_argument(
+        "--adversarial-level",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_LEVEL,
+        help="screen opponent replies at this level (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--adversarial-reply-margin",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_REPLY_MARGIN,
+        help="retain opponent replies within this many discs of its best move",
+    )
+    parser.add_argument(
+        "--adversarial-reply-width",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_REPLY_WIDTH,
+        help="maximum opponent replies retained at each branch",
+    )
+    parser.add_argument(
+        "--adversarial-engine-width",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_ENGINE_WIDTH,
+        help="maximum close contest-book moves revalidated at each engine turn",
+    )
+    parser.add_argument(
         "--exe",
         type=Path,
         default=CONSOLE_EXE,
@@ -95,7 +145,10 @@ def main() -> int:
     parser.add_argument(
         "--resume",
         action="store_true",
-        help="skip starts that already have at least --games unique records",
+        help=(
+            "skip starts that satisfy both the ordinary --games target and "
+            "the --adversarial-games target"
+        ),
     )
     args = parser.parse_args()
     args.exe = args.exe.resolve()
@@ -108,6 +161,18 @@ def main() -> int:
         raise ValueError("loss limits must be non-negative")
     if args.max_book_loss < 0:
         raise ValueError("--max-book-loss must be non-negative")
+    if args.adversarial_games < 0:
+        raise ValueError("--adversarial-games must be non-negative")
+    if args.adversarial_batch_size <= 0:
+        raise ValueError("--adversarial-batch-size must be positive")
+    if args.adversarial_level <= 0:
+        raise ValueError("--adversarial-level must be positive")
+    if args.adversarial_reply_margin < 0:
+        raise ValueError("--adversarial-reply-margin must be non-negative")
+    if args.adversarial_reply_width <= 0:
+        raise ValueError("--adversarial-reply-width must be positive")
+    if args.adversarial_engine_width <= 0:
+        raise ValueError("--adversarial-engine-width must be positive")
     if not (0 <= args.cut_empty < 64):
         raise ValueError("--cut-empty must be in [0, 63]")
     if args.skip < 0:
@@ -132,11 +197,28 @@ def main() -> int:
         if args.resume:
             records_dir = record_dir_for_start(initial_board)
             n_known = count_unique_records(records_dir, initial_board)
-            if n_known >= args.games:
+            targets = adversarial_targets(args.adversarial_games)
+            adversarial_counts = {
+                parity: count_adversarial_records(records_dir, initial_board, parity)
+                for parity in targets
+            }
+            n_adversarial = sum(adversarial_counts.values())
+            regular_complete = n_known >= args.games
+            adversarial_complete = all(
+                adversarial_counts[parity] >= targets[parity]
+                for parity in targets
+            )
+            if regular_complete and adversarial_complete:
                 ensure_generation_manifest(records_dir, initial_board)
-                print(f"[{idx}] skip complete known={n_known} target={args.games} {initial_board}")
+                print(
+                    f"[{idx}] skip complete known={n_known} target={args.games} "
+                    f"adversarial={n_adversarial}/{args.adversarial_games} {initial_board}"
+                )
                 continue
-            print(f"[{idx}] resume known={n_known} target={args.games} {initial_board}")
+            print(
+                f"[{idx}] resume known={n_known} target={args.games} "
+                f"adversarial={n_adversarial}/{args.adversarial_games} {initial_board}"
+            )
         else:
             print(f"[{idx}] generate target={args.games} {initial_board}")
         cmd = [
@@ -151,6 +233,12 @@ def main() -> int:
             "--max-loss-total", str(args.max_loss_total),
             "--max-book-loss", str(args.max_book_loss),
             "--cut-empty", str(args.cut_empty),
+            "--adversarial-games", str(args.adversarial_games),
+            "--adversarial-batch-size", str(args.adversarial_batch_size),
+            "--adversarial-level", str(args.adversarial_level),
+            "--adversarial-reply-margin", str(args.adversarial_reply_margin),
+            "--adversarial-reply-width", str(args.adversarial_reply_width),
+            "--adversarial-engine-width", str(args.adversarial_engine_width),
             "--exe", str(args.exe),
         ]
         if args.use_existing_book:

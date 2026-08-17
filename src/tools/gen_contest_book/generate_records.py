@@ -15,6 +15,11 @@ from book_artifact import (
 )
 from config import (
     CONSOLE_EXE,
+    DEFAULT_ADVERSARIAL_BATCH_SIZE,
+    DEFAULT_ADVERSARIAL_ENGINE_WIDTH,
+    DEFAULT_ADVERSARIAL_LEVEL,
+    DEFAULT_ADVERSARIAL_REPLY_MARGIN,
+    DEFAULT_ADVERSARIAL_REPLY_WIDTH,
     DEFAULT_BOOK_MAX_LOSS,
     DEFAULT_CUT_EMPTY,
     DEFAULT_GAMES_PER_START,
@@ -32,6 +37,15 @@ from othello import normalize_board_text
 
 GENERATION_MANIFEST_SCHEMA = "contest_record_generation_manifest_v1"
 GENERATION_LOCK_FILENAME = ".generation.lock"
+ADVERSARIAL_GENERATION_MODE = "adversarial_v2"
+ADVERSARIAL_PARITY_ORDER = (1, 0)
+
+
+def adversarial_targets(n_games: int) -> dict[int, int]:
+    return {
+        0: (n_games + 1) // 2,
+        1: n_games // 2,
+    }
 
 
 def count_unique_records(records_dir: Path, initial_board: str) -> int:
@@ -59,6 +73,52 @@ def count_unique_records(records_dir: Path, initial_board: str) -> int:
     return len(transcripts)
 
 
+def count_adversarial_records(
+    records_dir: Path,
+    initial_board: str,
+    engine_parity: int | None = None,
+) -> int:
+    """Count unique adversarial records, optionally for one engine parity."""
+    transcripts: set[str] = set()
+    if not records_dir.exists():
+        return 0
+
+    def flush(block: dict[str, str]) -> None:
+        try:
+            block_initial = normalize_board_text(block.get("initial board", ""))
+        except ValueError:
+            return
+        if block_initial != initial_board or block.get("generation mode") != ADVERSARIAL_GENERATION_MODE:
+            return
+        if engine_parity is not None:
+            try:
+                block_parity = int(block.get("engine parity", ""))
+            except ValueError:
+                return
+            if block_parity != engine_parity:
+                return
+        transcript = block.get("transcript")
+        if transcript is not None:
+            transcripts.add(transcript)
+
+    for path in sorted(records_dir.glob("*.txt")):
+        block: dict[str, str] = {}
+        with path.open("r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line:
+                    if block:
+                        flush(block)
+                        block = {}
+                    continue
+                if ": " in line:
+                    key, value = line.split(": ", 1)
+                    block[key] = value
+            if block:
+                flush(block)
+    return len(transcripts)
+
+
 def run_record_batch(args: argparse.Namespace, initial_board: str, out_dir: Path, n_games: int, use_contest_book: bool) -> None:
     cmd = [str(args.exe)]
     if not args.use_existing_book:
@@ -75,6 +135,33 @@ def run_record_batch(args: argparse.Namespace, initial_board: str, out_dir: Path
         str(args.max_loss_per_move),
         str(args.max_loss_total),
         str(args.cut_empty),
+    ])
+    subprocess.run(cmd, cwd=CONSOLE_EXE.parents[1], check=True)
+
+
+def run_adversarial_record_batch(
+    args: argparse.Namespace,
+    initial_board: str,
+    out_dir: Path,
+    n_games: int,
+    engine_parity: int,
+) -> None:
+    cmd = [str(args.exe)]
+    if not args.use_existing_book:
+        cmd.append("-nobook")
+    cmd.extend([
+        "-contestbook", str(TRAINED_DIR),
+        "-l", str(args.adversarial_level),
+        "-thread", str(args.threads),
+        "-contestrecordadv",
+        initial_board,
+        str(n_games),
+        str(out_dir),
+        str(args.adversarial_reply_margin),
+        str(args.adversarial_reply_width),
+        str(args.adversarial_engine_width),
+        str(args.cut_empty),
+        str(engine_parity),
     ])
     subprocess.run(cmd, cwd=CONSOLE_EXE.parents[1], check=True)
 
@@ -143,6 +230,21 @@ def generation_profile(args: argparse.Namespace) -> dict[str, object]:
             "use_existing_book": args.use_existing_book,
         },
     }
+
+
+def adversarial_generation_profile(args: argparse.Namespace) -> dict[str, object]:
+    profile = generation_profile(args)
+    settings = profile["settings"]
+    if not isinstance(settings, dict):
+        raise ValueError("generation profile settings must be an object")
+    settings.update({
+        "generation_mode": ADVERSARIAL_GENERATION_MODE,
+        "adversarial_level": args.adversarial_level,
+        "adversarial_reply_margin": args.adversarial_reply_margin,
+        "adversarial_reply_width": args.adversarial_reply_width,
+        "adversarial_engine_width": args.adversarial_engine_width,
+    })
+    return profile
 
 
 def prepare_generation_manifest(
@@ -264,6 +366,60 @@ def record_generation_batch(
     return after
 
 
+def adversarial_record_generation_batch(
+    manifest: dict[str, object],
+    out_dir: Path,
+    initial_board: str,
+    args: argparse.Namespace,
+    profile: dict[str, object],
+    output: Path,
+    n_batch: int,
+    engine_parity: int,
+    target_for_parity: int,
+    before: dict[str, object],
+) -> dict[str, object]:
+    batches = manifest["batches"]
+    if not isinstance(batches, list):
+        raise ValueError("generation manifest batches must be a list")
+    pending: dict[str, object] = {
+        "sequence": len(batches),
+        "profile": profile,
+        "generation_mode": ADVERSARIAL_GENERATION_MODE,
+        "engine_parity": engine_parity,
+        "target_adversarial_records": target_for_parity,
+        "requested_records": n_batch,
+        "before": before,
+        "contest_book": {
+            "path": output.resolve().as_posix(),
+            "fingerprint": fingerprint_files([output.resolve()]),
+        },
+    }
+    manifest["pending_batch"] = pending
+    write_json_atomically(generation_manifest_path(out_dir), manifest)
+
+    result = "completed"
+    try:
+        run_adversarial_record_batch(
+            args,
+            initial_board,
+            out_dir,
+            n_batch,
+            engine_parity,
+        )
+    except BaseException as exc:
+        result = f"failed:{type(exc).__name__}"
+        raise
+    finally:
+        after = records_snapshot(out_dir, initial_board)
+        completed = dict(pending)
+        completed["after"] = after
+        completed["result"] = result
+        batches.append(completed)
+        manifest["pending_batch"] = None
+        write_json_atomically(generation_manifest_path(out_dir), manifest)
+    return after
+
+
 def generate_to_target(
     args: argparse.Namespace,
     initial_board: str,
@@ -322,6 +478,96 @@ def generate_to_target(
         return n_known_records
 
 
+def generate_adversarial_to_target(
+    args: argparse.Namespace,
+    initial_board: str,
+    out_dir: Path,
+    output: Path,
+) -> int:
+    """Add a small, role-balanced set of counterexample-oriented records."""
+    if args.adversarial_games <= 0:
+        return count_adversarial_records(out_dir, initial_board)
+
+    targets = adversarial_targets(args.adversarial_games)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with file_lock(out_dir / GENERATION_LOCK_FILENAME):
+        manifest, snapshot = prepare_generation_manifest(out_dir, initial_board)
+        if not can_use_provisional_book(args, initial_board, out_dir, output):
+            print(f"build current book before adversarial generation: {output}")
+            build_provisional_book(args, initial_board, out_dir, output)
+        if not can_use_provisional_book(args, initial_board, out_dir, output):
+            raise ValueError(f"cannot build a current contest book for adversarial generation: {output}")
+
+        profile = adversarial_generation_profile(args)
+        stalled: set[int] = set()
+        while True:
+            counts = {
+                parity: count_adversarial_records(out_dir, initial_board, parity)
+                for parity in targets
+            }
+            pending_parities = [
+                parity
+                for parity in ADVERSARIAL_PARITY_ORDER
+                if counts[parity] < targets[parity] and parity not in stalled
+            ]
+            if not pending_parities:
+                total = sum(counts.values())
+                print(
+                    "adversarial generation done "
+                    f"parity0={counts[0]}/{targets[0]} "
+                    f"parity1={counts[1]}/{targets[1]} total={total}"
+                )
+                return total
+
+            # Finish second-player records before starting first-player
+            # records.  The latter therefore forms the final validation phase
+            # and follows any root-policy change caused by the former.
+            parity = pending_parities[0]
+            before_count = counts[parity]
+            n_batch = min(
+                args.adversarial_batch_size,
+                targets[parity] - before_count,
+            )
+            spec = provisional_book_spec(args, initial_board, out_dir, output)
+            with locked_book_status(spec) as book_status:
+                if not book_status.current:
+                    raise ValueError(
+                        f"contest book became stale before adversarial batch: {book_status.reason}"
+                    )
+                print(
+                    "generate adversarial batch "
+                    f"parity={parity} count={before_count}/{targets[parity]} "
+                    f"requested={n_batch}"
+                )
+                snapshot = adversarial_record_generation_batch(
+                    manifest,
+                    out_dir,
+                    initial_board,
+                    args,
+                    profile,
+                    output,
+                    n_batch,
+                    parity,
+                    targets[parity],
+                    snapshot,
+                )
+
+            after_count = count_adversarial_records(out_dir, initial_board, parity)
+            if after_count <= before_count:
+                print(
+                    "no new adversarial records were generated; "
+                    f"stop parity {parity} at {after_count}/{targets[parity]}"
+                )
+                build_provisional_book(args, initial_board, out_dir, output)
+                stalled.add(parity)
+                continue
+            print(
+                "rebuild provisional book after adversarial batch "
+                f"parity={parity} {before_count}->{after_count}"
+            )
+            build_provisional_book(args, initial_board, out_dir, output)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("initial_board")
@@ -346,6 +592,40 @@ def main() -> int:
     parser.add_argument("--max-book-loss", type=int, default=DEFAULT_BOOK_MAX_LOSS)
     parser.add_argument("--cut-empty", type=int, default=DEFAULT_CUT_EMPTY)
     parser.add_argument("--use-existing-book", action="store_true")
+    parser.add_argument(
+        "--adversarial-games",
+        type=int,
+        default=0,
+        help="minimum adversarial records to keep for this start (default: disabled)",
+    )
+    parser.add_argument(
+        "--adversarial-batch-size",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_BATCH_SIZE,
+    )
+    parser.add_argument(
+        "--adversarial-level",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_LEVEL,
+    )
+    parser.add_argument(
+        "--adversarial-reply-margin",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_REPLY_MARGIN,
+        help="retain opponent replies within this many discs of its best screened move",
+    )
+    parser.add_argument(
+        "--adversarial-reply-width",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_REPLY_WIDTH,
+        help="maximum opponent replies retained at each adversarial branch",
+    )
+    parser.add_argument(
+        "--adversarial-engine-width",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_ENGINE_WIDTH,
+        help="maximum close contest-book moves revalidated at each engine turn",
+    )
     args = parser.parse_args()
     args.exe = args.exe.resolve()
 
@@ -358,6 +638,18 @@ def main() -> int:
         raise ValueError("loss limits must be non-negative")
     if args.max_book_loss < 0:
         raise ValueError("--max-book-loss must be non-negative")
+    if args.adversarial_games < 0:
+        raise ValueError("--adversarial-games must be non-negative")
+    if args.adversarial_batch_size <= 0:
+        raise ValueError("--adversarial-batch-size must be positive")
+    if args.adversarial_level <= 0:
+        raise ValueError("--adversarial-level must be positive")
+    if args.adversarial_reply_margin < 0:
+        raise ValueError("--adversarial-reply-margin must be non-negative")
+    if args.adversarial_reply_width <= 0:
+        raise ValueError("--adversarial-reply-width must be positive")
+    if args.adversarial_engine_width <= 0:
+        raise ValueError("--adversarial-engine-width must be positive")
     if not (0 <= args.cut_empty < 64):
         raise ValueError("--cut-empty must be in [0, 63]")
     out_dir = args.out_dir or record_dir_for_start(initial_board)
@@ -366,6 +658,7 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
 
     generate_to_target(args, initial_board, out_dir, output)
+    generate_adversarial_to_target(args, initial_board, out_dir, output)
     return 0
 
 

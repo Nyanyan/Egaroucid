@@ -52,6 +52,12 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 
 既定値は、開始局面あたり512棋譜、16棋譜ごとの反復更新、レベル19、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。打ち切り局面の `leaf value` は30手99.9%読みで評価します。棋譜数、ロス制限、打ち切り空き数などはコマンドラインオプションで変更できます。
 
+`generate_all_records.py` は通常棋譜の生成後、既定で開始局面あたり5件のadversarial v2棋譜も追加します。この生成では、Egaroucid側は現在のcontest book最善手に加えて、2石以内の上位2手までを再検証します。相手側はレベル19で通常探索し、最善手から2石以内の上位3手までを評価値順に分岐候補にします。評価値が同じ場合だけ、次のEgaroucid局面がbookに存在しない応手を優先します。後手担当側へ2件、先手担当側へ3件を割り当て、1件追加するごとにbookを再構築します。後手担当側を先に完了し、先手担当側の3件を最後に連続処理するため、途中の再構築でbook最善手が変わっても新しい実戦PVを繰り返し再検証できます。
+
+旧adversarial生成の棋譜はbook素材として引き続き利用しますが、v2の完了数には含めません。そのため、既に旧方式の棋譜がある局面でも、同じ `--resume` コマンドでv2棋譜が新たに生成されます。
+
+計算量は `--adversarial-games`、`--adversarial-batch-size`、`--adversarial-level`、`--adversarial-reply-margin`、`--adversarial-reply-width`、`--adversarial-engine-width` で調整できます。無効化する場合は `--adversarial-games 0` を指定します。`--resume` は通常棋譜数とadversarial v2棋譜数の両方を確認し、不足している方だけを再開します。単一局面用 `generate_records.py` では既定で無効なので、必要な場合だけ同じオプションを明示してください。
+
 生成engineの既定値は大会用 `bin/Egaroucid_for_Console_clang.exe` です。別binaryを使う既存運用では、単局・全局面のどちらのdriverでも `--exe <path>` で上書きできます。
 
 棋譜生成は、合計ロス0の棋譜をすべて列挙してから合計ロス1へ進む、という順序で進みます。ユニーク棋譜の目標総数に達するか、上限lossまで列挙し終わると終了します。
@@ -178,6 +184,28 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 When combined with `--skip`, the script skips that many additional positions after `--start-board`.
 
 Defaults are 512 records per start, iterative updates every 16 records, level 19, per-move loss 2, total loss 4, and cut at 30 empties. The cutoff position's `leaf value` is evaluated with a 30-ply 99.9% selective endgame search. Record counts, loss limits, and the cutoff empty count can be changed with command-line options.
+
+After the ordinary records, `generate_all_records.py` adds five adversarial-v2
+records per start by default.  On the Egaroucid side it revalidates the current
+contest-book winner and up to two book moves within two discs of it.  On the
+opposing side it performs a fresh level-19 search and branches over at most
+three replies within two discs of the best screened reply.  Reply strength is
+the primary ordering; leaving the current book is only a tie-break.  Two records
+are generated with Egaroucid as the second player, followed by three with it as
+the first player, and the provisional book is rebuilt after every addition.
+The final three passes recheck a new winner when rebuilding changes book order.
+
+Legacy adversarial records remain valid book input, but do not satisfy the v2
+completion count.  Therefore the same `--resume` command generates fresh v2
+records even for starts that already contain records from the old method.
+
+Use `--adversarial-games`, `--adversarial-batch-size`,
+`--adversarial-level`, `--adversarial-reply-margin`, and
+`--adversarial-reply-width`, and `--adversarial-engine-width` to tune the budget.  Set
+`--adversarial-games 0` to retain the old behavior.  `--resume` checks the
+ordinary and adversarial targets separately.  The single-start
+`generate_records.py` keeps adversarial generation disabled unless explicitly
+requested.
 
 The default generation engine is the tournament build at
 `bin/Egaroucid_for_Console_clang.exe`. Existing workflows can select another
