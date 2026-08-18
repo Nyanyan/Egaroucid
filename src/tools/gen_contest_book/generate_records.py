@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -18,8 +19,10 @@ from config import (
     DEFAULT_ADVERSARIAL_BATCH_SIZE,
     DEFAULT_ADVERSARIAL_ENGINE_WIDTH,
     DEFAULT_ADVERSARIAL_LEVEL,
+    DEFAULT_ADVERSARIAL_MAX_ROUNDS,
     DEFAULT_ADVERSARIAL_REPLY_MARGIN,
     DEFAULT_ADVERSARIAL_REPLY_WIDTH,
+    DEFAULT_ADVERSARIAL_STABLE_ROUNDS,
     DEFAULT_BOOK_MAX_LOSS,
     DEFAULT_CUT_EMPTY,
     DEFAULT_GAMES_PER_START,
@@ -37,8 +40,9 @@ from othello import normalize_board_text
 
 GENERATION_MANIFEST_SCHEMA = "contest_record_generation_manifest_v1"
 GENERATION_LOCK_FILENAME = ".generation.lock"
-ADVERSARIAL_GENERATION_MODE = "adversarial_v2"
+ADVERSARIAL_GENERATION_MODE = "adversarial_v3"
 ADVERSARIAL_PARITY_ORDER = (1, 0)
+ADVERSARIAL_STABILIZATION_SCHEMA = "contest_book_adversarial_stabilization_v1"
 
 
 def adversarial_targets(n_games: int) -> dict[int, int]:
@@ -232,6 +236,24 @@ def generation_profile(args: argparse.Namespace) -> dict[str, object]:
     }
 
 
+def contest_book_policy_fingerprint(output: Path) -> dict[str, object]:
+    """Hash only playable book rows, excluding changing provenance comments."""
+    digest = hashlib.sha256()
+    rows = 0
+    try:
+        with output.open("r", encoding="utf-8") as book_file:
+            for raw_line in book_file:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                digest.update(line.encode("utf-8"))
+                digest.update(b"\n")
+                rows += 1
+    except (OSError, UnicodeError) as exc:
+        raise ValueError(f"cannot fingerprint contest book {output}: {exc}") from exc
+    return {"rows": rows, "sha256": digest.hexdigest()}
+
+
 def adversarial_generation_profile(args: argparse.Namespace) -> dict[str, object]:
     profile = generation_profile(args)
     settings = profile["settings"]
@@ -239,12 +261,80 @@ def adversarial_generation_profile(args: argparse.Namespace) -> dict[str, object
         raise ValueError("generation profile settings must be an object")
     settings.update({
         "generation_mode": ADVERSARIAL_GENERATION_MODE,
+        "adversarial_games_per_round": args.adversarial_games,
         "adversarial_level": args.adversarial_level,
         "adversarial_reply_margin": args.adversarial_reply_margin,
         "adversarial_reply_width": args.adversarial_reply_width,
         "adversarial_engine_width": args.adversarial_engine_width,
+        "adversarial_stable_rounds": args.adversarial_stable_rounds,
     })
     return profile
+
+
+def adversarial_stabilization_is_current(
+    records_dir: Path,
+    initial_board: str,
+    output: Path,
+    profile: dict[str, object],
+) -> bool:
+    """Return whether the final published book has a matching stable sweep."""
+    path = generation_manifest_path(records_dir)
+    if not path.exists() or not output.is_file():
+        return False
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return False
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema") != GENERATION_MANIFEST_SCHEMA
+        or manifest.get("initial_board") != initial_board
+    ):
+        return False
+    stabilization = manifest.get("adversarial_stabilization")
+    if not isinstance(stabilization, dict):
+        return False
+    if (
+        stabilization.get("schema") != ADVERSARIAL_STABILIZATION_SCHEMA
+        or stabilization.get("status") != "stable"
+        or stabilization.get("generation_mode") != ADVERSARIAL_GENERATION_MODE
+        or stabilization.get("profile") != profile
+    ):
+        return False
+    try:
+        return (
+            stabilization.get("records") == records_snapshot(records_dir, initial_board)
+            and stabilization.get("book") == fingerprint_files([output.resolve()])
+            and stabilization.get("policy") == contest_book_policy_fingerprint(output)
+        )
+    except ValueError:
+        return False
+
+
+def write_adversarial_stabilization(
+    manifest: dict[str, object],
+    out_dir: Path,
+    initial_board: str,
+    output: Path,
+    profile: dict[str, object],
+    status: str,
+    rounds: list[dict[str, object]],
+    stable_rounds: int,
+    new_records: int,
+) -> None:
+    manifest["adversarial_stabilization"] = {
+        "schema": ADVERSARIAL_STABILIZATION_SCHEMA,
+        "status": status,
+        "generation_mode": ADVERSARIAL_GENERATION_MODE,
+        "profile": profile,
+        "records": records_snapshot(out_dir, initial_board),
+        "book": fingerprint_files([output.resolve()]),
+        "policy": contest_book_policy_fingerprint(output),
+        "rounds": rounds,
+        "stable_rounds": stable_rounds,
+        "new_records": new_records,
+    }
+    write_json_atomically(generation_manifest_path(out_dir), manifest)
 
 
 def prepare_generation_manifest(
@@ -484,7 +574,7 @@ def generate_adversarial_to_target(
     out_dir: Path,
     output: Path,
 ) -> int:
-    """Add a small, role-balanced set of counterexample-oriented records."""
+    """Probe and rebuild until the final book reaches a bounded fixed point."""
     if args.adversarial_games <= 0:
         return count_adversarial_records(out_dir, initial_board)
 
@@ -499,45 +589,60 @@ def generate_adversarial_to_target(
             raise ValueError(f"cannot build a current contest book for adversarial generation: {output}")
 
         profile = adversarial_generation_profile(args)
-        stalled: set[int] = set()
-        while True:
-            counts = {
-                parity: count_adversarial_records(out_dir, initial_board, parity)
-                for parity in targets
-            }
-            pending_parities = [
-                parity
-                for parity in ADVERSARIAL_PARITY_ORDER
-                if counts[parity] < targets[parity] and parity not in stalled
-            ]
-            if not pending_parities:
-                total = sum(counts.values())
-                print(
-                    "adversarial generation done "
-                    f"parity0={counts[0]}/{targets[0]} "
-                    f"parity1={counts[1]}/{targets[1]} total={total}"
-                )
-                return total
+        if adversarial_stabilization_is_current(
+            out_dir,
+            initial_board,
+            output,
+            profile,
+        ):
+            total = count_adversarial_records(out_dir, initial_board)
+            print(f"adversarial stabilization already current: records={total}")
+            return total
 
-            # Finish second-player records before starting first-player
-            # records.  The latter therefore forms the final validation phase
-            # and follows any root-policy change caused by the former.
-            parity = pending_parities[0]
-            before_count = counts[parity]
-            n_batch = min(
-                args.adversarial_batch_size,
-                targets[parity] - before_count,
-            )
-            spec = provisional_book_spec(args, initial_board, out_dir, output)
-            with locked_book_status(spec) as book_status:
-                if not book_status.current:
-                    raise ValueError(
-                        f"contest book became stale before adversarial batch: {book_status.reason}"
-                    )
+        rounds: list[dict[str, object]] = []
+        stable_rounds = 0
+        total_new = 0
+        previous_stabilization = manifest.get("adversarial_stabilization")
+        if (
+            isinstance(previous_stabilization, dict)
+            and previous_stabilization.get("schema") == ADVERSARIAL_STABILIZATION_SCHEMA
+            and previous_stabilization.get("generation_mode") == ADVERSARIAL_GENERATION_MODE
+            and previous_stabilization.get("profile") == profile
+            and previous_stabilization.get("records") == snapshot
+            and previous_stabilization.get("book") == fingerprint_files([output.resolve()])
+            and previous_stabilization.get("policy") == contest_book_policy_fingerprint(output)
+        ):
+            previous_rounds = previous_stabilization.get("rounds")
+            if isinstance(previous_rounds, list):
+                rounds = [item for item in previous_rounds if isinstance(item, dict)]
+            previous_stable_rounds = previous_stabilization.get("stable_rounds")
+            if isinstance(previous_stable_rounds, int) and previous_stable_rounds >= 0:
+                stable_rounds = previous_stable_rounds
+            previous_new_records = previous_stabilization.get("new_records")
+            if isinstance(previous_new_records, int) and previous_new_records >= 0:
+                total_new = previous_new_records
+
+        for round_offset in range(args.adversarial_max_rounds):
+            round_index = len(rounds)
+            before_snapshot = snapshot
+            before_unique = int(before_snapshot["unique_records"])
+            before_book = fingerprint_files([output.resolve()])
+            before_policy = contest_book_policy_fingerprint(output)
+            parity_results: list[dict[str, int]] = []
+
+            # Both roles deliberately probe the same immutable book snapshot.
+            # Rebuilding between roles would validate the second role against
+            # a policy that the first role never saw.
+            for parity in ADVERSARIAL_PARITY_ORDER:
+                n_probes = targets[parity]
+                if n_probes <= 0:
+                    continue
+                if fingerprint_files([output.resolve()]) != before_book:
+                    raise ValueError("contest book changed during adversarial stabilization round")
+                parity_before = int(snapshot["unique_records"])
                 print(
-                    "generate adversarial batch "
-                    f"parity={parity} count={before_count}/{targets[parity]} "
-                    f"requested={n_batch}"
+                    "generate adversarial stabilization probes "
+                    f"round={round_index} parity={parity} probes={n_probes}"
                 )
                 snapshot = adversarial_record_generation_batch(
                     manifest,
@@ -546,26 +651,87 @@ def generate_adversarial_to_target(
                     args,
                     profile,
                     output,
-                    n_batch,
+                    n_probes,
                     parity,
-                    targets[parity],
+                    n_probes,
                     snapshot,
                 )
+                parity_after = int(snapshot["unique_records"])
+                parity_results.append({
+                    "parity": parity,
+                    "probes": n_probes,
+                    "new_records": parity_after - parity_before,
+                })
 
-            after_count = count_adversarial_records(out_dir, initial_board, parity)
-            if after_count <= before_count:
+            round_new = int(snapshot["unique_records"]) - before_unique
+            total_new += round_new
+            if round_new > 0:
                 print(
-                    "no new adversarial records were generated; "
-                    f"stop parity {parity} at {after_count}/{targets[parity]}"
+                    "rebuild provisional book after adversarial stabilization round "
+                    f"round={round_index} new_records={round_new}"
                 )
                 build_provisional_book(args, initial_board, out_dir, output)
-                stalled.add(parity)
-                continue
-            print(
-                "rebuild provisional book after adversarial batch "
-                f"parity={parity} {before_count}->{after_count}"
+            after_book = fingerprint_files([output.resolve()])
+            after_policy = contest_book_policy_fingerprint(output)
+            policy_stable = before_policy == after_policy
+            if round_new == 0 and policy_stable:
+                stable_rounds += 1
+            else:
+                stable_rounds = 0
+            rounds.append({
+                "round": round_index,
+                "before_book": before_book,
+                "after_book": after_book,
+                "before_policy": before_policy,
+                "after_policy": after_policy,
+                "parities": parity_results,
+                "new_records": round_new,
+                "policy_stable": policy_stable,
+            })
+
+            status = (
+                "stable"
+                if stable_rounds >= args.adversarial_stable_rounds
+                else "running"
             )
-            build_provisional_book(args, initial_board, out_dir, output)
+            write_adversarial_stabilization(
+                manifest,
+                out_dir,
+                initial_board,
+                output,
+                profile,
+                status,
+                rounds,
+                stable_rounds,
+                total_new,
+            )
+            if status == "stable":
+                total = count_adversarial_records(out_dir, initial_board)
+                print(
+                    "adversarial stabilization done "
+                    f"rounds={round_offset + 1} stable_rounds={stable_rounds} "
+                    f"new_records={total_new} adversarial_records={total}"
+                )
+                return total
+
+        write_adversarial_stabilization(
+            manifest,
+            out_dir,
+            initial_board,
+            output,
+            profile,
+            "budget_exhausted",
+            rounds,
+            stable_rounds,
+            total_new,
+        )
+        total = count_adversarial_records(out_dir, initial_board)
+        print(
+            "adversarial stabilization budget exhausted; keep pending for --resume "
+            f"rounds={args.adversarial_max_rounds} new_records={total_new} "
+            f"adversarial_records={total}"
+        )
+        return total
 
 
 def main() -> int:
@@ -596,12 +762,13 @@ def main() -> int:
         "--adversarial-games",
         type=int,
         default=0,
-        help="minimum adversarial records to keep for this start (default: disabled)",
+        help="counterexample probes per stabilization round (default: disabled)",
     )
     parser.add_argument(
         "--adversarial-batch-size",
         type=int,
         default=DEFAULT_ADVERSARIAL_BATCH_SIZE,
+        help="deprecated compatibility option; stabilization rebuilds once per round",
     )
     parser.add_argument(
         "--adversarial-level",
@@ -625,6 +792,18 @@ def main() -> int:
         type=int,
         default=DEFAULT_ADVERSARIAL_ENGINE_WIDTH,
         help="maximum close contest-book moves revalidated at each engine turn",
+    )
+    parser.add_argument(
+        "--adversarial-max-rounds",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_MAX_ROUNDS,
+        help="maximum fixed-point rounds per invocation (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--adversarial-stable-rounds",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_STABLE_ROUNDS,
+        help="unchanged full sweeps required for certification (default: %(default)s)",
     )
     args = parser.parse_args()
     args.exe = args.exe.resolve()
@@ -650,6 +829,10 @@ def main() -> int:
         raise ValueError("--adversarial-reply-width must be positive")
     if args.adversarial_engine_width <= 0:
         raise ValueError("--adversarial-engine-width must be positive")
+    if args.adversarial_max_rounds <= 0:
+        raise ValueError("--adversarial-max-rounds must be positive")
+    if args.adversarial_stable_rounds <= 0:
+        raise ValueError("--adversarial-stable-rounds must be positive")
     if not (0 <= args.cut_empty < 64):
         raise ValueError("--cut-empty must be in [0, 63]")
     out_dir = args.out_dir or record_dir_for_start(initial_board)

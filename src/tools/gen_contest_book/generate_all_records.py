@@ -10,8 +10,10 @@ from config import (
     DEFAULT_ADVERSARIAL_ENGINE_WIDTH,
     DEFAULT_ADVERSARIAL_GAMES_PER_START,
     DEFAULT_ADVERSARIAL_LEVEL,
+    DEFAULT_ADVERSARIAL_MAX_ROUNDS,
     DEFAULT_ADVERSARIAL_REPLY_MARGIN,
     DEFAULT_ADVERSARIAL_REPLY_WIDTH,
+    DEFAULT_ADVERSARIAL_STABLE_ROUNDS,
     DEFAULT_BOOK_MAX_LOSS,
     DEFAULT_CUT_EMPTY,
     DEFAULT_GAMES_PER_START,
@@ -21,11 +23,13 @@ from config import (
     DEFAULT_RECORD_BATCH_SIZE,
     DEFAULT_THREADS,
     WORK_DIR,
+    book_path_for_start,
     iter_start_boards,
     record_dir_for_start,
 )
 from generate_records import (
-    adversarial_targets,
+    adversarial_generation_profile,
+    adversarial_stabilization_is_current,
     count_adversarial_records,
     count_unique_records,
     ensure_generation_manifest,
@@ -102,15 +106,15 @@ def main() -> int:
         type=int,
         default=DEFAULT_ADVERSARIAL_GAMES_PER_START,
         help=(
-            "minimum counterexample-oriented records per start, split across "
-            "both engine parities (default: %(default)s; use 0 to disable)"
+            "counterexample probes per stabilization round, split across both "
+            "engine parities (default: %(default)s; use 0 to disable)"
         ),
     )
     parser.add_argument(
         "--adversarial-batch-size",
         type=int,
         default=DEFAULT_ADVERSARIAL_BATCH_SIZE,
-        help="rebuild the book after this many adversarial records per parity",
+        help="deprecated compatibility option; stabilization rebuilds once per round",
     )
     parser.add_argument(
         "--adversarial-level",
@@ -137,6 +141,18 @@ def main() -> int:
         help="maximum close contest-book moves revalidated at each engine turn",
     )
     parser.add_argument(
+        "--adversarial-max-rounds",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_MAX_ROUNDS,
+        help="maximum fixed-point rounds per start and invocation",
+    )
+    parser.add_argument(
+        "--adversarial-stable-rounds",
+        type=int,
+        default=DEFAULT_ADVERSARIAL_STABLE_ROUNDS,
+        help="unchanged full sweeps required for certification",
+    )
+    parser.add_argument(
         "--exe",
         type=Path,
         default=CONSOLE_EXE,
@@ -146,8 +162,8 @@ def main() -> int:
         "--resume",
         action="store_true",
         help=(
-            "skip starts that satisfy both the ordinary --games target and "
-            "the --adversarial-games target"
+            "skip starts that satisfy --games and have a current adversarial "
+            "stabilization certificate"
         ),
     )
     args = parser.parse_args()
@@ -173,6 +189,10 @@ def main() -> int:
         raise ValueError("--adversarial-reply-width must be positive")
     if args.adversarial_engine_width <= 0:
         raise ValueError("--adversarial-engine-width must be positive")
+    if args.adversarial_max_rounds <= 0:
+        raise ValueError("--adversarial-max-rounds must be positive")
+    if args.adversarial_stable_rounds <= 0:
+        raise ValueError("--adversarial-stable-rounds must be positive")
     if not (0 <= args.cut_empty < 64):
         raise ValueError("--cut-empty must be in [0, 63]")
     if args.skip < 0:
@@ -192,32 +212,38 @@ def main() -> int:
         boards = boards[:args.limit]
 
     script = WORK_DIR / "generate_records.py"
+    adversarial_profile = (
+        adversarial_generation_profile(args)
+        if args.resume and args.adversarial_games > 0
+        else None
+    )
     for idx, board in enumerate(boards, start=start_idx):
         initial_board = normalize_board_text(board)
         if args.resume:
             records_dir = record_dir_for_start(initial_board)
             n_known = count_unique_records(records_dir, initial_board)
-            targets = adversarial_targets(args.adversarial_games)
-            adversarial_counts = {
-                parity: count_adversarial_records(records_dir, initial_board, parity)
-                for parity in targets
-            }
-            n_adversarial = sum(adversarial_counts.values())
+            n_adversarial = count_adversarial_records(records_dir, initial_board)
             regular_complete = n_known >= args.games
-            adversarial_complete = all(
-                adversarial_counts[parity] >= targets[parity]
-                for parity in targets
+            adversarial_complete = (
+                args.adversarial_games == 0
+                or adversarial_stabilization_is_current(
+                    records_dir,
+                    initial_board,
+                    book_path_for_start(initial_board),
+                    adversarial_profile,
+                )
             )
             if regular_complete and adversarial_complete:
                 ensure_generation_manifest(records_dir, initial_board)
                 print(
                     f"[{idx}] skip complete known={n_known} target={args.games} "
-                    f"adversarial={n_adversarial}/{args.adversarial_games} {initial_board}"
+                    f"adversarial_stable=yes records={n_adversarial} {initial_board}"
                 )
                 continue
             print(
                 f"[{idx}] resume known={n_known} target={args.games} "
-                f"adversarial={n_adversarial}/{args.adversarial_games} {initial_board}"
+                f"adversarial_stable={'yes' if adversarial_complete else 'no'} "
+                f"records={n_adversarial} {initial_board}"
             )
         else:
             print(f"[{idx}] generate target={args.games} {initial_board}")
@@ -239,6 +265,8 @@ def main() -> int:
             "--adversarial-reply-margin", str(args.adversarial_reply_margin),
             "--adversarial-reply-width", str(args.adversarial_reply_width),
             "--adversarial-engine-width", str(args.adversarial_engine_width),
+            "--adversarial-max-rounds", str(args.adversarial_max_rounds),
+            "--adversarial-stable-rounds", str(args.adversarial_stable_rounds),
             "--exe", str(args.exe),
         ]
         if args.use_existing_book:

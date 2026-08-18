@@ -176,6 +176,8 @@ class GenerateRecordsTests(unittest.TestCase):
             adversarial_reply_margin=2,
             adversarial_reply_width=3,
             adversarial_engine_width=2,
+            adversarial_max_rounds=3,
+            adversarial_stable_rounds=1,
         )
 
     def test_games_is_target_total_not_additional_count(self) -> None:
@@ -247,14 +249,18 @@ class GenerateRecordsTests(unittest.TestCase):
                 generate_records.count_adversarial_records(records_dir, INITIAL_BOARD, 1),
             )
 
-    def test_legacy_adversarial_records_do_not_satisfy_v2_target(self) -> None:
+    def test_legacy_adversarial_records_do_not_satisfy_v3_target(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             records_dir = Path(temporary)
             (records_dir / "legacy.txt").write_text(
                 "generation mode: adversarial\n"
                 "engine parity: 0\n"
                 f"initial board: {INITIAL_BOARD}\n"
-                "transcript: legacy-attack\n\n",
+                "transcript: legacy-attack\n\n"
+                "generation mode: adversarial_v2\n"
+                "engine parity: 1\n"
+                f"initial board: {INITIAL_BOARD}\n"
+                "transcript: legacy-v2-attack\n\n",
                 encoding="utf-8",
             )
 
@@ -262,6 +268,65 @@ class GenerateRecordsTests(unittest.TestCase):
                 0,
                 generate_records.count_adversarial_records(records_dir, INITIAL_BOARD),
             )
+
+    def test_stabilization_certificate_is_tied_to_records_book_and_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            records_dir = root / "records"
+            records_dir.mkdir()
+            write_adversarial_records(records_dir / "adversarial.txt", [("attack-a", 0)])
+            output = root / "book.egcb"
+            output.write_text(valid_book_text(), encoding="utf-8", newline="\n")
+            args = self.make_args(games=3)
+            profile = generate_records.adversarial_generation_profile(args)
+            manifest = {
+                "schema": generate_records.GENERATION_MANIFEST_SCHEMA,
+                "initial_board": INITIAL_BOARD,
+                "baseline": generate_records.records_snapshot(records_dir, INITIAL_BOARD),
+                "batches": [],
+                "pending_batch": None,
+            }
+            generate_records.write_adversarial_stabilization(
+                manifest,
+                records_dir,
+                INITIAL_BOARD,
+                output,
+                profile,
+                "stable",
+                [],
+                1,
+                0,
+            )
+
+            self.assertTrue(generate_records.adversarial_stabilization_is_current(
+                records_dir, INITIAL_BOARD, output, profile
+            ))
+            write_adversarial_records(
+                records_dir / "adversarial.txt",
+                [("attack-a", 0), ("attack-b", 1)],
+            )
+            self.assertFalse(generate_records.adversarial_stabilization_is_current(
+                records_dir, INITIAL_BOARD, output, profile
+            ))
+            write_adversarial_records(records_dir / "adversarial.txt", [("attack-a", 0)])
+            self.assertTrue(generate_records.adversarial_stabilization_is_current(
+                records_dir, INITIAL_BOARD, output, profile
+            ))
+
+            output.write_text(
+                valid_book_text().replace("d3:0", "c3:0"),
+                encoding="utf-8",
+                newline="\n",
+            )
+            self.assertFalse(generate_records.adversarial_stabilization_is_current(
+                records_dir, INITIAL_BOARD, output, profile
+            ))
+            output.write_text(valid_book_text(), encoding="utf-8", newline="\n")
+            changed_profile = json.loads(json.dumps(profile))
+            changed_profile["settings"]["adversarial_reply_width"] = 4
+            self.assertFalse(generate_records.adversarial_stabilization_is_current(
+                records_dir, INITIAL_BOARD, output, changed_profile
+            ))
 
     def test_adversarial_batch_uses_book_and_role_specific_command(self) -> None:
         args = self.make_args(games=3)
@@ -290,12 +355,8 @@ class GenerateRecordsTests(unittest.TestCase):
             output = root / "book.egcb"
             args = self.make_args(games=3)
             args.adversarial_batch_size = 1
-            counts = {0: 0, 1: 0}
-
-            def fake_count(_records_dir, _initial_board, parity=None):
-                if parity is None:
-                    return sum(counts.values())
-                return counts[parity]
+            output.write_text(valid_book_text(), encoding="utf-8")
+            batch_calls = 0
 
             def fake_batch(
                 _manifest,
@@ -309,11 +370,13 @@ class GenerateRecordsTests(unittest.TestCase):
                 _target,
                 before,
             ):
-                counts[parity] += n_batch
-                return before
+                nonlocal batch_calls
+                batch_calls += 1
+                after = dict(before)
+                if batch_calls <= 2:
+                    after["unique_records"] = int(before["unique_records"]) + n_batch
+                return after
 
-            locked = mock.MagicMock()
-            locked.return_value.__enter__.return_value = SimpleNamespace(current=True)
             with (
                 mock.patch.object(
                     generate_records,
@@ -321,14 +384,29 @@ class GenerateRecordsTests(unittest.TestCase):
                     return_value=({"batches": [], "pending_batch": None}, {"unique_records": 3}),
                 ),
                 mock.patch.object(generate_records, "can_use_provisional_book", return_value=True),
-                mock.patch.object(generate_records, "count_adversarial_records", side_effect=fake_count),
-                mock.patch.object(generate_records, "locked_book_status", locked),
+                mock.patch.object(generate_records, "count_adversarial_records", return_value=4),
+                mock.patch.object(
+                    generate_records,
+                    "adversarial_stabilization_is_current",
+                    return_value=False,
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "contest_book_policy_fingerprint",
+                    return_value={"rows": 1, "sha256": "policy"},
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "fingerprint_files",
+                    return_value={"count": 1, "sha256": "book", "total_bytes": 1},
+                ),
                 mock.patch.object(
                     generate_records,
                     "adversarial_record_generation_batch",
                     side_effect=fake_batch,
                 ) as batch,
                 mock.patch.object(generate_records, "build_provisional_book") as build,
+                mock.patch.object(generate_records, "write_adversarial_stabilization") as write_stable,
             ):
                 result = generate_records.generate_adversarial_to_target(
                     args,
@@ -338,13 +416,153 @@ class GenerateRecordsTests(unittest.TestCase):
                 )
 
             self.assertEqual(4, result)
-            self.assertEqual({0: 2, 1: 2}, counts)
             self.assertEqual(4, batch.call_count)
-            self.assertEqual(4, build.call_count)
+            self.assertEqual(1, build.call_count)
             self.assertEqual(
-                [1, 1, 0, 0],
+                [1, 0, 1, 0],
                 [call.args[7] for call in batch.call_args_list],
             )
+            self.assertEqual("stable", write_stable.call_args.args[5])
+
+    def test_adversarial_generation_marks_unconverged_round_budget_exhausted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            records_dir = root / "records"
+            output = root / "book.egcb"
+            output.write_text(valid_book_text(), encoding="utf-8")
+            args = self.make_args(games=3)
+            args.adversarial_max_rounds = 1
+
+            def fake_batch(
+                _manifest,
+                _out_dir,
+                _initial_board,
+                _args,
+                _profile,
+                _output,
+                n_batch,
+                _parity,
+                _target,
+                before,
+            ):
+                after = dict(before)
+                after["unique_records"] = int(before["unique_records"]) + n_batch
+                return after
+
+            with (
+                mock.patch.object(
+                    generate_records,
+                    "prepare_generation_manifest",
+                    return_value=({"batches": [], "pending_batch": None}, {"unique_records": 3}),
+                ),
+                mock.patch.object(generate_records, "can_use_provisional_book", return_value=True),
+                mock.patch.object(generate_records, "count_adversarial_records", return_value=4),
+                mock.patch.object(
+                    generate_records,
+                    "adversarial_stabilization_is_current",
+                    return_value=False,
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "contest_book_policy_fingerprint",
+                    return_value={"rows": 1, "sha256": "policy"},
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "fingerprint_files",
+                    return_value={"count": 1, "sha256": "book", "total_bytes": 1},
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "adversarial_record_generation_batch",
+                    side_effect=fake_batch,
+                ),
+                mock.patch.object(generate_records, "build_provisional_book") as build,
+                mock.patch.object(generate_records, "write_adversarial_stabilization") as write_stable,
+            ):
+                result = generate_records.generate_adversarial_to_target(
+                    args, INITIAL_BOARD, records_dir, output
+                )
+
+            self.assertEqual(4, result)
+            build.assert_called_once()
+            self.assertEqual("budget_exhausted", write_stable.call_args.args[5])
+
+    def test_adversarial_generation_carries_stable_sweeps_across_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            records_dir = root / "records"
+            output = root / "book.egcb"
+            output.write_text(valid_book_text(), encoding="utf-8")
+            args = self.make_args(games=3)
+            args.adversarial_max_rounds = 1
+            args.adversarial_stable_rounds = 2
+            snapshot = {"unique_records": 3}
+            book_fingerprint = {"count": 1, "sha256": "book", "total_bytes": 1}
+            policy_fingerprint = {"rows": 1, "sha256": "policy"}
+            profile = generate_records.adversarial_generation_profile(args)
+            manifest = {
+                "batches": [],
+                "pending_batch": None,
+                "adversarial_stabilization": {
+                    "schema": generate_records.ADVERSARIAL_STABILIZATION_SCHEMA,
+                    "status": "budget_exhausted",
+                    "generation_mode": generate_records.ADVERSARIAL_GENERATION_MODE,
+                    "profile": profile,
+                    "records": snapshot,
+                    "book": book_fingerprint,
+                    "policy": policy_fingerprint,
+                    "rounds": [{"round": 0}],
+                    "stable_rounds": 1,
+                    "new_records": 0,
+                },
+            }
+
+            with (
+                mock.patch.object(
+                    generate_records,
+                    "prepare_generation_manifest",
+                    return_value=(manifest, snapshot),
+                ),
+                mock.patch.object(generate_records, "can_use_provisional_book", return_value=True),
+                mock.patch.object(generate_records, "count_adversarial_records", return_value=4),
+                mock.patch.object(
+                    generate_records,
+                    "adversarial_stabilization_is_current",
+                    return_value=False,
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "adversarial_generation_profile",
+                    return_value=profile,
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "contest_book_policy_fingerprint",
+                    return_value=policy_fingerprint,
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "fingerprint_files",
+                    return_value=book_fingerprint,
+                ),
+                mock.patch.object(
+                    generate_records,
+                    "adversarial_record_generation_batch",
+                    side_effect=lambda *_args: snapshot,
+                ) as batch,
+                mock.patch.object(generate_records, "build_provisional_book") as build,
+                mock.patch.object(generate_records, "write_adversarial_stabilization") as write_stable,
+            ):
+                result = generate_records.generate_adversarial_to_target(
+                    args, INITIAL_BOARD, records_dir, output
+                )
+
+            self.assertEqual(4, result)
+            self.assertEqual(2, batch.call_count)
+            build.assert_not_called()
+            self.assertEqual("stable", write_stable.call_args.args[5])
+            self.assertEqual(2, write_stable.call_args.args[7])
 
     def test_satisfied_target_does_not_generate_or_build(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -377,6 +595,11 @@ class GenerateRecordsTests(unittest.TestCase):
             mock.patch.object(generate_all_records, "iter_start_boards", return_value=[INITIAL_BOARD]),
             mock.patch.object(generate_all_records, "count_unique_records", return_value=3),
             mock.patch.object(generate_all_records, "count_adversarial_records", return_value=8),
+            mock.patch.object(
+                generate_all_records,
+                "adversarial_stabilization_is_current",
+                return_value=True,
+            ),
             mock.patch.object(generate_all_records, "ensure_generation_manifest") as ensure_manifest,
             mock.patch.object(generate_all_records.subprocess, "run") as run,
         ):
@@ -406,6 +629,11 @@ class GenerateRecordsTests(unittest.TestCase):
                 side_effect=[3, 1],
             ),
             mock.patch.object(generate_all_records, "count_adversarial_records", return_value=8),
+            mock.patch.object(
+                generate_all_records,
+                "adversarial_stabilization_is_current",
+                side_effect=[True, False],
+            ),
             mock.patch.object(generate_all_records, "ensure_generation_manifest") as ensure_manifest,
             mock.patch.object(generate_all_records.subprocess, "run") as run,
         ):
@@ -437,6 +665,8 @@ class GenerateRecordsTests(unittest.TestCase):
         self.assertEqual("5", command[command.index("--adversarial-games") + 1])
         self.assertEqual("19", command[command.index("--adversarial-level") + 1])
         self.assertEqual("2", command[command.index("--adversarial-engine-width") + 1])
+        self.assertEqual("3", command[command.index("--adversarial-max-rounds") + 1])
+        self.assertEqual("1", command[command.index("--adversarial-stable-rounds") + 1])
 
     def test_generate_all_resume_runs_missing_adversarial_records(self) -> None:
         argv = [
@@ -451,6 +681,11 @@ class GenerateRecordsTests(unittest.TestCase):
             mock.patch.object(generate_all_records, "iter_start_boards", return_value=[INITIAL_BOARD]),
             mock.patch.object(generate_all_records, "count_unique_records", return_value=3),
             mock.patch.object(generate_all_records, "count_adversarial_records", return_value=1),
+            mock.patch.object(
+                generate_all_records,
+                "adversarial_stabilization_is_current",
+                return_value=False,
+            ),
             mock.patch.object(generate_all_records.subprocess, "run") as run,
         ):
             self.assertEqual(0, generate_all_records.main())

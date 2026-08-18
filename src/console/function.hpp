@@ -1054,7 +1054,7 @@ struct Contest_record_adversarial_line {
         : board(board_), transcript(std::move(transcript_)), opponent_loss_sum(opponent_loss_sum_) {}
 };
 
-constexpr const char *CONTEST_RECORD_ADVERSARIAL_GENERATION_MODE = "adversarial_v2";
+constexpr const char *CONTEST_RECORD_ADVERSARIAL_GENERATION_MODE = "adversarial_v3";
 
 std::vector<Contest_record_scored_move> contest_record_adversarial_book_candidates(
     const Board &board,
@@ -1080,9 +1080,19 @@ std::vector<Contest_record_scored_move> contest_record_adversarial_book_candidat
             candidates.emplace_back(move.policy, move.value);
         }
     }
-    std::sort(candidates.begin(), candidates.end(), [](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
+    Search_result selected_book_result;
+    const int selected_book_policy = contest_book->get_search_result(board, &selected_book_result)
+        ? selected_book_result.policy
+        : MOVE_UNDEFINED;
+    std::sort(candidates.begin(), candidates.end(), [&](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
         if (a.value != b.value) {
             return a.value > b.value;
+        }
+        // Match Contest_book::get_search_result exactly when several moves
+        // share the best value.  The first adversarial probe must follow the
+        // move that GGS would actually play, not a coordinate-order tie-break.
+        if ((a.policy == selected_book_policy) != (b.policy == selected_book_policy)) {
+            return a.policy == selected_book_policy;
         }
         return a.policy < b.policy;
     });
@@ -1227,6 +1237,223 @@ Contest_record_adversarial_line contest_record_play_adversarial_line(
     return Contest_record_adversarial_line(board, transcript, opponent_loss_sum);
 }
 
+struct Contest_record_adversarial_beam_state {
+    Board board;
+    std::string transcript;
+    int opponent_loss_sum;
+    bool engine_to_move;
+    int heuristic;
+
+    Contest_record_adversarial_beam_state(
+        Board board_,
+        std::string transcript_,
+        int opponent_loss_sum_,
+        bool engine_to_move_,
+        int heuristic_
+    ) :
+        board(board_),
+        transcript(std::move(transcript_)),
+        opponent_loss_sum(opponent_loss_sum_),
+        engine_to_move(engine_to_move_),
+        heuristic(heuristic_) {}
+};
+
+std::vector<Contest_record_scored_move> contest_record_adversarial_opponent_candidates(
+    const Board &board,
+    Options *options,
+    int reply_margin,
+    int reply_width,
+    Contest_record_score_cache *score_cache,
+    std::mutex *score_cache_mtx,
+    const Contest_book *contest_book
+) {
+    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(
+        board,
+        options->level,
+        true,
+        THREAD_ID_NONE,
+        score_cache,
+        score_cache_mtx,
+        nullptr,
+        1,
+        nullptr
+    );
+    if (scored_moves.empty() || scored_moves[0].value == SCORE_UNDEFINED) {
+        return {};
+    }
+    const int best_value = scored_moves[0].value;
+    std::vector<Contest_record_scored_move> candidates;
+    for (const Contest_record_scored_move &move: scored_moves) {
+        if (move.value == SCORE_UNDEFINED || best_value - move.value > reply_margin) {
+            continue;
+        }
+        candidates.emplace_back(move);
+    }
+    if (candidates.empty()) {
+        candidates.emplace_back(scored_moves[0]);
+    }
+    if (contest_book != nullptr) {
+        Flip flip;
+        std::unordered_map<int, bool> exits_contest_book;
+        for (const Contest_record_scored_move &move: candidates) {
+            Board next_board = board.copy();
+            calc_flip(&flip, &next_board, move.policy);
+            next_board.move_board(&flip);
+            Search_result next_book_result;
+            exits_contest_book[move.policy] =
+                next_board.get_legal() != 0ULL &&
+                !contest_book->get_search_result(next_board, &next_book_result);
+        }
+        std::stable_sort(
+            candidates.begin(),
+            candidates.end(),
+            [&](const Contest_record_scored_move &a, const Contest_record_scored_move &b) {
+                if (a.value != b.value) {
+                    return a.value > b.value;
+                }
+                if (exits_contest_book[a.policy] != exits_contest_book[b.policy]) {
+                    return exits_contest_book[a.policy];
+                }
+                return a.policy < b.policy;
+            }
+        );
+    }
+    if ((int)candidates.size() > reply_width) {
+        candidates.erase(candidates.begin() + reply_width, candidates.end());
+    }
+    return candidates;
+}
+
+std::vector<Contest_record_adversarial_line> contest_record_play_adversarial_beam(
+    Board board,
+    Options *options,
+    int reply_margin,
+    int reply_width,
+    int engine_width,
+    int cut_empty,
+    int engine_parity,
+    int beam_width,
+    Contest_record_score_cache *score_cache,
+    std::mutex *score_cache_mtx,
+    const Contest_book *contest_book
+) {
+    std::vector<Contest_record_adversarial_beam_state> beam;
+    beam.emplace_back(board, "", 0, engine_parity == 0, 0);
+    Flip flip;
+    while (true) {
+        bool expanded_any = false;
+        std::vector<Contest_record_adversarial_beam_state> expanded;
+        for (Contest_record_adversarial_beam_state state: beam) {
+            while (
+                HW2 - state.board.n_discs() > cut_empty &&
+                !state.board.is_end() &&
+                state.board.get_legal() == 0ULL
+            ) {
+                state.board.pass();
+                state.engine_to_move = !state.engine_to_move;
+            }
+            if (HW2 - state.board.n_discs() <= cut_empty || state.board.is_end()) {
+                expanded.emplace_back(std::move(state));
+                continue;
+            }
+
+            std::vector<Contest_record_scored_move> candidates;
+            if (state.engine_to_move) {
+                candidates = contest_record_adversarial_book_candidates(
+                    state.board,
+                    contest_book,
+                    reply_margin,
+                    engine_width
+                );
+                if (candidates.empty()) {
+                    std::vector<Contest_record_scored_move> scored_moves = contest_record_score_moves_cached(
+                        state.board,
+                        options->level,
+                        true,
+                        THREAD_ID_NONE,
+                        score_cache,
+                        score_cache_mtx,
+                        nullptr,
+                        1,
+                        nullptr
+                    );
+                    if (!scored_moves.empty() && scored_moves[0].value != SCORE_UNDEFINED) {
+                        candidates.emplace_back(scored_moves[0]);
+                    }
+                }
+            } else {
+                candidates = contest_record_adversarial_opponent_candidates(
+                    state.board,
+                    options,
+                    reply_margin,
+                    reply_width,
+                    score_cache,
+                    score_cache_mtx,
+                    contest_book
+                );
+            }
+            if (candidates.empty()) {
+                expanded.emplace_back(std::move(state));
+                continue;
+            }
+
+            expanded_any = true;
+            const int best_value = candidates[0].value;
+            for (const Contest_record_scored_move &candidate: candidates) {
+                Contest_record_adversarial_beam_state child = state;
+                child.transcript += idx_to_coord(candidate.policy);
+                if (!state.engine_to_move) {
+                    child.opponent_loss_sum += best_value - candidate.value;
+                }
+                child.heuristic = state.engine_to_move ? candidate.value : -candidate.value;
+                calc_flip(&flip, &child.board, candidate.policy);
+                child.board.move_board(&flip);
+                child.engine_to_move = !state.engine_to_move;
+                expanded.emplace_back(std::move(child));
+            }
+        }
+        if (!expanded_any) {
+            beam = std::move(expanded);
+            break;
+        }
+
+        std::sort(
+            expanded.begin(),
+            expanded.end(),
+            [](const Contest_record_adversarial_beam_state &a, const Contest_record_adversarial_beam_state &b) {
+                if (a.heuristic != b.heuristic) {
+                    return a.heuristic < b.heuristic;
+                }
+                if (a.opponent_loss_sum != b.opponent_loss_sum) {
+                    return a.opponent_loss_sum < b.opponent_loss_sum;
+                }
+                return a.transcript < b.transcript;
+            }
+        );
+        std::unordered_set<std::string> unique_transcripts;
+        beam.clear();
+        for (Contest_record_adversarial_beam_state &state: expanded) {
+            if (!unique_transcripts.insert(state.transcript).second) {
+                continue;
+            }
+            beam.emplace_back(std::move(state));
+            if ((int)beam.size() >= beam_width) {
+                break;
+            }
+        }
+        if (beam.empty()) {
+            break;
+        }
+    }
+
+    std::vector<Contest_record_adversarial_line> result;
+    result.reserve(beam.size());
+    for (Contest_record_adversarial_beam_state &state: beam) {
+        result.emplace_back(state.board, std::move(state.transcript), state.opponent_loss_sum);
+    }
+    return result;
+}
+
 void contest_record_write_adversarial_record(
     std::ofstream &ofs,
     const std::string &initial_board,
@@ -1237,7 +1464,7 @@ void contest_record_write_adversarial_record(
     int reply_margin,
     int reply_width,
     int engine_width,
-    uint64_t variation_index
+    uint64_t probe_index
 ) {
     ofs << "record: " << record_idx << '\n';
     ofs << "generation mode: " << CONTEST_RECORD_ADVERSARIAL_GENERATION_MODE << '\n';
@@ -1245,7 +1472,7 @@ void contest_record_write_adversarial_record(
     ofs << "reply margin: " << reply_margin << '\n';
     ofs << "reply width: " << reply_width << '\n';
     ofs << "engine width: " << engine_width << '\n';
-    ofs << "variation: " << variation_index << '\n';
+    ofs << "probe: " << probe_index << '\n';
     ofs << "initial board: " << initial_board << '\n';
     ofs << "transcript: " << line.transcript << '\n';
     ofs << "leaf board: " << line.board.to_str() << '\n';
@@ -1312,23 +1539,49 @@ void contest_record_adversarial_commandline(std::vector<std::string> arg, Option
 
     uint64_t strt = tim();
     int n_generated = 0;
-    const uint64_t max_attempts = std::max<uint64_t>(256, (uint64_t)n_games * 256);
     Contest_record_score_cache score_cache;
     std::mutex score_cache_mtx;
-    for (uint64_t variation_index = 0; variation_index < max_attempts && n_generated < n_games; ++variation_index) {
-        Contest_record_adversarial_line line = contest_record_play_adversarial_line(
-            board_start,
-            options,
-            reply_margin,
-            reply_width,
-            engine_width,
-            cut_empty,
-            engine_parity,
-            variation_index,
-            &score_cache,
-            &score_cache_mtx,
-            &contest_book
-        );
+    std::vector<Contest_record_adversarial_line> probes;
+    probes.emplace_back(contest_record_play_adversarial_line(
+        board_start,
+        options,
+        reply_margin,
+        reply_width,
+        engine_width,
+        cut_empty,
+        engine_parity,
+        0,
+        &score_cache,
+        &score_cache_mtx,
+        &contest_book
+    ));
+    const int beam_width = std::max({n_games, reply_width, engine_width});
+    std::vector<Contest_record_adversarial_line> beam = contest_record_play_adversarial_beam(
+        board_start,
+        options,
+        reply_margin,
+        reply_width,
+        engine_width,
+        cut_empty,
+        engine_parity,
+        beam_width,
+        &score_cache,
+        &score_cache_mtx,
+        &contest_book
+    );
+    std::unordered_set<std::string> probe_transcripts;
+    probe_transcripts.insert(probes[0].transcript);
+    for (Contest_record_adversarial_line &line: beam) {
+        if ((int)probes.size() >= n_games) {
+            break;
+        }
+        if (probe_transcripts.insert(line.transcript).second) {
+            probes.emplace_back(std::move(line));
+        }
+    }
+
+    for (uint64_t probe_index = 0; probe_index < probes.size(); ++probe_index) {
+        Contest_record_adversarial_line &line = probes[probe_index];
         if (line.transcript.empty() || seen_transcripts.find(line.transcript) != seen_transcripts.end()) {
             continue;
         }
@@ -1346,7 +1599,7 @@ void contest_record_adversarial_commandline(std::vector<std::string> arg, Option
             reply_margin,
             reply_width,
             engine_width,
-            variation_index
+            probe_index
         );
         seen_transcripts.insert(line.transcript);
         ++n_generated;
@@ -1357,7 +1610,8 @@ void contest_record_adversarial_commandline(std::vector<std::string> arg, Option
         std::error_code remove_error;
         std::filesystem::remove(out_file, remove_error);
     }
-    std::cerr << "adversarial contest record generation done " << n_generated << "/" << n_games
+    std::cerr << "adversarial contest record generation probed " << probes.size()
+              << " generated " << n_generated
               << " engine_parity " << engine_parity << " in " << tim() - strt << " ms" << std::endl;
 }
 

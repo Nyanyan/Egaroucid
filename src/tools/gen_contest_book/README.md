@@ -52,11 +52,11 @@ python src/tools/gen_contest_book/generate_all_records.py --start-board "<initia
 
 既定値は、開始局面あたり512棋譜、16棋譜ごとの反復更新、レベル19、1手あたり2石損まで、1局合計4石損まで、30空きで打ち切りです。打ち切り局面の `leaf value` は30手99.9%読みで評価します。棋譜数、ロス制限、打ち切り空き数などはコマンドラインオプションで変更できます。
 
-`generate_all_records.py` は通常棋譜の生成後、既定で開始局面あたり5件のadversarial v2棋譜も追加します。この生成では、Egaroucid側は現在のcontest book最善手に加えて、2石以内の上位2手までを再検証します。相手側はレベル19で通常探索し、最善手から2石以内の上位3手までを評価値順に分岐候補にします。評価値が同じ場合だけ、次のEgaroucid局面がbookに存在しない応手を優先します。後手担当側へ2件、先手担当側へ3件を割り当て、1件追加するごとにbookを再構築します。後手担当側を先に完了し、先手担当側の3件を最後に連続処理するため、途中の再構築でbook最善手が変わっても新しい実戦PVを繰り返し再検証できます。
+`generate_all_records.py` は通常棋譜の生成後、contest bookが収束するまでadversarial v3検証を行います。1ラウンドでは既定で5本のprobeを後手担当側2本・先手担当側3本に分け、両方を同じbook snapshotへ適用してから1回だけ再構築します。各手番の最初のprobeは現在のbook最善手を必ず通る主検証線です。残りは、Egaroucid側の2石以内の上位2手と、レベル19で評価した相手側の2石以内の上位3手を展開する幅制限付きの最悪応手beamです。
 
-旧adversarial生成の棋譜はbook素材として引き続き利用しますが、v2の完了数には含めません。そのため、既に旧方式の棋譜がある局面でも、同じ `--resume` コマンドでv2棋譜が新たに生成されます。
+再構築後の完全な両手番probeで新規棋譜がなく、book方針も変化しなかった場合だけ、`generation_manifest.json` に収束証明を保存します。再構築によって別の手が最善になれば次のラウンドで必ず再検証します。1回の起動では既定で最大3ラウンドとし、収束しなければ `budget_exhausted` のまま次の局面へ進み、次回の `--resume` で続行します。
 
-計算量は `--adversarial-games`、`--adversarial-batch-size`、`--adversarial-level`、`--adversarial-reply-margin`、`--adversarial-reply-width`、`--adversarial-engine-width` で調整できます。無効化する場合は `--adversarial-games 0` を指定します。`--resume` は通常棋譜数とadversarial v2棋譜数の両方を確認し、不足している方だけを再開します。単一局面用 `generate_records.py` では既定で無効なので、必要な場合だけ同じオプションを明示してください。
+旧adversarial棋譜はbook素材として引き続き利用しますが、収束証明の代わりにはなりません。計算量は `--adversarial-games`、`--adversarial-level`、`--adversarial-reply-margin`、`--adversarial-reply-width`、`--adversarial-engine-width`、`--adversarial-max-rounds`、`--adversarial-stable-rounds` で調整できます。無効化する場合は `--adversarial-games 0` を指定します。`--resume` は通常棋譜数と、現在のbook・棋譜・binary・設定に一致する収束証明を確認します。単一局面用 `generate_records.py` では既定で無効なので、必要な場合だけ同じオプションを明示してください。
 
 生成engineの既定値は大会用 `bin/Egaroucid_for_Console_clang.exe` です。別binaryを使う既存運用では、単局・全局面のどちらのdriverでも `--exe <path>` で上書きできます。
 
@@ -185,27 +185,29 @@ When combined with `--skip`, the script skips that many additional positions aft
 
 Defaults are 512 records per start, iterative updates every 16 records, level 19, per-move loss 2, total loss 4, and cut at 30 empties. The cutoff position's `leaf value` is evaluated with a 30-ply 99.9% selective endgame search. Record counts, loss limits, and the cutoff empty count can be changed with command-line options.
 
-After the ordinary records, `generate_all_records.py` adds five adversarial-v2
-records per start by default.  On the Egaroucid side it revalidates the current
-contest-book winner and up to two book moves within two discs of it.  On the
-opposing side it performs a fresh level-19 search and branches over at most
-three replies within two discs of the best screened reply.  Reply strength is
-the primary ordering; leaving the current book is only a tie-break.  Two records
-are generated with Egaroucid as the second player, followed by three with it as
-the first player, and the provisional book is rebuilt after every addition.
-The final three passes recheck a new winner when rebuilding changes book order.
+After the ordinary records, `generate_all_records.py` runs adversarial-v3
+fixed-point validation.  A round uses five probes by default: two with
+Egaroucid moving second and three with it moving first.  Both roles probe the
+same immutable book snapshot, followed by one rebuild.  The first probe for
+each role always follows the current book winner.  The others use a bounded
+worst-reply beam over up to two close book moves and three level-19 opponent
+replies within two discs of the screened best move.
 
-Legacy adversarial records remain valid book input, but do not satisfy the v2
-completion count.  Therefore the same `--resume` command generates fresh v2
-records even for starts that already contain records from the old method.
+Completion now requires a full post-rebuild sweep that adds no transcript and
+does not change the playable book rows.  A rebuild that exposes a new winner
+therefore triggers another round.  The driver runs at most three rounds per
+start and invocation by default.  An unconverged start is recorded as
+`budget_exhausted`, remains incomplete, and is retried by the next `--resume`.
+The stable certificate is tied to the records, final book, engine binary, and
+generation settings.  Legacy adversarial records remain valid book input but
+do not replace this certificate.
 
-Use `--adversarial-games`, `--adversarial-batch-size`,
-`--adversarial-level`, `--adversarial-reply-margin`, and
-`--adversarial-reply-width`, and `--adversarial-engine-width` to tune the budget.  Set
-`--adversarial-games 0` to retain the old behavior.  `--resume` checks the
-ordinary and adversarial targets separately.  The single-start
-`generate_records.py` keeps adversarial generation disabled unless explicitly
-requested.
+Use `--adversarial-games`, `--adversarial-level`,
+`--adversarial-reply-margin`, `--adversarial-reply-width`,
+`--adversarial-engine-width`, `--adversarial-max-rounds`, and
+`--adversarial-stable-rounds` to tune the budget. Set `--adversarial-games 0`
+to disable stabilization. The single-start `generate_records.py` keeps it
+disabled unless explicitly requested.
 
 The default generation engine is the tournament build at
 `bin/Egaroucid_for_Console_clang.exe`. Existing workflows can select another
