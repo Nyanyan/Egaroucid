@@ -206,6 +206,15 @@
 #define USE_AI_GET_VALUES_CANDIDATE_PARALLEL true
 #endif
 
+// Poll split cancellation inside the specialized endgame NWS.  A sparse poll
+// avoids paying an atomic load at every endgame node.
+#ifndef USE_END_NWS_CANCELLATION_POLLING
+#define USE_END_NWS_CANCELLATION_POLLING true
+#endif
+#ifndef END_NWS_CANCELLATION_POLL_MASK
+#define END_NWS_CANCELLATION_POLL_MASK 1023
+#endif
+
 /*
     @brief tuning
 */

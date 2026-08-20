@@ -36,6 +36,22 @@
 
 constexpr int LOCAL_TT_SIZE = 2048;
 constexpr int LOCAL_TT_SIZE_BIT = 11;
+static_assert(
+    (END_NWS_CANCELLATION_POLL_MASK & (END_NWS_CANCELLATION_POLL_MASK + 1)) == 0,
+    "END_NWS_CANCELLATION_POLL_MASK must be one less than a power of two"
+);
+
+inline bool end_nws_cancellation_requested(Search *search, const std::vector<bool*> &searchings) {
+#if USE_END_NWS_CANCELLATION_POLLING
+    return
+        (search->n_nodes & END_NWS_CANCELLATION_POLL_MASK) == 0ULL &&
+        !is_searching(searchings);
+#else
+    (void)search;
+    (void)searchings;
+    return false;
+#endif
+}
 
 /*
     @brief Get a final score with few empties (NWS)
@@ -48,7 +64,10 @@ constexpr int LOCAL_TT_SIZE_BIT = 11;
     @param skipped              already passed?
     @return the final score
 */
-int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
+int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped, const std::vector<bool*> &searchings) {
+    if (end_nws_cancellation_requested(search, searchings)) {
+        return SCORE_UNDEFINED;
+    }
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -67,9 +86,9 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
             return end_evaluate(&search->board);
         }
         search->pass_noeval();
-            int v = -nega_alpha_end_fast_nws(search, -alpha - 1, true);
+            const int child_value = nega_alpha_end_fast_nws(search, -alpha - 1, true, searchings);
         search->pass_noeval();
-        return v;
+        return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
 
     Board board0;
@@ -109,7 +128,13 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped) {
             for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
                 calc_flip(&flip, &board0, cell);
                 board0.move_copy(&flip, &search->board);
-                g = -nega_alpha_end_fast_nws(search, -alpha - 1, false);
+                const int child_value = nega_alpha_end_fast_nws(search, -alpha - 1, false, searchings);
+                if (child_value == SCORE_UNDEFINED) {
+                    --search->n_discs;
+                    board0.copy(&search->board);
+                    return SCORE_UNDEFINED;
+                }
+                g = -child_value;
                 if (alpha < g) {
                     --search->n_discs;
                     board0.copy(&search->board);
@@ -279,9 +304,12 @@ inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs) {
     @param legal                for use of previously calculated legal bitboard
     @return the final score
 */
-int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uint64_t legal) {
+int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uint64_t legal, const std::vector<bool*> &searchings) {
+    if (end_nws_cancellation_requested(search, searchings)) {
+        return SCORE_UNDEFINED;
+    }
     if (search->n_discs >= HW2 - END_FAST_DEPTH) {
-        return nega_alpha_end_fast_nws(search, alpha, skipped);
+        return nega_alpha_end_fast_nws(search, alpha, skipped, searchings);
     }
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
@@ -304,9 +332,9 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
             return end_evaluate(&search->board);
         }
         search->pass_noeval();
-            v = -nega_alpha_end_simple_nws(search, -alpha - 1, true, LEGAL_UNDEFINED);
+            const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searchings);
         search->pass_noeval();
-        return v;
+        return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
     const int canput = pop_count_ull(legal);
     Flip_value move_list[END_SIMPLE_DEPTH];
@@ -362,8 +390,12 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
                 flip_value->n_legal = search->board.get_legal();
                 int nm = get_n_moves_cornerX2(flip_value->n_legal);
                 if (nm <= 1) {
-                    g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, flip_value->n_legal);
+                    const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, flip_value->n_legal, searchings);
                     search->undo_noeval(&flip_value->flip);
+                    if (child_value == SCORE_UNDEFINED) {
+                        return SCORE_UNDEFINED;
+                    }
+                    g = -child_value;
                     if (v < g) {
                         v = g;
                         if (alpha < v) {
@@ -395,8 +427,12 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
             Board nboard = search->board;
             const uint32_t child_n_discs = search->n_discs;
             LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
-            g = -nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal);
+            const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searchings);
         search->undo_noeval(&move_list[move_idx].flip);
+        if (child_value == SCORE_UNDEFINED) {
+            return SCORE_UNDEFINED;
+        }
+        g = -child_value;
         if (v < g) {
             v = g;
             if (alpha < v) {
@@ -426,9 +462,12 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
     @param legal                for use of previously calculated legal bitboard
     @return the final score
 */
-int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t legal) {
+int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t legal, const std::vector<bool*> &searchings) {
+    if (end_nws_cancellation_requested(search, searchings)) {
+        return SCORE_UNDEFINED;
+    }
     if (search->n_discs >= HW2 - END_SIMPLE_DEPTH) {
-        return nega_alpha_end_simple_nws(search, alpha, skipped, legal);
+        return nega_alpha_end_simple_nws(search, alpha, skipped, legal, searchings);
     }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
@@ -451,9 +490,9 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
             return end_evaluate(&search->board);
         }
         search->pass_endsearch();
-            v = -nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED);
+            const int child_value = nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searchings);
         search->pass_endsearch();
-        return v;
+        return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
     int g;
     const int canput = pop_count_ull(legal);
@@ -505,8 +544,12 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                 flip_value->n_legal = search->board.get_legal();
                 int nm = get_n_moves_cornerX2(flip_value->n_legal);
                 if (nm <= 1) {
-                    g = -nega_alpha_end_nws(search, -alpha - 1, false, flip_value->n_legal);
+                    const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, flip_value->n_legal, searchings);
                     search->undo_endsearch(&flip_value->flip);
+                    if (child_value == SCORE_UNDEFINED) {
+                        return SCORE_UNDEFINED;
+                    }
+                    g = -child_value;
                     if (v < g) {
                         v = g;
                         if (alpha < v) {
@@ -538,8 +581,12 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
             Board nboard = search->board;
             const uint32_t child_n_discs = search->n_discs;
             LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
-            g = -nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal);
+            const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searchings);
         search->undo_endsearch(&move_list[move_idx].flip);
+        if (child_value == SCORE_UNDEFINED) {
+            return SCORE_UNDEFINED;
+        }
+        g = -child_value;
         if (v < g) {
             v = g;
             if (alpha < v) {
