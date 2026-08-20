@@ -220,9 +220,10 @@ inline void ybwc_undo_child(Search *search, const Flip *flip, const bool use_end
     @param searching            flag for terminating this search
     @return the result in Parallel_task structure
 */
-Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, bool use_dim0_mpc_eval, thread_id_t thread_id, int parent_alpha, const int depth, uint64_t legal, const bool is_end_search, uint_fast8_t policy, int move_idx, std::vector<bool*> searchings, bool *n_searching) {
+Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, bool use_dim0_mpc_eval, thread_id_t thread_id, int mid_split_task_limit, int parent_alpha, const int depth, uint64_t legal, const bool is_end_search, uint_fast8_t policy, int move_idx, std::vector<bool*> searchings, bool *n_searching) {
     Search search(player, opponent, n_discs, parity, mpc_level, (!is_end_search && depth > YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth > YBWC_END_SPLIT_MIN_DEPTH), is_presearch, thread_id);
     search.use_dim0_mpc_eval = use_dim0_mpc_eval;
+    search.mid_split_task_limit = mid_split_task_limit;
     Parallel_task task;
     task.value = -nega_alpha_ordering_nws(&search, -parent_alpha - 1, depth, false, legal, is_end_search, searchings);
     const bool cancelled = !is_searching(searchings);
@@ -301,7 +302,13 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         // }
         if (is_searching(searchings)) {
             bool pushed;
-            parallel_tasks.emplace_back(thread_pool.push(search->thread_id, &pushed, std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, parent_alpha, depth, legal, is_end_search, policy, move_idx, searchings, n_searching)));
+            const int task_limit = is_end_search ? THREAD_SIZE_INF : search->mid_split_task_limit;
+            auto task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, legal, is_end_search, policy, move_idx, searchings, n_searching);
+            if (task_limit == THREAD_SIZE_INF) {
+                parallel_tasks.emplace_back(thread_pool.push(search->thread_id, &pushed, task));
+            } else {
+                parallel_tasks.emplace_back(thread_pool.push(search->thread_id, task_limit, &pushed, task));
+            }
             if (pushed) {
                 #if USE_YBWC_SPLIT_STATISTICS
                     ++ybwc_split_pushed[depth];

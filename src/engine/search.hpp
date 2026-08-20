@@ -30,6 +30,25 @@ constexpr int MID_TO_END_DEPTH = 13;
 constexpr int MID_TO_END_DEPTH_MPC = 9;
 constexpr int MID_SIMPLE_ORDERING_DEPTH = 4;
 
+// A root search copies this thread-local setting into Search.  Parallel child
+// searches then inherit it explicitly, because they may run on another worker.
+inline thread_local int ybwc_mid_split_task_limit = YBWC_MID_MAX_SPLIT_TASKS;
+
+class Scoped_ybwc_mid_split_task_limit {
+    private:
+        int previous_limit;
+
+    public:
+        explicit Scoped_ybwc_mid_split_task_limit(int task_limit)
+            : previous_limit(ybwc_mid_split_task_limit) {
+            ybwc_mid_split_task_limit = task_limit;
+        }
+
+        ~Scoped_ybwc_mid_split_task_limit() {
+            ybwc_mid_split_task_limit = previous_limit;
+        }
+};
+
 
 
 
@@ -264,6 +283,7 @@ class Search {
         bool is_presearch;
         bool use_dim0_mpc_eval = false;
         int lazy_smp_worker_idx = 0;
+        int mid_split_task_limit = ybwc_mid_split_task_limit;
 
 #if USE_KILLER_MOVE_MO
         // Killer move support

@@ -47,6 +47,7 @@ class Thread_pool {
 
         int max_thread_size[THREAD_ID_SIZE];
         std::atomic<int> n_using_thread[THREAD_ID_SIZE];
+        std::atomic<int> n_using_limited_thread[THREAD_ID_SIZE];
         //std::unordered_map<thread_id_t, int> max_thread_size;
         //std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
         //std::atomic<int> n_using_tasks;
@@ -69,6 +70,7 @@ class Thread_pool {
                 for (int i = 0; i < THREAD_ID_SIZE; ++i) {
                     max_thread_size[i] = THREAD_SIZE_DEFAULT;
                     n_using_thread[i] = THREAD_SIZE_DEFAULT;
+                    n_using_limited_thread[i] = 0;
                 }
                 max_thread_size[THREAD_ID_NONE] = THREAD_SIZE_INF;
                 n_using_thread[THREAD_ID_NONE] = 0;
@@ -229,6 +231,27 @@ class Thread_pool {
         return future;
     }
 
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+        template<typename F, typename... Args, typename R = std::invoke_result_t<std::decay_t<F>, std::decay_t<Args>...>>
+#else
+        template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
+#endif
+    std::future<R> push(thread_id_t id, int task_limit, bool *pushed, F &&func, const Args &&...args) {
+        if (n_using_thread[id] >= max_thread_size[id] || n_using_limited_thread[id] >= task_limit) {
+            *pushed = false;
+            return std::future<R>();
+        }
+        auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
+            return func(args...);
+        });
+        auto future = task->get_future();
+        *pushed = push_limited_task(id, task_limit, [this, id, task]() {
+            (*task)();
+            n_using_limited_thread[id].fetch_sub(1, std::memory_order_relaxed);
+        });
+        return future;
+    }
+
         /*
         void tell_start_using() {
             n_using_tasks.fetch_add(1);
@@ -259,6 +282,36 @@ class Thread_pool {
                             n_using_thread[id].fetch_add(1);
                         }
                     }
+                }
+            }
+            return pushed;
+        }
+
+        template<typename F>
+        inline bool push_limited_task(thread_id_t id, int task_limit, const F &task) {
+            if (!running) {
+                throw std::runtime_error("Cannot schedule new task after shutdown.");
+            }
+            bool pushed = false;
+            if (
+                n_idle.load(std::memory_order_relaxed) > 0 &&
+                n_using_thread[id] < max_thread_size[id] &&
+                n_using_limited_thread[id] < task_limit
+            ) {
+                std::unique_lock<std::mutex> lock(mtx);
+                if (
+                    n_idle.load(std::memory_order_relaxed) > 0 &&
+                    n_using_thread[id] < max_thread_size[id] &&
+                    n_using_limited_thread[id] < task_limit
+                ) {
+                    pushed = true;
+                    tasks.emplace_back(id, std::function<void()>(task));
+                    n_idle.fetch_sub(1, std::memory_order_relaxed);
+                    if (id != THREAD_ID_NONE) {
+                        n_using_thread[id].fetch_add(1, std::memory_order_relaxed);
+                    }
+                    n_using_limited_thread[id].fetch_add(1, std::memory_order_relaxed);
+                    condition.notify_one();
                 }
             }
             return pushed;

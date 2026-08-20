@@ -215,6 +215,16 @@
 #define END_NWS_CANCELLATION_POLL_MASK 1023
 #endif
 
+// Tree-parallel midgame search scales poorly beyond this many in-flight split
+// tasks on the tournament workload. Exact searches keep the full pool.
+#if IS_GGS_TOURNAMENT
+    #ifndef YBWC_MID_MAX_SPLIT_TASKS
+        #define YBWC_MID_MAX_SPLIT_TASKS 9
+    #endif
+#else
+    #define YBWC_MID_MAX_SPLIT_TASKS THREAD_SIZE_INF
+#endif
+
 /*
     @brief tuning
 */

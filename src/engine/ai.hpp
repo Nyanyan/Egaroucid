@@ -3782,6 +3782,9 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
 }
 
 double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t thread_id, double before_val, bool *searching) {
+    // Match-boundary verification needs every candidate to finish.  Keep the
+    // normal midgame cap out of this deliberately stronger confirmation pass.
+    Scoped_ybwc_mid_split_task_limit full_pool(THREAD_SIZE_INF);
     uint64_t strt = tim();
     // selfplay
     std::vector<Board> boards;
@@ -3863,6 +3866,7 @@ double selfplay_and_analyze(Board board, int level, bool show_log, thread_id_t t
 
 
 Search_result selfplay_and_analyze_search_result(Board board, int level, bool show_log, thread_id_t thread_id, bool *searching) {
+    Scoped_ybwc_mid_split_task_limit full_pool(THREAD_SIZE_INF);
     uint64_t strt = tim();
     Search_result res;
     // selfplay
