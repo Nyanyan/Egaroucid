@@ -101,7 +101,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const bool skipped) {
 
 
 int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t legal, bool *searching) {
-    if (!global_searching || !(*searching)) {
+    if (!global_searching || !search_cancellation_load(searching)) {
         return SCORE_UNDEFINED;
     }
     ++search->n_nodes;
@@ -136,7 +136,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             search->move(&flip);
                 g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
             search->undo(&flip);
-            if (!(*searching)) {
+            if (!search_cancellation_load(searching)) {
                 return SCORE_UNDEFINED;
             }
             legal ^= 1ULL << moves[i];
@@ -156,7 +156,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             search->move(&flip);
                 g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
             search->undo(&flip);
-            if (!(*searching)) {
+            if (!search_cancellation_load(searching)) {
                 return SCORE_UNDEFINED;
             }
             if (v < g) {
@@ -189,7 +189,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
     @return the value
 */
 int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, bool *searching) {
-    if (!global_searching || !(*searching)) {
+    if (!global_searching || !search_cancellation_load(searching)) {
         return SCORE_UNDEFINED;
     }
     if (depth == 2) {
@@ -290,9 +290,9 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     if (v <= alpha) {
         move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searching);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_ORDERING_DEPTH
-        for (int move_idx = 0; move_idx < canput - n_etc_done && *searching; ++move_idx) {
+        for (int move_idx = 0; move_idx < canput - n_etc_done && search_cancellation_load(searching); ++move_idx) {
 #else
-        for (int move_idx = 0; move_idx < canput && *searching; ++move_idx) {
+        for (int move_idx = 0; move_idx < canput && search_cancellation_load(searching); ++move_idx) {
 #endif
             swap_next_best_move(move_list, move_idx, canput);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_ORDERING_DEPTH
@@ -319,7 +319,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 #if !USE_DIM0_ONLY_EVALUATION
         !search->use_dim0_mpc_eval &&
 #endif
-        *searching && global_searching
+        search_cancellation_load(searching) && global_searching
     ) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
@@ -327,9 +327,9 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 }
 
 
-inline bool is_searching(std::vector<bool*> &searchings) {
+inline bool is_searching(const std::vector<bool*> &searchings) {
     return std::all_of(searchings.begin(), searchings.end(), 
-                       [](bool* elem) { return *elem; });
+                       [](const bool* elem) { return search_cancellation_load(elem); });
 }
 
 

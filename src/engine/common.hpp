@@ -15,6 +15,7 @@
 #include <fstream>
 #include <time.h>
 #include <chrono>
+#include <atomic>
 #include <random>
 #include <string>
 #include "setting.hpp"
@@ -193,8 +194,19 @@ constexpr uint64_t bit_d9down[HW2] = {
 
 
 
+// Search cancellation is shared by the controlling thread and worker threads.
+// Keep the very hot polling path relaxed: cancellation only needs eventual
+// visibility and does not publish any accompanying search data.
+inline bool search_cancellation_load(const bool *flag) {
+    return std::atomic_ref<bool>(*const_cast<bool*>(flag)).load(std::memory_order_relaxed);
+}
+
+inline void search_cancellation_store(bool *flag, bool value) {
+    std::atomic_ref<bool>(*flag).store(value, std::memory_order_relaxed);
+}
+
 // set false to stop all search immediately
-bool global_searching = true;
+std::atomic_bool global_searching = true;
 
 /*
     @brief timing function

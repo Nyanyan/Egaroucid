@@ -196,7 +196,9 @@
 #define USE_THREAD_MONITOR false
 
 // YBWC split statistics
-#define USE_YBWC_SPLIT_STATISTICS false
+#ifndef USE_YBWC_SPLIT_STATISTICS
+    #define USE_YBWC_SPLIT_STATISTICS false
+#endif
 
 /*
     @brief tuning
