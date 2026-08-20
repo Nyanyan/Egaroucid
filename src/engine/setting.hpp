@@ -197,7 +197,13 @@
 
 // YBWC split statistics
 #ifndef USE_YBWC_SPLIT_STATISTICS
-    #define USE_YBWC_SPLIT_STATISTICS false
+#define USE_YBWC_SPLIT_STATISTICS false
+#endif
+
+// Search the moves used by the GGS ambiguity probe concurrently.  Keep this
+// externally overridable so the scheduling policy can be A/B benchmarked.
+#ifndef USE_AI_GET_VALUES_CANDIDATE_PARALLEL
+#define USE_AI_GET_VALUES_CANDIDATE_PARALLEL true
 #endif
 
 /*

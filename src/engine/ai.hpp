@@ -4097,6 +4097,76 @@ bool comp_get_values_elem(Ponder_elem &a, Ponder_elem &b) {
     return a.value > b.value;
 }
 
+void ai_get_value_until(Board board, Ponder_elem *elem, uint64_t deadline, thread_id_t thread_id) {
+    while (tim() < deadline && !elem->is_complete_search && global_searching) {
+        Board n_board = board.copy();
+        n_board.move_board(&elem->flip);
+        const int max_depth = HW2 - n_board.n_discs();
+        int new_depth = elem->depth + 1;
+        uint_fast8_t new_mpc_level = elem->mpc_level;
+        if (new_depth > max_depth) {
+            new_depth = max_depth;
+            ++new_mpc_level;
+        } else if (new_depth > max_depth - PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) {
+            new_depth = max_depth;
+        }
+        const bool new_is_end_search = new_depth == max_depth;
+        const bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
+        Search search(&n_board, new_mpc_level, true, false);
+        search.thread_id = thread_id;
+        alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
+        const uint64_t time_limit_this_search = deadline > tim() ? deadline - tim() : 0ULL;
+        std::future<int> v_future = std::async(
+            std::launch::async,
+            nega_scout,
+            &search,
+            -SCORE_MAX,
+            SCORE_MAX,
+            new_depth,
+            false,
+            LEGAL_UNDEFINED,
+            new_is_end_search,
+            &n_searching
+        );
+        if (v_future.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
+            const int v = -v_future.get();
+            if (global_searching && search_cancellation_load(&n_searching)) {
+                if (elem->value == INF || new_is_end_search) {
+                    elem->value = v;
+                } else {
+                    elem->value = (0.9 * elem->value + 1.1 * v) / 2.0;
+                }
+                elem->depth = new_depth;
+                elem->mpc_level = new_mpc_level;
+                elem->is_endgame_search = new_is_end_search;
+                elem->is_complete_search = new_is_complete_search;
+                ++elem->count;
+            }
+        } else {
+            search_cancellation_store(&n_searching, false);
+            try {
+                v_future.get();
+            } catch (const std::exception &e) {
+            }
+        }
+    }
+}
+
+void ai_get_value_after_start(
+    Board board,
+    Ponder_elem *elem,
+    const std::atomic_bool *start,
+    const uint64_t *deadline,
+    thread_id_t thread_id
+) {
+    while (!start->load(std::memory_order_acquire) && global_searching) {
+        std::this_thread::yield();
+    }
+    if (global_searching) {
+        ai_get_value_until(board, elem, *deadline, thread_id);
+    }
+}
+
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     uint64_t legal = board.get_legal();
@@ -4127,58 +4197,70 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
         move_list[idx].is_complete_search = false;
         ++idx;
     }
-    uint64_t tl_per_move = time_limit / canput;
-    if (show_log) {
-        std::cerr << "get values tl per move " << tl_per_move << std::endl;
+    const uint64_t tl_per_move = time_limit / canput;
+    int max_helper_threads = thread_pool.get_max_thread_size(thread_id);
+    if (max_helper_threads == THREAD_SIZE_DEFAULT || max_helper_threads > thread_pool.size()) {
+        max_helper_threads = thread_pool.size();
     }
-    const int max_depth = HW2 - board.n_discs() - 1;
-    for (Ponder_elem &elem: move_list) {
-        uint64_t elem_strt = tim();
-        while (tim() - elem_strt < tl_per_move && !elem.is_complete_search && global_searching) {
-            Board n_board = board.copy();
-            n_board.move_board(&elem.flip);
-            int max_depth = HW2 - n_board.n_discs();
-            int new_depth = elem.depth + 1;
-            uint_fast8_t new_mpc_level = elem.mpc_level;
-            if (new_depth > max_depth) {
-                new_depth = max_depth;
-                ++new_mpc_level;
-            } else if (new_depth > max_depth - PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) {
-                new_depth = max_depth;
+    const int n_usable_threads = max_helper_threads + 1;
+    const bool use_candidate_parallel =
+        USE_AI_GET_VALUES_CANDIDATE_PARALLEL &&
+        canput >= 2 &&
+        n_usable_threads >= 2 &&
+        thread_pool.get_n_idle() >= 1;
+    if (show_log) {
+        std::cerr << "get values tl per move " << tl_per_move
+                  << " candidate parallel eligible " << use_candidate_parallel
+                  << " usable threads " << n_usable_threads << std::endl;
+    }
+    int candidate_parallel_width = 1;
+    if (use_candidate_parallel) {
+        uint64_t deadline = 0ULL;
+        std::atomic_bool start_candidates(false);
+        std::vector<std::future<void>> tasks;
+        const int target_parallel_width = std::min(
+            canput,
+            std::min(n_usable_threads, thread_pool.get_n_idle() + 1)
+        );
+        tasks.reserve(target_parallel_width - 1);
+        for (int i = 1; i < target_parallel_width; ++i) {
+            bool pushed = false;
+            tasks.emplace_back(thread_pool.push(
+                thread_id,
+                &pushed,
+                std::bind(
+                    ai_get_value_after_start,
+                    board,
+                    &move_list[i],
+                    &start_candidates,
+                    &deadline,
+                    thread_id
+                )
+            ));
+            if (!pushed) {
+                tasks.pop_back();
+                break;
             }
-            bool new_is_end_search = (new_depth == max_depth);
-            bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
-            Search search(&n_board, new_mpc_level, true, false);
-            search.thread_id = thread_id;
-            bool n_searching = true;
-            uint64_t time_limit_this_search = get_this_search_time_limit(tl_per_move, tim() - elem_strt);
-            std::future<int> v_future = std::async(std::launch::async, nega_scout, &search, -SCORE_MAX, SCORE_MAX, new_depth, false, LEGAL_UNDEFINED, new_is_end_search, &n_searching);
-            if (v_future.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
-                int v = -v_future.get();
-                if (global_searching) {
-                    if (elem.value == INF || new_is_end_search) {
-                        elem.value = v;
-                    } else {
-                        elem.value = (0.9 * elem.value + 1.1 * v) / 2.0;
-                    }
-                    elem.depth = new_depth;
-                    elem.mpc_level = new_mpc_level;
-                    elem.is_endgame_search = new_is_end_search;
-                    elem.is_complete_search = new_is_complete_search;
-                    ++elem.count;
-                }
-            } else {
-                n_searching = false;
-                try {
-                    v_future.get();
-                } catch (const std::exception &e) {
-                }
-            }
+        }
+        candidate_parallel_width = (int)tasks.size() + 1;
+        deadline = tim() + tl_per_move * candidate_parallel_width;
+        start_candidates.store(true, std::memory_order_release);
+        ai_get_value_until(board, &move_list[0], deadline, thread_id);
+        for (std::future<void> &task: tasks) {
+            task.get();
+        }
+        for (int i = candidate_parallel_width; i < canput && global_searching; ++i) {
+            ai_get_value_until(board, &move_list[i], tim() + tl_per_move, thread_id);
+        }
+    } else {
+        for (Ponder_elem &elem: move_list) {
+            ai_get_value_until(board, &elem, tim() + tl_per_move, thread_id);
         }
     }
     std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
     if (show_log) {
         std::cerr << "ai_get_values searched in " << tim() - strt << " ms" << std::endl;
+        std::cerr << "ai_get_values candidate parallel width " << candidate_parallel_width << std::endl;
         std::cerr << "ai_get_values board " << board.to_str() << std::endl;
         for (int i = 0; i < canput; ++i) {
             std::cerr << "gb " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
