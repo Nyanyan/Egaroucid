@@ -329,6 +329,41 @@ void test_candidate_stage2_selection() {
     );
 }
 
+void test_selfplay_order_early_stop() {
+    std::vector<Ponder_elem> moves(3);
+    for (Ponder_elem &move: moves) {
+        move.count = 1;
+        move.depth = 22;
+        move.mpc_level = MPC_74_LEVEL;
+        move.selfplay_count = 2;
+    }
+    moves[0].value = 4.8;
+    moves[1].value = 1.8;
+    moves[2].value = 1.0;
+    require(
+        ai_tl_ggs_selfplay_order_status(moves, 3).confident,
+        "aligned repeated top two should stop at a one-disc or larger gap"
+    );
+    moves[0].value = 2.5;
+    moves[1].value = 2.0;
+    require(
+        !ai_tl_ggs_selfplay_order_status(moves, 3).confident,
+        "small repeated gap remains ambiguous"
+    );
+    moves[0].value = 5.0;
+    moves[0].selfplay_count = 1;
+    moves[1].selfplay_count = 1;
+    require(
+        ai_tl_ggs_selfplay_order_status(moves, 3).confident,
+        "one aligned pass may stop only at a 2.5-disc or larger gap"
+    );
+    moves[1].depth = 21;
+    require(
+        !ai_tl_ggs_selfplay_order_status(moves, 3).confident,
+        "unaligned top two must continue"
+    );
+}
+
 } // namespace
 
 int main() {
@@ -344,6 +379,7 @@ int main() {
         test_policy_verify_timeout_fallback();
         test_end_boundary_reserve();
         test_candidate_stage2_selection();
+        test_selfplay_order_early_stop();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

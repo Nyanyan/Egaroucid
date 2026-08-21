@@ -293,7 +293,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit, thread_id_t thread_id);
 std::pair<int, int> ponder_selfplay(Board board_start, int root_depth, uint_fast8_t root_mpc_level, bool show_log, bool use_multi_thread, bool *searching);
 std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, uint64_t time_limit, thread_id_t thread_id, int aligned_min_level);
-std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id, int initial_level = 21);
+std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id, int initial_level = 21, uint64_t *elapsed_out = nullptr, bool *early_confident_out = nullptr);
 Search_result ai_legal_window(Board board, int alpha, int beta, int level, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t use_legal);
 Search_result selfplay_and_analyze_search_result(Board board, int level, bool show_log, thread_id_t thread_id, bool *searching);
 
@@ -3129,6 +3129,9 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
     int second_selfplay_count;
     bool top_two_selfplayed;
     bool top_two_selfplay_aligned;
+    uint64_t allocated_time;
+    uint64_t elapsed_time;
+    bool early_confident;
 
     AI_TL_GGS_Selfplay_Resolve_Result()
         : valid(false),
@@ -3144,8 +3147,64 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
           top_selfplay_count(0),
           second_selfplay_count(0),
           top_two_selfplayed(false),
-          top_two_selfplay_aligned(false) {}
+          top_two_selfplay_aligned(false),
+          allocated_time(0ULL),
+          elapsed_time(0ULL),
+          early_confident(false) {}
 };
+
+struct AI_TL_GGS_Selfplay_Order_Status {
+    bool confident;
+    int first_idx;
+    int second_idx;
+    double gap;
+
+    AI_TL_GGS_Selfplay_Order_Status()
+        : confident(false), first_idx(-1), second_idx(-1), gap(-INF) {}
+};
+
+inline AI_TL_GGS_Selfplay_Order_Status ai_tl_ggs_selfplay_order_status(
+    const std::vector<Ponder_elem> &move_list,
+    int n_good_moves
+) {
+    AI_TL_GGS_Selfplay_Order_Status status;
+    double first_value = -INF;
+    double second_value = -INF;
+    n_good_moves = std::min(n_good_moves, (int)move_list.size());
+    for (int i = 0; i < n_good_moves; ++i) {
+        if (move_list[i].value > first_value) {
+            second_value = first_value;
+            status.second_idx = status.first_idx;
+            first_value = move_list[i].value;
+            status.first_idx = i;
+        } else if (move_list[i].value > second_value) {
+            second_value = move_list[i].value;
+            status.second_idx = i;
+        }
+    }
+    if (status.first_idx < 0 || status.second_idx < 0) {
+        return status;
+    }
+    status.gap = first_value - second_value;
+    const Ponder_elem &first = move_list[status.first_idx];
+    const Ponder_elem &second = move_list[status.second_idx];
+    const bool aligned =
+        first.selfplay_count > 0 &&
+        second.selfplay_count > 0 &&
+        first.selfplay_count == second.selfplay_count &&
+        first.depth == second.depth &&
+        first.mpc_level == second.mpc_level;
+    const bool repeated =
+        first.selfplay_count >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REPEATED_TOP_COUNT &&
+        second.selfplay_count >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REPEATED_TOP_COUNT;
+    status.confident =
+        aligned &&
+        (
+            (repeated && status.gap >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP) ||
+            status.gap >= AI_TL_GGS_SELFPLAY_RESOLVE_SINGLE_PASS_MIN_RESULT_GAP
+        );
+    return status;
+}
 
 inline uint64_t ai_time_limit_ggs_selfplay_resolve_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
     const int n_empties = HW2 - board.n_discs();
@@ -3273,6 +3332,7 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
     }
     const int selfplay_initial_level =
         !late_midgame && best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ? 22 : 21;
+    result.allocated_time = selfplay_time;
     std::vector<Ponder_elem> selfplay_move_list = ai_additional_selfplay(
         board,
         show_log,
@@ -3281,7 +3341,9 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE,
         selfplay_time,
         thread_id,
-        selfplay_initial_level
+        selfplay_initial_level,
+        &result.elapsed_time,
+        &result.early_confident
     );
     if (selfplay_move_list.empty() || selfplay_move_list[0].count <= 0) {
         return result;
@@ -3322,7 +3384,10 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         std::cerr << " depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[result.mpc_level] << "%"
                   << " selfplayed " << result.selfplayed_moves << "/" << n_good_moves
                   << " top_counts " << result.top_selfplay_count << "/" << result.second_selfplay_count
-                  << " aligned " << result.top_two_selfplay_aligned << std::endl;
+                  << " aligned " << result.top_two_selfplay_aligned
+                  << " time " << result.elapsed_time << "/" << result.allocated_time
+                  << " returned " << (result.allocated_time > result.elapsed_time ? result.allocated_time - result.elapsed_time : 0ULL)
+                  << " early_confident " << result.early_confident << std::endl;
     }
     return result;
 }
@@ -4743,8 +4808,14 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
     return move_list;
 }
 
-std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id, int initial_level) {
+std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std::vector<Ponder_elem> move_list, int n_good_moves, double threshold, uint64_t time_limit, thread_id_t thread_id, int initial_level, uint64_t *elapsed_out, bool *early_confident_out) {
     uint64_t strt = tim();
+    if (elapsed_out != nullptr) {
+        *elapsed_out = 0ULL;
+    }
+    if (early_confident_out != nullptr) {
+        *early_confident_out = false;
+    }
     if (show_log) {
         std::cerr << "additional selfplay tl " << time_limit << " n_good_moves " << n_good_moves << " out of " << move_list.size() << std::endl;
     }
@@ -4764,6 +4835,25 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
     std::vector<Board> n_boards;
     Flip flip;
     while (tim() - strt < time_limit) {
+#if IS_GGS_TOURNAMENT
+        const AI_TL_GGS_Selfplay_Order_Status order_status =
+            ai_tl_ggs_selfplay_order_status(move_list, n_good_moves);
+        if (order_status.confident) {
+            if (early_confident_out != nullptr) {
+                *early_confident_out = true;
+            }
+            if (show_log) {
+                std::cerr << "selfplay order established "
+                          << idx_to_coord(move_list[order_status.first_idx].flip.pos) << "/"
+                          << idx_to_coord(move_list[order_status.second_idx].flip.pos)
+                          << " gap " << std::fixed << std::setprecision(2) << order_status.gap
+                          << " counts " << move_list[order_status.first_idx].selfplay_count << "/"
+                          << move_list[order_status.second_idx].selfplay_count
+                          << " time " << tim() - strt << " ms" << std::endl;
+            }
+            break;
+        }
+#endif
         double first_val = -INF, second_val = -INF;
         int first_level = -1, second_level = -1;
         for (int i = 0; i < n_good_moves; ++i) {
@@ -4853,6 +4943,9 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
             searching = false;
             selfplay_future.get();
         }
+    }
+    if (elapsed_out != nullptr) {
+        *elapsed_out = tim() - strt;
     }
     std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
     if (show_log) {
