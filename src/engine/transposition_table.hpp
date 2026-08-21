@@ -663,7 +663,12 @@ class Transposition_table {
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                             node->data.get_moves(moves);
                             if (node->data.has_usable_bounds(depth, search->mpc_level)) {
-                                node->data.get_bounds(lower, upper);
+                                int node_lower, node_upper;
+                                node->data.get_bounds(&node_lower, &node_upper);
+                                if (search->can_use_tt_nonexact_bounds() || node_lower == node_upper) {
+                                    *lower = node_lower;
+                                    *upper = node_upper;
+                                }
                             }
                             node->lock.unlock();
                             return;
@@ -690,7 +695,14 @@ class Transposition_table {
                     node->lock.lock();
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                             if (node->data.has_usable_bounds(depth, search->mpc_level)) {
-                                node->data.get_bounds(lower, upper);
+                                int node_lower, node_upper;
+                                node->data.get_bounds(&node_lower, &node_upper);
+                                if (!search->can_use_tt_nonexact_bounds() && node_lower != node_upper) {
+                                    node->lock.unlock();
+                                    return false;
+                                }
+                                *lower = node_lower;
+                                *upper = node_upper;
                                 node->lock.unlock();
                                 return true;
                             }
@@ -718,7 +730,14 @@ class Transposition_table {
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                     node->lock.lock();
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
-                            node->data.get_bounds(lower, upper);
+                            int node_lower, node_upper;
+                            node->data.get_bounds(&node_lower, &node_upper);
+                            if (!search->can_use_tt_nonexact_bounds() && node_lower != node_upper) {
+                                node->lock.unlock();
+                                return false;
+                            }
+                            *lower = node_lower;
+                            *upper = node_upper;
                             node->lock.unlock();
                             return true;
                         }
@@ -823,8 +842,12 @@ class Transposition_table {
                     node->lock.lock();
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                             if (node->data.has_usable_bounds(depth, search->mpc_level)) {
-                                node->lock.unlock();
-                                return true;
+                                int node_lower, node_upper;
+                                node->data.get_bounds(&node_lower, &node_upper);
+                                if (search->can_use_tt_nonexact_bounds() || node_lower == node_upper) {
+                                    node->lock.unlock();
+                                    return true;
+                                }
                             }
                         }
                     node->lock.unlock();
@@ -858,6 +881,11 @@ class Transposition_table {
                             res = TRANSPOSITION_TABLE_HAS_NODE;
                             if (node->data.has_usable_bounds(depth, search->mpc_level)) {
                                 node->data.get_bounds(&l, &u);
+                                if (!search->can_use_tt_nonexact_bounds() && l != u) {
+                                    res = TRANSPOSITION_TABLE_HAS_NODE;
+                                    node->lock.unlock();
+                                    break;
+                                }
                                 if (u <= alpha) {
                                     res = u;
                                 } else if (beta <= l) {
@@ -883,6 +911,10 @@ class Transposition_table {
                         if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
                             if (node->data.has_usable_bounds(depth, search->mpc_level)) {
                                 node->data.get_bounds(l, u);
+                                if (!search->can_use_tt_nonexact_bounds() && *l != *u) {
+                                    node->lock.unlock();
+                                    return false;
+                                }
                             }
                             node->lock.unlock();
                             return true;

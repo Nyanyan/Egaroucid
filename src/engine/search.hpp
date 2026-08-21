@@ -284,6 +284,11 @@ class Search {
         bool use_dim0_mpc_eval = false;
         int lazy_smp_worker_idx = 0;
         int mid_split_task_limit = ybwc_mid_split_task_limit;
+        int tt_nonexact_bound_min_ply = 0;
+
+        inline bool can_use_tt_nonexact_bounds() const {
+            return n_discs - root_n_discs >= tt_nonexact_bound_min_ply;
+        }
 
 #if USE_KILLER_MOVE_MO
         // Killer move support

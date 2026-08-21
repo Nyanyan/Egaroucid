@@ -1050,8 +1050,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 policy_change_previous_policy = previous_policy;
                 policy_change_new_policy = new_policy;
 #endif
-                Search verify_search(&board, verify_mpc_level, use_multi_thread, false);
-                verify_search.thread_id = thread_id;
+                uint64_t policy_verify_nodes = 0ULL;
                 bool verify_searching = true;
 #if IS_GGS_TOURNAMENT
                 uint64_t verify_budget = std::min<uint64_t>(
@@ -1076,10 +1075,16 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     if (time_limit_verify == 0ULL) {
                         return false;
                     }
+                    // Isolate per-candidate killer/history state.  At the root
+                    // and forced candidate child, exact TT values remain usable
+                    // but one-sided bounds do not decide the verification.
+                    Search candidate_verify_search(&board, verify_mpc_level, use_multi_thread, false);
+                    candidate_verify_search.thread_id = thread_id;
+                    candidate_verify_search.tt_nonexact_bound_min_ply = 2;
                     std::future<std::pair<int, int>> verify_f = std::async(
                         std::launch::async,
                         first_nega_scout_legal,
-                        &verify_search,
+                        &candidate_verify_search,
                         verify_alpha,
                         verify_beta,
                         main_depth,
@@ -1091,6 +1096,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     );
                     if (verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
                         *value = verify_f.get().first;
+                        policy_verify_nodes += candidate_verify_search.n_nodes;
                         return true;
                     }
                     verify_searching = false;
@@ -1098,6 +1104,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         verify_f.get();
                     } catch (const std::exception &e) {
                     }
+                    policy_verify_nodes += candidate_verify_search.n_nodes;
                     return false;
                 };
 
@@ -1158,7 +1165,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     ss << "->" << idx_to_coord(id_result.second);
                     verify_log = ss.str();
                 }
-                result->nodes += verify_search.n_nodes;
+                result->nodes += policy_verify_nodes;
                 result->time = tim() - strt;
                 result->nps = calc_nps(result->nodes, result->time);
             }

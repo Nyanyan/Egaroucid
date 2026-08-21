@@ -364,6 +364,17 @@ void test_selfplay_order_early_stop() {
     );
 }
 
+void test_verification_tt_bound_scope() {
+    Board board;
+    Search search(&board, MPC_93_LEVEL, true, false);
+    search.tt_nonexact_bound_min_ply = 2;
+    require(!search.can_use_tt_nonexact_bounds(), "verification root must ignore one-sided TT bounds");
+    search.n_discs = search.root_n_discs + 1;
+    require(!search.can_use_tt_nonexact_bounds(), "forced candidate child must ignore one-sided TT bounds");
+    search.n_discs = search.root_n_discs + 2;
+    require(search.can_use_tt_nonexact_bounds(), "deeper verification nodes retain TT bounds");
+}
+
 } // namespace
 
 int main() {
@@ -380,6 +391,7 @@ int main() {
         test_end_boundary_reserve();
         test_candidate_stage2_selection();
         test_selfplay_order_early_stop();
+        test_verification_tt_bound_scope();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;
