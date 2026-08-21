@@ -4399,6 +4399,107 @@ void ai_get_value_after_start(
     }
 }
 
+#if IS_GGS_TOURNAMENT
+constexpr double AI_GET_VALUES_STAGE1_TIME_COE = 0.62;
+constexpr uint64_t AI_GET_VALUES_TWO_STAGE_MIN_TIME = 400ULL;
+constexpr int AI_GET_VALUES_STAGE2_MAX_CANDIDATES = 4;
+constexpr double AI_GET_VALUES_STAGE2_MAX_GAP = 4.0;
+#endif
+
+int ai_get_values_search_stage(
+    Board board,
+    std::vector<Ponder_elem> *move_list,
+    int n_candidates,
+    uint64_t deadline,
+    thread_id_t thread_id,
+    bool use_candidate_parallel,
+    int n_usable_threads
+) {
+    if (n_candidates <= 0 || tim() >= deadline || !global_searching) {
+        return 0;
+    }
+    const uint64_t stage_time = deadline - tim();
+    const uint64_t tl_per_move = std::max<uint64_t>(1ULL, stage_time / (uint64_t)n_candidates);
+    int parallel_width = 1;
+    if (use_candidate_parallel && n_candidates >= 2) {
+        uint64_t parallel_deadline = 0ULL;
+        std::atomic_bool start_candidates(false);
+        std::vector<std::future<void>> tasks;
+        const int target_parallel_width = std::min(
+            n_candidates,
+            std::min(n_usable_threads, thread_pool.get_n_idle() + 1)
+        );
+        tasks.reserve(target_parallel_width - 1);
+        for (int i = 1; i < target_parallel_width; ++i) {
+            bool pushed = false;
+            tasks.emplace_back(thread_pool.push(
+                thread_id,
+                &pushed,
+                std::bind(
+                    ai_get_value_after_start,
+                    board,
+                    &(*move_list)[i],
+                    &start_candidates,
+                    &parallel_deadline,
+                    thread_id
+                )
+            ));
+            if (!pushed) {
+                tasks.pop_back();
+                break;
+            }
+        }
+        parallel_width = (int)tasks.size() + 1;
+        const uint64_t parallel_budget = tl_per_move * (uint64_t)parallel_width;
+        parallel_deadline = std::min<uint64_t>(deadline, tim() + parallel_budget);
+        start_candidates.store(true, std::memory_order_release);
+        ai_get_value_until(board, &(*move_list)[0], parallel_deadline, thread_id);
+        for (std::future<void> &task: tasks) {
+            task.get();
+        }
+        for (int i = parallel_width; i < n_candidates && global_searching && tim() < deadline; ++i) {
+            const uint64_t remaining = deadline - tim();
+            const uint64_t candidate_time = std::max<uint64_t>(
+                1ULL,
+                remaining / (uint64_t)(n_candidates - i)
+            );
+            ai_get_value_until(board, &(*move_list)[i], std::min<uint64_t>(deadline, tim() + candidate_time), thread_id);
+        }
+    } else {
+        for (int i = 0; i < n_candidates && global_searching && tim() < deadline; ++i) {
+            const uint64_t remaining = deadline - tim();
+            const uint64_t candidate_time = std::max<uint64_t>(
+                1ULL,
+                remaining / (uint64_t)(n_candidates - i)
+            );
+            ai_get_value_until(board, &(*move_list)[i], std::min<uint64_t>(deadline, tim() + candidate_time), thread_id);
+        }
+    }
+    return parallel_width;
+}
+
+#if IS_GGS_TOURNAMENT
+inline int ai_get_values_stage2_candidate_count(const std::vector<Ponder_elem> &move_list) {
+    int valid_candidates = 0;
+    while (valid_candidates < (int)move_list.size() && move_list[valid_candidates].count > 0) {
+        ++valid_candidates;
+    }
+    if (valid_candidates < 2) {
+        return valid_candidates;
+    }
+    int n_candidates = std::min(2, valid_candidates);
+    const double best_value = move_list[0].value;
+    while (
+        n_candidates < valid_candidates &&
+        n_candidates < AI_GET_VALUES_STAGE2_MAX_CANDIDATES &&
+        move_list[n_candidates].value >= best_value - AI_GET_VALUES_STAGE2_MAX_GAP
+    ) {
+        ++n_candidates;
+    }
+    return n_candidates;
+}
+#endif
+
 std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time_limit, thread_id_t thread_id) {
     uint64_t strt = tim();
     uint64_t legal = board.get_legal();
@@ -4429,7 +4530,6 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
         move_list[idx].is_complete_search = false;
         ++idx;
     }
-    const uint64_t tl_per_move = time_limit / canput;
     int max_helper_threads = thread_pool.get_max_thread_size(thread_id);
     if (max_helper_threads == THREAD_SIZE_DEFAULT || max_helper_threads > thread_pool.size()) {
         max_helper_threads = thread_pool.size();
@@ -4441,58 +4541,56 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
         n_usable_threads >= 2 &&
         thread_pool.get_n_idle() >= 1;
     if (show_log) {
-        std::cerr << "get values tl per move " << tl_per_move
+        std::cerr << "get values tl " << time_limit
                   << " candidate parallel eligible " << use_candidate_parallel
                   << " usable threads " << n_usable_threads << std::endl;
     }
-    int candidate_parallel_width = 1;
-    if (use_candidate_parallel) {
-        uint64_t deadline = 0ULL;
-        std::atomic_bool start_candidates(false);
-        std::vector<std::future<void>> tasks;
-        const int target_parallel_width = std::min(
-            canput,
-            std::min(n_usable_threads, thread_pool.get_n_idle() + 1)
-        );
-        tasks.reserve(target_parallel_width - 1);
-        for (int i = 1; i < target_parallel_width; ++i) {
-            bool pushed = false;
-            tasks.emplace_back(thread_pool.push(
-                thread_id,
-                &pushed,
-                std::bind(
-                    ai_get_value_after_start,
-                    board,
-                    &move_list[i],
-                    &start_candidates,
-                    &deadline,
-                    thread_id
-                )
-            ));
-            if (!pushed) {
-                tasks.pop_back();
-                break;
-            }
-        }
-        candidate_parallel_width = (int)tasks.size() + 1;
-        deadline = tim() + tl_per_move * candidate_parallel_width;
-        start_candidates.store(true, std::memory_order_release);
-        ai_get_value_until(board, &move_list[0], deadline, thread_id);
-        for (std::future<void> &task: tasks) {
-            task.get();
-        }
-        for (int i = candidate_parallel_width; i < canput && global_searching; ++i) {
-            ai_get_value_until(board, &move_list[i], tim() + tl_per_move, thread_id);
-        }
-    } else {
-        for (Ponder_elem &elem: move_list) {
-            ai_get_value_until(board, &elem, tim() + tl_per_move, thread_id);
-        }
-    }
+    const uint64_t final_deadline = strt + time_limit;
+#if IS_GGS_TOURNAMENT
+    const bool use_two_stage = canput >= 3 && time_limit >= AI_GET_VALUES_TWO_STAGE_MIN_TIME;
+    const uint64_t stage1_time = use_two_stage ?
+        std::max<uint64_t>(1ULL, (uint64_t)((double)time_limit * AI_GET_VALUES_STAGE1_TIME_COE)) :
+        time_limit;
+#else
+    const bool use_two_stage = false;
+    const uint64_t stage1_time = time_limit;
+#endif
+    const uint64_t stage1_deadline = std::min<uint64_t>(final_deadline, strt + stage1_time);
+    const int stage1_parallel_width = ai_get_values_search_stage(
+        board,
+        &move_list,
+        canput,
+        stage1_deadline,
+        thread_id,
+        use_candidate_parallel,
+        n_usable_threads
+    );
     std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
+#if IS_GGS_TOURNAMENT
+    int stage2_candidates = 0;
+    int stage2_parallel_width = 0;
+    if (use_two_stage && tim() < final_deadline && global_searching) {
+        stage2_candidates = ai_get_values_stage2_candidate_count(move_list);
+        stage2_parallel_width = ai_get_values_search_stage(
+            board,
+            &move_list,
+            stage2_candidates,
+            final_deadline,
+            thread_id,
+            use_candidate_parallel,
+            n_usable_threads
+        );
+        std::sort(move_list.begin(), move_list.end(), comp_get_values_elem);
+    }
+#endif
     if (show_log) {
         std::cerr << "ai_get_values searched in " << tim() - strt << " ms" << std::endl;
-        std::cerr << "ai_get_values candidate parallel width " << candidate_parallel_width << std::endl;
+        std::cerr << "ai_get_values stage1 parallel width " << stage1_parallel_width;
+#if IS_GGS_TOURNAMENT
+        std::cerr << " stage2 candidates " << stage2_candidates
+                  << " parallel width " << stage2_parallel_width;
+#endif
+        std::cerr << std::endl;
         std::cerr << "ai_get_values board " << board.to_str() << std::endl;
         for (int i = 0; i < canput; ++i) {
             std::cerr << "gb " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;

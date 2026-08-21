@@ -299,6 +299,36 @@ void test_end_boundary_reserve() {
     );
 }
 
+void test_candidate_stage2_selection() {
+    std::vector<Ponder_elem> moves(6);
+    const double values[] = {4.0, 2.0, 0.5, -0.1, -3.0, -8.0};
+    for (int i = 0; i < 6; ++i) {
+        moves[i].value = values[i];
+        moves[i].count = 1;
+    }
+    require_equal(
+        (uint64_t)ai_get_values_stage2_candidate_count(moves),
+        3ULL,
+        "stage two keeps the top two and all moves within four discs"
+    );
+    moves[3].value = 0.0;
+    require_equal(
+        (uint64_t)ai_get_values_stage2_candidate_count(moves),
+        4ULL,
+        "stage two accepts at most four close candidates"
+    );
+    moves[1].value = -10.0;
+    moves[2].value = -11.0;
+    moves[3].value = -12.0;
+    moves[4].value = -13.0;
+    moves[5].value = -14.0;
+    require_equal(
+        (uint64_t)ai_get_values_stage2_candidate_count(moves),
+        2ULL,
+        "stage two always rechecks at least the top two"
+    );
+}
+
 } // namespace
 
 int main() {
@@ -313,6 +343,7 @@ int main() {
         test_match_boundary_reserve_trigger();
         test_policy_verify_timeout_fallback();
         test_end_boundary_reserve();
+        test_candidate_stage2_selection();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;
