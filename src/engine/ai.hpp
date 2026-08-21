@@ -902,11 +902,13 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             std::string verify_log;
 #if IS_GGS_TOURNAMENT
             bool policy_change_verify_attempted = false;
+            bool policy_change_previous_probe_complete = false;
             bool policy_change_previous_complete = false;
             bool policy_change_new_complete = false;
             int policy_change_previous_policy = MOVE_UNDEFINED;
             int policy_change_new_policy = MOVE_UNDEFINED;
             int policy_change_previous_value = SCORE_UNDEFINED;
+            int policy_change_previous_probe_value = SCORE_UNDEFINED;
             int policy_change_new_value = SCORE_UNDEFINED;
             uint64_t policy_change_verify_budget = 0ULL;
             uint64_t policy_change_verify_elapsed = 0ULL;
@@ -1032,59 +1034,95 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #else
                 uint64_t time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
 #endif
-                std::future<std::pair<int, int>> previous_verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << previous_policy, strt, &verify_searching);
-                if (previous_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
-                    std::pair<int, int> previous_verify_result = previous_verify_f.get();
-                    previous_value = previous_verify_result.first;
-#if IS_GGS_TOURNAMENT
-                    policy_change_previous_complete = true;
-                    policy_change_previous_value = previous_value;
-#endif
-                } else {
-                    verify_searching = false;
-                    try {
-                        previous_verify_f.get();
-                    } catch (const std::exception &e) {
-                    }
-                    verify_timeout = true;
-                }
-                if (!verify_timeout) {
+                auto run_policy_verify = [&](int verify_alpha, int verify_beta, int policy, int *value) {
 #if IS_GGS_TOURNAMENT
                     time_limit_verify = get_this_search_time_limit(verify_budget, tim() - verify_strt);
 #else
                     time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
 #endif
-                    std::future<std::pair<int, int>> new_verify_f = std::async(std::launch::async, first_nega_scout_legal, &verify_search, alpha, beta, main_depth, main_is_end_search, clogs, 1ULL << new_policy, strt, &verify_searching);
-                    if (new_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
-                        std::pair<int, int> new_verify_result = new_verify_f.get();
-                        new_value = new_verify_result.first;
+                    if (time_limit_verify == 0ULL) {
+                        return false;
+                    }
+                    std::future<std::pair<int, int>> verify_f = std::async(
+                        std::launch::async,
+                        first_nega_scout_legal,
+                        &verify_search,
+                        verify_alpha,
+                        verify_beta,
+                        main_depth,
+                        main_is_end_search,
+                        clogs,
+                        1ULL << policy,
+                        strt,
+                        &verify_searching
+                    );
+                    if (verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
+                        *value = verify_f.get().first;
+                        return true;
+                    }
+                    verify_searching = false;
+                    try {
+                        verify_f.get();
+                    } catch (const std::exception &e) {
+                    }
+                    return false;
+                };
+
+                // Verify the provisional PV first.  If the previous move
+                // fails low against it in a null window, no second full-window
+                // search is needed.  A fail high is resolved by a full-window
+                // search of the previous move.
+                bool previous_probe_completed = false;
+                int previous_probe_value = SCORE_UNDEFINED;
+                if (run_policy_verify(alpha, beta, new_policy, &new_value)) {
 #if IS_GGS_TOURNAMENT
-                        policy_change_new_complete = true;
-                        policy_change_new_value = new_value;
+                    policy_change_new_complete = true;
+                    policy_change_new_value = new_value;
 #endif
-                    } else {
-                        verify_searching = false;
-                        try {
-                            new_verify_f.get();
-                        } catch (const std::exception &e) {
+                    if (new_value >= SCORE_MAX) {
+                        id_result = std::make_pair(new_value, new_policy);
+                    } else if (run_policy_verify(new_value, new_value + 1, previous_policy, &previous_probe_value)) {
+                        previous_probe_completed = true;
+#if IS_GGS_TOURNAMENT
+                        policy_change_previous_probe_complete = true;
+                        policy_change_previous_probe_value = previous_probe_value;
+#endif
+                        if (previous_probe_value <= new_value) {
+                            id_result = std::make_pair(new_value, new_policy);
+                        } else if (run_policy_verify(alpha, beta, previous_policy, &previous_value)) {
+#if IS_GGS_TOURNAMENT
+                            policy_change_previous_complete = true;
+                            policy_change_previous_value = previous_value;
+#endif
+                            if (new_value >= previous_value) {
+                                id_result = std::make_pair(new_value, new_policy);
+                            } else {
+                                id_result = std::make_pair(previous_value, previous_policy);
+                            }
+                        } else {
+                            verify_timeout = true;
                         }
+                    } else {
                         verify_timeout = true;
                     }
+                } else {
+                    verify_timeout = true;
                 }
 #if IS_GGS_TOURNAMENT
                 policy_change_verify_elapsed = tim() - verify_strt;
 #endif
-                if (verify_timeout) {
-                } else {
+                if (!verify_timeout) {
                     std::ostringstream ss;
-                    ss << " verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% " << idx_to_coord(previous_policy) << "=" << previous_value << " " << idx_to_coord(new_policy) << "=" << new_value;
-                    if (new_value > previous_value) {
-                        id_result = std::make_pair(new_value, new_policy);
-                        ss << "->" << idx_to_coord(new_policy);
+                    ss << " verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% "
+                       << idx_to_coord(new_policy) << "=" << new_value << " ";
+                    if (!previous_probe_completed) {
+                        ss << idx_to_coord(previous_policy) << "=not-needed";
+                    } else if (previous_probe_value <= new_value) {
+                        ss << idx_to_coord(previous_policy) << "<=" << previous_probe_value << "(nws)";
                     } else {
-                        id_result = std::make_pair(previous_value, previous_policy);
-                        ss << "->" << idx_to_coord(previous_policy);
+                        ss << idx_to_coord(previous_policy) << "=" << previous_value << "(full)";
                     }
+                    ss << "->" << idx_to_coord(id_result.second);
                     verify_log = ss.str();
                 }
                 result->nodes += verify_search.n_nodes;
@@ -1126,7 +1164,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                               << " old=" << idx_to_coord(policy_change_previous_policy)
                               << " prior=" << previous_result.value
                               << "@" << previous_result.depth << "/" << previous_result.probability << "%"
-                              << " checked=" << policy_change_previous_complete;
+                              << " nws=" << policy_change_previous_probe_complete;
+                    if (policy_change_previous_probe_complete) {
+                        std::cerr << " bound=" << policy_change_previous_probe_value;
+                    }
+                    std::cerr << " full=" << policy_change_previous_complete;
                     if (policy_change_previous_complete) {
                         std::cerr << " value=" << policy_change_previous_value;
                     }
@@ -1134,7 +1176,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                               << " main=" << id_result.first
                               << "@" << main_depth << "/" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%"
                               << " end=" << main_is_end_search
-                              << " checked=" << policy_change_new_complete;
+                              << " full=" << policy_change_new_complete;
                     if (policy_change_new_complete) {
                         std::cerr << " value=" << policy_change_new_value;
                     }
