@@ -230,6 +230,52 @@ void test_match_boundary_reserve_trigger() {
     );
 }
 
+void test_policy_verify_timeout_fallback() {
+    require(
+        ai_tl_ggs_should_use_main_on_verify_timeout(
+            true, false, 74, 74, false, false, SCORE_UNDEFINED, SCORE_UNDEFINED
+        ),
+        "first endgame iteration should replace a midgame result"
+    );
+    require(
+        ai_tl_ggs_should_use_main_on_verify_timeout(
+            true, true, 88, 74, false, false, SCORE_UNDEFINED, SCORE_UNDEFINED
+        ),
+        "higher-selectivity endgame iteration should replace the previous result"
+    );
+    require(
+        ai_tl_ggs_should_use_main_on_verify_timeout(
+            true, true, 88, 88, true, false, SCORE_UNDEFINED, -6
+        ),
+        "completed new full-window search should be usable"
+    );
+    require(
+        !ai_tl_ggs_should_use_main_on_verify_timeout(
+            true, true, 88, 88, true, true, -5, -6
+        ),
+        "previous fail-high must prevent the new-move fallback"
+    );
+    require(
+        !ai_tl_ggs_should_use_main_on_verify_timeout(
+            false, false, 88, 74, true, false, SCORE_UNDEFINED, -6
+        ),
+        "midgame timeout must not use the endgame fallback"
+    );
+
+    require(
+        ai_tl_ggs_can_keep_previous_on_verify_timeout(8000ULL, 0, 1, 35),
+        "short-time fallback should not depend on evaluation sign"
+    );
+    require(
+        ai_tl_ggs_can_keep_previous_on_verify_timeout(20000ULL, 88, 34, 35),
+        "strong adjacent iteration may be kept"
+    );
+    require(
+        !ai_tl_ggs_can_keep_previous_on_verify_timeout(20000ULL, 74, 27, 35),
+        "weak stale iteration must not be kept"
+    );
+}
+
 } // namespace
 
 int main() {
@@ -242,6 +288,7 @@ int main() {
         test_match_boundary_revalidation_gate();
         test_match_boundary_classification();
         test_match_boundary_reserve_trigger();
+        test_policy_verify_timeout_fallback();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

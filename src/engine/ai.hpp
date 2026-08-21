@@ -64,12 +64,8 @@ constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = GGS_TOURNAMENT_ENDGAME_INITIAL_M
         #define GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN 2
     #endif
 constexpr int AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN = GGS_TOURNAMENT_VERIFY_TIMEOUT_KEEP_MARGIN;
-    #ifndef GGS_TOURNAMENT_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN
-        #define GGS_TOURNAMENT_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN 0
-    #endif
-constexpr int AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN = GGS_TOURNAMENT_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN;
-constexpr int AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MIN_PROBABILITY = 88;
-constexpr uint64_t AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_LOW_CONF_KEEP_MAX_TIME = 14000ULL;
+constexpr int AI_TL_GGS_VERIFY_TIMEOUT_KEEP_MIN_PROBABILITY = 88;
+constexpr uint64_t AI_TL_GGS_VERIFY_TIMEOUT_LOW_CONF_KEEP_MAX_TIME = 14000ULL;
 #else
 constexpr int AI_TL_POLICY_CHANGE_VERIFY_MIN_DEPTH = 24;
 constexpr int AI_TL_ENDGAME_INITIAL_MPC_LEVEL = MPC_74_LEVEL;
@@ -398,6 +394,43 @@ inline bool ai_tl_ggs_can_retry_alt_verify(int last_verify_depth, int main_depth
         last_verify_depth < 0 ||
         last_verify_policy != current_policy ||
         main_depth >= last_verify_depth + AI_TL_GGS_ALT_VERIFY_RETRY_DEPTH_GAP;
+}
+
+inline bool ai_tl_ggs_should_use_main_on_verify_timeout(
+    bool main_is_end_search,
+    bool previous_is_end_search,
+    int main_probability,
+    int previous_probability,
+    bool new_full_complete,
+    bool previous_nws_complete,
+    int previous_nws_value,
+    int new_full_value
+) {
+    if (!main_is_end_search) {
+        return false;
+    }
+    if (new_full_complete) {
+        // A completed full-window search of the new move is sufficient unless
+        // the previous move has already failed high against that exact value.
+        return !previous_nws_complete || previous_nws_value <= new_full_value;
+    }
+    // The root search itself searched every legal move.  Prefer it when it is
+    // the first endgame iteration, or when it raises endgame selectivity.
+    return !previous_is_end_search || main_probability > previous_probability;
+}
+
+inline bool ai_tl_ggs_can_keep_previous_on_verify_timeout(
+    uint64_t time_limit,
+    int previous_probability,
+    int previous_depth,
+    int main_depth
+) {
+    return
+        time_limit < AI_TL_GGS_VERIFY_TIMEOUT_LOW_CONF_KEEP_MAX_TIME ||
+        (
+            previous_probability >= AI_TL_GGS_VERIFY_TIMEOUT_KEEP_MIN_PROBABILITY &&
+            previous_depth + 1 >= main_depth
+        );
 }
 #endif
 
@@ -1131,21 +1164,33 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             if (verify_timeout) {
 #if IS_GGS_TOURNAMENT
-                const int verify_timeout_keep_margin =
-                    previous_result.value >= 0 ? AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MARGIN : AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN;
+                const bool use_main_end_fallback = ai_tl_ggs_should_use_main_on_verify_timeout(
+                    main_is_end_search,
+                    previous_result.is_end_search,
+                    SELECTIVITY_PERCENTAGE[main_mpc_level],
+                    previous_result.probability,
+                    policy_change_new_complete,
+                    policy_change_previous_probe_complete,
+                    policy_change_previous_probe_value,
+                    policy_change_new_value
+                );
+                if (use_main_end_fallback && policy_change_new_complete) {
+                    id_result = std::make_pair(policy_change_new_value, policy_change_new_policy);
+                }
                 const bool can_keep_previous_on_verify_timeout =
-                    previous_result.value < 0 ||
-                    time_limit < AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_LOW_CONF_KEEP_MAX_TIME ||
-                    (
-                        previous_result.probability >= AI_TL_GGS_VERIFY_TIMEOUT_POSITIVE_KEEP_MIN_PROBABILITY &&
-                        previous_result.depth + 1 >= main_depth
+                    !use_main_end_fallback &&
+                    ai_tl_ggs_can_keep_previous_on_verify_timeout(
+                        time_limit,
+                        previous_result.probability,
+                        previous_result.depth,
+                        main_depth
                     );
                 if (
                     can_keep_previous_on_verify_timeout &&
                     is_valid_policy(previous_result.policy) &&
                     (use_legal & (1ULL << previous_result.policy)) &&
                     previous_result.value != SCORE_UNDEFINED &&
-                    id_result.first <= previous_result.value + verify_timeout_keep_margin
+                    id_result.first <= previous_result.value + AI_TL_VERIFY_TIMEOUT_KEEP_MARGIN
                 ) {
                     const uint64_t accumulated_nodes = result->nodes;
                     const uint64_t elapsed = tim() - strt;
@@ -1156,6 +1201,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     result->nps = nps;
                     keep_previous_on_verify_timeout = true;
                     verify_log = " verify-timeout-keep-previous";
+                } else if (use_main_end_fallback) {
+                    verify_log = " verify-timeout-use-main-end-strength";
                 } else {
                     verify_log = " verify-timeout-use-main";
                 }
@@ -1182,7 +1229,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     }
                     std::cerr << " budget=" << policy_change_verify_budget
                               << " elapsed=" << policy_change_verify_elapsed
-                              << " decision=" << (keep_previous_on_verify_timeout ? "keep-old" : "use-main")
+                              << " decision="
+                              << (keep_previous_on_verify_timeout ? "keep-old" : (use_main_end_fallback ? "use-main-end-strength" : "use-main"))
                               << std::endl;
                 }
 #else
