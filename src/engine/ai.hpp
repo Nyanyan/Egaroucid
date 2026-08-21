@@ -901,6 +901,17 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             bool skip_policy_change_as_bad_stable = false;
             std::string verify_log;
 #if IS_GGS_TOURNAMENT
+            bool policy_change_verify_attempted = false;
+            bool policy_change_previous_complete = false;
+            bool policy_change_new_complete = false;
+            int policy_change_previous_policy = MOVE_UNDEFINED;
+            int policy_change_new_policy = MOVE_UNDEFINED;
+            int policy_change_previous_value = SCORE_UNDEFINED;
+            int policy_change_new_value = SCORE_UNDEFINED;
+            uint64_t policy_change_verify_budget = 0ULL;
+            uint64_t policy_change_verify_elapsed = 0ULL;
+#endif
+#if IS_GGS_TOURNAMENT
             if (
                 !main_is_complete_search &&
                 !main_is_end_search &&
@@ -999,6 +1010,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 int new_policy = id_result.second;
                 int previous_value = SCORE_UNDEFINED;
                 int new_value = SCORE_UNDEFINED;
+#if IS_GGS_TOURNAMENT
+                policy_change_verify_attempted = true;
+                policy_change_previous_policy = previous_policy;
+                policy_change_new_policy = new_policy;
+#endif
                 Search verify_search(&board, verify_mpc_level, use_multi_thread, false);
                 verify_search.thread_id = thread_id;
                 bool verify_searching = true;
@@ -1011,6 +1027,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     )
                 );
                 uint64_t verify_strt = tim();
+                policy_change_verify_budget = verify_budget;
                 uint64_t time_limit_verify = get_this_search_time_limit(verify_budget, tim() - verify_strt);
 #else
                 uint64_t time_limit_verify = get_this_search_time_limit(time_limit, tim() - strt);
@@ -1019,6 +1036,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 if (previous_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
                     std::pair<int, int> previous_verify_result = previous_verify_f.get();
                     previous_value = previous_verify_result.first;
+#if IS_GGS_TOURNAMENT
+                    policy_change_previous_complete = true;
+                    policy_change_previous_value = previous_value;
+#endif
                 } else {
                     verify_searching = false;
                     try {
@@ -1037,6 +1058,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     if (new_verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
                         std::pair<int, int> new_verify_result = new_verify_f.get();
                         new_value = new_verify_result.first;
+#if IS_GGS_TOURNAMENT
+                        policy_change_new_complete = true;
+                        policy_change_new_value = new_value;
+#endif
                     } else {
                         verify_searching = false;
                         try {
@@ -1046,10 +1071,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         verify_timeout = true;
                     }
                 }
+#if IS_GGS_TOURNAMENT
+                policy_change_verify_elapsed = tim() - verify_strt;
+#endif
                 if (verify_timeout) {
-                    if (show_log) {
-                        std::cerr << "policy-change verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% terminated " << tim() - strt << " ms" << std::endl;
-                    }
                 } else {
                     std::ostringstream ss;
                     ss << " verify@" << SELECTIVITY_PERCENTAGE[verify_mpc_level] << "% " << idx_to_coord(previous_policy) << "=" << previous_value << " " << idx_to_coord(new_policy) << "=" << new_value;
@@ -1095,6 +1120,28 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     verify_log = " verify-timeout-keep-previous";
                 } else {
                     verify_log = " verify-timeout-use-main";
+                }
+                if (show_log && policy_change_verify_attempted) {
+                    std::cerr << "policy-change verify-timeout"
+                              << " old=" << idx_to_coord(policy_change_previous_policy)
+                              << " prior=" << previous_result.value
+                              << "@" << previous_result.depth << "/" << previous_result.probability << "%"
+                              << " checked=" << policy_change_previous_complete;
+                    if (policy_change_previous_complete) {
+                        std::cerr << " value=" << policy_change_previous_value;
+                    }
+                    std::cerr << " new=" << idx_to_coord(policy_change_new_policy)
+                              << " main=" << id_result.first
+                              << "@" << main_depth << "/" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%"
+                              << " end=" << main_is_end_search
+                              << " checked=" << policy_change_new_complete;
+                    if (policy_change_new_complete) {
+                        std::cerr << " value=" << policy_change_new_value;
+                    }
+                    std::cerr << " budget=" << policy_change_verify_budget
+                              << " elapsed=" << policy_change_verify_elapsed
+                              << " decision=" << (keep_previous_on_verify_timeout ? "keep-old" : "use-main")
+                              << std::endl;
                 }
 #else
                 break;
