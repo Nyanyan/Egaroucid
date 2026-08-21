@@ -276,6 +276,29 @@ void test_policy_verify_timeout_fallback() {
     );
 }
 
+void test_end_boundary_reserve() {
+    require_equal(
+        ai_time_limit_ggs_end_boundary_reserve_time(35, true, 5000ULL, 31000ULL),
+        9500ULL,
+        "ambiguous 35-empty boundary gets a ramped reserve"
+    );
+    require_equal(
+        ai_time_limit_ggs_end_boundary_reserve_time(35, false, 5000ULL, 40000ULL),
+        5000ULL,
+        "quiet boundary does not get a reserve"
+    );
+    require_equal(
+        ai_time_limit_ggs_end_boundary_reserve_time(39, true, 5000ULL, 40000ULL),
+        5000ULL,
+        "reserve is limited to the end-search boundary"
+    );
+    require_equal(
+        ai_time_limit_ggs_end_boundary_reserve_time(35, true, 10000ULL, 25000ULL),
+        10000ULL,
+        "reserve never reduces the existing allocation"
+    );
+}
+
 } // namespace
 
 int main() {
@@ -289,6 +312,7 @@ int main() {
         test_match_boundary_classification();
         test_match_boundary_reserve_trigger();
         test_policy_verify_timeout_fallback();
+        test_end_boundary_reserve();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

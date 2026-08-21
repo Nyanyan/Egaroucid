@@ -2699,6 +2699,13 @@ constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 2.20;
 constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BEST_ABS_VALUE = 4.0;
 constexpr int AI_TL_GGS_AMBIGUITY_EARLY_CAP_MIN_N_EMPTY = 49;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_EARLY_MAX_BONUS = 6000ULL;
+constexpr int AI_TL_GGS_END_BOUNDARY_RESERVE_MIN_N_EMPTY = 34;
+constexpr int AI_TL_GGS_END_BOUNDARY_RESERVE_MAX_N_EMPTY = 38;
+constexpr double AI_TL_GGS_END_BOUNDARY_RESERVE_CLOSE_VALUE = 3.0;
+constexpr double AI_TL_GGS_END_BOUNDARY_RESERVE_RAMP_START_REMAINING = 22000.0;
+constexpr double AI_TL_GGS_END_BOUNDARY_RESERVE_FULL_REMAINING = 40000.0;
+constexpr double AI_TL_GGS_END_BOUNDARY_RESERVE_LEAVE_MSEC = 12000.0;
+constexpr double AI_TL_GGS_END_BOUNDARY_RESERVE_MAX_TIME = 14000.0;
 
 inline uint64_t ai_time_limit_ggs_cap_early_ambiguity_time(const Board &board, uint64_t time_limit, uint64_t boosted_time_limit) {
     const int n_empties = HW2 - board.n_discs();
@@ -2706,6 +2713,68 @@ inline uint64_t ai_time_limit_ggs_cap_early_ambiguity_time(const Board &board, u
         return std::min<uint64_t>(boosted_time_limit, time_limit + AI_TL_GGS_AMBIGUITY_EARLY_MAX_BONUS);
     }
     return boosted_time_limit;
+}
+
+inline uint64_t ai_time_limit_ggs_end_boundary_reserve_time(
+    int n_empties,
+    bool ambiguous,
+    uint64_t time_limit,
+    uint64_t remaining_time_msec
+) {
+    if (
+        !ambiguous ||
+        n_empties < AI_TL_GGS_END_BOUNDARY_RESERVE_MIN_N_EMPTY ||
+        n_empties > AI_TL_GGS_END_BOUNDARY_RESERVE_MAX_N_EMPTY
+    ) {
+        return time_limit;
+    }
+    return time_management_ggs_ramped_endgame_force_time(
+        time_limit,
+        remaining_time_msec,
+        AI_TL_GGS_END_BOUNDARY_RESERVE_RAMP_START_REMAINING,
+        AI_TL_GGS_END_BOUNDARY_RESERVE_FULL_REMAINING,
+        AI_TL_GGS_END_BOUNDARY_RESERVE_LEAVE_MSEC,
+        AI_TL_GGS_END_BOUNDARY_RESERVE_MAX_TIME
+    );
+}
+
+inline bool ai_time_limit_ggs_end_boundary_is_ambiguous(const std::vector<Ponder_elem> &move_list) {
+    double best_value = -INF;
+    for (const Ponder_elem &elem: move_list) {
+        if (elem.count > 0) {
+            best_value = std::max(best_value, elem.value);
+        }
+    }
+    if (best_value <= -INF) {
+        return false;
+    }
+    int close_moves = 0;
+    for (const Ponder_elem &elem: move_list) {
+        if (elem.count > 0 && elem.value >= best_value - AI_TL_GGS_END_BOUNDARY_RESERVE_CLOSE_VALUE) {
+            if (++close_moves >= 2) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+inline uint64_t ai_time_limit_ggs_apply_capped_ambiguity_boost(
+    const Board &board,
+    uint64_t time_limit,
+    uint64_t requested_time_limit,
+    uint64_t remaining_time_msec,
+    double remaining_moves
+) {
+    const uint64_t capped = time_management_ggs_cap_time_limit(
+        requested_time_limit,
+        remaining_time_msec,
+        remaining_moves
+    );
+    return std::max<uint64_t>(
+        time_limit,
+        ai_time_limit_ggs_cap_early_ambiguity_time(board, time_limit, capped)
+    );
 }
 
 inline uint64_t ai_time_limit_ggs_ambiguity_probe_time(const Board &board, uint64_t time_limit, uint64_t remaining_time_msec) {
@@ -2786,10 +2855,12 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_DEFENSIVE_MAX_BONUS_COE));
             const int n_empties = HW2 - board.n_discs();
             const double remaining_moves = (double)(n_empties + 1) / 2.0;
-            const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+            const uint64_t boosted_time_limit = ai_time_limit_ggs_apply_capped_ambiguity_boost(
                 board,
                 time_limit,
-                time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+                time_limit + bonus,
+                remaining_time_msec,
+                remaining_moves
             );
             if (show_log) {
                 std::cerr << "ggs ambiguity defensive best " << best_value
@@ -2811,10 +2882,12 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_DEEP_BAD_MAX_BONUS_COE));
             const int n_empties = HW2 - board.n_discs();
             const double remaining_moves = (double)(n_empties + 1) / 2.0;
-            const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+            const uint64_t boosted_time_limit = ai_time_limit_ggs_apply_capped_ambiguity_boost(
                 board,
                 time_limit,
-                time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+                time_limit + bonus,
+                remaining_time_msec,
+                remaining_moves
             );
             if (show_log) {
                 std::cerr << "ggs ambiguity deep-bad best " << best_value
@@ -2835,10 +2908,12 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
             );
             const int n_empties = HW2 - board.n_discs();
             const double remaining_moves = (double)(n_empties + 1) / 2.0;
-            const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+            const uint64_t boosted_time_limit = ai_time_limit_ggs_apply_capped_ambiguity_boost(
                 board,
                 time_limit,
-                time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+                time_limit + bonus,
+                remaining_time_msec,
+                remaining_moves
             );
             if (show_log) {
                 std::cerr << "ggs ambiguity narrow best " << best_value
@@ -2869,10 +2944,12 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
 
         const int n_empties = HW2 - board.n_discs();
         const double remaining_moves = (double)(n_empties + 1) / 2.0;
-        const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+        const uint64_t boosted_time_limit = ai_time_limit_ggs_apply_capped_ambiguity_boost(
             board,
             time_limit,
-            time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+            time_limit + bonus,
+            remaining_time_msec,
+            remaining_moves
         );
         if (show_log) {
             std::cerr << "ggs ambiguity unreliable close_moves " << close_moves << "/" << valid_moves
@@ -2900,10 +2977,12 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
 
     const int n_empties = HW2 - board.n_discs();
     const double remaining_moves = (double)(n_empties + 1) / 2.0;
-    const uint64_t boosted_time_limit = ai_time_limit_ggs_cap_early_ambiguity_time(
+    const uint64_t boosted_time_limit = ai_time_limit_ggs_apply_capped_ambiguity_boost(
         board,
         time_limit,
-        time_management_ggs_cap_time_limit(time_limit + bonus, remaining_time_msec, remaining_moves)
+        time_limit + bonus,
+        remaining_time_msec,
+        remaining_moves
     );
     if (show_log) {
         std::cerr << "ggs ambiguity close_moves " << close_moves << "/" << valid_moves
@@ -3615,6 +3694,18 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             remaining_time_msec = 1ULL;
         }
         time_limit = ai_time_limit_ggs_ambiguity_boost(board, ambiguity_move_list, time_limit, remaining_time_msec, show_log);
+        const bool end_boundary_ambiguous = ai_time_limit_ggs_end_boundary_is_ambiguous(ambiguity_move_list);
+        const uint64_t end_boundary_time_limit = ai_time_limit_ggs_end_boundary_reserve_time(
+            HW2 - board.n_discs(),
+            end_boundary_ambiguous,
+            time_limit,
+            remaining_time_msec
+        );
+        if (show_log && end_boundary_time_limit > time_limit) {
+            std::cerr << "ggs end-boundary reserve tl " << time_limit << " -> " << end_boundary_time_limit
+                      << " remaining " << remaining_time_msec << std::endl;
+        }
+        time_limit = end_boundary_time_limit;
     }
     if (has_ambiguity_move_list && global_searching && *searching) {
         uint64_t strt_selfplay_resolve = tim();
