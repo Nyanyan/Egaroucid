@@ -276,6 +276,67 @@ void test_policy_verify_timeout_fallback() {
     );
 }
 
+void test_losing_pair_six_keeps_high_confidence_move() {
+    Board board;
+    const std::string board_text =
+        "----------XO-O--XXXXOOX-OXOOXOX--OXXXOO-O-XXXO------X----------- X";
+    require(board.from_str(board_text), "failed to construct losing pair 6 board");
+    require_equal((uint64_t)(HW2 - board.n_discs()), 35ULL, "losing pair 6 empties");
+
+    const int previous_policy = get_coord_from_chars('e', '2');
+    const int current_policy = get_coord_from_chars('a', '5');
+    const uint64_t legal = board.get_legal();
+    std::string legal_moves;
+    for (int policy = 0; policy < HW2; ++policy) {
+        if (legal & (1ULL << policy)) {
+            legal_moves += idx_to_coord(policy);
+        }
+    }
+    require(
+        legal & (1ULL << previous_policy),
+        "e2 must be legal in losing pair 6; legal moves: " + legal_moves
+    );
+    require(
+        legal & (1ULL << current_policy),
+        "a5 must be legal in losing pair 6; legal moves: " + legal_moves
+    );
+
+    Search_result previous_result;
+    previous_result.policy = previous_policy;
+    previous_result.value = -19;
+    previous_result.depth = 26;
+    previous_result.probability = 88;
+    require(
+        ai_tl_ggs_should_keep_high_confidence_previous(
+            35,
+            27,
+            MPC_74_LEVEL,
+            false,
+            false,
+            previous_result,
+            -19,
+            current_policy,
+            legal
+        ),
+        "negative evaluation must not prevent keeping pair 6 e2"
+    );
+
+    require(
+        !ai_tl_ggs_should_keep_high_confidence_previous(
+            35,
+            27,
+            MPC_74_LEVEL,
+            false,
+            false,
+            previous_result,
+            -16,
+            current_policy,
+            legal
+        ),
+        "a three-disc gain must still allow the new move"
+    );
+}
+
 void test_end_boundary_reserve() {
     require_equal(
         ai_time_limit_ggs_end_boundary_reserve_time(35, true, 5000ULL, 31000ULL),
@@ -379,6 +440,7 @@ void test_verification_tt_bound_scope() {
 
 int main() {
     try {
+        mobility_init();
         test_cap_is_continuous_at_reserve();
         test_pair_boost_phase_scale();
         test_extra_time_is_not_budgeted_for_normal_search();
@@ -388,6 +450,7 @@ int main() {
         test_match_boundary_classification();
         test_match_boundary_reserve_trigger();
         test_policy_verify_timeout_fallback();
+        test_losing_pair_six_keeps_high_confidence_move();
         test_end_boundary_reserve();
         test_candidate_stage2_selection();
         test_selfplay_order_early_stop();

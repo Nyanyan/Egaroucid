@@ -98,7 +98,6 @@ constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_N_EMPTY = 29;
 constexpr int AI_TL_GGS_HIGH_CONF_STICK_MAX_N_EMPTY = 48;
 constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_DEPTH = 25;
 constexpr int AI_TL_GGS_HIGH_CONF_STICK_MIN_PREV_PROBABILITY = 88;
-constexpr int AI_TL_GGS_HIGH_CONF_STICK_VALUE_MIN = 0;
 constexpr int AI_TL_GGS_HIGH_CONF_STICK_MAX_GAIN = 2;
 constexpr int AI_TL_GGS_WINNING_STICK_MIN_N_EMPTY = 36;
 constexpr int AI_TL_GGS_WINNING_STICK_MAX_N_EMPTY = 48;
@@ -330,6 +329,35 @@ inline uint_fast8_t get_ai_tl_policy_change_verify_mpc_level(int depth, uint_fas
 }
 
 #if IS_GGS_TOURNAMENT
+inline bool ai_tl_ggs_should_keep_high_confidence_previous(
+    int max_depth,
+    int main_depth,
+    uint_fast8_t main_mpc_level,
+    bool main_is_complete_search,
+    bool main_is_end_search,
+    const Search_result &previous_result,
+    int current_value,
+    int current_policy,
+    uint64_t legal
+) {
+    return
+        !main_is_complete_search &&
+        !main_is_end_search &&
+        AI_TL_GGS_HIGH_CONF_STICK_MIN_N_EMPTY <= max_depth &&
+        max_depth <= AI_TL_GGS_HIGH_CONF_STICK_MAX_N_EMPTY &&
+        main_depth >= AI_TL_GGS_HIGH_CONF_STICK_MIN_DEPTH &&
+        main_mpc_level == MPC_74_LEVEL &&
+        previous_result.probability >= AI_TL_GGS_HIGH_CONF_STICK_MIN_PREV_PROBABILITY &&
+        previous_result.depth + 1 >= main_depth &&
+        is_valid_policy(previous_result.policy) &&
+        is_valid_policy(current_policy) &&
+        previous_result.policy != current_policy &&
+        (legal & (1ULL << previous_result.policy)) &&
+        (legal & (1ULL << current_policy)) &&
+        previous_result.value != SCORE_UNDEFINED &&
+        current_value <= previous_result.value + AI_TL_GGS_HIGH_CONF_STICK_MAX_GAIN;
+}
+
 inline bool ai_tl_ggs_is_defensive_alt_verify_candidate(
     int max_depth,
     int main_depth,
@@ -973,22 +1001,17 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             if (
                 !skip_policy_change_as_bad_stable &&
-                !main_is_complete_search &&
-                !main_is_end_search &&
-                AI_TL_GGS_HIGH_CONF_STICK_MIN_N_EMPTY <= max_depth &&
-                max_depth <= AI_TL_GGS_HIGH_CONF_STICK_MAX_N_EMPTY &&
-                main_depth >= AI_TL_GGS_HIGH_CONF_STICK_MIN_DEPTH &&
-                main_mpc_level == MPC_74_LEVEL &&
-                previous_result.probability >= AI_TL_GGS_HIGH_CONF_STICK_MIN_PREV_PROBABILITY &&
-                previous_result.depth + 1 >= main_depth &&
-                is_valid_policy(previous_result.policy) &&
-                is_valid_policy(id_result.second) &&
-                previous_result.policy != id_result.second &&
-                (use_legal & (1ULL << previous_result.policy)) &&
-                (use_legal & (1ULL << id_result.second)) &&
-                AI_TL_GGS_HIGH_CONF_STICK_VALUE_MIN <= previous_result.value &&
-                previous_result.value != SCORE_UNDEFINED &&
-                id_result.first <= previous_result.value + AI_TL_GGS_HIGH_CONF_STICK_MAX_GAIN
+                ai_tl_ggs_should_keep_high_confidence_previous(
+                    max_depth,
+                    main_depth,
+                    main_mpc_level,
+                    main_is_complete_search,
+                    main_is_end_search,
+                    previous_result,
+                    id_result.first,
+                    id_result.second,
+                    use_legal
+                )
             ) {
                 std::ostringstream ss;
                 ss << " high-conf-stick "
