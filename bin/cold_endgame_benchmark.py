@@ -14,6 +14,8 @@ hash allocation, and evaluation-file loading.
 
 Examples (run from bin):
 
+    python cold_endgame_benchmark.py
+
     python cold_endgame_benchmark.py --games "ggs/log/game/2026-08-23-*.txt"
 
     python cold_endgame_benchmark.py --positions previous/corpus.jsonl \
@@ -45,6 +47,7 @@ from typing import Iterable, Optional
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_GAME_DIR = SCRIPT_DIR / "ggs" / "log" / "game"
 DEFAULT_EXE = SCRIPT_DIR / "Egaroucid_for_Console_clang.exe"
+DEFAULT_CORPUS = SCRIPT_DIR / "problem" / "cold_endgame_2026-08-23_egrcd.txt"
 
 BOARD_RE = re.compile(r"^[XO-]{64}\s+[XO]$", re.IGNORECASE)
 DEPTH_RE = re.compile(r"^(-?\d+)@([0-9]+(?:\.[0-9]+)?)%$")
@@ -188,7 +191,8 @@ def parse_args() -> argparse.Namespace:
         nargs="+",
         help=(
             "Game-record files, directories, or glob patterns. Directories "
-            "are searched recursively for *.txt. Default: ggs/log/game"
+            "are searched recursively for *.txt. If omitted, use the "
+            "bundled cold-endgame corpus in bin/problem."
         ),
     )
     source.add_argument(
@@ -201,7 +205,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--player",
         default="egrcd",
-        help="Only positions where this GGS player is to move, or 'all'.",
+        help=(
+            "When extracting --games, only positions where this GGS player "
+            "is to move, or 'all'."
+        ),
     )
     parser.add_argument(
         "--max-per-empty",
@@ -780,7 +787,7 @@ def main() -> int:
     if args.positions:
         positions = load_positions(args.positions, args.min_empty, args.max_empty)
         source_description: object = str(resolve_input_path(args.positions))
-    else:
+    elif args.games:
         game_files = expand_game_inputs(args.games)
         if not game_files:
             print("No GGS game-record files found.", file=sys.stderr)
@@ -797,6 +804,12 @@ def main() -> int:
                 extraction_errors.append(f"{path}: {error}")
         positions = extracted
         source_description = [str(path) for path in game_files]
+    else:
+        if not DEFAULT_CORPUS.is_file():
+            print(f"Bundled corpus not found: {DEFAULT_CORPUS}", file=sys.stderr)
+            return 2
+        positions = load_positions(DEFAULT_CORPUS, args.min_empty, args.max_empty)
+        source_description = str(DEFAULT_CORPUS)
 
     positions = deduplicate_positions(positions)
     positions = sample_positions(positions, args.max_per_empty, args.seed)
