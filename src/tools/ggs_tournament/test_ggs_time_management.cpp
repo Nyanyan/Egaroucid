@@ -483,6 +483,24 @@ void test_early_endgame_schedule() {
 #endif
 }
 
+void test_ybwc_end_split_depth() {
+    require_equal(
+        ybwc_end_split_min_depth(MPC_100_LEVEL),
+        YBWC_END_SPLIT_MIN_DEPTH,
+        "exact endgame YBWC split depth"
+    );
+    require_equal(
+        ybwc_end_split_min_depth(MPC_74_LEVEL),
+        YBWC_SELECTIVE_END_SPLIT_MIN_DEPTH,
+        "74-percent endgame YBWC split depth"
+    );
+    require_equal(
+        ybwc_end_split_min_depth(MPC_88_LEVEL),
+        YBWC_END_SPLIT_MIN_DEPTH,
+        "higher-selectivity endgame YBWC split depth"
+    );
+}
+
 } // namespace
 
 int main() {
@@ -503,6 +521,7 @@ int main() {
         test_selfplay_order_early_stop();
         test_verification_tt_bound_scope();
         test_early_endgame_schedule();
+        test_ybwc_end_split_depth();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

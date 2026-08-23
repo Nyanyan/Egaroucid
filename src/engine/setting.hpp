@@ -171,7 +171,9 @@
 #define USE_LAZY_SMP true
 
 // YBWC splitted task termination (less idoling, more nodes)
+#ifndef USE_YBWC_SPLITTED_TASK_TERMINATION
 #define USE_YBWC_SPLITTED_TASK_TERMINATION false
+#endif
 
 // last flip pass optimization
 #define LAST_FLIP_PASS_OPT true
@@ -198,6 +200,28 @@
 // YBWC split statistics
 #ifndef USE_YBWC_SPLIT_STATISTICS
 #define USE_YBWC_SPLIT_STATISTICS false
+#endif
+
+// Endgame YBWC tuning.  These remain externally overridable so cold-TT A/B
+// binaries can differ by one scheduling factor without editing the source.
+#ifndef YBWC_END_SPLIT_MIN_DEPTH
+#define YBWC_END_SPLIT_MIN_DEPTH 15
+#endif
+#ifndef YBWC_SELECTIVE_END_SPLIT_MIN_DEPTH
+// The tournament's first endgame pass is 74%.  Higher-selectivity and exact
+// searches retain the established split depth.
+#define YBWC_SELECTIVE_END_SPLIT_MIN_DEPTH 18
+#endif
+#ifndef YBWC_END_MAX_SPLIT_TASKS
+#define YBWC_END_MAX_SPLIT_TASKS THREAD_SIZE_INF
+#endif
+// Zero preserves the depth-dependent defaults in ybwc.hpp.  Values 1-3 use a
+// fixed minimum number of remaining younger moves at every endgame split.
+#ifndef YBWC_END_MIN_REMAINING_MOVES
+#define YBWC_END_MIN_REMAINING_MOVES 0
+#endif
+#ifndef YBWC_END_WAIT_HELP
+#define YBWC_END_WAIT_HELP false
 #endif
 
 // Search the moves used by the GGS ambiguity probe concurrently.  Keep this

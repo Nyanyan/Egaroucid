@@ -989,6 +989,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
             std::cerr << "depth " << main_depth << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "% " << std::flush;
         }
+#if USE_YBWC_SPLIT_STATISTICS
+        if (main_is_end_search) {
+            ybwc_split_stats_reset();
+        }
+#endif
         Search main_search(&board, main_mpc_level, use_multi_thread, false);
         main_search.thread_id = thread_id;
         std::pair<int, int> id_result;
@@ -1039,6 +1044,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         result->nodes += main_search.n_nodes;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
+#if USE_YBWC_SPLIT_STATISTICS
+        if (show_log && main_is_end_search && !search_success) {
+            ybwc_split_stats_print();
+        }
+#endif
         previous_iteration_time = std::max<uint64_t>(1ULL, tim() - iteration_start);
 #if EGAROUCID_EARLY_ENDGAME_SCHEDULE
         previous_iteration_nodes = main_search.n_nodes;
@@ -1607,6 +1617,11 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             if (show_log) {
                 std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(result->policy) << verify_log << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
             }
+#if USE_YBWC_SPLIT_STATISTICS
+            if (show_log && main_is_end_search) {
+                ybwc_split_stats_print();
+            }
+#endif
 #if IS_GGS_TOURNAMENT
             ai_tl_record_recent_policy(diagnostics, result->policy);
 #endif

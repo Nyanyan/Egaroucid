@@ -24,7 +24,6 @@
 */
 constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 6;
 //constexpr int YBWC_MID_SPLIT_MAX_DEPTH = 26;
-constexpr int YBWC_END_SPLIT_MIN_DEPTH = 15;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
 // constexpr int YBWC_N_ELDER_CHILD = 1;
 #if IS_GGS_TOURNAMENT
@@ -70,6 +69,39 @@ inline std::atomic<uint64_t> ybwc_task_nodes[YBWC_STATS_DEPTH_SIZE];
 inline std::atomic<uint64_t> ybwc_cancelled_task_nodes[YBWC_STATS_DEPTH_SIZE];
 inline std::atomic<uint64_t> ybwc_split_attempt_by_move[YBWC_STATS_DEPTH_SIZE][YBWC_STATS_MOVE_BUCKET_SIZE];
 inline std::atomic<uint64_t> ybwc_split_pushed_by_move[YBWC_STATS_DEPTH_SIZE][YBWC_STATS_MOVE_BUCKET_SIZE];
+inline std::atomic<uint64_t> ybwc_split_idle_sum;
+inline std::atomic<int> ybwc_split_idle_min;
+inline std::atomic<int> ybwc_split_idle_max;
+inline std::atomic<int> ybwc_tasks_running;
+inline std::atomic<int> ybwc_tasks_running_max;
+inline std::atomic<uint64_t> ybwc_wait_help_executed;
+inline std::atomic<uint64_t> ybwc_wait_yielded;
+
+inline void ybwc_stats_update_max(std::atomic<int> *target, const int value) {
+    int observed = target->load(std::memory_order_relaxed);
+    while (
+        observed < value &&
+        !target->compare_exchange_weak(
+            observed,
+            value,
+            std::memory_order_relaxed,
+            std::memory_order_relaxed
+        )
+    ) {}
+}
+
+inline void ybwc_stats_update_min(std::atomic<int> *target, const int value) {
+    int observed = target->load(std::memory_order_relaxed);
+    while (
+        value < observed &&
+        !target->compare_exchange_weak(
+            observed,
+            value,
+            std::memory_order_relaxed,
+            std::memory_order_relaxed
+        )
+    ) {}
+}
 
 inline int ybwc_stats_move_bucket(const int n_remaining_moves) {
     if (n_remaining_moves <= 1) {
@@ -82,6 +114,13 @@ inline int ybwc_stats_move_bucket(const int n_remaining_moves) {
 }
 
 inline void ybwc_split_stats_reset() {
+    ybwc_split_idle_sum = 0;
+    ybwc_split_idle_min = THREAD_SIZE_INF;
+    ybwc_split_idle_max = 0;
+    ybwc_tasks_running = 0;
+    ybwc_tasks_running_max = 0;
+    ybwc_wait_help_executed = 0;
+    ybwc_wait_yielded = 0;
     for (int i = 0; i < YBWC_STATS_DEPTH_SIZE; ++i) {
         ybwc_split_attempt[i] = 0;
         ybwc_split_idle_ok[i] = 0;
@@ -101,6 +140,25 @@ inline void ybwc_split_stats_reset() {
 }
 
 inline void ybwc_split_stats_print() {
+    uint64_t total_attempts = 0;
+    for (int depth = 0; depth < YBWC_STATS_DEPTH_SIZE; ++depth) {
+        total_attempts += ybwc_split_attempt[depth].load();
+    }
+    const int idle_min = total_attempts == 0
+        ? 0
+        : ybwc_split_idle_min.load(std::memory_order_relaxed);
+    const double idle_mean = total_attempts == 0
+        ? 0.0
+        : (double)ybwc_split_idle_sum.load(std::memory_order_relaxed) /
+            (double)total_attempts;
+    std::cerr << "ybwc runtime stats attempts " << total_attempts
+              << " idle_mean " << idle_mean
+              << " idle_min " << idle_min
+              << " idle_max " << ybwc_split_idle_max.load(std::memory_order_relaxed)
+              << " max_running " << ybwc_tasks_running_max.load(std::memory_order_relaxed)
+              << " wait_help " << ybwc_wait_help_executed.load(std::memory_order_relaxed)
+              << " wait_yield " << ybwc_wait_yielded.load(std::memory_order_relaxed)
+              << std::endl;
     std::cerr << "ybwc split stats depth attempt idle_ok move_ok pushed push_failed" << std::endl;
     for (int depth = 0; depth < YBWC_STATS_DEPTH_SIZE; ++depth) {
         uint64_t attempt = ybwc_split_attempt[depth].load();
@@ -178,7 +236,15 @@ inline bool ybwc_wait_task_with_help(std::vector<std::future<Parallel_task>> &pa
         if (task_state < 0) {
             return false;
         }
-        if (!use_help || !thread_pool.try_execute_one(thread_id)) {
+        const bool helped = use_help && thread_pool.try_execute_one(thread_id);
+#if USE_YBWC_SPLIT_STATISTICS
+        if (helped) {
+            ybwc_wait_help_executed.fetch_add(1, std::memory_order_relaxed);
+        } else {
+            ybwc_wait_yielded.fetch_add(1, std::memory_order_relaxed);
+        }
+#endif
+        if (!helped) {
             std::this_thread::yield();
         }
     }
@@ -204,6 +270,12 @@ inline void ybwc_undo_child(Search *search, const Flip *flip, const bool use_end
     }
 }
 
+inline int ybwc_end_split_min_depth(const uint_fast8_t mpc_level) {
+    return mpc_level == MPC_74_LEVEL
+        ? YBWC_SELECTIVE_END_SPLIT_MIN_DEPTH
+        : YBWC_END_SPLIT_MIN_DEPTH;
+}
+
 /*
     @brief Wrapper for parallel NWS (Null Window Search)
 
@@ -221,7 +293,21 @@ inline void ybwc_undo_child(Search *search, const Flip *flip, const bool use_end
     @return the result in Parallel_task structure
 */
 Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, bool use_dim0_mpc_eval, thread_id_t thread_id, int mid_split_task_limit, int parent_alpha, const int depth, uint64_t legal, const bool is_end_search, uint_fast8_t policy, int move_idx, std::vector<bool*> searchings, bool *n_searching) {
-    Search search(player, opponent, n_discs, parity, mpc_level, (!is_end_search && depth > YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth > YBWC_END_SPLIT_MIN_DEPTH), is_presearch, thread_id);
+#if USE_YBWC_SPLIT_STATISTICS
+    const int running_tasks = ybwc_tasks_running.fetch_add(1, std::memory_order_relaxed) + 1;
+    ybwc_stats_update_max(&ybwc_tasks_running_max, running_tasks);
+#endif
+    Search search(
+        player,
+        opponent,
+        n_discs,
+        parity,
+        mpc_level,
+        (!is_end_search && depth > YBWC_MID_SPLIT_MIN_DEPTH) ||
+            (is_end_search && depth > ybwc_end_split_min_depth(mpc_level)),
+        is_presearch,
+        thread_id
+    );
     search.use_dim0_mpc_eval = use_dim0_mpc_eval;
     search.mid_split_task_limit = mid_split_task_limit;
     Parallel_task task;
@@ -247,6 +333,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
             ybwc_task_fail_high[stats_depth].fetch_add(1, std::memory_order_relaxed);
         }
     }
+    ybwc_tasks_running.fetch_sub(1, std::memory_order_relaxed);
 #endif
     return task;
 }
@@ -274,12 +361,18 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         int move_bucket = ybwc_stats_move_bucket(n_remaining_moves);
         ++ybwc_split_attempt_by_move[depth][move_bucket];
     #endif
-    bool idle_ok = thread_pool.get_n_idle() > 0;
+    const int n_idle = thread_pool.get_n_idle();
+    bool idle_ok = n_idle > 0;
     const int n_younger_child = is_end_search
-        ? (depth <= YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH ? YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD : YBWC_END_N_YOUNGER_CHILD)
+        ? (YBWC_END_MIN_REMAINING_MOVES > 0
+            ? YBWC_END_MIN_REMAINING_MOVES
+            : (depth <= YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH ? YBWC_END_LOW_DEPTH_N_YOUNGER_CHILD : YBWC_END_N_YOUNGER_CHILD))
         : (depth <= YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD_MAX_DEPTH ? YBWC_MID_LOW_DEPTH_N_YOUNGER_CHILD : YBWC_MID_N_YOUNGER_CHILD);
     bool move_ok = n_remaining_moves >= n_younger_child;
     #if USE_YBWC_SPLIT_STATISTICS
+        ybwc_split_idle_sum.fetch_add((uint64_t)std::max(0, n_idle), std::memory_order_relaxed);
+        ybwc_stats_update_min(&ybwc_split_idle_min, n_idle);
+        ybwc_stats_update_max(&ybwc_split_idle_max, n_idle);
         if (idle_ok) {
             ++ybwc_split_idle_ok[depth];
         }
@@ -302,7 +395,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, uin
         // }
         if (is_searching(searchings)) {
             bool pushed;
-            const int task_limit = is_end_search ? THREAD_SIZE_INF : search->mid_split_task_limit;
+            const int task_limit = is_end_search ? YBWC_END_MAX_SPLIT_TASKS : search->mid_split_task_limit;
             auto task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, legal, is_end_search, policy, move_idx, searchings, n_searching);
             if (task_limit == THREAD_SIZE_INF) {
                 parallel_tasks.emplace_back(thread_pool.push(search->thread_id, &pushed, task));
@@ -400,7 +493,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
         if (is_searching(searchings) && *v <= alpha && running_count >= 2) {
             search_cancellation_store(&n_searching, false); // terminate splitted tasks
-            while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+            while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search || YBWC_END_WAIT_HELP, &task_result)) {
                 --running_count;
                 search->n_nodes += task_result.n_nodes;
             }
@@ -412,7 +505,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+    while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search || YBWC_END_WAIT_HELP, &task_result)) {
         --running_count;
         search->n_nodes += task_result.n_nodes;
         if (task_result.value != SCORE_UNDEFINED) {
@@ -502,7 +595,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
         if (is_searching(searchings) && *v <= alpha && running_count >= 2) {
             search_cancellation_store(&n_searching, false); // terminate splitted tasks
-            while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+            while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search || YBWC_END_WAIT_HELP, &task_result)) {
                 --running_count;
                 search->n_nodes += task_result.n_nodes;
             }
@@ -514,7 +607,7 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
         }
     }
 #endif
-    while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+    while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search || YBWC_END_WAIT_HELP, &task_result)) {
         --running_count;
         search->n_nodes += task_result.n_nodes;
         if (task_result.value != SCORE_UNDEFINED) {
@@ -614,7 +707,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
     if (running_count) {
         // thread_pool.start_idling();
         Parallel_task task_result;
-        while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+        while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search || YBWC_END_WAIT_HELP, &task_result)) {
             --running_count;
             search->n_nodes += task_result.n_nodes;
             if (!cutoff_found && task_result.value != SCORE_UNDEFINED) {
@@ -726,7 +819,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
     if (running_count) {
         // thread_pool.start_idling();
         Parallel_task task_result;
-        while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search, &task_result)) {
+        while (running_count > 0 && ybwc_wait_task_with_help(parallel_tasks, search->thread_id, !is_end_search || YBWC_END_WAIT_HELP, &task_result)) {
             --running_count;
             search->n_nodes += task_result.n_nodes;
             if (!cutoff_found && task_result.value != SCORE_UNDEFINED) {
