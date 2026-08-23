@@ -29,6 +29,21 @@ constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 8;
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
+// Start selective endgame search while enough of the move budget remains.
+// Keep this externally overridable for an otherwise identical A/B control.
+#ifndef EGAROUCID_EARLY_ENDGAME_SCHEDULE
+    #define EGAROUCID_EARLY_ENDGAME_SCHEDULE 1
+#endif
+static_assert(
+    EGAROUCID_EARLY_ENDGAME_SCHEDULE == 0 ||
+    EGAROUCID_EARLY_ENDGAME_SCHEDULE == 1
+);
+constexpr int AI_TL_EARLY_ENDGAME_MIN_N_EMPTY = 38;
+constexpr int AI_TL_EARLY_ENDGAME_MAX_N_EMPTY = 44;
+constexpr int AI_TL_EARLY_ENDGAME_FIXED_DEPTH = 30;
+constexpr uint64_t AI_TL_EARLY_ENDGAME_MIN_RESERVE_MSEC = 4500ULL;
+constexpr uint64_t AI_TL_EARLY_ENDGAME_RESERVE_PERCENT = 55ULL;
+
 constexpr int PONDER_START_SELFPLAY_DEPTH = 17;
 constexpr double PONDER_UCB_COE = 0.6;
 #if IS_GGS_TOURNAMENT
@@ -326,6 +341,99 @@ inline uint_fast8_t get_ai_tl_policy_change_verify_mpc_level(int depth, uint_fas
         return mpc_level;
     }
     return std::max<uint_fast8_t>(mpc_level, AI_TL_POLICY_CHANGE_VERIFY_MPC_LEVEL);
+}
+
+struct AI_TL_Early_Endgame_Decision {
+    bool start;
+    const char *reason;
+    double node_growth;
+    uint64_t predicted_next_mid_msec;
+    uint64_t endgame_reserve_msec;
+
+    AI_TL_Early_Endgame_Decision()
+        : start(false),
+          reason("none"),
+          node_growth(1.0),
+          predicted_next_mid_msec(0ULL),
+          endgame_reserve_msec(0ULL) {}
+};
+
+inline AI_TL_Early_Endgame_Decision ai_tl_early_endgame_decision(
+    int n_empties,
+    int depth,
+    uint_fast8_t mpc_level,
+    bool is_end_search,
+    bool search_success,
+    uint64_t elapsed_msec,
+    uint64_t time_limit_msec,
+    uint64_t iteration_msec,
+    uint64_t iteration_nodes,
+    uint64_t previous_iteration_msec,
+    uint64_t previous_iteration_nodes
+) {
+    AI_TL_Early_Endgame_Decision decision;
+#if !EGAROUCID_EARLY_ENDGAME_SCHEDULE
+    (void)n_empties;
+    (void)depth;
+    (void)mpc_level;
+    (void)is_end_search;
+    (void)search_success;
+    (void)elapsed_msec;
+    (void)time_limit_msec;
+    (void)iteration_msec;
+    (void)iteration_nodes;
+    (void)previous_iteration_msec;
+    (void)previous_iteration_nodes;
+    return decision;
+#else
+    if (
+        is_end_search ||
+        !search_success ||
+        n_empties < AI_TL_EARLY_ENDGAME_MIN_N_EMPTY ||
+        AI_TL_EARLY_ENDGAME_MAX_N_EMPTY < n_empties
+    ) {
+        return decision;
+    }
+
+    if (depth >= AI_TL_EARLY_ENDGAME_FIXED_DEPTH && mpc_level >= MPC_93_LEVEL) {
+        decision.start = true;
+        decision.reason = "fixed-30@93";
+        return decision;
+    }
+
+    if (depth >= AI_TL_EARLY_ENDGAME_FIXED_DEPTH - 1 && mpc_level >= MPC_88_LEVEL) {
+        decision.start = true;
+        decision.reason = "fixed-29@88";
+        return decision;
+    }
+
+    const bool confidence_ready =
+        (depth >= AI_TL_EARLY_ENDGAME_FIXED_DEPTH - 1 && mpc_level >= MPC_74_LEVEL) ||
+        (depth >= AI_TL_EARLY_ENDGAME_FIXED_DEPTH - 2 && mpc_level >= MPC_88_LEVEL);
+    if (!confidence_ready || elapsed_msec >= time_limit_msec) {
+        return decision;
+    }
+
+    if (previous_iteration_nodes > 0ULL) {
+        decision.node_growth = (double)iteration_nodes / (double)previous_iteration_nodes;
+    } else if (previous_iteration_msec > 0ULL) {
+        decision.node_growth = (double)iteration_msec / (double)previous_iteration_msec;
+    }
+    decision.node_growth = std::max(1.25, std::min(3.0, decision.node_growth));
+    decision.predicted_next_mid_msec = std::max<uint64_t>(
+        iteration_msec,
+        (uint64_t)std::ceil((double)iteration_msec * decision.node_growth)
+    );
+    decision.endgame_reserve_msec = std::max<uint64_t>(
+        AI_TL_EARLY_ENDGAME_MIN_RESERVE_MSEC,
+        time_limit_msec * AI_TL_EARLY_ENDGAME_RESERVE_PERCENT / 100ULL
+    );
+    const uint64_t remaining_msec = time_limit_msec - elapsed_msec;
+    decision.start = remaining_msec <=
+        decision.endgame_reserve_msec + decision.predicted_next_mid_msec;
+    decision.reason = decision.start ? "dynamic-budget" : "none";
+    return decision;
+#endif
 }
 
 #if IS_GGS_TOURNAMENT
@@ -850,7 +958,14 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     const uint64_t active_time_limit = time_limit;
 #endif
     uint64_t previous_iteration_time = 0;
+#if EGAROUCID_EARLY_ENDGAME_SCHEDULE
+    uint64_t previous_iteration_nodes = 0;
+#endif
     while (global_searching && (*searching) && ((tim() - strt < active_time_limit) || main_depth <= 1)) {
+#if EGAROUCID_EARLY_ENDGAME_SCHEDULE
+        const uint64_t prior_iteration_time = previous_iteration_time;
+        const uint64_t prior_iteration_nodes = previous_iteration_nodes;
+#endif
         uint64_t elapsed_before_iteration = tim() - strt;
         if (conservative_start && main_depth > 1 && elapsed_before_iteration < active_time_limit) {
             const uint64_t remaining = active_time_limit - elapsed_before_iteration;
@@ -925,6 +1040,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
         previous_iteration_time = std::max<uint64_t>(1ULL, tim() - iteration_start);
+#if EGAROUCID_EARLY_ENDGAME_SCHEDULE
+        previous_iteration_nodes = main_search.n_nodes;
+#endif
 #if IS_GGS_TOURNAMENT
         if (!search_success && !conditional_match_reserve_released) {
             const bool hold_reserve = ai_tl_ggs_should_hold_match_reserve(
@@ -1575,7 +1693,44 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         //if (main_depth > 10 && pop_count_ull(board.get_legal()) == 1) { // not use_legal
         //    break; // there is only 1 move
         //}
+#if EGAROUCID_EARLY_ENDGAME_SCHEDULE
+        const uint64_t elapsed_after_iteration = tim() - strt;
+        const bool baseline_would_continue_mid = main_depth <
+            max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT;
+        const AI_TL_Early_Endgame_Decision early_endgame = ai_tl_early_endgame_decision(
+            max_depth,
+            main_depth,
+            (uint_fast8_t)main_mpc_level,
+            main_is_end_search,
+            search_success,
+            elapsed_after_iteration,
+            active_time_limit,
+            previous_iteration_time,
+            previous_iteration_nodes,
+            prior_iteration_time,
+            prior_iteration_nodes
+        );
+        const bool start_early_endgame = baseline_would_continue_mid && early_endgame.start;
+        if (show_log && start_early_endgame) {
+            const uint64_t remaining_msec = get_this_search_time_limit(
+                active_time_limit,
+                elapsed_after_iteration
+            );
+            std::cerr << "early endgame switch " << early_endgame.reason
+                      << " after mid depth " << main_depth
+                      << "@" << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%"
+                      << " elapsed " << elapsed_after_iteration
+                      << " iteration " << previous_iteration_time
+                      << " nodes " << main_search.n_nodes
+                      << " growth " << std::fixed << std::setprecision(2) << early_endgame.node_growth
+                      << " predicted-next " << early_endgame.predicted_next_mid_msec
+                      << " reserve " << early_endgame.endgame_reserve_msec
+                      << " remaining " << remaining_msec << std::defaultfloat << std::endl;
+        }
+        if (baseline_would_continue_mid && !start_early_endgame) { // next: midgame search
+#else
         if (main_depth < max_depth - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT) { // next: midgame search
+#endif
             if (main_depth <= 15 && main_depth < max_depth - 3) {
                 main_depth += 3;
                 if (main_depth > 13 && main_mpc_level == MPC_100_LEVEL) {

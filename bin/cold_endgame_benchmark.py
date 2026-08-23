@@ -27,6 +27,7 @@ Use --extract-only to create a reproducible corpus without running searches.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import csv
 import glob
 import json
@@ -56,6 +57,11 @@ END_LINE_RE = re.compile(
     re.IGNORECASE,
 )
 END_TIME_RE = re.compile(r"\btime\s+(\d+)\b", re.IGNORECASE)
+MID_LINE_RE = re.compile(
+    r"mid\s+depth\s+(\d+)@([0-9]+(?:\.[0-9]+)?)%\s+(.*)",
+    re.IGNORECASE,
+)
+TERMINATED_TIME_RE = re.compile(r"\bterminated\s+(\d+)\s+ms\b", re.IGNORECASE)
 
 
 @dataclass
@@ -90,10 +96,16 @@ class SearchResult:
     nodes: Optional[int]
     nps: Optional[int]
     wall_time_ms: int
+    cpu_time_ms: Optional[int]
+    cpu_average_cores: Optional[float]
+    cpu_utilization_percent: Optional[float]
     end_attempted: bool
     end_completed: bool
+    end_start_time_ms: Optional[int]
+    end_search_time_ms: Optional[int]
     first_end_selectivity: Optional[float]
     first_end_time_ms: Optional[int]
+    first_end_search_time_ms: Optional[int]
     exact_completed: bool
     first_exact_time_ms: Optional[int]
 
@@ -518,10 +530,20 @@ def parse_end_iterations(
     end_attempted = False
     end_completed = False
     exact_completed = False
+    last_mid_time_ms: Optional[int] = None
+    end_start_time_ms: Optional[int] = None
+    end_last_time_ms: Optional[int] = None
     first_end_selectivity: Optional[float] = None
     first_end_time_ms: Optional[int] = None
     first_exact_time_ms: Optional[int] = None
     for line in stderr.splitlines():
+        mid_match = MID_LINE_RE.search(line)
+        if mid_match:
+            tail = mid_match.group(3)
+            time_match = END_TIME_RE.search(tail)
+            if "value" in tail.lower() and time_match:
+                last_mid_time_ms = int(time_match.group(1))
+            continue
         match = END_LINE_RE.search(line)
         if not match:
             continue
@@ -531,9 +553,20 @@ def parse_end_iterations(
         if depth != empties:
             continue
         end_attempted = True
-        if "terminated" in tail.lower() or "value" not in tail.lower():
-            continue
+        if end_start_time_ms is None:
+            end_start_time_ms = last_mid_time_ms or 0
         time_match = END_TIME_RE.search(tail)
+        terminated_match = TERMINATED_TIME_RE.search(tail)
+        if time_match:
+            end_last_time_ms = int(time_match.group(1))
+        elif terminated_match:
+            end_last_time_ms = int(terminated_match.group(1))
+        # A completed root search can be followed on the same log line by an
+        # auxiliary policy-verification timeout (for example,
+        # "value ... narrow-alt@88% terminated").  Only a root tail that
+        # starts with "terminated" means the end iteration itself timed out.
+        if tail.lstrip().lower().startswith("terminated") or "value" not in tail.lower():
+            continue
         if not time_match:
             continue
         iteration_time_ms = int(time_match.group(1))
@@ -544,14 +577,59 @@ def parse_end_iterations(
         if selectivity + 1e-9 >= 100.0 and not exact_completed:
             exact_completed = True
             first_exact_time_ms = iteration_time_ms
+    end_search_time_ms = None
+    if end_start_time_ms is not None and end_last_time_ms is not None:
+        end_search_time_ms = max(0, end_last_time_ms - end_start_time_ms)
+    first_end_search_time_ms = None
+    if end_start_time_ms is not None and first_end_time_ms is not None:
+        first_end_search_time_ms = max(0, first_end_time_ms - end_start_time_ms)
     return {
         "end_attempted": end_attempted,
         "end_completed": end_completed,
+        "end_start_time_ms": end_start_time_ms,
+        "end_search_time_ms": end_search_time_ms,
         "first_end_selectivity": first_end_selectivity,
         "first_end_time_ms": first_end_time_ms,
+        "first_end_search_time_ms": first_end_search_time_ms,
         "exact_completed": exact_completed,
         "first_exact_time_ms": first_exact_time_ms,
     }
+
+
+def get_process_cpu_time_ms(process: Optional[subprocess.Popen[str]]) -> Optional[int]:
+    """Return child user+kernel CPU time while its Windows handle is valid."""
+    if process is None or sys.platform != "win32" or not hasattr(process, "_handle"):
+        return None
+
+    class FileTime(ctypes.Structure):
+        _fields_ = [("low", ctypes.c_uint32), ("high", ctypes.c_uint32)]
+
+    creation = FileTime()
+    exit_time = FileTime()
+    kernel = FileTime()
+    user = FileTime()
+    get_process_times = ctypes.windll.kernel32.GetProcessTimes
+    get_process_times.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(FileTime),
+        ctypes.POINTER(FileTime),
+        ctypes.POINTER(FileTime),
+        ctypes.POINTER(FileTime),
+    ]
+    get_process_times.restype = ctypes.c_int
+    if not get_process_times(
+        ctypes.c_void_p(int(process._handle)),
+        ctypes.byref(creation),
+        ctypes.byref(exit_time),
+        ctypes.byref(kernel),
+        ctypes.byref(user),
+    ):
+        return None
+
+    def ticks(value: FileTime) -> int:
+        return (int(value.high) << 32) | int(value.low)
+
+    return round((ticks(kernel) + ticks(user)) / 10_000)
 
 
 def get_engine_version(exe: Path) -> str:
@@ -604,6 +682,7 @@ def run_case(
     timed_out = False
     error_text = ""
     process: Optional[subprocess.Popen[str]] = None
+    cpu_time_ms: Optional[int] = None
     try:
         process = subprocess.Popen(
             command,
@@ -616,6 +695,7 @@ def run_case(
             errors="replace",
         )
         stdout, stderr = process.communicate(engine_input, timeout=timeout_seconds)
+        cpu_time_ms = get_process_cpu_time_ms(process)
         return_code = process.returncode
         if return_code != 0:
             error_text = f"engine exited with code {return_code}"
@@ -625,6 +705,7 @@ def run_case(
         if process is not None:
             process.kill()
             stdout, stderr = process.communicate()
+            cpu_time_ms = get_process_cpu_time_ms(process)
             return_code = process.returncode
     except KeyboardInterrupt:
         if process is not None:
@@ -637,6 +718,16 @@ def run_case(
     except OSError as error:
         error_text = str(error)
     wall_time_ms = round((time.perf_counter() - start) * 1000)
+    cpu_average_cores = (
+        cpu_time_ms / wall_time_ms
+        if cpu_time_ms is not None and wall_time_ms > 0
+        else None
+    )
+    cpu_utilization_percent = (
+        cpu_average_cores / max(1, threads) * 100.0
+        if cpu_average_cores is not None
+        else None
+    )
 
     table = parse_result_table(stdout)
     end = parse_end_iterations(stderr, position.empties, required_selectivity)
@@ -662,10 +753,16 @@ def run_case(
         nodes=table.get("nodes"),
         nps=table.get("nps"),
         wall_time_ms=wall_time_ms,
+        cpu_time_ms=cpu_time_ms,
+        cpu_average_cores=cpu_average_cores,
+        cpu_utilization_percent=cpu_utilization_percent,
         end_attempted=bool(end["end_attempted"]),
         end_completed=bool(end["end_completed"]),
+        end_start_time_ms=end["end_start_time_ms"],
+        end_search_time_ms=end["end_search_time_ms"],
         first_end_selectivity=end["first_end_selectivity"],
         first_end_time_ms=end["first_end_time_ms"],
+        first_end_search_time_ms=end["first_end_search_time_ms"],
         exact_completed=bool(end["exact_completed"]),
         first_exact_time_ms=end["first_exact_time_ms"],
     )
@@ -689,14 +786,43 @@ def percentile(values: list[int], fraction: float) -> Optional[float]:
 
 def summarize_group(results: list[SearchResult]) -> dict[str, object]:
     completed = [result for result in results if result.end_completed]
+    attempted = [result for result in results if result.end_attempted]
     exact = [result for result in results if result.exact_completed]
     end_times = [
         result.first_end_time_ms
         for result in completed
         if result.first_end_time_ms is not None
     ]
-    nodes = [result.nodes for result in completed if result.nodes is not None]
     valid = [result for result in results if not result.error]
+    nodes = [result.nodes for result in completed if result.nodes is not None]
+    valid_nodes = [result.nodes for result in valid if result.nodes is not None]
+    nps = [result.nps for result in valid if result.nps is not None]
+    completed_nps = [result.nps for result in completed if result.nps is not None]
+    end_start_times = [
+        result.end_start_time_ms
+        for result in attempted
+        if result.end_start_time_ms is not None
+    ]
+    end_search_times = [
+        result.end_search_time_ms
+        for result in attempted
+        if result.end_search_time_ms is not None
+    ]
+    first_end_search_times = [
+        result.first_end_search_time_ms
+        for result in completed
+        if result.first_end_search_time_ms is not None
+    ]
+    cpu_average_cores = [
+        result.cpu_average_cores
+        for result in valid
+        if result.cpu_average_cores is not None
+    ]
+    cpu_utilization = [
+        result.cpu_utilization_percent
+        for result in valid
+        if result.cpu_utilization_percent is not None
+    ]
     return {
         "count": len(results),
         "valid": len(valid),
@@ -707,6 +833,23 @@ def summarize_group(results: list[SearchResult]) -> dict[str, object]:
         "first_end_time_median_ms": statistics.median(end_times) if end_times else None,
         "first_end_time_p90_ms": percentile(end_times, 0.90),
         "nodes_median": statistics.median(nodes) if nodes else None,
+        "valid_nodes_median": statistics.median(valid_nodes) if valid_nodes else None,
+        "nps_median": statistics.median(nps) if nps else None,
+        "completed_nps_median": statistics.median(completed_nps) if completed_nps else None,
+        "end_start_time_median_ms": statistics.median(end_start_times) if end_start_times else None,
+        "end_start_time_p90_ms": percentile(end_start_times, 0.90),
+        "end_search_time_median_ms": statistics.median(end_search_times) if end_search_times else None,
+        "end_search_time_p90_ms": percentile(end_search_times, 0.90),
+        "first_end_search_time_median_ms": (
+            statistics.median(first_end_search_times) if first_end_search_times else None
+        ),
+        "first_end_search_time_p90_ms": percentile(first_end_search_times, 0.90),
+        "cpu_average_cores_median": (
+            statistics.median(cpu_average_cores) if cpu_average_cores else None
+        ),
+        "cpu_utilization_percent_median": (
+            statistics.median(cpu_utilization) if cpu_utilization else None
+        ),
     }
 
 
@@ -758,6 +901,17 @@ def print_summary(summary: dict[str, object]) -> None:
         f"({float(overall['completion_rate']):.1%}), "
         f"{overall['exact_completed']} exact, "
         f"median first-end {format_optional_number(overall['first_end_time_median_ms'])} ms"
+    )
+    print(
+        "timing: median end-start "
+        f"{format_optional_number(overall['end_start_time_median_ms'])} ms, "
+        "end-search "
+        f"{format_optional_number(overall['end_search_time_median_ms'])} ms, "
+        "NPS "
+        f"{format_optional_number(overall['nps_median'])}, "
+        "CPU "
+        f"{format_optional_number(overall['cpu_utilization_percent_median'], 1)}% "
+        "of requested threads"
     )
 
 

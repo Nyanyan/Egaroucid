@@ -436,6 +436,53 @@ void test_verification_tt_bound_scope() {
     require(search.can_use_tt_nonexact_bounds(), "deeper verification nodes retain TT bounds");
 }
 
+void test_early_endgame_schedule() {
+#if EGAROUCID_EARLY_ENDGAME_SCHEDULE
+    require(
+        !ai_tl_early_endgame_decision(
+            45, 29, MPC_88_LEVEL, false, true,
+            5000ULL, 15000ULL, 1000ULL, 1000ULL, 500ULL, 500ULL
+        ).start,
+        "early endgame schedule must stay within the 38-44 empty range"
+    );
+    require(
+        !ai_tl_early_endgame_decision(
+            40, 29, MPC_88_LEVEL, false, false,
+            5000ULL, 15000ULL, 1000ULL, 1000ULL, 500ULL, 500ULL
+        ).start,
+        "an incomplete midgame iteration must not trigger endgame search"
+    );
+    require(
+        ai_tl_early_endgame_decision(
+            40, 29, MPC_88_LEVEL, false, true,
+            2000ULL, 15000ULL, 100ULL, 100ULL, 100ULL, 100ULL
+        ).start,
+        "29@88 must be sufficient to start selective endgame search"
+    );
+    require(
+        !ai_tl_early_endgame_decision(
+            40, 28, MPC_88_LEVEL, false, true,
+            2000ULL, 15000ULL, 100ULL, 100ULL, 100ULL, 100ULL
+        ).start,
+        "28@88 must continue when the next midgame iteration fits the budget"
+    );
+    const AI_TL_Early_Endgame_Decision costly = ai_tl_early_endgame_decision(
+        40, 28, MPC_88_LEVEL, false, true,
+        5000ULL, 15000ULL, 2000ULL, 300ULL, 1000ULL, 100ULL
+    );
+    require(costly.start, "expensive next midgame iteration must reserve time for endgame");
+    require_equal(costly.endgame_reserve_msec, 8250ULL, "15-second endgame reserve");
+#else
+    require(
+        !ai_tl_early_endgame_decision(
+            40, 29, MPC_88_LEVEL, false, true,
+            5000ULL, 15000ULL, 1000ULL, 1000ULL, 500ULL, 500ULL
+        ).start,
+        "disabled early endgame schedule must never trigger"
+    );
+#endif
+}
+
 } // namespace
 
 int main() {
@@ -455,6 +502,7 @@ int main() {
         test_candidate_stage2_selection();
         test_selfplay_order_early_stop();
         test_verification_tt_bound_scope();
+        test_early_endgame_schedule();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;
