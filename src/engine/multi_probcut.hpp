@@ -53,6 +53,99 @@ constexpr double probcut_end_d = 0.48284187178125065;
 constexpr double probcut_end_e = 5.289589936037036;
 constexpr double probcut_end_f = 11.940601436361513;
 
+/*
+    Recalibrated endgame MPC model.  The tables were fitted from exact-labelled
+    search contexts and are intentionally restricted to their covered range.
+    Outside depth 10--18 and selectivity 74--93, the legacy model is used.
+
+    The shallow depth candidates were also measured at +2 plies.  Although the
+    deeper probes reduced node counts, they reduced parallel NPS enough to lose
+    wall time, so this table keeps the faster original parity-preserving depths.
+*/
+constexpr int END_MPC_MODEL_MIN_DEPTH = 10;
+constexpr int END_MPC_MODEL_MAX_DEPTH = 18;
+constexpr int END_MPC_MODEL_SIZE = END_MPC_MODEL_MAX_DEPTH - END_MPC_MODEL_MIN_DEPTH + 1;
+
+#ifndef END_MPC_USE_RECALIBRATED_SHALLOW
+    #define END_MPC_USE_RECALIBRATED_SHALLOW 1
+#endif
+#ifndef END_MPC_USE_STATIC_EVAL_CUT
+    #define END_MPC_USE_STATIC_EVAL_CUT 1
+#endif
+#ifndef END_MPC_SHALLOW_GATE_SLACK_VALUE
+    #define END_MPC_SHALLOW_GATE_SLACK_VALUE 4
+#endif
+
+constexpr double END_MPC_SHALLOW_CUSHION = 1.10;
+constexpr int END_MPC_SHALLOW_GATE_SLACK = END_MPC_SHALLOW_GATE_SLACK_VALUE;
+constexpr int END_MPC_SHALLOW_DEPTH[END_MPC_MODEL_SIZE] = {
+    4, 5, 4, 5, 4, 7, 6, 7, 6
+};
+constexpr double END_MPC_SHALLOW_SIGMA[END_MPC_MODEL_SIZE] = {
+    4.784937620133198, 4.404753276200285, 5.2572064673113585,
+    4.228319028081452, 5.128290894292946, 3.8714224779536655,
+    4.498944083748551, 3.5529833917572193, 3.9725633191799896
+};
+constexpr double END_MPC_SHALLOW_LOWER_TAIL[3] = {
+    1.0550310553705888, 1.4922446086063115, 1.7959223408965452
+};
+constexpr double END_MPC_SHALLOW_UPPER_TAIL[3] = {
+    1.0859804512675133, 1.5634343141830378, 1.8446710563924853
+};
+// ceil(cushion * directional_tail * sigma), precomputed for the hot path.
+constexpr int END_MPC_SHALLOW_ERROR_HIGH[3][END_MPC_MODEL_SIZE] = {
+    {6, 6, 7, 5, 6, 5, 6, 5, 5},
+    {8, 8, 9, 7, 9, 7, 8, 6, 7},
+    {10, 9, 11, 9, 11, 8, 9, 8, 8}
+};
+constexpr int END_MPC_SHALLOW_ERROR_LOW[3][END_MPC_MODEL_SIZE] = {
+    {6, 6, 7, 6, 7, 5, 6, 5, 5},
+    {9, 8, 10, 8, 9, 7, 8, 7, 7},
+    {10, 9, 11, 9, 11, 8, 10, 8, 9}
+};
+
+// The static model predicts exact_value = static_eval + bias.  Its independent
+// 99% tails are deliberately more conservative than the requested selectivity.
+constexpr double END_MPC_STATIC_BIAS = 3.2015961138098543;
+constexpr double END_MPC_STATIC_CUSHION = 1.05;
+constexpr double END_MPC_STATIC_SIGMA[END_MPC_MODEL_SIZE] = {
+    7.451537457705234, 7.716189916857538, 7.9373539190235975,
+    8.298192366205916, 8.207674719706846, 7.795496183403784,
+    7.969549491857762, 7.768698310940474, 7.755365107145744
+};
+constexpr double END_MPC_STATIC_LOWER_TAIL = 2.6966500549415615;
+constexpr double END_MPC_STATIC_UPPER_TAIL = 3.0400938484780884;
+constexpr int END_MPC_STATIC_HIGH_OFFSET[END_MPC_MODEL_SIZE] = {
+    18, 19, 20, 21, 21, 19, 20, 19, 19
+};
+constexpr int END_MPC_STATIC_LOW_OFFSET[END_MPC_MODEL_SIZE] = {
+    -27, -28, -29, -30, -30, -29, -29, -29, -28
+};
+
+inline bool use_recalibrated_end_mpc(uint_fast8_t mpc_level, int depth) {
+    return
+        mpc_level <= MPC_93_LEVEL &&
+        END_MPC_MODEL_MIN_DEPTH <= depth && depth <= END_MPC_MODEL_MAX_DEPTH;
+}
+
+inline int end_mpc_shallow_depth(int depth) {
+    return END_MPC_SHALLOW_DEPTH[depth - END_MPC_MODEL_MIN_DEPTH];
+}
+
+inline int end_mpc_shallow_error(uint_fast8_t mpc_level, int depth, bool high) {
+    const int index = depth - END_MPC_MODEL_MIN_DEPTH;
+    return high
+        ? END_MPC_SHALLOW_ERROR_HIGH[mpc_level][index]
+        : END_MPC_SHALLOW_ERROR_LOW[mpc_level][index];
+}
+
+inline int end_mpc_static_threshold(int depth, int boundary, bool high) {
+    const int index = depth - END_MPC_MODEL_MIN_DEPTH;
+    return boundary + (high
+        ? END_MPC_STATIC_HIGH_OFFSET[index]
+        : END_MPC_STATIC_LOW_OFFSET[index]);
+}
+
 #if defined(END_PROBCUT_CONTEXT_TRACE)
 inline thread_local int end_probcut_context_trace_remaining = 0;
 inline thread_local int end_probcut_context_trace_min_depth = 0;
@@ -141,6 +234,122 @@ inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
 }
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
+
+inline bool mpc_end_static_eval_cut(
+    Search *search,
+    int alpha,
+    int beta,
+    int depth,
+    int d0_value,
+    uint64_t legal,
+    int *v
+) {
+#if END_MPC_USE_STATIC_EVAL_CUT
+    const int legal_count = pop_count_ull(legal);
+    const int static_high_threshold = end_mpc_static_threshold(depth, beta, true);
+    const int static_low_threshold = end_mpc_static_threshold(depth, alpha, false);
+#if defined(END_PROBCUT_CONTEXT_TRACE)
+    end_probcut_trace_context(
+        search, depth, 0, alpha, beta, "high", d0_value, legal_count,
+        static_high_threshold, d0_value >= static_high_threshold, true,
+        search->mpc_level
+    );
+    end_probcut_trace_context(
+        search, depth, 0, alpha, beta, "low", d0_value, legal_count,
+        static_low_threshold, d0_value <= static_low_threshold, true,
+        search->mpc_level
+    );
+#endif
+    if (d0_value >= static_high_threshold) {
+        *v = beta + (beta & 1);
+        return true;
+    }
+    if (d0_value <= static_low_threshold) {
+        *v = alpha - (alpha & 1);
+        return true;
+    }
+#else
+    (void)search;
+    (void)alpha;
+    (void)beta;
+    (void)depth;
+    (void)d0_value;
+    (void)legal;
+    (void)v;
+#endif
+    return false;
+}
+
+inline bool mpc_end_recalibrated_shallow(
+    Search *search,
+    int alpha,
+    int beta,
+    int depth,
+    int d0_value,
+    uint64_t legal,
+    int *v,
+    std::vector<bool*> &searchings
+) {
+    const uint_fast8_t mpc_level = search->mpc_level;
+    const int legal_count = pop_count_ull(legal);
+    const int shallow_depth = end_mpc_shallow_depth(depth);
+    const int high_threshold = beta + end_mpc_shallow_error(mpc_level, depth, true);
+    const int low_threshold = alpha - end_mpc_shallow_error(mpc_level, depth, false);
+    const bool high_gate = d0_value >= high_threshold - END_MPC_SHALLOW_GATE_SLACK;
+    const bool low_gate = d0_value <= low_threshold + END_MPC_SHALLOW_GATE_SLACK;
+#if defined(END_PROBCUT_CONTEXT_TRACE)
+    end_probcut_trace_context(
+        search, depth, shallow_depth, alpha, beta, "high", d0_value,
+        legal_count, high_threshold, high_gate, false, mpc_level
+    );
+    end_probcut_trace_context(
+        search, depth, shallow_depth, alpha, beta, "low", d0_value,
+        legal_count, low_threshold, low_gate, false, mpc_level
+    );
+#endif
+    if (!high_gate && !low_gate) {
+        return false;
+    }
+
+    search->mpc_level = MPC_100_LEVEL;
+#if !USE_DIM0_ONLY_EVALUATION
+    const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
+    search->use_dim0_mpc_eval = false;
+#endif
+    if (
+        high_gate && high_threshold <= SCORE_MAX &&
+        nega_alpha_ordering_nws(
+            search, high_threshold - 1, shallow_depth, false, legal, false,
+            searchings
+        ) >= high_threshold
+    ) {
+        *v = beta + (beta & 1);
+#if !USE_DIM0_ONLY_EVALUATION
+        search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
+#endif
+        search->mpc_level = mpc_level;
+        return true;
+    }
+    if (
+        low_gate && low_threshold >= -SCORE_MAX &&
+        nega_alpha_ordering_nws(
+            search, low_threshold, shallow_depth, false, legal, false,
+            searchings
+        ) <= low_threshold
+    ) {
+        *v = alpha - (alpha & 1);
+#if !USE_DIM0_ONLY_EVALUATION
+        search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
+#endif
+        search->mpc_level = mpc_level;
+        return true;
+    }
+#if !USE_DIM0_ONLY_EVALUATION
+    search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
+#endif
+    search->mpc_level = mpc_level;
+    return false;
+}
 
 template<bool IsEndSearch>
 inline int mpc_static_error(uint_fast8_t mpc_level, int n_discs, int depth) {
@@ -239,6 +448,18 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         }
         if ((beta & 1) == 0) {
             beta -= 1;
+        }
+        if (use_recalibrated_end_mpc(mpc_level, depth)) {
+            if (mpc_end_static_eval_cut(
+                search, alpha, beta, depth, d0value, legal, v
+            )) {
+                return true;
+            }
+#if END_MPC_USE_RECALIBRATED_SHALLOW
+            return mpc_end_recalibrated_shallow(
+                search, alpha, beta, depth, d0value, legal, v, searchings
+            );
+#endif
         }
     }
 
