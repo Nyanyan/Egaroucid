@@ -154,9 +154,12 @@ def filter_roots(
     return selected, len(excluded)
 
 
-def run_process(command: list[str], timeout: float) -> dict[str, Any]:
+def run_process(command: list[str], timeout: float, cwd: Path | None = None) -> dict[str, Any]:
     try:
-        completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
+        completed = subprocess.run(
+            command, capture_output=True, text=True, timeout=timeout,
+            check=False, cwd=cwd,
+        )
         return {"return_code": completed.returncode, "stdout": completed.stdout, "stderr": completed.stderr, "timed_out": False}
     except subprocess.TimeoutExpired as error:
         return {"return_code": None, "stdout": error.stdout or "", "stderr": error.stderr or "", "timed_out": True}
@@ -245,7 +248,7 @@ def trace_phase(args: argparse.Namespace, items: list[dict[str, Any]]) -> None:
         result = run_process([
             str(args.exe), "trace", item["board"], str(level),
             str(args.trace_contexts_per_depth), str(args.min_deep), str(args.max_deep),
-        ], args.trace_timeout)
+        ], args.trace_timeout, args.exe.parent)
         return item, level, result
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         for index, (item, level, result) in enumerate(executor.map(execute, jobs), 1):
@@ -339,7 +342,7 @@ def score_phase(args: argparse.Namespace) -> None:
         result = run_process([
             str(args.exe), "score-grid", board, str(deep_depth),
             ",".join(str(depth) for depth in depths),
-        ], args.score_timeout)
+        ], args.score_timeout, args.exe.parent)
         return (board, deep_depth), rows, result
 
     with ThreadPoolExecutor(max_workers=args.workers) as executor:

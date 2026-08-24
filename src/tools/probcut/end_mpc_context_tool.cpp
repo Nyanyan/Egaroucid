@@ -190,6 +190,67 @@ int score_grid(const std::string &board_text, int deep_depth, const std::string 
     return 0;
 }
 
+int shallow_grid(const std::string &board_text, int deep_depth, const std::string &depth_text) {
+    Board board;
+    if (!board.from_str(board_text)) {
+        std::cerr << "invalid board\n";
+        return 2;
+    }
+    const uint64_t legal = board.get_legal();
+    if (legal == 0 || deep_depth <= 0 || deep_depth > HW2 - board.n_discs()) {
+        std::cerr << "invalid scoring context\n";
+        return 2;
+    }
+    const std::vector<int> shallow_depths = parse_depths(depth_text);
+    if (shallow_depths.empty()) {
+        std::cerr << "no shallow depths\n";
+        return 2;
+    }
+
+    Search eval_search(&board, MPC_100_LEVEL, false, false);
+    const int d0_value = mid_evaluate_diff(&eval_search);
+    for (const int shallow_depth : shallow_depths) {
+        int shallow_value = d0_value;
+        uint64_t shallow_nodes = 0;
+        uint64_t shallow_time = 0;
+        if (shallow_depth > 0) {
+            transposition_table.init();
+            bool searching = true;
+            global_searching = true;
+            const uint64_t start = tim();
+            Search shallow_search(&board, MPC_100_LEVEL, false, false);
+            const std::pair<int, int> result = first_nega_scout_legal(
+                &shallow_search,
+                -SCORE_MAX,
+                SCORE_MAX,
+                shallow_depth,
+                false,
+                std::vector<Clog_result>(),
+                legal,
+                start,
+                &searching
+            );
+            if (!searching) {
+                return 4;
+            }
+            shallow_value = result.first;
+            shallow_nodes = shallow_search.n_nodes;
+            shallow_time = tim() - start;
+        }
+        std::cout
+            << "END_PROBCUT_SHALLOW_V2\t"
+            << deep_depth << '\t'
+            << shallow_depth << '\t'
+            << shallow_value << '\t'
+            << shallow_nodes << '\t'
+            << shallow_time << '\t'
+            << d0_value << '\t'
+            << pop_count_ull(legal)
+            << '\n';
+    }
+    return 0;
+}
+
 std::pair<int, int> cold_root_search(const Board &board, int mpc_level, bool use_multi_thread) {
     transposition_table.init();
     bool searching = true;
@@ -424,7 +485,7 @@ int batch_probe(const std::string &path) {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cerr << "usage: end_mpc_context_tool <trace|score-grid|label> ...\n";
+        std::cerr << "usage: end_mpc_context_tool <trace|score-grid|shallow-grid|label> ...\n";
         return 2;
     }
     const std::string command = argv[1];
@@ -449,6 +510,9 @@ int main(int argc, char **argv) {
     }
     if (command == "score-grid" && argc == 5) {
         return score_grid(argv[2], std::atoi(argv[3]), argv[4]);
+    }
+    if (command == "shallow-grid" && argc == 5) {
+        return shallow_grid(argv[2], std::atoi(argv[3]), argv[4]);
     }
     if (command == "compare-pv" && argc == 6) {
         return compare_pv(argv[2], std::atoi(argv[3]), std::atoi(argv[4]), n_threads);
