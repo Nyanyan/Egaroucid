@@ -24,12 +24,6 @@ constexpr double MPC_ERROR_SCALE = 1.0;
 constexpr int MPC_ERROR0_OFFSET = 3;
 constexpr int MPC_DEPTH_NUMERATOR = 2;
 constexpr int MPC_DEPTH_DENOMINATOR = 5;
-#ifndef END_MPC_74_ERROR_MARGIN
-    #define END_MPC_74_ERROR_MARGIN 2
-#endif
-#ifndef END_MPC_74_ERROR_MARGIN_MAX_DEPTH
-    #define END_MPC_74_ERROR_MARGIN_MAX_DEPTH 24
-#endif
 #ifndef MPC_SIGMA_SCALE
     #define MPC_SIGMA_SCALE 1.0
 #endif
@@ -94,21 +88,6 @@ inline double probcut_sigma_end(int n_discs, int depth) {
 
 inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
     return ceil(MPC_ERROR_SCALE * SELECTIVITY_MPCT[mpc_level] * sigma);
-}
-
-template<bool IsEndSearch>
-inline int mpc_error_margin(uint_fast8_t mpc_level, int depth) {
-    if constexpr (IsEndSearch) {
-        // Thousands of 74% cuts can contribute to one exact-endgame result.
-        // Give the leaf-heavy part of that tree a small safety reserve while
-        // leaving the stronger selectivity levels and upper tree unchanged.
-        return
-            mpc_level == MPC_74_LEVEL &&
-            depth <= END_MPC_74_ERROR_MARGIN_MAX_DEPTH
-                ? END_MPC_74_ERROR_MARGIN
-                : 0;
-    }
-    return 0;
 }
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
@@ -215,7 +194,6 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 
     if (search_depth == 0) {
         int static_error = mpc_static_error<IsEndSearch>(mpc_level, search->n_discs, depth);
-        static_error += mpc_error_margin<IsEndSearch>(mpc_level, depth);
         if (d0value >= beta + static_error) {
             *v = beta;
             if constexpr (IsEndSearch) {
@@ -233,7 +211,6 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
     } else {
         int error_search;
         mpc_search_errors<IsEndSearch>(mpc_level, search->n_discs, search_depth, depth, &error_search, nullptr);
-        error_search += mpc_error_margin<IsEndSearch>(mpc_level, depth);
         // if (IsEndSearch) {
         //     error_search += 1.5;
         // }
