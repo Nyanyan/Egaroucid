@@ -53,6 +53,56 @@ constexpr double probcut_end_d = 0.48284187178125065;
 constexpr double probcut_end_e = 5.289589936037036;
 constexpr double probcut_end_f = 11.940601436361513;
 
+#if defined(END_PROBCUT_CONTEXT_TRACE)
+inline thread_local int end_probcut_context_trace_remaining = 0;
+inline thread_local int end_probcut_context_trace_min_depth = 0;
+inline thread_local int end_probcut_context_trace_max_depth = HW2;
+inline thread_local int end_probcut_context_trace_per_depth_remaining[HW2 + 1] = {};
+
+inline void end_probcut_trace_context(
+    const Search *search,
+    int deep_depth,
+    int shallow_depth,
+    int alpha,
+    int beta,
+    const char *direction,
+    int d0_value,
+    int legal_count,
+    int threshold,
+    bool gate_passed,
+    bool static_probe,
+    uint_fast8_t mpc_level
+) {
+    if (
+        end_probcut_context_trace_remaining <= 0 ||
+        deep_depth < end_probcut_context_trace_min_depth ||
+        deep_depth > end_probcut_context_trace_max_depth ||
+        end_probcut_context_trace_per_depth_remaining[deep_depth] <= 0
+    ) {
+        return;
+    }
+    --end_probcut_context_trace_remaining;
+    --end_probcut_context_trace_per_depth_remaining[deep_depth];
+    std::cout
+        << "END_PROBCUT_CONTEXT_V2\t"
+        << search->board.to_str() << '\t'
+        << deep_depth << '\t'
+        << shallow_depth << '\t'
+        << static_cast<int>(search->n_discs) << '\t'
+        << static_cast<int>(search->n_discs - search->root_n_discs) << '\t'
+        << alpha << '\t'
+        << beta << '\t'
+        << direction << '\t'
+        << d0_value << '\t'
+        << legal_count << '\t'
+        << static_cast<int>(mpc_level) << '\t'
+        << threshold << '\t'
+        << static_cast<int>(gate_passed) << '\t'
+        << static_cast<int>(static_probe)
+        << '\n';
+}
+#endif
+
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
@@ -194,6 +244,20 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 
     if (search_depth == 0) {
         int static_error = mpc_static_error<IsEndSearch>(mpc_level, search->n_discs, depth);
+#if defined(END_PROBCUT_CONTEXT_TRACE)
+        if constexpr (IsEndSearch) {
+            end_probcut_trace_context(
+                search, depth, 0, alpha, beta, "high", d0value,
+                pop_count_ull(legal), beta + static_error,
+                d0value >= beta + static_error, true, mpc_level
+            );
+            end_probcut_trace_context(
+                search, depth, 0, alpha, beta, "low", d0value,
+                pop_count_ull(legal), alpha - static_error,
+                d0value <= alpha - static_error, true, mpc_level
+            );
+        }
+#endif
         if (d0value >= beta + static_error) {
             *v = beta;
             if constexpr (IsEndSearch) {
@@ -215,6 +279,20 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         //     error_search += 1.5;
         // }
         int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
+#if defined(END_PROBCUT_CONTEXT_TRACE)
+        if constexpr (IsEndSearch) {
+            end_probcut_trace_context(
+                search, depth, search_depth, alpha, beta, "high", d0value,
+                pop_count_ull(legal), beta + error_search,
+                d0value >= beta + error_0, false, mpc_level
+            );
+            end_probcut_trace_context(
+                search, depth, search_depth, alpha, beta, "low", d0value,
+                pop_count_ull(legal), alpha - error_search,
+                d0value <= alpha - error_0, false, mpc_level
+            );
+        }
+#endif
         search->mpc_level = MPC_100_LEVEL;
 #if !USE_DIM0_ONLY_EVALUATION
         const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
