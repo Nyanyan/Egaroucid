@@ -1,0 +1,2 @@
+src/tools/policy_network_human_like_ai/10_train_policy_network/trained/**/*.h5 filter=lfs diff=lfs merge=lfs -text
+src/tools/policy_network_human_like_ai/10_train_policy_network/trained/**/*.bin filter=lfs diff=lfs merge=lfs -text

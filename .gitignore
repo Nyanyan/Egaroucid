@@ -91,6 +91,23 @@ enc_temp_folder
 src/tools/evaluation/dl_test
 
 # policy network human-like AI research local artifacts
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_256x4_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_256x4_e50/**
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_384x4_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_384x4_e50/**
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_512x4_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_512x4_e50/**
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_768x4_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_768x4_e50/**
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_1024x4_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_1024x4_e50/**
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_512x6_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_512x6_e50/**
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_768x6_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_768x6_e50/**
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_1024x6_e50/
+!src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_1024x6_e50/**
 src/tools/policy_network_human_like_ai/report
 src/tools/policy_network_human_like_ai/10_train_policy_network/train_log
 

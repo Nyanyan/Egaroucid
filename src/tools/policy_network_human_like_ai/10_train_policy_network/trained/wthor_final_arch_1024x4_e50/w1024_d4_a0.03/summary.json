@@ -1,0 +1,160 @@
+{
+  "name": "w1024_d4_a0.03",
+  "spec": {
+    "name": "w1024_d4_a0.03",
+    "width": 1024,
+    "depth": 4,
+    "alpha": 0.03,
+    "dropout": 0.0,
+    "l2": 0.0,
+    "learning_rate": 0.001
+  },
+  "params": 3346496,
+  "epochs_ran": 50,
+  "selected_epoch": 50,
+  "selection_rule": "final_epoch",
+  "selected_val_loss": 1.658315896987915,
+  "selected_val_accuracy": 0.5419338345527649,
+  "selected_val_top3": 0.8396185040473938,
+  "selected_val_top5": 0.9341379404067993,
+  "final_loss": 0.7171720862388611,
+  "final_accuracy": 0.7315985560417175,
+  "final_top3": 0.9588653445243835,
+  "final_top5": 0.9919965267181396,
+  "output_dir": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_1024x4_e50\\w1024_d4_a0.03",
+  "split_topn": {
+    "train": {
+      "split": "train",
+      "positions": 6428225,
+      "invalid_policy_samples": 0,
+      "illegal_label_samples": 0,
+      "topn": [
+        {
+          "split": "train",
+          "top_n": 1,
+          "hits": 4878681,
+          "positions": 6428225,
+          "accuracy": 0.7589468321348428
+        },
+        {
+          "split": "train",
+          "top_n": 2,
+          "hits": 5887273,
+          "positions": 6428225,
+          "accuracy": 0.9158473762197185
+        },
+        {
+          "split": "train",
+          "top_n": 3,
+          "hits": 6219515,
+          "positions": 6428225,
+          "accuracy": 0.9675322503490466
+        },
+        {
+          "split": "train",
+          "top_n": 5,
+          "hits": 6392419,
+          "positions": 6428225,
+          "accuracy": 0.9944298776100712
+        },
+        {
+          "split": "train",
+          "top_n": 10,
+          "hits": 6427947,
+          "positions": 6428225,
+          "accuracy": 0.9999567532250349
+        }
+      ]
+    },
+    "val": {
+      "split": "val",
+      "positions": 803528,
+      "invalid_policy_samples": 0,
+      "illegal_label_samples": 0,
+      "topn": [
+        {
+          "split": "val",
+          "top_n": 1,
+          "hits": 439615,
+          "positions": 803528,
+          "accuracy": 0.5471060124849414
+        },
+        {
+          "split": "val",
+          "top_n": 2,
+          "hits": 599448,
+          "positions": 803528,
+          "accuracy": 0.746020051572565
+        },
+        {
+          "split": "val",
+          "top_n": 3,
+          "hits": 681647,
+          "positions": 803528,
+          "accuracy": 0.84831766907936
+        },
+        {
+          "split": "val",
+          "top_n": 5,
+          "hits": 758318,
+          "positions": 803528,
+          "accuracy": 0.9437356258898258
+        },
+        {
+          "split": "val",
+          "top_n": 10,
+          "hits": 801289,
+          "positions": 803528,
+          "accuracy": 0.9972135382961141
+        }
+      ]
+    },
+    "test": {
+      "split": "test",
+      "positions": 803529,
+      "invalid_policy_samples": 0,
+      "illegal_label_samples": 0,
+      "topn": [
+        {
+          "split": "test",
+          "top_n": 1,
+          "hits": 440070,
+          "positions": 803529,
+          "accuracy": 0.5476715837262874
+        },
+        {
+          "split": "test",
+          "top_n": 2,
+          "hits": 599658,
+          "positions": 803529,
+          "accuracy": 0.7462804702754973
+        },
+        {
+          "split": "test",
+          "top_n": 3,
+          "hits": 682001,
+          "positions": 803529,
+          "accuracy": 0.8487571699341281
+        },
+        {
+          "split": "test",
+          "top_n": 5,
+          "hits": 758279,
+          "positions": 803529,
+          "accuracy": 0.9436859155052275
+        },
+        {
+          "split": "test",
+          "top_n": 10,
+          "hits": 801301,
+          "positions": 803529,
+          "accuracy": 0.9972272313755944
+        }
+      ]
+    }
+  },
+  "selected_val_legal_top1": 0.5471060124849414,
+  "selected_val_legal_top3": 0.84831766907936,
+  "selected_val_legal_top5": 0.9437356258898258,
+  "selected_val_legal_top10": 0.9972135382961141
+}

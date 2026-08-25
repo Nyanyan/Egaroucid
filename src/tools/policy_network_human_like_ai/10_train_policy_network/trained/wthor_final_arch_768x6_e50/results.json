@@ -1,0 +1,162 @@
+[
+  {
+    "name": "w768_d6_a0.03",
+    "spec": {
+      "name": "w768_d6_a0.03",
+      "width": 768,
+      "depth": 6,
+      "alpha": 0.03,
+      "dropout": 0.0,
+      "l2": 0.0,
+      "learning_rate": 0.001
+    },
+    "params": 3101248,
+    "epochs_ran": 50,
+    "selected_epoch": 50,
+    "selection_rule": "final_epoch",
+    "selected_val_loss": 1.4480571746826172,
+    "selected_val_accuracy": 0.5499285459518433,
+    "selected_val_top3": 0.8461808562278748,
+    "selected_val_top5": 0.9366008639335632,
+    "final_loss": 0.8466664552688599,
+    "final_accuracy": 0.6817598938941956,
+    "final_top3": 0.9406751990318298,
+    "final_top5": 0.9869675040245056,
+    "output_dir": "src\\tools\\policy_network_human_like_ai\\10_train_policy_network\\trained\\wthor_final_arch_768x6_e50\\w768_d6_a0.03",
+    "split_topn": {
+      "train": {
+        "split": "train",
+        "positions": 6428225,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "topn": [
+          {
+            "split": "train",
+            "top_n": 1,
+            "hits": 4525646,
+            "positions": 6428225,
+            "accuracy": 0.7040273170276399
+          },
+          {
+            "split": "train",
+            "top_n": 2,
+            "hits": 5684114,
+            "positions": 6428225,
+            "accuracy": 0.8842431619926185
+          },
+          {
+            "split": "train",
+            "top_n": 3,
+            "hits": 6116900,
+            "positions": 6428225,
+            "accuracy": 0.9515690567769486
+          },
+          {
+            "split": "train",
+            "top_n": 5,
+            "hits": 6371134,
+            "positions": 6428225,
+            "accuracy": 0.9911186991743444
+          },
+          {
+            "split": "train",
+            "top_n": 10,
+            "hits": 6427800,
+            "positions": 6428225,
+            "accuracy": 0.9999338853260425
+          }
+        ]
+      },
+      "val": {
+        "split": "val",
+        "positions": 803528,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "topn": [
+          {
+            "split": "val",
+            "top_n": 1,
+            "hits": 445399,
+            "positions": 803528,
+            "accuracy": 0.5543042681773379
+          },
+          {
+            "split": "val",
+            "top_n": 2,
+            "hits": 605480,
+            "positions": 803528,
+            "accuracy": 0.7535269461674018
+          },
+          {
+            "split": "val",
+            "top_n": 3,
+            "hits": 686292,
+            "positions": 803528,
+            "accuracy": 0.8540984259415976
+          },
+          {
+            "split": "val",
+            "top_n": 5,
+            "hits": 760038,
+            "positions": 803528,
+            "accuracy": 0.9458761860196533
+          },
+          {
+            "split": "val",
+            "top_n": 10,
+            "hits": 801119,
+            "positions": 803528,
+            "accuracy": 0.9970019713065381
+          }
+        ]
+      },
+      "test": {
+        "split": "test",
+        "positions": 803529,
+        "invalid_policy_samples": 0,
+        "illegal_label_samples": 0,
+        "topn": [
+          {
+            "split": "test",
+            "top_n": 1,
+            "hits": 446594,
+            "positions": 803529,
+            "accuracy": 0.5557907679747713
+          },
+          {
+            "split": "test",
+            "top_n": 2,
+            "hits": 606106,
+            "positions": 803529,
+            "accuracy": 0.7543050717522329
+          },
+          {
+            "split": "test",
+            "top_n": 3,
+            "hits": 686418,
+            "positions": 803529,
+            "accuracy": 0.8542541712869106
+          },
+          {
+            "split": "test",
+            "top_n": 5,
+            "hits": 759780,
+            "positions": 803529,
+            "accuracy": 0.945553925247253
+          },
+          {
+            "split": "test",
+            "top_n": 10,
+            "hits": 800930,
+            "positions": 803529,
+            "accuracy": 0.996765518108245
+          }
+        ]
+      }
+    },
+    "selected_val_legal_top1": 0.5543042681773379,
+    "selected_val_legal_top3": 0.8540984259415976,
+    "selected_val_legal_top5": 0.9458761860196533,
+    "selected_val_legal_top10": 0.9970019713065381
+  }
+]
