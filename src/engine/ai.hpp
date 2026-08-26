@@ -176,7 +176,7 @@ struct AI_Time_Limit_Match_Context {
 
 struct AI_TL_Iteration_Diagnostics {
     bool enable_match_revalidation;
-    bool enable_pair_win_nws;
+    bool enable_pair_outcome_nws;
     int pair_value;
     int recent_policies[4];
     int recent_policy_count;
@@ -189,7 +189,7 @@ struct AI_TL_Iteration_Diagnostics {
 
     AI_TL_Iteration_Diagnostics()
         : enable_match_revalidation(false),
-          enable_pair_win_nws(false),
+          enable_pair_outcome_nws(false),
           pair_value(0),
           recent_policies{MOVE_UNDEFINED, MOVE_UNDEFINED, MOVE_UNDEFINED, MOVE_UNDEFINED},
           recent_policy_count(0),
@@ -221,12 +221,16 @@ inline bool ai_search_result_has_proven_lower_bound(int n_discs, const Search_re
 }
 
 #if IS_GGS_TOURNAMENT
-inline int ai_tl_ggs_pair_win_target(int exact_pair_value) {
+inline int ai_tl_ggs_pair_win_target(int proven_pair_value) {
     // A positive sum, rather than a draw, is the only successful match result.
-    return 1 - exact_pair_value;
+    return 1 - proven_pair_value;
 }
 
-struct AI_TL_GGS_Pair_Win_Proof {
+inline int ai_tl_ggs_pair_draw_target(int proven_pair_value) {
+    return -proven_pair_value;
+}
+
+struct AI_TL_GGS_Pair_Outcome_Proof {
     bool complete;
     bool proved;
     int target;
@@ -235,21 +239,21 @@ struct AI_TL_GGS_Pair_Win_Proof {
     uint64_t nodes;
     uint64_t elapsed;
 
-    AI_TL_GGS_Pair_Win_Proof()
+    AI_TL_GGS_Pair_Outcome_Proof()
         : complete(false), proved(false), target(SCORE_UNDEFINED),
           value(SCORE_UNDEFINED), policy(MOVE_UNDEFINED), nodes(0), elapsed(0) {}
 };
 
-inline AI_TL_GGS_Pair_Win_Proof ai_tl_ggs_pair_win_nws(
+inline AI_TL_GGS_Pair_Outcome_Proof ai_tl_ggs_pair_target_nws(
     const Board &board,
-    int exact_pair_value,
+    int target,
     uint64_t budget,
     bool use_multi_thread,
     thread_id_t thread_id,
     bool *searching
 );
 
-inline bool ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(
+inline bool ai_tl_ggs_should_replace_complete_search_with_pair_outcome_nws(
     bool main_is_complete_search,
     const AI_TL_Iteration_Diagnostics *diagnostics,
     const Search_result &previous_result
@@ -257,7 +261,7 @@ inline bool ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(
     return
         main_is_complete_search &&
         diagnostics != nullptr &&
-        diagnostics->enable_pair_win_nws &&
+        diagnostics->enable_pair_outcome_nws &&
         previous_result.is_end_search &&
         previous_result.probability < 100 &&
         is_valid_policy(previous_result.policy);
@@ -1093,44 +1097,111 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #endif
 #if IS_GGS_TOURNAMENT
         if (
-            ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(
+            ai_tl_ggs_should_replace_complete_search_with_pair_outcome_nws(
                 main_is_complete_search,
                 diagnostics,
                 *result
             )
         ) {
+            const uint64_t pair_outcome_start = tim();
+            uint64_t pair_outcome_budget = time_limit_this_search;
+            const int pair_win_target = ai_tl_ggs_pair_win_target(diagnostics->pair_value);
             if (show_log) {
                 std::cerr << "pair-win NWS target "
-                          << ai_tl_ggs_pair_win_target(diagnostics->pair_value)
-                          << " budget " << time_limit_this_search << " ms ";
+                          << pair_win_target
+                          << " budget " << pair_outcome_budget << " ms ";
             }
-            const AI_TL_GGS_Pair_Win_Proof proof = ai_tl_ggs_pair_win_nws(
-                board,
-                diagnostics->pair_value,
-                time_limit_this_search,
-                use_multi_thread,
-                thread_id,
-                searching
-            );
-            result->nodes += proof.nodes;
+            AI_TL_GGS_Pair_Outcome_Proof win_proof;
+            if (pair_win_target <= SCORE_MAX) {
+                win_proof = ai_tl_ggs_pair_target_nws(
+                    board,
+                    pair_win_target,
+                    pair_outcome_budget,
+                    use_multi_thread,
+                    thread_id,
+                    searching
+                );
+            } else {
+                win_proof.complete = true;
+                win_proof.target = pair_win_target;
+            }
+            result->nodes += win_proof.nodes;
             result->time = tim() - strt;
             result->nps = calc_nps(result->nodes, result->time);
-            if (proof.complete && proof.proved) {
-                result->policy = proof.policy;
-                result->value = proof.value;
+            if (win_proof.complete && win_proof.proved) {
+                result->policy = win_proof.policy;
+                result->value = win_proof.value;
                 result->depth = max_depth;
                 result->probability = 100;
                 result->is_end_search = true;
                 result->is_exact_lower_bound = true;
             }
             if (show_log) {
-                std::cerr << (proof.complete ? (proof.proved ? "proved" : "no-win-proof") : "terminated")
-                          << " value " << proof.value
-                          << " policy " << (is_valid_policy(proof.policy) ? idx_to_coord(proof.policy) : "undefined")
-                          << " n_nodes " << proof.nodes
-                          << " time " << proof.elapsed << " ms" << std::endl;
+                std::cerr << (win_proof.complete ? (win_proof.proved ? "proved" : "fail-low") : "terminated")
+                          << " value " << win_proof.value
+                          << " policy " << (is_valid_policy(win_proof.policy) ? idx_to_coord(win_proof.policy) : "undefined")
+                          << " n_nodes " << win_proof.nodes
+                          << " time " << win_proof.elapsed << " ms" << std::endl;
             }
-            break;
+            if (!win_proof.complete || win_proof.proved) {
+                break;
+            }
+
+            const uint64_t elapsed_after_win_nws = tim() - pair_outcome_start;
+            pair_outcome_budget = elapsed_after_win_nws < time_limit_this_search ?
+                time_limit_this_search - elapsed_after_win_nws : 0ULL;
+            if (pair_outcome_budget == 0ULL) {
+                break;
+            }
+            if (show_log) {
+                std::cerr << "pair-draw NWS target "
+                          << ai_tl_ggs_pair_draw_target(diagnostics->pair_value)
+                          << " budget " << pair_outcome_budget << " ms ";
+            }
+            const AI_TL_GGS_Pair_Outcome_Proof draw_proof = ai_tl_ggs_pair_target_nws(
+                board,
+                ai_tl_ggs_pair_draw_target(diagnostics->pair_value),
+                pair_outcome_budget,
+                use_multi_thread,
+                thread_id,
+                searching
+            );
+            result->nodes += draw_proof.nodes;
+            result->time = tim() - strt;
+            result->nps = calc_nps(result->nodes, result->time);
+            if (draw_proof.complete && draw_proof.proved) {
+                result->policy = draw_proof.policy;
+                // The preceding fail-low at draw_target + 1 is an upper bound,
+                // while this fail-high is a matching lower bound. Together they
+                // prove the exact root value and a policy attaining it.
+                result->value = draw_proof.target;
+                result->depth = max_depth;
+                result->probability = 100;
+                result->is_end_search = true;
+                result->is_exact_lower_bound = false;
+            }
+            if (show_log) {
+                std::cerr << (draw_proof.complete ? (draw_proof.proved ? "proved" : "fail-low") : "terminated")
+                          << " value " << draw_proof.value
+                          << " policy " << (is_valid_policy(draw_proof.policy) ? idx_to_coord(draw_proof.policy) : "undefined")
+                          << " n_nodes " << draw_proof.nodes
+                          << " time " << draw_proof.elapsed << " ms" << std::endl;
+            }
+            if (!draw_proof.complete || draw_proof.proved) {
+                break;
+            }
+
+            const uint64_t elapsed_after_draw_nws = tim() - pair_outcome_start;
+            pair_outcome_budget = elapsed_after_draw_nws < time_limit_this_search ?
+                time_limit_this_search - elapsed_after_draw_nws : 0ULL;
+            if (pair_outcome_budget == 0ULL) {
+                break;
+            }
+            time_limit_this_search = pair_outcome_budget;
+            if (show_log) {
+                std::cerr << "pair-loss full-window fallback budget "
+                          << time_limit_this_search << " ms ";
+            }
         }
 #endif
         std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &main_searching);
@@ -3904,16 +3975,16 @@ inline AI_TL_GGS_Match_Revalidation_Pair ai_tl_ggs_match_revalidate(
     return deepest_pair;
 }
 
-inline AI_TL_GGS_Pair_Win_Proof ai_tl_ggs_pair_win_nws(
+inline AI_TL_GGS_Pair_Outcome_Proof ai_tl_ggs_pair_target_nws(
     const Board &board,
-    int exact_pair_value,
+    int target,
     uint64_t budget,
     bool use_multi_thread,
     thread_id_t thread_id,
     bool *searching
 ) {
-    AI_TL_GGS_Pair_Win_Proof proof;
-    proof.target = ai_tl_ggs_pair_win_target(exact_pair_value);
+    AI_TL_GGS_Pair_Outcome_Proof proof;
+    proof.target = target;
     const uint64_t legal = board.get_legal();
     if (
         budget == 0ULL ||
@@ -3923,6 +3994,14 @@ inline AI_TL_GGS_Pair_Win_Proof ai_tl_ggs_pair_win_nws(
         legal == 0ULL ||
         proof.target > SCORE_MAX
     ) {
+        return proof;
+    }
+    if (proof.target <= -SCORE_MAX) {
+        uint64_t legal_copy = legal;
+        proof.complete = true;
+        proof.proved = true;
+        proof.value = -SCORE_MAX;
+        proof.policy = first_bit(&legal_copy);
         return proof;
     }
 
@@ -3986,9 +4065,10 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         match_context != nullptr &&
         match_context->has_pair_result &&
         match_context->pair_value_is_proven &&
-        ai_tl_ggs_pair_win_target(match_context->pair_value) <= SCORE_MAX
+        -SCORE_MAX <= ai_tl_ggs_pair_draw_target(match_context->pair_value) &&
+        ai_tl_ggs_pair_draw_target(match_context->pair_value) <= SCORE_MAX
     ) {
-        iteration_diagnostics.enable_pair_win_nws = true;
+        iteration_diagnostics.enable_pair_outcome_nws = true;
         iteration_diagnostics.pair_value = match_context->pair_value;
     }
 #else
@@ -4189,7 +4269,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         thread_id,
         searching,
 #if IS_GGS_TOURNAMENT
-        (iteration_diagnostics.enable_match_revalidation || iteration_diagnostics.enable_pair_win_nws) ?
+        (iteration_diagnostics.enable_match_revalidation || iteration_diagnostics.enable_pair_outcome_nws) ?
             &iteration_diagnostics : nullptr
 #else
         nullptr
