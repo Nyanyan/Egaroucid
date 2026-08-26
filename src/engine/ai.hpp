@@ -166,15 +166,17 @@ constexpr int AI_TL_ADDITIONAL_SELFPLAY_BALANCED_PASSES = 1;
 
 struct AI_Time_Limit_Match_Context {
     bool has_pair_result;
+    bool pair_value_is_proven;
     int pair_value;
     uint64_t real_remaining_time_msec;
 
     AI_Time_Limit_Match_Context()
-        : has_pair_result(false), pair_value(0), real_remaining_time_msec(0) {}
+        : has_pair_result(false), pair_value_is_proven(false), pair_value(0), real_remaining_time_msec(0) {}
 };
 
 struct AI_TL_Iteration_Diagnostics {
     bool enable_match_revalidation;
+    bool enable_pair_win_nws;
     int pair_value;
     int recent_policies[4];
     int recent_policy_count;
@@ -187,6 +189,7 @@ struct AI_TL_Iteration_Diagnostics {
 
     AI_TL_Iteration_Diagnostics()
         : enable_match_revalidation(false),
+          enable_pair_win_nws(false),
           pair_value(0),
           recent_policies{MOVE_UNDEFINED, MOVE_UNDEFINED, MOVE_UNDEFINED, MOVE_UNDEFINED},
           recent_policy_count(0),
@@ -198,7 +201,68 @@ struct AI_TL_Iteration_Diagnostics {
           attempted_probability(0) {}
 };
 
+inline bool ai_search_result_has_exact_value(int n_discs, const Search_result &result) {
+    return
+        result.is_end_search &&
+        !result.is_exact_lower_bound &&
+        result.probability == 100 &&
+        result.depth >= HW2 - n_discs &&
+        result.value != SCORE_UNDEFINED &&
+        (is_valid_policy(result.policy) || result.policy == MOVE_PASS);
+}
+
+inline bool ai_search_result_has_proven_lower_bound(int n_discs, const Search_result &result) {
+    return
+        result.is_end_search &&
+        result.probability == 100 &&
+        result.depth >= HW2 - n_discs &&
+        result.value != SCORE_UNDEFINED &&
+        (is_valid_policy(result.policy) || result.policy == MOVE_PASS);
+}
+
 #if IS_GGS_TOURNAMENT
+inline int ai_tl_ggs_pair_win_target(int exact_pair_value) {
+    // A positive sum, rather than a draw, is the only successful match result.
+    return 1 - exact_pair_value;
+}
+
+struct AI_TL_GGS_Pair_Win_Proof {
+    bool complete;
+    bool proved;
+    int target;
+    int value;
+    int policy;
+    uint64_t nodes;
+    uint64_t elapsed;
+
+    AI_TL_GGS_Pair_Win_Proof()
+        : complete(false), proved(false), target(SCORE_UNDEFINED),
+          value(SCORE_UNDEFINED), policy(MOVE_UNDEFINED), nodes(0), elapsed(0) {}
+};
+
+inline AI_TL_GGS_Pair_Win_Proof ai_tl_ggs_pair_win_nws(
+    const Board &board,
+    int exact_pair_value,
+    uint64_t budget,
+    bool use_multi_thread,
+    thread_id_t thread_id,
+    bool *searching
+);
+
+inline bool ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(
+    bool main_is_complete_search,
+    const AI_TL_Iteration_Diagnostics *diagnostics,
+    const Search_result &previous_result
+) {
+    return
+        main_is_complete_search &&
+        diagnostics != nullptr &&
+        diagnostics->enable_pair_win_nws &&
+        previous_result.is_end_search &&
+        previous_result.probability < 100 &&
+        is_valid_policy(previous_result.policy);
+}
+
 inline int ai_tl_ggs_match_outcome(int value) {
     return (value > 0) - (value < 0);
 }
@@ -1027,6 +1091,48 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
         }
 #endif
+#if IS_GGS_TOURNAMENT
+        if (
+            ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(
+                main_is_complete_search,
+                diagnostics,
+                *result
+            )
+        ) {
+            if (show_log) {
+                std::cerr << "pair-win NWS target "
+                          << ai_tl_ggs_pair_win_target(diagnostics->pair_value)
+                          << " budget " << time_limit_this_search << " ms ";
+            }
+            const AI_TL_GGS_Pair_Win_Proof proof = ai_tl_ggs_pair_win_nws(
+                board,
+                diagnostics->pair_value,
+                time_limit_this_search,
+                use_multi_thread,
+                thread_id,
+                searching
+            );
+            result->nodes += proof.nodes;
+            result->time = tim() - strt;
+            result->nps = calc_nps(result->nodes, result->time);
+            if (proof.complete && proof.proved) {
+                result->policy = proof.policy;
+                result->value = proof.value;
+                result->depth = max_depth;
+                result->probability = 100;
+                result->is_end_search = true;
+                result->is_exact_lower_bound = true;
+            }
+            if (show_log) {
+                std::cerr << (proof.complete ? (proof.proved ? "proved" : "no-win-proof") : "terminated")
+                          << " value " << proof.value
+                          << " policy " << (is_valid_policy(proof.policy) ? idx_to_coord(proof.policy) : "undefined")
+                          << " n_nodes " << proof.nodes
+                          << " time " << proof.elapsed << " ms" << std::endl;
+            }
+            break;
+        }
+#endif
         std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &main_searching);
         if (f.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
             id_result = f.get();
@@ -1824,7 +1930,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
 #endif
     }
     if (show_log && result->is_end_search && result->probability == 100) {
-        std::cerr << "completely searched" << std::endl;
+        std::cerr << (result->is_exact_lower_bound ? "exact lower bound proved" : "completely searched") << std::endl;
     }
 }
 
@@ -3797,6 +3903,71 @@ inline AI_TL_GGS_Match_Revalidation_Pair ai_tl_ggs_match_revalidate(
     }
     return deepest_pair;
 }
+
+inline AI_TL_GGS_Pair_Win_Proof ai_tl_ggs_pair_win_nws(
+    const Board &board,
+    int exact_pair_value,
+    uint64_t budget,
+    bool use_multi_thread,
+    thread_id_t thread_id,
+    bool *searching
+) {
+    AI_TL_GGS_Pair_Win_Proof proof;
+    proof.target = ai_tl_ggs_pair_win_target(exact_pair_value);
+    const uint64_t legal = board.get_legal();
+    if (
+        budget == 0ULL ||
+        searching == nullptr ||
+        !*searching ||
+        !global_searching ||
+        legal == 0ULL ||
+        proof.target > SCORE_MAX
+    ) {
+        return proof;
+    }
+
+    const uint64_t start = tim();
+    Search search(&board, MPC_100_LEVEL, use_multi_thread, false);
+    search.thread_id = thread_id;
+    bool local_searching = true;
+    std::future<std::pair<int, int>> future = std::async(
+        std::launch::async,
+        first_nega_scout_legal,
+        &search,
+        proof.target - 1,
+        proof.target,
+        HW2 - board.n_discs(),
+        true,
+        std::vector<Clog_result>(),
+        legal,
+        start,
+        &local_searching
+    );
+    if (future.wait_for(std::chrono::milliseconds(budget)) == std::future_status::ready) {
+        const std::pair<int, int> raw = future.get();
+        proof.complete =
+            local_searching &&
+            global_searching &&
+            *searching &&
+            is_valid_policy(raw.second) &&
+            (legal & (1ULL << raw.second));
+        if (proof.complete) {
+            proof.value = raw.first;
+            proof.policy = raw.second;
+            proof.proved = raw.first >= proof.target;
+        }
+    } else {
+        local_searching = false;
+        try {
+            const std::pair<int, int> discarded = future.get();
+            (void)discarded;
+        } catch (const std::exception &e) {
+        }
+    }
+    proof.nodes = search.n_nodes;
+    proof.elapsed = tim() - start;
+    return proof;
+}
 #endif
 
 Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching, const AI_Time_Limit_Match_Context *match_context = nullptr) {
@@ -3809,6 +3980,15 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         ai_tl_ggs_match_revalidation_gate(board, allocated_time_limit, match_context)
     ) {
         iteration_diagnostics.enable_match_revalidation = true;
+        iteration_diagnostics.pair_value = match_context->pair_value;
+    }
+    if (
+        match_context != nullptr &&
+        match_context->has_pair_result &&
+        match_context->pair_value_is_proven &&
+        ai_tl_ggs_pair_win_target(match_context->pair_value) <= SCORE_MAX
+    ) {
+        iteration_diagnostics.enable_pair_win_nws = true;
         iteration_diagnostics.pair_value = match_context->pair_value;
     }
 #else
@@ -4009,13 +4189,18 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         thread_id,
         searching,
 #if IS_GGS_TOURNAMENT
-        iteration_diagnostics.enable_match_revalidation ? &iteration_diagnostics : nullptr
+        (iteration_diagnostics.enable_match_revalidation || iteration_diagnostics.enable_pair_win_nws) ?
+            &iteration_diagnostics : nullptr
 #else
         nullptr
 #endif
     );
 #if IS_GGS_TOURNAMENT
-    if (iteration_diagnostics.reserve_held && iteration_diagnostics.reserved_time_msec > 0ULL) {
+    if (
+        !search_result.is_exact_lower_bound &&
+        iteration_diagnostics.reserve_held &&
+        iteration_diagnostics.reserved_time_msec > 0ULL
+    ) {
         uint64_t revalidation_nodes = 0ULL;
         const AI_TL_GGS_Match_Revalidation_Pair revalidated = ai_tl_ggs_match_revalidate(
             board,
@@ -4066,6 +4251,8 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         }
     }
     if (
+        !search_result.is_exact_lower_bound &&
+        !ai_search_result_has_exact_value(board.n_discs(), search_result) &&
         selfplay_resolve_result.valid &&
         is_valid_policy(search_result.policy) &&
         selfplay_resolve_result.policy != search_result.policy &&
@@ -4092,7 +4279,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         search_result.probability = SELECTIVITY_PERCENTAGE[selfplay_resolve_result.mpc_level];
         search_result.is_end_search = selfplay_resolve_result.is_endgame_search;
     }
-    if (has_ambiguity_move_list) {
+    if (
+        has_ambiguity_move_list &&
+        !search_result.is_exact_lower_bound &&
+        !ai_search_result_has_exact_value(board.n_discs(), search_result)
+    ) {
         const Ponder_elem *late_fallback = ai_time_limit_ggs_late_ambiguity_fallback(
             board,
             ambiguity_move_list,

@@ -191,6 +191,7 @@ inline void eval_pass_endsearch(Eval_search *eval);
     @param nps                  NPS (Nodes Per Second)
     @param is_end_search        search till the end?
     @param probability          MPC (Multi-ProbCut) probability in integer [%]
+    @param is_exact_lower_bound value is a 100% lower-bound proof, not an exact score
 */
 struct Search_result {
     int level;
@@ -204,9 +205,10 @@ struct Search_result {
     uint64_t nps;
     bool is_end_search;
     int probability;
+    bool is_exact_lower_bound;
 
     Search_result() 
-        : level(0), policy(MOVE_UNDEFINED), value(SCORE_UNDEFINED), depth(-1), time(0), nodes(0), clog_time(0), clog_nodes(0), nps(0), is_end_search(false), probability(0) {}
+        : level(0), policy(MOVE_UNDEFINED), value(SCORE_UNDEFINED), depth(-1), time(0), nodes(0), clog_time(0), clog_nodes(0), nps(0), is_end_search(false), probability(0), is_exact_lower_bound(false) {}
 
     bool operator<(const Search_result &another) const {
         if (depth == SEARCH_BOOK && another.depth != SEARCH_BOOK) {

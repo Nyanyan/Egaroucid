@@ -230,6 +230,71 @@ void test_match_boundary_reserve_trigger() {
     );
 }
 
+void test_pair_win_exact_nws_policy() {
+    require_equal(ai_tl_ggs_pair_win_target(6), -5, "strict win target from +6 exact pair value");
+    require_equal(ai_tl_ggs_pair_win_target(-4), 5, "strict win target from -4 exact pair value");
+
+    Search_result exact;
+    exact.policy = 0;
+    exact.value = 6;
+    exact.depth = 30;
+    exact.probability = 100;
+    exact.is_end_search = true;
+    require(ai_search_result_has_exact_value(34, exact), "full-window 100% result is exact");
+    require(ai_search_result_has_proven_lower_bound(34, exact), "an exact result is also a proven lower bound");
+
+    AI_TL_Iteration_Diagnostics diagnostics;
+    diagnostics.enable_pair_win_nws = true;
+    Search_result selective = exact;
+    selective.probability = 99;
+    require(
+        ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(true, &diagnostics, selective),
+        "exact pair context replaces a pending full-window complete search with NWS"
+    );
+    require(
+        !ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(false, &diagnostics, selective),
+        "a selective iteration itself is not replaced with pair-win NWS"
+    );
+    require(
+        !ai_tl_ggs_should_replace_complete_search_with_pair_win_nws(true, &diagnostics, exact),
+        "an already exact current result does not need pair-win NWS"
+    );
+
+    exact.is_exact_lower_bound = true;
+    require(!ai_search_result_has_exact_value(34, exact), "NWS lower bound is not an exact value");
+    require(
+        ai_search_result_has_proven_lower_bound(34, exact),
+        "an NWS lower-bound proof can preserve the pair-win guarantee on later moves"
+    );
+}
+
+void test_pair_win_exact_nws_search() {
+    Board board;
+    require(
+        board.from_str("O-XXX--O-OXXXXO-OOXOXOXOOOXOOXOOOXOOOXOOOXOOXOOOOXXXOOOOOOOOOOO- X"),
+        "pair-win NWS regression board parses"
+    );
+    require_equal(HW2 - board.n_discs(), 6, "pair-win NWS regression empties");
+
+    transposition_table.init();
+    bool searching = true;
+    AI_TL_GGS_Pair_Win_Proof win = ai_tl_ggs_pair_win_nws(
+        board, 8, 1000ULL, false, THREAD_ID_NONE, &searching
+    );
+    require(win.complete, "pair-win NWS completes on the six-empty regression board");
+    require(win.proved, "-6 combined with exact +8 proves a strict pair win");
+    require_equal(win.target, -7, "pair-win NWS strict target");
+    require(board.get_legal() & (1ULL << win.policy), "pair-win NWS returns a legal move");
+
+    transposition_table.init();
+    searching = true;
+    AI_TL_GGS_Pair_Win_Proof no_win = ai_tl_ggs_pair_win_nws(
+        board, 6, 1000ULL, false, THREAD_ID_NONE, &searching
+    );
+    require(no_win.complete, "pair-win NWS fail-low completes on the regression board");
+    require(!no_win.proved, "-6 combined with exact +6 is only a draw, not a pair win");
+}
+
 void test_policy_verify_timeout_fallback() {
     require(
         ai_tl_ggs_should_use_main_on_verify_timeout(
@@ -505,10 +570,24 @@ void test_ybwc_end_split_depth() {
 
 int main() {
     try {
+        bit_init();
         mobility_init();
+        flip_init();
+        last_flip_init();
+        endsearch_init();
+        move_ordering_init();
+        require(transposition_table.resize(10), "test transposition table allocation");
+        hash_init_rand(10);
+        global_hash_level = 10;
+#if USE_CRC32C_HASH
+        global_hash_bit_mask = (1U << global_hash_level) - 1;
+#endif
+        stability_init();
         test_cap_is_continuous_at_reserve();
         test_pair_boost_phase_scale();
         test_extra_time_is_not_budgeted_for_normal_search();
+        test_pair_win_exact_nws_policy();
+        test_pair_win_exact_nws_search();
         test_early_endgame_ramp();
         test_late_endgame_ramp();
         test_match_boundary_revalidation_gate();

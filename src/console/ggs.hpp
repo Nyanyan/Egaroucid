@@ -295,6 +295,7 @@ struct GGS_Synchro_Time_Context {
     int pair_depth;
     int pair_probability;
     bool pair_is_end_search;
+    bool pair_value_is_proven;
 
     GGS_Synchro_Time_Context()
         : has_pair_result(false),
@@ -302,7 +303,8 @@ struct GGS_Synchro_Time_Context {
           pair_value(0),
           pair_depth(0),
           pair_probability(0),
-          pair_is_end_search(false) {}
+          pair_is_end_search(false),
+          pair_value_is_proven(false) {}
 };
 
 using GGS_Move_Hint_Table = std::unordered_map<std::string, GGS_Move_Hint>;
@@ -351,6 +353,7 @@ inline bool ggs_is_usable_ponder_result(const Board &board, const Search_result 
     if (
         !result.is_end_search ||
         result.depth < HW2 - board.n_discs() ||
+        result.is_exact_lower_bound ||
         !is_valid_policy(result.policy) ||
         !(board.get_legal() & (1ULL << result.policy))
     ) {
@@ -360,7 +363,7 @@ inline bool ggs_is_usable_ponder_result(const Board &board, const Search_result 
 }
 
 inline bool ggs_is_cacheable_ponder_result(const Search_result &result) {
-    return result.is_end_search && result.probability == 100 && is_valid_policy(result.policy);
+    return result.is_end_search && !result.is_exact_lower_bound && result.probability == 100 && is_valid_policy(result.policy);
 }
 
 Search_result ggs_get_ponder_result(const GGS_Ponder_Result_Table &ponder_results, const Board &board) {
@@ -392,6 +395,9 @@ inline bool ggs_should_play_hint_without_search(const Board &board, int policy, 
 }
 
 inline bool ggs_should_override_with_hint(const Board &board, int policy, int hint_count, const Search_result &search_result) {
+    if (search_result.is_exact_lower_bound || ai_search_result_has_exact_value(board.n_discs(), search_result)) {
+        return false;
+    }
     if (!ggs_is_legal_hint(board, policy) || policy == search_result.policy) {
         return false;
     }
@@ -480,6 +486,9 @@ std::string ggs_search_result_summary(
         " nodes " + std::to_string(search_result.nodes) +
         " nps " + std::to_string(search_result.nps) +
         " end " + std::to_string(search_result.is_end_search ? 1 : 0);
+    if (search_result.is_exact_lower_bound) {
+        msg += " lower_bound 1";
+    }
     if (ggs_is_legal_hint(ggs_board.board, hint_policy)) {
         msg += " hint " + ggs_policy_to_text(hint_policy) + "x" + std::to_string(hint_count);
     }
@@ -554,6 +563,7 @@ GGS_Synchro_Time_Context ggs_make_synchro_time_context(
     context.pair_depth = pair_record.result.depth;
     context.pair_probability = pair_record.result.probability;
     context.pair_is_end_search = pair_record.result.is_end_search;
+    context.pair_value_is_proven = ai_search_result_has_proven_lower_bound(pair_record.n_discs, pair_record.result);
     return context;
 }
 
@@ -1873,6 +1883,7 @@ Search_result ggs_search(
         AI_Time_Limit_Match_Context ai_match_context;
         if (synchro_time_context.has_pair_result) {
             ai_match_context.has_pair_result = true;
+            ai_match_context.pair_value_is_proven = synchro_time_context.pair_value_is_proven;
             ai_match_context.pair_value = synchro_time_context.pair_value;
             ai_match_context.real_remaining_time_msec = remaining_time_msec;
         }
@@ -1921,6 +1932,7 @@ Search_result ggs_search(
             " ext " + std::to_string(ggs_board.clock.extension_msec) +
             (synchro_time_context.has_pair_result ?
                 (" pair_value " + std::to_string(synchro_time_context.pair_value) +
+                 " pair_proven " + std::to_string(synchro_time_context.pair_value_is_proven ? 1 : 0) +
                  " pair_game " + synchro_time_context.pair_game_id) : ""),
             options
         );
