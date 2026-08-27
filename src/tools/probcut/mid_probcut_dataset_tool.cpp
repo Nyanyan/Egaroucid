@@ -71,12 +71,13 @@ Score search_score(const Board &board, int depth, int n_threads) {
     const uint64_t start = tim();
     Search search(&board, MPC_100_LEVEL, n_threads > 1, false);
     search.thread_id = THREAD_ID_NONE;
+    const bool is_end_search = depth == HW2 - board.n_discs();
     const std::pair<int, int> result = first_nega_scout_legal(
         &search,
         -SCORE_MAX,
         SCORE_MAX,
         depth,
-        false,
+        is_end_search,
         std::vector<Clog_result>(),
         board.get_legal(),
         start,
