@@ -201,6 +201,27 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
         return end_evaluate(&search->board);
     }
     if (!is_end_search) {
+        const int n_empties = HW2 - search->n_discs;
+        if (should_extend_pv_to_end(
+            depth,
+            n_empties,
+            search->pv_extension_empties,
+            is_end_search,
+            node_type
+        )) {
+            ++search->n_pv_extensions;
+            return nega_scout_node(
+                search,
+                alpha,
+                beta,
+                n_empties,
+                skipped,
+                legal,
+                true,
+                node_type,
+                searching
+            );
+        }
         if (depth == 1) {
             return nega_alpha_eval1(search, alpha, beta, skipped);
         }
@@ -380,6 +401,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
 }
 
 inline int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+    search->configure_pv_extension(depth, is_end_search);
     return nega_scout_node(search, alpha, beta, depth, skipped, legal, is_end_search, SEARCH_NODE_PV, searching);
 }
 
@@ -574,6 +596,7 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @return pair of value and best move
 */
 std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
+    search->configure_pv_extension(depth, is_end_search);
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
@@ -704,6 +727,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, const 
 }
 
 Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching) {
+    search->configure_pv_extension(depth, is_end_search);
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];

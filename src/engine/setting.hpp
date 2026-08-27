@@ -157,6 +157,12 @@
 // aspiration search in negascout
 #define USE_ASPIRATION_NEGASCOUT false
 
+// Extend a sufficiently deep midgame PV to the end of the game. The trigger
+// follows Edax's depth-dependent schedule and does not depend on a time limit.
+#ifndef USE_PV_EXTENSION
+#define USE_PV_EXTENSION true
+#endif
+
 // Hash level setting
 #define USE_CHANGEABLE_HASH_LEVEL true
 

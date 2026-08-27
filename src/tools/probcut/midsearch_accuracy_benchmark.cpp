@@ -38,6 +38,7 @@ struct FixedSearchResult {
     int policy = MOVE_UNDEFINED;
     uint64_t nodes = 0;
     uint64_t elapsed = 0;
+    uint64_t pv_extensions = 0;
     bool complete = false;
 };
 
@@ -92,6 +93,7 @@ FixedSearchResult run_fixed_search(
     out.policy = result.second;
     out.nodes = search.n_nodes;
     out.elapsed = tim() - start;
+    out.pv_extensions = search.n_pv_extensions;
     out.complete = searching && global_searching;
     return out;
 }
@@ -264,11 +266,13 @@ int main(int argc, char **argv) {
     uint64_t reference_nodes_sum = 0;
     uint64_t candidate_time_sum = 0;
     uint64_t reference_time_sum = 0;
+    uint64_t candidate_pv_extensions_sum = 0;
 
     if (!summary_only) {
         std::cout
             << "index\tempties\tstatic_value\tcandidate_value\tcandidate_move"
-               "\tcandidate_nodes\tcandidate_time_ms\treference_value\treference_move"
+               "\tcandidate_nodes\tcandidate_time_ms\tcandidate_pv_extensions"
+               "\treference_value\treference_move"
                "\treference_nodes\treference_time_ms\tcandidate_reference_value"
                "\tregret\tagree\tcomplete\n";
     }
@@ -360,6 +364,7 @@ int main(int argc, char **argv) {
             candidate_nodes_sum += candidate.nodes;
             reference_nodes_sum += reference.nodes;
             candidate_time_sum += candidate.elapsed;
+            candidate_pv_extensions_sum += candidate.pv_extensions;
             reference_time_sum += reference.elapsed;
         }
 
@@ -372,6 +377,7 @@ int main(int argc, char **argv) {
                 << idx_to_coord(candidate.policy) << '\t'
                 << candidate.nodes << '\t'
                 << candidate.elapsed << '\t'
+                << candidate.pv_extensions << '\t'
                 << reference.value << '\t'
                 << idx_to_coord(reference.policy) << '\t'
                 << reference.nodes << '\t'
@@ -397,6 +403,7 @@ int main(int argc, char **argv) {
               << " candidate_nodes=" << candidate_nodes_sum
               << " reference_nodes=" << reference_nodes_sum
               << " candidate_time_ms=" << candidate_time_sum
+              << " candidate_pv_extensions=" << candidate_pv_extensions_sum
               << " reference_time_ms=" << reference_time_sum
               << '\n';
     return complete_count == static_cast<int>(positions.size()) ? 0 : 4;

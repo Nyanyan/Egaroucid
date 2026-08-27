@@ -74,6 +74,49 @@ inline bool is_pv_node(const Search_node_type node_type) {
     return node_type == SEARCH_NODE_PV;
 }
 
+constexpr int PV_EXTENSION_DISABLED = -1;
+
+/*
+    Return the number of empty squares at which an Edax-style PV search is
+    extended to the end of the game. Reaching the trigger with at least two
+    nominal plies left is checked at the node, matching Edax's effective
+    depth + 8/10/12/14 schedule.
+
+    Reference:
+    https://github.com/abulmo/edax-reversi/blob/713a434f13b3d15fb69c61b9ba3641aed82c496c/src/search.c
+*/
+constexpr int get_pv_extension_empties(const int depth, const int n_empties) {
+    if (depth >= n_empties || depth <= 9) {
+        return PV_EXTENSION_DISABLED;
+    }
+    if (depth <= 12) {
+        return 10;
+    }
+    if (depth <= 18) {
+        return 12;
+    }
+    if (depth <= 24) {
+        return 14;
+    }
+    return 16;
+}
+
+constexpr bool should_extend_pv_to_end(
+    const int depth,
+    const int n_empties,
+    const int pv_extension_empties,
+    const bool is_end_search,
+    const Search_node_type node_type
+) {
+    return USE_PV_EXTENSION &&
+        !is_end_search &&
+        is_pv_node(node_type) &&
+        depth >= 2 &&
+        depth < n_empties &&
+        pv_extension_empties != PV_EXTENSION_DISABLED &&
+        n_empties <= pv_extension_empties;
+}
+
 inline Search_node_type search_child_node_type(const Search_node_type parent_node_type) {
     return is_pv_node(parent_node_type) ? SEARCH_NODE_PV : SEARCH_NODE_NONPV;
 }
@@ -264,6 +307,8 @@ struct Analyze_result {
     @param parity               parity of the board
     @param mpc_level            MPC (Multi-ProbCut) probability level
     @param n_nodes              number of visited nodes
+    @param pv_extension_empties empty-square trigger for PV extension
+    @param n_pv_extensions      number of PV-to-end transitions
     @param eval_features        features of pattern evaluation
     @param eval_feature_reversed    need to swap player in evaluation?
     @param use_multi_thread     use parallel search?
@@ -287,9 +332,17 @@ class Search {
         int lazy_smp_worker_idx = 0;
         int mid_split_task_limit = ybwc_mid_split_task_limit;
         int tt_nonexact_bound_min_ply = 0;
+        int_fast8_t pv_extension_empties = PV_EXTENSION_DISABLED;
+        uint64_t n_pv_extensions = 0;
 
         inline bool can_use_tt_nonexact_bounds() const {
             return n_discs - root_n_discs >= tt_nonexact_bound_min_ply;
+        }
+
+        inline void configure_pv_extension(const int depth, const bool is_end_search) {
+            pv_extension_empties = is_end_search
+                ? PV_EXTENSION_DISABLED
+                : get_pv_extension_empties(depth, HW2 - root_n_discs);
         }
 
 #if USE_KILLER_MOVE_MO
