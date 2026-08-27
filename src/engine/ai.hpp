@@ -132,6 +132,19 @@ constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MIN_TIME_LEFT = 2200ULL;
 constexpr uint64_t AI_TL_GGS_NARROW_ALT_VERIFY_MAX_TIME = 10000ULL;
 constexpr double AI_TL_GGS_NARROW_ALT_VERIFY_TIME_COE = 0.45;
 constexpr int AI_TL_GGS_ALT_VERIFY_RETRY_DEPTH_GAP = 3;
+constexpr int AI_TL_GGS_EARLY_PAIR_EXACT_MIN_PREVIOUS_PROBABILITY = 88;
+constexpr uint64_t AI_TL_GGS_EARLY_PAIR_EXACT_MIN_REMAINING_TIME = 700ULL;
+constexpr uint64_t AI_TL_GGS_EARLY_PAIR_EXACT_MIN_BUDGET = 300ULL;
+constexpr uint64_t AI_TL_GGS_EARLY_PAIR_EXACT_MIN_FALLBACK_RESERVE = 350ULL;
+constexpr uint64_t AI_TL_GGS_EARLY_PAIR_EXACT_FALLBACK_OVERHEAD = 100ULL;
+constexpr int AI_TL_GGS_EARLY_PAIR_EXACT_BUDGET_PERCENT = 45;
+#ifndef EGAROUCID_GGS_EARLY_PAIR_EXACT_NWS
+    #define EGAROUCID_GGS_EARLY_PAIR_EXACT_NWS 1
+#endif
+constexpr bool AI_TL_GGS_EARLY_PAIR_EXACT_NWS_ENABLED = EGAROUCID_GGS_EARLY_PAIR_EXACT_NWS != 0;
+constexpr int AI_TL_GGS_EARLY_PAIR_PROVED_NONE = 0;
+constexpr int AI_TL_GGS_EARLY_PAIR_PROVED_DRAW = 1;
+constexpr int AI_TL_GGS_EARLY_PAIR_PROVED_WIN = 2;
 // Temporarily disable match-boundary revalidation for GGS tournament play.
 // Keep the implementation available so it can be re-enabled after evaluation.
 constexpr bool AI_TL_GGS_MATCH_REVALIDATION_ENABLED = false;
@@ -186,6 +199,11 @@ struct AI_TL_Iteration_Diagnostics {
     uint64_t reserved_time_msec;
     int attempted_depth;
     int attempted_probability;
+#if IS_GGS_TOURNAMENT
+    bool early_pair_exact_attempted;
+    uint64_t early_pair_exact_budget;
+    int early_pair_exact_proved_outcome;
+#endif
 
     AI_TL_Iteration_Diagnostics()
         : enable_match_revalidation(false),
@@ -198,7 +216,13 @@ struct AI_TL_Iteration_Diagnostics {
           next_selectivity_incomplete(false),
           reserved_time_msec(0),
           attempted_depth(-1),
-          attempted_probability(0) {}
+          attempted_probability(0)
+#if IS_GGS_TOURNAMENT
+          , early_pair_exact_attempted(false),
+          early_pair_exact_budget(0),
+          early_pair_exact_proved_outcome(AI_TL_GGS_EARLY_PAIR_PROVED_NONE)
+#endif
+          {}
 };
 
 inline bool ai_search_result_has_exact_value(int n_discs, const Search_result &result) {
@@ -265,6 +289,79 @@ inline bool ai_tl_ggs_should_replace_complete_search_with_pair_outcome_nws(
         previous_result.is_end_search &&
         previous_result.probability < 100 &&
         is_valid_policy(previous_result.policy);
+}
+
+struct AI_TL_GGS_Early_Pair_Exact_Decision {
+    bool start;
+    bool confidence_ready;
+    bool next_iteration_at_risk;
+    uint64_t probe_budget;
+    uint64_t fallback_reserve;
+    uint64_t predicted_next_iteration_time;
+
+    AI_TL_GGS_Early_Pair_Exact_Decision()
+        : start(false), confidence_ready(false), next_iteration_at_risk(false),
+          probe_budget(0), fallback_reserve(0), predicted_next_iteration_time(0) {}
+};
+
+inline AI_TL_GGS_Early_Pair_Exact_Decision ai_tl_ggs_early_pair_exact_decision(
+    bool already_attempted,
+    bool main_is_end_search,
+    bool main_is_complete_search,
+    const AI_TL_Iteration_Diagnostics *diagnostics,
+    const Search_result &previous_result,
+    uint64_t remaining_time,
+    uint64_t previous_iteration_time
+) {
+    AI_TL_GGS_Early_Pair_Exact_Decision decision;
+    if (
+        !AI_TL_GGS_EARLY_PAIR_EXACT_NWS_ENABLED ||
+        already_attempted ||
+        !main_is_end_search ||
+        main_is_complete_search ||
+        diagnostics == nullptr ||
+        !diagnostics->enable_pair_outcome_nws ||
+        !previous_result.is_end_search ||
+        previous_result.probability >= 100 ||
+        !is_valid_policy(previous_result.policy) ||
+        remaining_time < AI_TL_GGS_EARLY_PAIR_EXACT_MIN_REMAINING_TIME ||
+        previous_iteration_time == 0ULL
+    ) {
+        return decision;
+    }
+
+    decision.predicted_next_iteration_time = previous_iteration_time > UINT64_MAX / 2ULL ?
+        UINT64_MAX : previous_iteration_time * 2ULL;
+    const uint64_t desired_fallback = previous_iteration_time >
+            (UINT64_MAX - AI_TL_GGS_EARLY_PAIR_EXACT_FALLBACK_OVERHEAD) / 2ULL ?
+        UINT64_MAX :
+        previous_iteration_time * 2ULL + AI_TL_GGS_EARLY_PAIR_EXACT_FALLBACK_OVERHEAD;
+    decision.fallback_reserve = std::max<uint64_t>(
+        AI_TL_GGS_EARLY_PAIR_EXACT_MIN_FALLBACK_RESERVE,
+        desired_fallback
+    );
+    decision.fallback_reserve = std::min<uint64_t>(
+        decision.fallback_reserve,
+        remaining_time - AI_TL_GGS_EARLY_PAIR_EXACT_MIN_BUDGET
+    );
+
+    const uint64_t fraction_budget =
+        remaining_time * AI_TL_GGS_EARLY_PAIR_EXACT_BUDGET_PERCENT / 100ULL;
+    decision.probe_budget = std::min<uint64_t>(
+        fraction_budget,
+        remaining_time - decision.fallback_reserve
+    );
+    if (decision.probe_budget < AI_TL_GGS_EARLY_PAIR_EXACT_MIN_BUDGET) {
+        decision.probe_budget = 0ULL;
+        return decision;
+    }
+
+    decision.confidence_ready =
+        previous_result.probability >= AI_TL_GGS_EARLY_PAIR_EXACT_MIN_PREVIOUS_PROBABILITY;
+    decision.next_iteration_at_risk =
+        decision.predicted_next_iteration_time >= remaining_time - decision.fallback_reserve;
+    decision.start = decision.confidence_ready || decision.next_iteration_at_risk;
+    return decision;
 }
 
 inline int ai_tl_ggs_match_outcome(int value) {
@@ -1012,6 +1109,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     uint64_t conditional_match_reserve = 0ULL;
     uint64_t active_time_limit = time_limit;
     bool conditional_match_reserve_released = true;
+    bool early_pair_exact_attempted = false;
     if (diagnostics != nullptr && diagnostics->enable_match_revalidation) {
         conditional_match_reserve = std::max<uint64_t>(
             1ULL,
@@ -1069,6 +1167,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         bool main_searching = true;
         uint64_t time_limit_this_search = get_this_search_time_limit(active_time_limit, tim() - strt);
 #if IS_GGS_TOURNAMENT
+        uint64_t early_pair_probe_elapsed_this_iteration = 0ULL;
+#endif
+#if IS_GGS_TOURNAMENT
         uint64_t reserved_for_defensive_alt = 0ULL;
         if (
             ai_tl_ggs_is_defensive_alt_verify_candidate(
@@ -1096,6 +1197,118 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
         }
 #endif
 #if IS_GGS_TOURNAMENT
+        const AI_TL_GGS_Early_Pair_Exact_Decision early_pair_exact_decision =
+            ai_tl_ggs_early_pair_exact_decision(
+                early_pair_exact_attempted,
+                main_is_end_search,
+                main_is_complete_search,
+                diagnostics,
+                *result,
+                time_limit_this_search,
+                previous_iteration_time
+            );
+        if (early_pair_exact_decision.start) {
+            early_pair_exact_attempted = true;
+            diagnostics->early_pair_exact_attempted = true;
+            diagnostics->early_pair_exact_budget = early_pair_exact_decision.probe_budget;
+            const uint64_t early_pair_start = tim();
+            uint64_t early_pair_budget = early_pair_exact_decision.probe_budget;
+            const int pair_win_target = ai_tl_ggs_pair_win_target(diagnostics->pair_value);
+            if (show_log) {
+                std::cerr << "early pair-exact start reason "
+                          << (early_pair_exact_decision.confidence_ready ? "confidence" : "next-iteration-cost")
+                          << " probe_budget " << early_pair_budget
+                          << " fallback_reserve " << early_pair_exact_decision.fallback_reserve
+                          << " predicted_next " << early_pair_exact_decision.predicted_next_iteration_time
+                          << " ms" << std::endl;
+                std::cerr << "early pair-win NWS target " << pair_win_target
+                          << " budget " << early_pair_budget << " ms ";
+            }
+
+            AI_TL_GGS_Pair_Outcome_Proof win_proof;
+            if (pair_win_target <= SCORE_MAX) {
+                win_proof = ai_tl_ggs_pair_target_nws(
+                    board,
+                    pair_win_target,
+                    early_pair_budget,
+                    use_multi_thread,
+                    thread_id,
+                    searching
+                );
+            } else {
+                win_proof.complete = true;
+                win_proof.target = pair_win_target;
+            }
+            result->nodes += win_proof.nodes;
+            result->time = tim() - strt;
+            result->nps = calc_nps(result->nodes, result->time);
+            if (show_log) {
+                std::cerr << (win_proof.complete ? (win_proof.proved ? "proved" : "fail-low") : "terminated")
+                          << " value " << win_proof.value
+                          << " policy " << (is_valid_policy(win_proof.policy) ? idx_to_coord(win_proof.policy) : "undefined")
+                          << " n_nodes " << win_proof.nodes
+                          << " time " << win_proof.elapsed << " ms" << std::endl;
+            }
+            if (win_proof.complete && win_proof.proved) {
+                diagnostics->early_pair_exact_proved_outcome = AI_TL_GGS_EARLY_PAIR_PROVED_WIN;
+                result->policy = win_proof.policy;
+                result->value = win_proof.value;
+                result->depth = max_depth;
+                result->probability = 100;
+                result->is_end_search = true;
+                result->is_exact_lower_bound = true;
+                break;
+            }
+
+            const uint64_t elapsed_after_win = tim() - early_pair_start;
+            early_pair_budget = elapsed_after_win < early_pair_exact_decision.probe_budget ?
+                early_pair_exact_decision.probe_budget - elapsed_after_win : 0ULL;
+            if (win_proof.complete && early_pair_budget > 0ULL) {
+                const int pair_draw_target = ai_tl_ggs_pair_draw_target(diagnostics->pair_value);
+                if (show_log) {
+                    std::cerr << "early pair-draw NWS target " << pair_draw_target
+                              << " budget " << early_pair_budget << " ms ";
+                }
+                const AI_TL_GGS_Pair_Outcome_Proof draw_proof = ai_tl_ggs_pair_target_nws(
+                    board,
+                    pair_draw_target,
+                    early_pair_budget,
+                    use_multi_thread,
+                    thread_id,
+                    searching
+                );
+                result->nodes += draw_proof.nodes;
+                result->time = tim() - strt;
+                result->nps = calc_nps(result->nodes, result->time);
+                if (show_log) {
+                    std::cerr << (draw_proof.complete ? (draw_proof.proved ? "proved" : "fail-low") : "terminated")
+                              << " value " << draw_proof.value
+                              << " policy " << (is_valid_policy(draw_proof.policy) ? idx_to_coord(draw_proof.policy) : "undefined")
+                              << " n_nodes " << draw_proof.nodes
+                              << " time " << draw_proof.elapsed << " ms" << std::endl;
+                }
+                if (draw_proof.complete && draw_proof.proved) {
+                    diagnostics->early_pair_exact_proved_outcome = AI_TL_GGS_EARLY_PAIR_PROVED_DRAW;
+                    result->policy = draw_proof.policy;
+                    result->value = draw_proof.target;
+                    result->depth = max_depth;
+                    result->probability = 100;
+                    result->is_end_search = true;
+                    result->is_exact_lower_bound = false;
+                    break;
+                }
+            }
+
+            early_pair_probe_elapsed_this_iteration = tim() - early_pair_start;
+            time_limit_this_search = get_this_search_time_limit(active_time_limit, tim() - strt);
+            time_limit_this_search = time_limit_this_search > reserved_for_defensive_alt ?
+                time_limit_this_search - reserved_for_defensive_alt : 0ULL;
+            if (show_log) {
+                std::cerr << "early pair-exact inconclusive; continue selective search budget "
+                          << time_limit_this_search << " ms" << std::endl;
+            }
+        }
+
         if (
             ai_tl_ggs_should_replace_complete_search_with_pair_outcome_nws(
                 main_is_complete_search,
@@ -1226,7 +1439,12 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             ybwc_split_stats_print();
         }
 #endif
-        previous_iteration_time = std::max<uint64_t>(1ULL, tim() - iteration_start);
+        uint64_t main_iteration_time = tim() - iteration_start;
+#if IS_GGS_TOURNAMENT
+        main_iteration_time = main_iteration_time > early_pair_probe_elapsed_this_iteration ?
+            main_iteration_time - early_pair_probe_elapsed_this_iteration : 1ULL;
+#endif
+        previous_iteration_time = std::max<uint64_t>(1ULL, main_iteration_time);
 #if EGAROUCID_EARLY_ENDGAME_SCHEDULE
         previous_iteration_nodes = main_search.n_nodes;
 #endif

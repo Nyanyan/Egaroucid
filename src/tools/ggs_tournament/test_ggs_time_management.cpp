@@ -262,6 +262,31 @@ void test_pair_outcome_exact_nws_policy() {
         "an already exact current result does not need pair-win NWS"
     );
 
+    AI_TL_GGS_Early_Pair_Exact_Decision early = ai_tl_ggs_early_pair_exact_decision(
+        false, true, false, &diagnostics, selective, 2000ULL, 300ULL
+    );
+    require(early.start, "a completed 99-percent endgame iteration starts an early exact pair probe");
+    require(early.confidence_ready, "the early exact probe records its confidence trigger");
+    require_equal(early.probe_budget, 900ULL, "early exact probe uses at most 45 percent of remaining time");
+    require(early.fallback_reserve >= 700ULL, "early exact probe reserves time for selective fallback");
+
+    selective.probability = 74;
+    early = ai_tl_ggs_early_pair_exact_decision(
+        false, true, false, &diagnostics, selective, 1000ULL, 400ULL
+    );
+    require(early.start, "predicted next-iteration starvation starts an early exact pair probe");
+    require(early.next_iteration_at_risk, "the early exact probe records its cost trigger");
+
+    early = ai_tl_ggs_early_pair_exact_decision(
+        true, true, false, &diagnostics, selective, 2000ULL, 400ULL
+    );
+    require(!early.start, "an early exact pair probe is attempted at most once per move");
+
+    early = ai_tl_ggs_early_pair_exact_decision(
+        false, true, false, &diagnostics, selective, 600ULL, 200ULL
+    );
+    require(!early.start, "too little remaining time is left entirely to the normal search");
+
     exact.is_exact_lower_bound = true;
     require(!ai_search_result_has_exact_value(34, exact), "NWS lower bound is not an exact value");
     require(
