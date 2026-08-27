@@ -123,6 +123,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=20260827)
     parser.add_argument("--shard-count", type=int, default=1)
     parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--exclude-positions", type=Path, action="append", default=[])
     args = parser.parse_args()
 
     if args.shard_count <= 0 or not 0 <= args.shard_index < args.shard_count:
@@ -138,9 +139,17 @@ def main() -> int:
     if args.max_games is not None:
         files = files[:args.max_games]
 
+    excluded: set[str] = set()
+    for path in args.exclude_positions:
+        excluded.update(
+            line.strip()
+            for line in path.read_text(encoding="utf-8-sig").splitlines()
+            if line.strip()
+        )
+
     rows: list[dict[str, object]] = []
     rejected = 0
-    seen: set[str] = set()
+    seen: set[str] = set(excluded)
     for path in files:
         try:
             game_rows = replay(path, args.targets)
@@ -167,7 +176,10 @@ def main() -> int:
             encoding="utf-8",
             newline="\n",
         )
-    print(f"games={len(files)} rejected={rejected} positions={len(rows)} output={args.output}")
+    print(
+        f"games={len(files)} rejected={rejected} excluded={len(excluded)} "
+        f"positions={len(rows)} output={args.output}"
+    )
     return 0
 
 

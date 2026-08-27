@@ -14,16 +14,19 @@
     Usage:
         midsearch_accuracy_benchmark.exe <positions> <depth> <mpc-level:0..6>
             <reference-depth> <threads> <hash-level> [position-limit]
+            [reference-cache] [forced-cache] [summary-only:0|1]
 */
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "../../engine/engine_all.hpp"
@@ -109,14 +112,83 @@ std::vector<std::string> read_positions(const std::string &path, int limit) {
     return positions;
 }
 
+std::unordered_map<std::string, FixedSearchResult> read_reference_cache(
+    const std::string &path,
+    int reference_depth
+) {
+    std::unordered_map<std::string, FixedSearchResult> result;
+    std::ifstream input(path);
+    std::string line;
+    std::getline(input, line); // header
+    while (std::getline(input, line)) {
+        const size_t board_end = line.find('\t');
+        if (board_end == std::string::npos) continue;
+        const std::string board = line.substr(0, board_end);
+        std::vector<std::string> fields;
+        size_t begin = board_end + 1;
+        while (begin <= line.size()) {
+            const size_t end = line.find('\t', begin);
+            fields.emplace_back(line.substr(begin, end - begin));
+            if (end == std::string::npos) break;
+            begin = end + 1;
+        }
+        if (fields.size() != 5 || std::atoi(fields[0].c_str()) != reference_depth) {
+            continue;
+        }
+        FixedSearchResult cached;
+        cached.value = std::atoi(fields[1].c_str());
+        cached.policy = std::atoi(fields[2].c_str());
+        cached.nodes = std::strtoull(fields[3].c_str(), nullptr, 10);
+        cached.elapsed = std::strtoull(fields[4].c_str(), nullptr, 10);
+        cached.complete = true;
+        result.emplace(board, cached);
+    }
+    return result;
+}
+
+std::string forced_cache_key(const std::string &board, int reference_depth, int policy) {
+    return board + '\t' + std::to_string(reference_depth) + '\t' + std::to_string(policy);
+}
+
+std::unordered_map<std::string, FixedSearchResult> read_forced_cache(
+    const std::string &path
+) {
+    std::unordered_map<std::string, FixedSearchResult> result;
+    std::ifstream input(path);
+    std::string line;
+    std::getline(input, line); // header
+    while (std::getline(input, line)) {
+        std::vector<std::string> fields;
+        size_t begin = 0;
+        while (begin <= line.size()) {
+            const size_t end = line.find('\t', begin);
+            fields.emplace_back(line.substr(begin, end - begin));
+            if (end == std::string::npos) break;
+            begin = end + 1;
+        }
+        if (fields.size() != 6) continue;
+        const int reference_depth = std::atoi(fields[1].c_str());
+        const int policy = std::atoi(fields[2].c_str());
+        FixedSearchResult cached;
+        cached.policy = policy;
+        cached.value = std::atoi(fields[3].c_str());
+        cached.nodes = std::strtoull(fields[4].c_str(), nullptr, 10);
+        cached.elapsed = std::strtoull(fields[5].c_str(), nullptr, 10);
+        cached.complete = true;
+        result.emplace(forced_cache_key(fields[0], reference_depth, policy), cached);
+    }
+    return result;
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
-    if (argc != 7 && argc != 8) {
+    if (argc < 7 || argc > 11) {
         std::cerr
             << "usage: " << argv[0]
             << " <positions> <depth> <mpc-level:0..6> <reference-depth>"
-               " <threads> <hash-level> [position-limit]\n";
+               " <threads> <hash-level> [position-limit] [reference-cache]"
+               " [forced-cache] [summary-only:0|1]\n";
         return 2;
     }
 
@@ -126,7 +198,42 @@ int main(int argc, char **argv) {
     const int reference_depth = std::atoi(argv[4]);
     const int n_threads = std::atoi(argv[5]);
     const int hash_level = std::atoi(argv[6]);
-    const int position_limit = argc == 8 ? std::atoi(argv[7]) : 0;
+    const int position_limit = argc >= 8 ? std::atoi(argv[7]) : 0;
+    const std::string reference_cache_path = argc >= 9 ? argv[8] : "";
+    const std::string forced_cache_path = argc >= 10 ? argv[9] : "";
+    const bool summary_only = argc >= 11 && std::atoi(argv[10]) != 0;
+    const bool reference_cache_exists =
+        !reference_cache_path.empty() && std::filesystem::exists(reference_cache_path);
+    std::unordered_map<std::string, FixedSearchResult> reference_cache;
+    if (reference_cache_exists) {
+        reference_cache = read_reference_cache(reference_cache_path, reference_depth);
+    }
+    std::ofstream reference_cache_output;
+    if (!reference_cache_path.empty() && !reference_cache_exists) {
+        reference_cache_output.open(reference_cache_path);
+        if (!reference_cache_output) {
+            std::cerr << "cannot create reference cache\n";
+            return 2;
+        }
+        reference_cache_output << "board\treference_depth\tvalue\tpolicy\tnodes\ttime_ms\n";
+    }
+    const bool forced_cache_exists =
+        !forced_cache_path.empty() && std::filesystem::exists(forced_cache_path);
+    std::unordered_map<std::string, FixedSearchResult> forced_cache;
+    if (forced_cache_exists) {
+        forced_cache = read_forced_cache(forced_cache_path);
+    }
+    std::ofstream forced_cache_output;
+    if (!forced_cache_path.empty()) {
+        forced_cache_output.open(forced_cache_path, std::ios::app);
+        if (!forced_cache_output) {
+            std::cerr << "cannot open forced-move cache\n";
+            return 2;
+        }
+        if (!forced_cache_exists) {
+            forced_cache_output << "board\treference_depth\tpolicy\tvalue\tnodes\ttime_ms\n";
+        }
+    }
     if (
         depth <= 0 || reference_depth < depth ||
         mpc_level < 0 || mpc_level >= N_SELECTIVITY_LEVEL ||
@@ -158,11 +265,13 @@ int main(int argc, char **argv) {
     uint64_t candidate_time_sum = 0;
     uint64_t reference_time_sum = 0;
 
-    std::cout
-        << "index\tempties\tstatic_value\tcandidate_value\tcandidate_move"
-           "\tcandidate_nodes\tcandidate_time_ms\treference_value\treference_move"
-           "\treference_nodes\treference_time_ms\tcandidate_reference_value"
-           "\tregret\tagree\tcomplete\n";
+    if (!summary_only) {
+        std::cout
+            << "index\tempties\tstatic_value\tcandidate_value\tcandidate_move"
+               "\tcandidate_nodes\tcandidate_time_ms\treference_value\treference_move"
+               "\treference_nodes\treference_time_ms\tcandidate_reference_value"
+               "\tregret\tagree\tcomplete\n";
+    }
 
     for (size_t i = 0; i < positions.size(); ++i) {
         Board board;
@@ -186,21 +295,54 @@ int main(int argc, char **argv) {
         const FixedSearchResult candidate = run_fixed_search(
             board, depth, static_cast<uint_fast8_t>(mpc_level), n_threads, legal
         );
-        const FixedSearchResult reference = run_fixed_search(
-            board, reference_depth, MPC_100_LEVEL, n_threads, legal
-        );
+        FixedSearchResult reference;
+        const auto cached = reference_cache.find(positions[i]);
+        if (cached != reference_cache.end()) {
+            reference = cached->second;
+        } else {
+            if (reference_cache_exists) {
+                std::cerr << "missing board in reference cache at input line " << (i + 1) << '\n';
+                return 2;
+            }
+            reference = run_fixed_search(
+                board, reference_depth, MPC_100_LEVEL, n_threads, legal
+            );
+            if (reference_cache_output) {
+                reference_cache_output
+                    << positions[i] << '\t' << reference_depth << '\t'
+                    << reference.value << '\t' << reference.policy << '\t'
+                    << reference.nodes << '\t' << reference.elapsed << '\n';
+                reference_cache_output.flush();
+            }
+        }
 
         int candidate_reference_value = reference.value;
         FixedSearchResult forced;
         forced.complete = true;
         if (candidate.policy != reference.policy) {
-            forced = run_fixed_search(
-                board,
-                reference_depth,
-                MPC_100_LEVEL,
-                n_threads,
-                1ULL << candidate.policy
+            const std::string key = forced_cache_key(
+                positions[i], reference_depth, candidate.policy
             );
+            const auto cached_forced = forced_cache.find(key);
+            if (cached_forced != forced_cache.end()) {
+                forced = cached_forced->second;
+            } else {
+                forced = run_fixed_search(
+                    board,
+                    reference_depth,
+                    MPC_100_LEVEL,
+                    n_threads,
+                    1ULL << candidate.policy
+                );
+                forced_cache.emplace(key, forced);
+                if (forced_cache_output) {
+                    forced_cache_output
+                        << positions[i] << '\t' << reference_depth << '\t'
+                        << candidate.policy << '\t' << forced.value << '\t'
+                        << forced.nodes << '\t' << forced.elapsed << '\n';
+                    forced_cache_output.flush();
+                }
+            }
             candidate_reference_value = forced.value;
         }
 
@@ -221,22 +363,24 @@ int main(int argc, char **argv) {
             reference_time_sum += reference.elapsed;
         }
 
-        std::cout
-            << (i + 1) << '\t'
-            << empties << '\t'
-            << static_value << '\t'
-            << candidate.value << '\t'
-            << idx_to_coord(candidate.policy) << '\t'
-            << candidate.nodes << '\t'
-            << candidate.elapsed << '\t'
-            << reference.value << '\t'
-            << idx_to_coord(reference.policy) << '\t'
-            << reference.nodes << '\t'
-            << reference.elapsed << '\t'
-            << candidate_reference_value << '\t'
-            << regret << '\t'
-            << static_cast<int>(agree) << '\t'
-            << static_cast<int>(complete) << '\n';
+        if (!summary_only) {
+            std::cout
+                << (i + 1) << '\t'
+                << empties << '\t'
+                << static_value << '\t'
+                << candidate.value << '\t'
+                << idx_to_coord(candidate.policy) << '\t'
+                << candidate.nodes << '\t'
+                << candidate.elapsed << '\t'
+                << reference.value << '\t'
+                << idx_to_coord(reference.policy) << '\t'
+                << reference.nodes << '\t'
+                << reference.elapsed << '\t'
+                << candidate_reference_value << '\t'
+                << regret << '\t'
+                << static_cast<int>(agree) << '\t'
+                << static_cast<int>(complete) << '\n';
+        }
     }
 
     const double denominator = std::max(1, complete_count);
