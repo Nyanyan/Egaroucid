@@ -337,6 +337,9 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
         return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
     const int canput = pop_count_ull(legal);
+    const uint32_t child_n_discs = search->n_discs + 1;
+    LocalTTEntry *const child_lttable =
+        lttable[HW2 - child_n_discs - END_FAST_DEPTH];
     Flip_value move_list[END_SIMPLE_DEPTH];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
@@ -358,8 +361,10 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
             }
             search->move_noeval(&flip_value->flip);
                 Board nboard = search->board;
-                const uint32_t child_n_discs = search->n_discs;
-                LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
+                // static_eval is unused in endgame move ordering.  Carry the
+                // already-computed local-TT index with the move through sort.
+                flip_value->static_eval = hash_bb(&nboard);
+                LocalTTEntry *tt = child_lttable + flip_value->static_eval;
 #if USE_LOCAL_TT_STATISTICS
                 local_tt_record_probe(child_n_discs, tt, &nboard);
 #endif
@@ -425,8 +430,10 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
         }
         search->move_noeval(&move_list[move_idx].flip);
             Board nboard = search->board;
-            const uint32_t child_n_discs = search->n_discs;
-            LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
+            const uint32_t ltt_index = canput > 1
+                ? move_list[move_idx].static_eval
+                : hash_bb(&nboard);
+            LocalTTEntry *tt = child_lttable + ltt_index;
             const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searchings);
         search->undo_noeval(&move_list[move_idx].flip);
         if (child_value == SCORE_UNDEFINED) {
@@ -496,6 +503,9 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
     }
     int g;
     const int canput = pop_count_ull(legal);
+    const uint32_t child_n_discs = search->n_discs + 1;
+    LocalTTEntry *const child_lttable =
+        lttable[HW2 - child_n_discs - END_FAST_DEPTH];
     Flip_value move_list[MID_TO_END_DEPTH];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
@@ -512,8 +522,10 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
             flip_value->value = 0;
             search->move_endsearch(&flip_value->flip);
                 Board nboard = search->board;
-                const uint32_t child_n_discs = search->n_discs;
-                LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
+                // static_eval is unused in endgame move ordering.  Carry the
+                // already-computed local-TT index with the move through sort.
+                flip_value->static_eval = hash_bb(&nboard);
+                LocalTTEntry *tt = child_lttable + flip_value->static_eval;
 #if USE_LOCAL_TT_STATISTICS
                 local_tt_record_probe(child_n_discs, tt, &nboard);
 #endif
@@ -579,8 +591,10 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         }
         search->move_endsearch(&move_list[move_idx].flip);
             Board nboard = search->board;
-            const uint32_t child_n_discs = search->n_discs;
-            LocalTTEntry *tt = get_ltt(&nboard, child_n_discs);
+            const uint32_t ltt_index = canput > 1
+                ? move_list[move_idx].static_eval
+                : hash_bb(&nboard);
+            LocalTTEntry *tt = child_lttable + ltt_index;
             const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searchings);
         search->undo_endsearch(&move_list[move_idx].flip);
         if (child_value == SCORE_UNDEFINED) {
