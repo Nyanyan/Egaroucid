@@ -50,21 +50,24 @@ inline Midsearch_nws_after_eval1_test_hook midsearch_nws_after_eval1_test_hook =
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
     @param node_hint            pass state and optional cached static evaluation
+    @param legal                for use of previously calculated legal bitboard
     @return the value
 */
-inline int nega_alpha_eval1_nws(Search *search, int alpha, const Nws_node_hint node_hint) {
+inline int nega_alpha_eval1_nws(Search *search, int alpha, const Nws_node_hint node_hint, uint64_t legal) {
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
     ++search->n_nodes_discs[search->n_discs];
 #endif
     int v = -SCORE_INF;
-    uint64_t legal = search->board.get_legal();
+    if (legal == LEGAL_UNDEFINED) {
+        legal = search->board.get_legal();
+    }
     if (legal == 0ULL) {
         if (node_hint.is_after_pass()) {
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_eval1_nws(search, -alpha - 1, Nws_node_hint::after_pass());
+            v = -nega_alpha_eval1_nws(search, -alpha - 1, Nws_node_hint::after_pass(), LEGAL_UNDEFINED);
         search->pass();
         return v;
     }
@@ -148,7 +151,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const Nws_node_hint node_hin
         if (moves[i] != MOVE_UNDEFINED) {
             calc_flip(&flip, &search->board, moves[i]);
             search->move(&flip);
-                g = -nega_alpha_eval1_nws(search, -alpha - 1, Nws_node_hint::no_static_eval());
+                g = -nega_alpha_eval1_nws(search, -alpha - 1, Nws_node_hint::no_static_eval(), LEGAL_UNDEFINED);
             search->undo(&flip);
 #if defined(EGAROUCID_TEST_MIDSEARCH_NWS_CANCELLATION)
             if (midsearch_nws_after_eval1_test_hook != nullptr) {
@@ -173,7 +176,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const Nws_node_hint node_hin
         for (uint_fast8_t cell = first_bit(&l); l; cell = next_bit(&l)) {
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
-                g = -nega_alpha_eval1_nws(search, -alpha - 1, Nws_node_hint::no_static_eval());
+                g = -nega_alpha_eval1_nws(search, -alpha - 1, Nws_node_hint::no_static_eval(), LEGAL_UNDEFINED);
             search->undo(&flip);
 #if defined(EGAROUCID_TEST_MIDSEARCH_NWS_CANCELLATION)
             if (midsearch_nws_after_eval1_test_hook != nullptr) {
@@ -220,7 +223,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         return SCORE_UNDEFINED;
     }
     if (depth == 1) {
-        return nega_alpha_eval1_nws(search, alpha, node_hint);
+        return nega_alpha_eval1_nws(search, alpha, node_hint, legal);
     }
     if (depth == 0) {
         ++search->n_nodes;
