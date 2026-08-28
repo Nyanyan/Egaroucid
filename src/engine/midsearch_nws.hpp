@@ -33,6 +33,13 @@ inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t leg
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
 inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
 
+#if defined(EGAROUCID_TEST_MIDSEARCH_NWS_CANCELLATION)
+using Midsearch_nws_after_pass_test_hook = void (*)(bool*);
+inline Midsearch_nws_after_pass_test_hook midsearch_nws_after_pass_test_hook = nullptr;
+using Midsearch_nws_after_eval1_test_hook = void (*)(bool*);
+inline Midsearch_nws_after_eval1_test_hook midsearch_nws_after_eval1_test_hook = nullptr;
+#endif
+
 /*
     @brief Get a value with last move with Nega-Alpha algorithm (NWS)
 
@@ -117,9 +124,14 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_eval2_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
+#if defined(EGAROUCID_TEST_MIDSEARCH_NWS_CANCELLATION)
+            if (midsearch_nws_after_pass_test_hook != nullptr) {
+                midsearch_nws_after_pass_test_hook(searching);
+            }
+#endif
+            const int child_value = nega_alpha_eval2_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searching);
         search->pass();
-        return v;
+        return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
     uint32_t hash_code = search->board.hash();
     transposition_table.prefetch(hash_code);
@@ -136,6 +148,11 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             search->move(&flip);
                 g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
             search->undo(&flip);
+#if defined(EGAROUCID_TEST_MIDSEARCH_NWS_CANCELLATION)
+            if (midsearch_nws_after_eval1_test_hook != nullptr) {
+                midsearch_nws_after_eval1_test_hook(searching);
+            }
+#endif
             if (!search_cancellation_load(searching)) {
                 return SCORE_UNDEFINED;
             }
@@ -156,6 +173,11 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
             search->move(&flip);
                 g = -nega_alpha_eval1_nws(search, -alpha - 1, false);
             search->undo(&flip);
+#if defined(EGAROUCID_TEST_MIDSEARCH_NWS_CANCELLATION)
+            if (midsearch_nws_after_eval1_test_hook != nullptr) {
+                midsearch_nws_after_eval1_test_hook(searching);
+            }
+#endif
             if (!search_cancellation_load(searching)) {
                 return SCORE_UNDEFINED;
             }
@@ -189,11 +211,11 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const bool skipped, uint64_t
     @return the value
 */
 int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, bool *searching) {
-    if (!global_searching || !search_cancellation_load(searching)) {
-        return SCORE_UNDEFINED;
-    }
     if (depth == 2) {
         return nega_alpha_eval2_nws(search, alpha, skipped, legal, searching);
+    }
+    if (!global_searching || !search_cancellation_load(searching)) {
+        return SCORE_UNDEFINED;
     }
     if (depth == 1) {
         return nega_alpha_eval1_nws(search, alpha, skipped);
@@ -219,9 +241,14 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, searching);
+#if defined(EGAROUCID_TEST_MIDSEARCH_NWS_CANCELLATION)
+            if (midsearch_nws_after_pass_test_hook != nullptr) {
+                midsearch_nws_after_pass_test_hook(searching);
+            }
+#endif
+            const int child_value = nega_alpha_ordering_nws_simple(search, -alpha - 1, depth, true, LEGAL_UNDEFINED, searching);
         search->pass();
-        return v;
+        return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
     uint32_t hash_code = search->board.hash();
     transposition_table.prefetch(hash_code);
@@ -267,8 +294,12 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 #endif
     if (tt_moves_idx0 != -1 && move_list[tt_moves_idx0].flip.flip) {
         search->move(&move_list[tt_moves_idx0].flip);
-            g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, searching);
+            const int child_value = nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[tt_moves_idx0].n_legal, searching);
         search->undo(&move_list[tt_moves_idx0].flip);
+        if (child_value == SCORE_UNDEFINED) {
+            return SCORE_UNDEFINED;
+        }
+        g = -child_value;
         if (v < g) {
             v = g;
             best_move = move_list[tt_moves_idx0].flip.pos;
@@ -290,9 +321,9 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     if (v <= alpha) {
         move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searching);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_ORDERING_DEPTH
-        for (int move_idx = 0; move_idx < canput - n_etc_done && search_cancellation_load(searching); ++move_idx) {
+        for (int move_idx = 0; move_idx < canput - n_etc_done; ++move_idx) {
 #else
-        for (int move_idx = 0; move_idx < canput && search_cancellation_load(searching); ++move_idx) {
+        for (int move_idx = 0; move_idx < canput; ++move_idx) {
 #endif
             swap_next_best_move(move_list, move_idx, canput);
 #if USE_MID_ETC && MID_ETC_DEPTH_NWS <= MID_SIMPLE_ORDERING_DEPTH
@@ -301,8 +332,12 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
             }
 #endif
             search->move(&move_list[move_idx].flip);
-                g = -nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
+                const int child_value = nega_alpha_ordering_nws_simple(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, searching);
             search->undo(&move_list[move_idx].flip);
+            if (child_value == SCORE_UNDEFINED) {
+                return SCORE_UNDEFINED;
+            }
+            g = -child_value;
             if (v < g) {
                 v = g;
                 best_move = move_list[move_idx].flip.pos;
