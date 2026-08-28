@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <exception>
 #include <iostream>
 #include "setting.hpp"
 #include "common.hpp"
@@ -18,6 +19,10 @@
 #include "parallel.hpp"
 #include "thread_pool.hpp"
 #include "transposition_cutoff.hpp"
+#include "ybwc_completion_group.hpp"
+
+static_assert(MAX_N_BRANCHES <= 64);
+using Ybwc_parallel_task_group = Ybwc_completion_group<Parallel_task, MAX_N_BRANCHES>;
 
 /*
     @brief YBWC parameters
@@ -212,29 +217,14 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, Nws_node
 int nega_scout_node(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Search_node_type node_type, bool *searching);
 inline bool is_searching(const std::vector<bool*> &searchings);
 
-inline int ybwc_poll_task(std::vector<std::future<Parallel_task>> &parallel_tasks, Parallel_task *task_result) {
-    bool has_valid_task = false;
-    for (std::future<Parallel_task> &task: parallel_tasks) {
-        if (!task.valid()) {
-            continue;
-        }
-        has_valid_task = true;
-        if (task.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            *task_result = task.get();
-            return 1;
-        }
-    }
-    return has_valid_task ? 0 : -1;
+inline int ybwc_poll_task(Ybwc_parallel_task_group &parallel_tasks, Parallel_task *task_result) {
+    return parallel_tasks.try_pop(task_result) ? 1 : 0;
 }
 
-inline bool ybwc_wait_task_with_help(std::vector<std::future<Parallel_task>> &parallel_tasks, thread_id_t thread_id, bool use_help, Parallel_task *task_result) {
+inline bool ybwc_wait_task_with_help(Ybwc_parallel_task_group &parallel_tasks, thread_id_t thread_id, bool use_help, Parallel_task *task_result) {
     while (true) {
-        int task_state = ybwc_poll_task(parallel_tasks, task_result);
-        if (task_state > 0) {
+        if (ybwc_poll_task(parallel_tasks, task_result) > 0) {
             return true;
-        }
-        if (task_state < 0) {
-            return false;
         }
         const bool helped = use_help && thread_pool.try_execute_one(thread_id);
 #if USE_YBWC_SPLIT_STATISTICS
@@ -245,7 +235,7 @@ inline bool ybwc_wait_task_with_help(std::vector<std::future<Parallel_task>> &pa
         }
 #endif
         if (!helped) {
-            std::this_thread::yield();
+            parallel_tasks.wait_for_ready();
         }
     }
 }
@@ -352,10 +342,10 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     @param policy               the last move
     @param pv_idx               the priority of this move
     @param seems_to_be_all_node     this node seems to be ALL node?
-    @param parallel_tasks       vector of splitted tasks
+    @param parallel_tasks       completion group of splitted tasks
     @return task splitted?
 */
-inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings, bool *n_searching, uint_fast8_t policy, const int n_remaining_moves, const int move_idx, const int running_count, std::vector<std::future<Parallel_task>> &parallel_tasks) {
+inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings, bool *n_searching, uint_fast8_t policy, const int n_remaining_moves, const int move_idx, const int running_count, Ybwc_parallel_task_group &parallel_tasks) {
     #if USE_YBWC_SPLIT_STATISTICS
         ++ybwc_split_attempt[depth];
         int move_bucket = ybwc_stats_move_bucket(n_remaining_moves);
@@ -397,13 +387,24 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, con
             bool pushed;
             const int task_limit = is_end_search ? YBWC_END_MAX_SPLIT_TASKS : search->mid_split_task_limit;
             const Nws_node_hint task_node_hint = Nws_node_hint::no_static_eval();
-            auto task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, task_node_hint, legal, is_end_search, policy, move_idx, searchings, n_searching);
+            const std::size_t task_slot = parallel_tasks.reserve_slot();
+            auto search_task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, task_node_hint, legal, is_end_search, policy, move_idx, searchings, n_searching);
+            auto completion_task = [search_task = std::move(search_task), completion_group = &parallel_tasks, task_slot]() noexcept {
+                try {
+                    completion_group->publish(task_slot, search_task());
+                } catch (...) {
+                    std::terminate();
+                }
+            };
             if (task_limit == THREAD_SIZE_INF) {
-                parallel_tasks.emplace_back(thread_pool.push(search->thread_id, &pushed, task));
+                std::future<void> ignored_future = thread_pool.push(search->thread_id, &pushed, completion_task);
+                (void)ignored_future;
             } else {
-                parallel_tasks.emplace_back(thread_pool.push(search->thread_id, task_limit, &pushed, task));
+                std::future<void> ignored_future = thread_pool.push(search->thread_id, task_limit, &pushed, completion_task);
+                (void)ignored_future;
             }
             if (pushed) {
+                parallel_tasks.mark_submitted(task_slot);
                 #if USE_YBWC_SPLIT_STATISTICS
                     ++ybwc_split_pushed[depth];
                     ++ybwc_split_pushed_by_move[depth][move_bucket];
@@ -413,7 +414,6 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, con
                 #if USE_YBWC_SPLIT_STATISTICS
                     ++ybwc_split_push_failed[depth];
                 #endif
-                parallel_tasks.pop_back();
             }
         }
     }
@@ -424,8 +424,8 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, con
 
 #if USE_YBWC_NWS
 inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, std::vector<bool*> &searchings) {
-    std::vector<std::future<Parallel_task>> parallel_tasks;
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
+    Ybwc_parallel_task_group parallel_tasks;
     searchings.emplace_back(&n_searching);
     int canput = (int)move_list.size();
     int running_count = 0;
@@ -528,8 +528,8 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
 
 
 inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput, std::vector<bool*> &searchings) {
-    std::vector<std::future<Parallel_task>> parallel_tasks;
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
+    Ybwc_parallel_task_group parallel_tasks;
     searchings.emplace_back(&n_searching);
     int running_count = 0;
     int g;
@@ -653,8 +653,8 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
 
 #if USE_YBWC_NEGASCOUT
 void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, Search_node_type node_type, bool need_best_move, bool *searching) {
-    std::vector<std::future<Parallel_task>> parallel_tasks;
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
+    Ybwc_parallel_task_group parallel_tasks;
     std::vector<bool*> searchings = {searching, &n_searching};
     int canput = (int)move_list.size();
     int running_count = 0;
@@ -767,8 +767,8 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
 
 
 void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput, Search_node_type node_type, bool need_best_move, bool *searching) {
-    std::vector<std::future<Parallel_task>> parallel_tasks;
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
+    Ybwc_parallel_task_group parallel_tasks;
     std::vector<bool*> searchings = {searching, &n_searching};
     int running_count = 0;
     int g;
