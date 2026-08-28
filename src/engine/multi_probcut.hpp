@@ -233,8 +233,8 @@ inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
     return ceil(MPC_ERROR_SCALE * SELECTIVITY_MPCT[mpc_level] * sigma);
 }
 
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, bool *searching);
 
 inline bool mpc_end_static_eval_cut(
     Search *search,
@@ -321,7 +321,8 @@ inline bool mpc_end_recalibrated_shallow(
     if (
         high_gate && high_threshold <= SCORE_MAX &&
         nega_alpha_ordering_nws(
-            search, high_threshold - 1, shallow_depth, false, legal, false,
+            search, high_threshold - 1, shallow_depth,
+            Nws_node_hint::no_static_eval(), legal, false,
             searchings
         ) >= high_threshold
     ) {
@@ -335,7 +336,8 @@ inline bool mpc_end_recalibrated_shallow(
     if (
         low_gate && low_threshold >= -SCORE_MAX &&
         nega_alpha_ordering_nws(
-            search, low_threshold, shallow_depth, false, legal, false,
+            search, low_threshold, shallow_depth,
+            Nws_node_hint::no_static_eval(), legal, false,
             searchings
         ) <= low_threshold
     ) {
@@ -420,15 +422,39 @@ inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_de
     @return cutoff occurred?
 */
 template<bool IsEndSearch, typename Searchings>
-inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, Searchings &searchings) {
+inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Nws_node_hint node_hint, Searchings &searchings) {
     int search_depth = ((depth * MPC_DEPTH_NUMERATOR / MPC_DEPTH_DENOMINATOR) & 0b11111110) + (depth & 1);
     const uint_fast8_t mpc_level = search->mpc_level;
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
 #if USE_DIM0_ONLY_EVALUATION
-    int d0value = mid_evaluate_diff(search);
+    int d0value;
+    if constexpr (!IsEndSearch) {
+        if (node_hint.has_static_eval()) {
+            d0value = node_hint.get_static_eval();
+#if defined(EGAROUCID_VALIDATE_NWS_STATIC_EVAL_REUSE)
+            assert(d0value == mid_evaluate_diff(search));
+#endif
+        } else {
+            d0value = mid_evaluate_diff(search);
+        }
+    } else {
+        d0value = mid_evaluate_diff(search);
+    }
 #else
     const bool use_dim0_mpc_eval = eval_fm_enabled && eval_fm_use_dim0_mpc_search && !IsEndSearch;
-    int d0value = use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
+    int d0value;
+    if constexpr (!IsEndSearch) {
+        if (!use_dim0_mpc_eval && node_hint.has_static_eval()) {
+            d0value = node_hint.get_static_eval();
+#if defined(EGAROUCID_VALIDATE_NWS_STATIC_EVAL_REUSE)
+            assert(d0value == mid_evaluate_diff(search));
+#endif
+        } else {
+            d0value = use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
+        }
+    } else {
+        d0value = mid_evaluate_diff(search);
+    }
 #endif
     /*
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD && depth >= 20 && search_depth < depth - 2) {
@@ -524,7 +550,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         if (d0value >= beta + error_0) {
             int pc_beta = beta + error_search;
             if (pc_beta <= SCORE_MAX) {
-                if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, false, legal, false, searchings) >= pc_beta) {
+                if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) >= pc_beta) {
                     *v = beta;
                     if constexpr (IsEndSearch) {
                         *v += beta & 1;
@@ -540,7 +566,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         if (d0value <= alpha - error_0) {
             int pc_alpha = alpha - error_search;
             if (pc_alpha >= -SCORE_MAX) {
-                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searchings) <= pc_alpha) {
+                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) <= pc_alpha) {
                     *v = alpha;
                     if constexpr (IsEndSearch) {
                         *v -= alpha & 1;
@@ -562,19 +588,27 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 }
 
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings) {
-    return mpc_impl<false>(search, alpha, beta, depth, legal, v, searchings);
+    return mpc_impl<false>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), searchings);
+}
+
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Nws_node_hint node_hint, std::vector<bool*> &searchings) {
+    return mpc_impl<false>(search, alpha, beta, depth, legal, v, node_hint, searchings);
 }
 
 inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings) {
-    return mpc_impl<true>(search, alpha, beta, depth, legal, v, searchings);
+    return mpc_impl<true>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), searchings);
 }
 
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool *searching) {
-    return mpc_impl<false>(search, alpha, beta, depth, legal, v, searching);
+    return mpc_impl<false>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), searching);
+}
+
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Nws_node_hint node_hint, bool *searching) {
+    return mpc_impl<false>(search, alpha, beta, depth, legal, v, node_hint, searching);
 }
 
 inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool *searching) {
-    return mpc_impl<true>(search, alpha, beta, depth, legal, v, searching);
+    return mpc_impl<true>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), searching);
 }
 
 
@@ -614,7 +648,7 @@ inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t lega
             const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
             search->use_dim0_mpc_eval = use_dim0_mpc_eval;
 #endif
-            if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, false, legal, false, searching) <= pc_alpha) {
+            if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, Nws_node_hint::no_static_eval(), legal, false, searching) <= pc_alpha) {
 #if !USE_DIM0_ONLY_EVALUATION
                 search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
 #endif

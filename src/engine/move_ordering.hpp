@@ -166,6 +166,18 @@ inline void move_ordering_init() {
 }
 #endif
 
+inline int move_ordering_mid_evaluate(
+    Search *search,
+    Flip_value *flip_value,
+    const bool cache_static_eval
+) {
+    const int static_eval = mid_evaluate_diff(search);
+    if (cache_static_eval) {
+        flip_value->static_eval = static_eval;
+    }
+    return static_eval;
+}
+
 /*
     @brief Get number of corner mobility
 
@@ -277,7 +289,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         switch (depth) {
             case 0:
 #if USE_DIM0_ONLY_EVALUATION
-                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_VALUE;
+                flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, use_dynamic_ordering)) * W_VALUE;
 #else
                 flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_VALUE;
 #endif
@@ -288,7 +300,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                     flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 } else {
 #if USE_DIM0_ONLY_EVALUATION
-                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
+                    flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, use_dynamic_ordering)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
 #else
                     flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
 #endif
@@ -300,7 +312,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                     flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                 } else {
 #if USE_DIM0_ONLY_EVALUATION
-                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
+                    flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, use_dynamic_ordering)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
 #else
                     flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
 #endif
@@ -321,7 +333,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
     @param searching            flag for terminating this search
     @return true if wipeout found else false
 */
-inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool use_dynamic_ordering, bool *searching) {
+inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha, int beta, int depth, bool use_dynamic_ordering, const bool cache_static_eval, bool *searching) {
     flip_value->value = 0;
 #if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
     if (use_dynamic_ordering) {
@@ -339,7 +351,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         switch (depth) {
             case 0:
 #if USE_DIM0_ONLY_EVALUATION
-                flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * W_NWS_VALUE;
+                flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * W_NWS_VALUE;
 #else
                 flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_NWS_VALUE;
 #endif
@@ -350,7 +362,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
 #if USE_DIM0_ONLY_EVALUATION
-                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                    flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
 #else
                     flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
 #endif
@@ -362,7 +374,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
 #if USE_DIM0_ONLY_EVALUATION
-                    flip_value->value += (SCORE_MAX - mid_evaluate_diff(search)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                    flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
 #else
                     flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
 #endif
@@ -610,7 +622,7 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
             } else if (flip_value.flip.pos == moves[1]) {
                 flip_value.value = W_2ND_MOVE;
             } else{
-                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, !is_end_search, searching);
+                move_evaluate_nws(search, &flip_value, eval_alpha, eval_beta, eval_depth, !is_end_search, !is_end_search, searching);
             }
         }
     }
@@ -644,7 +656,7 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
             } else if (move_list[i].flip.pos == moves[1]) {
                 move_list[i].value = W_2ND_MOVE;
             } else{
-                move_evaluate_nws(search, &move_list[i], eval_alpha, eval_beta, eval_depth, !is_end_search, searching);
+                move_evaluate_nws(search, &move_list[i], eval_alpha, eval_beta, eval_depth, !is_end_search, !is_end_search, searching);
             }
         }
     }

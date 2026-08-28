@@ -91,7 +91,7 @@ void test_cancelled_at_entry() {
         Search search(&board, MPC_100_LEVEL, false, false);
         const Search_snapshot before = take_snapshot(&search);
         const int value = nega_alpha_ordering_nws_simple(
-            &search, 0, depth, false, board.get_legal(), &searching
+            &search, 0, depth, Nws_node_hint::no_static_eval(), board.get_legal(), &searching
         );
         require(value == SCORE_UNDEFINED, "false local flag at depth " + std::to_string(depth));
         require(search.n_nodes == 0, "false local flag visits no nodes at depth " + std::to_string(depth));
@@ -103,7 +103,7 @@ void test_cancelled_at_entry() {
         Search global_search(&board, MPC_100_LEVEL, false, false);
         const Search_snapshot global_before = take_snapshot(&global_search);
         const int global_value = nega_alpha_ordering_nws_simple(
-            &global_search, 0, depth, false, board.get_legal(), &searching
+            &global_search, 0, depth, Nws_node_hint::no_static_eval(), board.get_legal(), &searching
         );
         global_searching = true;
         require(global_value == SCORE_UNDEFINED, "false global flag at depth " + std::to_string(depth));
@@ -138,7 +138,7 @@ void test_pass_cancellation_propagates() {
 
         midsearch_nws_after_pass_test_hook = cancel_after_pass;
         const int value = nega_alpha_ordering_nws_simple(
-            &search, 0, depth, false, LEGAL_UNDEFINED, &searching
+            &search, 0, depth, Nws_node_hint::no_static_eval(), LEGAL_UNDEFINED, &searching
         );
         midsearch_nws_after_pass_test_hook = nullptr;
 
@@ -172,7 +172,7 @@ void test_eval2_post_child_polling() {
     eval1_children_completed = 0;
     midsearch_nws_after_eval1_test_hook = cancel_after_first_eval1_child;
     const int value = nega_alpha_eval2_nws(
-        &search, SCORE_MAX - 1, false, board.get_legal(), &searching
+        &search, SCORE_MAX - 1, Nws_node_hint::no_static_eval(), board.get_legal(), &searching
     );
     midsearch_nws_after_eval1_test_hook = nullptr;
 
@@ -200,7 +200,7 @@ void test_completed_pass_restores_state() {
         Search search(&board, MPC_100_LEVEL, false, false);
         const Search_snapshot before = take_snapshot(&search);
         const int value = nega_alpha_ordering_nws_simple(
-            &search, 0, depth, false, LEGAL_UNDEFINED, &searching
+            &search, 0, depth, Nws_node_hint::no_static_eval(), LEGAL_UNDEFINED, &searching
         );
         require(searching, "pass search completes at depth " + std::to_string(depth));
         require(value != SCORE_UNDEFINED, "completed pass has a value at depth " + std::to_string(depth));

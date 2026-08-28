@@ -192,7 +192,11 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
         return SCORE_UNDEFINED;
     }
     if (alpha + 1 == beta) {
-        return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searching);
+        return nega_alpha_ordering_nws(
+            search, alpha, depth,
+            skipped ? Nws_node_hint::after_pass() : Nws_node_hint::no_static_eval(),
+            legal, is_end_search, searching
+        );
     }
     if (is_end_search && search->n_discs == HW2 - 4) {
         return -last4(search, -beta, -alpha);
@@ -362,7 +366,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
                     if (v == -SCORE_INF) {
                         g = -nega_scout_node(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_child_node_type(node_type), searching);
                     } else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[move_idx], is_end_search), move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha < g && g < beta) {
                             g = -nega_scout_node(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, search_child_node_type(node_type), searching);
                         }
@@ -669,7 +673,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
                     if (v == -SCORE_INF) {
                         g = -nega_scout_node(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, SEARCH_NODE_PV, searching);
                     } else{
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[move_idx], is_end_search), move_list[move_idx].n_legal, is_end_search, searching);
                         if (alpha < g && g < beta) {
                             g = -nega_scout_node(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, SEARCH_NODE_PV, searching);
                         }
@@ -826,7 +830,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
                         if (res.alt_score == -SCORE_INF) {
                             g = -nega_scout_node(search, -beta, -alpha, depth - 1, false, move_list[move_idx].n_legal, is_end_search, SEARCH_NODE_PV, searching);
                         } else{
-                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, false, move_list[move_idx].n_legal, is_end_search, searching);
+                            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[move_idx], is_end_search), move_list[move_idx].n_legal, is_end_search, searching);
                             if (alpha < g && g < beta) {
                                 g = -nega_scout_node(search, -beta, -g, depth - 1, false, move_list[move_idx].n_legal, is_end_search, SEARCH_NODE_PV, searching);
                             }

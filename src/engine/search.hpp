@@ -13,6 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <cassert>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -64,6 +65,56 @@ constexpr int MOVE_NOMOVE = 65;
 constexpr int MOVE_PASS = 64;
 constexpr int SEARCH_BOOK = -1;
 constexpr int MAX_N_BRANCHES = 35;
+
+/*
+    Per-node information carried by midgame null-window search.
+
+    The representation deliberately fits in the same four-byte argument slot
+    as the old `bool skipped` parameter.  Construction is restricted so that
+    a stale bool cannot silently become a cached static evaluation of 0.
+*/
+class Nws_node_hint {
+    private:
+        int value;
+
+        explicit constexpr Nws_node_hint(const int value_) : value(value_) {}
+
+    public:
+        static constexpr Nws_node_hint after_pass() {
+            return Nws_node_hint(SCORE_INF);
+        }
+
+        static constexpr Nws_node_hint no_static_eval() {
+            return Nws_node_hint(SCORE_UNDEFINED);
+        }
+
+        static Nws_node_hint from_optional_static_eval(const int static_eval) {
+            if (static_eval == SCORE_UNDEFINED) {
+                return no_static_eval();
+            }
+#if defined(EGAROUCID_VALIDATE_NWS_STATIC_EVAL_REUSE)
+            assert(-SCORE_MAX <= static_eval && static_eval <= SCORE_MAX);
+#endif
+            return Nws_node_hint(static_eval);
+        }
+
+        constexpr bool is_after_pass() const {
+            return value == SCORE_INF;
+        }
+
+        constexpr bool has_static_eval() const {
+            return -SCORE_MAX <= value && value <= SCORE_MAX;
+        }
+
+        int get_static_eval() const {
+#if defined(EGAROUCID_VALIDATE_NWS_STATIC_EVAL_REUSE)
+            assert(has_static_eval());
+#endif
+            return value;
+        }
+};
+
+static_assert(sizeof(Nws_node_hint) == sizeof(int));
 
 enum Search_node_type : uint_fast8_t {
     SEARCH_NODE_PV,
@@ -758,6 +809,7 @@ struct Clog_result {
 struct Flip_value {
     Flip flip;
     int value;
+    int static_eval;
     uint64_t n_legal;
 
     Flip_value() = default;
@@ -774,7 +826,16 @@ struct Flip_value {
 inline void calc_flip_value(Flip_value *flip_value, Board *board, const uint_fast8_t cell) {
     calc_flip(&flip_value->flip, board, cell);
     flip_value->value = 0;
+    flip_value->static_eval = SCORE_UNDEFINED;
     flip_value->n_legal = LEGAL_UNDEFINED;
+}
+
+static_assert(sizeof(Flip_value) == 32);
+
+inline Nws_node_hint child_nws_hint(const Flip_value &move, const bool is_end_search) {
+    return is_end_search
+        ? Nws_node_hint::no_static_eval()
+        : Nws_node_hint::from_optional_static_eval(move.static_eval);
 }
 
 #if defined(USE_NNUE_EVALUATION)

@@ -375,7 +375,7 @@ int label(
             &deep_search,
             boundary - 1,
             deep_depth,
-            false,
+            Nws_node_hint::no_static_eval(),
             legal,
             true,
             &searching
@@ -386,7 +386,7 @@ int label(
             &deep_search,
             boundary,
             deep_depth,
-            false,
+            Nws_node_hint::no_static_eval(),
             legal,
             true,
             &searching
