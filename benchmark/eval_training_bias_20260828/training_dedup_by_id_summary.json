@@ -1,0 +1,19 @@
+{
+  "format_version": 1,
+  "board_root": "E:/egaroucid_data/train_data/board_data",
+  "position_key": "lexicographic minimum (player, opponent) under eight D4 symmetries; player/opponent never exchanged",
+  "phase_definition": "popcount(player | opponent) - 4",
+  "unique_label_aggregation": "standard median of every record label for a canonical position; even count uses arithmetic mean of middle two",
+  "distribution_median_definition": "standard median; even count uses arithmetic mean of middle two",
+  "quantile_definition": "nearest rank",
+  "stddev_definition": "population standard deviation (ddof=0)",
+  "chunk_records": 100000000,
+  "chunk_count": 6,
+  "phases": [
+    {"phase": 30, "selected_id_count": 42, "records": 69988462, "unique_positions": 44122102, "duplicate_occurrences": 25866360, "duplicate_rate": 0.36958034597188322, "conflicting_keys": 876371, "conflicting_records": 4212320, "cross_id_keys": 5301206, "cross_id_records": 21653124, "cross_id_conflicting_keys": 606920},
+    {"phase": 35, "selected_id_count": 64, "records": 99432818, "unique_positions": 71257778, "duplicate_occurrences": 28175040, "duplicate_rate": 0.28335755303646326, "conflicting_keys": 200942, "conflicting_records": 967952, "cross_id_keys": 5180608, "cross_id_records": 20931170, "cross_id_conflicting_keys": 138670},
+    {"phase": 36, "selected_id_count": 67, "records": 102170589, "unique_positions": 74121917, "duplicate_occurrences": 28048672, "duplicate_rate": 0.27452784871387986, "conflicting_keys": 135067, "conflicting_records": 659318, "cross_id_keys": 5152740, "cross_id_records": 20790778, "cross_id_conflicting_keys": 90540},
+    {"phase": 40, "selected_id_count": 79, "records": 120382767, "unique_positions": 88104942, "duplicate_occurrences": 32277825, "duplicate_rate": 0.26812662480170441, "conflicting_keys": 652, "conflicting_records": 2037, "cross_id_keys": 5068992, "cross_id_records": 20298933, "cross_id_conflicting_keys": 228},
+    {"phase": 44, "selected_id_count": 87, "records": 129417824, "unique_positions": 97545903, "duplicate_occurrences": 31871921, "duplicate_rate": 0.24627149502992726, "conflicting_keys": 487, "conflicting_records": 1402, "cross_id_keys": 5021150, "cross_id_records": 19954861, "cross_id_conflicting_keys": 162}
+  ]
+}

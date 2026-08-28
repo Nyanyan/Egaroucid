@@ -1,0 +1,76 @@
+# Egaroucid evaluation-training bias investigation
+# Working directory: D:\github\othello\Egaroucid
+# Sampling seed: 20260828
+# PowerShell syntax is used below.  Per-position Edax command lines are also
+# retained in each edax_*/commands.txt measurement directory.
+
+# Environment and provenance
+$env:EGAROUCID_DATA
+git rev-parse HEAD
+git log --all --follow --format="%H %cI %s" -- bin/resources/eval.egev2
+Get-FileHash bin/resources/eval.egev2 -Algorithm SHA256
+Get-FileHash model/20260621_1_afterrand16_used_dev-eval/eval.egev2 -Algorithm SHA256
+Get-FileHash model/20260621_1_afterrand16_used_dev-eval/eval.egev -Algorithm SHA256
+
+# Reproduce the historical/current selector and scan every selected indexed file.
+python -B src/tools/evaluation/analyze_training_bias.py --data-root E:\egaroucid_data --output-dir benchmark/eval_training_bias_20260828 manifest-labels --phases 28-46
+python -B src/tools/evaluation/analyze_training_bias.py --data-root E:\egaroucid_data --output-dir benchmark/eval_training_bias_20260828 refresh-metadata
+
+# Fixed-seed samples.  The second command is a separate phase-36 scan because
+# phase 36 is a 24-square-empty search-leaf diagnostic, not an exact-root sample.
+python -B src/tools/evaluation/analyze_training_bias.py --data-root E:\egaroucid_data --output-dir benchmark/eval_training_bias_20260828 sample --phase30 10 --phase35 500 --phase36 0 --phase40 500 --phase44 500 --stratum-reservoir 16 --chunk-records 2000000
+python -B src/tools/evaluation/analyze_training_bias.py --data-root E:\egaroucid_data --output-dir benchmark/eval_training_bias_20260828/phase36_sample sample --phase30 0 --phase35 0 --phase36 500 --phase40 0 --phase44 0 --stratum-reservoir 16 --chunk-records 2000000
+
+# Convert sampled rows to engine input and extract two independent GGS-96 sets.
+python -B bin/extract_ggs_midgame_positions.py --game-dir ggs/log/game --targets 25 --output benchmark/eval_training_bias_20260828/ggs_25_empties.txt --metadata benchmark/eval_training_bias_20260828/ggs_25_empties.jsonl --seed 20260828
+python -B src/tools/evaluation/analyze_training_bias.py --data-root E:\egaroucid_data --output-dir benchmark/eval_training_bias_20260828 prepare-inputs --ggs-metadata benchmark/eval_training_bias_20260828/ggs_25_empties.jsonl
+python -B src/tools/evaluation/analyze_training_bias.py --data-root E:\egaroucid_data --output-dir benchmark/eval_training_bias_20260828/phase36_sample prepare-inputs --ggs-metadata benchmark/eval_training_bias_20260828/phase36_sample/no_ggs.jsonl
+
+# Verify board_data -> bin_data record counts and complete phase score histograms.
+python -B src/tools/evaluation/verify_training_data_conversion.py --report-dir benchmark/eval_training_bias_20260828
+
+# Build the two C++ diagnostics (MinGW g++ 13.1.0).
+g++ -O3 -march=native -mtune=native -std=c++20 -pthread src/tools/evaluation/eval_training_bias_tool.cpp -o benchmark/eval_training_bias_20260828/eval_training_bias_tool.exe
+g++ -O3 -march=native -mtune=native -std=c++20 -pthread src/tools/evaluation/training_data_deduplicate.cpp -o benchmark/eval_training_bias_20260828/training_data_deduplicate_v2.exe
+benchmark\eval_training_bias_20260828\training_data_deduplicate_v2.exe --self-test
+
+# Full D4 duplicate scan.  These are the exact selected IDs, including IDs
+# whose indexed file exists but has zero usable records in a listed phase.
+benchmark\eval_training_bias_20260828\training_data_deduplicate_v2.exe --board-root E:\egaroucid_data\train_data\board_data --output-prefix benchmark\eval_training_bias_20260828\training_dedup --temp-dir benchmark\eval_training_bias_20260828\dedup_tmp --chunk-records 5000000 --no-details 30:20,21,29,37,38,65,66,67,68,69,77,78,79,80,82,97,144,145,214,223,224,225,259,260,261,262,263,264,265,311,313,314,315,316,317,318,319,320,321,322,323,324 35:18,19,20,21,29,30,37,38,65,66,67,68,69,70,71,72,73,74,77,78,79,80,82,97,144,145,146,147,148,149,214,223,224,225,226,227,228,229,230,259,260,261,262,263,264,265,266,267,268,269,270,311,313,314,315,316,317,318,319,320,321,322,323,324 36:18,19,20,21,29,30,37,38,65,66,67,68,69,70,71,72,73,74,77,78,79,80,82,97,144,145,146,147,148,149,158,214,223,224,225,226,227,228,229,230,231,259,260,261,262,263,264,265,266,267,268,269,270,271,311,313,314,315,316,317,318,319,320,321,322,323,324 40:18,19,20,21,24,29,30,31,37,38,65,66,67,68,69,70,71,72,73,74,77,78,79,80,82,97,144,145,146,147,148,149,158,159,160,161,214,223,224,225,226,227,228,229,230,231,232,233,234,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,311,313,314,315,316,317,318,319,320,321,322,323,324 44:18,19,20,21,24,29,30,31,37,38,65,66,67,68,69,70,71,72,73,74,77,78,79,80,82,97,144,145,146,147,148,149,150,151,158,159,160,161,162,163,214,223,224,225,226,227,228,229,230,231,232,233,234,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,311,313,314,315,316,317,318,319,320,321,322,323,324
+
+# Egaroucid corrected balanced measurements (run from bin so ./resources is used).
+# The program itself fixes one thread, no book, no MPC, no LMR, no PV extension,
+# full-window fixed depth, and clears both transposition tables per actual search.
+Push-Location bin
+..\benchmark\eval_training_bias_20260828\eval_training_bias_tool.exe ..\benchmark\eval_training_bias_20260828\exact_input_16_empties_stratified_data_id_teacher_band.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase44_balanced_strat_root.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase44_balanced_strat_children.tsv 16 20 500 ./ 0
+..\benchmark\eval_training_bias_20260828\eval_training_bias_tool.exe ..\benchmark\eval_training_bias_20260828\exact_input_20_empties_stratified_data_id_teacher_band.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase40_balanced_strat_root.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase40_balanced_strat_children.tsv 20 20 500 ./ 1
+..\benchmark\eval_training_bias_20260828\eval_training_bias_tool.exe ..\benchmark\eval_training_bias_20260828\phase36_sample\exact_input_24_empties_stratified_data_id_teacher_band.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase36_balanced_strat_root.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase36_balanced_strat_children.tsv 20 20 500 ./ 0
+..\benchmark\eval_training_bias_20260828\eval_training_bias_tool.exe ..\benchmark\eval_training_bias_20260828\exact_input_25_empties_stratified_data_id_teacher_band.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase35_balanced_strat_root.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase35_balanced_strat_children.tsv 25 20 500 ./ 0
+# The phase-35 command was stopped after 100 reported completions; 98 complete,
+# well-formed new rows survived buffering and validation.  Together with 500
+# frequency rows this produced 598 accepted positions.
+..\benchmark\eval_training_bias_20260828\eval_training_bias_tool.exe ..\benchmark\eval_training_bias_20260828\exact_input_30_empties_stratified_data_id_teacher_band.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase30_balanced_strat_root.tsv ..\benchmark\eval_training_bias_20260828\egaroucid_phase30_balanced_strat_children.tsv 30 20 3 ./ 0
+# The first corrected phase-30 stratified position did not finish in eight
+# minutes and the process was stopped.  It produced no accepted numeric row;
+# only seven completed frequency rows are aggregated.
+Pop-Location
+
+# Edax 4.5.5 corrected balanced runs.  The runner launches a fresh process for
+# every unique (board, depth), one thread, book off, fixed depth <=10 or exact.
+python -B src/tools/evaluation/run_edax_training_bias.py benchmark/eval_training_bias_20260828/exact_input_16_empties_stratified_data_id_teacher_band.tsv benchmark/eval_training_bias_20260828/edax_phase44_balanced_strat_static --depths 0 --quiet
+python -B src/tools/evaluation/run_edax_training_bias.py benchmark/eval_training_bias_20260828/exact_input_16_empties_stratified_data_id_teacher_band.tsv benchmark/eval_training_bias_20260828/edax_phase44_balanced_strat_exact --exact --quiet
+python -B src/tools/evaluation/run_edax_training_bias.py benchmark/eval_training_bias_20260828/exact_input_20_empties_stratified_data_id_teacher_band.tsv benchmark/eval_training_bias_20260828/edax_phase40_balanced_strat_static --depths 0 --quiet
+python -B src/tools/evaluation/run_edax_training_bias.py benchmark/eval_training_bias_20260828/egaroucid_phase40_balanced_strat_children.tsv benchmark/eval_training_bias_20260828/edax_phase40_balanced_strat_sibling_static --board-column child_normalized_board --depths 0 --quiet
+python -B src/tools/evaluation/run_edax_training_bias.py benchmark/eval_training_bias_20260828/phase36_sample/exact_input_24_empties_stratified_data_id_teacher_band.tsv benchmark/eval_training_bias_20260828/edax_phase36_balanced_strat_static --depths 0 --quiet
+python -B src/tools/evaluation/run_edax_training_bias.py benchmark/eval_training_bias_20260828/exact_input_25_empties_stratified_data_id_teacher_band.tsv benchmark/eval_training_bias_20260828/edax_phase35_balanced_strat_fixed --depths 0 1 2 4 5 6 8 9 10 --quiet
+
+# Position-distribution diagnostics and the final fixed-seed aggregation.
+python -B src/tools/evaluation/analyze_position_distribution.py --report-dir benchmark/eval_training_bias_20260828 --bootstrap 1000
+python -B src/tools/evaluation/aggregate_eval_training_bias.py --input-dir benchmark/eval_training_bias_20260828 --output-dir benchmark/eval_training_bias_20260828 --seed 20260828 --bootstrap-reps 1000 --overwrite
+
+# Verification used before commit.
+Push-Location src/tools/evaluation
+python -B -m unittest test_analyze_training_bias.py
+Pop-Location
+python -m py_compile src/tools/evaluation/aggregate_eval_training_bias.py src/tools/evaluation/analyze_training_bias.py src/tools/evaluation/analyze_position_distribution.py src/tools/evaluation/run_edax_training_bias.py src/tools/evaluation/verify_training_data_conversion.py src/tools/evaluation/test_analyze_training_bias.py bin/extract_ggs_midgame_positions.py
+git diff --check

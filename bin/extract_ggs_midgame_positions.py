@@ -168,14 +168,14 @@ def main() -> int:
         ).digest()
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text("".join(f"{row['board']}\n" for row in rows), encoding="utf-8", newline="\n")
+    with args.output.open("w", encoding="utf-8", newline="\n") as destination:
+        destination.write("".join(f"{row['board']}\n" for row in rows))
     if args.metadata:
         args.metadata.parent.mkdir(parents=True, exist_ok=True)
-        args.metadata.write_text(
-            "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows),
-            encoding="utf-8",
-            newline="\n",
-        )
+        with args.metadata.open("w", encoding="utf-8", newline="\n") as destination:
+            destination.write(
+                "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows)
+            )
     print(
         f"games={len(files)} rejected={rejected} excluded={len(excluded)} "
         f"positions={len(rows)} output={args.output}"

@@ -1,0 +1,643 @@
+{
+  "bootstrap_reps": 1000,
+  "confidence_interval": {
+    "cluster": [
+      "source_file",
+      "game_index_in_file"
+    ],
+    "confidence": 0.95,
+    "context_seed": "first 64 bits little-endian of SHA-256(base_seed + NUL + context)",
+    "fallback": "sample_id when source_file or game_index_in_file is missing",
+    "method": "percentile cluster bootstrap",
+    "percentile_interpolation": "linear at (n-1)*p",
+    "undefined_replicates": "a confidence interval is left empty unless its metric is defined in every requested bootstrap replicate"
+  },
+  "counters": {
+    "exact_child_values_from_edax": 1001,
+    "excluded_incomplete_exact_child_parents": 1,
+    "excluded_legacy_biased_stratified_rows": 1679,
+    "incomplete_root_sample_ids": 415
+  },
+  "definitions": {
+    "bias": "mean(prediction - reference)",
+    "mean_abs_delta": "mean(abs(prediction) - abs(reference))",
+    "phase36_search_reference": "phase36 has no exact root values; its search errors and teacher_sign/teacher_score_band groups use z_teacher as the reference, not v_exact",
+    "pv_prefix_changed": "the complete previous-depth PV token sequence is not a prefix of the current-depth PV; unlike full-string comparison, mere PV extension is not counted as a change",
+    "regression": "prediction = slope * reference + intercept (ordinary least squares)",
+    "same_sign_smaller_abs_rate": "signs equal and nonzero, and abs(prediction) < abs(reference), divided by all rows",
+    "search_paired_difference": "Egaroucid metric minus Edax metric on the same completed positions",
+    "selected_loss": "maximum exact child value minus exact value of selected child, parent-side score",
+    "sibling_rank": "strict exact unequal sibling pairs; predicted ties are reported separately",
+    "sibling_residual_correlation": "Pearson correlation after adding both orientations of every unordered sibling residual pair",
+    "worsened": "absolute error at current listed depth exceeds absolute error at the previous listed depth"
+  },
+  "generated_at_utc": "2026-08-28T11:27:49.723162+00:00",
+  "input_dir": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828",
+  "inputs": [
+    {
+      "bytes": 24657,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase30_root.tsv",
+      "role": "egaroucid_phase30_root",
+      "rows": 7,
+      "sha256": "f3dc353810984de30716791c339a8140daeb5458450d55f5d3e3c93c738e9a3d",
+      "status": "used"
+    },
+    {
+      "bytes": 4104,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase30_balanced_strat_root.tsv",
+      "role": "egaroucid_phase30_balanced_strat_root",
+      "rows": 0,
+      "sha256": "f6a1666c15aec1a1eb04050d68a88d936b0b57eaaea8acebc1e834c42ea5eb8d",
+      "status": "used"
+    },
+    {
+      "bytes": 1566960,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_root.tsv",
+      "role": "egaroucid_phase35_root",
+      "rows": 679,
+      "sha256": "c48d4678b2a19de1860b79c708585a6a921d17912dfabd1c20dabca4593f0b5f",
+      "status": "used"
+    },
+    {
+      "bytes": 234290,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_balanced_strat_root.tsv",
+      "role": "egaroucid_phase35_balanced_strat_root",
+      "rows": 98,
+      "sha256": "05c3bc64c921673560b39b36460b2b2a7f1e53dfcd6f960ed83ca38c4389e89d",
+      "status": "used"
+    },
+    {
+      "bytes": 2310966,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase36_root.tsv",
+      "role": "egaroucid_phase36_root",
+      "rows": 1000,
+      "sha256": "dd7ea87e5f6af7f527daf3e261dfe4fa6c22e22344b19d27efdf05a5a55d562c",
+      "status": "used"
+    },
+    {
+      "bytes": 1163328,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase36_balanced_strat_root.tsv",
+      "role": "egaroucid_phase36_balanced_strat_root",
+      "rows": 500,
+      "sha256": "e348fbd72ac2ca2131a9ee058c44b5c16815c5e25d65a1b657a0349e98164e33",
+      "status": "used"
+    },
+    {
+      "bytes": 2302170,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase40_root.tsv",
+      "role": "egaroucid_phase40_root",
+      "rows": 1000,
+      "sha256": "d1c1be1356913ca18e7716a93f783662a3d602b5f3983f16bb6b8dc180586727",
+      "status": "used"
+    },
+    {
+      "bytes": 1158631,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase40_balanced_strat_root.tsv",
+      "role": "egaroucid_phase40_balanced_strat_root",
+      "rows": 500,
+      "sha256": "09e511f90e85336d12d2ff28a8c556d6a30a1d70c301fe49fe905e1ec60b64f4",
+      "status": "used"
+    },
+    {
+      "bytes": 2295811,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase44_root.tsv",
+      "role": "egaroucid_phase44_root",
+      "rows": 1000,
+      "sha256": "c0fbc0d3f397e7a0a27178dd8d68fa7c9adc921e4192e44f56687bb7f350c199",
+      "status": "used"
+    },
+    {
+      "bytes": 1155210,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase44_balanced_strat_root.tsv",
+      "role": "egaroucid_phase44_balanced_strat_root",
+      "rows": 500,
+      "sha256": "6ea6a1bb391b913bdca28673efffba06ff6ace18c5c25f7b72de2b796ff6aeed",
+      "status": "used"
+    },
+    {
+      "bytes": 218758,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs_latest96_root.tsv",
+      "role": "egaroucid_ggs_latest96_root",
+      "rows": 96,
+      "sha256": "9dbdb6e5428eae6a3a9c49d9d91ddbe449701b3f630706a4eb3f62f6c2d041a5",
+      "status": "used"
+    },
+    {
+      "bytes": 219028,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs96_root.tsv",
+      "role": "egaroucid_ggs96_root",
+      "rows": 96,
+      "sha256": "6d197cd96a61d90b70bc9350c37d3b5f304bdd2ebf59cf1b69bb78261a61113e",
+      "status": "used"
+    },
+    {
+      "bytes": 218689,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs96_exact_root.tsv",
+      "role": "egaroucid_ggs96_exact_root",
+      "rows": 96,
+      "sha256": "4254044ee19cd4a4dd9b73bddcd84c33bb69d4cc3ba2e939f9c1365aa3d9f087",
+      "status": "used"
+    },
+    {
+      "bytes": 5247,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\exact_input_30_empties.tsv",
+      "role": "expected_samples_phase30",
+      "rows": 20,
+      "sha256": "45ee2b40054c2590178759f02573058ec268c38973a0ac639c95000b7a326975",
+      "status": "used"
+    },
+    {
+      "bytes": 251271,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\phase35_search_input.tsv",
+      "role": "expected_samples_phase35",
+      "rows": 1000,
+      "sha256": "4120b088a076034129ac8a47db3f37f041b41802235213568b59a9e54b00b7ff",
+      "status": "used"
+    },
+    {
+      "bytes": 251172,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\phase36_sample\\sample_positions.tsv",
+      "role": "expected_samples_phase36",
+      "rows": 1000,
+      "sha256": "715ebd23876dd422a3718d7dcbbe3b83993460fa683f9fffdb4bb33d5974eca5",
+      "status": "used"
+    },
+    {
+      "bytes": 250578,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\exact_input_20_empties.tsv",
+      "role": "expected_samples_phase40",
+      "rows": 1000,
+      "sha256": "94e5efa00b9f4d683f405a43420c31ec212a96e2ca9f16c5cb61e85dfcc8515d",
+      "status": "used"
+    },
+    {
+      "bytes": 250554,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\exact_input_16_empties.tsv",
+      "role": "expected_samples_phase44",
+      "rows": 1000,
+      "sha256": "6b0d68ded8dc28bb9e2fcd8aaa18b614e83ed910263ccc2f00939f10d1aa91c6",
+      "status": "used"
+    },
+    {
+      "bytes": 16020,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\ggs_phase35_latest96_input.tsv",
+      "role": "expected_samples_ggs_latest96",
+      "rows": 96,
+      "sha256": "4a8df618da7384430f5203be1b62744f598cb674c2838fdd6ac6751a565cdabf",
+      "status": "used"
+    },
+    {
+      "bytes": 16011,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\ggs_phase35_96_input.tsv",
+      "role": "expected_samples_ggs_seeded96",
+      "rows": 96,
+      "sha256": "e944bc896ac84d98bacc6d23b67ccf2134b95d628ead681edd6a674a93328366",
+      "status": "used"
+    },
+    {
+      "bytes": 37831,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_ggs96_exact\\edax_results.tsv",
+      "role": "edax_edax_ggs96_exact",
+      "rows": 96,
+      "sha256": "cbb3a3fff8657001d2f615f60ae05339b8573dae6d2c0bbe159c8296e0ebe090",
+      "status": "used"
+    },
+    {
+      "bytes": 328746,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_ggs96_fixed\\edax_results.tsv",
+      "role": "edax_edax_ggs96_fixed",
+      "rows": 864,
+      "sha256": "0e60f1c27e0bf12845bf58363098865da6b204790994fc806c195290becc8cdd",
+      "status": "used"
+    },
+    {
+      "bytes": 631360,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_ggs_latest96_child_exact\\edax_results.tsv",
+      "role": "edax_edax_ggs_latest96_child_exact",
+      "rows": 1001,
+      "sha256": "73f76b2e2b167b5256a7da7148794bbc646eed3124db8bf7a6a99aeb7ac2a828",
+      "status": "used"
+    },
+    {
+      "bytes": 607835,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_ggs_latest96_child_static\\edax_results.tsv",
+      "role": "edax_edax_ggs_latest96_child_static",
+      "rows": 1001,
+      "sha256": "2c9679e3b73d748766bad1f595109c27128244f5a7de2fe1af4b1af7e85a4398",
+      "status": "used"
+    },
+    {
+      "bytes": 37847,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_ggs_latest96_exact\\edax_results.tsv",
+      "role": "edax_edax_ggs_latest96_exact",
+      "rows": 96,
+      "sha256": "7ce7bc707702349dbe48e108cba24e4af3b474e11d628af7204d29a502586d61",
+      "status": "used"
+    },
+    {
+      "bytes": 328877,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_ggs_latest96_fixed\\edax_results.tsv",
+      "role": "edax_edax_ggs_latest96_fixed",
+      "rows": 864,
+      "sha256": "8f263aa759e70c7cc4074121b55e1de31f56d8d4047cccf9db48808bebb94fa4",
+      "status": "used"
+    },
+    {
+      "bytes": 84462,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase30_fixed\\edax_results.tsv",
+      "role": "edax_edax_phase30_fixed",
+      "rows": 180,
+      "sha256": "a87f5c5528358e94995eebe1b53a01ab6a48a95c8b8b2d30ca04cd317530c8f1",
+      "status": "used"
+    },
+    {
+      "bytes": 1039,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase30_probe_exact\\edax_results.tsv",
+      "role": "edax_edax_phase30_probe_exact",
+      "rows": 1,
+      "sha256": "46d5812ad1e1c00a423d1e1419ccfc4d192fc53b09699df29d972a77cb37e81f",
+      "status": "used"
+    },
+    {
+      "bytes": 2149024,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase35_balanced_strat_fixed\\edax_results.tsv",
+      "role": "edax_edax_phase35_balanced_strat_fixed",
+      "rows": 4500,
+      "sha256": "30fac650a3b73cc32d75116043124cca323995dd457ee478244d111eeba1eb13",
+      "status": "used"
+    },
+    {
+      "bytes": 4216361,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase35_fixed\\edax_results.tsv",
+      "role": "edax_edax_phase35_fixed",
+      "rows": 9000,
+      "sha256": "62e7fd538192066a7b1ff65fcd6fbdabbcd1f358cd06597208bebe72a4610676",
+      "status": "used"
+    },
+    {
+      "bytes": 232213,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase36_balanced_strat_static\\edax_results.tsv",
+      "role": "edax_edax_phase36_balanced_strat_static",
+      "rows": 500,
+      "sha256": "899cac0b59377b6aed531896e40c31d72b85841a548b3ecd19a812caaeca516b",
+      "status": "used"
+    },
+    {
+      "bytes": 454651,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase36_static\\edax_results.tsv",
+      "role": "edax_edax_phase36_static",
+      "rows": 1000,
+      "sha256": "b85457c7459af43b9fb678d05b9e960a624203b3249942ed0e5d46bd54d7be3f",
+      "status": "used"
+    },
+    {
+      "bytes": 3207354,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase40_balanced_strat_sibling_static\\edax_results.tsv",
+      "role": "edax_edax_phase40_balanced_strat_sibling_static",
+      "rows": 4614,
+      "sha256": "ef2aba48a15ac59ca3a30cc83a0e1f966ddb92df286a04df719df18d643d2bbd",
+      "status": "used"
+    },
+    {
+      "bytes": 232153,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase40_balanced_strat_static\\edax_results.tsv",
+      "role": "edax_edax_phase40_balanced_strat_static",
+      "rows": 500,
+      "sha256": "129e75e254920ff3c6131123e1ba7ca357ef2bd4554650af1e2fd9e9284afc0c",
+      "status": "used"
+    },
+    {
+      "bytes": 6427615,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase40_sibling_static\\edax_results.tsv",
+      "role": "edax_edax_phase40_sibling_static",
+      "rows": 9381,
+      "sha256": "943202c05487d6f5fd6481ebab476b914a6e435b3bd13bbf69201b90c5d0c581",
+      "status": "used"
+    },
+    {
+      "bytes": 453784,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase40_static\\edax_results.tsv",
+      "role": "edax_edax_phase40_static",
+      "rows": 1000,
+      "sha256": "ca68e0a7036071c25a8440767ffbf1baf647ca4d36045cda6da329a1cd63b574",
+      "status": "used"
+    },
+    {
+      "bytes": 239583,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase44_balanced_strat_exact\\edax_results.tsv",
+      "role": "edax_edax_phase44_balanced_strat_exact",
+      "rows": 500,
+      "sha256": "d52ca4e604e9a30c666e7ff6d5fd41ec1fa8e336b8ab6e4152e068cc64f627cc",
+      "status": "used"
+    },
+    {
+      "bytes": 232135,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase44_balanced_strat_static\\edax_results.tsv",
+      "role": "edax_edax_phase44_balanced_strat_static",
+      "rows": 500,
+      "sha256": "f1d00fcf2c199d5f2c2f47bd798b6f0ed94db78ba79d50fa217ea0f7ca839c10",
+      "status": "used"
+    },
+    {
+      "bytes": 469025,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase44_exact\\edax_results.tsv",
+      "role": "edax_edax_phase44_exact",
+      "rows": 1000,
+      "sha256": "e5f332fb9c0b1ab867ef9b9c4af21ec300ef1b0bd961aab582f865599ed211a7",
+      "status": "used"
+    },
+    {
+      "bytes": 454103,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\edax_phase44_static\\edax_results.tsv",
+      "role": "edax_edax_phase44_static",
+      "rows": 1000,
+      "sha256": "a1be33c7f72d2330e911640f04166122311ee9899bc9dd6bf97941d6a01b5737",
+      "status": "used"
+    },
+    {
+      "bytes": 407233,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs96_children.tsv",
+      "role": "children_egaroucid_ggs96_children",
+      "rows": 997,
+      "sha256": "3535fdea931ee865ea18ba060b498953fb4ab215e8213beab49c3fcfe04fee06",
+      "status": "used"
+    },
+    {
+      "bytes": 403245,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs96_exact_children.tsv",
+      "role": "children_egaroucid_ggs96_exact_children",
+      "rows": 997,
+      "sha256": "7d33bef065028c51434f092ea1c85deb92b03fd27fc44b012129d86ec4cfe24e",
+      "status": "used"
+    },
+    {
+      "bytes": 309140,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs96_sibling_children.tsv",
+      "role": "children_egaroucid_ggs96_sibling_children",
+      "rows": 772,
+      "sha256": "6aa370660a6f3f68e1b40e7a99b24e2e91b45ed3614c55a57b092f3a4694acce",
+      "status": "used"
+    },
+    {
+      "bytes": 404908,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs_latest96_children.tsv",
+      "role": "children_egaroucid_ggs_latest96_children",
+      "rows": 1001,
+      "sha256": "f2c44b42ef16b1d4822254034fbf82b705f5f133a7f7568048374b1b91bdfa32",
+      "status": "used"
+    },
+    {
+      "bytes": 45280,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase30_children.tsv",
+      "role": "children_egaroucid_phase30_children",
+      "rows": 91,
+      "sha256": "35fcf6ecc71b2be10680182962fba5e3172b2e31254b35c5a5df2b1d7ff74ac4",
+      "status": "used"
+    },
+    {
+      "bytes": 4107,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase30_strat_children.tsv",
+      "role": "children_egaroucid_phase30_strat_children",
+      "rows": 6,
+      "sha256": "aa663f68ee57365048dfaa508d8775cbecb43080e17c3a0585290cf9e96a5c23",
+      "status": "used"
+    },
+    {
+      "bytes": 543383,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_balanced_strat_children.tsv",
+      "role": "children_egaroucid_phase35_balanced_strat_children",
+      "rows": 1089,
+      "sha256": "756d5b90e4e3f30850781f611e4686d402f27b4e70fb5e73697ab7a50ec57dca",
+      "status": "used"
+    },
+    {
+      "bytes": 3505913,
+      "malformed_rows": 1,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_children.tsv",
+      "role": "children_egaroucid_phase35_children",
+      "rows": 7229,
+      "sha256": "a9c4daf8b381946ca587c6f8fcc518dc4422ae4683968900c9cc738144a34346",
+      "status": "used"
+    },
+    {
+      "bytes": 2592720,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase36_balanced_strat_children.tsv",
+      "role": "children_egaroucid_phase36_balanced_strat_children",
+      "rows": 5157,
+      "sha256": "b27f424837488956be38b36705ae55de93d7c0add833af85e67fd8af08ef328c",
+      "status": "used"
+    },
+    {
+      "bytes": 5068770,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase36_children.tsv",
+      "role": "children_egaroucid_phase36_children",
+      "rows": 10275,
+      "sha256": "04dfefd0f02bcbb82a2964996e03f8e3452bce3ad6a69d1fb89e6ebcfefdb9c5",
+      "status": "used"
+    },
+    {
+      "bytes": 2260231,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase40_balanced_strat_children.tsv",
+      "role": "children_egaroucid_phase40_balanced_strat_children",
+      "rows": 4614,
+      "sha256": "77adfd63c426aa79e449bf068a40513972120b6e4719a5d5ae13a06fd8107005",
+      "status": "used"
+    },
+    {
+      "bytes": 4576184,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase40_children.tsv",
+      "role": "children_egaroucid_phase40_children",
+      "rows": 9381,
+      "sha256": "f3d54ee0b4708f89f3216af1a778e487c3ef2b3155c150237c53b760ea461e39",
+      "status": "used"
+    },
+    {
+      "bytes": 4499684,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase40_sibling_children.tsv",
+      "role": "children_egaroucid_phase40_sibling_children",
+      "rows": 9381,
+      "sha256": "799e693ee49568b1bed2a1177fbcf068b6155d9b2dadc36bed7ed7ebafd83217",
+      "status": "used"
+    },
+    {
+      "bytes": 2030047,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase44_balanced_strat_children.tsv",
+      "role": "children_egaroucid_phase44_balanced_strat_children",
+      "rows": 4082,
+      "sha256": "81c1644a64816d3ff2b5bed081b8ae249c18e6ae31032654da6b330a52745fbe",
+      "status": "used"
+    },
+    {
+      "bytes": 3894491,
+      "malformed_rows": 0,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase44_children.tsv",
+      "role": "children_egaroucid_phase44_children",
+      "rows": 7988,
+      "sha256": "2311dcbd1e33df01c1f6078363708da6ef59c0bfc7b14db2961b1685c23a531c",
+      "status": "used"
+    },
+    {
+      "bytes": 372665,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\label_distribution.csv",
+      "role": "label_distribution_legacy",
+      "rows": 1288,
+      "sha256": "eaf672063674e5defc6e83596e44cc3fc7317427146fd4e5227e13acf7f3f8fb",
+      "status": "used"
+    },
+    {
+      "bytes": 161249,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\training_dedup_by_id_phase_id_distribution_summary.csv",
+      "role": "dedup_within_data_id_distribution",
+      "rows": 624,
+      "sha256": "53dfbf84ec7b60bf269f9311b797f67183b758ec2296907603404e80bc3e4ce5",
+      "status": "used"
+    },
+    {
+      "bytes": 2975,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\training_dedup_by_id_distribution_summary.csv",
+      "role": "dedup_all_ids_distribution",
+      "rows": 10,
+      "sha256": "f72be048f875552da0d5b6cd585186dbd909d496dcb51052e33f26677b6377e6",
+      "status": "used"
+    },
+    {
+      "bytes": 1511936,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\data_manifest.json",
+      "role": "training_data_manifest",
+      "sha256": "592ce6c151cbed7800180abe51d677eb4754d38742d5eb6ad18815f663e98b5f",
+      "status": "used"
+    }
+  ],
+  "output_dir": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828",
+  "outputs": [
+    {
+      "bytes": 1147439,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\label_vs_exact.csv",
+      "role": "label_vs_exact",
+      "sha256": "3216743945d4f2ce8588575df586f1d5d0ad8ab63bc0583300d970e176b6f462"
+    },
+    {
+      "bytes": 1342805,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\evaluator_vs_label_vs_exact.csv",
+      "role": "evaluator_vs_label_vs_exact",
+      "sha256": "9c31767743126db0ef5732247ece870dc83fdadbb7ee08fdb93bc66311a340a4"
+    },
+    {
+      "bytes": 1496157,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\phase_summary.csv",
+      "role": "phase_summary",
+      "sha256": "4d1dfeebeadd8545fcd7c54ead8e0f930c255e67856bb0956ab64031636c49f3"
+    },
+    {
+      "bytes": 22620,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\sibling_ranking.csv",
+      "role": "sibling_ranking",
+      "sha256": "1539c4fd7488a8f3217e51b0eb7226f277221fceb4296f24f2546493cd1d008d"
+    },
+    {
+      "bytes": 1502614,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\search_depth_comparison.csv",
+      "role": "search_depth_comparison",
+      "sha256": "e657b6d9a75ad22186d35057331d3d4a1e9789d82d910a9a6728bb9823f64934"
+    },
+    {
+      "bytes": 1272488,
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\label_distribution.csv",
+      "role": "label_distribution",
+      "sha256": "7c92cd3ada3f498c0fdad4fe893e190d035f93bafda22f9e705963492613abd1"
+    }
+  ],
+  "python": {
+    "executable": "C:\\Users\\yaman\\AppData\\Local\\Programs\\Python\\Python39\\python.exe",
+    "version": "3.9.13 (tags/v3.9.13:6de2ca5, May 17 2022, 16:36:42) [MSC v.1929 64 bit (AMD64)]"
+  },
+  "row_counts": {
+    "evaluator_vs_label_vs_exact": 2797,
+    "label_distribution": 1605,
+    "label_vs_exact": 2605,
+    "normalized_datasets": {
+      "ggs_latest96": 96,
+      "ggs_seeded96": 96,
+      "phase30": 7,
+      "phase35": 598,
+      "phase36": 1000,
+      "phase40": 1000,
+      "phase44": 1000
+    },
+    "phase_summary": 2991,
+    "search_depth_comparison": 1386,
+    "sibling_ranking": 45
+  },
+  "sampling_seed": 20260828,
+  "schema_version": 1,
+  "script": {
+    "path": "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\aggregate_eval_training_bias.py",
+    "sha256": "80939c81ffec5b971eadeb8aaadecaaf5708cec98ea784978641f404392d8818"
+  },
+  "script_version": "1",
+  "warnings": [
+    "egaroucid_phase30_root: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase30_root.tsv",
+    "egaroucid_phase35_root: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_root.tsv",
+    "egaroucid_phase35_balanced_strat_root: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_balanced_strat_root.tsv",
+    "phase30 root measurement is incomplete: 7/20 expected sample IDs present",
+    "phase35 root measurement is incomplete: 598/1000 expected sample IDs present",
+    "children_egaroucid_ggs96_sibling_children: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_ggs96_sibling_children.tsv",
+    "children_egaroucid_phase30_children: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase30_children.tsv",
+    "children_egaroucid_phase30_strat_children: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase30_strat_children.tsv",
+    "children_egaroucid_phase35_balanced_strat_children: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_balanced_strat_children.tsv",
+    "children_egaroucid_phase35_children: skipped 1 malformed/incomplete rows: D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\egaroucid_phase35_children.tsv"
+  ]
+}

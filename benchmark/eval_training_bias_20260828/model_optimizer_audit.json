@@ -1,0 +1,515 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-28T19:01:36.8429168+09:00",
+  "repository_root": "D:/github/othello/Egaroucid",
+  "git_head": "9ba323ce3d8a239afce41be513726a2a787d4f59",
+  "scope": "Egaroucid current evaluation artifact provenance, Egaroucid and local Edax model structure, effective phases, scaling/quantization, and source-level optimizer properties. This audit does not change weights or engines and does not claim that any source property causes the measured regression-slope shrinkage.",
+  "classification_vocabulary": {
+    "provenance-confirmed": "The artifact identity or ancestry is supported by matching hashes and/or Git history.",
+    "source-confirmed property, causal unverified": "The stated behavior is present in the cited source. Its causal contribution to evaluation shrinkage has not been established by an intervention or ablation.",
+    "artifact-measured, causal unverified": "The property was measured directly from the named bytes. Its causal contribution to evaluation shrinkage has not been established.",
+    "derived from source, causal unverified": "The number follows arithmetically from cited source constants/tables. Its causal contribution has not been established.",
+    "unknown": "The available local evidence is insufficient to establish the claim."
+  },
+  "source_files": {
+    "ega_eval_common": {
+      "path": "src/engine/evaluate_common.hpp",
+      "sha256": "9f1ceaaa72ad135b9d2ae17e56f1e9828113059f193a741025391023753438cc"
+    },
+    "ega_common": {
+      "path": "src/engine/common.hpp",
+      "sha256": "50466545def1147ed0e365b4f5a6def51496bbd45a46c3b39932e3d502d11cb3"
+    },
+    "ega_eval_simd": {
+      "path": "src/engine/evaluate_simd.hpp",
+      "sha256": "9ff232b8d285dda624068fd92ae61f47e0dba291ff88b40dcc493cbd8be5470b"
+    },
+    "ega_eval_dispatch": {
+      "path": "src/engine/evaluate.hpp",
+      "sha256": "99ec09185bc22d0dcf9cb7cbfb2f58e23473130fe56fa086844c162053dc3875"
+    },
+    "ega_setting": {
+      "path": "src/engine/setting.hpp",
+      "sha256": "c2e53b95d64914793de37d87ace701d965f96985c67c4207007991d758073b0b"
+    },
+    "ega_training_definition": {
+      "path": "src/tools/evaluation/evaluation_definition_20241125_1_7_5.hpp",
+      "sha256": "8794e116a9365d399f58b9666ab98edad41ca14b02f2a2c1ef2307b1b7d59ef6"
+    },
+    "ega_optimizer_cuda": {
+      "path": "src/tools/evaluation/eval_optimizer_cuda.cu",
+      "sha256": "26eb50136c5e3a4e2045914422f74b9677a315daa2263ed219fee4c45ef90c00"
+    },
+    "ega_optimizer_phase": {
+      "path": "src/tools/evaluation/eval_optimizer_phase.py",
+      "sha256": "4c2dce243c897add2da7fd7c74c262eea3399e83c8d70f30cb68ab7ef9be4ea4"
+    },
+    "ega_optimizer_driver": {
+      "path": "src/tools/evaluation/eval_optimizer.py",
+      "sha256": "534a42647821b63bd9bdc5c7150a3482da847de070e5dc1983e508e2bc565018"
+    },
+    "ega_egev2_writer": {
+      "path": "src/tools/evaluation/output_egev2.cpp",
+      "sha256": "f3cbb996947301fb290373b85624b8c1ee2c877db8c7bf5bcc496636e3bfd068"
+    },
+    "ega_model_info": {
+      "path": "model/20260621_1_afterrand16_used_dev-eval/info.txt",
+      "sha256": "c37193b0632e18e67e48ba4241cd72719823507baa5eabbfdede3a1aace43fc6",
+      "tracked_by_parent_git": false
+    },
+    "edax_avx_readme": {
+      "path": "ignored/edax-reversi-AVX-master/README.md",
+      "sha256": "6ba3ea34649bbfba1ce660a377804c6899864a753577ab1ea1663d72a9f59c64",
+      "tracked_by_parent_git": false
+    },
+    "edax_eval_h": {
+      "path": "ignored/edax-reversi-AVX-master/src/eval.h",
+      "sha256": "1c092ffcfee76cae05ae2b219d969a90404ba3313329ee6155cbe55b53bc1b2e",
+      "tracked_by_parent_git": false
+    },
+    "edax_eval_c": {
+      "path": "ignored/edax-reversi-AVX-master/src/eval.c",
+      "sha256": "d55306ca2113ad278214fdd5a6b30e459ded4d34aaef93d918ae2be700b8c0da",
+      "tracked_by_parent_git": false
+    },
+    "edax_midgame_c": {
+      "path": "ignored/edax-reversi-AVX-master/src/midgame.c",
+      "sha256": "9af8514620853df64a50ae0f1e8b298522a1079171aa2710155c592a67e552d7",
+      "tracked_by_parent_git": false
+    },
+    "edax_const_h": {
+      "path": "ignored/edax-reversi-AVX-master/src/const.h",
+      "sha256": "2163d35f5636d7ce499be3a8c5e3134dff80416614fa8edb4a2b0afabe9a3d30",
+      "tracked_by_parent_git": false
+    },
+    "edax_eval_builder_c": {
+      "path": "ignored/edax-reversi-AVX-master/src/eval_builder.c",
+      "sha256": "a78d595235283a8a2b54b210451da6d9af7871056d91309080cfb43ab8f5b6d6",
+      "tracked_by_parent_git": false
+    }
+  },
+  "artifacts": {
+    "egaroucid_runtime_eval": {
+      "path": "bin/resources/eval.egev2",
+      "size_bytes": 36547114,
+      "sha256": "b4744ce60ea7082a5fe46a59125cce40c348a2d90d4a8fdb7721d1a8760e6b5a",
+      "git_blob": "2be38b9ecd7a2f2f322fdb7a7d298cd3f5e96af8",
+      "introduced_by_commit": "7c0861256746577c3f91d5a2384e2181ad876660",
+      "commit_author_time": "2026-06-22T08:20:49+09:00",
+      "commit_subject": "update eval #545",
+      "classification": "provenance-confirmed"
+    },
+    "egaroucid_model_copy": {
+      "path": "model/20260621_1_afterrand16_used_dev-eval/eval.egev2",
+      "size_bytes": 36547114,
+      "last_write_time_utc": "2026-06-21T02:19:14.3893307Z",
+      "sha256": "b4744ce60ea7082a5fe46a59125cce40c348a2d90d4a8fdb7721d1a8760e6b5a",
+      "byte_identity_to_runtime_eval": true,
+      "classification": "provenance-confirmed"
+    },
+    "egaroucid_uncompressed_model": {
+      "path": "model/20260621_1_afterrand16_used_dev-eval/eval.egev",
+      "size_bytes": 73491000,
+      "last_write_time_utc": "2026-06-21T02:19:12.1570925Z",
+      "sha256": "7faec0714d67914ccca7c3102876d52ce7b78eba5ebdbaca3780849cb36d613a"
+    },
+    "egaroucid_optimizer_executable_candidate": {
+      "path": "src/tools/evaluation/eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260513_all_off.exe",
+      "size_bytes": 266752,
+      "last_write_time_utc": "2026-05-13T03:45:42.0378607Z",
+      "sha256": "0085934f486a542c3d63a611722e65457107289ea767506aa029c89cc6d41b67",
+      "classification": "unknown",
+      "provenance_limit": "The filename is selected by eval_optimizer_phase.py and recorded in info.txt, but info.txt has no training-time executable hash. Therefore the surviving bytes cannot be cryptographically proven identical to the executable used for the run."
+    },
+    "edax_runtime_binary": {
+      "path": "bin/versions/edax_4_5_5/bin/wEdax-x86-64-v3.exe",
+      "size_bytes": 566272,
+      "sha256": "52d57d89a956817672730e575a4cb67a1e0e38db4de8754a7b4cf15c4a473410",
+      "version_stdout": "Edax version 4.5.5 Jun 22 2025 12:13:46 for Windows",
+      "classification": "artifact-measured, causal unverified"
+    },
+    "edax_eval_dat": {
+      "path": "bin/versions/edax_4_5_5/bin/data/eval.dat",
+      "size_bytes": 13952436,
+      "sha256": "f8b2299612d9fa4414157e70e932636e33111c2602d0c2fc382a7d90ef21b792",
+      "header": {
+        "version": 3,
+        "release": 2,
+        "build": 5,
+        "unix_timestamp": 1038506343.701034,
+        "timestamp_utc": "2002-11-28T17:59:03.701034Z"
+      },
+      "classification": "artifact-measured, causal unverified"
+    }
+  },
+  "egaroucid": {
+    "runtime_selection": {
+      "use_dim0_only_evaluation": true,
+      "effective_static_evaluator": "SIMD pattern evaluator when USE_SIMD_EVALUATION is enabled; generic pattern evaluator otherwise. The NNUE path is selected only if USE_NNUE_EVALUATION is defined.",
+      "effective_weight_file": "resources/eval.egev2",
+      "fm_static_term_compiled_into_mid_evaluate": false,
+      "classification": "source-confirmed property, causal unverified",
+      "evidence": [
+        {"source": "ega_setting", "lines": "146-147"},
+        {"source": "ega_eval_dispatch", "lines": "11-18"},
+        {"source": "ega_eval_simd", "lines": "245-252,256-284,538-543,618-631"}
+      ]
+    },
+    "model_structure": {
+      "phase_count": 60,
+      "phase_index": "occupied_disc_count - 4",
+      "phase_index_range_for_nonterminal_static_positions": "0..59",
+      "disc_counts_per_phase": 1,
+      "pattern_type_count": 16,
+      "pattern_occurrence_count_on_board": 64,
+      "occurrences_per_pattern_type": 4,
+      "pattern_types": [
+        {"index": 0, "name": "hv2", "cells": 8, "occurrences": 4, "raw_entries": 6561, "reversal_orbits": 3321},
+        {"index": 1, "name": "d6+2C+X", "cells": 9, "occurrences": 4, "raw_entries": 19683, "reversal_orbits": 9963},
+        {"index": 2, "name": "hv3", "cells": 8, "occurrences": 4, "raw_entries": 6561, "reversal_orbits": 3321},
+        {"index": 3, "name": "d7+2corner", "cells": 9, "occurrences": 4, "raw_entries": 19683, "reversal_orbits": 9963},
+        {"index": 4, "name": "hv4", "cells": 8, "occurrences": 4, "raw_entries": 6561, "reversal_orbits": 3321},
+        {"index": 5, "name": "corner9", "cells": 9, "occurrences": 4, "raw_entries": 19683, "reversal_orbits": 10206},
+        {"index": 6, "name": "d5+2X", "cells": 7, "occurrences": 4, "raw_entries": 2187, "reversal_orbits": 1134},
+        {"index": 7, "name": "d8+2C", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 39366},
+        {"index": 8, "name": "edge+2X", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 29646},
+        {"index": 9, "name": "triangle", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 29889},
+        {"index": 10, "name": "corner+block", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 29646},
+        {"index": 11, "name": "cross", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 30618},
+        {"index": 12, "name": "edge+Y", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 29646},
+        {"index": 13, "name": "narrow triangle", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 29889},
+        {"index": 14, "name": "fish", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 30618},
+        {"index": 15, "name": "anvil", "cells": 10, "occurrences": 4, "raw_entries": 59049, "reversal_orbits": 29646}
+      ],
+      "additional_features": [
+        {
+          "name": "side-to-move self disc count",
+          "categories": 65,
+          "value": "popcount(board.player)",
+          "learned": true
+        }
+      ],
+      "constant_term": false,
+      "explicit_mobility_term": false,
+      "raw_pattern_parameters_per_phase": 612360,
+      "raw_parameters_per_phase_including_additional_feature": 612425,
+      "raw_parameters_all_60_phases": 36745500,
+      "reversal_symmetry_independent_pattern_parameters_per_phase": 320193,
+      "reversal_symmetry_independent_parameters_per_phase_including_additional_feature": 320258,
+      "reversal_symmetry_independent_parameters_all_60_phases": 19215480,
+      "symmetry_count_method": "For each pattern, count orbits of the base-3 table indices under adj_rev_patterns. Burnside form: (3^n + 3^c)/2, where c is the number of cycles of that pattern's reversal permutation. The additional 65-entry self-disc table is unchanged.",
+      "storage_note": "eval.egev/eval.egev2 stores the expanded raw tables. The 19,215,480 value is the tied degree-of-freedom count, not the number of int16 entries in the runtime file.",
+      "classification": "derived from source, causal unverified",
+      "evidence": [
+        {"source": "ega_eval_common", "lines": "17-32"},
+        {"source": "ega_training_definition", "lines": "35-61,76-220,246-269"},
+        {"source": "ega_eval_simd", "lines": "30-35,245-252,622-630"},
+        {"source": "ega_optimizer_cuda", "lines": "82-93,171-215,531-545,697-713"}
+      ]
+    },
+    "scale_quantization_and_storage": {
+      "internal_units_per_disc": 32,
+      "teacher_import": "int16 teacher score multiplied by 32 before optimization",
+      "continuous_fit": "double-valued weights",
+      "integerization": "ceil/floor candidates; nearest-integer initialization followed by a 60-second random reversal-pair hill climb accepting non-increasing training MSE",
+      "per_parameter_packaging_clamp": [-4091, 4091],
+      "runtime_score_rounding": "sum += (sum >= 0 ? 16 : -16); sum /= 32",
+      "runtime_output_clamp": [-64, 64],
+      "egev2_encoding": "little-endian int16 stream with values >=4096 representing zero-run lengths; this is zero-run compression, not symmetry packing",
+      "classification": "source-confirmed property, causal unverified",
+      "evidence": [
+        {"source": "ega_eval_common", "lines": "40-45,143,257-297"},
+        {"source": "ega_common", "lines": "36-41"},
+        {"source": "ega_optimizer_cuda", "lines": "144-150,658-748"},
+        {"source": "ega_egev2_writer", "lines": "9-12,35-103"},
+        {"source": "ega_eval_simd", "lines": "260-307,618-631"}
+      ],
+      "artifact_measurements": {
+        "egev2_encoded_int16_count": 18273555,
+        "egev2_zero_run_token_count": 2725160,
+        "expanded_zero_count": 21197105,
+        "expanded_nonzero_count": 15548395,
+        "expanded_int16_count": 36745500,
+        "expanded_min": -4091,
+        "expanded_max": 4091,
+        "expanded_sha256": "7faec0714d67914ccca7c3102876d52ce7b78eba5ebdbaca3780849cb36d613a",
+        "expanded_bytes_equal_model_eval_egev": true,
+        "training_text_raw_extrema_before_packaging_clamp": {"min": -4385, "max": 4533},
+        "packaging_clamp_event_count": 3,
+        "packaging_clamp_events_by_phase": {"25": 1, "30": 2},
+        "classification": "artifact-measured, causal unverified"
+      }
+    },
+    "training_provenance": {
+      "model_directory": "model/20260621_1_afterrand16_used_dev-eval",
+      "training_data_family": "20241125_1",
+      "trained_phase_range_inclusive": [0, 59],
+      "initial_model": null,
+      "logged_optimizer_filename": "eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260513_all_off.exe",
+      "logged_total_training_records_over_all_phases": 4987316661,
+      "logged_total_validation_records_over_all_phases": 382051880,
+      "logged_total_records_over_all_phases": 5369368541,
+      "logged_training_schedule": [
+        {"phase_start": 0, "phase_end": 4, "minutes_per_phase": 1, "initial_alpha": 10},
+        {"phase_start": 5, "phase_end": 7, "minutes_per_phase": 1, "initial_alpha": 100},
+        {"phase_start": 8, "phase_end": 9, "minutes_per_phase": 2, "initial_alpha": 100},
+        {"phase_start": 10, "phase_end": 10, "minutes_per_phase": 3, "initial_alpha": 200},
+        {"phase_start": 11, "phase_end": 11, "minutes_per_phase": 5, "initial_alpha": 300},
+        {"phase_start": 12, "phase_end": 17, "minutes_per_phase": 5, "initial_alpha": 400},
+        {"phase_start": 18, "phase_end": 20, "minutes_per_phase": 6, "initial_alpha": 400},
+        {"phase_start": 21, "phase_end": 29, "minutes_per_phase": 8, "initial_alpha": 450},
+        {"phase_start": 30, "phase_end": 39, "minutes_per_phase": 9, "initial_alpha": 500},
+        {"phase_start": 40, "phase_end": 49, "minutes_per_phase": 11, "initial_alpha": 550},
+        {"phase_start": 50, "phase_end": 59, "minutes_per_phase": 13, "initial_alpha": 600}
+      ],
+      "preparation_commit": {
+        "hash": "9a176753c8bd92df320c25a8ebefed357356a7fd",
+        "time": "2026-06-20T23:08:02+09:00",
+        "subject": "ready for train #545",
+        "change": "eval_optimizer_phase.py enabled data ID 311 and IDs 313..324"
+      },
+      "runtime_weight_commit": {
+        "hash": "7c0861256746577c3f91d5a2384e2181ad876660",
+        "time": "2026-06-22T08:20:49+09:00",
+        "subject": "update eval #545"
+      },
+      "source_stability_check": "git diff --stat 9a176753c8bd92df320c25a8ebefed357356a7fd HEAD over eval_optimizer_phase.py, eval_optimizer_cuda.cu, evaluation_definition_20241125_1_7_5.hpp and output_egev2.cpp is empty.",
+      "conclusion": "The runtime eval.egev2 is byte-identical to the 20260621 model snapshot and its Git introduction immediately follows the logged training-preparation commit. The exact training executable bytes remain unproven because no training-time executable hash was logged.",
+      "classification": "provenance-confirmed",
+      "evidence": [
+        {"source": "ega_model_info", "lines": "1-21,24-104"},
+        {"source": "ega_optimizer_phase", "lines": "7-18,96-170,233-245"},
+        {"source": "ega_optimizer_driver", "lines": "4-15"}
+      ]
+    },
+    "optimizer_source_properties": {
+      "all_off_meaning": {
+        "residual_prediction_clip": false,
+        "rounding_objective_prediction_clip": false,
+        "per_parameter_limit_during_updates": false,
+        "learning_rate_warmup": false,
+        "rare_parameter_minimum_appearance_threshold": 0,
+        "optimizer_itself_disabled": false,
+        "active_optimizer": "Adam",
+        "classification": "source-confirmed property, causal unverified",
+        "evidence": [
+          {"source": "ega_optimizer_cuda", "lines": "39-47,390-415,634-653"},
+          {"source": "ega_optimizer_phase", "lines": "159-170"}
+        ]
+      },
+      "validation_split_and_shuffle": {
+        "shuffle_rng": "std::random_device -> std::mt19937",
+        "fixed_seed": false,
+        "phase_greater_than_11": "Shuffle all loaded records once, then use the final 5% as validation.",
+        "phase_0_through_11": "Use the full loaded set as both training and validation.",
+        "classification": "source-confirmed property, causal unverified",
+        "evidence": [
+          {"source": "ega_optimizer_cuda", "lines": "493-519"}
+        ]
+      },
+      "stopping_and_best_model": {
+        "early_stopping_present": true,
+        "criterion": "Break when consecutive/non-improving validation-MSE count exceeds n_patience, or when the wall-clock budget expires.",
+        "current_script_n_patience": 100,
+        "current_script_reduce_lr_patience": 30,
+        "current_script_reduce_lr_ratio": 0.8,
+        "best_parameter_snapshot_present": false,
+        "best_parameter_restoration_present": false,
+        "output_iterate": "The current device weights at loop exit are copied, integerized on training MSE, and written.",
+        "classification": "source-confirmed property, causal unverified",
+        "evidence": [
+          {"source": "ega_optimizer_phase", "lines": "7-14,241-245"},
+          {"source": "ega_optimizer_cuda", "lines": "600-655,658-748"}
+        ]
+      },
+      "rounding_objective": {
+        "data_partition": "training records, not validation records",
+        "time_limit_ms": 60000,
+        "acceptance": "Accept a reversal-paired ceil/floor flip when training MSE is <= the current minimum.",
+        "rng_reuses_unfixed_mt19937": true,
+        "classification": "source-confirmed property, causal unverified",
+        "evidence": [
+          {"source": "ega_optimizer_cuda", "lines": "658-748"}
+        ]
+      },
+      "cuda_error_monitor_initialization_race_candidate": {
+        "confirmed_source_construction": "Each loss kernel lets data_idx==0 write zero to a global error-monitor array inside the same kernel in which all participating threads atomicAdd their contributions. CUDA provides no grid-wide barrier between that ordinary store and other blocks' atomic additions. No host-side cudaMemset of either monitor array appears before these launches.",
+        "affected_monitors": ["training MSE/MAE display", "validation MSE/MAE used for patience and learning-rate reduction", "integer-rounding MSE/MAE used for hill-climb acceptance"],
+        "not_directly_affected_by_this_specific_construction": "The residual-gradient array is reset by the optimizer kernel and updated atomically in a separately ordered kernel; this audit flags the monitor arrays, not a demonstrated gradient race.",
+        "causal_status": "Whether the race manifests on the training GPU, its numerical size, and whether it contributes to slope shrinkage are untested. Treat this as an ablation/test target, not a causal finding.",
+        "classification": "source-confirmed property, causal unverified",
+        "evidence": [
+          {"source": "ega_optimizer_cuda", "lines": "171-218,224-255,261-307,564-590,597-630,688-745"}
+        ]
+      }
+    }
+  },
+  "edax": {
+    "source_provenance": {
+      "local_tree": "ignored/edax-reversi-AVX-master",
+      "tree_identity": "Edax AVX fork; README describes it as an SSE/AVX optimized Edax 4.4 fork and separately identifies the maintained 4.5.5 build.",
+      "tree_git_commit": null,
+      "tree_is_ignored_and_has_no_local_git_metadata": true,
+      "warning": "These hashes make the local audit reproducible, but the source tree cannot be tied to an upstream commit from local metadata alone. Do not relabel fork-specific phase reduction as an official Edax training method.",
+      "classification": "unknown",
+      "evidence": [
+        {"source": "edax_avx_readme", "lines": "1-23"}
+      ]
+    },
+    "model_structure": {
+      "learned_board_pattern_type_count": 12,
+      "pattern_types": [
+        {"name": "C9", "cells": 9, "occurrences": 4, "raw_entries": 19683, "packed_entries": 10206},
+        {"name": "C10", "cells": 10, "occurrences": 4, "raw_entries": 59049, "packed_entries": 29889},
+        {"name": "S100", "cells": 10, "occurrences": 4, "raw_entries": 59049, "packed_entries": 29646},
+        {"name": "S101", "cells": 10, "occurrences": 4, "raw_entries": 59049, "packed_entries": 29646},
+        {"name": "S8-hv2", "cells": 8, "occurrences": 4, "raw_entries": 6561, "packed_entries": 3321},
+        {"name": "S8-hv3", "cells": 8, "occurrences": 4, "raw_entries": 6561, "packed_entries": 3321},
+        {"name": "S8-hv4", "cells": 8, "occurrences": 4, "raw_entries": 6561, "packed_entries": 3321},
+        {"name": "S8-diagonal", "cells": 8, "occurrences": 2, "raw_entries": 6561, "packed_entries": 3321},
+        {"name": "S7", "cells": 7, "occurrences": 4, "raw_entries": 2187, "packed_entries": 1134},
+        {"name": "S6", "cells": 6, "occurrences": 4, "raw_entries": 729, "packed_entries": 378},
+        {"name": "S5", "cells": 5, "occurrences": 4, "raw_entries": 243, "packed_entries": 135},
+        {"name": "S4", "cells": 4, "occurrences": 4, "raw_entries": 81, "packed_entries": 45}
+      ],
+      "pattern_occurrence_count_on_board": 46,
+      "learned_constant_terms": 1,
+      "runtime_feature_terms_including_constant": 47,
+      "explicit_self_disc_count_term": false,
+      "explicit_mobility_term": false,
+      "parity_role": "Ply parity selects the even/odd interleaved weight block; it is not an additive learned feature.",
+      "raw_parameters_per_weight_block_including_constant": 226315,
+      "packed_parameters_per_weight_block_including_constant": 114364,
+      "classification": "derived from source, causal unverified",
+      "evidence": [
+        {"source": "edax_eval_h", "lines": "16-17,23-61"},
+        {"source": "edax_eval_c", "lines": "41-101,449-472,565-629,667-697"},
+        {"source": "edax_midgame_c", "lines": "36-101"}
+      ]
+    },
+    "phase_count_distinction": {
+      "full_edax_format_nonterminal_physical_phases": {
+        "count": 60,
+        "ply_range": "0..59",
+        "packed_parameter_count": 6861840,
+        "raw_expanded_parameter_count": 13578900,
+        "note": "This is the 60-position nonterminal midgame phase baseline. It must be kept separate from both the extra serialized endpoint and the local 4.5.5 runtime reduction.",
+        "classification": "derived from source, causal unverified"
+      },
+      "bundled_eval_dat_serialization": {
+        "header_bytes": 28,
+        "packed_int16_per_block": 114364,
+        "serialized_weight_blocks": 61,
+        "serialized_block_index_range": "0..60",
+        "packed_parameter_count": 6976204,
+        "raw_expanded_equivalent_parameter_count": 13805215,
+        "formula": "(13952436 - 28) / (114364 * 2) = 61",
+        "note": "The 61st serialized block is an endpoint block. Saying '60 physical nonterminal phases' and '61 serialized blocks' is not a contradiction.",
+        "classification": "artifact-measured, causal unverified"
+      },
+      "local_4_5_5_runtime": {
+        "compile_time_EVAL_N_2PLY": 27,
+        "file_blocks_read": 54,
+        "zero_based_file_block_range_read": "0..53",
+        "prefix_blocks_skipped": 2,
+        "zero_based_active_file_block_range": "2..53",
+        "distinct_active_weight_blocks": 52,
+        "packed_active_parameter_count": 5946928,
+        "raw_expanded_active_parameter_count": 11768380,
+        "trailing_serialized_blocks_not_read": 7,
+        "runtime_mapping": "For game ply p=0..59, parity p&1 selects the interleaved half; floor(max(p-2,0)/2) is capped at 25. Consequently p=0/2 share file block 2, p=1/3 share block 3, and p>=54 reuses file block 52 or 53 by parity.",
+        "classification": "source-confirmed property, causal unverified"
+      },
+      "evidence": [
+        {"source": "edax_eval_h", "lines": "45-61"},
+        {"source": "edax_eval_c", "lines": "565-577,633-698"},
+        {"source": "edax_midgame_c", "lines": "29-48,110-123"},
+        {"source": "edax_eval_builder_c", "lines": "880-905"}
+      ]
+    },
+    "scale_quantization_and_runtime": {
+      "internal_units_per_disc": 128,
+      "stored_type": "signed int16 packed weights",
+      "runtime_score_rounding": "score += (score > 0 ? 64 : -64); score /= 128",
+      "runtime_output_clamp": [-63, 63],
+      "bundled_eval_dat_weight_min": -2736,
+      "bundled_eval_dat_weight_max": 2613,
+      "bundled_eval_dat_zero_weight_count": 1094949,
+      "bundled_eval_dat_total_weight_count": 6976204,
+      "local_builder_quantization_code": "(short)(128.0 * w[k] + 0.5)",
+      "builder_provenance_warning": "The bundled eval.dat header is version 3.2.5 with a 2002 timestamp. The presence of this quantization expression in the local 2025-era source does not prove that this exact builder/version generated the bundled weights.",
+      "classification": "source-confirmed property, causal unverified",
+      "evidence": [
+        {"source": "edax_eval_c", "lines": "565-577,645-698"},
+        {"source": "edax_midgame_c", "lines": "110-125"},
+        {"source": "edax_const_h", "lines": "51-58"},
+        {"source": "edax_eval_builder_c", "lines": "1608-1633"}
+      ]
+    },
+    "training_method": {
+      "training_data": "unknown",
+      "teacher_label_distribution": "unknown",
+      "loss_and_regularization_used_for_the_bundled_eval_dat": "unknown",
+      "optimizer_used_for_the_bundled_eval_dat": "unknown",
+      "statement": "The local runtime/model sources establish table structure, packing, phase mapping and inference scale. They do not establish the training corpus or training procedure for the bundled eval.dat.",
+      "classification": "unknown"
+    }
+  },
+  "model_capacity_comparison": {
+    "same_phase_raw_parameter_ratio_egaroucid_over_edax": 2.7060733933,
+    "same_phase_symmetry_independent_parameter_ratio_egaroucid_over_edax": 2.8003392676,
+    "board_pattern_occurrence_ratio_egaroucid_over_edax": 1.3913043478,
+    "egaroucid_independent_parameters_all_60_phases": 19215480,
+    "edax_full_format_independent_parameters_60_nonterminal_phases": 6861840,
+    "edax_local_4_5_5_active_independent_parameters_52_blocks": 5946928,
+    "total_active_independent_parameter_ratio_egaroucid_over_local_edax": 3.2311606934,
+    "additional_feature_difference": "Egaroucid has a learned 65-category side-to-move self-disc count table. Edax has a learned constant and no explicit self-disc-count or mobility term in this local static evaluator.",
+    "conclusion": "The cited structures do not support 'Egaroucid shrinks because its model is simpler than Edax.' Egaroucid has more pattern types, occurrences and independent parameters. Whether this extra capacity is fitted effectively requires residual measurements or ablations.",
+    "classification": "derived from source, causal unverified"
+  },
+  "causal_guardrails": [
+    {
+      "claim": "The all-off compile switches cause slope shrinkage.",
+      "status": "not established",
+      "required_test": "Controlled training ablations changing one switch at a time on identical data/split/seed."
+    },
+    {
+      "claim": "Non-deterministic validation shuffle or missing best restoration causes slope shrinkage.",
+      "status": "not established",
+      "required_test": "Repeat fixed-seed runs with best-checkpoint restoration and compare e-v/e-z slopes."
+    },
+    {
+      "claim": "The CUDA monitor initialization race causes slope shrinkage.",
+      "status": "not established",
+      "required_test": "Move monitor zeroing to host cudaMemset or a separate kernel, compare monitored losses/stopping decisions, and rerun identical-seed fits."
+    },
+    {
+      "claim": "Edax's training labels or training method explain its behavior.",
+      "status": "unknown",
+      "required_test": "No local training-data evidence exists; compare Edax outputs empirically on the same fixed position sets and keep training-method claims separate."
+    }
+  ],
+  "reproduction": {
+    "commands": [
+      "git rev-parse HEAD",
+      "git status --short -- src/tools/evaluation/eval_optimizer_cuda.cu src/tools/evaluation/eval_optimizer_phase.py src/tools/evaluation/evaluation_definition_20241125_1_7_5.hpp src/engine/evaluate_common.hpp src/engine/evaluate_simd.hpp src/engine/setting.hpp bin/resources/eval.egev2",
+      "git log --follow --format=%H%x09%aI%x09%s -- bin/resources/eval.egev2",
+      "git ls-files -s bin/resources/eval.egev2",
+      "git diff --stat 9a176753c8bd92df320c25a8ebefed357356a7fd HEAD -- src/tools/evaluation/eval_optimizer_phase.py src/tools/evaluation/eval_optimizer_cuda.cu src/tools/evaluation/evaluation_definition_20241125_1_7_5.hpp src/tools/evaluation/output_egev2.cpp",
+      "Get-FileHash -Algorithm SHA256 -LiteralPath bin/resources/eval.egev2",
+      "Get-FileHash -Algorithm SHA256 -LiteralPath model/20260621_1_afterrand16_used_dev-eval/eval.egev2",
+      "Get-FileHash -Algorithm SHA256 -LiteralPath bin/versions/edax_4_5_5/bin/data/eval.dat",
+      "python -c \"import pathlib,struct; b=pathlib.Path(r'bin/versions/edax_4_5_5/bin/data/eval.dat').read_bytes(); print(struct.unpack('<IIiiid',b[:28])); print((len(b)-28)//(114364*2),(len(b)-28)%(114364*2))\"",
+      "bin/versions/edax_4_5_5/bin/wEdax-x86-64-v3.exe -v",
+      "python -m json.tool benchmark/eval_training_bias_20260828/model_optimizer_audit.json"
+    ],
+    "arithmetic_checks": [
+      "Egaroucid raw/phase = 3*3^8 + 3*3^9 + 3^7 + 9*3^10 + 65 = 612425",
+      "Egaroucid raw/all = 612425*60 = 36745500",
+      "Egaroucid independent/phase = sum([3321,9963,3321,9963,3321,10206,1134,39366,29646,29889,29646,30618,29646,29889,30618,29646]) + 65 = 320258",
+      "Edax raw/block = 19683 + 3*59049 + 4*6561 + 2187 + 729 + 243 + 81 + 1 = 226315",
+      "Edax packed/block = sum([10206,29889,29646,29646,3321,3321,3321,3321,1134,378,135,45,1]) = 114364",
+      "Edax local active blocks = 54 read - 2 skipped = 52"
+    ]
+  }
+}

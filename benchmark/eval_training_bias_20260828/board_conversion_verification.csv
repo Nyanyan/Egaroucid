@@ -1,0 +1,6 @@
+﻿phase,empties,phase_id_rows,all_phase_id_record_counts_match,board_records,indexed_records,phase_score_histogram_matches,differing_score_bin_count,differing_score_bins,per_data_id_score_histogram_status
+30,30,42,True,69988462,69988462,True,0,,not_stored; per-ID record counts and aggregate distribution statistics were checked separately
+35,25,64,True,99432818,99432818,True,0,,not_stored; per-ID record counts and aggregate distribution statistics were checked separately
+36,24,67,True,102170589,102170589,True,0,,not_stored; per-ID record counts and aggregate distribution statistics were checked separately
+40,20,79,True,120382767,120382767,True,0,,not_stored; per-ID record counts and aggregate distribution statistics were checked separately
+44,16,87,True,129417824,129417824,True,0,,not_stored; per-ID record counts and aggregate distribution statistics were checked separately

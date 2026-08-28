@@ -1,0 +1,29 @@
+{
+  "script": "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\verify_training_data_conversion.py",
+  "script_sha256": "10ce11a9486572bb383a81af9cf20dc3606ddc301de21d798e830b5f61ac5793",
+  "inputs": [
+    {
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\training_dedup_by_id_score_histogram.csv",
+      "sha256": "10aa64f2684c39116598bd70249b12b5bb625ee252e78b4d043656f4b8afb619"
+    },
+    {
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\board_label_histograms.json",
+      "sha256": "e009d5de367b022e8854c7bfb0563b313b6258cc03a8e1f11c5719f22963c92b"
+    },
+    {
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\phase36_sample\\board_label_histograms.json",
+      "sha256": "ce2946a3779fdb4a4099513d25465188506be77048932d530c955e3f01104c42"
+    },
+    {
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\board_conversion_check.csv",
+      "sha256": "7d2ff1fcb3324cde7f9728d7e3e57af5cb39eacfcbf8a898edda1eea56a8ae11"
+    },
+    {
+      "path": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\phase36_sample\\board_conversion_check.csv",
+      "sha256": "0c95b7183a4b89e346075326a857c929e6a1d9885e7e88bcd0318a08cc6eb868"
+    }
+  ],
+  "output": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_training_bias_20260828\\board_conversion_verification.csv",
+  "output_sha256": "9c49475320c89e27cb34cabb133e0780e876f318a48d0e8e17b38bbdd9b56fdf",
+  "scope_note": "Full score-bin equality is checked after summing all selected data IDs within each phase. Per-data-ID full histograms were not retained."
+}

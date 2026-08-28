@@ -1,0 +1,121 @@
+{
+  "schema_version": 2,
+  "generated_at_local": "2026-08-28T20:35:29.2198124+09:00",
+  "cwd": "D:\\github\\othello\\Egaroucid",
+  "timezone": "Asia/Tokyo",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+  "python": "3.9.13",
+  "numpy": "1.24.3",
+  "compiler": "MinGW-Builds g++ 13.1.0, x86_64-posix-seh-rev1",
+  "git": {
+    "base_head": "9ba323ce3d8a239afce41be513726a2a787d4f59",
+    "branch": "dev-lazysmp-ggs-b",
+    "eval_blob": "2be38b9ecd7a2f2f322fdb7a7d298cd3f5e96af8",
+    "eval_introduced_by": "7c0861256746577c3f91d5a2384e2181ad876660",
+    "eval_introduced_at": "2026-06-22T08:20:49+09:00",
+    "eval_commit_subject": "update eval #545",
+    "git_status_before_analysis": "?? benchmark/eval_training_bias_20260828/\n?? src/tools/evaluation/analyze_training_bias.py"
+  },
+  "data": {
+    "EGAROUCID_DATA": "E:\\egaroucid_data",
+    "indexed_input_file_entries": 1269,
+    "ordered_selected_indexed_stream_sha256": "4f04d6fa44b04b482b4309e06e95018e5d32cdf1ed5a8e3811bc2b0a74fb77fd",
+    "per_file_sha256_location": "data_manifest.json/input_files",
+    "sampling_seed": 20260828,
+    "sample_positions_tsv": {
+      "bytes": 757071,
+      "sha256": "fe1d5ec50b07433396a4ff3d6b28ae4d9c0216cc89e7a2bceb900475f1873ab5"
+    },
+    "phase36_sample_positions_tsv": {
+      "bytes": 251172,
+      "sha256": "715ebd23876dd422a3718d7dcbbe3b83993460fa683f9fffdb4bb33d5974eca5"
+    },
+    "ggs_25_empties_jsonl": {
+      "bytes": 775723,
+      "sha256": "ddfaa0092919f23b8d2d55f24ed27ccd2677c4809df174981431f6aa9bf1cc94"
+    },
+    "accepted_measurement_rows": {
+      "phase30": 7,
+      "phase35": 598,
+      "phase36": 1000,
+      "phase40": 1000,
+      "phase44": 1000,
+      "ggs_latest96": 96,
+      "ggs_seeded96": 96
+    }
+  },
+  "artifacts": {
+    "bin/resources/eval.egev2": {
+      "bytes": 36547114,
+      "sha256": "b4744ce60ea7082a5fe46a59125cce40c348a2d90d4a8fdb7721d1a8760e6b5a"
+    },
+    "model/20260621_1_afterrand16_used_dev-eval/eval.egev2": {
+      "bytes": 36547114,
+      "sha256": "b4744ce60ea7082a5fe46a59125cce40c348a2d90d4a8fdb7721d1a8760e6b5a",
+      "byte_identical_to_runtime_eval": true
+    },
+    "model/20260621_1_afterrand16_used_dev-eval/eval.egev": {
+      "bytes": 73491000,
+      "sha256": "7faec0714d67914ccca7c3102876d52ce7b78eba5ebdbaca3780849cb36d613a"
+    },
+    "src/tools/evaluation/eval_optimizer_cuda_12_2_0_20241125_1_7_5_20260513_all_off.exe": {
+      "bytes": 266752,
+      "sha256": "0085934f486a542c3d63a611722e65457107289ea767506aa029c89cc6d41b67",
+      "provenance_limit": "filename and timestamps match the log, but the training log contains no executable hash"
+    },
+    "bin/versions/edax_4_5_5/bin/wEdax-x86-64-v3.exe": {
+      "bytes": 566272,
+      "sha256": "52d57d89a956817672730e575a4cb67a1e0e38db4de8754a7b4cf15c4a473410",
+      "version": "Edax version 4.5.5 Jun 22 2025 12:13:46 for Windows"
+    },
+    "bin/versions/edax_4_5_5/bin/data/eval.dat": {
+      "bytes": 13952436,
+      "sha256": "f8b2299612d9fa4414157e70e932636e33111c2602d0c2fc382a7d90ef21b792"
+    },
+    "benchmark/eval_training_bias_20260828/eval_training_bias_tool.exe": {
+      "bytes": 1181998,
+      "sha256": "db8c7ae08a6369aa51741efe5e77d10445ad3d526942fefc662c956219fa0c3b"
+    },
+    "benchmark/eval_training_bias_20260828/training_data_deduplicate_v2.exe": {
+      "bytes": 200883,
+      "sha256": "c0c2be3093d912327228e58615e7829768ab6c55f156a4f6ab04970a0586f8b7"
+    },
+    "benchmark/eval_training_bias_20260828/data_manifest.json": {
+      "bytes": 1511936,
+      "sha256": "592ce6c151cbed7800180abe51d677eb4754d38742d5eb6ad18815f663e98b5f"
+    }
+  },
+  "analysis_source_sha256": {
+    "src/tools/evaluation/analyze_training_bias.py": "4cc4d5c8d95a03994bc147ab82783792e00bb21681290a8a96f2369a24497198",
+    "src/tools/evaluation/aggregate_eval_training_bias.py": "80939c81ffec5b971eadeb8aaadecaaf5708cec98ea784978641f404392d8818",
+    "src/tools/evaluation/analyze_position_distribution.py": "93f66bf08ae477ebf741ea49bbde708fd36f635940892dfa1f4c7af43ee60b54",
+    "src/tools/evaluation/eval_training_bias_tool.cpp": "6866d57ec32f0fc6b8e0a46cf1406a0ffe06eeebcd0f10cf5af3f6985b2ff785",
+    "src/tools/evaluation/run_edax_training_bias.py": "bbe24fd399d914f155c61cf8d52a64e47b68d1ee3b99cd94231cd04377b53aee",
+    "src/tools/evaluation/training_data_deduplicate.cpp": "b10e6d5fd45fd0257f71679a116034babc4c5951c922f3415fc7090cc5747956",
+    "src/tools/evaluation/verify_training_data_conversion.py": "10ce11a9486572bb383a81af9cf20dc3606ddc301de21d798e830b5f61ac5793",
+    "src/tools/evaluation/test_analyze_training_bias.py": "3cbd5b5912c4950298e14fc1f817cb45dd40a06594a541389a8af0ffd5f3e503",
+    "bin/extract_ggs_midgame_positions.py": "062dac3d8c186f424de526ba0d511fcc6858a555ef1c95be474bba57ceab5c64"
+  },
+  "search_controls": {
+    "threads": 1,
+    "book": false,
+    "mpc": false,
+    "lmr": false,
+    "pv_extension": false,
+    "window": "full",
+    "transposition_table": "cleared for every unique position/depth and engine; duplicate rows reuse the recorded cold-search result",
+    "edax_fixed_depths": [0, 1, 2, 4, 5, 6, 8, 9, 10]
+  },
+  "cross_checks": {
+    "egaroucid_edax_exact_agreement": "1692/1692",
+    "edax_latest96_exact_children_reproduce_root": "96/96",
+    "pass_containing_nonterminal_pv_root_leaf_sign_agreement": "399/399"
+  },
+  "bootstrap": {
+    "requested_replicates": 1000,
+    "confidence": 0.95,
+    "cluster": ["source_file", "game_index_in_file"],
+    "undefined_metric_policy": "CI left empty unless the metric is defined in every requested replicate"
+  }
+}
