@@ -25,11 +25,17 @@
 */
 inline int stability_cut(Search *search, int *alpha, int *beta) {
     if (*beta >= stability_threshold[search->n_discs]) {
-        int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
-        if (n_beta <= *alpha) {
-            return n_beta;
-        } else if (n_beta < *beta) {
-            *beta = n_beta;
+        const int cheap_upper = HW2 - 2 * pop_count_ull(search->board.opponent);
+        // Stable opponent discs are a subset of all opponent discs, so
+        // n_beta >= cheap_upper.  For a valid alpha < beta window, only
+        // cheap_upper < beta can affect the result or narrow the window.
+        if (cheap_upper < *beta) {
+            const int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
+            if (n_beta <= *alpha) {
+                return n_beta;
+            } else if (n_beta < *beta) {
+                *beta = n_beta;
+            }
         }
     }
     return SCORE_UNDEFINED;
@@ -61,9 +67,14 @@ inline int stability_cut_last4(Search *search, int *alpha, int beta) {
 */
 inline int stability_cut_nws(Search *search, int alpha) {
     if (alpha >= stability_threshold_nws[search->n_discs]) {
-        int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
-        if (n_beta <= alpha) {
-            return n_beta;
+        const int cheap_upper = HW2 - 2 * pop_count_ull(search->board.opponent);
+        // n_beta >= cheap_upper, so a cutoff is possible only when
+        // cheap_upper <= alpha (the NWS beta is alpha + 1).
+        if (cheap_upper <= alpha) {
+            const int n_beta = HW2 - 2 * pop_count_ull(calc_stability(search->board.opponent, search->board.player));
+            if (n_beta <= alpha) {
+                return n_beta;
+            }
         }
     }
     return SCORE_UNDEFINED;
