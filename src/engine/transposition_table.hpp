@@ -543,6 +543,10 @@ class Transposition_table {
             @param cost                 search cost (log2(nodes))
         */
         inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
+            // This option is fixed before searches start.  When disabled, the
+            // registration count is not used and must not remain a shared
+            // atomic hot spot between search threads.
+            const bool track_registrations = transposition_table_auto_reset_importance;
             Hash_node *node = get_node(hash);
             const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
@@ -573,7 +577,7 @@ class Transposition_table {
                                     min_level_node = node;
                                 }
 #else
-                                if (node->data.get_importance() == 0) {
+                                if (track_registrations && node->data.get_importance() == 0) {
                                     n_registered.fetch_add(1);
                                 }
                                 node->board.player = search->board.player;
@@ -598,13 +602,13 @@ class Transposition_table {
                     min_level_node->board.player = search->board.player;
                     min_level_node->board.opponent = search->board.opponent;
                     min_level_node->data.reg_new_data(depth, search->mpc_level, alpha, beta, value, policy);
-                    if (min_level_node->data.get_level() > 0) {
+                    if (track_registrations && min_level_node->data.get_level() > 0) {
                         n_registered.fetch_add(1);
                     }
                 min_level_node->lock.unlock();
             }
 #endif
-            if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
+            if (track_registrations && n_registered >= n_registered_threshold) {
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold) {
                     reset_importance_proc();
@@ -614,6 +618,7 @@ class Transposition_table {
 
 
         inline void reg_overwrite(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
+            const bool track_registrations = transposition_table_auto_reset_importance;
             Hash_node *node = get_node(hash);
             //const uint32_t level = get_level_common(depth, search->mpc_level);
             uint32_t node_level;
@@ -636,7 +641,7 @@ class Transposition_table {
                 ++hash;
                 node = get_node(hash);
             }
-            if (n_registered >= n_registered_threshold && transposition_table_auto_reset_importance) {
+            if (track_registrations && n_registered >= n_registered_threshold) {
                 std::lock_guard lock(mtx);
                 if (n_registered >= n_registered_threshold) {
                     //std::cerr << "resetting transposition importance" << std::endl;
