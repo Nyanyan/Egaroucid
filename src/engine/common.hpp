@@ -18,6 +18,7 @@
 #include <atomic>
 #include <random>
 #include <string>
+#include <type_traits>
 #include "setting.hpp"
 
 // board size definition
@@ -203,6 +204,26 @@ inline bool search_cancellation_load(const bool *flag) {
 
 inline void search_cancellation_store(bool *flag, bool value) {
     std::atomic_ref<bool>(*flag).store(value, std::memory_order_relaxed);
+}
+
+// A search can be cancelled either by its caller or by any enclosing YBWC
+// split.  Keep the chain as immutable stack nodes so passing it to a worker is
+// only a two-pointer copy and does not allocate.
+struct Search_cancellation_context {
+    bool *current;
+    const Search_cancellation_context *parent;
+};
+
+static_assert(std::is_trivially_copyable_v<Search_cancellation_context>);
+static_assert(sizeof(Search_cancellation_context) == 2 * sizeof(void *));
+
+inline bool is_searching(const Search_cancellation_context &context) noexcept {
+    for (const Search_cancellation_context *node = &context; node != nullptr; node = node->parent) {
+        if (!search_cancellation_load(node->current)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // set false to stop all search immediately

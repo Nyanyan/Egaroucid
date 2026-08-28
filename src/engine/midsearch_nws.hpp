@@ -28,9 +28,9 @@
 #include "util.hpp"
 #include "stability_cutoff.hpp"
 
-inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings);
-inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, Nws_node_hint node_hint, std::vector<bool*> &searchings);
-inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings);
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Search_cancellation_context &cancellation);
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, Nws_node_hint node_hint, const Search_cancellation_context &cancellation);
+inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Search_cancellation_context &cancellation);
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, Nws_node_hint node_hint, bool* searching);
 inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool* searching);
@@ -367,13 +367,6 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 }
 
 
-inline bool is_searching(const std::vector<bool*> &searchings) {
-    return std::all_of(searchings.begin(), searchings.end(), 
-                       [](const bool* elem) { return search_cancellation_load(elem); });
-}
-
-
-
 /*
     @brief Get a value with given depth with Nega-Alpha algorithm (NWS)
 
@@ -386,20 +379,20 @@ inline bool is_searching(const std::vector<bool*> &searchings) {
     @param node_hint            pass state and optional cached static evaluation
     @param legal                for use of previously calculated legal bitboard
     @param is_end_search        search till the end?
-    @param searching            flag for terminating this search
+    @param cancellation         linked flags for terminating this search
     @return the value
 */
-int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings) {
-    if (!global_searching || !is_searching(searchings)) {
+int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, const Search_cancellation_context &cancellation) {
+    if (!global_searching || !is_searching(cancellation)) {
         return SCORE_UNDEFINED;
     }
     if (is_end_search) {
         if (depth <= MID_TO_END_DEPTH_MPC || (search->mpc_level == MPC_100_LEVEL && depth <= MID_TO_END_DEPTH)) {
-            return nega_alpha_end_nws(search, alpha, node_hint.is_after_pass(), legal, searchings);
+            return nega_alpha_end_nws(search, alpha, node_hint.is_after_pass(), legal, cancellation);
         }
     } else {
         if (depth <= MID_SIMPLE_ORDERING_DEPTH) {
-            return nega_alpha_ordering_nws_simple(search, alpha, depth, node_hint, legal, searchings.back());
+            return nega_alpha_ordering_nws_simple(search, alpha, depth, node_hint, legal, cancellation.current);
         }
     }
     int v = -SCORE_INF;
@@ -423,7 +416,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
             return end_evaluate(&search->board);
         }
         search->pass();
-            v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, Nws_node_hint::after_pass(), LEGAL_UNDEFINED, is_end_search, searchings);
+            v = -nega_alpha_ordering_nws(search, -alpha - 1, depth, Nws_node_hint::after_pass(), LEGAL_UNDEFINED, is_end_search, cancellation);
         search->pass();
         return v;
     }
@@ -435,7 +428,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
     }
 #if USE_MID_MPC
     if (search->mpc_level < MPC_100_LEVEL && depth >= USE_MPC_MIN_DEPTH) {
-        if (is_end_search ? mpc_end(search, alpha, alpha + 1, depth, legal, &v, searchings) : mpc_mid(search, alpha, alpha + 1, depth, legal, &v, node_hint, searchings)) {
+        if (is_end_search ? mpc_end(search, alpha, alpha + 1, depth, legal, &v, cancellation) : mpc_mid(search, alpha, alpha + 1, depth, legal, &v, node_hint, cancellation)) {
             return v;
         }
     }
@@ -468,7 +461,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
     bool serial_searched = false;
     if (tt_moves_idx0 != -1 && move_list[tt_moves_idx0].flip.flip) {
         search->move(&move_list[tt_moves_idx0].flip);
-            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, Nws_node_hint::no_static_eval(), move_list[tt_moves_idx0].n_legal, is_end_search, searchings);
+            g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, Nws_node_hint::no_static_eval(), move_list[tt_moves_idx0].n_legal, is_end_search, cancellation);
         search->undo(&move_list[tt_moves_idx0].flip);
         if (v < g) {
             v = g;
@@ -480,9 +473,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
     }
     if (v <= alpha) {
         if (is_end_search) {
-            move_list_evaluate_end_nws(search, move_list, canput, moves, searchings.back());
+            move_list_evaluate_end_nws(search, move_list, canput, moves, cancellation.current);
         } else {
-            move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, searchings.back());
+            move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, cancellation.current);
         }
 #if USE_YBWC_NWS
         if (
@@ -495,7 +488,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
             if (move_list[0].flip.flip) {
                 if (!serial_searched) {
                     search->move(&move_list[0].flip);
-                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[0], is_end_search), move_list[0].n_legal, is_end_search, searchings);
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[0], is_end_search), move_list[0].n_legal, is_end_search, cancellation);
                     search->undo(&move_list[0].flip);
                     move_list[0].flip.flip = 0;
                     if (v < g) {
@@ -504,12 +497,12 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
                     }
                 }
                 if (v <= alpha) {
-                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, canput, searchings);
+                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, canput, cancellation);
                 }
             }
         } else{
 #endif
-            for (int move_idx = 0; move_idx < canput - n_etc_done && is_searching(searchings); ++move_idx) {
+            for (int move_idx = 0; move_idx < canput - n_etc_done && is_searching(cancellation); ++move_idx) {
                 swap_next_best_move(move_list, move_idx, canput);
 #if USE_MID_ETC
                 if (move_list[move_idx].flip.flip == 0) {
@@ -517,7 +510,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
                 }
 #endif
                 search->move(&move_list[move_idx].flip);
-                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[move_idx], is_end_search), move_list[move_idx].n_legal, is_end_search, searchings);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[move_idx], is_end_search), move_list[move_idx].n_legal, is_end_search, cancellation);
                 search->undo(&move_list[move_idx].flip);
                 if (v < g) {
                     v = g;
@@ -540,7 +533,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
 #if !USE_DIM0_ONLY_EVALUATION
         !search->use_dim0_mpc_eval &&
 #endif
-        global_searching && is_searching(searchings)
+        global_searching && is_searching(cancellation)
     ) {
         transposition_table.reg(search, hash_code, depth, alpha, alpha + 1, v, best_move);
     }
@@ -551,6 +544,6 @@ inline int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, c
     if (!is_end_search && depth <= MID_SIMPLE_ORDERING_DEPTH) {
         return nega_alpha_ordering_nws_simple(search, alpha, depth, node_hint, legal, searching);
     }
-    std::vector<bool*> searchings = {searching};
-    return nega_alpha_ordering_nws(search, alpha, depth, node_hint, legal, is_end_search, searchings);
+    const Search_cancellation_context cancellation{searching, nullptr};
+    return nega_alpha_ordering_nws(search, alpha, depth, node_hint, legal, is_end_search, cancellation);
 }

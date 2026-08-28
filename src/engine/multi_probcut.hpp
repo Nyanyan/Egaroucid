@@ -233,7 +233,7 @@ inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
     return ceil(MPC_ERROR_SCALE * SELECTIVITY_MPCT[mpc_level] * sigma);
 }
 
-int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, const Search_cancellation_context &cancellation);
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, bool *searching);
 
 inline bool mpc_end_static_eval_cut(
@@ -418,7 +418,7 @@ inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_de
     @param depth                depth of deep search
     @param legal                for use of previously calculated legal bitboard
     @param v                    an integer to store result
-    @param searching            flag for terminating this search
+    @param searchings           flag or linked flags for terminating this search
     @return cutoff occurred?
 */
 template<bool IsEndSearch, typename Searchings>
@@ -587,16 +587,16 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
     return false;
 }
 
-inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings) {
-    return mpc_impl<false>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), searchings);
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Search_cancellation_context &cancellation) {
+    return mpc_impl<false>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), cancellation);
 }
 
-inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Nws_node_hint node_hint, std::vector<bool*> &searchings) {
-    return mpc_impl<false>(search, alpha, beta, depth, legal, v, node_hint, searchings);
+inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Nws_node_hint node_hint, const Search_cancellation_context &cancellation) {
+    return mpc_impl<false>(search, alpha, beta, depth, legal, v, node_hint, cancellation);
 }
 
-inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings) {
-    return mpc_impl<true>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), searchings);
+inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Search_cancellation_context &cancellation) {
+    return mpc_impl<true>(search, alpha, beta, depth, legal, v, Nws_node_hint::no_static_eval(), cancellation);
 }
 
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool *searching) {

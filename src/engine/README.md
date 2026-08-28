@@ -52,7 +52,7 @@ Egaroucidは高性能なオセロ（リバーシ）AIエンジンです。主な
 **概要**: Null Window Searchの実装。
 
 **主要関数**:
-- `int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, std::vector<bool*> &searchings)`
+- `int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, bool is_end_search, const Search_cancellation_context &cancellation)`
   - **目的**: 並列対応のNWS探索
   - **呼び出し元**: `nega_scout`, `first_nega_scout_legal`, 自己再帰
   - **呼び出し先**: `nega_alpha_ordering_nws_simple`, `move_list_evaluate_nws`, `ybwc_search_young_brothers_nws`
@@ -116,7 +116,7 @@ Egaroucidは高性能なオセロ（リバーシ）AIエンジンです。主な
   - **呼び出し元**: `nega_scout`, `first_nega_scout_legal`
   - **呼び出し先**: `nega_scout`, `nega_alpha_ordering_nws`
 
-- `void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, int canput, std::vector<bool*> &searchings)`
+- `void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, int canput, const Search_cancellation_context &cancellation)`
   - **目的**: 並列でのNWS探索
   - **呼び出し元**: `nega_alpha_ordering_nws`
   - **呼び出し先**: `nega_alpha_ordering_nws`

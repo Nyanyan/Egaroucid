@@ -41,14 +41,14 @@ static_assert(
     "END_NWS_CANCELLATION_POLL_MASK must be one less than a power of two"
 );
 
-inline bool end_nws_cancellation_requested(Search *search, const std::vector<bool*> &searchings) {
+inline bool end_nws_cancellation_requested(Search *search, const Search_cancellation_context &cancellation) {
 #if USE_END_NWS_CANCELLATION_POLLING
     return
         (search->n_nodes & END_NWS_CANCELLATION_POLL_MASK) == 0ULL &&
-        !is_searching(searchings);
+        !is_searching(cancellation);
 #else
     (void)search;
-    (void)searchings;
+    (void)cancellation;
     return false;
 #endif
 }
@@ -62,10 +62,11 @@ inline bool end_nws_cancellation_requested(Search *search, const std::vector<boo
     @param search               search information
     @param alpha                alpha value (beta value is alpha + 1)
     @param skipped              already passed?
+    @param cancellation         linked flags for terminating this search
     @return the final score
 */
-int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped, const std::vector<bool*> &searchings) {
-    if (end_nws_cancellation_requested(search, searchings)) {
+int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped, const Search_cancellation_context &cancellation) {
+    if (end_nws_cancellation_requested(search, cancellation)) {
         return SCORE_UNDEFINED;
     }
     ++search->n_nodes;
@@ -86,7 +87,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped, const
             return end_evaluate(&search->board);
         }
         search->pass_noeval();
-            const int child_value = nega_alpha_end_fast_nws(search, -alpha - 1, true, searchings);
+            const int child_value = nega_alpha_end_fast_nws(search, -alpha - 1, true, cancellation);
         search->pass_noeval();
         return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
@@ -128,7 +129,7 @@ int nega_alpha_end_fast_nws(Search *search, int alpha, const bool skipped, const
             for (cell = first_bit(&prioritymoves); prioritymoves; cell = next_bit(&prioritymoves)) {
                 calc_flip(&flip, &board0, cell);
                 board0.move_copy(&flip, &search->board);
-                const int child_value = nega_alpha_end_fast_nws(search, -alpha - 1, false, searchings);
+                const int child_value = nega_alpha_end_fast_nws(search, -alpha - 1, false, cancellation);
                 if (child_value == SCORE_UNDEFINED) {
                     --search->n_discs;
                     board0.copy(&search->board);
@@ -302,14 +303,15 @@ inline LocalTTEntry *get_ltt(Board *board, uint32_t n_discs) {
     @param alpha                alpha value (beta value is alpha + 1)
     @param skipped              already passed?
     @param legal                for use of previously calculated legal bitboard
+    @param cancellation         linked flags for terminating this search
     @return the final score
 */
-int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uint64_t legal, const std::vector<bool*> &searchings) {
-    if (end_nws_cancellation_requested(search, searchings)) {
+int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uint64_t legal, const Search_cancellation_context &cancellation) {
+    if (end_nws_cancellation_requested(search, cancellation)) {
         return SCORE_UNDEFINED;
     }
     if (search->n_discs >= HW2 - END_FAST_DEPTH) {
-        return nega_alpha_end_fast_nws(search, alpha, skipped, searchings);
+        return nega_alpha_end_fast_nws(search, alpha, skipped, cancellation);
     }
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
@@ -332,7 +334,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
             return end_evaluate(&search->board);
         }
         search->pass_noeval();
-            const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searchings);
+            const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, cancellation);
         search->pass_noeval();
         return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
@@ -395,7 +397,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
                 flip_value->n_legal = search->board.get_legal();
                 int nm = get_n_moves_cornerX2(flip_value->n_legal);
                 if (nm <= 1) {
-                    const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, flip_value->n_legal, searchings);
+                    const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, flip_value->n_legal, cancellation);
                     search->undo_noeval(&flip_value->flip);
                     if (child_value == SCORE_UNDEFINED) {
                         return SCORE_UNDEFINED;
@@ -434,7 +436,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
                 ? move_list[move_idx].static_eval
                 : hash_bb(&nboard);
             LocalTTEntry *tt = child_lttable + ltt_index;
-            const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searchings);
+            const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, cancellation);
         search->undo_noeval(&move_list[move_idx].flip);
         if (child_value == SCORE_UNDEFINED) {
             return SCORE_UNDEFINED;
@@ -467,14 +469,15 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
     @param alpha                alpha value (beta value is alpha + 1)
     @param skipped              already passed?
     @param legal                for use of previously calculated legal bitboard
+    @param cancellation         linked flags for terminating this search
     @return the final score
 */
-int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t legal, const std::vector<bool*> &searchings) {
-    if (end_nws_cancellation_requested(search, searchings)) {
+int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t legal, const Search_cancellation_context &cancellation) {
+    if (end_nws_cancellation_requested(search, cancellation)) {
         return SCORE_UNDEFINED;
     }
     if (search->n_discs >= HW2 - END_SIMPLE_DEPTH) {
-        return nega_alpha_end_simple_nws(search, alpha, skipped, legal, searchings);
+        return nega_alpha_end_simple_nws(search, alpha, skipped, legal, cancellation);
     }
     ++search->n_nodes;
     #if USE_SEARCH_STATISTICS
@@ -497,7 +500,7 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
             return end_evaluate(&search->board);
         }
         search->pass_endsearch();
-            const int child_value = nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, searchings);
+            const int child_value = nega_alpha_end_nws(search, -alpha - 1, true, LEGAL_UNDEFINED, cancellation);
         search->pass_endsearch();
         return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
@@ -556,7 +559,7 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                 flip_value->n_legal = search->board.get_legal();
                 int nm = get_n_moves_cornerX2(flip_value->n_legal);
                 if (nm <= 1) {
-                    const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, flip_value->n_legal, searchings);
+                    const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, flip_value->n_legal, cancellation);
                     search->undo_endsearch(&flip_value->flip);
                     if (child_value == SCORE_UNDEFINED) {
                         return SCORE_UNDEFINED;
@@ -595,7 +598,7 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                 ? move_list[move_idx].static_eval
                 : hash_bb(&nboard);
             LocalTTEntry *tt = child_lttable + ltt_index;
-            const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, searchings);
+            const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, cancellation);
         search->undo_endsearch(&move_list[move_idx].flip);
         if (child_value == SCORE_UNDEFINED) {
             return SCORE_UNDEFINED;
