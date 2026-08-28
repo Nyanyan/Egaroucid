@@ -128,7 +128,7 @@ int clog_search(Search *search, int depth, bool *searching) {
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }

@@ -340,7 +340,7 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
     Flip_value move_list[END_SIMPLE_DEPTH];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
@@ -499,7 +499,7 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
     Flip_value move_list[MID_TO_END_DEPTH];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }

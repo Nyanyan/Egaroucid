@@ -64,7 +64,7 @@ int nega_alpha_human_like(Search *search, int alpha, int beta, int depth, bool s
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         noise_flip(&move_list[idx].flip, depth);
         ++idx;
     }
@@ -109,7 +109,7 @@ Search_result nega_alpha_human_like_root(Search *search, int alpha, int beta, in
     std::vector<Flip_value> move_list(canput);
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         //noise_flip(&move_list[idx].flip, depth);
         ++idx;
     }

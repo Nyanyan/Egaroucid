@@ -276,7 +276,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
     int idx = 0;
     int tt_moves_idx0 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
@@ -628,7 +628,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
         Flip_value move_list[MAX_N_BRANCHES];
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-            calc_flip(&move_list[idx].flip, &search->board, cell);
+            calc_flip_value(&move_list[idx], &search->board, cell);
             if (move_list[idx].flip.flip == search->board.opponent) {
                 return std::make_pair(SCORE_MAX, (int)cell);
             }
@@ -778,7 +778,7 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         Flip_value move_list[MAX_N_BRANCHES];
         int idx = 0;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-            calc_flip(&move_list[idx].flip, &search->board, cell);
+            calc_flip_value(&move_list[idx], &search->board, cell);
             ++idx;
         }
         uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};

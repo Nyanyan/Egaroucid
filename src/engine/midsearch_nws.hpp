@@ -245,7 +245,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     int tt_moves_idx0 = -1;
     // int tt_moves_idx1 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }
@@ -408,7 +408,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
     int idx = 0;
     int tt_moves_idx0 = -1;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-        calc_flip(&move_list[idx].flip, &search->board, cell);
+        calc_flip_value(&move_list[idx], &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
         }

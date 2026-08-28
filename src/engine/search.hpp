@@ -760,8 +760,7 @@ struct Flip_value {
     int value;
     uint64_t n_legal;
 
-    Flip_value() 
-        : n_legal(LEGAL_UNDEFINED), value(0) {}
+    Flip_value() = default;
 
     bool operator<(const Flip_value &another) const{
         return value < another.value;
@@ -771,6 +770,12 @@ struct Flip_value {
         return value > another.value;
     }
 };
+
+inline void calc_flip_value(Flip_value *flip_value, Board *board, const uint_fast8_t cell) {
+    calc_flip(&flip_value->flip, board, cell);
+    flip_value->value = 0;
+    flip_value->n_legal = LEGAL_UNDEFINED;
+}
 
 #if defined(USE_NNUE_EVALUATION)
 #include "./../tools/evaluation/nnue/evaluate_nnue_search_impl.hpp"
