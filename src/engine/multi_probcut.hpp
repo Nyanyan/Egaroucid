@@ -234,6 +234,7 @@ inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
 }
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, std::vector<bool*> &searchings);
+int nega_alpha_ordering_nws(Search *search, int alpha, int depth, bool skipped, uint64_t legal, const bool is_end_search, bool *searching);
 
 inline bool mpc_end_static_eval_cut(
     Search *search,
@@ -280,6 +281,7 @@ inline bool mpc_end_static_eval_cut(
     return false;
 }
 
+template<typename Searchings>
 inline bool mpc_end_recalibrated_shallow(
     Search *search,
     int alpha,
@@ -288,7 +290,7 @@ inline bool mpc_end_recalibrated_shallow(
     int d0_value,
     uint64_t legal,
     int *v,
-    std::vector<bool*> &searchings
+    Searchings &searchings
 ) {
     const uint_fast8_t mpc_level = search->mpc_level;
     const int legal_count = pop_count_ull(legal);
@@ -417,8 +419,8 @@ inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_de
     @param searching            flag for terminating this search
     @return cutoff occurred?
 */
-template<bool IsEndSearch>
-inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, std::vector<bool*> &searchings) {
+template<bool IsEndSearch, typename Searchings>
+inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, Searchings &searchings) {
     int search_depth = ((depth * MPC_DEPTH_NUMERATOR / MPC_DEPTH_DENOMINATOR) & 0b11111110) + (depth & 1);
     const uint_fast8_t mpc_level = search->mpc_level;
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
@@ -568,13 +570,11 @@ inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t leg
 }
 
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool *searching) {
-    std::vector<bool*> searchings = {searching};
-    return mpc_mid(search, alpha, beta, depth, legal, v, searchings);
+    return mpc_impl<false>(search, alpha, beta, depth, legal, v, searching);
 }
 
 inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, bool *searching) {
-    std::vector<bool*> searchings = {searching};
-    return mpc_end(search, alpha, beta, depth, legal, v, searchings);
+    return mpc_impl<true>(search, alpha, beta, depth, legal, v, searching);
 }
 
 

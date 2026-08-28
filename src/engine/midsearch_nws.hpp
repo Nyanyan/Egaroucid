@@ -508,6 +508,9 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bo
 }
 
 inline int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+    if (!is_end_search && depth <= MID_SIMPLE_ORDERING_DEPTH) {
+        return nega_alpha_ordering_nws_simple(search, alpha, depth, skipped, legal, searching);
+    }
     std::vector<bool*> searchings = {searching};
     return nega_alpha_ordering_nws(search, alpha, depth, skipped, legal, is_end_search, searchings);
 }
