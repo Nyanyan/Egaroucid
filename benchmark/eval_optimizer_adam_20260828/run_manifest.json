@@ -1,0 +1,2169 @@
+{
+  "started_at": "2026-08-28T23:42:20+09:00",
+  "repo_root": "D:\\github\\othello\\Egaroucid",
+  "git_commit": "3bb23bcfc1c84473986e6d6fee58ee0843caa4d5",
+  "source_worktree_dirty_at_start": true,
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.9.13 (tags/v3.9.13:6de2ca5, May 17 2022, 16:36:42) [MSC v.1929 64 bit (AMD64)]",
+  "binary": {
+    "path": "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\eval_optimizer_cuda_training_metrics_20260828_final.exe",
+    "sha256": "b27eb3ecb6210485272d598eac539969bcd12a82bdaa610650f81e8151e642ad"
+  },
+  "build_command": "& 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe' 'D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\eval_optimizer_cuda_12_2_0.vcxproj' /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:TargetName=eval_optimizer_cuda_training_metrics_20260828_final /m",
+  "source_files": {
+    "eval_optimizer_cuda.cu": "2432b2ea5219582771dcdd5b7cab3b7b85d15b795aed46484d4499c7f9be59af",
+    "eval_optimizer_cuda_12_2_0.vcxproj": "d67f29f175424b91698780203d9206aff0b072ab6d7e580cfd242e50eff54bdd",
+    "runner": "b5e78582256ffec3777ca7886bb13584d129578f67aa4a164d1d16e93ff51964"
+  },
+  "validation_seed": 20260828,
+  "round_seed": 20260828,
+  "metrics_interval": 25,
+  "round_seconds": 60,
+  "data_root": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1",
+  "disk_record_bytes": 136,
+  "test_data_touched": false,
+  "phases": [
+    {
+      "phase": 11,
+      "status": "completed",
+      "started_at": "2026-08-28T23:42:20+09:00",
+      "minutes": 5,
+      "alpha": 300.0,
+      "patience": 100,
+      "reduce_lr_patience": 30,
+      "reduce_lr_ratio": 0.8,
+      "validation_mode": "shared_all_not_holdout",
+      "data_ids": [
+        37,
+        80,
+        97,
+        311,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324
+      ],
+      "total_records": 85568632,
+      "expected_records": 85568632,
+      "input_files": [
+        {
+          "data_id": 37,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\37.dat",
+          "bytes": 774384,
+          "records": 5694,
+          "mtime": "2025-09-12T17:27:00.884514+09:00"
+        },
+        {
+          "data_id": 80,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\80.dat",
+          "bytes": 2690979640,
+          "records": 19786615,
+          "mtime": "2025-09-12T17:27:16.382685+09:00"
+        },
+        {
+          "data_id": 97,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\97.dat",
+          "bytes": 68000000,
+          "records": 500000,
+          "mtime": "2025-09-12T17:27:09.228555+09:00"
+        },
+        {
+          "data_id": 311,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\311.dat",
+          "bytes": 2690979640,
+          "records": 19786615,
+          "mtime": "2026-06-20T22:49:08.006501+09:00"
+        },
+        {
+          "data_id": 313,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\313.dat",
+          "bytes": 10589912,
+          "records": 77867,
+          "mtime": "2026-06-20T22:48:55.845555+09:00"
+        },
+        {
+          "data_id": 314,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\314.dat",
+          "bytes": 2478872,
+          "records": 18227,
+          "mtime": "2026-06-20T22:48:55.708030+09:00"
+        },
+        {
+          "data_id": 315,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\315.dat",
+          "bytes": 23380848,
+          "records": 171918,
+          "mtime": "2026-06-20T22:48:57.094804+09:00"
+        },
+        {
+          "data_id": 316,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\316.dat",
+          "bytes": 18821448,
+          "records": 138393,
+          "mtime": "2026-06-20T22:48:57.399179+09:00"
+        },
+        {
+          "data_id": 317,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\317.dat",
+          "bytes": 29470520,
+          "records": 216695,
+          "mtime": "2026-06-20T22:48:58.089875+09:00"
+        },
+        {
+          "data_id": 318,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\318.dat",
+          "bytes": 89673912,
+          "records": 659367,
+          "mtime": "2026-06-20T22:49:00.790498+09:00"
+        },
+        {
+          "data_id": 319,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\319.dat",
+          "bytes": 27846952,
+          "records": 204757,
+          "mtime": "2026-06-20T22:48:58.642323+09:00"
+        },
+        {
+          "data_id": 320,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\320.dat",
+          "bytes": 535258056,
+          "records": 3935721,
+          "mtime": "2026-06-20T22:49:22.873114+09:00"
+        },
+        {
+          "data_id": 321,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\321.dat",
+          "bytes": 15165224,
+          "records": 111509,
+          "mtime": "2026-06-20T22:48:58.640312+09:00"
+        },
+        {
+          "data_id": 322,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\322.dat",
+          "bytes": 2707995824,
+          "records": 19911734,
+          "mtime": "2026-06-20T22:51:06.313387+09:00"
+        },
+        {
+          "data_id": 323,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\323.dat",
+          "bytes": 5918720,
+          "records": 43520,
+          "mtime": "2026-06-20T22:48:59.248148+09:00"
+        },
+        {
+          "data_id": 324,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\324.dat",
+          "bytes": 2720000000,
+          "records": 20000000,
+          "mtime": "2026-06-20T22:51:06.763466+09:00"
+        }
+      ],
+      "reference_file": {
+        "path": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\11.txt",
+        "sha256": "692364cb70ab43b3e63812e1aa02075e3ebe065c13259de99b9eb0ce6f4004fb"
+      },
+      "initialization": "zero (input path intentionally absent)",
+      "command": [
+        "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\eval_optimizer_cuda_training_metrics_20260828_final.exe",
+        "11",
+        "0",
+        "5",
+        "0",
+        "300.0",
+        "100",
+        "30",
+        "0.8",
+        "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\missing_zero_initialization\\11.txt",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\37.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\80.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\97.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\311.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\313.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\314.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\315.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\316.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\317.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\318.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\319.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\320.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\321.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\322.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\323.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\11\\324.dat"
+      ],
+      "environment_overrides": {
+        "EGAROUCID_EVAL_VALIDATION_SEED": "20260828",
+        "EGAROUCID_EVAL_ROUND_SEED": "20260828",
+        "EGAROUCID_EVAL_METRICS_INTERVAL": "25",
+        "EGAROUCID_EVAL_ROUND_SECONDS": "60",
+        "EGAROUCID_EVAL_OUTPUT_DIR": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\trained",
+        "EGAROUCID_EVAL_REFERENCE_FILE": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\11.txt"
+      },
+      "finished_at": "2026-08-28T23:48:52+09:00",
+      "return_code": 0,
+      "outputs": {
+        "metrics": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\trained\\metrics_phase_11.csv",
+        "float_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\trained\\float_11.txt",
+        "integer_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\trained\\11.txt",
+        "appearance_counts": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\trained\\weight_11.txt",
+        "stdout": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\stdout.txt",
+        "stderr": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_11\\stderr.txt"
+      }
+    },
+    {
+      "phase": 12,
+      "status": "completed",
+      "started_at": "2026-08-28T23:48:52+09:00",
+      "minutes": 5,
+      "alpha": 400.0,
+      "patience": 100,
+      "reduce_lr_patience": 30,
+      "reduce_lr_ratio": 0.8,
+      "validation_mode": "fixed_shuffled_suffix_5pct",
+      "data_ids": [
+        20,
+        21,
+        29,
+        37,
+        38,
+        65,
+        66,
+        67,
+        78,
+        79,
+        80,
+        82,
+        97,
+        214,
+        223,
+        259,
+        260,
+        261,
+        262,
+        263,
+        311,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324
+      ],
+      "total_records": 64447874,
+      "expected_records": 64447874,
+      "input_files": [
+        {
+          "data_id": 20,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\20.dat",
+          "bytes": 12329352,
+          "records": 90657,
+          "mtime": "2025-09-12T17:27:14.619397+09:00"
+        },
+        {
+          "data_id": 21,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\21.dat",
+          "bytes": 18244536,
+          "records": 134151,
+          "mtime": "2025-09-12T17:27:15.031818+09:00"
+        },
+        {
+          "data_id": 29,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\29.dat",
+          "bytes": 648565368,
+          "records": 4768863,
+          "mtime": "2025-09-12T17:27:43.973060+09:00"
+        },
+        {
+          "data_id": 37,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\37.dat",
+          "bytes": 1102688,
+          "records": 8108,
+          "mtime": "2025-09-12T17:27:16.137201+09:00"
+        },
+        {
+          "data_id": 38,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\38.dat",
+          "bytes": 207944,
+          "records": 1529,
+          "mtime": "2025-09-12T17:27:16.268535+09:00"
+        },
+        {
+          "data_id": 65,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\65.dat",
+          "bytes": 13592928,
+          "records": 99948,
+          "mtime": "2025-09-12T17:27:20.118718+09:00"
+        },
+        {
+          "data_id": 66,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\66.dat",
+          "bytes": 13595512,
+          "records": 99967,
+          "mtime": "2025-09-12T17:27:20.266730+09:00"
+        },
+        {
+          "data_id": 67,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\67.dat",
+          "bytes": 13595512,
+          "records": 99967,
+          "mtime": "2025-09-12T17:27:20.421291+09:00"
+        },
+        {
+          "data_id": 78,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\78.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:27:21.244796+09:00"
+        },
+        {
+          "data_id": 79,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\79.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:27:21.399040+09:00"
+        },
+        {
+          "data_id": 80,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\80.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:27:21.553481+09:00"
+        },
+        {
+          "data_id": 82,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\82.dat",
+          "bytes": 937312680,
+          "records": 6892005,
+          "mtime": "2025-09-12T17:28:07.590054+09:00"
+        },
+        {
+          "data_id": 97,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\97.dat",
+          "bytes": 68000000,
+          "records": 500000,
+          "mtime": "2025-09-12T17:27:24.334236+09:00"
+        },
+        {
+          "data_id": 214,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\214.dat",
+          "bytes": 66720920,
+          "records": 490595,
+          "mtime": "2025-09-12T17:27:28.315722+09:00"
+        },
+        {
+          "data_id": 223,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\223.dat",
+          "bytes": 94156880,
+          "records": 692330,
+          "mtime": "2025-09-12T17:27:30.893374+09:00"
+        },
+        {
+          "data_id": 259,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\259.dat",
+          "bytes": 136613632,
+          "records": 1004512,
+          "mtime": "2026-06-01T13:37:58.413122+09:00"
+        },
+        {
+          "data_id": 260,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\260.dat",
+          "bytes": 139706136,
+          "records": 1027251,
+          "mtime": "2026-06-01T13:38:00.615760+09:00"
+        },
+        {
+          "data_id": 261,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\261.dat",
+          "bytes": 139463648,
+          "records": 1025468,
+          "mtime": "2026-06-01T13:38:01.178222+09:00"
+        },
+        {
+          "data_id": 262,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\262.dat",
+          "bytes": 139857912,
+          "records": 1028367,
+          "mtime": "2026-06-01T13:38:01.281863+09:00"
+        },
+        {
+          "data_id": 263,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\263.dat",
+          "bytes": 136105672,
+          "records": 1000777,
+          "mtime": "2026-03-14T17:26:07.676255+09:00"
+        },
+        {
+          "data_id": 311,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\311.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2026-06-20T22:48:59.510510+09:00"
+        },
+        {
+          "data_id": 313,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\313.dat",
+          "bytes": 10589912,
+          "records": 77867,
+          "mtime": "2026-06-20T22:49:00.388163+09:00"
+        },
+        {
+          "data_id": 314,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\314.dat",
+          "bytes": 2478872,
+          "records": 18227,
+          "mtime": "2026-06-20T22:49:00.395156+09:00"
+        },
+        {
+          "data_id": 315,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\315.dat",
+          "bytes": 23380848,
+          "records": 171918,
+          "mtime": "2026-06-20T22:49:01.477362+09:00"
+        },
+        {
+          "data_id": 316,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\316.dat",
+          "bytes": 18820496,
+          "records": 138386,
+          "mtime": "2026-06-20T22:49:01.783104+09:00"
+        },
+        {
+          "data_id": 317,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\317.dat",
+          "bytes": 29470520,
+          "records": 216695,
+          "mtime": "2026-06-20T22:49:02.637164+09:00"
+        },
+        {
+          "data_id": 318,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\318.dat",
+          "bytes": 89673912,
+          "records": 659367,
+          "mtime": "2026-06-20T22:49:05.360892+09:00"
+        },
+        {
+          "data_id": 319,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\319.dat",
+          "bytes": 27790920,
+          "records": 204345,
+          "mtime": "2026-06-20T22:49:03.147836+09:00"
+        },
+        {
+          "data_id": 320,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\320.dat",
+          "bytes": 535177544,
+          "records": 3935129,
+          "mtime": "2026-06-20T22:49:29.573168+09:00"
+        },
+        {
+          "data_id": 321,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\321.dat",
+          "bytes": 15165224,
+          "records": 111509,
+          "mtime": "2026-06-20T22:49:03.956878+09:00"
+        },
+        {
+          "data_id": 322,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\322.dat",
+          "bytes": 2707992424,
+          "records": 19911709,
+          "mtime": "2026-06-20T22:51:12.086086+09:00"
+        },
+        {
+          "data_id": 323,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\323.dat",
+          "bytes": 5917496,
+          "records": 43511,
+          "mtime": "2026-06-20T22:49:05.491391+09:00"
+        },
+        {
+          "data_id": 324,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\324.dat",
+          "bytes": 2719281376,
+          "records": 19994716,
+          "mtime": "2026-06-20T22:51:11.554695+09:00"
+        }
+      ],
+      "reference_file": {
+        "path": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\12.txt",
+        "sha256": "f770dbfbabd5e48ed3816b71a05770752fcaab7bbe15930e6e85bf296e60da2f"
+      },
+      "initialization": "zero (input path intentionally absent)",
+      "command": [
+        "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\eval_optimizer_cuda_training_metrics_20260828_final.exe",
+        "12",
+        "0",
+        "5",
+        "0",
+        "400.0",
+        "100",
+        "30",
+        "0.8",
+        "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\missing_zero_initialization\\12.txt",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\20.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\21.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\29.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\37.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\38.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\65.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\66.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\67.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\78.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\79.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\80.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\82.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\97.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\214.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\223.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\259.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\260.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\261.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\262.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\263.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\311.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\313.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\314.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\315.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\316.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\317.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\318.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\319.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\320.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\321.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\322.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\323.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\12\\324.dat"
+      ],
+      "environment_overrides": {
+        "EGAROUCID_EVAL_VALIDATION_SEED": "20260828",
+        "EGAROUCID_EVAL_ROUND_SEED": "20260828",
+        "EGAROUCID_EVAL_METRICS_INTERVAL": "25",
+        "EGAROUCID_EVAL_ROUND_SECONDS": "60",
+        "EGAROUCID_EVAL_OUTPUT_DIR": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\trained",
+        "EGAROUCID_EVAL_REFERENCE_FILE": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\12.txt"
+      },
+      "finished_at": "2026-08-28T23:55:11+09:00",
+      "return_code": 0,
+      "outputs": {
+        "metrics": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\trained\\metrics_phase_12.csv",
+        "float_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\trained\\float_12.txt",
+        "integer_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\trained\\12.txt",
+        "appearance_counts": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\trained\\weight_12.txt",
+        "stdout": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\stdout.txt",
+        "stderr": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_12\\stderr.txt"
+      }
+    },
+    {
+      "phase": 21,
+      "status": "completed",
+      "started_at": "2026-08-28T23:55:11+09:00",
+      "minutes": 8,
+      "alpha": 450.0,
+      "patience": 100,
+      "reduce_lr_patience": 30,
+      "reduce_lr_ratio": 0.8,
+      "validation_mode": "fixed_shuffled_suffix_5pct",
+      "data_ids": [
+        20,
+        21,
+        29,
+        37,
+        38,
+        65,
+        66,
+        67,
+        68,
+        78,
+        79,
+        80,
+        82,
+        97,
+        144,
+        214,
+        223,
+        224,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        311,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324
+      ],
+      "total_records": 67163942,
+      "expected_records": 67163942,
+      "input_files": [
+        {
+          "data_id": 20,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\20.dat",
+          "bytes": 12328808,
+          "records": 90653,
+          "mtime": "2025-09-12T17:30:51.280534+09:00"
+        },
+        {
+          "data_id": 21,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\21.dat",
+          "bytes": 18241272,
+          "records": 134127,
+          "mtime": "2025-09-12T17:30:51.741113+09:00"
+        },
+        {
+          "data_id": 29,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\29.dat",
+          "bytes": 648270656,
+          "records": 4766696,
+          "mtime": "2025-09-12T17:31:23.454664+09:00"
+        },
+        {
+          "data_id": 37,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\37.dat",
+          "bytes": 1878568,
+          "records": 13813,
+          "mtime": "2025-09-12T17:30:52.821143+09:00"
+        },
+        {
+          "data_id": 38,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\38.dat",
+          "bytes": 207944,
+          "records": 1529,
+          "mtime": "2025-09-12T17:30:52.942160+09:00"
+        },
+        {
+          "data_id": 65,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\65.dat",
+          "bytes": 13589664,
+          "records": 99924,
+          "mtime": "2025-09-12T17:30:59.791191+09:00"
+        },
+        {
+          "data_id": 66,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\66.dat",
+          "bytes": 13593472,
+          "records": 99952,
+          "mtime": "2025-09-12T17:30:59.957733+09:00"
+        },
+        {
+          "data_id": 67,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\67.dat",
+          "bytes": 13588712,
+          "records": 99917,
+          "mtime": "2025-09-12T17:31:00.276787+09:00"
+        },
+        {
+          "data_id": 68,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\68.dat",
+          "bytes": 13594832,
+          "records": 99962,
+          "mtime": "2025-09-12T17:31:00.449320+09:00"
+        },
+        {
+          "data_id": 78,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\78.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:31:03.058752+09:00"
+        },
+        {
+          "data_id": 79,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\79.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:31:03.364736+09:00"
+        },
+        {
+          "data_id": 80,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\80.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:31:03.520769+09:00"
+        },
+        {
+          "data_id": 82,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\82.dat",
+          "bytes": 936978664,
+          "records": 6889549,
+          "mtime": "2025-09-12T17:31:51.858795+09:00"
+        },
+        {
+          "data_id": 97,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\97.dat",
+          "bytes": 68000000,
+          "records": 500000,
+          "mtime": "2025-09-12T17:31:06.967417+09:00"
+        },
+        {
+          "data_id": 144,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\144.dat",
+          "bytes": 128028088,
+          "records": 941383,
+          "mtime": "2025-09-12T17:31:11.839943+09:00"
+        },
+        {
+          "data_id": 214,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\214.dat",
+          "bytes": 66715480,
+          "records": 490555,
+          "mtime": "2025-09-12T17:31:24.375795+09:00"
+        },
+        {
+          "data_id": 223,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\223.dat",
+          "bytes": 94106832,
+          "records": 691962,
+          "mtime": "2025-09-12T17:31:28.198810+09:00"
+        },
+        {
+          "data_id": 224,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\224.dat",
+          "bytes": 91059072,
+          "records": 669552,
+          "mtime": "2025-09-12T17:31:28.477355+09:00"
+        },
+        {
+          "data_id": 259,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\259.dat",
+          "bytes": 136603704,
+          "records": 1004439,
+          "mtime": "2026-06-01T13:38:24.894011+09:00"
+        },
+        {
+          "data_id": 260,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\260.dat",
+          "bytes": 139697024,
+          "records": 1027184,
+          "mtime": "2026-06-01T13:38:25.491708+09:00"
+        },
+        {
+          "data_id": 261,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\261.dat",
+          "bytes": 139426520,
+          "records": 1025195,
+          "mtime": "2026-06-01T13:38:25.582209+09:00"
+        },
+        {
+          "data_id": 262,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\262.dat",
+          "bytes": 139843496,
+          "records": 1028261,
+          "mtime": "2026-06-01T13:38:26.239095+09:00"
+        },
+        {
+          "data_id": 263,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\263.dat",
+          "bytes": 136040936,
+          "records": 1000301,
+          "mtime": "2026-03-14T17:27:35.551336+09:00"
+        },
+        {
+          "data_id": 264,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\264.dat",
+          "bytes": 137505520,
+          "records": 1011070,
+          "mtime": "2026-03-14T17:27:35.585213+09:00"
+        },
+        {
+          "data_id": 311,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\311.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2026-06-20T22:52:21.799452+09:00"
+        },
+        {
+          "data_id": 313,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\313.dat",
+          "bytes": 10588280,
+          "records": 77855,
+          "mtime": "2026-06-20T22:52:25.320518+09:00"
+        },
+        {
+          "data_id": 314,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\314.dat",
+          "bytes": 2478872,
+          "records": 18227,
+          "mtime": "2026-06-20T22:52:33.121465+09:00"
+        },
+        {
+          "data_id": 315,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\315.dat",
+          "bytes": 23378944,
+          "records": 171904,
+          "mtime": "2026-06-20T22:52:35.327851+09:00"
+        },
+        {
+          "data_id": 316,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\316.dat",
+          "bytes": 18820496,
+          "records": 138386,
+          "mtime": "2026-06-20T22:52:36.557853+09:00"
+        },
+        {
+          "data_id": 317,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\317.dat",
+          "bytes": 29462768,
+          "records": 216638,
+          "mtime": "2026-06-20T22:52:40.521752+09:00"
+        },
+        {
+          "data_id": 318,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\318.dat",
+          "bytes": 89671600,
+          "records": 659350,
+          "mtime": "2026-06-20T22:52:46.022032+09:00"
+        },
+        {
+          "data_id": 319,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\319.dat",
+          "bytes": 27776640,
+          "records": 204240,
+          "mtime": "2026-06-20T22:52:44.999628+09:00"
+        },
+        {
+          "data_id": 320,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\320.dat",
+          "bytes": 535155240,
+          "records": 3934965,
+          "mtime": "2026-06-20T22:53:11.718907+09:00"
+        },
+        {
+          "data_id": 321,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\321.dat",
+          "bytes": 15136528,
+          "records": 111298,
+          "mtime": "2026-06-20T22:53:02.107178+09:00"
+        },
+        {
+          "data_id": 322,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\322.dat",
+          "bytes": 2707750616,
+          "records": 19909931,
+          "mtime": "2026-06-20T22:55:14.713166+09:00"
+        },
+        {
+          "data_id": 323,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\323.dat",
+          "bytes": 5900224,
+          "records": 43384,
+          "mtime": "2026-06-20T22:53:05.080834+09:00"
+        },
+        {
+          "data_id": 324,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\324.dat",
+          "bytes": 2718876640,
+          "records": 19991740,
+          "mtime": "2026-06-20T22:55:17.150337+09:00"
+        }
+      ],
+      "reference_file": {
+        "path": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\21.txt",
+        "sha256": "77f695f20c6113583bcb16a2130d5b08b2eab8365d8eb68f3bb82622e9612644"
+      },
+      "initialization": "zero (input path intentionally absent)",
+      "command": [
+        "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\eval_optimizer_cuda_training_metrics_20260828_final.exe",
+        "21",
+        "0",
+        "8",
+        "0",
+        "450.0",
+        "100",
+        "30",
+        "0.8",
+        "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\missing_zero_initialization\\21.txt",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\20.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\21.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\29.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\37.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\38.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\65.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\66.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\67.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\68.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\78.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\79.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\80.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\82.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\97.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\144.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\214.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\223.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\224.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\259.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\260.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\261.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\262.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\263.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\264.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\311.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\313.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\314.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\315.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\316.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\317.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\318.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\319.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\320.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\321.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\322.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\323.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\21\\324.dat"
+      ],
+      "environment_overrides": {
+        "EGAROUCID_EVAL_VALIDATION_SEED": "20260828",
+        "EGAROUCID_EVAL_ROUND_SEED": "20260828",
+        "EGAROUCID_EVAL_METRICS_INTERVAL": "25",
+        "EGAROUCID_EVAL_ROUND_SECONDS": "60",
+        "EGAROUCID_EVAL_OUTPUT_DIR": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\trained",
+        "EGAROUCID_EVAL_REFERENCE_FILE": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\21.txt"
+      },
+      "finished_at": "2026-08-29T00:00:33+09:00",
+      "return_code": 0,
+      "outputs": {
+        "metrics": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\trained\\metrics_phase_21.csv",
+        "float_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\trained\\float_21.txt",
+        "integer_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\trained\\21.txt",
+        "appearance_counts": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\trained\\weight_21.txt",
+        "stdout": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\stdout.txt",
+        "stderr": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_21\\stderr.txt"
+      }
+    },
+    {
+      "phase": 30,
+      "status": "completed",
+      "started_at": "2026-08-29T00:00:33+09:00",
+      "minutes": 9,
+      "alpha": 500.0,
+      "patience": 100,
+      "reduce_lr_patience": 30,
+      "reduce_lr_ratio": 0.8,
+      "validation_mode": "fixed_shuffled_suffix_5pct",
+      "data_ids": [
+        20,
+        21,
+        29,
+        37,
+        38,
+        65,
+        66,
+        67,
+        68,
+        69,
+        77,
+        78,
+        79,
+        80,
+        82,
+        97,
+        144,
+        145,
+        214,
+        223,
+        224,
+        225,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        311,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324
+      ],
+      "total_records": 69988462,
+      "expected_records": 69988462,
+      "input_files": [
+        {
+          "data_id": 20,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\20.dat",
+          "bytes": 12328808,
+          "records": 90653,
+          "mtime": "2025-09-12T17:37:51.494109+09:00"
+        },
+        {
+          "data_id": 21,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\21.dat",
+          "bytes": 18240864,
+          "records": 134124,
+          "mtime": "2025-09-12T17:37:52.037837+09:00"
+        },
+        {
+          "data_id": 29,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\29.dat",
+          "bytes": 648264536,
+          "records": 4766651,
+          "mtime": "2025-09-12T17:38:26.535764+09:00"
+        },
+        {
+          "data_id": 37,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\37.dat",
+          "bytes": 866320,
+          "records": 6370,
+          "mtime": "2025-09-12T17:37:54.366954+09:00"
+        },
+        {
+          "data_id": 38,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\38.dat",
+          "bytes": 207944,
+          "records": 1529,
+          "mtime": "2025-09-12T17:37:55.433671+09:00"
+        },
+        {
+          "data_id": 65,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\65.dat",
+          "bytes": 13589528,
+          "records": 99923,
+          "mtime": "2025-09-12T17:38:05.611276+09:00"
+        },
+        {
+          "data_id": 66,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\66.dat",
+          "bytes": 13593200,
+          "records": 99950,
+          "mtime": "2025-09-12T17:38:06.378561+09:00"
+        },
+        {
+          "data_id": 67,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\67.dat",
+          "bytes": 13588168,
+          "records": 99913,
+          "mtime": "2025-09-12T17:38:07.039101+09:00"
+        },
+        {
+          "data_id": 68,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\68.dat",
+          "bytes": 13594288,
+          "records": 99958,
+          "mtime": "2025-09-12T17:38:07.329759+09:00"
+        },
+        {
+          "data_id": 69,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\69.dat",
+          "bytes": 13590616,
+          "records": 99931,
+          "mtime": "2025-09-12T17:38:08.135783+09:00"
+        },
+        {
+          "data_id": 77,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\77.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:38:09.453524+09:00"
+        },
+        {
+          "data_id": 78,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\78.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:38:09.924305+09:00"
+        },
+        {
+          "data_id": 79,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\79.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:38:10.549055+09:00"
+        },
+        {
+          "data_id": 80,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\80.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:38:10.709020+09:00"
+        },
+        {
+          "data_id": 82,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\82.dat",
+          "bytes": 936960712,
+          "records": 6889417,
+          "mtime": "2025-09-12T17:39:04.975078+09:00"
+        },
+        {
+          "data_id": 97,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\97.dat",
+          "bytes": 68000000,
+          "records": 500000,
+          "mtime": "2025-09-12T17:38:14.477316+09:00"
+        },
+        {
+          "data_id": 144,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\144.dat",
+          "bytes": 128022784,
+          "records": 941344,
+          "mtime": "2025-09-12T17:38:19.831258+09:00"
+        },
+        {
+          "data_id": 145,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\145.dat",
+          "bytes": 138150704,
+          "records": 1015814,
+          "mtime": "2025-09-12T17:38:21.049825+09:00"
+        },
+        {
+          "data_id": 214,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\214.dat",
+          "bytes": 66713848,
+          "records": 490543,
+          "mtime": "2025-09-12T17:38:34.052511+09:00"
+        },
+        {
+          "data_id": 223,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\223.dat",
+          "bytes": 94102480,
+          "records": 691930,
+          "mtime": "2025-09-12T17:38:40.066126+09:00"
+        },
+        {
+          "data_id": 224,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\224.dat",
+          "bytes": 91056488,
+          "records": 669533,
+          "mtime": "2025-09-12T17:38:40.098125+09:00"
+        },
+        {
+          "data_id": 225,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\225.dat",
+          "bytes": 96137584,
+          "records": 706894,
+          "mtime": "2025-09-12T17:38:41.996387+09:00"
+        },
+        {
+          "data_id": 259,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\259.dat",
+          "bytes": 136600984,
+          "records": 1004419,
+          "mtime": "2026-06-01T13:38:50.503488+09:00"
+        },
+        {
+          "data_id": 260,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\260.dat",
+          "bytes": 139690632,
+          "records": 1027137,
+          "mtime": "2026-06-01T13:38:50.996502+09:00"
+        },
+        {
+          "data_id": 261,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\261.dat",
+          "bytes": 139420264,
+          "records": 1025149,
+          "mtime": "2026-06-01T13:38:51.002914+09:00"
+        },
+        {
+          "data_id": 262,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\262.dat",
+          "bytes": 139832616,
+          "records": 1028181,
+          "mtime": "2026-06-01T13:38:54.731542+09:00"
+        },
+        {
+          "data_id": 263,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\263.dat",
+          "bytes": 136032232,
+          "records": 1000237,
+          "mtime": "2026-03-14T17:29:52.835739+09:00"
+        },
+        {
+          "data_id": 264,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\264.dat",
+          "bytes": 137496816,
+          "records": 1011006,
+          "mtime": "2026-03-14T17:29:53.025777+09:00"
+        },
+        {
+          "data_id": 265,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\265.dat",
+          "bytes": 137400120,
+          "records": 1010295,
+          "mtime": "2026-03-14T17:29:53.071411+09:00"
+        },
+        {
+          "data_id": 311,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\311.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2026-06-20T22:56:36.453467+09:00"
+        },
+        {
+          "data_id": 313,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\313.dat",
+          "bytes": 10588280,
+          "records": 77855,
+          "mtime": "2026-06-20T22:56:37.664629+09:00"
+        },
+        {
+          "data_id": 314,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\314.dat",
+          "bytes": 2478872,
+          "records": 18227,
+          "mtime": "2026-06-20T22:56:43.735653+09:00"
+        },
+        {
+          "data_id": 315,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\315.dat",
+          "bytes": 23378944,
+          "records": 171904,
+          "mtime": "2026-06-20T22:56:45.130043+09:00"
+        },
+        {
+          "data_id": 316,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\316.dat",
+          "bytes": 18820496,
+          "records": 138386,
+          "mtime": "2026-06-20T22:56:45.754676+09:00"
+        },
+        {
+          "data_id": 317,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\317.dat",
+          "bytes": 29462768,
+          "records": 216638,
+          "mtime": "2026-06-20T22:56:46.611090+09:00"
+        },
+        {
+          "data_id": 318,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\318.dat",
+          "bytes": 89671328,
+          "records": 659348,
+          "mtime": "2026-06-20T22:56:49.471731+09:00"
+        },
+        {
+          "data_id": 319,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\319.dat",
+          "bytes": 27776640,
+          "records": 204240,
+          "mtime": "2026-06-20T22:56:47.287423+09:00"
+        },
+        {
+          "data_id": 320,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\320.dat",
+          "bytes": 535151840,
+          "records": 3934940,
+          "mtime": "2026-06-20T22:57:14.528094+09:00"
+        },
+        {
+          "data_id": 321,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\321.dat",
+          "bytes": 15136528,
+          "records": 111298,
+          "mtime": "2026-06-20T22:56:50.288822+09:00"
+        },
+        {
+          "data_id": 322,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\322.dat",
+          "bytes": 2707731304,
+          "records": 19909789,
+          "mtime": "2026-06-20T22:58:58.499763+09:00"
+        },
+        {
+          "data_id": 323,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\323.dat",
+          "bytes": 5900224,
+          "records": 43384,
+          "mtime": "2026-06-20T22:56:51.655891+09:00"
+        },
+        {
+          "data_id": 324,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\324.dat",
+          "bytes": 2718851072,
+          "records": 19991552,
+          "mtime": "2026-06-20T22:58:55.766356+09:00"
+        }
+      ],
+      "reference_file": {
+        "path": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\30.txt",
+        "sha256": "470b589216c2e7210f7a5caa7576e7da3f2e946be75694736fb570aa18c19c5b"
+      },
+      "initialization": "zero (input path intentionally absent)",
+      "command": [
+        "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\eval_optimizer_cuda_training_metrics_20260828_final.exe",
+        "30",
+        "0",
+        "9",
+        "0",
+        "500.0",
+        "100",
+        "30",
+        "0.8",
+        "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\missing_zero_initialization\\30.txt",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\20.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\21.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\29.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\37.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\38.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\65.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\66.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\67.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\68.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\69.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\77.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\78.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\79.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\80.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\82.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\97.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\144.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\145.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\214.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\223.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\224.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\225.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\259.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\260.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\261.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\262.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\263.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\264.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\265.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\311.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\313.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\314.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\315.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\316.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\317.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\318.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\319.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\320.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\321.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\322.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\323.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\30\\324.dat"
+      ],
+      "environment_overrides": {
+        "EGAROUCID_EVAL_VALIDATION_SEED": "20260828",
+        "EGAROUCID_EVAL_ROUND_SEED": "20260828",
+        "EGAROUCID_EVAL_METRICS_INTERVAL": "25",
+        "EGAROUCID_EVAL_ROUND_SECONDS": "60",
+        "EGAROUCID_EVAL_OUTPUT_DIR": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\trained",
+        "EGAROUCID_EVAL_REFERENCE_FILE": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\30.txt"
+      },
+      "finished_at": "2026-08-29T00:05:04+09:00",
+      "return_code": 0,
+      "outputs": {
+        "metrics": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\trained\\metrics_phase_30.csv",
+        "float_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\trained\\float_30.txt",
+        "integer_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\trained\\30.txt",
+        "appearance_counts": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\trained\\weight_30.txt",
+        "stdout": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\stdout.txt",
+        "stderr": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_30\\stderr.txt"
+      }
+    },
+    {
+      "phase": 41,
+      "status": "completed",
+      "started_at": "2026-08-29T00:05:04+09:00",
+      "minutes": 11,
+      "alpha": 550.0,
+      "patience": 100,
+      "reduce_lr_patience": 30,
+      "reduce_lr_ratio": 0.8,
+      "validation_mode": "fixed_shuffled_suffix_5pct",
+      "data_ids": [
+        18,
+        19,
+        20,
+        21,
+        24,
+        29,
+        30,
+        31,
+        37,
+        38,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        77,
+        78,
+        79,
+        80,
+        82,
+        97,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        158,
+        159,
+        160,
+        161,
+        214,
+        223,
+        224,
+        225,
+        226,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        311,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324
+      ],
+      "total_records": 122532802,
+      "expected_records": 122532802,
+      "input_files": [
+        {
+          "data_id": 18,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\18.dat",
+          "bytes": 271640960,
+          "records": 1997360,
+          "mtime": "2025-09-12T17:49:59.199359+09:00"
+        },
+        {
+          "data_id": 19,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\19.dat",
+          "bytes": 1358168760,
+          "records": 9986535,
+          "mtime": "2025-09-12T17:50:59.600599+09:00"
+        },
+        {
+          "data_id": 20,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\20.dat",
+          "bytes": 12325816,
+          "records": 90631,
+          "mtime": "2025-09-12T17:49:46.527710+09:00"
+        },
+        {
+          "data_id": 21,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\21.dat",
+          "bytes": 18232568,
+          "records": 134063,
+          "mtime": "2025-09-12T17:49:49.341916+09:00"
+        },
+        {
+          "data_id": 24,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\24.dat",
+          "bytes": 651010512,
+          "records": 4786842,
+          "mtime": "2025-09-12T17:50:26.279358+09:00"
+        },
+        {
+          "data_id": 29,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\29.dat",
+          "bytes": 648139008,
+          "records": 4765728,
+          "mtime": "2025-09-12T17:50:27.245766+09:00"
+        },
+        {
+          "data_id": 30,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\30.dat",
+          "bytes": 610258656,
+          "records": 4487196,
+          "mtime": "2025-09-12T17:50:25.345045+09:00"
+        },
+        {
+          "data_id": 31,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\31.dat",
+          "bytes": 481634480,
+          "records": 3541430,
+          "mtime": "2025-09-12T17:50:20.774143+09:00"
+        },
+        {
+          "data_id": 37,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\37.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:49:59.510830+09:00"
+        },
+        {
+          "data_id": 38,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\38.dat",
+          "bytes": 207808,
+          "records": 1528,
+          "mtime": "2025-09-12T17:50:00.814109+09:00"
+        },
+        {
+          "data_id": 65,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\65.dat",
+          "bytes": 13580008,
+          "records": 99853,
+          "mtime": "2025-09-12T17:50:28.902172+09:00"
+        },
+        {
+          "data_id": 66,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\66.dat",
+          "bytes": 13573752,
+          "records": 99807,
+          "mtime": "2025-09-12T17:50:29.085317+09:00"
+        },
+        {
+          "data_id": 67,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\67.dat",
+          "bytes": 13576336,
+          "records": 99826,
+          "mtime": "2025-09-12T17:50:29.231826+09:00"
+        },
+        {
+          "data_id": 68,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\68.dat",
+          "bytes": 13571440,
+          "records": 99790,
+          "mtime": "2025-09-12T17:50:29.361847+09:00"
+        },
+        {
+          "data_id": 69,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\69.dat",
+          "bytes": 13574296,
+          "records": 99811,
+          "mtime": "2025-09-12T17:50:30.176469+09:00"
+        },
+        {
+          "data_id": 70,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\70.dat",
+          "bytes": 13571440,
+          "records": 99790,
+          "mtime": "2025-09-12T17:50:30.322974+09:00"
+        },
+        {
+          "data_id": 71,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\71.dat",
+          "bytes": 13574296,
+          "records": 99811,
+          "mtime": "2025-09-12T17:50:30.458541+09:00"
+        },
+        {
+          "data_id": 72,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\72.dat",
+          "bytes": 13574976,
+          "records": 99816,
+          "mtime": "2025-09-12T17:50:31.563829+09:00"
+        },
+        {
+          "data_id": 73,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\73.dat",
+          "bytes": 13582184,
+          "records": 99869,
+          "mtime": "2025-09-12T17:50:31.899754+09:00"
+        },
+        {
+          "data_id": 74,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\74.dat",
+          "bytes": 13584768,
+          "records": 99888,
+          "mtime": "2025-09-12T17:50:32.048274+09:00"
+        },
+        {
+          "data_id": 77,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\77.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:50:32.001272+09:00"
+        },
+        {
+          "data_id": 78,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\78.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:50:32.316789+09:00"
+        },
+        {
+          "data_id": 79,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\79.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:50:32.476887+09:00"
+        },
+        {
+          "data_id": 80,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\80.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2025-09-12T17:50:32.630004+09:00"
+        },
+        {
+          "data_id": 82,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\82.dat",
+          "bytes": 936397264,
+          "records": 6885274,
+          "mtime": "2025-09-12T17:51:24.316409+09:00"
+        },
+        {
+          "data_id": 97,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\97.dat",
+          "bytes": 68000000,
+          "records": 500000,
+          "mtime": "2025-09-12T17:50:36.099551+09:00"
+        },
+        {
+          "data_id": 144,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\144.dat",
+          "bytes": 127856048,
+          "records": 940118,
+          "mtime": "2025-09-12T17:50:40.813542+09:00"
+        },
+        {
+          "data_id": 145,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\145.dat",
+          "bytes": 138014704,
+          "records": 1014814,
+          "mtime": "2025-09-12T17:50:41.812032+09:00"
+        },
+        {
+          "data_id": 146,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\146.dat",
+          "bytes": 198969088,
+          "records": 1463008,
+          "mtime": "2025-09-12T17:50:45.734478+09:00"
+        },
+        {
+          "data_id": 147,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\147.dat",
+          "bytes": 136039440,
+          "records": 1000290,
+          "mtime": "2025-09-12T17:50:44.500128+09:00"
+        },
+        {
+          "data_id": 148,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\148.dat",
+          "bytes": 137997432,
+          "records": 1014687,
+          "mtime": "2025-09-12T17:50:44.614634+09:00"
+        },
+        {
+          "data_id": 149,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\149.dat",
+          "bytes": 116340520,
+          "records": 855445,
+          "mtime": "2025-09-12T17:50:43.606635+09:00"
+        },
+        {
+          "data_id": 150,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\150.dat",
+          "bytes": 156628344,
+          "records": 1151679,
+          "mtime": "2025-09-12T17:50:47.247518+09:00"
+        },
+        {
+          "data_id": 158,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\158.dat",
+          "bytes": 139763392,
+          "records": 1027672,
+          "mtime": "2025-09-12T17:50:56.725904+09:00"
+        },
+        {
+          "data_id": 159,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\159.dat",
+          "bytes": 135870120,
+          "records": 999045,
+          "mtime": "2025-09-12T17:50:57.106958+09:00"
+        },
+        {
+          "data_id": 160,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\160.dat",
+          "bytes": 203373040,
+          "records": 1495390,
+          "mtime": "2025-09-12T17:51:01.889389+09:00"
+        },
+        {
+          "data_id": 161,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\161.dat",
+          "bytes": 203830680,
+          "records": 1498755,
+          "mtime": "2025-09-12T17:51:02.481040+09:00"
+        },
+        {
+          "data_id": 214,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\214.dat",
+          "bytes": 66667336,
+          "records": 490201,
+          "mtime": "2025-09-12T17:51:00.968394+09:00"
+        },
+        {
+          "data_id": 223,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\223.dat",
+          "bytes": 94023736,
+          "records": 691351,
+          "mtime": "2025-09-12T17:51:07.277339+09:00"
+        },
+        {
+          "data_id": 224,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\224.dat",
+          "bytes": 90928104,
+          "records": 668589,
+          "mtime": "2025-09-12T17:51:07.142820+09:00"
+        },
+        {
+          "data_id": 225,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\225.dat",
+          "bytes": 96040480,
+          "records": 706180,
+          "mtime": "2025-09-12T17:51:08.189953+09:00"
+        },
+        {
+          "data_id": 226,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\226.dat",
+          "bytes": 95203536,
+          "records": 700026,
+          "mtime": "2025-09-12T17:51:09.028821+09:00"
+        },
+        {
+          "data_id": 227,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\227.dat",
+          "bytes": 89865944,
+          "records": 660779,
+          "mtime": "2025-09-12T17:51:09.188832+09:00"
+        },
+        {
+          "data_id": 228,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\228.dat",
+          "bytes": 85399568,
+          "records": 627938,
+          "mtime": "2025-09-12T17:51:09.084325+09:00"
+        },
+        {
+          "data_id": 229,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\229.dat",
+          "bytes": 71276512,
+          "records": 524092,
+          "mtime": "2025-09-12T17:51:08.658492+09:00"
+        },
+        {
+          "data_id": 230,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\230.dat",
+          "bytes": 74497128,
+          "records": 547773,
+          "mtime": "2025-09-12T17:51:09.784469+09:00"
+        },
+        {
+          "data_id": 231,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\231.dat",
+          "bytes": 95651656,
+          "records": 703321,
+          "mtime": "2025-09-12T17:51:13.362398+09:00"
+        },
+        {
+          "data_id": 232,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\232.dat",
+          "bytes": 106006424,
+          "records": 779459,
+          "mtime": "2025-09-12T17:51:14.562273+09:00"
+        },
+        {
+          "data_id": 233,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\233.dat",
+          "bytes": 69302608,
+          "records": 509578,
+          "mtime": "2025-09-12T17:51:13.251884+09:00"
+        },
+        {
+          "data_id": 234,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\234.dat",
+          "bytes": 79839208,
+          "records": 587053,
+          "mtime": "2025-09-12T17:51:13.944193+09:00"
+        },
+        {
+          "data_id": 259,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\259.dat",
+          "bytes": 136534344,
+          "records": 1003929,
+          "mtime": "2026-06-01T13:39:22.281751+09:00"
+        },
+        {
+          "data_id": 260,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\260.dat",
+          "bytes": 139502408,
+          "records": 1025753,
+          "mtime": "2026-06-01T13:39:23.748426+09:00"
+        },
+        {
+          "data_id": 261,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\261.dat",
+          "bytes": 139301400,
+          "records": 1024275,
+          "mtime": "2026-06-01T13:39:25.055115+09:00"
+        },
+        {
+          "data_id": 262,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\262.dat",
+          "bytes": 139596248,
+          "records": 1026443,
+          "mtime": "2026-06-01T13:39:25.886443+09:00"
+        },
+        {
+          "data_id": 263,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\263.dat",
+          "bytes": 135867808,
+          "records": 999028,
+          "mtime": "2026-03-14T17:33:36.985089+09:00"
+        },
+        {
+          "data_id": 264,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\264.dat",
+          "bytes": 137234744,
+          "records": 1009079,
+          "mtime": "2026-03-14T17:33:37.392123+09:00"
+        },
+        {
+          "data_id": 265,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\265.dat",
+          "bytes": 137194760,
+          "records": 1008785,
+          "mtime": "2026-03-14T17:33:37.547834+09:00"
+        },
+        {
+          "data_id": 266,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\266.dat",
+          "bytes": 138288608,
+          "records": 1016828,
+          "mtime": "2026-03-14T17:33:37.808895+09:00"
+        },
+        {
+          "data_id": 267,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\267.dat",
+          "bytes": 137752088,
+          "records": 1012883,
+          "mtime": "2026-03-14T17:33:38.095085+09:00"
+        },
+        {
+          "data_id": 268,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\268.dat",
+          "bytes": 137938952,
+          "records": 1014257,
+          "mtime": "2026-03-14T17:33:38.344002+09:00"
+        },
+        {
+          "data_id": 269,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\269.dat",
+          "bytes": 137049104,
+          "records": 1007714,
+          "mtime": "2026-03-14T17:33:38.469903+09:00"
+        },
+        {
+          "data_id": 270,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\270.dat",
+          "bytes": 138228088,
+          "records": 1016383,
+          "mtime": "2026-03-14T17:33:38.698910+09:00"
+        },
+        {
+          "data_id": 271,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\271.dat",
+          "bytes": 137127304,
+          "records": 1008289,
+          "mtime": "2026-03-14T17:33:39.163868+09:00"
+        },
+        {
+          "data_id": 272,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\272.dat",
+          "bytes": 138124048,
+          "records": 1015618,
+          "mtime": "2026-03-14T17:33:39.168866+09:00"
+        },
+        {
+          "data_id": 273,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\273.dat",
+          "bytes": 137079976,
+          "records": 1007941,
+          "mtime": "2026-03-14T17:33:39.509121+09:00"
+        },
+        {
+          "data_id": 274,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\274.dat",
+          "bytes": 137755216,
+          "records": 1012906,
+          "mtime": "2026-03-14T17:33:41.951941+09:00"
+        },
+        {
+          "data_id": 275,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\275.dat",
+          "bytes": 136670616,
+          "records": 1004931,
+          "mtime": "2026-03-14T17:33:44.013318+09:00"
+        },
+        {
+          "data_id": 276,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\276.dat",
+          "bytes": 137572704,
+          "records": 1011564,
+          "mtime": "2026-03-14T17:33:44.370410+09:00"
+        },
+        {
+          "data_id": 311,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\311.dat",
+          "bytes": 0,
+          "records": 0,
+          "mtime": "2026-06-20T23:01:22.740748+09:00"
+        },
+        {
+          "data_id": 313,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\313.dat",
+          "bytes": 10588280,
+          "records": 77855,
+          "mtime": "2026-06-20T23:01:25.957075+09:00"
+        },
+        {
+          "data_id": 314,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\314.dat",
+          "bytes": 2478872,
+          "records": 18227,
+          "mtime": "2026-06-20T23:01:26.266413+09:00"
+        },
+        {
+          "data_id": 315,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\315.dat",
+          "bytes": 23378944,
+          "records": 171904,
+          "mtime": "2026-06-20T23:01:28.465602+09:00"
+        },
+        {
+          "data_id": 316,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\316.dat",
+          "bytes": 18820496,
+          "records": 138386,
+          "mtime": "2026-06-20T23:01:29.508216+09:00"
+        },
+        {
+          "data_id": 317,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\317.dat",
+          "bytes": 29462768,
+          "records": 216638,
+          "mtime": "2026-06-20T23:01:31.319941+09:00"
+        },
+        {
+          "data_id": 318,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\318.dat",
+          "bytes": 89667928,
+          "records": 659323,
+          "mtime": "2026-06-20T23:01:37.426921+09:00"
+        },
+        {
+          "data_id": 319,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\319.dat",
+          "bytes": 27776640,
+          "records": 204240,
+          "mtime": "2026-06-20T23:01:37.617548+09:00"
+        },
+        {
+          "data_id": 320,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\320.dat",
+          "bytes": 535125184,
+          "records": 3934744,
+          "mtime": "2026-06-20T23:02:02.879159+09:00"
+        },
+        {
+          "data_id": 321,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\321.dat",
+          "bytes": 15136528,
+          "records": 111298,
+          "mtime": "2026-06-20T23:01:39.981222+09:00"
+        },
+        {
+          "data_id": 322,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\322.dat",
+          "bytes": 2707544168,
+          "records": 19908413,
+          "mtime": "2026-06-20T23:03:40.259129+09:00"
+        },
+        {
+          "data_id": 323,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\323.dat",
+          "bytes": 5900224,
+          "records": 43384,
+          "mtime": "2026-06-20T23:01:44.654812+09:00"
+        },
+        {
+          "data_id": 324,
+          "path": "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\324.dat",
+          "bytes": 2718598248,
+          "records": 19989693,
+          "mtime": "2026-06-20T23:03:47.272000+09:00"
+        }
+      ],
+      "reference_file": {
+        "path": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\41.txt",
+        "sha256": "e4c476f1e5916165e827f767ca7817f5d3f37140b03c67c3613924a5b2c6fac3"
+      },
+      "initialization": "zero (input path intentionally absent)",
+      "command": [
+        "D:\\github\\othello\\Egaroucid\\src\\tools\\evaluation\\eval_optimizer_cuda_training_metrics_20260828_final.exe",
+        "41",
+        "0",
+        "11",
+        "0",
+        "550.0",
+        "100",
+        "30",
+        "0.8",
+        "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\missing_zero_initialization\\41.txt",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\18.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\19.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\20.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\21.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\24.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\29.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\30.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\31.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\37.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\38.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\65.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\66.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\67.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\68.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\69.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\70.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\71.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\72.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\73.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\74.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\77.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\78.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\79.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\80.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\82.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\97.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\144.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\145.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\146.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\147.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\148.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\149.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\150.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\158.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\159.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\160.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\161.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\214.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\223.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\224.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\225.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\226.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\227.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\228.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\229.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\230.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\231.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\232.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\233.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\234.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\259.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\260.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\261.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\262.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\263.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\264.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\265.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\266.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\267.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\268.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\269.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\270.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\271.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\272.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\273.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\274.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\275.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\276.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\311.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\313.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\314.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\315.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\316.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\317.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\318.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\319.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\320.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\321.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\322.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\323.dat",
+        "E:\\egaroucid_data\\train_data\\bin_data\\20241125_1\\41\\324.dat"
+      ],
+      "environment_overrides": {
+        "EGAROUCID_EVAL_VALIDATION_SEED": "20260828",
+        "EGAROUCID_EVAL_ROUND_SEED": "20260828",
+        "EGAROUCID_EVAL_METRICS_INTERVAL": "25",
+        "EGAROUCID_EVAL_ROUND_SECONDS": "60",
+        "EGAROUCID_EVAL_OUTPUT_DIR": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\trained",
+        "EGAROUCID_EVAL_REFERENCE_FILE": "D:\\github\\othello\\Egaroucid\\model\\20260621_1_afterrand16_used_dev-eval\\41.txt"
+      },
+      "finished_at": "2026-08-29T00:17:44+09:00",
+      "return_code": 0,
+      "outputs": {
+        "metrics": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\trained\\metrics_phase_41.csv",
+        "float_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\trained\\float_41.txt",
+        "integer_weights": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\trained\\41.txt",
+        "appearance_counts": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\trained\\weight_41.txt",
+        "stdout": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\stdout.txt",
+        "stderr": "D:\\github\\othello\\Egaroucid\\benchmark\\eval_optimizer_adam_20260828\\phase_41\\stderr.txt"
+      }
+    }
+  ],
+  "finished_at": "2026-08-29T00:17:44+09:00"
+}
