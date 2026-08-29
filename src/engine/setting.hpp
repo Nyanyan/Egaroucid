@@ -147,7 +147,9 @@
 #define USE_DIM0_ONLY_EVALUATION true
 
 // MPC pre calculation
-#define USE_MPC_PRE_CALCULATION true
+#ifndef USE_MPC_PRE_CALCULATION
+    #define USE_MPC_PRE_CALCULATION true
+#endif
 
 // YBWC
 #define USE_YBWC_NWS true
