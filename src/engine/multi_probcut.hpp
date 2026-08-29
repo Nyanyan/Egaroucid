@@ -27,70 +27,18 @@ constexpr int MPC_DEPTH_DENOMINATOR = 5;
 #ifndef MPC_SIGMA_SCALE
     #define MPC_SIGMA_SCALE 1.0
 #endif
-#ifndef MID_MPC_SIGMA_SCALE_74
-    #define MID_MPC_SIGMA_SCALE_74 1.0
-#endif
-#ifndef MID_MPC_SIGMA_SCALE_88
-    #define MID_MPC_SIGMA_SCALE_88 1.0
-#endif
-#ifndef MID_MPC_SIGMA_SCALE_93
-    #define MID_MPC_SIGMA_SCALE_93 1.0
-#endif
-#ifndef MID_MPC_SIGMA_SCALE_98
-    #define MID_MPC_SIGMA_SCALE_98 0.90
-#endif
-#ifndef MID_MPC_SIGMA_SCALE_99
-    #define MID_MPC_SIGMA_SCALE_99 0.85
-#endif
-#ifdef MID_MPC_SIGMA_SCALE_999
-    #error Use MID_MPC_SIGMA_SCALE_99_9 for the 99.9% midgame MPC scale
-#endif
-#ifndef MID_MPC_SIGMA_SCALE_99_9
-    #define MID_MPC_SIGMA_SCALE_99_9 0.85
+#if defined(MID_MPC_SIGMA_SCALE_74) || \
+    defined(MID_MPC_SIGMA_SCALE_88) || \
+    defined(MID_MPC_SIGMA_SCALE_93) || \
+    defined(MID_MPC_SIGMA_SCALE_98) || \
+    defined(MID_MPC_SIGMA_SCALE_99) || \
+    defined(MID_MPC_SIGMA_SCALE_999) || \
+    defined(MID_MPC_SIGMA_SCALE_99_9)
+    #error MID_MPC_SIGMA_SCALE_* was replaced by MPC_SELECTIVITY_Z_MID in level.hpp
 #endif
 #ifndef MPC_PROBCUT_G_OFFSET
     #define MPC_PROBCUT_G_OFFSET 0.3
 #endif
-
-// constants from standard normal distribution table
-// two-sided test                                         74.0  88.0  93.0  98.0  99.0  99.9 100 (%)
-constexpr double SELECTIVITY_MPCT[N_SELECTIVITY_LEVEL] = {1.13, 1.55, 1.81, 2.32, 2.57, 3.29, 9.99};
-
-// Keep the measured midgame adjustment separate from both endgame models.
-// Each selectivity uses its independently measured safe boundary.
-constexpr double MID_MPC_SIGMA_SCALE[N_SELECTIVITY_LEVEL] = {
-    MID_MPC_SIGMA_SCALE_74,
-    MID_MPC_SIGMA_SCALE_88,
-    MID_MPC_SIGMA_SCALE_93,
-    MID_MPC_SIGMA_SCALE_98,
-    MID_MPC_SIGMA_SCALE_99,
-    MID_MPC_SIGMA_SCALE_99_9,
-    1.0
-};
-
-constexpr bool valid_mid_mpc_sigma_scales() {
-    for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
-        if (MID_MPC_SIGMA_SCALE[level] <= 0.0) {
-            return false;
-        }
-        if (
-            level > 0 &&
-            SELECTIVITY_MPCT[level - 1] * MID_MPC_SIGMA_SCALE[level - 1] >
-                SELECTIVITY_MPCT[level] * MID_MPC_SIGMA_SCALE[level]
-        ) {
-            return false;
-        }
-    }
-    return true;
-}
-static_assert(
-    valid_mid_mpc_sigma_scales(),
-    "midgame MPC sigma scales must be positive with monotone effective margins"
-);
-
-inline double mid_mpc_sigma_scale(const uint_fast8_t mpc_level) {
-    return MID_MPC_SIGMA_SCALE[mpc_level];
-}
 
 /*
     @brief constants for ProbCut error calculation
@@ -286,14 +234,20 @@ inline double probcut_sigma_end(int n_discs, int depth) {
     return MPC_SIGMA_SCALE * res;
 }
 
+inline int probcut_error_end(uint_fast8_t mpc_level, double sigma) {
+    return ceil(
+        MPC_ERROR_SCALE * MPC_SELECTIVITY_Z_END[mpc_level] * sigma
+    );
+}
+
+// Historical helper name; it has always represented the endgame/base table.
 inline int probcut_error(uint_fast8_t mpc_level, double sigma) {
-    return ceil(MPC_ERROR_SCALE * SELECTIVITY_MPCT[mpc_level] * sigma);
+    return probcut_error_end(mpc_level, sigma);
 }
 
 inline int probcut_error_mid(uint_fast8_t mpc_level, double sigma) {
     return ceil(
-        MPC_ERROR_SCALE * SELECTIVITY_MPCT[mpc_level] *
-        mid_mpc_sigma_scale(mpc_level) * sigma
+        MPC_ERROR_SCALE * MPC_SELECTIVITY_Z_MID[mpc_level] * sigma
     );
 }
 
@@ -428,14 +382,11 @@ inline int mpc_static_error(uint_fast8_t mpc_level, int n_discs, int depth) {
         return mpc_error[mpc_level][n_discs][0][depth];
     }
 #else
-    const double mpct = SELECTIVITY_MPCT[mpc_level];
+    const double mpct = mpc_selectivity_z(mpc_level, IsEndSearch);
     if constexpr (IsEndSearch) {
         return ceil(MPC_ERROR_SCALE * mpct * probcut_sigma_end(n_discs, 0));
     } else {
-        return ceil(
-            MPC_ERROR_SCALE * mpct * mid_mpc_sigma_scale(mpc_level) *
-            probcut_sigma(n_discs, 0, depth)
-        );
+        return ceil(MPC_ERROR_SCALE * mpct * probcut_sigma(n_discs, 0, depth));
     }
 #endif
 }
@@ -457,7 +408,7 @@ inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_de
         }
     }
 #else
-    const double mpct = SELECTIVITY_MPCT[mpc_level];
+    const double mpct = mpc_selectivity_z(mpc_level, IsEndSearch);
     double sigma_search;
     if constexpr (IsEndSearch) {
         sigma_search = probcut_sigma_end(n_discs, search_depth);
@@ -466,10 +417,9 @@ inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_de
             *eval_error = ceil(MPC_ERROR_SCALE * mpct * 0.5 * (sigma_0 + sigma_search));
         }
     } else {
-        const double sigma_scale = mid_mpc_sigma_scale(mpc_level);
-        sigma_search = sigma_scale * probcut_sigma(n_discs, search_depth, depth);
+        sigma_search = probcut_sigma(n_discs, search_depth, depth);
         if (eval_error) {
-            double sigma_0 = sigma_scale * probcut_sigma(n_discs, 0, depth);
+            double sigma_0 = probcut_sigma(n_discs, 0, depth);
             *eval_error = ceil(MPC_ERROR_SCALE * mpct * 0.5 * (sigma_0 + sigma_search));
         }
     }
@@ -694,14 +644,13 @@ inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t lega
         error_0 = mpc_error[mpc_level][search->n_discs][0][depth];
     }
 #else
-    double mpct = SELECTIVITY_MPCT[mpc_level];
+    const double mpct = mpc_selectivity_z(mpc_level, is_end_search);
     if (is_end_search) {
         error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
         error_0 = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
     }else{
-        const double sigma_scale = mid_mpc_sigma_scale(mpc_level);
-        error_search = ceil(mpct * sigma_scale * probcut_sigma(search->n_discs, search_depth, depth));
-        error_0 = ceil(mpct * sigma_scale * probcut_sigma(search->n_discs, 0, depth));
+        error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
+        error_0 = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
     }
 #endif
 #if USE_DIM0_ONLY_EVALUATION
@@ -740,7 +689,7 @@ void mpc_init() {
     for (mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level) {
         for (n_discs = 0; n_discs < HW2 + 1; ++n_discs) {
             for (depth1 = 0; depth1 < HW2 - 3; ++depth1) {
-                mpc_error_end[mpc_level][n_discs][depth1] = probcut_error(mpc_level, probcut_sigma_end(n_discs, depth1));
+                mpc_error_end[mpc_level][n_discs][depth1] = probcut_error_end(mpc_level, probcut_sigma_end(n_discs, depth1));
                 for (depth2 = 0; depth2 < HW2 - 3; ++depth2) {
                     mpc_error[mpc_level][n_discs][depth1][depth2] = probcut_error_mid(mpc_level, probcut_sigma(n_discs, depth1, depth2));
                 }

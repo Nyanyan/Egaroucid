@@ -1,4 +1,4 @@
-/* Regression tests for the selectivity-specific midgame MPC sigma scale. */
+/* Regression tests for phase-specific MPC probabilities and z thresholds. */
 
 #include <cmath>
 #include <iostream>
@@ -10,9 +10,25 @@
 
 namespace {
 
+constexpr double LEGACY_BASE_Z[N_SELECTIVITY_LEVEL] = {
+    1.13, 1.55, 1.81, 2.32, 2.57, 3.29, 9.99
+};
+constexpr double LEGACY_MID_SCALE[N_SELECTIVITY_LEVEL] = {
+    1.0, 1.0, 1.0, 0.90, 0.85, 0.85, 1.0
+};
+
 void require(bool condition, const char *message) {
     if (!condition) {
         throw std::runtime_error(message);
+    }
+}
+
+void require_near(double actual, double expected, double tolerance, const char *message) {
+    if (std::abs(actual - expected) > tolerance) {
+        throw std::runtime_error(
+            std::string(message) + ": expected " + std::to_string(expected) +
+            ", got " + std::to_string(actual)
+        );
     }
 }
 
@@ -130,16 +146,199 @@ void test_high_selectivity_search_paths() {
     }
 }
 
+void test_error_helpers_preserve_legacy_behavior() {
+    for (int n_discs = 0; n_discs <= HW2; ++n_discs) {
+        for (int depth = 0; depth < HW2 - 3; ++depth) {
+            for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
+                const int legacy_end_static = std::ceil(
+                    MPC_ERROR_SCALE * LEGACY_BASE_Z[level] *
+                    probcut_sigma_end(n_discs, 0)
+                );
+                const int legacy_mid_static = std::ceil(
+                    MPC_ERROR_SCALE * LEGACY_BASE_Z[level] *
+                    LEGACY_MID_SCALE[level] *
+                    probcut_sigma(n_discs, 0, depth)
+                );
+                if (mpc_static_error<true>(level, n_discs, depth) != legacy_end_static) {
+                    fail_table_value(
+                        "end static helper", level, n_discs, 0, depth,
+                        mpc_static_error<true>(level, n_discs, depth),
+                        legacy_end_static
+                    );
+                }
+                if (mpc_static_error<false>(level, n_discs, depth) != legacy_mid_static) {
+                    fail_table_value(
+                        "mid static helper", level, n_discs, 0, depth,
+                        mpc_static_error<false>(level, n_discs, depth),
+                        legacy_mid_static
+                    );
+                }
+
+                for (int search_depth = 0; search_depth < HW2 - 3; ++search_depth) {
+                    int actual_end_search = -1;
+                    int actual_end_eval = -1;
+                    int actual_mid_search = -1;
+                    int actual_mid_eval = -1;
+                    mpc_search_errors<true>(
+                        level, n_discs, search_depth, depth,
+                        &actual_end_search, &actual_end_eval
+                    );
+                    mpc_search_errors<false>(
+                        level, n_discs, search_depth, depth,
+                        &actual_mid_search, &actual_mid_eval
+                    );
+
+                    const double end_sigma_search =
+                        probcut_sigma_end(n_discs, search_depth);
+                    const double end_sigma_zero = probcut_sigma_end(n_discs, 0);
+                    const double raw_mid_sigma_search =
+                        probcut_sigma(n_discs, search_depth, depth);
+                    const double mid_sigma_search = LEGACY_MID_SCALE[level] *
+                        raw_mid_sigma_search;
+                    const double mid_sigma_zero = LEGACY_MID_SCALE[level] *
+                        probcut_sigma(n_discs, 0, depth);
+                    const int legacy_end_search = std::ceil(
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] * end_sigma_search
+                    );
+#if USE_MPC_PRE_CALCULATION
+                    const int legacy_mid_search = std::ceil(
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] *
+                        LEGACY_MID_SCALE[level] * raw_mid_sigma_search
+                    );
+                    const int legacy_end_zero = std::ceil(
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] * end_sigma_zero
+                    );
+                    const int legacy_mid_zero = std::ceil(
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] *
+                        LEGACY_MID_SCALE[level] *
+                        probcut_sigma(n_discs, 0, depth)
+                    );
+                    const int legacy_end_eval =
+                        (legacy_end_zero + legacy_end_search + 1) / 2;
+                    const int legacy_mid_eval =
+                        (legacy_mid_zero + legacy_mid_search + 1) / 2;
+#else
+                    const int legacy_mid_search = std::ceil(
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] * mid_sigma_search
+                    );
+                    const int legacy_end_eval = std::ceil(
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] * 0.5 *
+                        (end_sigma_zero + end_sigma_search)
+                    );
+                    const int legacy_mid_eval = std::ceil(
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] * 0.5 *
+                        (mid_sigma_zero + mid_sigma_search)
+                    );
+#endif
+                    if (actual_end_search != legacy_end_search) {
+                        fail_table_value(
+                            "end search helper", level, n_discs, search_depth,
+                            depth, actual_end_search, legacy_end_search
+                        );
+                    }
+                    if (actual_mid_search != legacy_mid_search) {
+                        fail_table_value(
+                            "mid search helper", level, n_discs, search_depth,
+                            depth, actual_mid_search, legacy_mid_search
+                        );
+                    }
+                    if (actual_end_eval != legacy_end_eval) {
+                        fail_table_value(
+                            "end eval helper", level, n_discs, search_depth,
+                            depth, actual_end_eval, legacy_end_eval
+                        );
+                    }
+                    if (actual_mid_eval != legacy_mid_eval) {
+                        fail_table_value(
+                            "mid eval helper", level, n_discs, search_depth,
+                            depth, actual_mid_eval, legacy_mid_eval
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
 } // namespace
 
 int main() {
-    require(MID_MPC_SIGMA_SCALE[MPC_74_LEVEL] == 1.0, "74% scale");
-    require(MID_MPC_SIGMA_SCALE[MPC_88_LEVEL] == 1.0, "88% scale");
-    require(MID_MPC_SIGMA_SCALE[MPC_93_LEVEL] == 1.0, "93% scale");
-    require(MID_MPC_SIGMA_SCALE[MPC_98_LEVEL] == 0.90, "98% scale");
-    require(MID_MPC_SIGMA_SCALE[MPC_99_LEVEL] == 0.85, "99% scale");
-    require(MID_MPC_SIGMA_SCALE[MPC_999_LEVEL] == 0.85, "99.9% scale");
-    require(MID_MPC_SIGMA_SCALE[MPC_100_LEVEL] == 1.0, "100% scale");
+    for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
+        require_near(
+            MPC_SELECTIVITY_Z_MID[level],
+            LEGACY_BASE_Z[level] * LEGACY_MID_SCALE[level],
+            0.0,
+            "midgame z preserves the measured search threshold"
+        );
+        require_near(
+            MPC_SELECTIVITY_Z_END[level],
+            LEGACY_BASE_Z[level],
+            0.0,
+            "endgame z preserves the original search threshold"
+        );
+        require_near(
+            SELECTIVITY_MPCT[level], MPC_SELECTIVITY_Z_END[level], 0.0,
+            "legacy z table name remains an endgame alias"
+        );
+        require_near(
+            mpc_selectivity_z(level, false),
+            MPC_SELECTIVITY_Z_MID[level],
+            0.0,
+            "midgame z selector"
+        );
+        require_near(
+            mpc_selectivity_z(level, true),
+            MPC_SELECTIVITY_Z_END[level],
+            0.0,
+            "endgame z selector"
+        );
+
+        const double expected_mid_probability = 100.0 * std::erf(
+            MPC_SELECTIVITY_Z_MID[level] / std::sqrt(2.0)
+        );
+        const double expected_end_probability = 100.0 * std::erf(
+            MPC_SELECTIVITY_Z_END[level] / std::sqrt(2.0)
+        );
+        require_near(
+            MPC_SELECTIVITY_PERCENTAGE_MID[level],
+            expected_mid_probability,
+            1.0e-12,
+            "midgame probability matches its z threshold"
+        );
+        require_near(
+            MPC_SELECTIVITY_PERCENTAGE_END[level],
+            expected_end_probability,
+            1.0e-12,
+            "endgame probability matches its z threshold"
+        );
+        require_near(
+            mpc_selectivity_percentage(level, false),
+            MPC_SELECTIVITY_PERCENTAGE_MID[level],
+            0.0,
+            "midgame probability selector"
+        );
+        require_near(
+            mpc_selectivity_percentage(level, true),
+            MPC_SELECTIVITY_PERCENTAGE_END[level],
+            0.0,
+            "endgame probability selector"
+        );
+    }
+
+    require(
+        MPC_SELECTIVITY_PERCENTAGE_MID[MPC_98_LEVEL] <
+            MPC_SELECTIVITY_PERCENTAGE_END[MPC_98_LEVEL],
+        "high-selectivity midgame and endgame probabilities are distinct"
+    );
+    constexpr double legacy_labels[N_SELECTIVITY_LEVEL] = {
+        74, 88, 93, 98, 99, 99.9, 100
+    };
+    for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
+        require_near(
+            SELECTIVITY_PERCENTAGE[level], legacy_labels[level], 0.0,
+            "legacy selectivity labels stay unchanged"
+        );
+    }
 
 #if USE_MPC_PRE_CALCULATION
     mpc_init();
@@ -152,15 +351,19 @@ int main() {
             int previous_end_error = -1;
             for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
                 const int expected_end = std::ceil(
-                    MPC_ERROR_SCALE * SELECTIVITY_MPCT[level] * end_sigma
+                    MPC_ERROR_SCALE * LEGACY_BASE_Z[level] * end_sigma
                 );
-                const int actual_end = probcut_error(level, end_sigma);
+                const int actual_end = probcut_error_end(level, end_sigma);
                 if (actual_end != expected_end) {
                     fail_table_value(
                         "end helper", level, n_discs, shallow_depth, -1,
                         actual_end, expected_end
                     );
                 }
+                require(
+                    probcut_error(level, end_sigma) == actual_end,
+                    "legacy end error helper remains compatible"
+                );
                 require(actual_end >= previous_end_error, "end margins are monotone");
                 previous_end_error = actual_end;
 #if USE_MPC_PRE_CALCULATION
@@ -181,8 +384,8 @@ int main() {
                 int previous_mid_error = -1;
                 for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
                     const int expected_mid = std::ceil(
-                        MPC_ERROR_SCALE * SELECTIVITY_MPCT[level] *
-                        MID_MPC_SIGMA_SCALE[level] * mid_sigma
+                        MPC_ERROR_SCALE * LEGACY_BASE_Z[level] *
+                        LEGACY_MID_SCALE[level] * mid_sigma
                     );
                     const int actual_mid = probcut_error_mid(level, mid_sigma);
                     if (actual_mid != expected_mid) {
@@ -208,7 +411,7 @@ int main() {
 #endif
                     if (level == MPC_100_LEVEL) {
                         require(
-                            actual_mid == probcut_error(level, mid_sigma),
+                            actual_mid == probcut_error_end(level, mid_sigma),
                             "100% mid margin stays unchanged"
                         );
                     }
@@ -217,10 +420,12 @@ int main() {
         }
     }
 
+    test_error_helpers_preserve_legacy_behavior();
+
     require(initialize_engine(), "engine initialization");
     test_scale_boundary_position();
     test_high_selectivity_search_paths();
 
-    std::cout << "Midgame MPC sigma scale tests passed\n";
+    std::cout << "Phase-specific MPC probability tests passed\n";
     return 0;
 }

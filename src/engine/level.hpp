@@ -43,7 +43,119 @@ constexpr int MPC_98_LEVEL = 3;
 constexpr int MPC_99_LEVEL = 4;
 constexpr int MPC_999_LEVEL = 5;
 constexpr int MPC_100_LEVEL = 6;
-constexpr double SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {74, 88, 93, 98, 99, 99.9, 100}; // percent
+
+// Compatibility labels used by existing logs, UI, and time-management code.
+// These rounded labels are not used to calculate MPC margins.
+constexpr double SELECTIVITY_PERCENTAGE[N_SELECTIVITY_LEVEL] = {
+    74, 88, 93, 98, 99, 99.9, 100
+}; // percent
+
+/*
+    MPC levels are ordered strength/speed presets.  The historical level
+    names above correspond to the endgame probabilities, but a level is not
+    itself a universal probability: midgame and endgame use different error
+    models and may use different normal-distribution thresholds.
+
+    For a two-sided standard-normal test:
+
+        probability (%) = 100 * erf(z / sqrt(2))
+
+    Keep the z thresholds and their corresponding nominal probabilities
+    explicit for each search phase.  SELECTIVITY_PERCENTAGE remains the old
+    rounded compatibility label; new diagnostics may use
+    mpc_selectivity_percentage() when they need the phase-specific value.
+*/
+constexpr double MPC_SELECTIVITY_Z_MID[N_SELECTIVITY_LEVEL] = {
+    1.13,
+    1.55,
+    1.81,
+    2.088,
+    2.1845,
+    2.7965,
+    9.99
+};
+constexpr double MPC_SELECTIVITY_Z_END[N_SELECTIVITY_LEVEL] = {
+    1.13,
+    1.55,
+    1.81,
+    2.32,
+    2.57,
+    3.29,
+    9.99
+};
+
+// Source-compatible name for code that historically meant the endgame z
+// table. New code must select MID or END explicitly.
+constexpr const double (&SELECTIVITY_MPCT)[N_SELECTIVITY_LEVEL] =
+    MPC_SELECTIVITY_Z_END;
+
+constexpr double MPC_SELECTIVITY_PERCENTAGE_MID[N_SELECTIVITY_LEVEL] = {
+    74.15237755199644,
+    87.88584839958820,
+    92.97042128319224,
+    96.32021653162846,
+    97.10744727176362,
+    99.48340589029564,
+    100.0
+};
+constexpr double MPC_SELECTIVITY_PERCENTAGE_END[N_SELECTIVITY_LEVEL] = {
+    74.15237755199644,
+    87.88584839958820,
+    92.97042128319224,
+    97.96591226625605,
+    98.98301485020178,
+    99.89981261724286,
+    100.0
+};
+
+constexpr double mpc_selectivity_z(
+    const uint_fast8_t mpc_level,
+    const bool is_end_search
+) {
+    return is_end_search
+        ? MPC_SELECTIVITY_Z_END[mpc_level]
+        : MPC_SELECTIVITY_Z_MID[mpc_level];
+}
+
+constexpr double mpc_selectivity_percentage(
+    const uint_fast8_t mpc_level,
+    const bool is_end_search
+) {
+    return is_end_search
+        ? MPC_SELECTIVITY_PERCENTAGE_END[mpc_level]
+        : MPC_SELECTIVITY_PERCENTAGE_MID[mpc_level];
+}
+
+constexpr bool valid_phase_selectivity_tables() {
+    for (int level = 0; level < N_SELECTIVITY_LEVEL; ++level) {
+        if (
+            MPC_SELECTIVITY_Z_MID[level] <= 0.0 ||
+            MPC_SELECTIVITY_Z_END[level] <= 0.0 ||
+            MPC_SELECTIVITY_PERCENTAGE_MID[level] <= 0.0 ||
+            MPC_SELECTIVITY_PERCENTAGE_MID[level] > 100.0 ||
+            MPC_SELECTIVITY_PERCENTAGE_END[level] <= 0.0 ||
+            MPC_SELECTIVITY_PERCENTAGE_END[level] > 100.0
+        ) {
+            return false;
+        }
+        if (
+            level > 0 &&
+            (
+                MPC_SELECTIVITY_Z_MID[level - 1] > MPC_SELECTIVITY_Z_MID[level] ||
+                MPC_SELECTIVITY_Z_END[level - 1] > MPC_SELECTIVITY_Z_END[level] ||
+                MPC_SELECTIVITY_PERCENTAGE_MID[level - 1] > MPC_SELECTIVITY_PERCENTAGE_MID[level] ||
+                MPC_SELECTIVITY_PERCENTAGE_END[level - 1] > MPC_SELECTIVITY_PERCENTAGE_END[level]
+            )
+        ) {
+            return false;
+        }
+    }
+    return true;
+}
+static_assert(
+    valid_phase_selectivity_tables(),
+    "midgame and endgame MPC selectivity tables must be positive and monotone"
+);
 
 constexpr int MAX_LEVEL = (N_LEVEL - 1);
 constexpr int LEVEL_TYPE_BOOK = 1000;
