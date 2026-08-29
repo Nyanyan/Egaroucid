@@ -15,8 +15,11 @@
 #include "thread_pool.hpp"
 #include "spinlock.hpp"
 #include "search.hpp"
+#include <cstdlib>
 #include <future>
 #include <functional>
+#include <new>
+#include <type_traits>
 
 //#define USE_TT_DEPTH_THRESHOLD 0
 
@@ -25,7 +28,12 @@
 */
 constexpr int TRANSPOSITION_TABLE_N_LOOP = 3;
 #if TT_USE_STACK
+#if defined(EGAROUCID_TEST_TRANSPOSITION_TABLE_STACK_LEVEL)
+constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE =
+    hash_sizes[EGAROUCID_TEST_TRANSPOSITION_TABLE_STACK_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
+#else
 constexpr size_t TRANSPOSITION_TABLE_STACK_SIZE = hash_sizes[DEFAULT_HASH_LEVEL] + TRANSPOSITION_TABLE_N_LOOP - 1;
+#endif
 #endif
 constexpr int N_TRANSPOSITION_MOVES = 2;
 constexpr double TT_REGISTER_THRESHOLD_RATE = 0.4;
@@ -261,6 +269,15 @@ struct Hash_node {
     }
 };
 
+static_assert(
+    std::is_trivially_destructible_v<Hash_node>,
+    "Transposition-table heap storage is released without a destruction pass"
+);
+
+#if defined(EGAROUCID_TEST_TRANSPOSITION_TABLE_STORAGE)
+std::atomic<uint64_t> transposition_table_test_constructed_nodes{0};
+#endif
+
 /*
     @brief Initialize transposition table in parallel
 
@@ -268,13 +285,24 @@ struct Hash_node {
     @param s                    start index
     @param e                    end index
 */
-void init_transposition_table(Hash_node table[], size_t s, size_t e) {
+template<bool construct_nodes>
+void init_transposition_table(
+    Hash_node table[],
+    size_t s,
+    size_t e
+) {
 #if USE_SIMD && USE_SIMD_TT_INIT
     // UNDER CONSTRUCTION
     Hash_node HASH_NODE_INIT;
     HASH_NODE_INIT.init();
     __m256i init_data = _mm256_load_si256(((__m256i*)&HASH_NODE_INIT));
     for(size_t i = s; i < e;) {
+        if constexpr (construct_nodes) {
+            ::new (static_cast<void*>(table + i)) Hash_node;
+#if defined(EGAROUCID_TEST_TRANSPOSITION_TABLE_STORAGE)
+            transposition_table_test_constructed_nodes.fetch_add(1, std::memory_order_relaxed);
+#endif
+        }
         std::cerr << sizeof(Hash_node) << " " << ((uintptr_t)(table + i) & 0x1f) << std::endl;
         if (sizeof(Hash_node) == 32 && (((uintptr_t)(table + i) & 0x1f) == 0) && i + 1 < e) {
             std::cerr << "a";
@@ -288,6 +316,12 @@ void init_transposition_table(Hash_node table[], size_t s, size_t e) {
     }
 #else
     for(size_t i = s; i < e; ++i) {
+        if constexpr (construct_nodes) {
+            ::new (static_cast<void*>(table + i)) Hash_node;
+#if defined(EGAROUCID_TEST_TRANSPOSITION_TABLE_STORAGE)
+            transposition_table_test_constructed_nodes.fetch_add(1, std::memory_order_relaxed);
+#endif
+        }
         table[i].init();
     }
 #endif
@@ -353,6 +387,7 @@ class Transposition_table {
 #endif
 #if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
         Hash_node *table_heap;
+        bool table_heap_needs_construction;
 #endif
         size_t table_size;
         std::atomic<uint64_t> n_registered;
@@ -364,7 +399,7 @@ class Transposition_table {
         */
         Transposition_table() 
 #if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
-            : table_heap(nullptr), table_size(0), n_registered(0), n_registered_threshold(0) {}
+            : table_heap(nullptr), table_heap_needs_construction(false), table_size(0), n_registered(0), n_registered_threshold(0) {}
 #else
             : table_size(0), n_registered(0), n_registered_threshold(0) {}
 #endif
@@ -380,19 +415,26 @@ class Transposition_table {
             size_t n_table_size = hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP - 1;
             table_size = 0;
             if (table_heap != nullptr) {
-                free(table_heap);
+                std::free(table_heap);
                 table_heap = nullptr;
             }
+            table_heap_needs_construction = false;
             #if TT_USE_STACK
                 if (n_table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
-                    table_heap = (Hash_node*)malloc(sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE));
+                    table_heap = static_cast<Hash_node*>(std::malloc(
+                        sizeof(Hash_node) * (n_table_size - TRANSPOSITION_TABLE_STACK_SIZE)
+                    ));
                     if (table_heap == nullptr)
                         return false;
+                    table_heap_needs_construction = true;
                 }
             #else
-                table_heap = (Hash_node*)malloc(sizeof(Hash_node) * n_table_size);
+                table_heap = static_cast<Hash_node*>(std::malloc(
+                    sizeof(Hash_node) * n_table_size
+                ));
                 if (table_heap == nullptr)
                     return false;
+                table_heap_needs_construction = true;
             #endif
             table_size = n_table_size;
             n_registered_threshold = table_size * TT_REGISTER_THRESHOLD_RATE;
@@ -413,20 +455,31 @@ class Transposition_table {
         */
         inline void init() {
             int thread_size = thread_pool.size();
+#if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
+            const bool construct_heap_nodes = table_heap_needs_construction;
+            using InitTranspositionTable = void (*)(Hash_node[], size_t, size_t);
+            const InitTranspositionTable init_heap = construct_heap_nodes
+                ? &init_transposition_table<true>
+                : &init_transposition_table<false>;
+#endif
             if (thread_size == 0) {
 #if TT_USE_STACK
-                for (size_t i = 0; i < std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE); ++i) {
-                    table_stack[i].init();
-                }
+                init_transposition_table<false>(
+                    table_stack,
+                    0,
+                    std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE)
+                );
 #if USE_CHANGEABLE_HASH_LEVEL
                 if (table_size > TRANSPOSITION_TABLE_STACK_SIZE) {
-                    for (size_t i = 0; i < table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE; ++i)
-                        table_heap[i].init();
+                    init_heap(
+                        table_heap,
+                        0,
+                        table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE
+                    );
                 }
 #endif // USE_CHANGEABLE_HASH_LEVEL
 #else // TT_USE_STACK
-                for (size_t i = 0; i < table_size; ++i)
-                    table_heap[i].init();
+                init_heap(table_heap, 0, table_size);
 #endif // TT_USE_STACK
             } else {
                 size_t s, e;
@@ -438,7 +491,10 @@ class Transposition_table {
                         e = std::min(std::min(table_size, (size_t)TRANSPOSITION_TABLE_STACK_SIZE), s + delta);
                         bool pushed = false;
                         while (!pushed) {
-                            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_stack, s, e)));
+                            tasks.emplace_back(thread_pool.push(
+                                &pushed,
+                                std::bind(&init_transposition_table<false>, table_stack, s, e)
+                            ));
                             if (!pushed)
                                 tasks.pop_back();
                         }
@@ -452,7 +508,15 @@ class Transposition_table {
                             e = std::min(table_size - (size_t)TRANSPOSITION_TABLE_STACK_SIZE, s + delta);
                             bool pushed = false;
                             while (!pushed) {
-                                tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
+                                tasks.emplace_back(thread_pool.push(
+                                    &pushed,
+                                    std::bind(
+                                        init_heap,
+                                        table_heap,
+                                        s,
+                                        e
+                                    )
+                                ));
                                 if (!pushed)
                                     tasks.pop_back();
                             }
@@ -467,7 +531,15 @@ class Transposition_table {
                     e = std::min(table_size, s + delta);
                     bool pushed = false;
                     while (!pushed) {
-                        tasks.emplace_back(thread_pool.push(&pushed, std::bind(&init_transposition_table, table_heap, s, e)));
+                        tasks.emplace_back(thread_pool.push(
+                            &pushed,
+                            std::bind(
+                                init_heap,
+                                table_heap,
+                                s,
+                                e
+                            )
+                        ));
                         if (!pushed)
                             tasks.pop_back();
                     }
@@ -478,6 +550,9 @@ class Transposition_table {
                     task.get();
                 }
             }
+#if USE_CHANGEABLE_HASH_LEVEL || !TT_USE_STACK
+            table_heap_needs_construction = false;
+#endif
             n_registered.store(0);
         }
 

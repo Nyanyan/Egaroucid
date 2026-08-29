@@ -168,7 +168,9 @@
 
 // transposition table stack / heap
 // if false, USE_CHANGEABLE_HASH_LEVEL must be true
+#ifndef TT_USE_STACK
 #define TT_USE_STACK true
+#endif
 
 // flip SIMD / AVX512 optimization for each compiler
 #define AUTO_FLIP_OPT_BY_COMPILER true
