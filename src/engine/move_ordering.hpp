@@ -384,6 +384,93 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
     search->undo(&flip_value->flip);
 }
 
+#if USE_SIMD
+/*
+    SIMD-only sibling-base variant of move_evaluate_nws().  The scoring and TT
+    logic intentionally remain byte-for-byte equivalent to the ordinary path;
+    only feature materialization differs.
+*/
+inline void move_evaluate_nws_from_sibling_base(
+    Search *search,
+    Flip_value *flip_value,
+    int alpha,
+    int beta,
+    int depth,
+    bool use_dynamic_ordering,
+    const bool cache_static_eval,
+    bool *searching,
+    const Eval_features *sibling_base
+) {
+    flip_value->value = 0;
+#if USE_KILLER_MOVE_MO && USE_KILLER_MOVE_NWS_MO
+    if (use_dynamic_ordering) {
+        flip_value->value += search->get_killer_bonus(flip_value->flip.pos) * W_NWS_KILLER;
+        int prev_pos = search->get_prev_move();
+        flip_value->value += search->get_history_bonus(prev_pos, flip_value->flip.pos) * W_NWS_HISTORY_MOVE;
+        flip_value->value += search->get_counter_move_bonus(prev_pos, flip_value->flip.pos) * W_NWS_COUNTER_MOVE;
+    }
+#endif
+    search->move_with_sibling_eval(&flip_value->flip, sibling_base);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value += (MO_OFFSET_L_PM - get_weighted_n_moves(flip_value->n_legal)) * W_NWS_MOBILITY;
+        int child_value = SCORE_UNDEFINED;
+        const bool has_tt_value = depth >= MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
+        switch (depth) {
+            case 0:
+#if USE_DIM0_ONLY_EVALUATION
+                flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * W_NWS_VALUE;
+#else
+                flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_NWS_VALUE;
+#endif
+                break;
+            case 1:
+                if (has_tt_value) {
+                    flip_value->value += W_NWS_TT_BONUS;
+                    flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+                } else {
+#if USE_DIM0_ONLY_EVALUATION
+                    flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+#else
+                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
+#endif
+                }
+                break;
+            default:
+                if (has_tt_value) {
+                    flip_value->value += W_NWS_TT_BONUS;
+                    flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+                } else {
+#if USE_DIM0_ONLY_EVALUATION
+                    flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+#else
+                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
+#endif
+                }
+                break;
+        }
+    search->undo(&flip_value->flip);
+}
+
+inline bool is_nws_sibling_eval_candidate(
+    const Flip_value &move,
+    const uint_fast8_t tt_moves[]
+) {
+    return move.flip.flip &&
+        move.flip.pos != tt_moves[0] &&
+        move.flip.pos != tt_moves[1];
+}
+
+#ifndef EGAROUCID_NWS_SIBLING_EVAL_MIN_MOVES
+#define EGAROUCID_NWS_SIBLING_EVAL_MIN_MOVES 4
+#endif
+static_assert(
+    2 <= EGAROUCID_NWS_SIBLING_EVAL_MIN_MOVES &&
+        EGAROUCID_NWS_SIBLING_EVAL_MIN_MOVES <= MAX_N_BRANCHES
+);
+constexpr int N_NWS_SIBLING_EVAL_MIN_MOVES =
+    EGAROUCID_NWS_SIBLING_EVAL_MIN_MOVES;
+#endif
+
 /*
     @brief Evaluate a move in endgame NWS
 
@@ -615,6 +702,43 @@ inline bool move_list_evaluate_nws(Search *search, std::vector<Flip_value> &move
     if (use_root_move_ordering_extension(search, static_cast<int>(move_list.size()), is_end_search)) {
         eval_depth = std::max(eval_depth, depth >> 2);
     }
+#if USE_SIMD
+    int n_sibling_eval_candidates = 0;
+    if (move_list.size() >= N_NWS_SIBLING_EVAL_MIN_MOVES) {
+        for (const Flip_value &flip_value : move_list) {
+            n_sibling_eval_candidates += is_nws_sibling_eval_candidate(flip_value, moves);
+            if (n_sibling_eval_candidates == N_NWS_SIBLING_EVAL_MIN_MOVES) {
+                break;
+            }
+        }
+    }
+    if (n_sibling_eval_candidates >= N_NWS_SIBLING_EVAL_MIN_MOVES) {
+        Eval_features sibling_base;
+        eval_prepare_move_sibling_base(&search->eval, &search->board, &sibling_base);
+        for (Flip_value &flip_value : move_list) {
+            if (flip_value.flip.flip) {
+                if (flip_value.flip.pos == moves[0]) {
+                    flip_value.value = W_1ST_MOVE;
+                } else if (flip_value.flip.pos == moves[1]) {
+                    flip_value.value = W_2ND_MOVE;
+                } else {
+                    move_evaluate_nws_from_sibling_base(
+                        search,
+                        &flip_value,
+                        eval_alpha,
+                        eval_beta,
+                        eval_depth,
+                        !is_end_search,
+                        !is_end_search,
+                        searching,
+                        &sibling_base
+                    );
+                }
+            }
+        }
+        return false;
+    }
+#endif
     for (Flip_value &flip_value: move_list) {
         if (flip_value.flip.flip) {
             if (flip_value.flip.pos == moves[0]) {
@@ -649,6 +773,43 @@ inline bool move_list_evaluate_nws(Search *search, Flip_value move_list[], int c
     if (use_root_move_ordering_extension(search, canput, is_end_search)) {
         eval_depth = std::max(eval_depth, depth >> 2);
     }
+#if USE_SIMD
+    int n_sibling_eval_candidates = 0;
+    if (canput >= N_NWS_SIBLING_EVAL_MIN_MOVES) {
+        for (int i = 0; i < canput; ++i) {
+            n_sibling_eval_candidates += is_nws_sibling_eval_candidate(move_list[i], moves);
+            if (n_sibling_eval_candidates == N_NWS_SIBLING_EVAL_MIN_MOVES) {
+                break;
+            }
+        }
+    }
+    if (n_sibling_eval_candidates >= N_NWS_SIBLING_EVAL_MIN_MOVES) {
+        Eval_features sibling_base;
+        eval_prepare_move_sibling_base(&search->eval, &search->board, &sibling_base);
+        for (int i = 0; i < canput; ++i) {
+            if (move_list[i].flip.flip) {
+                if (move_list[i].flip.pos == moves[0]) {
+                    move_list[i].value = W_1ST_MOVE;
+                } else if (move_list[i].flip.pos == moves[1]) {
+                    move_list[i].value = W_2ND_MOVE;
+                } else {
+                    move_evaluate_nws_from_sibling_base(
+                        search,
+                        &move_list[i],
+                        eval_alpha,
+                        eval_beta,
+                        eval_depth,
+                        !is_end_search,
+                        !is_end_search,
+                        searching,
+                        &sibling_base
+                    );
+                }
+            }
+        }
+        return false;
+    }
+#endif
     for (int i = 0; i < canput; ++i) {
         if (move_list[i].flip.flip) {
             if (move_list[i].flip.pos == moves[0]) {

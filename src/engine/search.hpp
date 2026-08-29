@@ -258,6 +258,11 @@ inline void eval_undo(Eval_search *eval);
 inline void eval_undo_endsearch(Eval_search *eval);
 #if USE_SIMD
 inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board);
+inline void eval_move_from_sibling_base(
+    Eval_search *eval,
+    const Flip *flip,
+    const Eval_features *sibling_base
+);
 inline void eval_pass(Eval_search *eval, const Board *board);
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
 inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
@@ -500,6 +505,26 @@ class Search {
             record_move(flip->pos);
 #endif
         }
+
+#if USE_SIMD
+        /*
+            Move with SIMD evaluation features materialized from a base shared
+            by sibling moves.  Keep every observable Search::move side effect
+            and their order after the feature update.
+        */
+        inline void move_with_sibling_eval(
+            const Flip *flip,
+            const Eval_features *sibling_base
+        ) {
+            eval_move_from_sibling_base(&eval, flip, sibling_base);
+            board.move_board(flip);
+            ++n_discs;
+            parity ^= cell_div4[flip->pos];
+#if USE_KILLER_MOVE_MO
+            record_move(flip->pos);
+#endif
+        }
+#endif
 
         /*
             @brief Undo board and other variables

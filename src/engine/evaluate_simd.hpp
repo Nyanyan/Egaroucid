@@ -714,6 +714,78 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
 }
 
 /*
+    Build the portion of a child feature update shared by every legal move.
+
+    The ordinary SIMD update is
+
+        parent - put + player + -(opponent & ~flipped)
+
+    because flipped discs are a subset of the parent opponent bitboard.  In
+    16-bit lanes this is exactly equivalent to
+
+        (parent + player - opponent) - put + flipped.
+
+    Addition and subtraction wrap in the same 16-bit ring, so changing the
+    grouping does not change a feature byte.
+*/
+inline void eval_prepare_move_sibling_base(
+    const Eval_search *eval,
+    const Board *board,
+    Eval_features *sibling_base
+) {
+    const uint16_t *player_group = reinterpret_cast<const uint16_t *>(&board->player);
+    const uint16_t *opponent_group = reinterpret_cast<const uint16_t *>(&board->opponent);
+    __m256i f0 = eval->features[eval->feature_idx].f256[0];
+    __m256i f1 = eval->features[eval->feature_idx].f256[1];
+    __m256i f2 = eval->features[eval->feature_idx].f256[2];
+    __m256i f3 = eval->features[eval->feature_idx].f256[3];
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
+        const uint16_t player = player_group[i];
+        const uint16_t opponent = opponent_group[i];
+        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[player][i][0]);
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player][i][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player][i][2]);
+        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[player][i][3]);
+        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[opponent][i][0]);
+        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[opponent][i][1]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent][i][2]);
+        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[opponent][i][3]);
+    }
+    sibling_base->f256[0] = f0;
+    sibling_base->f256[1] = f1;
+    sibling_base->f256[2] = f2;
+    sibling_base->f256[3] = f3;
+}
+
+/*
+    Materialize one child from a sibling base.  This has exactly the same
+    feature_idx and destination-slot effects as eval_move().
+*/
+inline void eval_move_from_sibling_base(
+    Eval_search *eval,
+    const Flip *flip,
+    const Eval_features *sibling_base
+) {
+    const uint16_t *flipped_group = reinterpret_cast<const uint16_t *>(&flip->flip);
+    __m256i f0 = _mm256_sub_epi16(sibling_base->f256[0], coord_to_feature_simd[flip->pos][0]);
+    __m256i f1 = _mm256_sub_epi16(sibling_base->f256[1], coord_to_feature_simd[flip->pos][1]);
+    __m256i f2 = _mm256_sub_epi16(sibling_base->f256[2], coord_to_feature_simd[flip->pos][2]);
+    __m256i f3 = _mm256_sub_epi16(sibling_base->f256[3], coord_to_feature_simd[flip->pos][3]);
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
+        const uint16_t flipped = flipped_group[i];
+        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[flipped][i][0]);
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[flipped][i][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[flipped][i][2]);
+        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[flipped][i][3]);
+    }
+    ++eval->feature_idx;
+    eval->features[eval->feature_idx].f256[0] = f0;
+    eval->features[eval->feature_idx].f256[1] = f1;
+    eval->features[eval->feature_idx].f256[2] = f2;
+    eval->features[eval->feature_idx].f256[3] = f3;
+}
+
+/*
     @brief move evaluation features
 
         put cell        2 -> 1 (empty -> opponent)  sub
