@@ -235,6 +235,7 @@ __m256i feature_to_coord_simd_mul[N_EVAL_VECTORS][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_EVAL_VECTORS][MAX_PATTERN_CELLS][2];
 __m256i coord_to_feature_simd[HW2][N_EVAL_VECTORS];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS];
+Eval_features eval_empty_features;
 __m256i eval_simd_offsets_simple[N_EVAL_VECTORS_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
 
@@ -461,6 +462,18 @@ inline void pre_calculate_eval_constant() {
                 }
             }
         }
+        for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
+            __m256i half_empty = _mm256_setzero_si256();
+            for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) {
+                half_empty = _mm256_add_epi16(
+                    half_empty,
+                    eval_move_unflipped_16bit[N_16BIT - 1][group][simd_feature_idx]
+                );
+            }
+            eval_empty_features.f256[simd_feature_idx] = _mm256_add_epi16(half_empty, half_empty);
+        }
+        eval_empty_features.f256[0] = _mm256_add_epi16(eval_empty_features.f256[0], eval_simd_offsets_simple[0]);
+        eval_empty_features.f256[1] = _mm256_add_epi16(eval_empty_features.f256[1], eval_simd_offsets_simple[1]);
         for (int i = 0; i < N_EVAL_VECTORS_COMP; ++i) {
             int i4 = i * 4;
             eval_simd_offsets_comp[i * 2] = _mm256_set_epi32(
@@ -701,16 +714,31 @@ inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, c
     @param search               search information
 */
 inline void calc_eval_features(Board *board, Eval_search *eval) {
-    int b_arr_int[HW2 + 1];
-    board->translate_to_arr_player_rev(b_arr_int);
-    b_arr_int[COORD_NO] = 0;
-    calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, MAX_N_CELLS_GROUP[0] - 1);
-    calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, MAX_N_CELLS_GROUP[1] - 1);
-    calc_feature_vector(eval->features[0].f256[2], b_arr_int, 2, MAX_N_CELLS_GROUP[2] - 1);
-    calc_feature_vector(eval->features[0].f256[3], b_arr_int, 3, MAX_N_CELLS_GROUP[3] - 1);
+    // With ternary digits player=0, opponent=1, empty=2, every feature is
+    // empty_feature - T[player] - T[player | opponent].
+    const uint64_t player = board->player;
+    const uint64_t occupied = player | board->opponent;
+    __m256i f0 = eval_empty_features.f256[0];
+    __m256i f1 = eval_empty_features.f256[1];
+    __m256i f2 = eval_empty_features.f256[2];
+    __m256i f3 = eval_empty_features.f256[3];
+    for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) {
+        const uint16_t player_group = static_cast<uint16_t>(player >> (group * N_SIMD_EVAL_FEATURE_CELLS));
+        const uint16_t occupied_group = static_cast<uint16_t>(occupied >> (group * N_SIMD_EVAL_FEATURE_CELLS));
+        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[player_group][group][0]);
+        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[occupied_group][group][0]);
+        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[player_group][group][1]);
+        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[occupied_group][group][1]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[player_group][group][2]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[occupied_group][group][2]);
+        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[player_group][group][3]);
+        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[occupied_group][group][3]);
+    }
+    eval->features[0].f256[0] = f0;
+    eval->features[0].f256[1] = f1;
+    eval->features[0].f256[2] = f2;
+    eval->features[0].f256[3] = f3;
     eval->feature_idx = 0;
-    eval->features[eval->feature_idx].f256[0] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[0], eval_simd_offsets_simple[0]); // global index
-    eval->features[eval->feature_idx].f256[1] = _mm256_add_epi16(eval->features[eval->feature_idx].f256[1], eval_simd_offsets_simple[1]); // global index
 }
 
 /*
@@ -875,6 +903,36 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
 
 
 // only corner+block cross edge+2X triangle
+// Share parent + player - opponent across all evaluated sibling moves.
+inline void eval_prepare_move_endsearch_sibling_base(
+    const Eval_search *eval,
+    const Board *board,
+    __m256i *sibling_base
+) {
+    const uint16_t *player_group = reinterpret_cast<const uint16_t *>(&board->player);
+    const uint16_t *opponent_group = reinterpret_cast<const uint16_t *>(&board->opponent);
+    __m256i f2 = eval->features[eval->feature_idx].f256[2];
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
+        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
+    }
+    *sibling_base = f2;
+}
+
+inline void eval_move_endsearch_from_sibling_base(
+    Eval_search *eval,
+    const Flip *flip,
+    const __m256i *sibling_base
+) {
+    const uint16_t *flipped_group = reinterpret_cast<const uint16_t *>(&flip->flip);
+    __m256i f2 = _mm256_sub_epi16(*sibling_base, coord_to_feature_simd[flip->pos][2]);
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[flipped_group[i]][i][2]);
+    }
+    ++eval->feature_idx;
+    eval->features[eval->feature_idx].f256[2] = f2;
+}
+
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board) {
     const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
     const uint16_t *player_group = (uint16_t*)&(board->player);

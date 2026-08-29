@@ -486,6 +486,40 @@ inline void move_evaluate_end_nws(Search *search, Flip_value *flip_value) {
     search->undo_endsearch(&flip_value->flip);
 }
 
+#if USE_SIMD
+inline void move_evaluate_end_nws_from_sibling_base(
+    Search *search,
+    Flip_value *flip_value,
+    const __m256i *sibling_base
+) {
+    flip_value->value = 0;
+    search->move_endsearch_with_sibling_eval(&flip_value->flip, sibling_base);
+        flip_value->n_legal = search->board.get_legal();
+        flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+        flip_value->value += (MO_OFFSET_L_PM - mid_evaluate_move_ordering_end(search)) * W_END_NWS_VALUE;
+    search->undo_endsearch(&flip_value->flip);
+}
+
+inline bool is_end_nws_sibling_eval_candidate(
+    const Flip_value &move,
+    const uint_fast8_t tt_moves[]
+) {
+    return move.flip.flip &&
+        move.flip.pos != tt_moves[0] &&
+        move.flip.pos != tt_moves[1];
+}
+
+#ifndef EGAROUCID_END_NWS_SIBLING_EVAL_MIN_MOVES
+#define EGAROUCID_END_NWS_SIBLING_EVAL_MIN_MOVES 4
+#endif
+static_assert(
+    2 <= EGAROUCID_END_NWS_SIBLING_EVAL_MIN_MOVES &&
+        EGAROUCID_END_NWS_SIBLING_EVAL_MIN_MOVES <= MAX_N_BRANCHES
+);
+constexpr int N_END_NWS_SIBLING_EVAL_MIN_MOVES =
+    EGAROUCID_END_NWS_SIBLING_EVAL_MIN_MOVES;
+#endif
+
 // /*
 //     @brief Evaluate a move in endgame NWS (simple)
 
@@ -835,6 +869,31 @@ inline bool move_list_evaluate_end_nws(Search *search, std::vector<Flip_value> &
     if (move_list.size() <= 1) {
         return false;
     }
+#if USE_SIMD
+    int n_sibling_eval_candidates = 0;
+    for (const Flip_value &flip_value : move_list) {
+        n_sibling_eval_candidates += is_end_nws_sibling_eval_candidate(flip_value, moves);
+        if (n_sibling_eval_candidates == N_END_NWS_SIBLING_EVAL_MIN_MOVES) {
+            break;
+        }
+    }
+    if (n_sibling_eval_candidates >= N_END_NWS_SIBLING_EVAL_MIN_MOVES) {
+        __m256i sibling_base;
+        eval_prepare_move_endsearch_sibling_base(&search->eval, &search->board, &sibling_base);
+        for (Flip_value &flip_value : move_list) {
+            if (flip_value.flip.flip) {
+                if (flip_value.flip.pos == moves[0]) {
+                    flip_value.value = W_1ST_MOVE;
+                } else if (flip_value.flip.pos == moves[1]) {
+                    flip_value.value = W_2ND_MOVE;
+                } else {
+                    move_evaluate_end_nws_from_sibling_base(search, &flip_value, &sibling_base);
+                }
+            }
+        }
+        return false;
+    }
+#endif
     for (Flip_value &flip_value: move_list) {
         if (flip_value.flip.flip) {
             if (flip_value.flip.pos == moves[0]) {
@@ -861,6 +920,31 @@ inline bool move_list_evaluate_end_nws(Search *search, Flip_value move_list[], i
     if (canput <= 1) {
         return false;
     }
+#if USE_SIMD
+    int n_sibling_eval_candidates = 0;
+    for (int i = 0; i < canput; ++i) {
+        n_sibling_eval_candidates += is_end_nws_sibling_eval_candidate(move_list[i], moves);
+        if (n_sibling_eval_candidates == N_END_NWS_SIBLING_EVAL_MIN_MOVES) {
+            break;
+        }
+    }
+    if (n_sibling_eval_candidates >= N_END_NWS_SIBLING_EVAL_MIN_MOVES) {
+        __m256i sibling_base;
+        eval_prepare_move_endsearch_sibling_base(&search->eval, &search->board, &sibling_base);
+        for (int i = 0; i < canput; ++i) {
+            if (move_list[i].flip.flip) {
+                if (move_list[i].flip.pos == moves[0]) {
+                    move_list[i].value = W_1ST_MOVE;
+                } else if (move_list[i].flip.pos == moves[1]) {
+                    move_list[i].value = W_2ND_MOVE;
+                } else {
+                    move_evaluate_end_nws_from_sibling_base(search, &move_list[i], &sibling_base);
+                }
+            }
+        }
+        return false;
+    }
+#endif
     for (int i = 0; i < canput; ++i) {
         if (move_list[i].flip.flip) {
             if (move_list[i].flip.pos == moves[0]) {

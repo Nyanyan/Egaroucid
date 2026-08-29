@@ -265,6 +265,16 @@ inline void eval_move_from_sibling_base(
 );
 inline void eval_pass(Eval_search *eval, const Board *board);
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
+inline void eval_prepare_move_endsearch_sibling_base(
+    const Eval_search *eval,
+    const Board *board,
+    __m256i *sibling_base
+);
+inline void eval_move_endsearch_from_sibling_base(
+    Eval_search *eval,
+    const Flip *flip,
+    const __m256i *sibling_base
+);
 inline void eval_pass_endsearch(Eval_search *eval, const Board *board);
 #else
 inline void eval_move(Eval_search *eval, const Flip *flip);
@@ -565,6 +575,18 @@ class Search {
             ++n_discs;
             parity ^= cell_div4[flip->pos];
         }
+
+#if USE_SIMD
+        inline void move_endsearch_with_sibling_eval(
+            const Flip *flip,
+            const __m256i *sibling_base
+        ) {
+            eval_move_endsearch_from_sibling_base(&eval, flip, sibling_base);
+            board.move_board(flip);
+            ++n_discs;
+            parity ^= cell_div4[flip->pos];
+        }
+#endif
 
         /*
             @brief Undo board and other variables
