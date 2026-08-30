@@ -187,6 +187,18 @@ foreach ($variant in 0..4) {
         run_directory = $repoRoot
     })
 }
+$testCases.Add([pscustomobject]@{
+    id = "coefficient_refit_rejects_global_sigma_scale"
+    description = "係数再推定候補と全体sigma倍率の併用をコンパイル時に拒否する"
+    source = $coefficientTest
+    defines = [string[]]@(
+        "MID_MPC_RECALIBRATED_VARIANT=1",
+        "MPC_SIGMA_SCALE=0.9"
+    )
+    run_directory = $repoRoot
+    expect_compile_failure = $true
+    expected_compile_error = "Coefficient-refitted MPC variants must not be combined with a global sigma multiplier"
+})
 
 $startedAt = [DateTimeOffset]::Now
 $results = [System.Collections.Generic.List[object]]::new()
@@ -211,8 +223,21 @@ foreach ($testCase in $testCases) {
         -WorkingDirectory $repoRoot `
         -TimeoutSeconds $CompileTimeoutSeconds
 
+    $expectFailureProperty = $testCase.PSObject.Properties["expect_compile_failure"]
+    $expectsCompileFailure = (
+        $null -ne $expectFailureProperty -and
+        [bool]$expectFailureProperty.Value
+    )
+    $expectedErrorProperty = $testCase.PSObject.Properties["expected_compile_error"]
+    $expectedCompileError = if ($null -eq $expectedErrorProperty) {
+        ""
+    }
+    else {
+        [string]$expectedErrorProperty.Value
+    }
+
     $runResult = $null
-    if ($compileResult.exit_code -eq 0) {
+    if ($compileResult.exit_code -eq 0 -and -not $expectsCompileFailure) {
         Write-Host ("[run]     {0}" -f $testCase.id)
         $runResult = Invoke-NativeProcess `
             -FilePath $executable `
@@ -221,7 +246,17 @@ foreach ($testCase in $testCases) {
             -TimeoutSeconds $RunTimeoutSeconds
     }
 
-    $status = if ($compileResult.exit_code -ne 0) {
+    $status = if (
+        $expectsCompileFailure -and
+        $compileResult.exit_code -ne 0 -and
+        $compileResult.stderr.Contains($expectedCompileError)
+    ) {
+        "passed"
+    }
+    elseif ($expectsCompileFailure) {
+        "expected_compile_rejection_failed"
+    }
+    elseif ($compileResult.exit_code -ne 0) {
         "compile_failed"
     }
     elseif ($runResult.exit_code -ne 0) {
@@ -240,6 +275,8 @@ foreach ($testCase in $testCases) {
         defines = [string[]]$testCase.defines
         executable = $relativeExecutable
         run_directory = (Get-CompatibleRelativePath $repoRoot $testCase.run_directory).Replace("\", "/")
+        expect_compile_failure = $expectsCompileFailure
+        expected_compile_error = $expectedCompileError
         compile = $compileResult
         run = $runResult
         status = $status
@@ -283,8 +320,8 @@ $markdown = [System.Text.StringBuilder]::new()
 [void]$markdown.AppendLine("|---|---|---|---:|---:|---:|---:|")
 foreach ($result in $results) {
     $defines = if ($result.defines.Count -eq 0) { "production既定値" } else { $result.defines -join ", " }
-    $compileStatus = if ($result.compile.exit_code -eq 0) { "成功" } else { "失敗 ($($result.compile.exit_code))" }
-    $runStatus = if ($null -eq $result.run) { "未実行" } elseif ($result.run.exit_code -eq 0) { "成功" } else { "失敗 ($($result.run.exit_code))" }
+    $compileStatus = if ($result.expect_compile_failure -and $result.status -eq "passed") { "意図通り拒否" } elseif ($result.compile.exit_code -eq 0) { "成功" } else { "失敗 ($($result.compile.exit_code))" }
+    $runStatus = if ($result.expect_compile_failure -and $result.status -eq "passed") { "対象外" } elseif ($null -eq $result.run) { "未実行" } elseif ($result.run.exit_code -eq 0) { "成功" } else { "失敗 ($($result.run.exit_code))" }
     $runDuration = if ($null -eq $result.run) { "-" } else { [string]$result.run.duration_ms }
     [void]$markdown.AppendLine(
         ('| `{0}` | {1} | `{2}` | {3} | {4} | {5} | {6} |' -f `
