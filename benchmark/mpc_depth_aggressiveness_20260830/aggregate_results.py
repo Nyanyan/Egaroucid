@@ -8,7 +8,7 @@
 2. MPC の浅い探索深度を変え、候補ごとに誤差モデルを再学習した比較
 3. 標準正規分布の z 値へ固定倍率を掛けただけの参考測定
 
-入力がまだ存在しない比較は、report.md の「未完了の測定」に残す。
+各比較の入力が揃っているかを検査し、report.md の「測定の完了状況」に示す。
 """
 
 from __future__ import annotations
@@ -536,6 +536,7 @@ def collect_end_depth_runtime(base_dir: Path) -> list[dict[str, Any]]:
                 "levels": ",".join(str(value) for value in config.get("levels", [])),
                 "threads": integer(config.get("threads")),
                 "hash_level": integer(config.get("hash_level")),
+                "timeout_seconds": number(config.get("timeout_seconds")),
                 "cold_tt": str(config.get("cold_tt", "")),
                 "source": path.relative_to(base_dir).as_posix(),
             }
@@ -591,6 +592,7 @@ def collect_end_generic_runtime(base_dir: Path) -> list[dict[str, Any]]:
                 "levels": ",".join(str(value) for value in config.get("levels", [])),
                 "threads": integer(config.get("threads")),
                 "hash_level": integer(config.get("hash_level")),
+                "timeout_seconds": number(config.get("timeout_seconds")),
                 "cold_tt": str(config.get("cold_tt", "")),
                 "source": path.relative_to(base_dir).as_posix(),
             }
@@ -673,8 +675,15 @@ def collect_cold_end_runtime(
                 "min_empty": integer(metadata.get("min_empty")),
                 "max_empty": integer(metadata.get("max_empty")),
                 "max_per_empty": integer(metadata.get("max_per_empty")),
+                "sampling_seed": integer(metadata.get("sampling_seed")),
+                "extraction_error_count": integer(
+                    metadata.get("extraction_error_count")
+                ),
                 "required_selectivity": number(
                     metadata.get("required_selectivity"), math.nan
+                ),
+                "case_timeout_seconds": number(
+                    metadata.get("case_timeout_seconds"), math.nan
                 ),
                 "cold_tt": str(metadata.get("cold_tt_method", "")),
                 "source": path.relative_to(base_dir).as_posix(),
@@ -947,6 +956,7 @@ def end_runtime_row_complete(row: Mapping[str, Any]) -> bool:
         and str(row.get("levels")) == "0,1,2"
         and integer(row.get("threads")) == 1
         and integer(row.get("hash_level")) == 29
+        and math.isclose(number(row.get("timeout_seconds")), 180.0)
         and "fresh process" in str(row.get("cold_tt", "")).lower()
         and runs == 24
         and integer(row.get("completed")) + integer(row.get("timed_out")) == runs
@@ -1009,7 +1019,10 @@ def build_status(
             and integer(row.get("min_empty")) == 32
             and integer(row.get("max_empty")) == 44
             and integer(row.get("max_per_empty")) == 5
+            and integer(row.get("sampling_seed")) == 20260823
+            and integer(row.get("extraction_error_count")) == 0
             and math.isclose(number(row.get("required_selectivity")), 74.0)
+            and math.isclose(number(row.get("case_timeout_seconds")), 105.0)
             and "fresh process" in str(row.get("cold_tt", "")).lower()
             for row in cold_end_overall
         )
@@ -1431,8 +1444,8 @@ def render_report(
             "control_nps": fmt_int(row["control_nps"]),
             "nps": fmt_int(row["nps"]),
             "nps_ratio": fmt_float(row["nps_ratio"], 4),
-            "value": f"{row['exact_value_matches']} / {row['runs']}",
-            "move": f"{row['exact_move_matches']} / {row['runs']}",
+            "value": f"{row['exact_value_matches']} / {row['completed']}",
+            "move": f"{row['exact_move_matches']} / {row['completed']}",
             "error": fmt_int(row["absolute_error_sum"]),
         }
         for row in end_generic_runtime
@@ -1442,9 +1455,9 @@ def render_report(
             "",
             "#### 1.2.1 終盤汎用 a～f の実機比較",
             "",
-            "30マス空き8局面を、選択率74%・88%・93%で各1回、1スレッド、置換表を毎回空にして実行する。合計24探索である。現行と候補の訪問ノード数・探索時間は24探索の合計、各NPSはそれぞれの合計ノード数÷合計探索時間である。",
+            "30マス空き8局面と選択率74%・88%・93%の組合せ、合計24条件について、現行と候補を各1回ずつ実行した（計48実行）。1スレッドで、置換表は毎回空にした。現行・候補それぞれの合計ノード数と合計時間は、その側で完了した実行だけの合計であり、時間切れした実行の180秒は加えていない。`対応完了対の総和比` と `対応完了対の幾何平均比` は、現行と候補の両方が完了した条件だけで計算した。各NPSは各側の完了分の合計ノード数÷合計時間である。完全読み値・手の一致数の分母は、候補側で完了した実行数である。",
             "",
-            markdown_table(generic_runtime_table, [("label", "設定"), ("runs", "完了 / 実行"), ("timeout", "時間切れ"), ("control_nodes", "現行・合計ノード"), ("nodes", "候補・合計ノード"), ("node_sum", "ノード合計比"), ("node_geo", "ノード幾何平均比"), ("control_time", "現行・合計時間 ms"), ("time", "候補・合計時間 ms"), ("time_sum", "時間合計比"), ("time_geo", "時間幾何平均比"), ("control_nps", "現行NPS"), ("nps", "候補NPS"), ("nps_ratio", "NPS比"), ("value", "完全読み値一致"), ("move", "完全読み手一致"), ("error", "絶対誤差合計")]),
+            markdown_table(generic_runtime_table, [("label", "設定"), ("runs", "候補完了 / 実行"), ("timeout", "候補時間切れ"), ("control_nodes", "現行完了分・合計ノード"), ("nodes", "候補完了分・合計ノード"), ("node_sum", "対応完了対のノード総和比"), ("node_geo", "対応完了対のノード比幾何平均"), ("control_time", "現行完了分・合計時間 ms"), ("time", "候補完了分・合計時間 ms"), ("time_sum", "対応完了対の時間総和比"), ("time_geo", "対応完了対の時間比幾何平均"), ("control_nps", "現行NPS"), ("nps", "候補NPS"), ("nps_ratio", "NPS比"), ("value", "完全読み値一致 / 候補完了"), ("move", "完全読み手一致 / 候補完了"), ("error", "候補完了分・絶対誤差合計")]),
             "",
         ]
     )
@@ -1570,7 +1583,7 @@ def render_report(
             "",
             "### 2.4 終盤・30マス空き8局面の実機比較",
             "",
-            "条件は1スレッド、置換表を毎回空にし、選択率74%・88%・93%を各8局面で測った合計24探索である。現行と候補の訪問ノード数・探索時間は24探索の合計、各NPSはそれぞれの合計ノード数÷合計探索時間である。`合計比` は候補と現行の総和の比、`幾何平均比` は同一局面・同一選択率の比の幾何平均である。",
+            "30マス空き8局面と選択率74%・88%・93%の組合せ、合計24条件について、現行と候補を各1回ずつ実行した（計48実行）。条件は1スレッドで、置換表は毎回空にした。現行・候補それぞれの合計ノード数と合計時間は、その側で完了した実行だけの合計であり、時間切れした実行の180秒は加えていない。`対応完了対の総和比` と `対応完了対の幾何平均比` は、現行と候補の両方が完了した条件だけで計算した。各NPSは各側の完了分の合計ノード数÷合計時間である。完全読み値・手の一致数の分母は、候補側で完了した実行数である。",
             "",
         ]
     )
@@ -1590,13 +1603,13 @@ def render_report(
             "control_nps": fmt_int(row["control_nps"]),
             "nps": fmt_int(row["nps"]),
             "nps_ratio": fmt_float(row["nps_ratio"], 4),
-            "value": f"{row['exact_value_matches']} / {row['runs']}",
-            "move": f"{row['exact_move_matches']} / {row['runs']}",
+            "value": f"{row['exact_value_matches']} / {row['completed']}",
+            "move": f"{row['exact_move_matches']} / {row['completed']}",
             "error": fmt_int(row["absolute_error_sum"]),
         }
         for row in end_depth_runtime
     ]
-    lines.append(markdown_table(runtime_table, [("label", "設定"), ("runs", "完了 / 実行"), ("timeout", "時間切れ"), ("control_nodes", "現行・合計ノード"), ("nodes", "候補・合計ノード"), ("node_sum", "ノード合計比"), ("node_geo", "ノード幾何平均比"), ("control_time", "現行・合計時間 ms"), ("time", "候補・合計時間 ms"), ("time_sum", "時間合計比"), ("time_geo", "時間幾何平均比"), ("control_nps", "現行NPS"), ("nps", "候補NPS"), ("nps_ratio", "NPS比"), ("value", "完全読み値一致"), ("move", "完全読み手一致"), ("error", "絶対誤差合計")]))
+    lines.append(markdown_table(runtime_table, [("label", "設定"), ("runs", "候補完了 / 実行"), ("timeout", "候補時間切れ"), ("control_nodes", "現行完了分・合計ノード"), ("nodes", "候補完了分・合計ノード"), ("node_sum", "対応完了対のノード総和比"), ("node_geo", "対応完了対のノード比幾何平均"), ("control_time", "現行完了分・合計時間 ms"), ("time", "候補完了分・合計時間 ms"), ("time_sum", "対応完了対の時間総和比"), ("time_geo", "対応完了対の時間比幾何平均"), ("control_nps", "現行NPS"), ("nps", "候補NPS"), ("nps_ratio", "NPS比"), ("value", "完全読み値一致 / 候補完了"), ("move", "完全読み手一致 / 候補完了"), ("error", "候補完了分・絶対誤差合計")]))
 
     end_depth_fixed_time_table = [
         {
@@ -1732,7 +1745,7 @@ def render_report(
             "",
             "確率への変換と整数誤差幅は [end_aggression_refit/report.md](end_aggression_refit/report.md) にある。",
             "",
-            "## 4. 未完了の測定",
+            "## 4. 測定の完了状況",
             "",
         ]
     )
@@ -1750,7 +1763,7 @@ def render_report(
             "python benchmark/mpc_depth_aggressiveness_20260830/aggregate_results.py",
             "```",
             "",
-            "上のコマンドは既存の CSV / JSON だけを読み、`generated/` 以下の集計 CSV とこの `report.md` を更新する。未完了の入力が後から作成された場合も、同じコマンドで表へ追加される。",
+            "上のコマンドは既存の CSV / JSON を読み、入力条件と件数を検査してから `generated/` 以下の集計 CSV とこの `report.md` を更新する。追加の測定入力が作成された場合も、同じコマンドで表へ反映される。",
             "",
         ]
     )
@@ -1775,6 +1788,7 @@ def main() -> int:
         mid_model_depth.extend(
             aggregate_mid_model_accuracy(path, path.parent.name)
         )
+    mid_model_depth.sort(key=lambda row: variant_sort_key(str(row["variant"])))
     mid_model_fixed_time = collect_fixed_time_mid_model(repo_dir)
 
     mid_depth = []
@@ -1823,12 +1837,12 @@ def main() -> int:
     write_csv(output_dir / "mid_shallow_depth_fixed_time_pairs.csv", mid_fixed_time, fixed_time_fields)
     write_csv(output_dir / "end_shallow_depth_offline.csv", end_depth_offline, ["variant", "label", "cv_contexts", "cv_cuts", "cv_wrong", "cv_wrong_2", "cv_wrong_4", "cv_node_ratio", "holdout_contexts", "holdout_cuts", "holdout_wrong", "holdout_wrong_2", "holdout_wrong_4", "holdout_node_ratio"])
     write_csv(output_dir / "end_shallow_depth_parameters.csv", end_depth_parameters, ["variant", "label", "deep_depth", "shallow_depth", "sigma", "lower_tails", "upper_tails", "high_errors", "low_errors"])
-    end_runtime_fields = ["variant", "label", "runs", "completed", "timed_out", "nodes", "control_nodes", "node_ratio_sum", "node_ratio_geomean", "time_ms", "control_time_ms", "time_ratio_sum", "time_ratio_geomean", "control_nps", "nps", "nps_ratio", "exact_value_matches", "exact_move_matches", "absolute_error_sum", "count", "repetitions", "levels", "threads", "hash_level", "cold_tt", "source"]
+    end_runtime_fields = ["variant", "label", "runs", "completed", "timed_out", "nodes", "control_nodes", "node_ratio_sum", "node_ratio_geomean", "time_ms", "control_time_ms", "time_ratio_sum", "time_ratio_geomean", "control_nps", "nps", "nps_ratio", "exact_value_matches", "exact_move_matches", "absolute_error_sum", "count", "repetitions", "levels", "threads", "hash_level", "timeout_seconds", "cold_tt", "source"]
     write_csv(output_dir / "end_shallow_depth_runtime.csv", end_depth_runtime, end_runtime_fields)
     write_csv(output_dir / "end_generic_model_runtime.csv", end_generic_runtime, end_runtime_fields)
     write_csv(output_dir / "end_shallow_depth_fixed_time_pairs.csv", end_depth_fixed_time, fixed_time_fields)
     write_csv(output_dir / "end_generic_model_fixed_time_pairs.csv", end_generic_fixed_time, fixed_time_fields)
-    cold_fields = ["variant", "label", "empties", "count", "valid", "attempted", "completed", "completion_rate", "exact_completed", "first_end_time_median_ms", "first_end_time_p90_ms", "nodes_median", "valid_nodes_median", "nps_median", "completed_nps_median", "end_start_time_median_ms", "end_search_time_median_ms", "cpu_average_cores_median", "cpu_utilization_percent_median", "result_depth_median", "result_depth_max", "threads", "movetime_ms", "hash_level", "min_empty", "max_empty", "max_per_empty", "required_selectivity", "cold_tt", "source"]
+    cold_fields = ["variant", "label", "empties", "count", "valid", "attempted", "completed", "completion_rate", "exact_completed", "first_end_time_median_ms", "first_end_time_p90_ms", "nodes_median", "valid_nodes_median", "nps_median", "completed_nps_median", "end_start_time_median_ms", "end_search_time_median_ms", "cpu_average_cores_median", "cpu_utilization_percent_median", "result_depth_median", "result_depth_max", "threads", "movetime_ms", "hash_level", "min_empty", "max_empty", "max_per_empty", "sampling_seed", "extraction_error_count", "required_selectivity", "case_timeout_seconds", "cold_tt", "source"]
     write_csv(output_dir / "cold_end_runtime_overall.csv", cold_end_overall, cold_fields)
     write_csv(output_dir / "cold_end_runtime_by_empty.csv", cold_end_by_empty, cold_fields)
     write_csv(output_dir / "end_z_multiplier_reference.csv", end_z, ["dataset", "candidate", "z_scale", "contexts", "cuts", "wrong_cuts", "wrong_2plus", "wrong_4plus", "simulated_nodes", "node_ratio"])

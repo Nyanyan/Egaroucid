@@ -1,0 +1,29 @@
+{
+  "tag": "mpc0830_mid_depth_m2_256p",
+  "control": "bin/console_mpc_control.exe",
+  "control_sha256": "D5EA2554E86E042D004A9554C7BD356700E11172B3DDA56D2A477706D0016059",
+  "candidate": "bin/console_mpc_depth_m2.exe",
+  "candidate_sha256": "0A1D0C541A405FC4A965CA419BC8ADEF7FEF7FD08E1A4BE7E257D9E5A26D87CC",
+  "openings_sha256": "356180F2EC0FB7F563C5B0A277BD6A4D93B1B2699E97AF0C5C2E8D6378FC99D3",
+  "pairs": 256,
+  "games": 512,
+  "opening_start": 5000,
+  "move_time_ms": 100,
+  "threads_per_engine": 1,
+  "hash_level": 20,
+  "candidate_pair_wins": 89,
+  "candidate_pair_draws": 72,
+  "candidate_pair_losses": 95,
+  "candidate_pair_score_rate": 0.48828125,
+  "candidate_pair_score_bootstrap_95pct": [
+    0.435546875,
+    0.541015625
+  ],
+  "decisive_pair_exact_two_sided_p": 0.7125307737127085,
+  "candidate_game_wins": 229,
+  "candidate_game_draws": 63,
+  "candidate_game_losses": 220,
+  "candidate_average_disc_diff_per_game": -0.10546875,
+  "errors": [],
+  "engines_exited_before_shutdown": []
+}

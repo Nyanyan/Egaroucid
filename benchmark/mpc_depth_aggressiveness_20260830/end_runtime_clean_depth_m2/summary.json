@@ -1,0 +1,178 @@
+{
+  "config": {
+    "alternation": "pair order reverses with (level_index + position) parity",
+    "candidate": "C:\\github\\othello\\Egaroucid\\bin\\end_mpc_depth_m2.exe",
+    "candidate_label": "depth_m2",
+    "candidate_sha256": "6198276da142ed23cc72aed3acb807504929dea94b38134ec79ab08c7a2c2272",
+    "cold_tt": "fresh process for every binary/position/selectivity run",
+    "control": "C:\\github\\othello\\Egaroucid\\bin\\end_mpc_control.exe",
+    "control_sha256": "c0153584a2ab1294b8585fcd4dd6533684c7a73752109e4d9795c55545a30b1a",
+    "count": 8,
+    "exact": "C:\\github\\othello\\Egaroucid\\benchmark\\end_mpc_v2_representative_8_exact.tsv",
+    "hash_level": 29,
+    "levels": [
+      0,
+      1,
+      2
+    ],
+    "positions": "C:\\github\\othello\\Egaroucid\\bin\\problem\\endgame_test_20.txt",
+    "repetitions": 1,
+    "start": 0,
+    "threads": 1,
+    "timeout_seconds": 180.0
+  },
+  "summary": {
+    "groups": {
+      "74": {
+        "depth_m2": {
+          "absolute_error_sum": 16,
+          "aggregate_nps": 45389743,
+          "attempted": 8,
+          "completed": 8,
+          "exact_labelled": 8,
+          "exact_move_matches": 7,
+          "exact_value_matches": 4,
+          "nodes": 1411394069,
+          "time_ms": 31095,
+          "timed_out": 0
+        },
+        "scale100": {
+          "absolute_error_sum": 16,
+          "aggregate_nps": 23337123,
+          "attempted": 8,
+          "completed": 8,
+          "exact_labelled": 8,
+          "exact_move_matches": 7,
+          "exact_value_matches": 4,
+          "nodes": 1883492518,
+          "time_ms": 80708,
+          "timed_out": 0
+        }
+      },
+      "88": {
+        "depth_m2": {
+          "absolute_error_sum": 10,
+          "aggregate_nps": 59172758,
+          "attempted": 8,
+          "completed": 8,
+          "exact_labelled": 8,
+          "exact_move_matches": 7,
+          "exact_value_matches": 5,
+          "nodes": 7318368314,
+          "time_ms": 123678,
+          "timed_out": 0
+        },
+        "scale100": {
+          "absolute_error_sum": 6,
+          "aggregate_nps": 31119167,
+          "attempted": 8,
+          "completed": 8,
+          "exact_labelled": 8,
+          "exact_move_matches": 7,
+          "exact_value_matches": 7,
+          "nodes": 6356992244,
+          "time_ms": 204279,
+          "timed_out": 0
+        }
+      },
+      "93": {
+        "depth_m2": {
+          "absolute_error_sum": 6,
+          "aggregate_nps": 62649804,
+          "attempted": 8,
+          "completed": 8,
+          "exact_labelled": 8,
+          "exact_move_matches": 8,
+          "exact_value_matches": 7,
+          "nodes": 13575899292,
+          "time_ms": 216695,
+          "timed_out": 0
+        },
+        "scale100": {
+          "absolute_error_sum": 8,
+          "aggregate_nps": 33654488,
+          "attempted": 8,
+          "completed": 8,
+          "exact_labelled": 8,
+          "exact_move_matches": 7,
+          "exact_value_matches": 6,
+          "nodes": 11590235481,
+          "time_ms": 344389,
+          "timed_out": 0
+        }
+      },
+      "overall": {
+        "depth_m2": {
+          "absolute_error_sum": 32,
+          "aggregate_nps": 60047330,
+          "attempted": 24,
+          "completed": 24,
+          "exact_labelled": 24,
+          "exact_move_matches": 22,
+          "exact_value_matches": 16,
+          "nodes": 22305661675,
+          "time_ms": 371468,
+          "timed_out": 0
+        },
+        "scale100": {
+          "absolute_error_sum": 30,
+          "aggregate_nps": 31508542,
+          "attempted": 24,
+          "completed": 24,
+          "exact_labelled": 24,
+          "exact_move_matches": 21,
+          "exact_value_matches": 17,
+          "nodes": 19830720243,
+          "time_ms": 629376,
+          "timed_out": 0
+        }
+      }
+    },
+    "pair_groups": {
+      "74": {
+        "candidate_better_exact_error": 1,
+        "candidate_worse_exact_error": 1,
+        "completed_pairs": 8,
+        "node_ratio_geomean": 0.7116827979587866,
+        "node_ratio_sum": 0.7493494428630377,
+        "same_move": 8,
+        "same_value": 6,
+        "time_ratio_geomean": 0.36198599684356464,
+        "time_ratio_sum": 0.3852777915448283
+      },
+      "88": {
+        "candidate_better_exact_error": 0,
+        "candidate_worse_exact_error": 2,
+        "completed_pairs": 8,
+        "node_ratio_geomean": 1.1398858382701986,
+        "node_ratio_sum": 1.1512312793691684,
+        "same_move": 8,
+        "same_value": 6,
+        "time_ratio_geomean": 0.5770193628457746,
+        "time_ratio_sum": 0.6054366821846592
+      },
+      "93": {
+        "candidate_better_exact_error": 1,
+        "candidate_worse_exact_error": 0,
+        "completed_pairs": 8,
+        "node_ratio_geomean": 1.2006942587573468,
+        "node_ratio_sum": 1.1713221283773847,
+        "same_move": 7,
+        "same_value": 7,
+        "time_ratio_geomean": 0.6167014144280228,
+        "time_ratio_sum": 0.62921579957548
+      },
+      "overall": {
+        "candidate_better_exact_error": 2,
+        "candidate_worse_exact_error": 3,
+        "completed_pairs": 24,
+        "node_ratio_geomean": 0.991273326621552,
+        "node_ratio_sum": 1.1248034061129788,
+        "same_move": 23,
+        "same_value": 19,
+        "time_ratio_geomean": 0.5050321593858158,
+        "time_ratio_sum": 0.590216341264999
+      }
+    }
+  }
+}

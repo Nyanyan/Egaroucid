@@ -1,0 +1,5 @@
+variant,label,pairs,games,move_time_ms,threads,hash_level,opening_start,pair_wins,pair_draws,pair_losses,pair_score_rate,score_ci_low,score_ci_high,disc_diff_per_game,error_count,early_exit_count,source
+depth_m4,浅い探索深度 -4手,256,512,100,1,20,5000,93,72,91,0.50390625,0.453125,0.5546875,-0.046875,0,0,benchmark/mpc_sigma_sweep_20260829/fixed_time_mpc0830_mid_depth_m4_256p/summary.json
+depth_m2,浅い探索深度 -2手,256,512,100,1,20,5000,89,72,95,0.48828125,0.435546875,0.541015625,-0.10546875,0,0,benchmark/mpc_sigma_sweep_20260829/fixed_time_mpc0830_mid_depth_m2_256p/summary.json
+depth_p2,浅い探索深度 +2手,256,512,100,1,20,5000,80,87,89,0.482421875,0.431640625,0.53125,-0.08203125,0,0,benchmark/mpc_sigma_sweep_20260829/fixed_time_mpc0830_mid_depth_p2_256p/summary.json
+depth_p4,浅い探索深度 +4手,256,512,100,1,20,5000,81,83,92,0.478515625,0.427734375,0.529296875,-0.4375,0,0,benchmark/mpc_sigma_sweep_20260829/fixed_time_mpc0830_mid_depth_p4_256p/summary.json

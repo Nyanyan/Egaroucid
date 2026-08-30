@@ -1,0 +1,19 @@
+{
+  "created_at": "2026-08-31T00:08:29.561824+09:00",
+  "cold_tt_method": "fresh process per position",
+  "source": "C:\\github\\othello\\Egaroucid\\bin\\problem\\cold_endgame_2026-08-23_egrcd.txt",
+  "position_count": 65,
+  "min_empty": 32,
+  "max_empty": 44,
+  "player": "egrcd",
+  "max_per_empty": 5,
+  "sampling_seed": 20260823,
+  "extraction_error_count": 0,
+  "executable": "C:\\github\\othello\\Egaroucid\\bin\\console_end_depth_p0.exe",
+  "threads": 20,
+  "hash_level": 29,
+  "movetime_ms": 15000,
+  "required_selectivity": 74.0,
+  "case_timeout_seconds": 105.0,
+  "engine_version": "Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)\n  @date     2021-2026\n  @build    Aug 30 2026 18:53:57\n  @author   Takuto Yamana\n  @license  GPL-3.0 license\n  @website  https://www.egaroucid.nyanyan.dev/"
+}

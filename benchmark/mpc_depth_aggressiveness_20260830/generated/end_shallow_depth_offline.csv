@@ -1,0 +1,5 @@
+variant,label,cv_contexts,cv_cuts,cv_wrong,cv_wrong_2,cv_wrong_4,cv_node_ratio,holdout_contexts,holdout_cuts,holdout_wrong,holdout_wrong_2,holdout_wrong_4,holdout_node_ratio
+depth_m2,浅い探索深度 -2手,3815,2182,13,7,5,0.317143856192227,1000,579,4,0,0,0.4138894828381086
+depth_refit0,浅い探索深度 ±0手（再学習）,3815,2563,9,2,1,0.243893160421925,1000,662,3,0,0,0.35660746831641454
+depth_p2,浅い探索深度 +2手,3815,2796,4,1,0,0.261271666704503,1000,730,3,0,0,0.34659819780826356
+depth_p4,浅い探索深度 +4手,3815,2958,4,2,1,0.360705692918349,1000,777,2,1,1,0.4021754802777415

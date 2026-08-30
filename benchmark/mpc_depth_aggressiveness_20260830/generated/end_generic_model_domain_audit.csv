@@ -1,0 +1,4 @@
+model,label,table_entries,minimum_raw_sigma,minimum_n_discs,minimum_shallow_depth,maximum_raw_sigma,nonpositive_entries,below_0_5_entries
+current,現行,3965,1.6056995437569395,56,20,31.646223134454893,0,0
+constrained_bernstein_root_equal_min0.5_prior0.03,開始局面を均等に重み付けした係数,3965,3.300559072174134,39,19,24.71673948575622,0,0
+constrained_bernstein_domain_equal_min0.5_prior3,探索深度範囲を均等に重み付けした係数,3965,3.694002620800946,34,19,26.81142422814483,0,0

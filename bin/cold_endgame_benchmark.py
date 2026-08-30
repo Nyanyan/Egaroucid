@@ -994,6 +994,7 @@ def main() -> int:
         "hash_level": args.hash_level,
         "movetime_ms": args.movetime_ms,
         "required_selectivity": args.required_selectivity,
+        "case_timeout_seconds": args.case_timeout_seconds,
     }
 
     print(f"Corpus: {len(positions)} positions")
