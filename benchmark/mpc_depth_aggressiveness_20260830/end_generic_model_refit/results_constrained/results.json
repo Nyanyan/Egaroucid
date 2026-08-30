@@ -1,0 +1,1061 @@
+{
+  "coefficient_grid": [
+    {
+      "a": -1.0,
+      "b": -31.666500000000003,
+      "c": 0.00016594972047964408,
+      "d": 0.01626298963214488,
+      "e": 0.5312549508184606,
+      "f": 6.284746616970415,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0"
+    },
+    {
+      "a": -1.0,
+      "b": -11.448275,
+      "c": -0.009220543666708233,
+      "d": 0.1244938461474535,
+      "e": 1.5497336326511917,
+      "f": 6.930503478663672,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03"
+    },
+    {
+      "a": -1.0,
+      "b": -6.9338,
+      "c": -0.03708315556061322,
+      "d": 0.339487509452247,
+      "e": 2.693426002492237,
+      "f": 7.623034406190969,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.1"
+    },
+    {
+      "a": -1.0,
+      "b": -6.0180750000000005,
+      "c": -0.05413415967976887,
+      "d": 0.45207228177143755,
+      "e": 3.172677178893082,
+      "f": 7.9220287974200225,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.3"
+    },
+    {
+      "a": -1.0,
+      "b": -5.762875,
+      "c": -0.06033175638778779,
+      "d": 0.5003708855757665,
+      "e": 3.3839457527882115,
+      "f": 8.128400710962525,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior1"
+    },
+    {
+      "a": -1.0,
+      "b": -5.7421750000000005,
+      "c": -0.06032165535990532,
+      "d": 0.5155270050071982,
+      "e": 3.4757732849844065,
+      "f": 8.311423915896581,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior3"
+    },
+    {
+      "a": -1.0,
+      "b": -5.7767,
+      "c": -0.05881332549753232,
+      "d": 0.5206012755333562,
+      "e": 3.527958663906895,
+      "f": 8.469305825899285,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior10"
+    },
+    {
+      "a": -1.0,
+      "b": -5.8003,
+      "c": -0.057915696920775785,
+      "d": 0.5217641678058057,
+      "e": 3.5481528703298206,
+      "f": 8.542834654701293,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior30"
+    },
+    {
+      "a": -1.0,
+      "b": -31.666500000000003,
+      "c": 0.00015844840726529007,
+      "d": 0.015527864687794794,
+      "e": 0.5072409918238486,
+      "f": 6.0232626198045836,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0"
+    },
+    {
+      "a": -1.0,
+      "b": -30.303300000000004,
+      "c": -0.0005601678765840974,
+      "d": 0.0167034889245689,
+      "e": 0.5228743248524577,
+      "f": 5.955897284384647,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.03"
+    },
+    {
+      "a": -1.0,
+      "b": -8.379424999999998,
+      "c": -0.02274757456189892,
+      "d": 0.2141812032168766,
+      "e": 2.0088965319824523,
+      "f": 6.780764784829835,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.1"
+    },
+    {
+      "a": -1.0,
+      "b": -6.31285,
+      "c": -0.049246980617870535,
+      "d": 0.37690169972836457,
+      "e": 2.756225594858571,
+      "f": 7.2186214471204995,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.3"
+    },
+    {
+      "a": -1.0,
+      "b": -5.800275,
+      "c": -0.06091982528340189,
+      "d": 0.4619972796093061,
+      "e": 3.141708550595174,
+      "f": 7.621494037966199,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior1"
+    },
+    {
+      "a": -1.0,
+      "b": -5.73455,
+      "c": -0.061512649507899114,
+      "d": 0.49761744911268796,
+      "e": 3.3512295919218524,
+      "f": 8.023007749425771,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3"
+    },
+    {
+      "a": -1.0,
+      "b": -5.76895,
+      "c": -0.059412186857069636,
+      "d": 0.514266888124523,
+      "e": 3.4810468523704903,
+      "f": 8.354344030451077,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior10"
+    },
+    {
+      "a": -1.0,
+      "b": -5.7969,
+      "c": -0.05814765925725715,
+      "d": 0.519543155204904,
+      "e": 3.531282871612212,
+      "f": 8.500592183353682,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior30"
+    }
+  ],
+  "coefficients": [
+    {
+      "a": -1.3182333120273682,
+      "b": -6.99290557735024,
+      "c": -0.05280654146244756,
+      "d": 0.48284187178125065,
+      "e": 5.289589936037036,
+      "f": 11.940601436361513,
+      "global_sigma_multiplier": 1.0,
+      "model": "current"
+    },
+    {
+      "a": -1.0,
+      "b": -11.448275,
+      "c": -0.009220543666708233,
+      "d": 0.1244938461474535,
+      "e": 1.5497336326511917,
+      "f": 6.930503478663672,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03"
+    },
+    {
+      "a": -1.0,
+      "b": -5.73455,
+      "c": -0.061512649507899114,
+      "d": 0.49761744911268796,
+      "e": 3.3512295919218524,
+      "f": 8.023007749425771,
+      "global_sigma_multiplier": 1.0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3"
+    }
+  ],
+  "cut_simulation": [
+    {
+      "contexts": 193,
+      "cuts": 36,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.9264199796251419,
+      "level": 0,
+      "model": "current",
+      "probes": 77,
+      "selectivity_percent": 74.15237755199644,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 192,
+      "cuts": 33,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.9549876529964829,
+      "level": 1,
+      "model": "current",
+      "probes": 61,
+      "selectivity_percent": 87.8858483995882,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 191,
+      "cuts": 25,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.8117688756428595,
+      "level": 2,
+      "model": "current",
+      "probes": 51,
+      "selectivity_percent": 92.97042128319224,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 758,
+      "cuts": 267,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.6253684800027636,
+      "level": 3,
+      "model": "current",
+      "probes": 440,
+      "selectivity_percent": 97.96591226625605,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 758,
+      "cuts": 206,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.7111904052986291,
+      "level": 4,
+      "model": "current",
+      "probes": 368,
+      "selectivity_percent": 98.98301485020178,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 758,
+      "cuts": 104,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.813305558890012,
+      "level": 5,
+      "model": "current",
+      "probes": 204,
+      "selectivity_percent": 99.89981261724286,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 193,
+      "cuts": 37,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.9344330126758131,
+      "level": 0,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "probes": 82,
+      "selectivity_percent": 74.15237755199644,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 192,
+      "cuts": 33,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.9549876529964829,
+      "level": 1,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "probes": 61,
+      "selectivity_percent": 87.8858483995882,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 191,
+      "cuts": 29,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.8062681519781394,
+      "level": 2,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "probes": 57,
+      "selectivity_percent": 92.97042128319224,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 758,
+      "cuts": 274,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.6129382579041374,
+      "level": 3,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "probes": 451,
+      "selectivity_percent": 97.96591226625605,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 758,
+      "cuts": 233,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.6818085463915667,
+      "level": 4,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "probes": 394,
+      "selectivity_percent": 98.98301485020178,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 758,
+      "cuts": 108,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.8106474511008498,
+      "level": 5,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "probes": 224,
+      "selectivity_percent": 99.89981261724286,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 193,
+      "cuts": 35,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.9345475911094829,
+      "level": 0,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "probes": 76,
+      "selectivity_percent": 74.15237755199644,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 192,
+      "cuts": 32,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.9550863983083666,
+      "level": 1,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "probes": 59,
+      "selectivity_percent": 87.8858483995882,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 191,
+      "cuts": 25,
+      "dataset": "locked_new_deep19_26",
+      "estimated_node_ratio": 0.8117688756428595,
+      "level": 2,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "probes": 51,
+      "selectivity_percent": 92.97042128319224,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 1
+    },
+    {
+      "contexts": 758,
+      "cuts": 273,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.6155152016833599,
+      "level": 3,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "probes": 451,
+      "selectivity_percent": 97.96591226625605,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 758,
+      "cuts": 227,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.6970841112002164,
+      "level": 4,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "probes": 390,
+      "selectivity_percent": 98.98301485020178,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    },
+    {
+      "contexts": 758,
+      "cuts": 108,
+      "dataset": "historical_202606_deep10_18_simulated_high_selectivity",
+      "estimated_node_ratio": 0.8106474511008498,
+      "level": 5,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "probes": 224,
+      "selectivity_percent": 99.89981261724286,
+      "wrong_2plus": 0,
+      "wrong_4plus": 0,
+      "wrong_cuts": 0
+    }
+  ],
+  "cv_summary": [
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0195983143059646,
+      "model": "current",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.5953448837887296,
+      "sigma_rmse": 0.7260367248430335,
+      "standardized_rms": 0.9617551883331033
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0268375067967703,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6095687035487866,
+      "sigma_rmse": 0.7349580480048407,
+      "standardized_rms": 1.0298065459180274
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0287541921815286,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.03",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6435428576902971,
+      "sigma_rmse": 0.771296335223779,
+      "standardized_rms": 1.0490114737186873
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.033496334136223,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.1",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6885750479816196,
+      "sigma_rmse": 0.822976088706094,
+      "standardized_rms": 1.0696698769126205
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0336265185801863,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.3",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.695376346847193,
+      "sigma_rmse": 0.8342687511080344,
+      "standardized_rms": 1.0662490315881645
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0292356695157334,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior1",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6628574820806167,
+      "sigma_rmse": 0.8129173610059227,
+      "standardized_rms": 1.032365281513859
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0282162979045704,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior10",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6884315897710772,
+      "sigma_rmse": 0.8557759405002145,
+      "standardized_rms": 0.9486680409438076
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0268313985667,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6697799293836293,
+      "sigma_rmse": 0.8158457458999941,
+      "standardized_rms": 0.9865820140212065
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.029784231817575,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior30",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.7029500897158304,
+      "sigma_rmse": 0.8845846241615977,
+      "standardized_rms": 0.9323460554001834
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0225105935455288,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6335858107841974,
+      "sigma_rmse": 0.7428924227672699,
+      "standardized_rms": 0.9965004207511772
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0252196503246602,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6644730052599946,
+      "sigma_rmse": 0.7840126638576796,
+      "standardized_rms": 0.9950085001204934
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.026773925430526,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.1",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6805724318853076,
+      "sigma_rmse": 0.8104191539030017,
+      "standardized_rms": 0.9933379474625202
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0273030323741406,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.3",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6873199437928953,
+      "sigma_rmse": 0.8224882282567443,
+      "standardized_rms": 0.9881241628504795
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.027466902517466,
+      "model": "constrained_bernstein_root_equal_min0.5_prior1",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6914482261721093,
+      "sigma_rmse": 0.8334496447916563,
+      "standardized_rms": 0.9741423141347694
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0294783472555,
+      "model": "constrained_bernstein_root_equal_min0.5_prior10",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.7032619802565603,
+      "sigma_rmse": 0.8788384835781397,
+      "standardized_rms": 0.9364920925517678
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.0281328419912974,
+      "model": "constrained_bernstein_root_equal_min0.5_prior3",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.6954690794176362,
+      "sigma_rmse": 0.8524636415439049,
+      "standardized_rms": 0.9546601718405886
+    },
+    {
+      "folds": 5,
+      "gaussian_nll": 2.030362783196867,
+      "model": "constrained_bernstein_root_equal_min0.5_prior30",
+      "observations": 3277,
+      "residual_mae": 3.5269200989452028,
+      "residual_rmse": 4.626740173060989,
+      "roots": 458,
+      "sigma_mae": 0.7100837086720964,
+      "sigma_rmse": 0.8944149845126642,
+      "standardized_rms": 0.9279661423991377
+    }
+  ],
+  "domain_audit": [
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 31.646223134454893,
+      "minimum_n_discs": 56,
+      "minimum_raw_sigma": 1.6056995437569395,
+      "minimum_shallow_depth": 20,
+      "model": "current",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 24.71673948575622,
+      "minimum_n_discs": 39,
+      "minimum_raw_sigma": 3.300559072174134,
+      "minimum_shallow_depth": 19,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.81142422814483,
+      "minimum_n_discs": 34,
+      "minimum_raw_sigma": 3.694002620800946,
+      "minimum_shallow_depth": 19,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    }
+  ],
+  "domain_audit_grid": [
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 6.284746616970415,
+      "minimum_n_discs": 64,
+      "minimum_raw_sigma": 0.4999999999999991,
+      "minimum_shallow_depth": 60,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 24.71673948575622,
+      "minimum_n_discs": 39,
+      "minimum_raw_sigma": 3.300559072174134,
+      "minimum_shallow_depth": 19,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.142157907216017,
+      "minimum_n_discs": 20,
+      "minimum_raw_sigma": 3.554613478977606,
+      "minimum_shallow_depth": 21,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.1",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.63425310750106,
+      "minimum_n_discs": 47,
+      "minimum_raw_sigma": 3.6585493189759273,
+      "minimum_shallow_depth": 17,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.3",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.789621434656283,
+      "minimum_n_discs": 4,
+      "minimum_raw_sigma": 3.7221167293577686,
+      "minimum_shallow_depth": 24,
+      "model": "constrained_bernstein_root_equal_min0.5_prior1",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.798716464507585,
+      "minimum_n_discs": 42,
+      "minimum_raw_sigma": 3.7724449432951843,
+      "minimum_shallow_depth": 18,
+      "model": "constrained_bernstein_root_equal_min0.5_prior3",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.77265298062858,
+      "minimum_n_discs": 0,
+      "minimum_raw_sigma": 3.813860605321268,
+      "minimum_shallow_depth": 25,
+      "model": "constrained_bernstein_root_equal_min0.5_prior10",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.755793394872512,
+      "minimum_n_discs": 19,
+      "minimum_raw_sigma": 3.8327671801327083,
+      "minimum_shallow_depth": 22,
+      "model": "constrained_bernstein_root_equal_min0.5_prior30",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 6.0232626198045836,
+      "minimum_n_discs": 64,
+      "minimum_raw_sigma": 0.5,
+      "minimum_shallow_depth": 60,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 23.13848502423372,
+      "minimum_n_discs": 13,
+      "minimum_raw_sigma": 2.9544739455758733,
+      "minimum_shallow_depth": 20,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.03",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 25.550741866066186,
+      "minimum_n_discs": 57,
+      "minimum_raw_sigma": 3.2887767970984876,
+      "minimum_shallow_depth": 16,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.1",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.477881821787093,
+      "minimum_n_discs": 50,
+      "minimum_raw_sigma": 3.4522811770679316,
+      "minimum_shallow_depth": 16,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior0.3",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.778960604957064,
+      "minimum_n_discs": 50,
+      "minimum_raw_sigma": 3.580042335557299,
+      "minimum_shallow_depth": 16,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior1",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.81142422814483,
+      "minimum_n_discs": 34,
+      "minimum_raw_sigma": 3.694002620800946,
+      "minimum_shallow_depth": 19,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.780699991986154,
+      "minimum_n_discs": 30,
+      "minimum_raw_sigma": 3.783270906251917,
+      "minimum_shallow_depth": 20,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior10",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    },
+    {
+      "below_0_5_entries": 0,
+      "maximum_raw_sigma": 26.75908302249328,
+      "minimum_n_discs": 62,
+      "minimum_raw_sigma": 3.821631081746,
+      "minimum_shallow_depth": 15,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior30",
+      "nonpositive_entries": 0,
+      "table_entries": 3965
+    }
+  ],
+  "holdout_metrics": [
+    {
+      "dataset": "historical_202606_deep10_18",
+      "gaussian_nll": 2.1320510087461173,
+      "model": "current",
+      "observations": 758.0,
+      "residual_mae": 3.968853157424585,
+      "residual_rmse": 5.1633218770097065,
+      "roots": 105.0,
+      "sigma_mae": 0.622053391232145,
+      "sigma_rmse": 0.7217497629447274,
+      "standardized_rms": 1.043747561825891
+    },
+    {
+      "dataset": "historical_202606_deep10_18",
+      "gaussian_nll": 2.142578813579752,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "observations": 758.0,
+      "residual_mae": 3.968853157424585,
+      "residual_rmse": 5.1633218770097065,
+      "roots": 105.0,
+      "sigma_mae": 0.7382259563225103,
+      "sigma_rmse": 0.8664917650236708,
+      "standardized_rms": 1.0871681682070031
+    },
+    {
+      "dataset": "historical_202606_deep10_18",
+      "gaussian_nll": 2.143124148385833,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "observations": 758.0,
+      "residual_mae": 3.968853157424585,
+      "residual_rmse": 5.1633218770097065,
+      "roots": 105.0,
+      "sigma_mae": 0.7483818148584437,
+      "sigma_rmse": 0.8741390500598315,
+      "standardized_rms": 1.086571718721514
+    },
+    {
+      "dataset": "locked_new_deep19_26",
+      "gaussian_nll": 2.040858021003507,
+      "model": "current",
+      "observations": 126.0,
+      "residual_mae": 3.2152777777777763,
+      "residual_rmse": 4.568156691221915,
+      "roots": 24.0,
+      "sigma_mae": 0.8424860334851194,
+      "sigma_rmse": 1.0107744290512168,
+      "standardized_rms": 1.118355908711383
+    },
+    {
+      "dataset": "locked_new_deep19_26",
+      "gaussian_nll": 2.0306577934620145,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "observations": 126.0,
+      "residual_mae": 3.2152777777777763,
+      "residual_rmse": 4.568156691221915,
+      "roots": 24.0,
+      "sigma_mae": 0.7309219507048467,
+      "sigma_rmse": 0.9395174628356253,
+      "standardized_rms": 1.0973818874636752
+    },
+    {
+      "dataset": "locked_new_deep19_26",
+      "gaussian_nll": 2.023226764163531,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "observations": 126.0,
+      "residual_mae": 3.2152777777777763,
+      "residual_rmse": 4.568156691221915,
+      "roots": 24.0,
+      "sigma_mae": 0.7420311830082645,
+      "sigma_rmse": 0.8909165679364156,
+      "standardized_rms": 1.0465517016366521
+    },
+    {
+      "dataset": "known_exact_deep30",
+      "gaussian_nll": 2.2140467335680922,
+      "model": "current",
+      "observations": 8.0,
+      "residual_mae": 2.75,
+      "residual_rmse": 4.8218253804964775,
+      "roots": 8.0,
+      "sigma_mae": 1.3681493862622283,
+      "sigma_rmse": 1.3681493862622283,
+      "standardized_rms": 1.396142946977739
+    },
+    {
+      "dataset": "known_exact_deep30",
+      "gaussian_nll": 2.1472978149304542,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "observations": 8.0,
+      "residual_mae": 2.75,
+      "residual_rmse": 4.8218253804964775,
+      "roots": 8.0,
+      "sigma_mae": 1.0653359336909252,
+      "sigma_rmse": 1.0653359336909252,
+      "standardized_rms": 1.2835988091479578
+    },
+    {
+      "dataset": "known_exact_deep30",
+      "gaussian_nll": 2.1033670769562707,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "observations": 8.0,
+      "residual_mae": 2.75,
+      "residual_rmse": 4.8218253804964775,
+      "roots": 8.0,
+      "sigma_mae": 0.7306033289406049,
+      "sigma_rmse": 0.7306033289406049,
+      "standardized_rms": 1.1785782633486637
+    }
+  ],
+  "method": "cubic constrained by bernstein inequalities to minimum_sigma; no global sigma multiplier",
+  "minimum_sigma": 0.5,
+  "models": [
+    {
+      "coefficients": [
+        -1.3182333120273682,
+        -6.99290557735024,
+        -0.05280654146244756,
+        0.48284187178125065,
+        5.289589936037036,
+        11.940601436361513
+      ],
+      "name": "current"
+    },
+    {
+      "bernstein_controls": [
+        6.930503478663672,
+        0.5,
+        0.5,
+        24.716739485756218
+      ],
+      "bucket_count": 14,
+      "coefficients": [
+        -1.0,
+        -11.448275,
+        -0.009220543666708233,
+        0.1244938461474535,
+        1.5497336326511917,
+        6.930503478663672
+      ],
+      "constraint_method": "bernstein",
+      "fit_objective": 0.367150470860345,
+      "minimum_sigma": 0.5,
+      "name": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "prior_strength": 0.03,
+      "u_interval_for_v": [
+        0.0,
+        12.448275
+      ],
+      "weighting": "root_equal"
+    },
+    {
+      "bernstein_controls": [
+        8.023007749425771,
+        0.5,
+        0.5,
+        26.811424228144826
+      ],
+      "bucket_count": 14,
+      "coefficients": [
+        -1.0,
+        -5.73455,
+        -0.061512649507899114,
+        0.49761744911268796,
+        3.3512295919218524,
+        8.023007749425771
+      ],
+      "constraint_method": "bernstein",
+      "fit_objective": 12.580132910593875,
+      "minimum_sigma": 0.5,
+      "name": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "prior_strength": 3.0,
+      "u_interval_for_v": [
+        0.0,
+        6.73455
+      ],
+      "weighting": "domain_equal"
+    }
+  ],
+  "prior_grid": [
+    0.0,
+    0.03,
+    0.1,
+    0.3,
+    1.0,
+    3.0,
+    10.0,
+    30.0
+  ],
+  "selected_priors_by_cv_gaussian_nll": {
+    "domain_equal": 3.0,
+    "root_equal": 0.03
+  },
+  "training_metrics": [
+    {
+      "gaussian_nll": 2.0195983143059606,
+      "model": "current",
+      "observations": 3277.0,
+      "residual_mae": 3.526920098945224,
+      "residual_rmse": 4.635426757383944,
+      "roots": 458.0,
+      "sigma_mae": 0.2881279141639222,
+      "sigma_rmse": 0.40038508842416176,
+      "standardized_rms": 0.9636016596185053
+    },
+    {
+      "gaussian_nll": 2.0227227417367812,
+      "model": "constrained_bernstein_root_equal_min0.5_prior0.03",
+      "observations": 3277.0,
+      "residual_mae": 3.526920098945224,
+      "residual_rmse": 4.635426757383944,
+      "roots": 458.0,
+      "sigma_mae": 0.3915540918296519,
+      "sigma_rmse": 0.4709530127147753,
+      "standardized_rms": 0.994025500372102
+    },
+    {
+      "gaussian_nll": 2.025617769448419,
+      "model": "constrained_bernstein_domain_equal_min0.5_prior3",
+      "observations": 3277.0,
+      "residual_mae": 3.526920098945224,
+      "residual_rmse": 4.635426757383944,
+      "roots": 458.0,
+      "sigma_mae": 0.4374125502660814,
+      "sigma_rmse": 0.5288047864447186,
+      "standardized_rms": 0.9870602456479111
+    }
+  ],
+  "training_observations": 3277
+}

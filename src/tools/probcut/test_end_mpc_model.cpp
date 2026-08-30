@@ -39,15 +39,17 @@ int main() {
     require(!use_recalibrated_end_mpc(MPC_74_LEVEL, 9), "depth 9 fallback");
     require(!use_recalibrated_end_mpc(MPC_74_LEVEL, 19), "depth 19 fallback");
 
-    constexpr int expected_depths[END_MPC_MODEL_SIZE] = {
+    constexpr int production_depths[END_MPC_MODEL_SIZE] = {
         4, 5, 4, 5, 4, 7, 6, 7, 6
     };
+    constexpr int variant_offsets[] = {0, -2, 0, 2, 4};
+    constexpr int variant_offset = variant_offsets[END_MPC_RECALIBRATED_VARIANT];
     for (int depth = END_MPC_MODEL_MIN_DEPTH;
          depth <= END_MPC_MODEL_MAX_DEPTH; ++depth) {
         const int index = depth - END_MPC_MODEL_MIN_DEPTH;
         require_equal(
             end_mpc_shallow_depth(depth),
-            expected_depths[index],
+            production_depths[index] + variant_offset,
             "shallow depth " + std::to_string(depth)
         );
         for (int level = MPC_74_LEVEL; level <= MPC_93_LEVEL; ++level) {
@@ -88,20 +90,31 @@ int main() {
         );
     }
 
+    constexpr int expected_edge_errors[5][4] = {
+        {6, 6, 8, 9},
+        {6, 9, 11, 15},
+        {6, 8, 9, 11},
+        {4, 6, 8, 11},
+        {4, 4, 8, 8},
+    };
     require_equal(
-        end_mpc_shallow_error(MPC_74_LEVEL, 10, true), 6,
+        end_mpc_shallow_error(MPC_74_LEVEL, 10, true),
+        expected_edge_errors[END_MPC_RECALIBRATED_VARIANT][0],
         "74% depth 10 fail-high error"
     );
     require_equal(
-        end_mpc_shallow_error(MPC_74_LEVEL, 10, false), 6,
+        end_mpc_shallow_error(MPC_74_LEVEL, 10, false),
+        expected_edge_errors[END_MPC_RECALIBRATED_VARIANT][1],
         "74% depth 10 fail-low error"
     );
     require_equal(
-        end_mpc_shallow_error(MPC_93_LEVEL, 18, true), 8,
+        end_mpc_shallow_error(MPC_93_LEVEL, 18, true),
+        expected_edge_errors[END_MPC_RECALIBRATED_VARIANT][2],
         "93% depth 18 fail-high error"
     );
     require_equal(
-        end_mpc_shallow_error(MPC_93_LEVEL, 18, false), 9,
+        end_mpc_shallow_error(MPC_93_LEVEL, 18, false),
+        expected_edge_errors[END_MPC_RECALIBRATED_VARIANT][3],
         "93% depth 18 fail-low error"
     );
     require_equal(END_MPC_SHALLOW_GATE_SLACK, 4, "admission slack");

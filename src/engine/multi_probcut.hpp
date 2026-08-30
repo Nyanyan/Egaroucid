@@ -24,6 +24,14 @@ constexpr double MPC_ERROR_SCALE = 1.0;
 constexpr int MPC_ERROR0_OFFSET = 3;
 constexpr int MPC_DEPTH_NUMERATOR = 2;
 constexpr int MPC_DEPTH_DENOMINATOR = 5;
+#ifndef MID_MPC_SHALLOW_DEPTH_OFFSET
+    #define MID_MPC_SHALLOW_DEPTH_OFFSET 0
+#endif
+#ifndef END_MPC_SHALLOW_DEPTH_OFFSET
+    #define END_MPC_SHALLOW_DEPTH_OFFSET 0
+#endif
+static_assert((MID_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
+static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
 #ifndef MPC_SIGMA_SCALE
     #define MPC_SIGMA_SCALE 1.0
 #endif
@@ -39,10 +47,71 @@ constexpr int MPC_DEPTH_DENOMINATOR = 5;
 #ifndef MPC_PROBCUT_G_OFFSET
     #define MPC_PROBCUT_G_OFFSET 0.3
 #endif
+#ifndef MID_MPC_RECALIBRATED_VARIANT
+    #define MID_MPC_RECALIBRATED_VARIANT 0
+#endif
+#if MID_MPC_RECALIBRATED_VARIANT < 0 || MID_MPC_RECALIBRATED_VARIANT > 5
+    #error MID_MPC_RECALIBRATED_VARIANT must be an index from 0 through 5
+#endif
+#if MID_MPC_RECALIBRATED_VARIANT != 0 && MID_MPC_SHALLOW_DEPTH_OFFSET != 0
+    #error MID_MPC_SHALLOW_DEPTH_OFFSET must stay zero for a recalibrated variant
+#endif
+#ifndef END_MPC_SIGMA_MODEL_VARIANT
+    #define END_MPC_SIGMA_MODEL_VARIANT 0
+#endif
+#if END_MPC_SIGMA_MODEL_VARIANT < 0 || END_MPC_SIGMA_MODEL_VARIANT > 2
+    #error END_MPC_SIGMA_MODEL_VARIANT must be 0, 1, or 2
+#endif
 
 /*
     @brief constants for ProbCut error calculation
 */
+#if MID_MPC_RECALIBRATED_VARIANT == 1
+// Four plies shallower; root-CV-filtered coefficient refit (ridge 1).
+constexpr double probcut_a = 0.82401064177795602;
+constexpr double probcut_b = -4.707256854709466;
+constexpr double probcut_c = 1.195936197029992;
+constexpr double probcut_d = -0.51602485095990669;
+constexpr double probcut_e = 6.2720872514018389;
+constexpr double probcut_f = 4.1311395597893092;
+constexpr double probcut_g = 1.8452655938095068;
+#elif MID_MPC_RECALIBRATED_VARIANT == 2
+// Two plies shallower; root-CV-filtered coefficient refit (ridge 10).
+constexpr double probcut_a = 0.83654221440046617;
+constexpr double probcut_b = -4.7141339417062573;
+constexpr double probcut_c = 1.1595957590980255;
+constexpr double probcut_d = -0.52741323914425797;
+constexpr double probcut_e = 6.4488921340359813;
+constexpr double probcut_f = 3.9629396156378216;
+constexpr double probcut_g = 1.8652402791855631;
+#elif MID_MPC_RECALIBRATED_VARIANT == 3
+// Production shallow depth; root-CV-filtered coefficient refit (ridge 10).
+constexpr double probcut_a = 0.83953848974506118;
+constexpr double probcut_b = -4.7144109706221009;
+constexpr double probcut_c = 1.1562994186860498;
+constexpr double probcut_d = -0.5266829769832837;
+constexpr double probcut_e = 6.4194366178442852;
+constexpr double probcut_f = 3.9616392064435049;
+constexpr double probcut_g = 1.8537318252529329;
+#elif MID_MPC_RECALIBRATED_VARIANT == 4
+// Two plies deeper; root-CV-filtered coefficient refit (ridge 3).
+constexpr double probcut_a = 0.81802231199785347;
+constexpr double probcut_b = -4.7208452849479272;
+constexpr double probcut_c = 1.1454184012830171;
+constexpr double probcut_d = -0.52880205200077901;
+constexpr double probcut_e = 6.4682004696076323;
+constexpr double probcut_f = 3.9772925548531921;
+constexpr double probcut_g = 1.9224434471584249;
+#elif MID_MPC_RECALIBRATED_VARIANT == 5
+// Four plies deeper; root-CV-filtered coefficient refit (ridge 3).
+constexpr double probcut_a = 0.82597593080465503;
+constexpr double probcut_b = -4.71706030657485;
+constexpr double probcut_c = 1.1552618089448403;
+constexpr double probcut_d = -0.52298829335719277;
+constexpr double probcut_e = 6.458107516892567;
+constexpr double probcut_f = 3.9807918334215708;
+constexpr double probcut_g = 1.8945888345974715;
+#else
 constexpr double probcut_a = 0.8335834703936896;
 constexpr double probcut_b = -4.71778909968251;
 constexpr double probcut_c = 1.1467905781538477;
@@ -50,22 +119,42 @@ constexpr double probcut_d = -0.5274699259330169;
 constexpr double probcut_e = 6.5091001393587335;
 constexpr double probcut_f = 3.9546352081550378;
 constexpr double probcut_g = 1.5719077939546169 + MPC_PROBCUT_G_OFFSET;
+#endif
 
+#if END_MPC_SIGMA_MODEL_VARIANT == 1
+// Root-balanced, positivity-constrained Bernstein refit (prior 0.03).
+constexpr double probcut_end_a = -1.0;
+constexpr double probcut_end_b = -11.448275;
+constexpr double probcut_end_c = -0.009220543666708233;
+constexpr double probcut_end_d = 0.1244938461474535;
+constexpr double probcut_end_e = 1.5497336326511917;
+constexpr double probcut_end_f = 6.930503478663672;
+#elif END_MPC_SIGMA_MODEL_VARIANT == 2
+// Search-depth-domain-balanced, positivity-constrained refit (prior 3).
+constexpr double probcut_end_a = -1.0;
+constexpr double probcut_end_b = -5.73455;
+constexpr double probcut_end_c = -0.061512649507899114;
+constexpr double probcut_end_d = 0.49761744911268796;
+constexpr double probcut_end_e = 3.3512295919218524;
+constexpr double probcut_end_f = 8.023007749425771;
+#else
 constexpr double probcut_end_a = -1.3182333120273682;
 constexpr double probcut_end_b = -6.99290557735024;
 constexpr double probcut_end_c = -0.05280654146244756;
 constexpr double probcut_end_d = 0.48284187178125065;
 constexpr double probcut_end_e = 5.289589936037036;
 constexpr double probcut_end_f = 11.940601436361513;
+#endif
 
 /*
     Recalibrated endgame MPC model.  The tables were fitted from exact-labelled
     search contexts and are intentionally restricted to their covered range.
-    Outside depth 10--18 and selectivity 74--93, the legacy model is used.
+    Outside depth 10--18 and selectivity 74--93, the generic polynomial model
+    selected by END_MPC_SIGMA_MODEL_VARIANT is used.
 
-    The shallow depth candidates were also measured at +2 plies.  Although the
-    deeper probes reduced node counts, they reduced parallel NPS enough to lose
-    wall time, so this table keeps the faster original parity-preserving depths.
+    Variant 0 is the production table.  Experimental variants 1--4 contain
+    candidate-specific shallow depths and independently refitted sigma, tail,
+    and integer-margin tables; they are selected only at compile time.
 */
 constexpr int END_MPC_MODEL_MIN_DEPTH = 10;
 constexpr int END_MPC_MODEL_MAX_DEPTH = 18;
@@ -80,9 +169,120 @@ constexpr int END_MPC_MODEL_SIZE = END_MPC_MODEL_MAX_DEPTH - END_MPC_MODEL_MIN_D
 #ifndef END_MPC_SHALLOW_GATE_SLACK_VALUE
     #define END_MPC_SHALLOW_GATE_SLACK_VALUE 4
 #endif
+#ifndef END_MPC_RECALIBRATED_VARIANT
+    #define END_MPC_RECALIBRATED_VARIANT 0
+#endif
+#if END_MPC_RECALIBRATED_VARIANT < 0 || END_MPC_RECALIBRATED_VARIANT > 4
+    #error END_MPC_RECALIBRATED_VARIANT must be 0, 1, 2, 3, or 4
+#endif
 
 constexpr double END_MPC_SHALLOW_CUSHION = 1.10;
 constexpr int END_MPC_SHALLOW_GATE_SLACK = END_MPC_SHALLOW_GATE_SLACK_VALUE;
+#if END_MPC_RECALIBRATED_VARIANT == 1
+// Candidate-specific refit: two plies shallower than the production table.
+constexpr int END_MPC_SHALLOW_DEPTH[END_MPC_MODEL_SIZE] = {
+    2, 3, 2, 3, 2, 5, 4, 5, 4
+};
+constexpr double END_MPC_SHALLOW_SIGMA[END_MPC_MODEL_SIZE] = {
+    6.3326980278439, 5.4529530431798179, 6.9197790376266193,
+    5.3277865054234566, 6.6376090103328362, 4.6405948203129688,
+    6.0042595220952615, 4.8872730739065169, 6.3001675601829428
+};
+constexpr double END_MPC_SHALLOW_LOWER_TAIL[3] = {
+    0.789552885360358, 1.2837081017514214, 1.5791057707207159
+};
+constexpr double END_MPC_SHALLOW_UPPER_TAIL[3] = {
+    1.2837081017514214, 1.7370163477927876, 2.023185989592204
+};
+constexpr int END_MPC_SHALLOW_ERROR_HIGH[3][END_MPC_MODEL_SIZE] = {
+    {6, 5, 7, 5, 6, 5, 6, 5, 6},
+    {9, 8, 10, 8, 10, 7, 9, 7, 9},
+    {11, 10, 13, 10, 12, 9, 11, 9, 11}
+};
+constexpr int END_MPC_SHALLOW_ERROR_LOW[3][END_MPC_MODEL_SIZE] = {
+    {9, 8, 10, 8, 10, 7, 9, 7, 9},
+    {13, 11, 14, 11, 13, 9, 12, 10, 13},
+    {15, 13, 16, 12, 15, 11, 14, 11, 15}
+};
+#elif END_MPC_RECALIBRATED_VARIANT == 2
+// Candidate-specific refit at the production shallow depths.
+constexpr int END_MPC_SHALLOW_DEPTH[END_MPC_MODEL_SIZE] = {
+    4, 5, 4, 5, 4, 7, 6, 7, 6
+};
+constexpr double END_MPC_SHALLOW_SIGMA[END_MPC_MODEL_SIZE] = {
+    5.0456062855878052, 4.36382530970134, 5.5198974322357817,
+    4.1467431707457258, 5.29876481813961, 4.1417840321439359,
+    4.7645333338182132, 4.39259905102411, 4.9794348052161173
+};
+constexpr double END_MPC_SHALLOW_LOWER_TAIL[3] = {
+    0.90581393248366882, 1.2593048635870716, 1.6040972090331176
+};
+constexpr double END_MPC_SHALLOW_UPPER_TAIL[3] = {
+    1.2681395054771365, 1.6880717497488906, 1.981922376417647
+};
+constexpr int END_MPC_SHALLOW_ERROR_HIGH[3][END_MPC_MODEL_SIZE] = {
+    {6, 5, 6, 5, 6, 5, 5, 5, 5},
+    {7, 7, 8, 6, 8, 6, 7, 7, 7},
+    {9, 8, 10, 8, 10, 8, 9, 8, 9}
+};
+constexpr int END_MPC_SHALLOW_ERROR_LOW[3][END_MPC_MODEL_SIZE] = {
+    {8, 7, 8, 6, 8, 6, 7, 7, 7},
+    {10, 9, 11, 8, 10, 8, 9, 9, 10},
+    {11, 10, 13, 10, 12, 10, 11, 10, 11}
+};
+#elif END_MPC_RECALIBRATED_VARIANT == 3
+// Candidate-specific refit: two plies deeper than the production table.
+constexpr int END_MPC_SHALLOW_DEPTH[END_MPC_MODEL_SIZE] = {
+    6, 7, 6, 7, 6, 9, 8, 9, 8
+};
+constexpr double END_MPC_SHALLOW_SIGMA[END_MPC_MODEL_SIZE] = {
+    3.8317143476526434, 3.2712334735982385, 4.3005002683225451,
+    3.6092506713620649, 4.4674553342230983, 3.494365212065579,
+    4.2444026769614807, 3.69598585206777, 4.5778955029041013
+};
+constexpr double END_MPC_SHALLOW_LOWER_TAIL[3] = {
+    0.91708525979960365, 1.3048989424441473, 1.5674524711029629
+};
+constexpr double END_MPC_SHALLOW_UPPER_TAIL[3] = {
+    1.2227803463994713, 1.6623949252423942, 2.014569665880078
+};
+constexpr int END_MPC_SHALLOW_ERROR_HIGH[3][END_MPC_MODEL_SIZE] = {
+    {4, 4, 5, 4, 5, 4, 5, 4, 5},
+    {6, 5, 7, 6, 7, 6, 7, 6, 7},
+    {7, 6, 8, 7, 8, 7, 8, 7, 8}
+};
+constexpr int END_MPC_SHALLOW_ERROR_LOW[3][END_MPC_MODEL_SIZE] = {
+    {6, 5, 6, 5, 7, 5, 6, 5, 7},
+    {8, 6, 8, 7, 9, 7, 8, 7, 9},
+    {9, 8, 10, 8, 10, 8, 10, 9, 11}
+};
+#elif END_MPC_RECALIBRATED_VARIANT == 4
+// Candidate-specific refit: four plies deeper than the production table.
+constexpr int END_MPC_SHALLOW_DEPTH[END_MPC_MODEL_SIZE] = {
+    8, 9, 8, 9, 8, 11, 10, 11, 10
+};
+constexpr double END_MPC_SHALLOW_SIGMA[END_MPC_MODEL_SIZE] = {
+    2.9102833842355489, 2.69574454400468, 3.3314035290793131,
+    2.6991871200643089, 3.6689596387729759, 2.823936957981112,
+    3.2845401387793092, 3.0228552777031461, 3.6053853280272969
+};
+constexpr double END_MPC_SHALLOW_LOWER_TAIL[3] = {
+    1.03082745008628, 1.4819276404611397, 1.8010426979580574
+};
+constexpr double END_MPC_SHALLOW_UPPER_TAIL[3] = {
+    1.112865092010288, 1.7180457501437998, 1.85477515335048
+};
+constexpr int END_MPC_SHALLOW_ERROR_HIGH[3][END_MPC_MODEL_SIZE] = {
+    {4, 4, 4, 4, 5, 4, 4, 4, 5},
+    {5, 5, 6, 5, 6, 5, 6, 5, 6},
+    {6, 6, 7, 6, 8, 6, 7, 6, 8}
+};
+constexpr int END_MPC_SHALLOW_ERROR_LOW[3][END_MPC_MODEL_SIZE] = {
+    {4, 4, 5, 4, 5, 4, 5, 4, 5},
+    {6, 6, 7, 6, 7, 6, 7, 6, 7},
+    {6, 6, 7, 6, 8, 6, 7, 7, 8}
+};
+#else
 constexpr int END_MPC_SHALLOW_DEPTH[END_MPC_MODEL_SIZE] = {
     4, 5, 4, 5, 4, 7, 6, 7, 6
 };
@@ -108,6 +308,7 @@ constexpr int END_MPC_SHALLOW_ERROR_LOW[3][END_MPC_MODEL_SIZE] = {
     {9, 8, 10, 8, 9, 7, 8, 7, 7},
     {10, 9, 11, 9, 11, 8, 10, 8, 9}
 };
+#endif
 
 // The static model predicts exact_value = static_eval + bias.  Its independent
 // 99% tails are deliberately more conservative than the requested selectivity.
@@ -249,6 +450,28 @@ inline int probcut_error_mid(uint_fast8_t mpc_level, double sigma) {
     return ceil(
         MPC_ERROR_SCALE * MPC_SELECTIVITY_Z_MID[mpc_level] * sigma
     );
+}
+
+template<bool IsEndSearch>
+constexpr int mpc_shallow_depth(int depth) {
+    constexpr int recalibrated_mid_offsets[] = {0, -4, -2, 0, 2, 4};
+    const int offset = IsEndSearch
+        ? END_MPC_SHALLOW_DEPTH_OFFSET
+        : (MID_MPC_RECALIBRATED_VARIANT == 0
+            ? MID_MPC_SHALLOW_DEPTH_OFFSET
+            : recalibrated_mid_offsets[MID_MPC_RECALIBRATED_VARIANT]);
+    int result =
+        ((depth * MPC_DEPTH_NUMERATOR / MPC_DEPTH_DENOMINATOR) & ~1) +
+        (depth & 1) + offset;
+    const int minimum = depth & 1;
+    const int maximum = depth - 2;
+    if (result < minimum) {
+        result = minimum;
+    }
+    if (result > maximum) {
+        result = maximum;
+    }
+    return result;
 }
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, const Search_cancellation_context &cancellation);
@@ -441,7 +664,7 @@ inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_de
 */
 template<bool IsEndSearch, typename Searchings>
 inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Nws_node_hint node_hint, Searchings &searchings) {
-    int search_depth = ((depth * MPC_DEPTH_NUMERATOR / MPC_DEPTH_DENOMINATOR) & 0b11111110) + (depth & 1);
+    int search_depth = mpc_shallow_depth<IsEndSearch>(depth);
     const uint_fast8_t mpc_level = search->mpc_level;
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
 #if USE_DIM0_ONLY_EVALUATION
