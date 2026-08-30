@@ -175,6 +175,14 @@ constexpr int END_MPC_MODEL_SIZE = END_MPC_MODEL_MAX_DEPTH - END_MPC_MODEL_MIN_D
 #if END_MPC_RECALIBRATED_VARIANT < 0 || END_MPC_RECALIBRATED_VARIANT > 4
     #error END_MPC_RECALIBRATED_VARIANT must be 0, 1, 2, 3, or 4
 #endif
+#if MID_MPC_RECALIBRATED_VARIANT != 0 || \
+    END_MPC_SIGMA_MODEL_VARIANT != 0 || \
+    END_MPC_RECALIBRATED_VARIANT != 0
+static_assert(
+    MPC_SIGMA_SCALE == 1.0,
+    "Coefficient-refitted MPC variants must not be combined with a global sigma multiplier"
+);
+#endif
 
 constexpr double END_MPC_SHALLOW_CUSHION = 1.10;
 constexpr int END_MPC_SHALLOW_GATE_SLACK = END_MPC_SHALLOW_GATE_SLACK_VALUE;
