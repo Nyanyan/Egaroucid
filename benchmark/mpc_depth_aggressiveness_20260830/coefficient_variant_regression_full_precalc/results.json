@@ -1,10 +1,10 @@
 ﻿{
     "schema_version":  1,
-    "started_at":  "2026-08-30T19:37:09.7634987+09:00",
-    "finished_at":  "2026-08-30T19:39:38.9246280+09:00",
-    "elapsed_ms":  149161,
+    "started_at":  "2026-08-30T19:41:45.2942415+09:00",
+    "finished_at":  "2026-08-30T19:43:52.9390982+09:00",
+    "elapsed_ms":  127645,
     "repository_root":  "C:\\github\\othello\\Egaroucid",
-    "git_head":  "6e3fb11b8b7987d085db89b780a8ca5bdaa32a17",
+    "git_head":  "ef88935f6006579b0e519fa6c65063add6328b8f",
     "compiler":  "C:\\software\\llvm-mingw-20260616-msvcrt-x86_64\\bin\\clang++.exe",
     "compiler_version":  "clang version 22.1.8 (https://github.com/llvm/llvm-project.git ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)",
     "compile_flags":  [
@@ -14,8 +14,8 @@
                           "-pthread",
                           "-lws2_32"
                       ],
-    "total":  23,
-    "passed":  23,
+    "total":  24,
+    "passed":  24,
     "failed":  0,
     "all_passed":  true,
     "results":  [
@@ -28,11 +28,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_production_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  7286,
+                                        "duration_ms":  4902,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -40,7 +42,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  663,
+                                    "duration_ms":  517,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -56,11 +58,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_1_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  7463,
+                                        "duration_ms":  4928,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -68,7 +72,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  652,
+                                    "duration_ms":  492,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -84,11 +88,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_2_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  7147,
+                                        "duration_ms":  4859,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -96,7 +102,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  546,
+                                    "duration_ms":  475,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -112,11 +118,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_3_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  6176,
+                                        "duration_ms":  4843,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -124,7 +132,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  556,
+                                    "duration_ms":  498,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -140,11 +148,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_4_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5785,
+                                        "duration_ms":  4839,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -152,7 +162,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  549,
+                                    "duration_ms":  480,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -168,11 +178,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_5_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5464,
+                                        "duration_ms":  4873,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -180,7 +192,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  549,
+                                    "duration_ms":  501,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -196,11 +208,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_end_sigma_variant_1_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5564,
+                                        "duration_ms":  4902,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -208,7 +222,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  554,
+                                    "duration_ms":  479,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -224,11 +238,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_end_sigma_variant_2_precalc_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5532,
+                                        "duration_ms":  4907,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -236,7 +252,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  545,
+                                    "duration_ms":  506,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -251,11 +267,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_production_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5525,
+                                        "duration_ms":  4892,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -263,7 +281,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  563,
+                                    "duration_ms":  496,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -279,11 +297,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_1_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5602,
+                                        "duration_ms":  4915,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -291,7 +311,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  556,
+                                    "duration_ms":  498,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -307,11 +327,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_2_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5662,
+                                        "duration_ms":  4913,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -319,7 +341,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  560,
+                                    "duration_ms":  478,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -335,11 +357,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_3_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5525,
+                                        "duration_ms":  4894,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -347,7 +371,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  547,
+                                    "duration_ms":  486,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -363,11 +387,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_4_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5518,
+                                        "duration_ms":  4901,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -375,7 +401,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  535,
+                                    "duration_ms":  518,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -391,11 +417,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_mid_variant_5_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5558,
+                                        "duration_ms":  4934,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -403,7 +431,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  554,
+                                    "duration_ms":  507,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -419,11 +447,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_end_sigma_variant_1_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5526,
+                                        "duration_ms":  4901,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -431,7 +461,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  554,
+                                    "duration_ms":  503,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -447,11 +477,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_end_sigma_variant_2_precalc_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5541,
+                                        "duration_ms":  4866,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -459,7 +491,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  546,
+                                    "duration_ms":  498,
                                     "stdout":  "MPC coefficient variant tests passed",
                                     "stderr":  ""
                                 },
@@ -474,11 +506,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/mid_sigma_scale_precalc_0.exe",
                         "run_directory":  "bin",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5566,
+                                        "duration_ms":  4901,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mid_mpc_sigma_scale.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -486,7 +520,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  1916,
+                                    "duration_ms":  1697,
                                     "stdout":  "Phase-specific MPC probability tests passed",
                                     "stderr":  "[ERROR] can\u0027t open hash20.eghs\r\n[ERROR] can\u0027t get hash. you can ignore this error"
                                 },
@@ -501,11 +535,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/mid_sigma_scale_precalc_1.exe",
                         "run_directory":  "bin",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5567,
+                                        "duration_ms":  4869,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mid_mpc_sigma_scale.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -513,7 +549,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  1902,
+                                    "duration_ms":  1737,
                                     "stdout":  "Phase-specific MPC probability tests passed",
                                     "stderr":  "[ERROR] can\u0027t open hash20.eghs\r\n[ERROR] can\u0027t get hash. you can ignore this error"
                                 },
@@ -528,11 +564,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/end_recalibrated_variant_0.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5519,
+                                        "duration_ms":  4796,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_end_mpc_model.cpp:14:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -540,7 +578,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  530,
+                                    "duration_ms":  470,
                                     "stdout":  "Endgame MPC model tests passed",
                                     "stderr":  ""
                                 },
@@ -555,11 +593,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/end_recalibrated_variant_1.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5453,
+                                        "duration_ms":  4816,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_end_mpc_model.cpp:14:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -567,7 +607,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  546,
+                                    "duration_ms":  500,
                                     "stdout":  "Endgame MPC model tests passed",
                                     "stderr":  ""
                                 },
@@ -582,11 +622,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/end_recalibrated_variant_2.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5477,
+                                        "duration_ms":  4846,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_end_mpc_model.cpp:14:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -594,7 +636,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  547,
+                                    "duration_ms":  507,
                                     "stdout":  "Endgame MPC model tests passed",
                                     "stderr":  ""
                                 },
@@ -609,11 +651,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/end_recalibrated_variant_3.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5459,
+                                        "duration_ms":  4829,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_end_mpc_model.cpp:14:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -621,7 +665,7 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  558,
+                                    "duration_ms":  509,
                                     "stdout":  "Endgame MPC model tests passed",
                                     "stderr":  ""
                                 },
@@ -636,11 +680,13 @@
                                     ],
                         "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/end_recalibrated_variant_4.exe",
                         "run_directory":  ".",
+                        "expect_compile_failure":  false,
+                        "expected_compile_error":  "",
                         "compile":  {
                                         "exit_code":  0,
                                         "timed_out":  false,
                                         "timeout_seconds":  300,
-                                        "duration_ms":  5486,
+                                        "duration_ms":  4819,
                                         "stdout":  "",
                                         "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_end_mpc_model.cpp:14:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings generated."
                                     },
@@ -648,10 +694,33 @@
                                     "exit_code":  0,
                                     "timed_out":  false,
                                     "timeout_seconds":  15,
-                                    "duration_ms":  601,
+                                    "duration_ms":  516,
                                     "stdout":  "Endgame MPC model tests passed",
                                     "stderr":  ""
                                 },
+                        "status":  "passed"
+                    },
+                    {
+                        "id":  "coefficient_refit_rejects_global_sigma_scale",
+                        "description":  "係数再推定候補と全体sigma倍率の併用をコンパイル時に拒否する",
+                        "source":  "src/tools/probcut/test_mpc_coefficient_variants.cpp",
+                        "defines":  [
+                                        "MID_MPC_RECALIBRATED_VARIANT=1",
+                                        "MPC_SIGMA_SCALE=0.9"
+                                    ],
+                        "executable":  "benchmark/mpc_depth_aggressiveness_20260830/coefficient_variant_regression_full_precalc/build/coefficient_refit_rejects_global_sigma_scale.exe",
+                        "run_directory":  ".",
+                        "expect_compile_failure":  true,
+                        "expected_compile_error":  "Coefficient-refitted MPC variants must not be combined with a global sigma multiplier",
+                        "compile":  {
+                                        "exit_code":  1,
+                                        "timed_out":  false,
+                                        "timeout_seconds":  300,
+                                        "duration_ms":  1513,
+                                        "stdout":  "",
+                                        "stderr":  "In file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:20:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/midsearch.hpp:24:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/multi_probcut.hpp:182:5: error: static assertion failed due to requirement \u00270.90000000000000002 == 1.\u0027: Coefficient-refitted MPC variants must not be combined with a global sigma multiplier\r\n  182 |     MPC_SIGMA_SCALE == 1.0,\r\n      |     ^~~~~~~~~~~~~~~~~~~~~~\r\n\u003ccommand line\u003e:2:25: note: expanded from macro \u0027MPC_SIGMA_SCALE\u0027\r\n    2 | #define MPC_SIGMA_SCALE 0.9\r\n      |                         ^\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut\\test_mpc_coefficient_variants.cpp:9:\r\nIn file included from C:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/engine_all.hpp:12:\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1427:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1427 |                 f.get();\r\n      |                 ^~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:1650:25: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 1650 |                         verify_f.get();\r\n      |                         ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:2055:29: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 2055 |                             nws_f.get();\r\n      |                             ^~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5134:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5134 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5477:17: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5477 |                 v_future.get();\r\n      |                 ^~~~~~~~~~~~~~\r\nC:\\github\\othello\\Egaroucid\\src\\tools\\probcut/../../engine/ai.hpp:5633:13: warning: ignoring return value of function declared with \u0027nodiscard\u0027 attribute [-Wunused-result]\r\n 5633 |             selfplay_future.get();\r\n      |             ^~~~~~~~~~~~~~~~~~~~~\r\n6 warnings and 1 error generated."
+                                    },
+                        "run":  null,
                         "status":  "passed"
                     }
                 ]
