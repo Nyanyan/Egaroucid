@@ -20,6 +20,7 @@ release
 train_data
 ignored
 reports
+.agents
 
 # build, VS Project
 build
