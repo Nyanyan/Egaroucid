@@ -19,6 +19,7 @@ model
 release
 train_data
 ignored
+reports
 
 # build, VS Project
 build
