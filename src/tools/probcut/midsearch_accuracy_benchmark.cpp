@@ -42,6 +42,84 @@ struct FixedSearchResult {
     bool complete = false;
 };
 
+#if defined(EGAROUCID_MPC_RUNTIME_TUNING)
+bool parse_depth_values(const char *name, int *values) {
+    const char *text = std::getenv(name);
+    if (text == nullptr || *text == '\0') {
+        return true;
+    }
+    std::string source(text);
+    size_t begin = 0;
+    while (begin < source.size()) {
+        const size_t end = source.find(',', begin);
+        const std::string field = source.substr(begin, end - begin);
+        const size_t separator = field.find(':');
+        if (separator == std::string::npos) {
+            return false;
+        }
+        const int depth = std::atoi(field.substr(0, separator).c_str());
+        const int value = std::atoi(field.substr(separator + 1).c_str());
+        if (depth < 0 || depth >= HW2 - 2 || value < 0) {
+            return false;
+        }
+        values[depth] = value;
+        if (end == std::string::npos) {
+            break;
+        }
+        begin = end + 1;
+    }
+    return true;
+}
+
+bool parse_coefficients(const char *name, double *coefficients) {
+    const char *text = std::getenv(name);
+    if (text == nullptr || *text == '\0') {
+        return true;
+    }
+    std::string source(text);
+    size_t begin = 0;
+    for (int index = 0; index < 7; ++index) {
+        const size_t end = source.find(',', begin);
+        if (begin >= source.size() || (index < 6 && end == std::string::npos)) {
+            return false;
+        }
+        coefficients[index] = std::strtod(
+            source.substr(begin, end - begin).c_str(), nullptr
+        );
+        if (!std::isfinite(coefficients[index])) {
+            return false;
+        }
+        begin = end == std::string::npos ? source.size() : end + 1;
+    }
+    return begin == source.size();
+}
+
+bool configure_runtime_mpc() {
+    mid_mpc_runtime_tuning_reset();
+    return
+        parse_depth_values(
+            "EGAROUCID_MID_MPC_SHALLOW_DEPTHS",
+            mid_mpc_runtime_shallow_depth
+        ) &&
+        parse_depth_values(
+            "EGAROUCID_MID_MPC_HIGH_GATE_SLACK",
+            mid_mpc_runtime_high_gate_slack
+        ) &&
+        parse_depth_values(
+            "EGAROUCID_MID_MPC_LOW_GATE_SLACK",
+            mid_mpc_runtime_low_gate_slack
+        ) &&
+        parse_coefficients(
+            "EGAROUCID_MID_MPC_HIGH_COEFFICIENTS",
+            mid_mpc_runtime_high_coefficients
+        ) &&
+        parse_coefficients(
+            "EGAROUCID_MID_MPC_LOW_COEFFICIENTS",
+            mid_mpc_runtime_low_coefficients
+        );
+}
+#endif
+
 bool initialize_engine(int n_threads, int hash_level) {
     thread_pool.resize(std::max(0, n_threads - 1));
     bit_init();
@@ -244,6 +322,13 @@ int main(int argc, char **argv) {
         std::cerr << "invalid numeric argument\n";
         return 2;
     }
+
+#if defined(EGAROUCID_MPC_RUNTIME_TUNING)
+    if (!configure_runtime_mpc()) {
+        std::cerr << "invalid MPC runtime tuning environment variable\n";
+        return 2;
+    }
+#endif
 
     const std::vector<std::string> positions = read_positions(positions_path, position_limit);
     if (positions.empty()) {

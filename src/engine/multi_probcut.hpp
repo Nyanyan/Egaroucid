@@ -56,11 +56,35 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
 #if MID_MPC_RECALIBRATED_VARIANT != 0 && MID_MPC_SHALLOW_DEPTH_OFFSET != 0
     #error MID_MPC_SHALLOW_DEPTH_OFFSET must stay zero for a recalibrated variant
 #endif
+#ifndef MID_MPC_POLICY_VARIANT
+    #define MID_MPC_POLICY_VARIANT 1
+#endif
+#if MID_MPC_POLICY_VARIANT < 0 || MID_MPC_POLICY_VARIANT > 1
+    #error MID_MPC_POLICY_VARIANT must be 0 or 1
+#endif
+#if MID_MPC_POLICY_VARIANT != 0 && MID_MPC_RECALIBRATED_VARIANT != 0
+    #error MID_MPC_POLICY_VARIANT and MID_MPC_RECALIBRATED_VARIANT cannot be combined
+#endif
+#ifndef MID_MPC_POLICY_USE_DIRECTIONAL_COEFFICIENTS
+    #define MID_MPC_POLICY_USE_DIRECTIONAL_COEFFICIENTS MID_MPC_POLICY_VARIANT
+#endif
+#ifndef MID_MPC_POLICY_USE_DEPTH_TABLE
+    #define MID_MPC_POLICY_USE_DEPTH_TABLE MID_MPC_POLICY_VARIANT
+#endif
+#ifndef MID_MPC_POLICY_USE_GATE_TABLE
+    #define MID_MPC_POLICY_USE_GATE_TABLE MID_MPC_POLICY_VARIANT
+#endif
 #ifndef END_MPC_SIGMA_MODEL_VARIANT
     #define END_MPC_SIGMA_MODEL_VARIANT 0
 #endif
 #if END_MPC_SIGMA_MODEL_VARIANT < 0 || END_MPC_SIGMA_MODEL_VARIANT > 2
     #error END_MPC_SIGMA_MODEL_VARIANT must be 0, 1, or 2
+#endif
+#ifndef END_MPC_POLICY_VARIANT
+    #define END_MPC_POLICY_VARIANT 1
+#endif
+#if END_MPC_POLICY_VARIANT < 0 || END_MPC_POLICY_VARIANT > 1
+    #error END_MPC_POLICY_VARIANT must be 0 or 1
 #endif
 
 /*
@@ -121,6 +145,90 @@ constexpr double probcut_f = 3.9546352081550378;
 constexpr double probcut_g = 1.5719077939546169 + MPC_PROBCUT_G_OFFSET;
 #endif
 
+/*
+    Direction-specific midgame coefficients selected by minimizing the
+    measured shallow-search plus remaining deep-search time, subject to the
+    development and verification samples not increasing 2-disc or 4-disc
+    wrong cuts.  Variant zero keeps the historical symmetric model.
+*/
+#if MID_MPC_POLICY_USE_DIRECTIONAL_COEFFICIENTS
+constexpr double probcut_high_a = 0.7935834703936896;
+constexpr double probcut_high_b = -4.86778909968251;
+constexpr double probcut_high_c = 1.0967905781538476;
+constexpr double probcut_high_d = -0.5574699259330169;
+constexpr double probcut_high_e = 6.5091001393587335;
+constexpr double probcut_high_f = 3.9546352081550378;
+constexpr double probcut_high_g = 1.7719077939546168;
+
+constexpr double probcut_low_a = 0.8335834703936896;
+constexpr double probcut_low_b = -4.71778909968251;
+constexpr double probcut_low_c = 1.1467905781538477;
+constexpr double probcut_low_d = -0.5274699259330169;
+constexpr double probcut_low_e = 6.5091001393587335;
+constexpr double probcut_low_f = 3.9546352081550378;
+constexpr double probcut_low_g = 1.871907793954617;
+#else
+constexpr double probcut_high_a = probcut_a;
+constexpr double probcut_high_b = probcut_b;
+constexpr double probcut_high_c = probcut_c;
+constexpr double probcut_high_d = probcut_d;
+constexpr double probcut_high_e = probcut_e;
+constexpr double probcut_high_f = probcut_f;
+constexpr double probcut_high_g = probcut_g;
+
+constexpr double probcut_low_a = probcut_a;
+constexpr double probcut_low_b = probcut_b;
+constexpr double probcut_low_c = probcut_c;
+constexpr double probcut_low_d = probcut_d;
+constexpr double probcut_low_e = probcut_e;
+constexpr double probcut_low_f = probcut_f;
+constexpr double probcut_low_g = probcut_g;
+#endif
+
+constexpr int MID_MPC_POLICY_MIN_DEPTH = 3;
+constexpr int MID_MPC_POLICY_MAX_DEPTH = 16;
+constexpr int MID_MPC_POLICY_SIZE =
+    MID_MPC_POLICY_MAX_DEPTH - MID_MPC_POLICY_MIN_DEPTH + 1;
+constexpr int MID_MPC_POLICY_SHALLOW_DEPTH[MID_MPC_POLICY_SIZE] = {
+    1, 0, 1, 2, 3, 2, 3, 4, 5, 4, 5, 4, 7, 6
+};
+constexpr int MID_MPC_POLICY_HIGH_GATE_SLACK[MID_MPC_POLICY_SIZE] = {
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3
+};
+constexpr int MID_MPC_POLICY_LOW_GATE_SLACK[MID_MPC_POLICY_SIZE] = {
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 3, 3
+};
+
+#if defined(EGAROUCID_MPC_RUNTIME_TUNING)
+inline bool mid_mpc_runtime_tuning_enabled = false;
+inline double mid_mpc_runtime_high_coefficients[7] = {};
+inline double mid_mpc_runtime_low_coefficients[7] = {};
+inline int mid_mpc_runtime_shallow_depth[HW2 - 2] = {};
+inline int mid_mpc_runtime_high_gate_slack[HW2 - 2] = {};
+inline int mid_mpc_runtime_low_gate_slack[HW2 - 2] = {};
+
+inline void mid_mpc_runtime_tuning_reset() {
+    constexpr double high_coefficients[7] = {
+        probcut_high_a, probcut_high_b, probcut_high_c, probcut_high_d,
+        probcut_high_e, probcut_high_f, probcut_high_g
+    };
+    constexpr double low_coefficients[7] = {
+        probcut_low_a, probcut_low_b, probcut_low_c, probcut_low_d,
+        probcut_low_e, probcut_low_f, probcut_low_g
+    };
+    for (int i = 0; i < 7; ++i) {
+        mid_mpc_runtime_high_coefficients[i] = high_coefficients[i];
+        mid_mpc_runtime_low_coefficients[i] = low_coefficients[i];
+    }
+    for (int depth = 0; depth < HW2 - 2; ++depth) {
+        mid_mpc_runtime_shallow_depth[depth] = -1;
+        mid_mpc_runtime_high_gate_slack[depth] = -1;
+        mid_mpc_runtime_low_gate_slack[depth] = -1;
+    }
+    mid_mpc_runtime_tuning_enabled = true;
+}
+#endif
+
 #if END_MPC_SIGMA_MODEL_VARIANT == 1
 // Root-balanced, positivity-constrained Bernstein refit (prior 0.03).
 constexpr double probcut_end_a = -1.0;
@@ -144,6 +252,36 @@ constexpr double probcut_end_c = -0.05280654146244756;
 constexpr double probcut_end_d = 0.48284187178125065;
 constexpr double probcut_end_e = 5.289589936037036;
 constexpr double probcut_end_f = 11.940601436361513;
+#endif
+
+#if END_MPC_POLICY_VARIANT == 1
+constexpr double probcut_end_high_a = -1.4382333120273683;
+constexpr double probcut_end_high_b = -7.29290557735024;
+constexpr double probcut_end_high_c = -0.058806541462447556;
+constexpr double probcut_end_high_d = 0.48284187178125065;
+constexpr double probcut_end_high_e = 5.289589936037036;
+constexpr double probcut_end_high_f = 11.940601436361513;
+
+constexpr double probcut_end_low_a = -1.3982333120273682;
+constexpr double probcut_end_low_b = -7.29290557735024;
+constexpr double probcut_end_low_c = -0.06480654146244756;
+constexpr double probcut_end_low_d = 0.3828418717812507;
+constexpr double probcut_end_low_e = 5.289589936037036;
+constexpr double probcut_end_low_f = 11.940601436361513;
+#else
+constexpr double probcut_end_high_a = probcut_end_a;
+constexpr double probcut_end_high_b = probcut_end_b;
+constexpr double probcut_end_high_c = probcut_end_c;
+constexpr double probcut_end_high_d = probcut_end_d;
+constexpr double probcut_end_high_e = probcut_end_e;
+constexpr double probcut_end_high_f = probcut_end_f;
+
+constexpr double probcut_end_low_a = probcut_end_a;
+constexpr double probcut_end_low_b = probcut_end_b;
+constexpr double probcut_end_low_c = probcut_end_c;
+constexpr double probcut_end_low_d = probcut_end_d;
+constexpr double probcut_end_low_e = probcut_end_e;
+constexpr double probcut_end_low_f = probcut_end_f;
 #endif
 
 /*
@@ -336,6 +474,25 @@ constexpr int END_MPC_STATIC_LOW_OFFSET[END_MPC_MODEL_SIZE] = {
     -27, -28, -29, -30, -30, -29, -29, -29, -28
 };
 
+/*
+    Generic endgame MPC policy for depths 19--25.  The shallow depth is
+    explicit for every deep depth, and the admission condition is independent
+    for upper and lower cuts.
+*/
+constexpr int END_MPC_GENERIC_POLICY_MIN_DEPTH = 19;
+constexpr int END_MPC_GENERIC_POLICY_MAX_DEPTH = 25;
+constexpr int END_MPC_GENERIC_POLICY_SIZE =
+    END_MPC_GENERIC_POLICY_MAX_DEPTH - END_MPC_GENERIC_POLICY_MIN_DEPTH + 1;
+constexpr int END_MPC_GENERIC_SHALLOW_DEPTH[END_MPC_GENERIC_POLICY_SIZE] = {
+    7, 8, 9, 8, 9, 8, 11
+};
+constexpr int END_MPC_GENERIC_GATE_HIGH[END_MPC_GENERIC_POLICY_SIZE] = {
+    7, 6, 6, 3, 4, 7, 4
+};
+constexpr int END_MPC_GENERIC_GATE_LOW[END_MPC_GENERIC_POLICY_SIZE] = {
+    4, 3, 0, 3, 0, 6, 0
+};
+
 inline bool use_recalibrated_end_mpc(uint_fast8_t mpc_level, int depth) {
     return
         mpc_level <= MPC_93_LEVEL &&
@@ -351,6 +508,15 @@ inline int end_mpc_shallow_error(uint_fast8_t mpc_level, int depth, bool high) {
     return high
         ? END_MPC_SHALLOW_ERROR_HIGH[mpc_level][index]
         : END_MPC_SHALLOW_ERROR_LOW[mpc_level][index];
+}
+
+inline int end_mpc_shallow_gate_slack(
+    uint_fast8_t mpc_level, int depth, bool high
+) {
+    (void)mpc_level;
+    (void)depth;
+    (void)high;
+    return END_MPC_SHALLOW_GATE_SLACK;
 }
 
 inline int end_mpc_static_threshold(int depth, int boundary, bool high) {
@@ -413,7 +579,9 @@ inline void end_probcut_trace_context(
 
 #if USE_MPC_PRE_CALCULATION
 int mpc_error[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
+int mpc_error_low[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3][HW2 - 3];
 int mpc_error_end[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
+int mpc_error_end_low[N_SELECTIVITY_LEVEL][HW2 + 1][HW2 - 3];
 #endif
 
 /*
@@ -430,6 +598,41 @@ inline double probcut_sigma(int n_discs, int depth1, int depth2) {
     return MPC_SIGMA_SCALE * res;
 }
 
+inline double probcut_sigma_mid_direction(
+    int n_discs,
+    int depth1,
+    int depth2,
+    bool high
+) {
+    double a = high ? probcut_high_a : probcut_low_a;
+    double b = high ? probcut_high_b : probcut_low_b;
+    double c = high ? probcut_high_c : probcut_low_c;
+    double d = high ? probcut_high_d : probcut_low_d;
+    double e = high ? probcut_high_e : probcut_low_e;
+    double f = high ? probcut_high_f : probcut_low_f;
+    double g = high ? probcut_high_g : probcut_low_g;
+#if defined(EGAROUCID_MPC_RUNTIME_TUNING)
+    if (mid_mpc_runtime_tuning_enabled) {
+        const double *coefficients = high
+            ? mid_mpc_runtime_high_coefficients
+            : mid_mpc_runtime_low_coefficients;
+        a = coefficients[0];
+        b = coefficients[1];
+        c = coefficients[2];
+        d = coefficients[3];
+        e = coefficients[4];
+        f = coefficients[5];
+        g = coefficients[6];
+    }
+#endif
+    double res =
+        a * ((double)n_discs / 64.0) +
+        b * ((double)depth1 / 60.0) +
+        c * ((double)depth2 / 60.0);
+    res = d * res * res * res + e * res * res + f * res + g;
+    return MPC_SIGMA_SCALE * res;
+}
+
 /*
     @brief ProbCut error calculation for endgame
 
@@ -437,10 +640,20 @@ inline double probcut_sigma(int n_discs, int depth1, int depth2) {
     @param depth                depth of shallow search
     @return expected error
 */
-inline double probcut_sigma_end(int n_discs, int depth) {
-    double res = probcut_end_a * ((double)n_discs / 64.0) + probcut_end_b * ((double)depth / 60.0);
-    res = probcut_end_c * res * res * res + probcut_end_d * res * res + probcut_end_e * res + probcut_end_f;
+inline double probcut_sigma_end_direction(int n_discs, int depth, bool high) {
+    const double a = high ? probcut_end_high_a : probcut_end_low_a;
+    const double b = high ? probcut_end_high_b : probcut_end_low_b;
+    const double c = high ? probcut_end_high_c : probcut_end_low_c;
+    const double d = high ? probcut_end_high_d : probcut_end_low_d;
+    const double e = high ? probcut_end_high_e : probcut_end_low_e;
+    const double f = high ? probcut_end_high_f : probcut_end_low_f;
+    double res = a * ((double)n_discs / 64.0) + b * ((double)depth / 60.0);
+    res = c * res * res * res + d * res * res + e * res + f;
     return MPC_SIGMA_SCALE * res;
+}
+
+inline double probcut_sigma_end(int n_discs, int depth) {
+    return probcut_sigma_end_direction(n_discs, depth, true);
 }
 
 inline int probcut_error_end(uint_fast8_t mpc_level, double sigma) {
@@ -462,6 +675,36 @@ inline int probcut_error_mid(uint_fast8_t mpc_level, double sigma) {
 
 template<bool IsEndSearch>
 constexpr int mpc_shallow_depth(int depth) {
+#if defined(EGAROUCID_MPC_RUNTIME_TUNING)
+    if constexpr (!IsEndSearch) {
+        if (
+            mid_mpc_runtime_tuning_enabled &&
+            0 <= depth && depth < HW2 - 2 &&
+            mid_mpc_runtime_shallow_depth[depth] >= 0
+        ) {
+            return mid_mpc_runtime_shallow_depth[depth];
+        }
+    }
+#endif
+#if END_MPC_POLICY_VARIANT == 1
+    if constexpr (IsEndSearch) {
+        if (
+            END_MPC_GENERIC_POLICY_MIN_DEPTH <= depth &&
+            depth <= END_MPC_GENERIC_POLICY_MAX_DEPTH
+        ) {
+            return END_MPC_GENERIC_SHALLOW_DEPTH[
+                depth - END_MPC_GENERIC_POLICY_MIN_DEPTH
+            ];
+        }
+    }
+#endif
+#if MID_MPC_POLICY_USE_DEPTH_TABLE
+    if constexpr (!IsEndSearch) {
+        if (MID_MPC_POLICY_MIN_DEPTH <= depth && depth <= MID_MPC_POLICY_MAX_DEPTH) {
+            return MID_MPC_POLICY_SHALLOW_DEPTH[depth - MID_MPC_POLICY_MIN_DEPTH];
+        }
+    }
+#endif
     constexpr int recalibrated_mid_offsets[] = {0, -4, -2, 0, 2, 4};
     const int offset = IsEndSearch
         ? END_MPC_SHALLOW_DEPTH_OFFSET
@@ -480,6 +723,47 @@ constexpr int mpc_shallow_depth(int depth) {
         result = maximum;
     }
     return result;
+}
+
+
+inline int mpc_shallow_gate_slack(int depth, bool high, bool is_end_search) {
+#if defined(EGAROUCID_MPC_RUNTIME_TUNING)
+    if (
+        mid_mpc_runtime_tuning_enabled && !is_end_search &&
+        0 <= depth && depth < HW2 - 2
+    ) {
+        const int value = high
+            ? mid_mpc_runtime_high_gate_slack[depth]
+            : mid_mpc_runtime_low_gate_slack[depth];
+        if (value >= 0) {
+            return value;
+        }
+    }
+#endif
+#if END_MPC_POLICY_VARIANT == 1
+    if (
+        is_end_search &&
+        END_MPC_GENERIC_POLICY_MIN_DEPTH <= depth &&
+        depth <= END_MPC_GENERIC_POLICY_MAX_DEPTH
+    ) {
+        const int index = depth - END_MPC_GENERIC_POLICY_MIN_DEPTH;
+        return high
+            ? END_MPC_GENERIC_GATE_HIGH[index]
+            : END_MPC_GENERIC_GATE_LOW[index];
+    }
+#endif
+#if MID_MPC_POLICY_USE_GATE_TABLE
+    if (
+        !is_end_search &&
+        MID_MPC_POLICY_MIN_DEPTH <= depth && depth <= MID_MPC_POLICY_MAX_DEPTH
+    ) {
+        const int index = depth - MID_MPC_POLICY_MIN_DEPTH;
+        return high
+            ? MID_MPC_POLICY_HIGH_GATE_SLACK[index]
+            : MID_MPC_POLICY_LOW_GATE_SLACK[index];
+    }
+#endif
+    return MPC_ERROR0_OFFSET;
 }
 
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, const Search_cancellation_context &cancellation);
@@ -546,8 +830,10 @@ inline bool mpc_end_recalibrated_shallow(
     const int shallow_depth = end_mpc_shallow_depth(depth);
     const int high_threshold = beta + end_mpc_shallow_error(mpc_level, depth, true);
     const int low_threshold = alpha - end_mpc_shallow_error(mpc_level, depth, false);
-    const bool high_gate = d0_value >= high_threshold - END_MPC_SHALLOW_GATE_SLACK;
-    const bool low_gate = d0_value <= low_threshold + END_MPC_SHALLOW_GATE_SLACK;
+    const bool high_gate = d0_value >= high_threshold -
+        end_mpc_shallow_gate_slack(mpc_level, depth, true);
+    const bool low_gate = d0_value <= low_threshold +
+        end_mpc_shallow_gate_slack(mpc_level, depth, false);
 #if defined(END_PROBCUT_CONTEXT_TRACE)
     end_probcut_trace_context(
         search, depth, shallow_depth, alpha, beta, "high", d0_value,
@@ -605,36 +891,67 @@ inline bool mpc_end_recalibrated_shallow(
 }
 
 template<bool IsEndSearch>
-inline int mpc_static_error(uint_fast8_t mpc_level, int n_discs, int depth) {
+inline int mpc_static_error(
+    uint_fast8_t mpc_level,
+    int n_discs,
+    int depth,
+    bool high = true
+) {
 #if USE_MPC_PRE_CALCULATION
     if constexpr (IsEndSearch) {
-        return mpc_error_end[mpc_level][n_discs][0];
+        return high
+            ? mpc_error_end[mpc_level][n_discs][0]
+            : mpc_error_end_low[mpc_level][n_discs][0];
     } else {
-        return mpc_error[mpc_level][n_discs][0][depth];
+        return high
+            ? mpc_error[mpc_level][n_discs][0][depth]
+            : mpc_error_low[mpc_level][n_discs][0][depth];
     }
 #else
     const double mpct = mpc_selectivity_z(mpc_level, IsEndSearch);
     if constexpr (IsEndSearch) {
-        return ceil(MPC_ERROR_SCALE * mpct * probcut_sigma_end(n_discs, 0));
+        return ceil(
+            MPC_ERROR_SCALE * mpct *
+            probcut_sigma_end_direction(n_discs, 0, high)
+        );
     } else {
-        return ceil(MPC_ERROR_SCALE * mpct * probcut_sigma(n_discs, 0, depth));
+        return ceil(
+            MPC_ERROR_SCALE * mpct *
+            probcut_sigma_mid_direction(n_discs, 0, depth, high)
+        );
     }
 #endif
 }
 
 template<bool IsEndSearch>
-inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_depth, int depth, int *error_search, int *eval_error) {
+inline void mpc_search_errors(
+    uint_fast8_t mpc_level,
+    int n_discs,
+    int search_depth,
+    int depth,
+    int *error_search,
+    int *eval_error,
+    bool high = true
+) {
 #if USE_MPC_PRE_CALCULATION
     if constexpr (IsEndSearch) {
-        *error_search = mpc_error_end[mpc_level][n_discs][search_depth];
+        *error_search = high
+            ? mpc_error_end[mpc_level][n_discs][search_depth]
+            : mpc_error_end_low[mpc_level][n_discs][search_depth];
         if (eval_error) {
-            int error_0 = mpc_error_end[mpc_level][n_discs][0];
+            int error_0 = high
+                ? mpc_error_end[mpc_level][n_discs][0]
+                : mpc_error_end_low[mpc_level][n_discs][0];
             *eval_error = (error_0 + *error_search + 1) / 2;
         }
     } else {
-        *error_search = mpc_error[mpc_level][n_discs][search_depth][depth];
+        *error_search = high
+            ? mpc_error[mpc_level][n_discs][search_depth][depth]
+            : mpc_error_low[mpc_level][n_discs][search_depth][depth];
         if (eval_error) {
-            int error_0 = mpc_error[mpc_level][n_discs][0][depth];
+            int error_0 = high
+                ? mpc_error[mpc_level][n_discs][0][depth]
+                : mpc_error_low[mpc_level][n_discs][0][depth];
             *eval_error = (error_0 + *error_search + 1) / 2;
         }
     }
@@ -642,15 +959,21 @@ inline void mpc_search_errors(uint_fast8_t mpc_level, int n_discs, int search_de
     const double mpct = mpc_selectivity_z(mpc_level, IsEndSearch);
     double sigma_search;
     if constexpr (IsEndSearch) {
-        sigma_search = probcut_sigma_end(n_discs, search_depth);
+        sigma_search = probcut_sigma_end_direction(
+            n_discs, search_depth, high
+        );
         if (eval_error) {
-            double sigma_0 = probcut_sigma_end(n_discs, 0);
+            double sigma_0 = probcut_sigma_end_direction(n_discs, 0, high);
             *eval_error = ceil(MPC_ERROR_SCALE * mpct * 0.5 * (sigma_0 + sigma_search));
         }
     } else {
-        sigma_search = probcut_sigma(n_discs, search_depth, depth);
+        sigma_search = probcut_sigma_mid_direction(
+            n_discs, search_depth, depth, high
+        );
         if (eval_error) {
-            double sigma_0 = probcut_sigma(n_discs, 0, depth);
+            double sigma_0 = probcut_sigma_mid_direction(
+                n_discs, 0, depth, high
+            );
             *eval_error = ceil(MPC_ERROR_SCALE * mpct * 0.5 * (sigma_0 + sigma_search));
         }
     }
@@ -741,29 +1064,34 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
     }
 
     if (search_depth == 0) {
-        int static_error = mpc_static_error<IsEndSearch>(mpc_level, search->n_discs, depth);
+        const int static_error_high = mpc_static_error<IsEndSearch>(
+            mpc_level, search->n_discs, depth, true
+        );
+        const int static_error_low = mpc_static_error<IsEndSearch>(
+            mpc_level, search->n_discs, depth, false
+        );
 #if defined(END_PROBCUT_CONTEXT_TRACE)
         if constexpr (IsEndSearch) {
             end_probcut_trace_context(
                 search, depth, 0, alpha, beta, "high", d0value,
-                pop_count_ull(legal), beta + static_error,
-                d0value >= beta + static_error, true, mpc_level
+                pop_count_ull(legal), beta + static_error_high,
+                d0value >= beta + static_error_high, true, mpc_level
             );
             end_probcut_trace_context(
                 search, depth, 0, alpha, beta, "low", d0value,
-                pop_count_ull(legal), alpha - static_error,
-                d0value <= alpha - static_error, true, mpc_level
+                pop_count_ull(legal), alpha - static_error_low,
+                d0value <= alpha - static_error_low, true, mpc_level
             );
         }
 #endif
-        if (d0value >= beta + static_error) {
+        if (d0value >= beta + static_error_high) {
             *v = beta;
             if constexpr (IsEndSearch) {
                 *v += beta & 1;
             }
             return true;
         }
-        if (d0value <= alpha - static_error) {
+        if (d0value <= alpha - static_error_low) {
             *v = alpha;
             if constexpr (IsEndSearch) {
                 *v -= alpha & 1;
@@ -771,23 +1099,42 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             return true;
         }
     } else {
-        int error_search;
-        mpc_search_errors<IsEndSearch>(mpc_level, search->n_discs, search_depth, depth, &error_search, nullptr);
+        int error_search_high;
+        int error_search_low;
+        mpc_search_errors<IsEndSearch>(
+            mpc_level, search->n_discs, search_depth, depth,
+            &error_search_high, nullptr, true
+        );
+        mpc_search_errors<IsEndSearch>(
+            mpc_level, search->n_discs, search_depth, depth,
+            &error_search_low, nullptr, false
+        );
         // if (IsEndSearch) {
         //     error_search += 1.5;
         // }
-        int error_0 = std::max(1, error_search - MPC_ERROR0_OFFSET);
+        const int error_0_high = std::max(
+            1,
+            error_search_high - mpc_shallow_gate_slack(
+                depth, true, IsEndSearch
+            )
+        );
+        const int error_0_low = std::max(
+            1,
+            error_search_low - mpc_shallow_gate_slack(
+                depth, false, IsEndSearch
+            )
+        );
 #if defined(END_PROBCUT_CONTEXT_TRACE)
         if constexpr (IsEndSearch) {
             end_probcut_trace_context(
                 search, depth, search_depth, alpha, beta, "high", d0value,
-                pop_count_ull(legal), beta + error_search,
-                d0value >= beta + error_0, false, mpc_level
+                pop_count_ull(legal), beta + error_search_high,
+                d0value >= beta + error_0_high, false, mpc_level
             );
             end_probcut_trace_context(
                 search, depth, search_depth, alpha, beta, "low", d0value,
-                pop_count_ull(legal), alpha - error_search,
-                d0value <= alpha - error_0, false, mpc_level
+                pop_count_ull(legal), alpha - error_search_low,
+                d0value <= alpha - error_0_low, false, mpc_level
             );
         }
 #endif
@@ -796,8 +1143,8 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
         search->use_dim0_mpc_eval = use_dim0_mpc_eval;
 #endif
-        if (d0value >= beta + error_0) {
-            int pc_beta = beta + error_search;
+        if (d0value >= beta + error_0_high) {
+            int pc_beta = beta + error_search_high;
             if (pc_beta <= SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) >= pc_beta) {
                     *v = beta;
@@ -812,8 +1159,8 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
                 }
             }
         }
-        if (d0value <= alpha - error_0) {
-            int pc_alpha = alpha - error_search;
+        if (d0value <= alpha - error_0_low) {
+            int pc_alpha = alpha - error_search_low;
             if (pc_alpha >= -SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) <= pc_alpha) {
                     *v = alpha;
@@ -868,8 +1215,8 @@ inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t lega
     int error_search, error_0;
 #if USE_MPC_PRE_CALCULATION
     if (is_end_search) {
-        error_search = mpc_error_end[mpc_level][search->n_discs][search_depth];
-        error_0 = mpc_error_end[mpc_level][search->n_discs][0];
+        error_search = mpc_error_end_low[mpc_level][search->n_discs][search_depth];
+        error_0 = mpc_error_end_low[mpc_level][search->n_discs][0];
     } else{
         error_search = mpc_error[mpc_level][search->n_discs][search_depth][depth];
         error_0 = mpc_error[mpc_level][search->n_discs][0][depth];
@@ -877,8 +1224,14 @@ inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t lega
 #else
     const double mpct = mpc_selectivity_z(mpc_level, is_end_search);
     if (is_end_search) {
-        error_search = ceil(mpct * probcut_sigma_end(search->n_discs, search_depth));
-        error_0 = ceil(mpct * probcut_sigma_end(search->n_discs, 0));
+        error_search = ceil(
+            mpct * probcut_sigma_end_direction(
+                search->n_discs, search_depth, false
+            )
+        );
+        error_0 = ceil(
+            mpct * probcut_sigma_end_direction(search->n_discs, 0, false)
+        );
     }else{
         error_search = ceil(mpct * probcut_sigma(search->n_discs, search_depth, depth));
         error_0 = ceil(mpct * probcut_sigma(search->n_discs, 0, depth));
@@ -920,9 +1273,30 @@ void mpc_init() {
     for (mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level) {
         for (n_discs = 0; n_discs < HW2 + 1; ++n_discs) {
             for (depth1 = 0; depth1 < HW2 - 3; ++depth1) {
-                mpc_error_end[mpc_level][n_discs][depth1] = probcut_error_end(mpc_level, probcut_sigma_end(n_discs, depth1));
+                mpc_error_end[mpc_level][n_discs][depth1] = probcut_error_end(
+                    mpc_level,
+                    probcut_sigma_end_direction(n_discs, depth1, true)
+                );
+                mpc_error_end_low[mpc_level][n_discs][depth1] =
+                    probcut_error_end(
+                        mpc_level,
+                        probcut_sigma_end_direction(n_discs, depth1, false)
+                    );
                 for (depth2 = 0; depth2 < HW2 - 3; ++depth2) {
-                    mpc_error[mpc_level][n_discs][depth1][depth2] = probcut_error_mid(mpc_level, probcut_sigma(n_discs, depth1, depth2));
+                    mpc_error[mpc_level][n_discs][depth1][depth2] =
+                        probcut_error_mid(
+                            mpc_level,
+                            probcut_sigma_mid_direction(
+                                n_discs, depth1, depth2, true
+                            )
+                        );
+                    mpc_error_low[mpc_level][n_discs][depth1][depth2] =
+                        probcut_error_mid(
+                            mpc_level,
+                            probcut_sigma_mid_direction(
+                                n_discs, depth1, depth2, false
+                            )
+                        );
                 }
             }
         }

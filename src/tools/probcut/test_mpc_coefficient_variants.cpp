@@ -92,6 +92,16 @@ int main() {
             : mid_offsets[MID_MPC_RECALIBRATED_VARIANT];
         expected_shallow = std::max(expected_shallow, deep_depth & 1);
         expected_shallow = std::min(expected_shallow, deep_depth - 2);
+#if MID_MPC_POLICY_USE_DEPTH_TABLE
+        if (
+            MID_MPC_POLICY_MIN_DEPTH <= deep_depth &&
+            deep_depth <= MID_MPC_POLICY_MAX_DEPTH
+        ) {
+            expected_shallow = MID_MPC_POLICY_SHALLOW_DEPTH[
+                deep_depth - MID_MPC_POLICY_MIN_DEPTH
+            ];
+        }
+#endif
         require(
             mpc_shallow_depth<false>(deep_depth) == expected_shallow,
             "mid shallow depth " + std::to_string(deep_depth)
@@ -103,59 +113,76 @@ int main() {
                 " at n_discs=" + std::to_string(n_discs) +
                 ", shallow=" + std::to_string(expected_shallow) +
                 ", deep=" + std::to_string(deep_depth);
-            const double sigma_0 = probcut_sigma(n_discs, 0, deep_depth);
-            const double sigma_search = probcut_sigma(
-                n_discs, expected_shallow, deep_depth
-            );
-            require(sigma_0 > 0.0, "mid static sigma is not positive" + coordinates);
-            require(
-                sigma_search > 0.0,
-                "mid search sigma is not positive" + coordinates
-            );
-            for (int mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level) {
-                const int expected_static = probcut_error_mid(mpc_level, sigma_0);
-                const int expected_search = probcut_error_mid(
-                    mpc_level, sigma_search
+            for (const bool high : {true, false}) {
+                const std::string direction = high ? " high" : " low";
+                const double sigma_0 = probcut_sigma_mid_direction(
+                    n_discs, 0, deep_depth, high
                 );
+                const double sigma_search = probcut_sigma_mid_direction(
+                    n_discs, expected_shallow, deep_depth, high
+                );
+                require(
+                    sigma_0 > 0.0,
+                    "mid static sigma is not positive" + direction + coordinates
+                );
+                require(
+                    sigma_search > 0.0,
+                    "mid search sigma is not positive" + direction + coordinates
+                );
+                for (int mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level) {
+                    const int expected_static = probcut_error_mid(mpc_level, sigma_0);
+                    const int expected_search = probcut_error_mid(
+                        mpc_level, sigma_search
+                    );
 #if USE_MPC_PRE_CALCULATION
-                require(
-                    mpc_error[mpc_level][n_discs][0][deep_depth] == expected_static,
-                    "mid precalculated static error differs from formula" + coordinates
-                );
-                require(
-                    mpc_error[mpc_level][n_discs][expected_shallow][deep_depth] ==
-                        expected_search,
-                    "mid precalculated search error differs from formula" + coordinates
-                );
+                    const int actual_static = high
+                        ? mpc_error[mpc_level][n_discs][0][deep_depth]
+                        : mpc_error_low[mpc_level][n_discs][0][deep_depth];
+                    const int actual_search = high
+                        ? mpc_error[mpc_level][n_discs][expected_shallow][deep_depth]
+                        : mpc_error_low[mpc_level][n_discs][expected_shallow][deep_depth];
+                    require(
+                        actual_static == expected_static,
+                        "mid precalculated static error differs from formula" +
+                            direction + coordinates
+                    );
+                    require(
+                        actual_search == expected_search,
+                        "mid precalculated search error differs from formula" +
+                            direction + coordinates
+                    );
 #endif
-                require(
-                    mpc_static_error<false>(mpc_level, n_discs, deep_depth) ==
-                        expected_static,
-                    "mid static helper differs from formula" + coordinates
-                );
-                int helper_search = 0;
-                int helper_eval = 0;
-                mpc_search_errors<false>(
-                    mpc_level, n_discs, expected_shallow, deep_depth,
-                    &helper_search, &helper_eval
-                );
-                require(
-                    helper_search == expected_search,
-                    "mid search helper differs from formula" + coordinates
-                );
+                    require(
+                        mpc_static_error<false>(
+                            mpc_level, n_discs, deep_depth, high
+                        ) == expected_static,
+                        "mid static helper differs from formula" + direction + coordinates
+                    );
+                    int helper_search = 0;
+                    int helper_eval = 0;
+                    mpc_search_errors<false>(
+                        mpc_level, n_discs, expected_shallow, deep_depth,
+                        &helper_search, &helper_eval, high
+                    );
+                    require(
+                        helper_search == expected_search,
+                        "mid search helper differs from formula" + direction + coordinates
+                    );
 #if USE_MPC_PRE_CALCULATION
-                const int expected_eval =
-                    (expected_static + expected_search + 1) / 2;
+                    const int expected_eval =
+                        (expected_static + expected_search + 1) / 2;
 #else
-                const int expected_eval = static_cast<int>(std::ceil(
-                    MPC_ERROR_SCALE * MPC_SELECTIVITY_Z_MID[mpc_level] *
-                    0.5 * (sigma_0 + sigma_search)
-                ));
+                    const int expected_eval = static_cast<int>(std::ceil(
+                        MPC_ERROR_SCALE * MPC_SELECTIVITY_Z_MID[mpc_level] *
+                        0.5 * (sigma_0 + sigma_search)
+                    ));
 #endif
-                require(
-                    helper_eval == expected_eval,
-                    "mid evaluation helper differs from its formula" + coordinates
-                );
+                    require(
+                        helper_eval == expected_eval,
+                        "mid evaluation helper differs from its formula" +
+                            direction + coordinates
+                    );
+                }
             }
         }
     }
@@ -196,44 +223,58 @@ int main() {
             const std::string coordinates =
                 " at n_discs=" + std::to_string(n_discs) +
                 ", shallow=" + std::to_string(shallow_depth);
-            const double sigma = probcut_sigma_end(n_discs, shallow_depth);
-            require(sigma > 0.0, "end sigma is not positive" + coordinates);
-            for (int mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level) {
-                const int expected = probcut_error_end(mpc_level, sigma);
-#if USE_MPC_PRE_CALCULATION
-                require(
-                    mpc_error_end[mpc_level][n_discs][shallow_depth] == expected,
-                    "end precalculated error differs from formula" + coordinates
+            for (const bool high : {true, false}) {
+                const double sigma = probcut_sigma_end_direction(
+                    n_discs, shallow_depth, high
                 );
+                require(
+                    sigma > 0.0,
+                    std::string(high ? "upper" : "lower") +
+                    " end sigma is not positive" + coordinates
+                );
+                for (int mpc_level = 0; mpc_level < N_SELECTIVITY_LEVEL; ++mpc_level) {
+                    const int expected = probcut_error_end(mpc_level, sigma);
+#if USE_MPC_PRE_CALCULATION
+                    const int precalculated = high
+                        ? mpc_error_end[mpc_level][n_discs][shallow_depth]
+                        : mpc_error_end_low[mpc_level][n_discs][shallow_depth];
+                    require(
+                        precalculated == expected,
+                        "end precalculated error differs from formula" + coordinates
+                    );
 #endif
-                int helper_search = 0;
-                int helper_eval = 0;
-                mpc_search_errors<true>(
-                    mpc_level, n_discs, shallow_depth, 0,
-                    &helper_search, &helper_eval
-                );
-                require(
-                    helper_search == expected,
-                    "end search helper differs from formula" + coordinates
-                );
-                const double sigma_0 = probcut_sigma_end(n_discs, 0);
-                const int expected_static = probcut_error_end(mpc_level, sigma_0);
-                require(
-                    mpc_static_error<true>(mpc_level, n_discs, 0) == expected_static,
-                    "end static helper differs from formula" + coordinates
-                );
+                    int helper_search = 0;
+                    int helper_eval = 0;
+                    mpc_search_errors<true>(
+                        mpc_level, n_discs, shallow_depth, 0,
+                        &helper_search, &helper_eval, high
+                    );
+                    require(
+                        helper_search == expected,
+                        "end search helper differs from formula" + coordinates
+                    );
+                    const double sigma_0 = probcut_sigma_end_direction(
+                        n_discs, 0, high
+                    );
+                    const int expected_static = probcut_error_end(mpc_level, sigma_0);
+                    require(
+                        mpc_static_error<true>(mpc_level, n_discs, 0, high) ==
+                            expected_static,
+                        "end static helper differs from formula" + coordinates
+                    );
 #if USE_MPC_PRE_CALCULATION
-                const int expected_eval = (expected_static + expected + 1) / 2;
+                    const int expected_eval = (expected_static + expected + 1) / 2;
 #else
-                const int expected_eval = static_cast<int>(std::ceil(
-                    MPC_ERROR_SCALE * MPC_SELECTIVITY_Z_END[mpc_level] *
-                    0.5 * (sigma_0 + sigma)
-                ));
+                    const int expected_eval = static_cast<int>(std::ceil(
+                        MPC_ERROR_SCALE * MPC_SELECTIVITY_Z_END[mpc_level] *
+                        0.5 * (sigma_0 + sigma)
+                    ));
 #endif
-                require(
-                    helper_eval == expected_eval,
-                    "end evaluation helper differs from its formula" + coordinates
-                );
+                    require(
+                        helper_eval == expected_eval,
+                        "end evaluation helper differs from its formula" + coordinates
+                    );
+                }
             }
         }
     }
