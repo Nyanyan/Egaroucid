@@ -233,6 +233,7 @@ Below is a list of Egaroucid-related links provided by third parties. The author
 
 These are works developed by third parties using Egaroucid or Egaroucid's training data, etc.
 
+- [PAPP](https://github.com/venylol/papp): This is software for generating match pairings for Othello tournaments. It utilizes Egaroucid for Console as its game analysis engine. The software's creator, [RuiRui](https://github.com/venylol), has also contributed significantly to Egaroucid through numerous pull requests and issues.
 - [Reversi Web](https://reversi.yuki-lab.com/en/): Othello AI that can be played on the website. The Egaroucid for Web engine is used as the top-level AI that you can play against by winning and advancing.
 - [Reversi Nexus](https://reversi.nexus/): Othello AI that can be played on websites, desktops, and mobiles. It seems they referred to Egaroucid's [training data](./technology/train-data/) and [technical explanation](./technology/explanation/).
 
