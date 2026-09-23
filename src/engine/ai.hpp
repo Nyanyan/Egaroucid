@@ -2286,6 +2286,11 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
             iterative_deepening_search(board, alpha, beta, depth, mpc_level, show_log, clogs, use_legal, use_multi_thread, thread_id, &res, searching);
         }
     }
+    // Iterative deepening assigns a complete Search_result, so restore the
+    // separately counted preliminary search after that assignment. Keep its
+    // time separate: callers timing tree_search_legal already include it.
+    res.clog_nodes = clog_nodes;
+    res.clog_time = clog_time;
     //thread_pool.tell_finish_using();
     //thread_pool.reset_unavailable();
     //delete_tt(&board, 6);
