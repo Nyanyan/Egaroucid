@@ -2238,6 +2238,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
     @return the result in Search_result structure
 */
 inline Search_result tree_search_legal(Board board, int alpha, int beta, int depth, uint_fast8_t mpc_level, bool show_log, uint64_t use_legal, bool use_multi_thread, uint64_t time_limit, thread_id_t thread_id, bool *searching, AI_TL_Iteration_Diagnostics *diagnostics = nullptr) {
+#if USE_CLUSTERED_TT
+    transposition_table.reset_importance();
+#endif
     //thread_pool.tell_start_using();
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);

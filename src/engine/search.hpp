@@ -386,6 +386,7 @@ class Search {
         int_fast8_t n_discs;
         uint_fast8_t parity;
         uint_fast8_t mpc_level;
+        uint8_t mpc_probe_nesting = 0;
         uint64_t n_nodes;
         Eval_search eval;
         bool use_multi_thread;

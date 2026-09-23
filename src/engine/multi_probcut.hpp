@@ -13,6 +13,7 @@
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search.hpp"
+#include "mpc_probe.hpp"
 #include "midsearch.hpp"
 #include "util.hpp"
 
@@ -848,11 +849,7 @@ inline bool mpc_end_recalibrated_shallow(
         return false;
     }
 
-    search->mpc_level = MPC_100_LEVEL;
-#if !USE_DIM0_ONLY_EVALUATION
-    const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
-    search->use_dim0_mpc_eval = false;
-#endif
+    Mpc_probe_scope probe(*search, false);
     if (
         high_gate && high_threshold <= SCORE_MAX &&
         nega_alpha_ordering_nws(
@@ -862,10 +859,6 @@ inline bool mpc_end_recalibrated_shallow(
         ) >= high_threshold
     ) {
         *v = beta + (beta & 1);
-#if !USE_DIM0_ONLY_EVALUATION
-        search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
-#endif
-        search->mpc_level = mpc_level;
         return true;
     }
     if (
@@ -877,16 +870,8 @@ inline bool mpc_end_recalibrated_shallow(
         ) <= low_threshold
     ) {
         *v = alpha - (alpha & 1);
-#if !USE_DIM0_ONLY_EVALUATION
-        search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
-#endif
-        search->mpc_level = mpc_level;
         return true;
     }
-#if !USE_DIM0_ONLY_EVALUATION
-    search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
-#endif
-    search->mpc_level = mpc_level;
     return false;
 }
 
@@ -1138,11 +1123,11 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             );
         }
 #endif
-        search->mpc_level = MPC_100_LEVEL;
+        Mpc_probe_scope probe(*search, false
 #if !USE_DIM0_ONLY_EVALUATION
-        const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
-        search->use_dim0_mpc_eval = use_dim0_mpc_eval;
+            || use_dim0_mpc_eval
 #endif
+        );
         if (d0value >= beta + error_0_high) {
             int pc_beta = beta + error_search_high;
             if (pc_beta <= SCORE_MAX) {
@@ -1151,10 +1136,6 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
                     if constexpr (IsEndSearch) {
                         *v += beta & 1;
                     }
-#if !USE_DIM0_ONLY_EVALUATION
-                    search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
-#endif
-                    search->mpc_level = mpc_level;
                     return true;
                 }
             }
@@ -1167,18 +1148,10 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
                     if constexpr (IsEndSearch) {
                         *v -= alpha & 1;
                     }
-#if !USE_DIM0_ONLY_EVALUATION
-                    search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
-#endif
-                    search->mpc_level = mpc_level;
                     return true;
                 }
             }
         }
-#if !USE_DIM0_ONLY_EVALUATION
-        search->use_dim0_mpc_eval = saved_use_dim0_mpc_eval;
-#endif
-        search->mpc_level = mpc_level;
     }
     return false;
 }

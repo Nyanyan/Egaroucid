@@ -53,7 +53,7 @@ constexpr int YBWC_PUSHED = 124;
 constexpr int MID_NWS_LMR_MIN_DEPTH = 8;
 constexpr int MID_NWS_LMR_MIN_MOVE = 4;
 inline int mid_nws_lmr_reduction(Search *search, const int depth, const int move_count, const bool is_end_search) {
-    if (is_end_search || search->mpc_level >= MPC_100_LEVEL || depth < MID_NWS_LMR_MIN_DEPTH || move_count < MID_NWS_LMR_MIN_MOVE) {
+    if (is_end_search || search->mpc_probe_nesting || search->mpc_level >= MPC_100_LEVEL || depth < MID_NWS_LMR_MIN_DEPTH || move_count < MID_NWS_LMR_MIN_MOVE) {
         return 0;
     }
     return 1;
@@ -265,6 +265,10 @@ inline int ybwc_end_split_min_depth(const uint_fast8_t mpc_level) {
         : YBWC_END_SPLIT_MIN_DEPTH;
 }
 
+#if USE_SHARED_YBWC
+#include "ybwc_shared.hpp"
+#endif
+
 /*
     @brief Wrapper for parallel NWS (Null Window Search)
 
@@ -281,7 +285,7 @@ inline int ybwc_end_split_min_depth(const uint_fast8_t mpc_level) {
     @param cancellation         linked flags for terminating this search
     @return the result in Parallel_task structure
 */
-Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, bool use_dim0_mpc_eval, thread_id_t thread_id, int mid_split_task_limit, int parent_alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, uint_fast8_t policy, int move_idx, Search_cancellation_context cancellation) {
+Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, bool use_dim0_mpc_eval, thread_id_t thread_id, int mid_split_task_limit, int parent_alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, uint_fast8_t policy, int move_idx, Search_cancellation_context cancellation, uint8_t mpc_probe_nesting) {
 #if USE_YBWC_SPLIT_STATISTICS
     const int running_tasks = ybwc_tasks_running.fetch_add(1, std::memory_order_relaxed) + 1;
     ybwc_stats_update_max(&ybwc_tasks_running_max, running_tasks);
@@ -297,6 +301,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
         is_presearch,
         thread_id
     );
+    search.mpc_probe_nesting = mpc_probe_nesting;
     search.use_dim0_mpc_eval = use_dim0_mpc_eval;
     search.mid_split_task_limit = mid_split_task_limit;
     Parallel_task task;
@@ -387,7 +392,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, con
             const int task_limit = is_end_search ? YBWC_END_MAX_SPLIT_TASKS : search->mid_split_task_limit;
             const Nws_node_hint task_node_hint = Nws_node_hint::no_static_eval();
             const std::size_t task_slot = parallel_tasks.reserve_slot();
-            auto search_task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, task_node_hint, legal, is_end_search, policy, move_idx, cancellation);
+            auto search_task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, task_node_hint, legal, is_end_search, policy, move_idx, cancellation, search->mpc_probe_nesting);
             auto completion_task = [search_task = std::move(search_task), completion_group = &parallel_tasks, task_slot]() noexcept {
                 try {
                     completion_group->publish(task_slot, search_task());
@@ -423,6 +428,10 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, con
 
 #if USE_YBWC_NWS
 inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, const Search_cancellation_context &parent_cancellation) {
+#if USE_SHARED_YBWC
+    if (ybwc_search_shared(search, &alpha, alpha + 1, v, best_move, depth, is_end_search,
+        move_list.data(), static_cast<int>(move_list.size()), SEARCH_NODE_NONPV, false, parent_cancellation)) return;
+#endif
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
     const Search_cancellation_context cancellation{&n_searching, &parent_cancellation};
     Ybwc_parallel_task_group parallel_tasks;
@@ -525,6 +534,10 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
 
 
 inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput, const Search_cancellation_context &parent_cancellation) {
+#if USE_SHARED_YBWC
+    if (ybwc_search_shared(search, &alpha, alpha + 1, v, best_move, depth, is_end_search,
+        move_list, canput, SEARCH_NODE_NONPV, false, parent_cancellation)) return;
+#endif
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
     const Search_cancellation_context cancellation{&n_searching, &parent_cancellation};
     Ybwc_parallel_task_group parallel_tasks;
@@ -648,6 +661,11 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
 
 #if USE_YBWC_NEGASCOUT
 void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, std::vector<Flip_value> &move_list, Search_node_type node_type, bool need_best_move, bool *searching) {
+#if USE_SHARED_YBWC
+    const Search_cancellation_context shared_parent{searching, nullptr};
+    if (ybwc_search_shared(search, alpha, *beta, v, best_move, depth, is_end_search,
+        move_list.data(), static_cast<int>(move_list.size()), node_type, true, shared_parent)) return;
+#endif
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
     const Search_cancellation_context root_cancellation{searching, nullptr};
     const Search_cancellation_context cancellation{&n_searching, &root_cancellation};
@@ -763,6 +781,11 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
 
 
 void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput, Search_node_type node_type, bool need_best_move, bool *searching) {
+#if USE_SHARED_YBWC
+    const Search_cancellation_context shared_parent{searching, nullptr};
+    if (ybwc_search_shared(search, alpha, *beta, v, best_move, depth, is_end_search,
+        move_list, canput, node_type, true, shared_parent)) return;
+#endif
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
     const Search_cancellation_context root_cancellation{searching, nullptr};
     const Search_cancellation_context cancellation{&n_searching, &root_cancellation};

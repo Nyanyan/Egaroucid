@@ -134,8 +134,17 @@
 // enhanced transposition cutoff
 #define USE_MID_ETC true
 
+#ifndef USE_CLUSTERED_TT
+#define USE_CLUSTERED_TT false
+#endif
+
 // Multi-ProbCut
 #define USE_MID_MPC true
+
+#ifndef MPC_MAX_PROBE_NESTING
+#define MPC_MAX_PROBE_NESTING 1
+#endif
+static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 
 // last parity ordering optimization
 #define LAST_PO_OPTIMIZE true
@@ -152,6 +161,10 @@
 #endif
 
 // YBWC
+#ifndef USE_SHARED_YBWC
+// Enable explicitly while comparing the persistent split-point implementation.
+#define USE_SHARED_YBWC false
+#endif
 #define USE_YBWC_NWS true
 #define USE_YBWC_NEGASCOUT true
 #define USE_YBWC_NEGASCOUT_ANALYZE false

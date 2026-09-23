@@ -379,6 +379,9 @@ class Transposition_table{
     @param table_heap           transposition table on heap
     @param table_size           total table size
 */
+#if USE_CLUSTERED_TT
+#include "transposition_table_clustered.hpp"
+#else
 class Transposition_table {
     private:
         std::mutex mtx;
@@ -1056,6 +1059,7 @@ class Transposition_table {
 };
 //#endif
 
+#endif // USE_CLUSTERED_TT
 Transposition_table transposition_table;
 
 void transposition_table_init() {
