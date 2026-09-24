@@ -135,14 +135,16 @@
 #define USE_MID_ETC true
 
 #ifndef USE_CLUSTERED_TT
-#define USE_CLUSTERED_TT false
+// Define it as false on the command line to compare the previous 3-entry table.
+#define USE_CLUSTERED_TT true
 #endif
 
 // Multi-ProbCut
 #define USE_MID_MPC true
 
 #ifndef MPC_MAX_PROBE_NESTING
-#define MPC_MAX_PROBE_NESTING 1
+// Define it as 1 on the command line to compare the non-recursive probe search.
+#define MPC_MAX_PROBE_NESTING 2
 #endif
 static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 
@@ -162,8 +164,8 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 
 // YBWC
 #ifndef USE_SHARED_YBWC
-// Enable explicitly while comparing the persistent split-point implementation.
-#define USE_SHARED_YBWC false
+// Define it as false on the command line to compare the one-task-per-move split.
+#define USE_SHARED_YBWC true
 #endif
 #define USE_YBWC_NWS true
 #define USE_YBWC_NEGASCOUT true
