@@ -57,6 +57,14 @@ bin/document/book.egbk3
 # bin directory
 bin/data
 bin/problem
+!bin/problem/
+bin/problem/*
+!bin/problem/ggs_mpc_endgame_38_42_20260823.txt
+!bin/problem/ggs_mpc_endgame_38_42_20260823.jsonl
+!bin/problem/ggs_mpc_endgame_40_20260823.txt
+!bin/problem/ggs_mpc_endgame_40_20260823.jsonl
+!bin/problem/ggs_mpc_endgame_39_20260823.txt
+!bin/problem/ggs_mpc_endgame_39_20260823.jsonl
 bin/versions
 bin/transcript
 bin/ffotest_result
