@@ -44,6 +44,34 @@
 #define MODE_AI_AI 2
 #define MODE_HUMAN_HUMAN 3
 
+// Windows 11 may run a process whose window is in the background (or that
+// has none) at EcoQoS, which prefers efficiency cores and lower clocks. The
+// search always wants full speed, so opt out. The API is resolved at run time
+// because it needs Windows 8 or later.
+inline void disable_power_throttling() {
+#ifdef _WIN32
+    struct Power_throttling_state {
+        ULONG Version;
+        ULONG ControlMask;
+        ULONG StateMask;
+    };
+    using Set_process_information = BOOL (WINAPI *)(HANDLE, int, LPVOID, DWORD);
+    constexpr int PROCESS_POWER_THROTTLING_CLASS = 4; // ProcessPowerThrottling
+    const HMODULE kernel32 = GetModuleHandleW(L"kernel32.dll");
+    if (kernel32 == nullptr) {
+        return;
+    }
+    const auto set_process_information = reinterpret_cast<Set_process_information>(
+        reinterpret_cast<void *>(GetProcAddress(kernel32, "SetProcessInformation")));
+    if (set_process_information == nullptr) {
+        return;
+    }
+    // Version 1; control EXECUTION_SPEED (1) and turn it off.
+    Power_throttling_state state{1, 1, 0};
+    set_process_information(GetCurrentProcess(), PROCESS_POWER_THROTTLING_CLASS, &state, sizeof(state));
+#endif
+}
+
 std::string get_parent_path(char raw_path[]) {
     std::filesystem::path p = raw_path;
     //p = std::filesystem::canonical(p);

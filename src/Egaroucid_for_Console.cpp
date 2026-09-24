@@ -14,6 +14,7 @@
 
 
 void init_console(Options options, std::string binary_path) {
+    disable_power_throttling();
     int thread_size = std::max(0, options.n_threads - 1);
     thread_pool.resize(thread_size);
     if (options.show_log)
