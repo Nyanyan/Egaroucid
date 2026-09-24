@@ -849,7 +849,7 @@ inline bool mpc_end_recalibrated_shallow(
         return false;
     }
 
-    Mpc_probe_scope probe(*search, false);
+    Mpc_probe_scope probe(*search, false, true);
     if (
         high_gate && high_threshold <= SCORE_MAX &&
         nega_alpha_ordering_nws(
@@ -1127,6 +1127,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 #if !USE_DIM0_ONLY_EVALUATION
             || use_dim0_mpc_eval
 #endif
+            , IsEndSearch
         );
         if (d0value >= beta + error_0_high) {
             int pc_beta = beta + error_search_high;

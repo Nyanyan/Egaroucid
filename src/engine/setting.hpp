@@ -289,13 +289,24 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #endif
 
 // Tree-parallel midgame search scales poorly beyond this many in-flight split
-// tasks on the tournament workload. Exact searches keep the full pool.
+// tasks on the tournament workload. Exact searches keep the full pool. With
+// USE_YBWC_HELPFUL_MASTER, 14 tasks were faster than 9 in the midgame without
+// more nodes, while MPC probes inside the endgame visited more nodes, so those
+// probes keep 9.
 #if IS_GGS_TOURNAMENT
     #ifndef YBWC_MID_MAX_SPLIT_TASKS
-        #define YBWC_MID_MAX_SPLIT_TASKS 9
+        #if USE_YBWC_HELPFUL_MASTER
+            #define YBWC_MID_MAX_SPLIT_TASKS 14
+        #else
+            #define YBWC_MID_MAX_SPLIT_TASKS 9
+        #endif
+    #endif
+    #ifndef YBWC_END_PROBE_MAX_SPLIT_TASKS
+        #define YBWC_END_PROBE_MAX_SPLIT_TASKS 9
     #endif
 #else
     #define YBWC_MID_MAX_SPLIT_TASKS THREAD_SIZE_INF
+    #define YBWC_END_PROBE_MAX_SPLIT_TASKS THREAD_SIZE_INF
 #endif
 
 /*
