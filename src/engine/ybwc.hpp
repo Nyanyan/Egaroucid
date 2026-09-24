@@ -21,6 +21,7 @@
 #include "thread_pool.hpp"
 #include "transposition_cutoff.hpp"
 #include "ybwc_completion_group.hpp"
+#include "ybwc_split_point.hpp"
 
 static_assert(MAX_N_BRANCHES <= 64);
 using Ybwc_parallel_task_group = Ybwc_completion_group<Parallel_task, MAX_N_BRANCHES>;
@@ -298,6 +299,9 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
     const int running_tasks = ybwc_tasks_running.fetch_add(1, std::memory_order_relaxed) + 1;
     ybwc_stats_update_max(&ybwc_tasks_running_max, running_tasks);
 #endif
+    // This task may run inline in a thread that is waiting for another split.
+    // It is not part of that split's subtree.
+    const Ybwc_current_split_scope no_split(nullptr);
     Search search(
         player,
         opponent,

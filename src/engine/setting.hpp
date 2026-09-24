@@ -167,6 +167,25 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 // Define it as false on the command line to compare the one-task-per-move split.
 #define USE_SHARED_YBWC true
 #endif
+// An owner of a shared YBWC split that has handed out all of its moves joins
+// a split below its helpers instead of sleeping until they finish.
+#ifndef USE_YBWC_HELPFUL_MASTER
+#define USE_YBWC_HELPFUL_MASTER true
+#endif
+// Owner, helpers and joiners searching one split at the same time. With 5,
+// the MPC endgame visited about 12% more nodes than with 4.
+#ifndef YBWC_JOIN_MAX_WORKERS
+#define YBWC_JOIN_MAX_WORKERS 4
+#endif
+// Join only splits where this many handed-out moves already failed low,
+// i.e. nodes that look like ALL nodes whose remaining moves are all needed.
+#ifndef YBWC_JOIN_MIN_FAIL_LOW
+#define YBWC_JOIN_MIN_FAIL_LOW 1
+#endif
+// How far below its own split an owner looks for work.
+#ifndef YBWC_JOIN_MAX_LEVELS
+#define YBWC_JOIN_MAX_LEVELS 16
+#endif
 #define USE_YBWC_NWS true
 #define USE_YBWC_NEGASCOUT true
 #define USE_YBWC_NEGASCOUT_ANALYZE false
