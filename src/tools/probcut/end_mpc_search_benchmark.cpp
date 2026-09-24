@@ -1,7 +1,7 @@
 /*
     Egaroucid Project
 
-    A small, deterministic driver for comparing full-depth endgame searches
+    A small, fixed-condition driver for comparing full-depth endgame searches
     at a specified MPC level. Run the executable from bin/ so that the
     evaluation files are found in bin/resources/.
 
@@ -13,7 +13,7 @@
         thread count
         hash level
         board string
-        optional minimum root ply for using non-exact TT bounds
+        optional --diagnostics (engine iteration and YBWC statistics)
 */
 
 #include <algorithm>
@@ -51,19 +51,19 @@ bool initialize_engine(int n_threads, int hash_level) {
 } // namespace
 
 int main(int argc, char **argv) {
-    if (argc != 5 && argc != 6) {
+    const bool diagnostics = argc == 6 && std::string(argv[5]) == "--diagnostics";
+    if (argc != 5 && !diagnostics) {
         std::cerr << "usage: " << argv[0]
-                  << " <mpc-level:0..6> <threads> <hash-level> \"<board> <side>\" [tt-nonexact-min-ply]\n";
+                  << " <mpc-level:0..6> <threads> <hash-level> \"<board> <side>\""
+                  << " [--diagnostics]\n";
         return 2;
     }
 
     const int mpc_level = std::atoi(argv[1]);
     const int n_threads = std::atoi(argv[2]);
     const int hash_level = std::atoi(argv[3]);
-    const int tt_nonexact_min_ply = argc == 6 ? std::atoi(argv[5]) : 0;
     if (mpc_level < 0 || mpc_level >= N_SELECTIVITY_LEVEL ||
-        n_threads <= 0 || hash_level < 0 || hash_level >= N_HASH_LEVEL ||
-        tt_nonexact_min_ply < 0) {
+        n_threads <= 0 || hash_level < 0 || hash_level >= N_HASH_LEVEL) {
         std::cerr << "invalid numeric argument\n";
         return 2;
     }
@@ -82,29 +82,29 @@ int main(int argc, char **argv) {
     global_searching = true;
     const int depth = HW2 - board.n_discs();
     const uint64_t start = tim();
-    Search search(&board, (uint_fast8_t)mpc_level, n_threads > 1, false);
-    search.thread_id = THREAD_ID_NONE;
-    search.tt_nonexact_bound_min_ply = tt_nonexact_min_ply;
-    const std::pair<int, int> result = first_nega_scout_legal(
-        &search,
+    const Search_result result = tree_search_legal(
+        board,
         -SCORE_MAX,
         SCORE_MAX,
         depth,
-        true,
-        std::vector<Clog_result>(),
+        (uint_fast8_t)mpc_level,
+        diagnostics,
         board.get_legal(),
-        start,
+        n_threads > 1,
+        TIME_LIMIT_INF,
+        THREAD_ID_NONE,
         &searching
     );
     const uint64_t elapsed = tim() - start;
+    const uint64_t nodes = result.nodes + result.clog_nodes;
 
     std::cout << "value\tmove\tdepth\tmpc_level\tnodes\ttime_ms\tnps\n"
-              << result.first << '\t'
-              << idx_to_coord(result.second) << '\t'
+              << result.value << '\t'
+              << idx_to_coord(result.policy) << '\t'
               << depth << '\t'
               << mpc_level << '\t'
-              << search.n_nodes << '\t'
+              << nodes << '\t'
               << elapsed << '\t'
-              << calc_nps(search.n_nodes, elapsed) << '\n';
+              << calc_nps(nodes, elapsed) << '\n';
     return searching ? 0 : 4;
 }
