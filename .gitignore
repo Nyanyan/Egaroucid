@@ -5,6 +5,7 @@
 **/*.ilk
 **/*.exp
 **/*.lib
+**/*.profraw
 **/__pycache__
 **/legacy
 **/data
@@ -74,6 +75,11 @@ bin/ggs/analyze
 bin/ggs/etc
 bin/egaroucid_vs_edax_time_log
 bin/tuning_logs
+
+# measurement launchers and their build byproducts
+bin/run_*.bat
+bin/resume_*.bat
+bin/*.s
 
 # bin directory (for Linux)
 bin/resources/engine
