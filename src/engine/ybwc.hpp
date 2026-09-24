@@ -81,6 +81,7 @@ inline std::atomic<int> ybwc_tasks_running;
 inline std::atomic<int> ybwc_tasks_running_max;
 inline std::atomic<uint64_t> ybwc_wait_help_executed;
 inline std::atomic<uint64_t> ybwc_wait_yielded;
+inline std::atomic<uint64_t> ybwc_wait_blocked_ns;
 
 inline void ybwc_stats_update_max(std::atomic<int> *target, const int value) {
     int observed = target->load(std::memory_order_relaxed);
@@ -126,6 +127,7 @@ inline void ybwc_split_stats_reset() {
     ybwc_tasks_running_max = 0;
     ybwc_wait_help_executed = 0;
     ybwc_wait_yielded = 0;
+    ybwc_wait_blocked_ns = 0;
     for (int i = 0; i < YBWC_STATS_DEPTH_SIZE; ++i) {
         ybwc_split_attempt[i] = 0;
         ybwc_split_idle_ok[i] = 0;
@@ -163,6 +165,8 @@ inline void ybwc_split_stats_print() {
               << " max_running " << ybwc_tasks_running_max.load(std::memory_order_relaxed)
               << " wait_help " << ybwc_wait_help_executed.load(std::memory_order_relaxed)
               << " wait_yield " << ybwc_wait_yielded.load(std::memory_order_relaxed)
+              << " wait_blocked_thread_ms "
+              << ybwc_wait_blocked_ns.load(std::memory_order_relaxed) / 1000000.0
               << std::endl;
     std::cerr << "ybwc split stats depth attempt idle_ok move_ok pushed push_failed" << std::endl;
     for (int depth = 0; depth < YBWC_STATS_DEPTH_SIZE; ++depth) {
@@ -234,7 +238,17 @@ inline bool ybwc_wait_task_with_help(Ybwc_parallel_task_group &parallel_tasks, t
         }
 #endif
         if (!helped) {
+#if USE_YBWC_SPLIT_STATISTICS
+            const auto wait_start = std::chrono::steady_clock::now();
+#endif
             parallel_tasks.wait_for_ready();
+#if USE_YBWC_SPLIT_STATISTICS
+            const auto wait_end = std::chrono::steady_clock::now();
+            ybwc_wait_blocked_ns.fetch_add(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(wait_end - wait_start).count(),
+                std::memory_order_relaxed
+            );
+#endif
         }
     }
 }
