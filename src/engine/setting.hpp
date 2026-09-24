@@ -235,6 +235,11 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 // searches retain the established split depth.
 #define YBWC_SELECTIVE_END_SPLIT_MIN_DEPTH 18
 #endif
+// Apply the selective endgame split floor at the parent-side split gates too.
+// Keep this disabled by default until the A/B benchmark has validated it.
+#ifndef YBWC_ENFORCE_SELECTIVE_END_SPLIT_MIN_DEPTH
+#define YBWC_ENFORCE_SELECTIVE_END_SPLIT_MIN_DEPTH false
+#endif
 #ifndef YBWC_END_MAX_SPLIT_TASKS
 #define YBWC_END_MAX_SPLIT_TASKS THREAD_SIZE_INF
 #endif

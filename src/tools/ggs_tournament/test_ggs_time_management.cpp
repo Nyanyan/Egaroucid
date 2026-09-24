@@ -637,6 +637,29 @@ void test_ybwc_end_split_depth() {
         YBWC_END_SPLIT_MIN_DEPTH,
         "higher-selectivity endgame YBWC split depth"
     );
+    require(
+        ybwc_can_split_child(MPC_74_LEVEL, YBWC_MID_SPLIT_MIN_DEPTH, false),
+        "midgame split gate must allow its minimum child depth"
+    );
+    require(
+        !ybwc_can_split_child(MPC_74_LEVEL, YBWC_MID_SPLIT_MIN_DEPTH - 1, false),
+        "midgame split gate must reject a shallower child depth"
+    );
+#if YBWC_ENFORCE_SELECTIVE_END_SPLIT_MIN_DEPTH
+    require(
+        !ybwc_can_split_child(MPC_74_LEVEL, YBWC_SELECTIVE_END_SPLIT_MIN_DEPTH - 1, true),
+        "candidate must reject a 74-percent endgame split below the selective floor"
+    );
+#else
+    require(
+        ybwc_can_split_child(MPC_74_LEVEL, YBWC_END_SPLIT_MIN_DEPTH, true),
+        "control must preserve the established parent-side split floor"
+    );
+#endif
+    require(
+        ybwc_can_split_child(MPC_100_LEVEL, YBWC_END_SPLIT_MIN_DEPTH, true),
+        "exact endgame split gate must retain its minimum child depth"
+    );
 }
 
 } // namespace

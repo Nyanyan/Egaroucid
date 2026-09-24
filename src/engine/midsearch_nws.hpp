@@ -24,6 +24,7 @@
 #include "move_ordering.hpp"
 #include "multi_probcut.hpp"
 #include "thread_pool.hpp"
+#include "ybwc_split_policy.hpp"
 #include "ybwc.hpp"
 #include "util.hpp"
 #include "stability_cutoff.hpp"
@@ -480,7 +481,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
 #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 
-            ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) //&& 
+            ybwc_can_split_child(search->mpc_level, depth - 1, is_end_search) //&&
             //((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
         ) {
             move_list_sort(move_list, canput);

@@ -23,6 +23,7 @@
 #include "move_ordering.hpp"
 #include "multi_probcut.hpp"
 #include "thread_pool.hpp"
+#include "ybwc_split_policy.hpp"
 #include "util.hpp"
 #include "stability_cutoff.hpp"
 #include "endsearch.hpp"
@@ -333,7 +334,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
     if (alpha < beta) {
         move_list_evaluate(search, move_list, canput, moves, depth, alpha, beta, is_end_search, searching);
 #if USE_YBWC_NEGASCOUT
-        if (search->use_multi_thread && ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH))) {
+        if (search->use_multi_thread && ybwc_can_split_child(search->mpc_level, depth - 1, is_end_search)) {
             move_list_sort(move_list, canput);
             if (move_list[0].flip.flip) {
                 if (!serial_searched) {
@@ -645,7 +646,7 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
 #if USE_YBWC_NEGASCOUT
         if (
             search->use_multi_thread && 
-            ((!is_end_search && depth - 1 >= YBWC_MID_SPLIT_MIN_DEPTH) || (is_end_search && depth - 1 >= YBWC_END_SPLIT_MIN_DEPTH)) //&& 
+            ybwc_can_split_child(search->mpc_level, depth - 1, is_end_search) //&&
             //((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
         ) {
             move_list_sort(move_list, canput);

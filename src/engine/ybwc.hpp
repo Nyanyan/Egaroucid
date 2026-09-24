@@ -14,6 +14,7 @@
 #include "setting.hpp"
 #include "common.hpp"
 #include "search.hpp"
+#include "ybwc_split_policy.hpp"
 #include "midsearch.hpp"
 #include "endsearch.hpp"
 #include "parallel.hpp"
@@ -27,7 +28,6 @@ using Ybwc_parallel_task_group = Ybwc_completion_group<Parallel_task, MAX_N_BRAN
 /*
     @brief YBWC parameters
 */
-constexpr int YBWC_MID_SPLIT_MIN_DEPTH = 6;
 //constexpr int YBWC_MID_SPLIT_MAX_DEPTH = 26;
 //constexpr int YBWC_END_SPLIT_MAX_DEPTH = 29;
 // constexpr int YBWC_N_ELDER_CHILD = 1;
@@ -257,12 +257,6 @@ inline void ybwc_undo_child(Search *search, const Flip *flip, const bool use_end
     } else {
         search->undo(flip);
     }
-}
-
-inline int ybwc_end_split_min_depth(const uint_fast8_t mpc_level) {
-    return mpc_level == MPC_74_LEVEL
-        ? YBWC_SELECTIVE_END_SPLIT_MIN_DEPTH
-        : YBWC_END_SPLIT_MIN_DEPTH;
 }
 
 #if USE_SHARED_YBWC
