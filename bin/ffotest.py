@@ -6,29 +6,44 @@ import subprocess
 import sys
 import os
 
-start = 40
-end = 59
-n_threads = 42
-hash_level = 25
-#exe = 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe'
-exe = 'Egaroucid_for_Console.exe'
-eval_file = ''
+def parse_args(args, names):
+    # positional (in the order of names) or name=value
+    n_positional = 0
+    for arg in sys.argv[1:]:
+        name, sep, value = arg.partition('=')
+        if sep and name.isidentifier():
+            if not (name in names):
+                raise ValueError('unknown option ' + name)
+        else:
+            if n_positional >= len(names):
+                raise ValueError('too many arguments')
+            name = names[n_positional]
+            value = arg
+            n_positional += 1
+        args[name] = type(args[name])(value)
+
+args = {
+    'start': 40,
+    'end': 59,
+    'n_threads': 42,
+    'hash_level': 25,
+    #'exe': 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe',
+    'exe': 'Egaroucid_for_Console.exe',
+    'eval_file': '',
+}
 try:
-    if len(sys.argv) >= 2:
-        start = int(sys.argv[1])
-    if len(sys.argv) >= 3:
-        end = int(sys.argv[2])
-    if len(sys.argv) >= 4:
-        n_threads = int(sys.argv[3])
-    if len(sys.argv) >= 5:
-        hash_level = int(sys.argv[4])
-    if len(sys.argv) >= 6:
-        exe = sys.argv[5]
-    if len(sys.argv) >= 7:
-        eval_file = sys.argv[6]
-except:
+    parse_args(args, ['start', 'end', 'n_threads', 'hash_level', 'exe', 'eval_file'])
+except Exception as e:
+    print(e)
     print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe] [eval_file=]')
+    print('arguments can be given in this order or as name=value (e.g. exe=Egaroucid_for_Console_clang.exe)')
     exit()
+start = args['start']
+end = args['end']
+n_threads = args['n_threads']
+hash_level = args['hash_level']
+exe = args['exe']
+eval_file = args['eval_file']
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if not os.path.isabs(exe):

@@ -18,31 +18,45 @@ def fill0(n, r):
 
 PROBS = ['74', '88', '93', '98', '99', '99.9', '100']
 
-prob = '74'
-n_threads = 42
-hash_level = 25
-exe = 'Egaroucid_for_Console.exe'
-eval_file = ''
-problem_file = 'problem/ggs_mpc_endgame_40_20260823.txt'
+def parse_args(args, names):
+    # positional (in the order of names) or name=value
+    n_positional = 0
+    for arg in sys.argv[1:]:
+        name, sep, value = arg.partition('=')
+        if sep and name.isidentifier():
+            if not (name in names):
+                raise ValueError('unknown option ' + name)
+        else:
+            if n_positional >= len(names):
+                raise ValueError('too many arguments')
+            name = names[n_positional]
+            value = arg
+            n_positional += 1
+        args[name] = type(args[name])(value)
 
+args = {
+    'prob': '74',
+    'n_threads': 42,
+    'hash_level': 25,
+    'exe': 'Egaroucid_for_Console.exe',
+    'eval_file': '',
+    'problem_file': 'problem/ggs_mpc_endgame_40_20260823.txt',
+}
 try:
-    if len(sys.argv) >= 2:
-        prob = sys.argv[1]
-        if not (prob in PROBS):
-            raise ValueError
-    if len(sys.argv) >= 3:
-        n_threads = int(sys.argv[2])
-    if len(sys.argv) >= 4:
-        hash_level = int(sys.argv[3])
-    if len(sys.argv) >= 5:
-        exe = sys.argv[4]
-    if len(sys.argv) >= 6:
-        eval_file = sys.argv[5]
-    if len(sys.argv) >= 7:
-        problem_file = sys.argv[6]
-except:
+    parse_args(args, ['prob', 'n_threads', 'hash_level', 'exe', 'eval_file', 'problem_file'])
+    if not (args['prob'] in PROBS):
+        raise ValueError('prob must be one of ' + ', '.join(PROBS))
+except Exception as e:
+    print(e)
     print('usage: python mpcendtest.py [prob=74 (74, 88, 93, 98, 99, 99.9, 100)] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe] [eval_file=] [problem_file=problem/ggs_mpc_endgame_40_20260823.txt]')
+    print('arguments can be given in this order or as name=value (e.g. exe=Egaroucid_for_Console_clang.exe)')
     exit()
+prob = args['prob']
+n_threads = args['n_threads']
+hash_level = args['hash_level']
+exe = args['exe']
+eval_file = args['eval_file']
+problem_file = args['problem_file']
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))

@@ -9,26 +9,41 @@ def fill0(n, r):
         n = '0' + n
     return n
 
-level = 23
-n_threads = 32
-hash_level = 25
-exe = 'Egaroucid_for_Console.exe'
-eval_file = ''
+def parse_args(args, names):
+    # positional (in the order of names) or name=value
+    n_positional = 0
+    for arg in sys.argv[1:]:
+        name, sep, value = arg.partition('=')
+        if sep and name.isidentifier():
+            if not (name in names):
+                raise ValueError('unknown option ' + name)
+        else:
+            if n_positional >= len(names):
+                raise ValueError('too many arguments')
+            name = names[n_positional]
+            value = arg
+            n_positional += 1
+        args[name] = type(args[name])(value)
 
+args = {
+    'level': 23,
+    'n_threads': 32,
+    'hash_level': 25,
+    'exe': 'Egaroucid_for_Console.exe',
+    'eval_file': '',
+}
 try:
-    if len(sys.argv) >= 2:
-        level = int(sys.argv[1])
-    if len(sys.argv) >= 3:
-        n_threads = int(sys.argv[2])
-    if len(sys.argv) >= 4:
-        hash_level = int(sys.argv[3])
-    if len(sys.argv) >= 5:
-        exe = sys.argv[4]
-    if len(sys.argv) >= 6:
-        eval_file = sys.argv[5]
-except:
+    parse_args(args, ['level', 'n_threads', 'hash_level', 'exe', 'eval_file'])
+except Exception as e:
+    print(e)
     print('usage: python midtest.py [level=23] [n_threads=32] [hash_level=25] [exe=Egaroucid_for_Console.exe] [eval_file=]')
+    print('arguments can be given in this order or as name=value (e.g. exe=Egaroucid_for_Console_clang.exe)')
     exit()
+level = args['level']
+n_threads = args['n_threads']
+hash_level = args['hash_level']
+exe = args['exe']
+eval_file = args['eval_file']
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
