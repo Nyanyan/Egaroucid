@@ -104,6 +104,10 @@ constexpr int MO_OFFSET_L_PM = 38;
     constexpr int W_END_NWS_SIMPLE_TT_BONUS = 300;
 #endif
 
+// endgame null window search ordered with shallow searches
+constexpr int W_END_NWS_SEARCH_VALUE = 40;
+constexpr int END_NWS_SEARCH_ORDERING_ALPHA_OFFSET = 8;
+
 constexpr int MOVE_ORDERING_VALUE_OFFSET_ALPHA = 12;
 constexpr int MOVE_ORDERING_VALUE_OFFSET_BETA = 8;
 constexpr int MOVE_ORDERING_NWS_VALUE_OFFSET_ALPHA = 16;

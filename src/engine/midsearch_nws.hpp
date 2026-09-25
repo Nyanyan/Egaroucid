@@ -368,6 +368,67 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
 }
 
 
+#if USE_END_NWS_SEARCH_ORDERING
+inline bool use_end_nws_search_ordering(const Search *search, int depth) {
+    return depth >= (search->mpc_level <= END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL ? END_NWS_SEARCH_ORDERING_MIN_DEPTH : END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH);
+}
+
+/*
+    @brief Evaluate all legal moves for deep endgame NWS with shallow searches
+
+    Like Edax's movelist_evaluate, each move is scored by the opponent's
+    mobility and a shallow midgame search whose depth grows with the remaining
+    depth.  The shallow searches do not use MPC.
+
+    @param search               search information
+    @param move_list            list of moves
+    @param canput               number of legal moves
+    @param moves                list of moves in transposition table
+    @param depth                remaining depth (number of empties)
+    @param alpha                alpha value (beta = alpha + 1)
+    @param cancellation         linked flags for terminating this search
+*/
+inline void move_list_evaluate_end_nws_search(Search *search, Flip_value move_list[], int canput, uint_fast8_t moves[], int depth, int alpha, const Search_cancellation_context &cancellation) {
+    if (canput <= 1) {
+        return;
+    }
+    int sort_depth = (depth - 15) / 3;
+    if (depth >= 27) {
+        ++sort_depth;
+    }
+    sort_depth = std::max(1, std::min(6, sort_depth));
+    const int w_value = sort_depth >= 3 ? W_END_NWS_SEARCH_VALUE : W_END_NWS_SEARCH_VALUE / 2;
+    const int sort_alpha = std::max(-SCORE_MAX, alpha - END_NWS_SEARCH_ORDERING_ALPHA_OFFSET);
+    const uint_fast8_t saved_mpc_level = search->mpc_level;
+    search->mpc_level = MPC_100_LEVEL;
+    for (int i = 0; i < canput; ++i) {
+        Flip_value *flip_value = &move_list[i];
+        if (!flip_value->flip.flip) {
+            continue;
+        }
+        if (flip_value->flip.pos == moves[0]) {
+            flip_value->value = W_1ST_MOVE;
+            continue;
+        }
+        if (flip_value->flip.pos == moves[1]) {
+            flip_value->value = W_2ND_MOVE;
+            continue;
+        }
+        flip_value->value = 0;
+        search->move(&flip_value->flip);
+            flip_value->n_legal = search->board.get_legal();
+            flip_value->value += (MO_OFFSET_L_PM - get_n_moves_cornerX2(flip_value->n_legal)) * W_END_NWS_MOBILITY;
+            int child_value = nega_scout_node(search, -SCORE_MAX, -sort_alpha, sort_depth, false, flip_value->n_legal, false, SEARCH_NODE_NONPV, cancellation);
+            if (child_value == SCORE_UNDEFINED) {
+                child_value = 0;
+            }
+            flip_value->value += (SCORE_MAX - child_value) * w_value;
+        search->undo(&flip_value->flip);
+    }
+    search->mpc_level = saved_mpc_level;
+}
+#endif
+
 /*
     @brief Get a value with given depth with Nega-Alpha algorithm (NWS)
 
@@ -474,6 +535,11 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
     }
     if (v <= alpha) {
         if (is_end_search) {
+#if USE_END_NWS_SEARCH_ORDERING
+            if (use_end_nws_search_ordering(search, depth)) {
+                move_list_evaluate_end_nws_search(search, move_list, canput, moves, depth, alpha, cancellation);
+            } else
+#endif
             move_list_evaluate_end_nws(search, move_list, canput, moves, cancellation.current);
         } else {
             move_list_evaluate_nws(search, move_list, canput, moves, depth, alpha, false, cancellation.current);
