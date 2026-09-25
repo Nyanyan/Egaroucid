@@ -1,0 +1,32 @@
+2026/09/25
+14700KF
+Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
+  @date     2021-2026
+  @build    Sep 25 2026 09:08:13
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 74 -nobook -thread 42 -hash 25 -solve script_dir\problem/ggs_mpc_endgame_40_20260823.txt
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |         custom|         40@74%|             g4|             -6|  000:00:02.284|      320873813|      140487658|
+#01 |         custom|         40@74%|             c2|             +4|  000:00:05.271|     1512781886|      287000926|
+#02 |         custom|         40@74%|             e8|            -16|  000:00:03.305|      553208653|      167385371|
+#03 |         custom|         40@74%|             c7|            -14|  000:00:00.465|       30353968|       65277350|
+#04 |         custom|         40@74%|             g5|             +2|  000:00:01.388|      132058488|       95143002|
+total 2549276808 nodes in 12.713s NPS 200525195
+
+Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
+  @date     2021-2026
+  @build    Sep 25 2026 09:08:13
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 88 -nobook -thread 42 -hash 25 -solve script_dir\problem/ggs_mpc_endgame_40_20260823.txt
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |         custom|         40@88%|             g4|             -6|  000:00:08.121|     2283322320|      281162704|
+#01 |         custom|         40@88%|             c2|             +4|  000:00:12.960|     4311601553|      332685305|
+#02 |         custom|         40@88%|             e8|            -18|  000:03:49.601|   102898208562|      448160977|
+#03 |         custom|         40@88%|             c7|            -16|  000:03:02.310|    77241296362|      423681072|
+#04 |         custom|         40@88%|             g5|             +2|  000:00:07.244|     2608771120|      360128536|
+total 189343199917 nodes in 440.236s NPS 430094767
+
