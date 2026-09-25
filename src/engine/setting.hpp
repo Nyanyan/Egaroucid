@@ -199,9 +199,11 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #ifndef END_NWS_SEARCH_ORDERING_MIN_DEPTH
 #define END_NWS_SEARCH_ORDERING_MIN_DEPTH 18
 #endif
-// Highest MPC level (0: 74% ... 5: 99.9%) that uses it from the depth above.
+// Highest MPC level (0: 74%, 1: 88%, 2: 93%, ... 5: 99.9%) that uses it from
+// the depth above.  The 98% and higher levels behave like exact searches, so
+// they keep the old ordering like the exact search.
 #ifndef END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL
-#define END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL 5
+#define END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL 2
 #endif
 // Remaining depth from which the other endgame NWS levels also use it.
 #ifndef END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH
