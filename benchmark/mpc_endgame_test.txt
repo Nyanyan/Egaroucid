@@ -15,6 +15,26 @@ script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 74 -nobook -thread 42 -h
 #04 |         custom|         40@74%|             g5|             +2|  000:00:01.388|      132058488|       95143002|
 total 2549276808 nodes in 12.713s NPS 200525195
 
+14700KF
+python mpcendtest.py exe=Egaroucid_for_Console_clang.exe hash_level=29
+Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
+  @date     2021-2026
+  @build    Sep 25 2026 09:08:13
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 74 -nobook -thread 42 -hash 29 -solve script_dir\problem/ggs_mpc_endgame_40_20260823.txt
+[ERROR] can't open hash29.eghs
+[ERROR] can't get hash. you can ignore this error
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |         custom|         40@74%|             g4|             -6|  000:00:02.736|      380779558|      139173815|
+#01 |         custom|         40@74%|             c2|             +4|  000:00:05.699|     1544519722|      271015918|
+#02 |         custom|         40@74%|             e8|            -16|  000:00:03.925|      549555494|      140014138|
+#03 |         custom|         40@74%|             c7|            -14|  000:00:00.526|       39486455|       75069306|
+#04 |         custom|         40@74%|             g5|             +2|  000:00:01.853|      173428642|       93593438|
+total 2687769871 nodes in 14.739s NPS 182357681
+
+14700KF
 Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
   @date     2021-2026
   @build    Sep 25 2026 09:08:13
@@ -30,3 +50,73 @@ script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 88 -nobook -thread 42 -h
 #04 |         custom|         40@88%|             g5|             +2|  000:00:07.244|     2608771120|      360128536|
 total 189343199917 nodes in 440.236s NPS 430094767
 
+14700KF
+python mpcendtest.py exe=Egaroucid_for_Console_clang.exe hash_level=29 prob=88
+Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
+  @date     2021-2026
+  @build    Sep 25 2026 09:08:13
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 88 -nobook -thread 42 -hash 29 -solve script_dir\problem/ggs_mpc_endgame_40_20260823.txt
+[ERROR] can't open hash29.eghs
+[ERROR] can't get hash. you can ignore this error
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |         custom|         40@88%|             g4|             -6|  000:00:09.864|     2808442166|      284716359|
+#01 |         custom|         40@88%|             c2|             +4|  000:00:14.289|     4561743824|      319248640|
+#02 |         custom|         40@88%|             e8|            -18|  000:02:02.736|    52433969934|      427209375|
+#03 |         custom|         40@88%|             c7|            -16|  000:01:35.338|    38342658260|      402176029|
+#04 |         custom|         40@88%|             g5|             +2|  000:00:08.563|     2868090585|      334939925|
+total 101014904769 nodes in 250.79s NPS 402786812
+
+13900K
+Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
+  @date     2021-2026
+  @build    Sep 25 2026 09:36:47
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 74 -nobook -thread 42 -hash 25 -solve script_dir\problem/ggs_mpc_endgame_40_20260823.txt
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |         custom|         40@74%|             g4|             -6|  000:00:02.679|      357521161|      133453214|
+#01 |         custom|         40@74%|             c2|             +4|  000:00:04.159|     1171092669|      281580348|
+#02 |         custom|         40@74%|             e8|            -16|  000:00:03.759|      624726376|      166194832|
+#03 |         custom|         40@74%|             c7|            -14|  000:00:00.913|       78034556|       85470488|
+#04 |         custom|         40@74%|             g5|             +2|  000:00:01.384|      131824391|       95248837|
+total 2363199153 nodes in 12.894s NPS 183278978
+
+13900K
+python mpcendtest.py exe=Egaroucid_for_Console_clang.exe prob=88
+Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
+  @date     2021-2026
+  @build    Sep 25 2026 09:36:47
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 88 -nobook -thread 42 -hash 25 -solve script_dir\problem/ggs_mpc_endgame_40_20260823.txt
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |         custom|         40@88%|             g4|             -6|  000:00:10.594|     3239890518|      305823156|
+#01 |         custom|         40@88%|             c2|             +4|  000:00:13.003|     4439346046|      341409370|
+#02 |         custom|         40@88%|             e8|            -18|  000:03:13.547|    87435291643|      451752244|
+#03 |         custom|         40@88%|             c7|            -16|  000:02:28.736|    65805325687|      442430384|
+#04 |         custom|         40@88%|             e8|             +2|  000:00:11.542|     4753681780|      411859450|
+total 165673535674 nodes in 377.422s NPS 438960992
+
+13900K
+python mpcendtest.py exe=Egaroucid_for_Console_clang.exe prob=88 hash_level=29
+Egaroucid for Console 7.8.1 Windows x64 SIMD (Clang)
+  @date     2021-2026
+  @build    Sep 25 2026 09:36:47
+  @author   Takuto Yamana
+  @license  GPL-3.0 license
+  @website  https://www.egaroucid.nyanyan.dev/
+script_dir\Egaroucid_for_Console_clang.exe -dpr 1 60 60 88 -nobook -thread 42 -hash 29 -solve script_dir\problem/ggs_mpc_endgame_40_20260823.txt
+[ERROR] can't open hash29.eghs
+[ERROR] can't get hash. you can ignore this error
+#   |          Level|          Depth|           Move|          Score|           Time|          Nodes|            NPS|
+#00 |         custom|         40@88%|             g4|             -6|  000:00:08.929|     2757666747|      308843851|
+#01 |         custom|         40@88%|             c2|             +4|  000:00:11.720|     3953291847|      337311591|
+#02 |         custom|         40@88%|             e8|            -18|  000:01:46.582|    49734406690|      466630450|
+#03 |         custom|         40@88%|             c7|            -16|  000:01:45.321|    47396460145|      450019085|
+#04 |         custom|         40@88%|             g5|             +2|  000:00:08.444|     3385067753|      400884385|
+total 107226893182 nodes in 240.996s NPS 444932252
