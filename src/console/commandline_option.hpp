@@ -72,3 +72,13 @@ std::vector<std::string> get_commandline_option_arg(std::vector<Commandline_opti
     std::vector<std::string> nores;
     return nores;
 }
+
+std::vector<std::vector<std::string>> get_commandline_option_args(std::vector<Commandline_option> commandline_options, int id) {
+    std::vector<std::vector<std::string>> res;
+    for (Commandline_option option: commandline_options) {
+        if (option.id == id) {
+            res.emplace_back(option.arg);
+        }
+    }
+    return res;
+}

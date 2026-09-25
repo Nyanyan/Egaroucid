@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS_BASE 38
+#define N_COMMANDLINE_OPTIONS_BASE 39
 
 #ifdef INCLUDE_GGS
     #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
@@ -61,6 +61,7 @@
 #define ID_MOVE_TIME 35
 #define ID_FM_MPC_DIM0 36
 #define ID_CONTEST_RECORD_ADVERSARIAL 37
+#define ID_DEPTH_PROB_RANGE 38
 
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
@@ -122,6 +123,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_MOVE_TIME,          {"-movetime", "-mt"},                               1, "<milliseconds>",    "Use fixed milliseconds for each move. -level and -time will be ignored"},
     {ID_FM_MPC_DIM0,        {"-fm-mpc-dim0"},                                   0, "",                  "Use Dim0 evaluation in non-end MPC searches for FM evaluation (default)"},
     {ID_CONTEST_RECORD_ADVERSARIAL, {"-contestrecordadv"},                     8, "<board> <n> <dir> <reply_margin> <reply_width> <engine_width> <cut_empty> <engine_parity>", "Generate adversarial contest book records"},
+    {ID_DEPTH_PROB_RANGE,   {"-dpr", "-depthprobrange"},                        4, "<m> <M> <depth> <prob>", "Set search depth/probability for move range [m, M] (prob: 74, 88, 93, 98, 99, 99.9, 100). Can be used multiple times without overlap. Outside specified ranges, -level is used"},
 #ifdef INCLUDE_GGS
     {ID_GGS,                {"-ggs"},                                           2, "<username> <password>", "Use GGS (Generic Game Server) mode"},
     {ID_GGS_LOGFILE,        {"-ggslogfile"},                                    1, "<file>",            "file for GGS client log"},
