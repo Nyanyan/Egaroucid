@@ -4275,10 +4275,17 @@ inline AI_TL_GGS_Pair_Outcome_Proof ai_tl_ggs_pair_target_nws(
 }
 #endif
 
-Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching, const AI_Time_Limit_Match_Context *match_context = nullptr) {
-    uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
+// plan_remaining_time_msec: see calc_time_limit_ply.
+Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching, const AI_Time_Limit_Match_Context *match_context = nullptr, uint64_t plan_remaining_time_msec = 0ULL) {
+    uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log, plan_remaining_time_msec);
 #if IS_GGS_TOURNAMENT
     const uint64_t allocated_time_limit = time_limit;
+    const Time_management_ggs_plan ggs_plan = time_management_ggs_make_plan(
+        HW2 - board.n_discs(),
+        plan_remaining_time_msec ? plan_remaining_time_msec : remaining_time_msec
+    );
+    // Whole-move bound (probe and boosts included) protecting later phases.
+    const uint64_t ggs_plan_move_cap = time_management_ggs_plan_move_cap(ggs_plan, allocated_time_limit);
     AI_TL_Iteration_Diagnostics iteration_diagnostics;
     if (
         AI_TL_GGS_MATCH_REVALIDATION_ENABLED &&
@@ -4424,6 +4431,11 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     std::vector<Ponder_elem> ambiguity_move_list;
     bool has_ambiguity_move_list = false;
     uint64_t ambiguity_probe_time = ai_time_limit_ggs_ambiguity_probe_time(board, time_limit, remaining_time_msec);
+    if (ggs_plan.phase == Time_management_ggs_phase::midgame && ggs_plan.share_msec > 0ULL) {
+        // The plan already gives these moves a fixed share; spend all of it on
+        // the main search instead of a probe whose boost the cap would absorb.
+        ambiguity_probe_time = 0ULL;
+    }
     if (ambiguity_probe_time > 0ULL) {
         // The existing, larger-budget ambiguity path already compares root
         // candidates.  Do not stack the low-budget match-boundary reserve on
@@ -4457,6 +4469,16 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
                       << " remaining " << remaining_time_msec << std::endl;
         }
         time_limit = end_boundary_time_limit;
+        if (ggs_plan_move_cap > 0ULL) {
+            const uint64_t capped = std::max<uint64_t>(1ULL, get_this_search_time_limit(ggs_plan_move_cap, tim() - strt));
+            if (capped < time_limit) {
+                if (show_log) {
+                    std::cerr << "ggs plan cap tl " << time_limit << " -> " << capped
+                              << " move cap " << ggs_plan_move_cap << std::endl;
+                }
+                time_limit = capped;
+            }
+        }
     }
     if (has_ambiguity_move_list && global_searching && *searching) {
         uint64_t strt_selfplay_resolve = tim();

@@ -621,6 +621,107 @@ void test_early_endgame_schedule() {
 #endif
 }
 
+Board board_with_empties(int n_empties) {
+    Board board;
+    const int n_discs = HW2 - n_empties;
+    const std::string board_text =
+        std::string(n_discs / 2, 'X') + std::string(n_discs - n_discs / 2, 'O') + std::string(n_empties, '-') + " X";
+    require(board.from_str(board_text), "failed to construct a board with " + std::to_string(n_empties) + " empties");
+    return board;
+}
+
+void test_ggs_plan_phases() {
+    require(time_management_ggs_phase(50) == Time_management_ggs_phase::opening, "50 empties is opening");
+    require(time_management_ggs_phase(47) == Time_management_ggs_phase::opening, "47 empties is opening");
+    require(time_management_ggs_phase(46) == Time_management_ggs_phase::midgame, "46 empties is midgame");
+    require(time_management_ggs_phase(37) == Time_management_ggs_phase::midgame, "37 empties is midgame");
+    require(time_management_ggs_phase(36) == Time_management_ggs_phase::early_endgame, "36 empties is early endgame");
+    require(time_management_ggs_phase(35) == Time_management_ggs_phase::early_endgame, "35 empties is early endgame");
+    require(time_management_ggs_phase(34) == Time_management_ggs_phase::pre_complete, "34 empties is pre-complete");
+    require(time_management_ggs_phase(29) == Time_management_ggs_phase::pre_complete, "29 empties is pre-complete");
+    require(time_management_ggs_phase(28) == Time_management_ggs_phase::late, "28 empties is late");
+}
+
+void test_ggs_plan_shares() {
+    // 50, 48, ..., 30: 11 planned own moves, weights 6600 + 4400 + 5 * 4000 + 7000 + 3 * 2500.
+    require_equal(time_management_ggs_make_plan(50, 56500ULL).share_msec, 6469ULL, "first move share of a fresh 1:00 clock");
+    // 40, 38 midgame, 36 early endgame, 34, 32, 30 pre-complete.
+    require_equal(time_management_ggs_make_plan(40, 33000ULL).share_msec, 4106ULL, "midgame share");
+    require_equal(time_management_ggs_make_plan(36, 23600ULL).share_msec, 7000ULL, "early endgame share");
+    require_equal(time_management_ggs_make_plan(33, 15000ULL).share_msec, 2100ULL, "pre-complete share");
+    require_equal(time_management_ggs_make_plan(28, 30000ULL).share_msec, 0ULL, "late moves are not planned");
+    require_equal(time_management_ggs_make_plan(33, 8000ULL).share_msec, 0ULL, "no share below the planned reserves");
+
+    uint64_t previous = 0ULL;
+    for (uint64_t remaining = 0ULL; remaining <= 60000ULL; remaining += 250ULL) {
+        const uint64_t share = time_management_ggs_make_plan(42, remaining).share_msec;
+        require(share >= previous, "share must be monotonic in remaining time");
+        previous = share;
+    }
+}
+
+void test_ggs_plan_keeps_late_reserve() {
+    // Spending every share plus the planned overhead leaves exactly the late
+    // reserve when the late endgame starts.
+    for (int first = 49; first <= 50; ++first) {
+        for (double remaining = 30000.0; remaining <= 300000.0; remaining += 15000.0) {
+            double clock = remaining;
+            for (int n_empties = first; n_empties >= TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_MIN_N_EMPTY; n_empties -= 2) {
+                clock -= (double)time_management_ggs_make_plan(n_empties, (uint64_t)clock).share_msec;
+                clock -= TIME_MANAGEMENT_GGS_PLAN_MOVE_OVERHEAD_MSEC;
+            }
+            require(
+                std::abs(clock - TIME_MANAGEMENT_GGS_PLAN_LATE_RESERVE_MSEC) < 20.0,
+                "late reserve must remain after the planned moves (start " + std::to_string(first) +
+                    ", clock " + std::to_string(remaining) + ", left " + std::to_string(clock) + ")"
+            );
+        }
+    }
+}
+
+void test_ggs_plan_application() {
+    Time_management_ggs_plan plan;
+    plan.phase = Time_management_ggs_phase::opening;
+    plan.share_msec = 5000ULL;
+    require_equal(time_management_ggs_apply_plan(plan, 7000ULL, false), 5000ULL, "opening allocation is capped by its share");
+    require_equal(time_management_ggs_apply_plan(plan, 3000ULL, false), 3000ULL, "opening keeps a smaller own allocation");
+    require_equal(time_management_ggs_plan_move_cap(plan, 3000ULL), 5000ULL, "opening boosts may fill the share");
+    plan.phase = Time_management_ggs_phase::midgame;
+    require_equal(time_management_ggs_apply_plan(plan, 1400ULL, false), 5000ULL, "midgame searches for its share");
+    require_equal(time_management_ggs_apply_plan(plan, 6000ULL, false), 6000ULL, "the plan never reduces a later-phase allocation");
+    require_equal(time_management_ggs_plan_move_cap(plan, 6000ULL), 6000ULL, "move cap keeps a larger allocation");
+    plan.share_msec = 0ULL;
+    require_equal(time_management_ggs_apply_plan(plan, 1400ULL, false), 1400ULL, "no share keeps the ordinary allocation");
+    require_equal(time_management_ggs_plan_move_cap(plan, 1400ULL), 0ULL, "no share means no move cap");
+    plan.phase = Time_management_ggs_phase::late;
+    plan.share_msec = 5000ULL;
+    require_equal(time_management_ggs_apply_plan(plan, 800ULL, false), 800ULL, "late moves keep the ordinary allocation");
+}
+
+void test_ggs_plan_time_limits() {
+    require(
+        calc_time_limit_ply(board_with_empties(40), 33000ULL, false) >= time_management_ggs_make_plan(40, 33000ULL).share_msec,
+        "midgame limit reaches its share"
+    );
+    require(
+        calc_time_limit_ply(board_with_empties(36), 24000ULL, false) >= time_management_ggs_make_plan(36, 24000ULL).share_msec,
+        "early endgame limit reaches its share"
+    );
+    require(
+        calc_time_limit_ply(board_with_empties(33), 15000ULL, false) >= time_management_ggs_make_plan(33, 15000ULL).share_msec,
+        "pre-complete limit reaches its share"
+    );
+    require(
+        calc_time_limit_ply(board_with_empties(50), 56500ULL, false) <= time_management_ggs_make_plan(50, 56500ULL).share_msec,
+        "first move stays within its share"
+    );
+    // A pair-boosted allocation clock must not enlarge the planned share.
+    require(
+        calc_time_limit_ply(board_with_empties(49), 90000ULL, false, 56500ULL) <= time_management_ggs_make_plan(49, 56500ULL).share_msec,
+        "the plan uses the real clock"
+    );
+}
+
 void test_ybwc_end_split_depth() {
     require_equal(
         ybwc_end_split_min_depth(MPC_100_LEVEL),
@@ -697,6 +798,11 @@ int main() {
         test_verification_tt_bound_scope();
         test_early_endgame_schedule();
         test_ybwc_end_split_depth();
+        test_ggs_plan_phases();
+        test_ggs_plan_shares();
+        test_ggs_plan_keeps_late_reserve();
+        test_ggs_plan_application();
+        test_ggs_plan_time_limits();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

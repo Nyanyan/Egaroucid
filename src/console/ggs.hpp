@@ -1887,6 +1887,8 @@ Search_result ggs_search(
             ai_match_context.pair_value = synchro_time_context.pair_value;
             ai_match_context.real_remaining_time_msec = remaining_time_msec;
         }
+        // The phase plan must see the real clock, not the pair-boosted one.
+        const uint64_t plan_remaining_time_msec = remaining_time_msec;
         remaining_time_msec = ggs_adjust_remaining_time_for_synchro_pair(
             ggs_board,
             remaining_time_msec,
@@ -1928,6 +1930,7 @@ Search_result ggs_search(
             " raw " + std::to_string(raw_remaining_time_msec) +
             " safety " + std::to_string(safety_margin) +
             " limit " + std::to_string(remaining_time_msec) +
+            " plan " + std::to_string(plan_remaining_time_msec) +
             " inc " + std::to_string(ggs_board.clock.increment_msec) +
             " ext " + std::to_string(ggs_board.clock.extension_msec) +
             (synchro_time_context.has_pair_result ?
@@ -1961,7 +1964,8 @@ Search_result ggs_search(
                 remaining_time_msec,
                 thread_id,
                 searching,
-                ai_match_context.has_pair_result ? &ai_match_context : nullptr
+                ai_match_context.has_pair_result ? &ai_match_context : nullptr,
+                ggs_subtract_elapsed_or_floor(plan_remaining_time_msec, tim() - strt)
             );
             const uint64_t legal = ggs_board.board.get_legal();
             if (ggs_should_override_with_hint(ggs_board.board, hint_policy, hint_count, search_result)) {

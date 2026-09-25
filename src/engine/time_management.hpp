@@ -129,6 +129,48 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC
         #define TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC 24
     #endif
+    // Phase plan for s8r14 games. Each own move before the late endgame gets a
+    // share of the distributable clock proportional to its phase weight. The
+    // weights are the intended search time per move (ms) in a 1:00 game.
+    // Measured on 2026-09-25 (192 games against nyanyan): GGS charged about
+    // 0.38 s per own move beyond the search, and the own moves at 28 empties
+    // or less took at most 8.4 s in total including that overhead.
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_ENABLED
+        #define TIME_MANAGEMENT_GGS_PLAN_ENABLED true
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_MOVE_OVERHEAD_MSEC
+        #define TIME_MANAGEMENT_GGS_PLAN_MOVE_OVERHEAD_MSEC 400.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_LATE_RESERVE_MSEC
+        #define TIME_MANAGEMENT_GGS_PLAN_LATE_RESERVE_MSEC 7500.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MIN_N_EMPTY
+        #define TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MIN_N_EMPTY 37
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MAX_N_EMPTY
+        #define TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MAX_N_EMPTY 46
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_MIN_N_EMPTY
+        #define TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_MIN_N_EMPTY 35
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_MIN_N_EMPTY
+        #define TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_MIN_N_EMPTY 29
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_FIRST_MOVE_WEIGHT
+        #define TIME_MANAGEMENT_GGS_PLAN_FIRST_MOVE_WEIGHT 6600.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_OPENING_WEIGHT
+        #define TIME_MANAGEMENT_GGS_PLAN_OPENING_WEIGHT 4400.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_MIDGAME_WEIGHT
+        #define TIME_MANAGEMENT_GGS_PLAN_MIDGAME_WEIGHT 4000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT
+        #define TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT 7000.0
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT
+        #define TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT 2500.0
+    #endif
 #else
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 2000 // ms
@@ -188,6 +230,120 @@ inline double time_management_ggs_pair_boost_phase_scale(int n_discs) {
            (1.0 - TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE) * progress;
 }
 
+enum class Time_management_ggs_phase {
+    opening,        // 47 empties or more: the first two own moves of s8r14
+    midgame,        // 46-37
+    early_endgame,  // 36-35: the one long selective-endgame search
+    pre_complete,   // 34-29: the moves just before the complete search
+    late            // 28 or less: covered by the late reserve
+};
+
+inline Time_management_ggs_phase time_management_ggs_phase(int n_empties) {
+    if (n_empties > TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MAX_N_EMPTY) {
+        return Time_management_ggs_phase::opening;
+    }
+    if (n_empties >= TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MIN_N_EMPTY) {
+        return Time_management_ggs_phase::midgame;
+    }
+    if (n_empties >= TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_MIN_N_EMPTY) {
+        return Time_management_ggs_phase::early_endgame;
+    }
+    if (n_empties >= TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_MIN_N_EMPTY) {
+        return Time_management_ggs_phase::pre_complete;
+    }
+    return Time_management_ggs_phase::late;
+}
+
+inline double time_management_ggs_plan_weight(int n_empties) {
+    switch (time_management_ggs_phase(n_empties)) {
+        case Time_management_ggs_phase::opening:
+            return n_empties >= TIME_MANAGEMENT_INITIAL_N_EMPTIES - 1 ?
+                TIME_MANAGEMENT_GGS_PLAN_FIRST_MOVE_WEIGHT :
+                TIME_MANAGEMENT_GGS_PLAN_OPENING_WEIGHT;
+        case Time_management_ggs_phase::midgame:
+            return TIME_MANAGEMENT_GGS_PLAN_MIDGAME_WEIGHT;
+        case Time_management_ggs_phase::early_endgame:
+            return TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT;
+        case Time_management_ggs_phase::pre_complete:
+            return TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT;
+        case Time_management_ggs_phase::late:
+            break;
+    }
+    return 0.0;
+}
+
+struct Time_management_ggs_plan {
+    Time_management_ggs_phase phase;
+    uint64_t share_msec; // 0 when the clock is below the planned reserves
+
+    Time_management_ggs_plan()
+        : phase(Time_management_ggs_phase::late), share_msec(0ULL) {}
+};
+
+// The share of this move in the time left after the late reserve and the
+// per-move GGS overhead of the planned moves. Own moves are assumed to come
+// every two empties; a pass only shifts the plan until the next move.
+inline Time_management_ggs_plan time_management_ggs_make_plan(int n_empties, uint64_t remaining_time_msec) {
+    Time_management_ggs_plan plan;
+    plan.phase = time_management_ggs_phase(n_empties);
+    if (!TIME_MANAGEMENT_GGS_PLAN_ENABLED || plan.phase == Time_management_ggs_phase::late) {
+        return plan;
+    }
+    double total_weight = 0.0;
+    int n_planned_moves = 0;
+    for (int e = n_empties; e >= TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_MIN_N_EMPTY; e -= 2) {
+        total_weight += time_management_ggs_plan_weight(e);
+        ++n_planned_moves;
+    }
+    const double distributable =
+        (double)remaining_time_msec -
+        TIME_MANAGEMENT_GGS_PLAN_LATE_RESERVE_MSEC -
+        TIME_MANAGEMENT_GGS_PLAN_MOVE_OVERHEAD_MSEC * n_planned_moves;
+    if (distributable <= 0.0 || total_weight <= 0.0) {
+        return plan;
+    }
+    plan.share_msec = (uint64_t)(distributable * time_management_ggs_plan_weight(n_empties) / total_weight);
+    return plan;
+}
+
+inline const char *time_management_ggs_phase_name(Time_management_ggs_phase phase) {
+    switch (phase) {
+        case Time_management_ggs_phase::opening: return "opening";
+        case Time_management_ggs_phase::midgame: return "midgame";
+        case Time_management_ggs_phase::early_endgame: return "early-endgame";
+        case Time_management_ggs_phase::pre_complete: return "pre-complete";
+        case Time_management_ggs_phase::late: return "late";
+    }
+    return "unknown";
+}
+
+// The opening keeps its own allocation below the share so that the ambiguity
+// boost still decides how much of the share a position gets. Later planned
+// phases search for the whole share.
+inline uint64_t time_management_ggs_apply_plan(const Time_management_ggs_plan &plan, uint64_t time_limit, bool show_log) {
+    if (plan.share_msec == 0ULL || plan.phase == Time_management_ggs_phase::late) {
+        return time_limit;
+    }
+    const uint64_t planned = plan.phase == Time_management_ggs_phase::opening ?
+        std::min(time_limit, plan.share_msec) :
+        std::max(time_limit, plan.share_msec);
+    if (show_log) {
+        std::cerr << "ggs plan " << time_management_ggs_phase_name(plan.phase)
+                  << " share " << plan.share_msec
+                  << " tl " << time_limit << " -> " << planned << std::endl;
+    }
+    return planned;
+}
+
+// Upper bound of the whole move (probe and boosts included) that keeps the
+// planned time of the later phases; 0 means no bound.
+inline uint64_t time_management_ggs_plan_move_cap(const Time_management_ggs_plan &plan, uint64_t planned_time_limit) {
+    if (plan.share_msec == 0ULL || plan.phase == Time_management_ggs_phase::late) {
+        return 0ULL;
+    }
+    return std::max(planned_time_limit, plan.share_msec);
+}
+
 inline uint64_t time_management_ggs_ramped_endgame_force_time(
     uint64_t selected_time,
     uint64_t remaining_time_msec,
@@ -219,7 +375,9 @@ inline uint64_t time_management_ggs_ramped_endgame_force_time(
 }
 #endif
 
-uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log) {
+// plan_remaining_time_msec: the clock used for the GGS phase plan when the
+// allocation clock was temporarily enlarged (synchro pair boost); 0 = same.
+uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log, uint64_t plan_remaining_time_msec = 0ULL) {
     int n_empties = HW2 - board.n_discs();
     double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
@@ -233,6 +391,12 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
 #if IS_GGS_TOURNAMENT
     const double ggs_time_scale = time_management_ggs_shortage_scale(remaining_time_msec, remaining_moves);
+    const Time_management_ggs_plan ggs_plan = time_management_ggs_make_plan(
+        n_empties,
+        plan_remaining_time_msec ? plan_remaining_time_msec : remaining_time_msec
+    );
+#else
+    (void)plan_remaining_time_msec;
 #endif
 
 #if IS_GGS_TOURNAMENT
@@ -242,13 +406,21 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         if (show_log) {
             std::cerr << "first move time limit" << std::endl;
         }
-        return time_management_ggs_cap_time_limit(remaining_time_msec_margin * TIME_MANAGEMENT_GGS_FIRST_MOVE_COE * ggs_time_scale, remaining_time_msec, remaining_moves);
+        return time_management_ggs_apply_plan(
+            ggs_plan,
+            time_management_ggs_cap_time_limit(remaining_time_msec_margin * TIME_MANAGEMENT_GGS_FIRST_MOVE_COE * ggs_time_scale, remaining_time_msec, remaining_moves),
+            show_log
+        );
     }
     if (n_empties == TIME_MANAGEMENT_INITIAL_N_EMPTIES - 1) {
         if (show_log) {
             std::cerr << "first reply move time limit" << std::endl;
         }
-        return time_management_ggs_cap_time_limit(remaining_time_msec_margin * TIME_MANAGEMENT_GGS_FIRST_REPLY_MOVE_COE * ggs_time_scale, remaining_time_msec, remaining_moves);
+        return time_management_ggs_apply_plan(
+            ggs_plan,
+            time_management_ggs_cap_time_limit(remaining_time_msec_margin * TIME_MANAGEMENT_GGS_FIRST_REPLY_MOVE_COE * ggs_time_scale, remaining_time_msec, remaining_moves),
+            show_log
+        );
     }
 #endif
 
@@ -334,8 +506,11 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         selected_time = midgame_use_time;
     }
 #if IS_GGS_TOURNAMENT
+    // The phase plan sizes the 36-29 moves itself, so the endgame ramps are
+    // only used without it.
     uint64_t endgame_forced_time = 0ULL;
     if (
+        !TIME_MANAGEMENT_GGS_PLAN_ENABLED &&
         TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MIN_N_EMPTY <= n_empties &&
         n_empties <= TIME_MANAGEMENT_GGS_EARLY_ENDGAME_FORCE_MAX_N_EMPTY &&
         n_empties <= endgame_search_depth &&
@@ -360,6 +535,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
         }
     }
     if (
+        !TIME_MANAGEMENT_GGS_PLAN_ENABLED &&
         TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MIN_N_EMPTY <= n_empties &&
         n_empties <= TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_N_EMPTY &&
         n_empties <= endgame_search_depth &&
@@ -393,7 +569,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     if (show_log && (ggs_time_scale < 0.999 || capped_time < selected_time)) {
         std::cerr << "ggs time adjust scale " << ggs_time_scale << " capped " << capped_time << " from " << selected_time << std::endl;
     }
-    return capped_time;
+    return time_management_ggs_apply_plan(ggs_plan, capped_time, show_log);
 #else
     return selected_time;
 #endif
