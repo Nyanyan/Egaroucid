@@ -12,7 +12,7 @@
 #include "./../engine/setting.hpp"
 
 #define EGAROUCID_NAME "Egaroucid for Console"
-#define EGAROUCID_CONSOLE_VERSION "1"
+#define EGAROUCID_CONSOLE_VERSION "0"
 #if USE_BETA_VERSION
     const std::string EGAROUCID_VERSION = EGAROUCID_ENGINE_VERSION + (std::string)"." + EGAROUCID_CONSOLE_VERSION + (std::string)" " + EGAROUCID_ENGINE_ENV_VERSION + (std::string)" beta";
 #else

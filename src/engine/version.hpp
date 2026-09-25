@@ -14,8 +14,8 @@
 /*
     @brief version settings
 */
-#define EGAROUCID_ENGINE_VERSION "7.8"
-#define USE_BETA_VERSION false
+#define EGAROUCID_ENGINE_VERSION "7.9"
+#define USE_BETA_VERSION true
 
 
 // OS
