@@ -190,9 +190,9 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #define USE_YBWC_NEGASCOUT true
 #define USE_YBWC_NEGASCOUT_ANALYZE false
 
-// Order deep selective endgame NWS moves with shallow searches, like Edax and
-// Melody, instead of only mobility and a static evaluation.  In the MPC40
-// benchmark this more than halved the time; exact searches did not gain.
+// Order deep endgame NWS moves with shallow searches, like Edax and Melody,
+// instead of only mobility and a static evaluation.  In the MPC40 benchmark
+// this more than halved the time.
 #ifndef USE_END_NWS_SEARCH_ORDERING
 #define USE_END_NWS_SEARCH_ORDERING true
 #endif
@@ -200,14 +200,16 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #define END_NWS_SEARCH_ORDERING_MIN_DEPTH 18
 #endif
 // Highest MPC level (0: 74%, 1: 88%, 2: 93%, ... 5: 99.9%) that uses it from
-// the depth above.  The 98% and higher levels behave like exact searches, so
-// they keep the old ordering like the exact search.
+// the depth above.  The 98% and higher levels behave like exact searches and
+// use it only from END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH.
 #ifndef END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL
 #define END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL 2
 #endif
-// Remaining depth from which the other endgame NWS levels also use it.
+// Remaining depth from which the other levels, including the exact search,
+// use it.  Near the root of 32-34 empty exact searches it cut the time by
+// 10-17%; from 24 empties the ordering cost exceeded the gain.
 #ifndef END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH
-#define END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH 99
+#define END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH 26
 #endif
 
 // aspiration search in negascout
