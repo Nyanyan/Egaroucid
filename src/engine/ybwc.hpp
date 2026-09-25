@@ -219,6 +219,7 @@ inline void ybwc_split_stats_print() {
 #endif
 
 int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, const Search_cancellation_context &cancellation);
+int nega_scout_node(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Search_node_type node_type, const Search_cancellation_context &cancellation);
 int nega_scout_node(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, Search_node_type node_type, bool *searching);
 
 inline int ybwc_poll_task(Ybwc_parallel_task_group &parallel_tasks, Parallel_task *task_result) {
@@ -792,15 +793,15 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
 
 
 
-void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput, Search_node_type node_type, bool need_best_move, bool *searching) {
+// The parent chain must reach the root flag: a PV re-search below a helper
+// otherwise keeps running after the root search has been stopped.
+void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput, Search_node_type node_type, bool need_best_move, const Search_cancellation_context &parent_cancellation) {
 #if USE_SHARED_YBWC
-    const Search_cancellation_context shared_parent{searching, nullptr};
     if (ybwc_search_shared(search, alpha, *beta, v, best_move, depth, is_end_search,
-        move_list, canput, node_type, true, shared_parent)) return;
+        move_list, canput, node_type, true, parent_cancellation)) return;
 #endif
     alignas(std::atomic_ref<bool>::required_alignment) bool n_searching = true;
-    const Search_cancellation_context root_cancellation{searching, nullptr};
-    const Search_cancellation_context cancellation{&n_searching, &root_cancellation};
+    const Search_cancellation_context cancellation{&n_searching, &parent_cancellation};
     Ybwc_parallel_task_group parallel_tasks;
     int running_count = 0;
     int g;
@@ -808,7 +809,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
     bool cutoff_found = false;
     int n_searched = 0;
     int n_moves_seen = 0;
-    for (int move_idx = 0; move_idx < canput && search_cancellation_load(searching) && search_cancellation_load(&n_searching); ++move_idx) {
+    for (int move_idx = 0; move_idx < canput && is_searching(parent_cancellation) && search_cancellation_load(&n_searching); ++move_idx) {
         if (move_list[move_idx].flip.flip) {
             ++n_moves_seen;
             bool move_done = false;
@@ -825,7 +826,7 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                         g = ybwc_split_state;
                         ++search->n_nodes;
                     }
-                    if (search_cancellation_load(searching) && search_cancellation_load(&n_searching)) {
+                    if (is_searching(parent_cancellation) && search_cancellation_load(&n_searching)) {
                         if (*alpha < g) {
                             if (g >= *beta) {
                                 if (*v < g) {
@@ -882,14 +883,14 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
         }
         // thread_pool.finish_idling();
     }
-    if (!cutoff_found && research_idxes.size() && *alpha < *beta && *searching) {
+    if (!cutoff_found && research_idxes.size() && *alpha < *beta && is_searching(parent_cancellation)) {
         for (const int &research_idx: research_idxes) {
             search->move(&move_list[research_idx].flip);
-                g = -nega_scout_node(search, -(*beta), -(*alpha), depth - 1, false, move_list[research_idx].n_legal, is_end_search, search_child_node_type(node_type), searching);
+                g = -nega_scout_node(search, -(*beta), -(*alpha), depth - 1, false, move_list[research_idx].n_legal, is_end_search, search_child_node_type(node_type), parent_cancellation);
             search->undo(&move_list[research_idx].flip);
             move_list[research_idx].flip.flip = 0;
             ++n_searched;
-            if (*searching) {
+            if (is_searching(parent_cancellation)) {
                 if (*v < g) {
                     *v = g;
                     *best_move = move_list[research_idx].flip.pos;
@@ -902,9 +903,14 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
                 }
             }
         }
-        if (*alpha < *beta && *searching) {
-            ybwc_search_young_brothers(search, alpha, beta, v, best_move, n_moves_seen - n_searched, hash_code, depth, is_end_search, move_list, canput, node_type, need_best_move, searching);
+        if (*alpha < *beta && is_searching(parent_cancellation)) {
+            ybwc_search_young_brothers(search, alpha, beta, v, best_move, n_moves_seen - n_searched, hash_code, depth, is_end_search, move_list, canput, node_type, need_best_move, parent_cancellation);
         }
     }
+}
+
+void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, int *best_move, int n_available_moves, uint32_t hash_code, int depth, bool is_end_search, Flip_value move_list[], int canput, Search_node_type node_type, bool need_best_move, bool *searching) {
+    const Search_cancellation_context root_cancellation{searching, nullptr};
+    ybwc_search_young_brothers(search, alpha, beta, v, best_move, n_available_moves, hash_code, depth, is_end_search, move_list, canput, node_type, need_best_move, root_cancellation);
 }
 #endif

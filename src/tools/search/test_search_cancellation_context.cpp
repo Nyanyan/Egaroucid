@@ -164,6 +164,43 @@ void test_simple_nws_uses_only_current_flag() {
     expected_simple_flag = nullptr;
 }
 
+// A PV re-search started by a YBWC helper only owns its split's flag; the
+// root flag above it must still stop the search.
+void test_pv_search_observes_cancelled_ancestor() {
+    Board board;
+    board.reset();
+    global_searching = true;
+
+    alignas(std::atomic_ref<bool>::required_alignment) bool root_flag = true;
+    alignas(std::atomic_ref<bool>::required_alignment) bool current_flag = true;
+    const Search_cancellation_context root{&root_flag, nullptr};
+    const Search_cancellation_context leaf{&current_flag, &root};
+
+    transposition_table.init();
+    Search linked_search(&board, MPC_100_LEVEL, false, false);
+    const int linked_value = nega_scout_node(
+        &linked_search, -SCORE_MAX, SCORE_MAX, 6, false, board.get_legal(), false, SEARCH_NODE_PV, leaf
+    );
+    transposition_table.init();
+    Search flag_search(&board, MPC_100_LEVEL, false, false);
+    alignas(std::atomic_ref<bool>::required_alignment) bool single_flag = true;
+    const int flag_value = nega_scout_node(
+        &flag_search, -SCORE_MAX, SCORE_MAX, 6, false, board.get_legal(), false, SEARCH_NODE_PV, &single_flag
+    );
+    require(linked_value != SCORE_UNDEFINED, "active chain completes the PV search");
+    require(linked_value == flag_value, "chain and single-flag PV searches agree");
+
+    search_cancellation_store(&root_flag, false);
+    transposition_table.init();
+    Search cancelled_search(&board, MPC_100_LEVEL, false, false);
+    const int cancelled_value = nega_scout_node(
+        &cancelled_search, -SCORE_MAX, SCORE_MAX, 6, false, board.get_legal(), false, SEARCH_NODE_PV, leaf
+    );
+    require(search_cancellation_load(&current_flag), "only the ancestor flag is cleared");
+    require(cancelled_value == SCORE_UNDEFINED, "PV search stops on a cancelled ancestor");
+    require(cancelled_search.n_nodes == 0, "PV search visits no node under a cancelled ancestor");
+}
+
 } // namespace
 
 int main() {
@@ -173,6 +210,7 @@ int main() {
         test_three_level_context();
         require(initialize_engine(), "engine initialization");
         test_simple_nws_uses_only_current_flag();
+        test_pv_search_observes_cancelled_ancestor();
     } catch (const std::exception &error) {
         midsearch_nws_after_eval1_test_hook = nullptr;
         ancestor_to_cancel = nullptr;

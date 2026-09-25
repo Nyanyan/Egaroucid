@@ -62,9 +62,11 @@ inline void ybwc_shared_worker(
                         ybwc_undo_child(search, &move.flip, true);
                         search->move(&move.flip);
                     }
+                    // Pass the whole chain: the split's own flag is not
+                    // cleared when an ancestor search is stopped.
                     g = -nega_scout_node(search, -split.beta(), -g, depth - 1,
                         false, move.n_legal, is_end_search, search_child_node_type(node_type),
-                        cancellation.current);
+                        cancellation);
                     if (end_move) {
                         search->undo(&move.flip);
                         ybwc_move_child(search, &move.flip, true);
