@@ -2003,7 +2003,20 @@ void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_resu
         ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + move_text + "/" + std::to_string(search_result.value);
     }
     ggs_send_message(sock, ggs_move_cmd + "\n", options);
-    ggs_print_info("move sent game " + ggs_board.game_id + " move " + move_text + " value " + std::to_string(search_result.value), options);
+    std::string msg = "move sent game " + ggs_board.game_id + " move " + move_text;
+    if (search_result.policy != MOVE_PASS) {
+        msg += " value " + std::to_string(search_result.value);
+        if (search_result.depth == SEARCH_BOOK) {
+            msg += " depth book";
+        } else {
+            msg += " depth " + std::to_string(search_result.depth) + "@" + std::to_string(search_result.probability) + "%";
+        }
+        msg +=
+            " time " + std::to_string(search_result.time) + "ms" +
+            " nodes " + std::to_string(search_result.nodes) +
+            " nps " + std::to_string(search_result.nps);
+    }
+    ggs_print_info(msg, options);
 }
 
 inline bool ggs_is_my_turn(const GGS_Board &ggs_board, Options *options) {
