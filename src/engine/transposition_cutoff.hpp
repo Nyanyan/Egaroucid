@@ -14,7 +14,14 @@
 #include "move_ordering.hpp"
 
 constexpr int MID_ETC_DEPTH = 16;
-constexpr int MID_ETC_DEPTH_NWS = 16;
+// From 8 instead of 16, the midgame took 0.94 times the time with 28
+// threads. Keep MID_ETC_DEPTH_NWS a constant: the preprocessor conditions
+// on it in midsearch_nws.hpp must keep the flip == 0 checks of the shallow
+// NWS.
+#ifndef EGAROUCID_MID_ETC_DEPTH_NWS
+#define EGAROUCID_MID_ETC_DEPTH_NWS 8
+#endif
+constexpr int MID_ETC_DEPTH_NWS = EGAROUCID_MID_ETC_DEPTH_NWS;
 
 inline bool transposition_cutoff(Search *search, const uint32_t hash_code, int depth, int *alpha, int *beta, int *v, uint_fast8_t moves[]) {
     int lower = -SCORE_MAX, upper = SCORE_MAX;

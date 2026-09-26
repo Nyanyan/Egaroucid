@@ -1129,6 +1129,32 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 #endif
             , IsEndSearch
         );
+#if USE_MPC_TT_PROBE_CUT
+        // A stored result at least as deep and as selective as the probe
+        // decides it, as the probe's own transposition cutoff would, even
+        // when the static evaluation did not suggest running the probe.
+        {
+            int tt_lower = -SCORE_MAX, tt_upper = SCORE_MAX;
+            if (transposition_table.get_bounds(search, search->board.hash(), search_depth, &tt_lower, &tt_upper)) {
+                const int pc_beta = beta + error_search_high;
+                if (pc_beta <= SCORE_MAX && pc_beta <= tt_lower) {
+                    *v = beta;
+                    if constexpr (IsEndSearch) {
+                        *v += beta & 1;
+                    }
+                    return true;
+                }
+                const int pc_alpha = alpha - error_search_low;
+                if (pc_alpha >= -SCORE_MAX && tt_upper <= pc_alpha) {
+                    *v = alpha;
+                    if constexpr (IsEndSearch) {
+                        *v -= alpha & 1;
+                    }
+                    return true;
+                }
+            }
+        }
+#endif
         if (d0value >= beta + error_0_high) {
             int pc_beta = beta + error_search_high;
             if (pc_beta <= SCORE_MAX) {

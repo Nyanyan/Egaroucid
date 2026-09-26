@@ -142,6 +142,12 @@
 // Multi-ProbCut
 #define USE_MID_MPC true
 
+// Let a stored result as deep as the MPC probe decide the probe, also when
+// the static evaluation does not suggest probing.
+#ifndef USE_MPC_TT_PROBE_CUT
+#define USE_MPC_TT_PROBE_CUT true
+#endif
+
 #ifndef MPC_MAX_PROBE_NESTING
 // Define it as 1 on the command line to compare the non-recursive probe search.
 #define MPC_MAX_PROBE_NESTING 2
