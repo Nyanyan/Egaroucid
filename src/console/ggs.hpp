@@ -192,6 +192,7 @@ struct GGS_Board {
     Board board;
     int player_to_move;
     GGS_Clock_Params clock;
+    uint64_t received_time; // tim() when this update arrived; 0 if unknown
 
     GGS_Board() {
         game_id = "";
@@ -205,6 +206,7 @@ struct GGS_Board {
         board.player = 0;
         board.opponent = 0;
         player_to_move = -1;
+        received_time = 0;
     }
 
     bool is_valid() const {
@@ -1283,6 +1285,19 @@ std::vector<std::string> ggs_receive_message(SOCKET *sock, Options *options) {
     }
 }
 
+struct GGS_Received_Messages {
+    std::vector<std::string> replies;
+    uint64_t received_time;
+};
+
+// Stamp the arrival time on the receiver thread so a busy main loop does not shorten the reported move time.
+GGS_Received_Messages ggs_receive_message_timed(SOCKET *sock, Options *options) {
+    GGS_Received_Messages res;
+    res.replies = ggs_receive_message(sock, options);
+    res.received_time = tim();
+    return res;
+}
+
 bool ggs_receive_until_text(SOCKET *sock, Options *options, const std::string &stage, const std::vector<std::string> &markers, std::string *received = nullptr) {
     ggs_print_debug("waiting for " + stage, options);
     std::string &buffer = ggs_receive_buffer();
@@ -1328,7 +1343,7 @@ void ggs_log_server_errors(const std::vector<std::string> &server_replies, Optio
         std::stringstream ss(server_reply);
         std::string line;
         while (std::getline(ss, line, '\n')) {
-            if (line.find("ERR") != std::string::npos || line.find("+err") != std::string::npos || line.find("-err") != std::string::npos) {
+            if (line.find("ERR") != std::string::npos || line.find("+err") != std::string::npos || line.find("-err") != std::string::npos || line.find("trust-violation") != std::string::npos) {
                 ggs_print_info("server error: " + line, options);
             }
         }
@@ -1992,18 +2007,40 @@ Search_result ggs_search(
     return search_result;
 }
 
+// Seconds since the board update arrived, as "s.mmm". With "t /os trust +" GGS charges this
+// instead of its wall clock unless it is more than 4 seconds shorter, so network lag is not charged.
+std::string ggs_move_time_text(const GGS_Board &ggs_board) {
+    if (ggs_board.received_time == 0) {
+        return "";
+    }
+    const uint64_t now = tim();
+    uint64_t elapsed_msec = now > ggs_board.received_time ? now - ggs_board.received_time : 0ULL;
+    elapsed_msec = std::min<uint64_t>(elapsed_msec, 99999000ULL); // GGS rejects moves with time >= 100000 s
+    std::string msec_text = std::to_string(elapsed_msec % 1000ULL);
+    return std::to_string(elapsed_msec / 1000ULL) + "." + std::string(3 - msec_text.size(), '0') + msec_text;
+}
+
 void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_result, Options *options) {
-    std::string ggs_move_cmd;
     std::string move_text;
+    std::string eval_text;
     if (search_result.policy == MOVE_PASS) {
-        ggs_move_cmd = "t /os play " + ggs_board.game_id + " pa";
         move_text = "pa";
     } else {
         move_text = idx_to_coord(search_result.policy);
-        ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + move_text + "/" + std::to_string(search_result.value);
+        eval_text = std::to_string(search_result.value);
+    }
+    const std::string time_text = ggs_move_time_text(ggs_board);
+    std::string ggs_move_cmd = "t /os play " + ggs_board.game_id + " " + move_text; // <move>[/<eval>[/<time>]]
+    if (!time_text.empty()) {
+        ggs_move_cmd += "/" + eval_text + "/" + time_text;
+    } else if (!eval_text.empty()) {
+        ggs_move_cmd += "/" + eval_text;
     }
     ggs_send_message(sock, ggs_move_cmd + "\n", options);
     std::string msg = "move sent game " + ggs_board.game_id + " move " + move_text;
+    if (!time_text.empty()) {
+        msg += " clock " + time_text + "s";
+    }
     if (search_result.policy != MOVE_PASS) {
         msg += " value " + std::to_string(search_result.value);
         if (search_result.depth == SEARCH_BOOK) {
@@ -2525,10 +2562,18 @@ void ggs_client(Options *options) {
         return;
     }
     ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
+    // trusted clients are charged the time sent with each move instead of the server wall clock
+    ggs_print_debug("initializing GGS subscriptions: t /os trust +", options);
+    if (ggs_send_message(sock, "t /os trust +\n", options) != 0 || !ggs_receive_required(&sock, options, "t /os trust + response", &init_replies)) {
+        ggs_close(sock);
+        return;
+    }
+    ggs_log_server_errors(init_replies, options);
+    ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
     ggs_print_info("GGS initialization completed; entering main loop", options);
     
     std::future<std::string> user_input_f;
-    std::future<std::vector<std::string>> ggs_message_f;
+    std::future<GGS_Received_Messages> ggs_message_f;
     std::future<Search_result> ai_futures[2];
     bool ai_searchings[2] = {false, false};
     GGS_Board ggs_boards_searching[2];
@@ -2610,12 +2655,15 @@ void ggs_client(Options *options) {
         }
         // check server reply
         std::vector<std::string> server_replies;
+        uint64_t server_replies_received_time = 0;
         if (ggs_message_f.valid()) {
             if (ggs_message_f.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                server_replies = ggs_message_f.get();
+                GGS_Received_Messages received_messages = ggs_message_f.get();
+                server_replies = std::move(received_messages.replies);
+                server_replies_received_time = received_messages.received_time;
             }
         } else {
-            ggs_message_f = std::async(std::launch::async, ggs_receive_message, &sock, options); // ask ggs message
+            ggs_message_f = std::async(std::launch::async, ggs_receive_message_timed, &sock, options); // ask ggs message
         }
         if (ggs_replies_connection_closed(server_replies)) {
             ggs_report_error("GGS connection is no longer available. Shutting down GGS client.", options);
@@ -2854,6 +2902,7 @@ void ggs_client(Options *options) {
                     if (ggs_is_board_info(os_info)) {
                         //std::cout << "getting board info" << std::endl;
                         GGS_Board ggs_board = ggs_get_board(server_reply);
+                        ggs_board.received_time = server_replies_received_time;
                         if (ggs_board.is_valid()) {
                             if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
                                 ggs_apply_board_clock(&ggs_board, &ggs_clock_params, options);
@@ -3094,7 +3143,7 @@ void ggs_client(Options *options) {
     ggs_socket_closing.store(true);
     if (ggs_message_f.valid()) {
         shutdown(sock, SD_BOTH);
-        std::vector<std::string> discarded_replies = ggs_message_f.get();
+        GGS_Received_Messages discarded_replies = ggs_message_f.get();
         (void)discarded_replies;
     }
     ggs_close(sock);
