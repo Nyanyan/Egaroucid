@@ -1715,30 +1715,20 @@ std::string ggs_board_get_id(std::string line) {
     return "";
 }
 
+// GGS prints the time left as MM:SS, or HH:MM:SS from one hour on.
 uint64_t ggs_parse_remaining_seconds(const std::string &clock_text) {
     std::string main_clock = clock_text.substr(0, clock_text.find(','));
-    if (main_clock.empty()) {
+    if (main_clock.empty() || main_clock[0] == '-') {
         return 0ULL;
     }
-    bool negative = false;
-    if (main_clock[0] == '-' || main_clock[0] == '+') {
-        negative = main_clock[0] == '-';
+    if (main_clock[0] == '+') {
         main_clock.erase(main_clock.begin());
     }
-    const size_t colon = main_clock.find(':');
-    if (negative || colon == std::string::npos || colon == 0 || colon + 1 >= main_clock.size()) {
+    uint64_t msec;
+    if (main_clock.empty() || !ggs_parse_clock_time_msec(main_clock, &msec)) {
         return 0ULL;
     }
-    try {
-        const int minutes = std::stoi(main_clock.substr(0, colon));
-        const int seconds = std::stoi(main_clock.substr(colon + 1));
-        if (minutes < 0 || seconds < 0) {
-            return 0ULL;
-        }
-        return (uint64_t)minutes * 60ULL + (uint64_t)seconds;
-    } catch (const std::exception&) {
-        return 0ULL;
-    }
+    return msec / 1000ULL;
 }
 
 GGS_Board ggs_get_board(std::string str) {
