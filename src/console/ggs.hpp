@@ -1610,31 +1610,79 @@ bool ggs_match_request_get_clock(std::string line, const std::string &username, 
     return ggs_parse_clock_params(clock_str, clock);
 }
 
-void ggs_accept_match_requests(std::vector<std::string> server_replies, SOCKET &sock, GGS_Clock_Params *clock_params, Options *options) {
+// Egaroucid plays 8x8 Othello only: [s]8[r<n>][b|w].
+// Komi (k), anti (a) and other boards (4-14, octagon 88) are unsupported.
+bool ggs_is_supported_match_type(const std::string &type) {
+    size_t i = 0;
+    if (i < type.size() && std::tolower((unsigned char)type[i]) == 's') { // synchro
+        ++i;
+    }
+    if (i >= type.size() || type[i] != '8') {
+        return false;
+    }
+    ++i;
+    if (i < type.size() && std::isdigit((unsigned char)type[i])) { // 88
+        return false;
+    }
+    while (i < type.size()) {
+        const char c = std::tolower((unsigned char)type[i++]);
+        if (c == 'r') { // random start
+            while (i < type.size() && std::isdigit((unsigned char)type[i])) {
+                ++i;
+            }
+        } else if (c != 'b' && c != 'w') { // color preference
+            return false;
+        }
+    }
+    return true;
+}
+
+// Accept a match request (when can_accept), or decline one from another player whose game type
+// Egaroucid cannot play. Returns true if a command was sent.
+bool ggs_answer_match_request(const std::string &os_info, bool can_accept, SOCKET &sock, GGS_Clock_Params *clock_params, Options *options) {
+    if (!ggs_is_match_request(os_info, options->ggs_username)) {
+        return false;
+    }
+    // /os: + .53 2619.2 egrcd 01:00//00:30 s8r14 R 2639.8 nyanyan
+    const std::vector<std::string> words = split_by_space(os_info);
+    const std::string request_id = ggs_match_request_get_id(os_info);
+    if (request_id.empty()) {
+        return false;
+    }
+    const std::string &match_type = words[6];
+    if (!ggs_is_supported_match_type(match_type)) {
+        if (words[4] == options->ggs_username) {
+            return false;
+        }
+        ggs_send_message(sock, "ts decline " + request_id + "\n", options);
+        ggs_print_info("match request declined " + request_id + " unsupported type " + match_type, options);
+        return true;
+    }
+    if (!can_accept) {
+        return false;
+    }
+    GGS_Clock_Params request_clock;
+    if (ggs_match_request_get_clock(os_info, options->ggs_username, &request_clock)) {
+        *clock_params = request_clock;
+        if (ggs_verbose_log(options)) {
+            std::cerr << "ggs clock " << ggs_clock_summary(*clock_params) << std::endl;
+            if (clock_params->extension_msec > 0ULL && clock_params->increment_msec == 0ULL) {
+                std::cerr << "ggs clock note: extension time is not per-move increment" << std::endl;
+            }
+        }
+    }
+    ggs_send_message(sock, "ts accept " + request_id + "\n", options);
+    ggs_print_info("match request accepted " + request_id, options);
+    return true;
+}
+
+void ggs_answer_match_requests(std::vector<std::string> server_replies, SOCKET &sock, GGS_Clock_Params *clock_params, Options *options) {
     if (!options->ggs_accept_request) {
         return;
     }
     for (std::string server_reply: server_replies) {
         if (server_reply.size()) {
-            std::string os_info = ggs_get_os_info(server_reply);
-            if (ggs_is_match_request(os_info, options->ggs_username)) {
-                std::string request_id = ggs_match_request_get_id(os_info);
-                if (request_id.size()) {
-                    GGS_Clock_Params request_clock;
-                    if (ggs_match_request_get_clock(os_info, options->ggs_username, &request_clock)) {
-                        *clock_params = request_clock;
-                        if (ggs_verbose_log(options)) {
-                            std::cerr << "ggs clock " << ggs_clock_summary(*clock_params) << std::endl;
-                            if (clock_params->extension_msec > 0ULL && clock_params->increment_msec == 0ULL) {
-                                std::cerr << "ggs clock note: extension time is not per-move increment" << std::endl;
-                            }
-                        }
-                    }
-                    std::string accept_cmd = "ts accept " + request_id;
-                    ggs_send_message(sock, accept_cmd + "\n", options);
-                    ggs_print_info("match request accepted " + request_id, options);
-                }
-            }
+            ggs_answer_match_request(ggs_get_os_info(server_reply), true, sock, clock_params, options);
         }
     }
 }
@@ -2600,13 +2648,13 @@ void ggs_client(Options *options) {
         ggs_close(sock);
         return;
     }
-    ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
+    ggs_answer_match_requests(init_replies, sock, &ggs_clock_params, options);
     ggs_print_debug("initializing GGS subscriptions: ts client -", options);
     if (ggs_send_message(sock, "ts client -\n", options) != 0 || !ggs_receive_required(&sock, options, "ts client response", &init_replies)) {
         ggs_close(sock);
         return;
     }
-    ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
+    ggs_answer_match_requests(init_replies, sock, &ggs_clock_params, options);
     // trusted clients are charged the time sent with each move instead of the server wall clock
     ggs_print_debug("initializing GGS subscriptions: t /os trust +", options);
     if (ggs_send_message(sock, "t /os trust +\n", options) != 0 || !ggs_receive_required(&sock, options, "t /os trust + response", &init_replies)) {
@@ -2614,7 +2662,7 @@ void ggs_client(Options *options) {
         return;
     }
     ggs_log_server_errors(init_replies, options);
-    ggs_accept_match_requests(init_replies, sock, &ggs_clock_params, options);
+    ggs_answer_match_requests(init_replies, sock, &ggs_clock_params, options);
     ggs_print_info("GGS initialization completed; entering main loop", options);
     
     std::future<std::string> user_input_f;
@@ -2900,30 +2948,12 @@ void ggs_client(Options *options) {
                     }
                 }
             }
-            // receive match request
+            // receive match request (unsupported types are declined even during a match)
             if (options->ggs_accept_request) {
-                if (!match_playing) {
-                    for (std::string server_reply: server_replies) {
-                        if (server_reply.size()) {
-                            std::string os_info = ggs_get_os_info(server_reply);
-                            // match end
-                            if (ggs_is_match_request(os_info, options->ggs_username)) {
-                                std::string request_id = ggs_match_request_get_id(os_info);
-                                GGS_Clock_Params request_clock;
-                                if (ggs_match_request_get_clock(os_info, options->ggs_username, &request_clock)) {
-                                    ggs_clock_params = request_clock;
-                                    if (ggs_verbose_log(options)) {
-                                        std::cerr << "ggs clock " << ggs_clock_summary(ggs_clock_params) << std::endl;
-                                        if (ggs_clock_params.extension_msec > 0ULL && ggs_clock_params.increment_msec == 0ULL) {
-                                            std::cerr << "ggs clock note: extension time is not per-move increment" << std::endl;
-                                        }
-                                    }
-                                }
-                                std::string accept_cmd = "ts accept " + request_id;
-                                ggs_send_message(sock, accept_cmd + "\n", options);
-                                last_sent_time = tim();
-                                ggs_print_info("match request accepted " + request_id, options);
-                            }
+                for (std::string server_reply: server_replies) {
+                    if (server_reply.size()) {
+                        if (ggs_answer_match_request(ggs_get_os_info(server_reply), !match_playing, sock, &ggs_clock_params, options)) {
+                            last_sent_time = tim();
                         }
                     }
                 }
