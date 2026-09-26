@@ -462,6 +462,18 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
     for (int move_idx = 0; move_idx < canput && is_searching(cancellation); ++move_idx) {
         //swap_next_best_move(move_list, move_idx, canput);
         if (move_list[move_idx].flip.flip) {
+#if USE_SHARED_YBWC && YBWC_RETRY_SHARED_SPLIT
+            // The shared split was declined because every thread was busy. If
+            // one has become free, share the moves still left instead of
+            // handing it single moves. Searched moves are cleared already.
+            if (
+                n_moves_seen > 0 && running_count == 0 &&
+                ybwc_search_shared(search, &alpha, alpha + 1, v, best_move, depth, is_end_search,
+                    move_list.data(), canput, SEARCH_NODE_NONPV, false, parent_cancellation)
+            ) {
+                return;
+            }
+#endif
             ++n_moves_seen;
             searched = false;
             const Nws_node_hint child_hint = child_nws_hint(move_list[move_idx], is_end_search);
@@ -567,6 +579,18 @@ inline void ybwc_search_young_brothers_nws(Search *search, int alpha, int *v, in
     for (int move_idx = 0; move_idx < canput && is_searching(cancellation); ++move_idx) {
         //swap_next_best_move(move_list, move_idx, canput);
         if (move_list[move_idx].flip.flip) {
+#if USE_SHARED_YBWC && YBWC_RETRY_SHARED_SPLIT
+            // The shared split was declined because every thread was busy. If
+            // one has become free, share the moves still left instead of
+            // handing it single moves. Searched moves are cleared already.
+            if (
+                n_moves_seen > 0 && running_count == 0 &&
+                ybwc_search_shared(search, &alpha, alpha + 1, v, best_move, depth, is_end_search,
+                    move_list, canput, SEARCH_NODE_NONPV, false, parent_cancellation)
+            ) {
+                return;
+            }
+#endif
             ++n_moves_seen;
             searched = false;
             const Nws_node_hint child_hint = child_nws_hint(move_list[move_idx], is_end_search);

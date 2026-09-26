@@ -197,6 +197,11 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #ifndef USE_YBWC_IDLE_JOIN
 #define USE_YBWC_IDLE_JOIN true
 #endif
+// A shared split declined because every thread was busy is retried before
+// each later move, instead of handing a thread that became free one move.
+#ifndef YBWC_RETRY_SHARED_SPLIT
+#define YBWC_RETRY_SHARED_SPLIT true
+#endif
 #define USE_YBWC_NWS true
 #define USE_YBWC_NEGASCOUT true
 #define USE_YBWC_NEGASCOUT_ANALYZE false
@@ -327,8 +332,9 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 // more nodes, while MPC probes inside the endgame visited more nodes, so those
 // probes keep 9. With 28 threads, that cap kept 55% of the thread time idle
 // (see YBWC_IDLE_PROFILE). Idle threads that join splits which already
-// failed low use the whole pool well: at 28 threads the midgame took about
-// 0.91 times the time of the 14-task cap.
+// failed low use the whole pool well: with YBWC_RETRY_SHARED_SPLIT, the
+// midgame took about 0.93 times the time of the 14-task cap at both 20 and
+// 28 threads.
 #if IS_GGS_TOURNAMENT
     #ifndef YBWC_MID_MAX_SPLIT_TASKS
         #if USE_YBWC_IDLE_JOIN
