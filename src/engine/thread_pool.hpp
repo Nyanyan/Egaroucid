@@ -17,6 +17,7 @@
 #include <atomic>
 #include <functional>
 #include <unordered_map>
+#include "ybwc_idle_profile.hpp"
 
 #define THREAD_ID_SIZE 100
 #define THREAD_ID_NONE 99 // reserved
@@ -48,6 +49,12 @@ class Thread_pool {
         int max_thread_size[THREAD_ID_SIZE];
         std::atomic<int> n_using_thread[THREAD_ID_SIZE];
         std::atomic<int> n_using_limited_thread[THREAD_ID_SIZE];
+
+        // An idle worker calls idle_work before sleeping. It returns whether
+        // it found work, which it claims with claim_idle_worker. Sleeping
+        // workers retry after notify_idle_work.
+        std::atomic<bool (*)()> idle_work{nullptr};
+        std::atomic<uint32_t> idle_work_epoch{0};
         //std::unordered_map<thread_id_t, int> max_thread_size;
         //std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
         //std::atomic<int> n_using_tasks;
@@ -133,6 +140,53 @@ class Thread_pool {
 
         int get_n_using_thread(thread_id_t id) {
             return n_using_thread[id];
+        }
+
+        void set_idle_work(bool (*work)()) {
+            idle_work.store(work, std::memory_order_release);
+        }
+
+        // Called from an idle worker's idle_work: counts the caller as a task
+        // of id, as if it had been pushed with task_limit. The worker counts
+        // itself as idle again once idle_work returns.
+        bool claim_idle_worker(thread_id_t id, int task_limit) {
+            int idle = n_idle.load(std::memory_order_relaxed);
+            do {
+                if (
+                    idle <= 0 ||
+                    n_using_thread[id] >= max_thread_size[id] ||
+                    (task_limit != THREAD_SIZE_INF && n_using_limited_thread[id] >= task_limit)
+                ) {
+                    return false;
+                }
+            } while (!n_idle.compare_exchange_weak(idle, idle - 1, std::memory_order_relaxed));
+            if (id != THREAD_ID_NONE) {
+                n_using_thread[id].fetch_add(1, std::memory_order_relaxed);
+            }
+            if (task_limit != THREAD_SIZE_INF) {
+                n_using_limited_thread[id].fetch_add(1, std::memory_order_relaxed);
+            }
+            return true;
+        }
+
+        void release_idle_worker(thread_id_t id, int task_limit) {
+            if (id != THREAD_ID_NONE) {
+                n_using_thread[id].fetch_sub(1, std::memory_order_relaxed);
+            }
+            if (task_limit != THREAD_SIZE_INF) {
+                n_using_limited_thread[id].fetch_sub(1, std::memory_order_relaxed);
+            }
+        }
+
+        // New work for idle_work may be available.
+        void notify_idle_work() {
+            if (n_idle.load(std::memory_order_relaxed) <= 0) {
+                return;
+            }
+            idle_work_epoch.fetch_add(1, std::memory_order_release);
+            // A worker checks the epoch under mtx before it sleeps.
+            { std::lock_guard<std::mutex> lock(mtx); }
+            condition.notify_one();
         }
 
         bool try_execute_one(thread_id_t preferred_id) {
@@ -239,6 +293,7 @@ class Thread_pool {
     std::future<R> push(thread_id_t id, int task_limit, bool *pushed, F &&func, const Args &&...args) {
         if (n_using_thread[id] >= max_thread_size[id] || n_using_limited_thread[id] >= task_limit) {
             *pushed = false;
+            YBWC_IDLE_COUNT(ybwc_push_cap_fail);
             return std::future<R>();
         }
         auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
@@ -324,7 +379,24 @@ class Thread_pool {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
                     n_idle.fetch_add(1, std::memory_order_relaxed);
-                    condition.wait(lock, [&] { return !tasks.empty() || !running; });
+                    while (tasks.empty() && running) {
+                        bool (*work)() = idle_work.load(std::memory_order_acquire);
+                        const uint32_t epoch = idle_work_epoch.load(std::memory_order_acquire);
+                        if (work != nullptr) {
+                            lock.unlock();
+                            const bool worked = work();
+                            lock.lock();
+                            if (worked) {
+                                // claim_idle_worker took this worker out of n_idle.
+                                n_idle.fetch_add(1, std::memory_order_relaxed);
+                                continue;
+                            }
+                        }
+                        YBWC_IDLE_SCOPE(YBWC_IDLE_POOL);
+                        condition.wait(lock, [&] {
+                            return !tasks.empty() || !running || idle_work_epoch.load(std::memory_order_acquire) != epoch;
+                        });
+                    }
                     if (!running && tasks.empty()) {
                         return;
                     }

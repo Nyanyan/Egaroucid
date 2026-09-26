@@ -20,6 +20,46 @@
 // moves can then join a descendant split instead of sleeping. Each split's
 // mutex guards its own moves, results and child list; the sibling links are
 // guarded by the parent's mutex. Locks are only ever taken parent-first.
+//
+// Splits linked below no other split are kept in ybwc_root_registry, so that
+// an idle thread can look for moves anywhere in the trees. Its mutex comes
+// before every split's.
+class Ybwc_split_point;
+
+class Ybwc_root_registry {
+    std::mutex mutex_;
+    std::array<Ybwc_split_point *, 64> roots_{};
+    int count_ = 0;
+public:
+    std::mutex &mutex() { return mutex_; }
+    // A root that does not fit stays unreachable for idle threads.
+    bool add(Ybwc_split_point *split) {
+        std::lock_guard lock(mutex_);
+        if (count_ == static_cast<int>(roots_.size())) return false;
+        roots_[count_++] = split;
+        return true;
+    }
+    void remove(Ybwc_split_point *split) {
+        std::lock_guard lock(mutex_);
+        for (int i = 0; i < count_; ++i) {
+            if (roots_[i] == split) {
+                roots_[i] = roots_[--count_];
+                return;
+            }
+        }
+        assert(false);
+    }
+    // Require mutex().
+    int size_locked() const { return count_; }
+    Ybwc_split_point *at_locked(int i) const { return roots_[i]; }
+};
+inline Ybwc_root_registry ybwc_root_registry;
+inline std::atomic<bool> ybwc_root_registry_enabled{false};
+
+// Called when a split starts accepting joiners, so that idle threads can
+// look for it. Set by the searcher; null disables the notification.
+inline std::atomic<void (*)()> ybwc_joinable_notifier{nullptr};
+
 class Ybwc_split_point {
 public:
     enum class Bound { upper, exact, lower };
@@ -59,6 +99,7 @@ private:
     Ybwc_split_point *next_sibling_ = nullptr;
     const void *join_context_ = nullptr;
     int join_min_fail_low_ = 0;
+    bool root_registered_ = false;
 
     // Helpers and joiners, excluding the owner. A worker's final access to
     // this object is its increment of retired_.
@@ -73,11 +114,12 @@ private:
         wake_.fetch_add(1, std::memory_order_release);
         wake_.notify_one();
     }
-    // Owners sleeping above this split may now join it.
+    // Owners sleeping above this split, and idle threads, may now join it.
     void wake_waiting_ancestors() {
         for (Ybwc_split_point *p = parent_.load(std::memory_order_acquire); p; p = p->parent_.load(std::memory_order_acquire)) {
             if (p->owner_waiting_.load(std::memory_order_seq_cst)) p->wake_owner();
         }
+        if (auto notify = ybwc_joinable_notifier.load(std::memory_order_relaxed)) notify();
     }
 
 public:
@@ -198,18 +240,32 @@ public:
     std::mutex &mutex() { return mutex_; }
 
     void link_to(Ybwc_split_point *parent) {
-        if (parent == nullptr) return;
-        {
+        if (parent == nullptr) {
+            if (!ybwc_root_registry_enabled.load(std::memory_order_relaxed)) return;
+            root_registered_ = ybwc_root_registry.add(this);
+            if (!root_registered_) return;
+        } else {
             std::lock_guard lock(parent->mutex_);
             parent_.store(parent, std::memory_order_release);
             next_sibling_ = parent->first_child_;
             if (next_sibling_) next_sibling_->prev_sibling_ = this;
             parent->first_child_ = this;
         }
-        if (join_context_ != nullptr && join_min_fail_low_ <= 0) wake_waiting_ancestors();
+        // Moves may have failed low before the split became reachable.
+        bool joinable;
+        {
+            std::lock_guard lock(mutex_);
+            joinable = join_context_ != nullptr && searching() && next_ < count_ && n_fail_low_ >= join_min_fail_low_;
+        }
+        if (joinable) wake_waiting_ancestors();
     }
     // Call only after every worker of this split has stopped running.
     void unlink() {
+        if (root_registered_) {
+            ybwc_root_registry.remove(this);
+            root_registered_ = false;
+            return;
+        }
         Ybwc_split_point *parent = parent_.load(std::memory_order_relaxed);
         if (parent == nullptr) return;
         std::lock_guard lock(parent->mutex_);
@@ -228,9 +284,16 @@ public:
     // left, so the owner, which waits only after its own take() came back
     // empty, never sees a new worker after it started waiting.
     bool try_admit_joiner_locked(int max_workers) {
+        return try_admit_joiner_locked(max_workers, [](const void *) { return true; });
+    }
+    // Admits only if claim(join_context()) also agrees, e.g. to take a thread
+    // out of the pool's idle count for this split's search.
+    template <typename Claim>
+    bool try_admit_joiner_locked(int max_workers, Claim &&claim) {
         if (join_context_ == nullptr || !searching() || next_ == count_) return false;
         if (n_fail_low_ < join_min_fail_low_) return false;
         if (1 + running_.load(std::memory_order_relaxed) >= max_workers) return false;
+        if (!claim(join_context_)) return false;
         register_worker();
         return true;
     }

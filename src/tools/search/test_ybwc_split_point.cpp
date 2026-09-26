@@ -120,6 +120,48 @@ void tree_links_and_wake() {
     require(root.first_child_locked() == nullptr, "unlink");
 }
 
+void root_registry_and_claims() {
+    ybwc_root_registry_enabled = true;
+    int n_notified = 0;
+    static int *notified;
+    notified = &n_notified;
+    ybwc_joinable_notifier = [] { ++*notified; };
+    int context = 0;
+    Ybwc_split_point root(0, 1, -64, -1, false), child(0, 1, -64, -1, false);
+    root.set_join_context(&context, 1);
+    child.set_join_context(&context, 1);
+    for (int i = 0; i < 3; ++i) { root.add_move(i); child.add_move(i); }
+    auto first = root.take();
+    require(root.publish(first, -2, 0, Bound::upper), "fail low");
+    require(n_notified == 1, "a joinable split notifies idle threads");
+    root.link_to(nullptr);
+    require(n_notified == 2, "a split that was joinable before it became reachable notifies again");
+    child.link_to(&root);
+    require(n_notified == 2, "a split nobody can join does not notify");
+    {
+        std::lock_guard lock(ybwc_root_registry.mutex());
+        require(ybwc_root_registry.size_locked() == 1 && ybwc_root_registry.at_locked(0) == &root, "only parentless splits are roots");
+    }
+    {
+        std::lock_guard lock(root.mutex());
+        const void *claimed = nullptr;
+        require(!root.try_admit_joiner_locked(8, [](const void *) { return false; }), "a refused claim admits nobody");
+        require(!root.has_running_workers(), "a refused claim registers no worker");
+        require(root.try_admit_joiner_locked(8, [&](const void *c) { claimed = c; return true; }), "claimed join");
+        require(claimed == &context, "the claim sees the join context");
+    }
+    root.worker_done(0);
+    child.unlink();
+    root.unlink();
+    root.wait_retired();
+    {
+        std::lock_guard lock(ybwc_root_registry.mutex());
+        require(ybwc_root_registry.size_locked() == 0, "unlink removes a root");
+    }
+    ybwc_joinable_notifier = nullptr;
+    ybwc_root_registry_enabled = false;
+}
+
 // Owners hand their split's moves to helper threads, and while waiting join
 // splits created below them. Every move of every split must be searched once.
 void concurrent_helpful_owners() {
@@ -189,7 +231,7 @@ void concurrent_helpful_owners() {
 int main() {
     try {
         stale_lower_bound(); old_upper_bound_and_cutoff(); parallel_claims();
-        join_admission(); tree_links_and_wake(); concurrent_helpful_owners();
+        join_admission(); tree_links_and_wake(); root_registry_and_claims(); concurrent_helpful_owners();
         Ybwc_split_point cancelled(0, 1, -64, -1, false);
         cancelled.add_move(0); cancelled.cancel();
         require(!cancelled.take(), "external stop prevents claiming work");

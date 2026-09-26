@@ -177,6 +177,11 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #ifndef YBWC_JOIN_MAX_WORKERS
 #define YBWC_JOIN_MAX_WORKERS 4
 #endif
+// The same for midgame splits, including MPC probes from endgame nodes. With
+// idle threads joining, 8 took about 0.97 times the midgame time of 4.
+#ifndef YBWC_MID_JOIN_MAX_WORKERS
+#define YBWC_MID_JOIN_MAX_WORKERS 8
+#endif
 // Join only splits where this many handed-out moves already failed low,
 // i.e. nodes that look like ALL nodes whose remaining moves are all needed.
 #ifndef YBWC_JOIN_MIN_FAIL_LOW
@@ -185,6 +190,12 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 // How far below its own split an owner looks for work.
 #ifndef YBWC_JOIN_MAX_LEVELS
 #define YBWC_JOIN_MAX_LEVELS 16
+#endif
+// An idle pool thread joins a split with unclaimed moves anywhere in the
+// search instead of sleeping until a new split is created. Splits created
+// while every thread was busy otherwise keep their moves to their owners.
+#ifndef USE_YBWC_IDLE_JOIN
+#define USE_YBWC_IDLE_JOIN true
 #endif
 #define USE_YBWC_NWS true
 #define USE_YBWC_NEGASCOUT true
@@ -314,10 +325,15 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 // tasks on the tournament workload. Exact searches keep the full pool. With
 // USE_YBWC_HELPFUL_MASTER, 14 tasks were faster than 9 in the midgame without
 // more nodes, while MPC probes inside the endgame visited more nodes, so those
-// probes keep 9.
+// probes keep 9. With 28 threads, that cap kept 55% of the thread time idle
+// (see YBWC_IDLE_PROFILE). Idle threads that join splits which already
+// failed low use the whole pool well: at 28 threads the midgame took about
+// 0.91 times the time of the 14-task cap.
 #if IS_GGS_TOURNAMENT
     #ifndef YBWC_MID_MAX_SPLIT_TASKS
-        #if USE_YBWC_HELPFUL_MASTER
+        #if USE_YBWC_IDLE_JOIN
+            #define YBWC_MID_MAX_SPLIT_TASKS THREAD_SIZE_INF
+        #elif USE_YBWC_HELPFUL_MASTER
             #define YBWC_MID_MAX_SPLIT_TASKS 14
         #else
             #define YBWC_MID_MAX_SPLIT_TASKS 9

@@ -231,7 +231,11 @@ inline bool ybwc_wait_task_with_help(Ybwc_parallel_task_group &parallel_tasks, t
         if (ybwc_poll_task(parallel_tasks, task_result) > 0) {
             return true;
         }
-        const bool helped = use_help && thread_pool.try_execute_one(thread_id);
+        bool helped;
+        {
+            YBWC_IDLE_SCOPE(YBWC_IDLE_LEGACY_HELP);
+            helped = use_help && thread_pool.try_execute_one(thread_id);
+        }
 #if USE_YBWC_SPLIT_STATISTICS
         if (helped) {
             ybwc_wait_help_executed.fetch_add(1, std::memory_order_relaxed);
@@ -243,6 +247,7 @@ inline bool ybwc_wait_task_with_help(Ybwc_parallel_task_group &parallel_tasks, t
 #if USE_YBWC_SPLIT_STATISTICS
             const auto wait_start = std::chrono::steady_clock::now();
 #endif
+            YBWC_IDLE_SCOPE(YBWC_IDLE_LEGACY_WAIT);
             parallel_tasks.wait_for_ready();
 #if USE_YBWC_SPLIT_STATISTICS
             const auto wait_end = std::chrono::steady_clock::now();

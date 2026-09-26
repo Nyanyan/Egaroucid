@@ -60,6 +60,10 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     #if USE_YBWC_SPLIT_STATISTICS
         ybwc_split_stats_reset();
     #endif
+    #if YBWC_IDLE_PROFILE
+        ybwc_idle_profile_reset();
+        const uint64_t idle_profile_start = tim();
+    #endif
     while (std::getline(ifs, line)) {
         transposition_table.init();
         setboard(&board, options, state, line);
@@ -72,6 +76,9 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
         total.time += res.time;
     }
     std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << calc_nps(total.nodes, total.time) << std::endl;
+    #if YBWC_IDLE_PROFILE
+        ybwc_idle_profile_print((double)(tim() - idle_profile_start) / 1000.0, thread_pool.size() + 1);
+    #endif
     #if USE_LOCAL_TT_STATISTICS
         local_tt_stats_print();
     #endif

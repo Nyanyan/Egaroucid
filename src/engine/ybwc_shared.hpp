@@ -108,17 +108,30 @@ inline void ybwc_run_shared_worker(Ybwc_split_point &split, const Ybwc_join_cont
     split.worker_done(nodes);
 }
 
+// Workers a split may have at once, the owner included.
+inline int ybwc_join_max_workers(const Ybwc_split_point &split) {
+    const auto *context = static_cast<const Ybwc_join_context *>(split.join_context());
+    return context != nullptr && !context->is_end_search ? YBWC_MID_JOIN_MAX_WORKERS : YBWC_JOIN_MAX_WORKERS;
+}
+
+// Requires split's mutex.
+template <typename Claim>
+inline bool ybwc_try_admit_joiner_locked(Ybwc_split_point &split, Claim &claim) {
+    return split.try_admit_joiner_locked(ybwc_join_max_workers(split), claim);
+}
+
 // Requires node's mutex. Children come before grandchildren, so a joiner
 // prefers the largest subtrees still being searched below node.
-inline Ybwc_split_point *ybwc_find_joinable_locked(Ybwc_split_point &node, int levels) {
+template <typename Claim>
+inline Ybwc_split_point *ybwc_find_joinable_locked(Ybwc_split_point &node, int levels, Claim &claim) {
     for (Ybwc_split_point *child = node.first_child_locked(); child; child = child->next_sibling_locked()) {
         std::lock_guard lock(child->mutex());
-        if (child->try_admit_joiner_locked(YBWC_JOIN_MAX_WORKERS)) return child;
+        if (ybwc_try_admit_joiner_locked(*child, claim)) return child;
     }
     if (levels <= 1) return nullptr;
     for (Ybwc_split_point *child = node.first_child_locked(); child; child = child->next_sibling_locked()) {
         std::lock_guard lock(child->mutex());
-        if (Ybwc_split_point *found = ybwc_find_joinable_locked(*child, levels - 1)) return found;
+        if (Ybwc_split_point *found = ybwc_find_joinable_locked(*child, levels - 1, claim)) return found;
     }
     return nullptr;
 }
@@ -129,14 +142,72 @@ inline Ybwc_split_point *ybwc_find_joinable_locked(Ybwc_split_point &node, int l
 // so helping never delays the owner beyond its own completion.
 inline bool ybwc_help_descendant(Ybwc_split_point &split) {
     Ybwc_split_point *target;
+    auto no_claim = [](const void *) { return true; };
     {
         std::lock_guard lock(split.mutex());
-        target = ybwc_find_joinable_locked(split, YBWC_JOIN_MAX_LEVELS);
+        target = ybwc_find_joinable_locked(split, YBWC_JOIN_MAX_LEVELS, no_claim);
     }
     if (target == nullptr) return false;
+    YBWC_IDLE_COUNT(ybwc_shared_joins);
     ybwc_run_shared_worker(*target, *static_cast<const Ybwc_join_context *>(target->join_context()));
     return true;
 }
+
+#if USE_YBWC_IDLE_JOIN
+inline int ybwc_split_task_limit(const Ybwc_join_context &context) {
+    return context.is_end_search ? YBWC_END_MAX_SPLIT_TASKS : context.seed->mid_split_task_limit;
+}
+
+// Run by an idle pool worker before it sleeps: joins a split anywhere in the
+// registered trees, like a helper pushed there late. Without it, a split
+// created while every thread was busy keeps its unclaimed moves for its own
+// few workers even after other threads become free.
+inline bool ybwc_idle_join() noexcept {
+    const Ybwc_join_context *context = nullptr;
+    auto claim = [&context](const void *join_context) {
+        const auto *c = static_cast<const Ybwc_join_context *>(join_context);
+        if (!thread_pool.claim_idle_worker(c->seed->thread_id, ybwc_split_task_limit(*c))) return false;
+        context = c;
+        return true;
+    };
+    Ybwc_split_point *target = nullptr;
+    {
+        std::lock_guard registry_lock(ybwc_root_registry.mutex());
+        for (int i = 0; i < ybwc_root_registry.size_locked() && target == nullptr; ++i) {
+            Ybwc_split_point *root = ybwc_root_registry.at_locked(i);
+            std::lock_guard lock(root->mutex());
+            if (ybwc_try_admit_joiner_locked(*root, claim)) {
+                target = root;
+            } else {
+                target = ybwc_find_joinable_locked(*root, YBWC_JOIN_MAX_LEVELS, claim);
+            }
+        }
+    }
+    if (target == nullptr) return false;
+    YBWC_IDLE_COUNT(ybwc_idle_joins);
+    // A notification wakes one idle thread. Wake the next one in case more
+    // work is left for it.
+    thread_pool.notify_idle_work();
+    // target and context may be gone once this worker has retired.
+    const thread_id_t thread_id = context->seed->thread_id;
+    const int task_limit = ybwc_split_task_limit(*context);
+    ybwc_run_shared_worker(*target, *context);
+    thread_pool.release_idle_worker(thread_id, task_limit);
+    return true;
+}
+
+inline void ybwc_notify_idle_join() {
+    thread_pool.notify_idle_work();
+}
+
+// Not inline: an unused inline variable need not be initialized at all.
+static const bool ybwc_idle_join_installed = [] {
+    thread_pool.set_idle_work(&ybwc_idle_join);
+    ybwc_joinable_notifier.store(&ybwc_notify_idle_join, std::memory_order_relaxed);
+    ybwc_root_registry_enabled.store(true, std::memory_order_relaxed);
+    return true;
+}();
+#endif
 
 inline bool ybwc_search_shared(
     Search *search, int *alpha, int beta, int *value, int *best_move,
@@ -194,6 +265,10 @@ inline bool ybwc_search_shared(
         ++submitted;
     }
     if (!submitted && !waiting_owner_above) return false;
+    YBWC_IDLE_COUNT(ybwc_shared_splits);
+#if YBWC_IDLE_PROFILE
+    ybwc_shared_helpers.fetch_add(submitted, std::memory_order_relaxed);
+#endif
     split.link_to(ybwc_current_split);
     {
         const Ybwc_current_split_scope scope(&split);
@@ -208,8 +283,12 @@ inline bool ybwc_search_shared(
             const uint32_t seen = split.wake_sequence();
             if (!split.has_running_workers()) break;
 #if USE_YBWC_HELPFUL_MASTER
-            if (ybwc_help_descendant(split)) continue;
+            {
+                YBWC_IDLE_SCOPE(YBWC_IDLE_OWNER_HELP);
+                if (ybwc_help_descendant(split)) continue;
+            }
 #endif
+            YBWC_IDLE_SCOPE(YBWC_IDLE_OWNER_SLEEP);
             split.wait_wake(seen);
         }
 #if USE_YBWC_HELPFUL_MASTER
@@ -218,7 +297,10 @@ inline bool ybwc_search_shared(
     }
     split.unlink();
     // Helpers may still be returning from their final access to split.
-    split.wait_retired();
+    {
+        YBWC_IDLE_SCOPE(YBWC_IDLE_RETIRE);
+        split.wait_retired();
+    }
     search->n_nodes += split.worker_nodes();
     const auto result = split.result();
     *value = result.value;
