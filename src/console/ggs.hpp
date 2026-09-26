@@ -1343,7 +1343,7 @@ void ggs_log_server_errors(const std::vector<std::string> &server_replies, Optio
         std::stringstream ss(server_reply);
         std::string line;
         while (std::getline(ss, line, '\n')) {
-            if (line.find("ERR") != std::string::npos || line.find("+err") != std::string::npos || line.find("-err") != std::string::npos || line.find("trust-violation") != std::string::npos) {
+            if (line.find("ERR") != std::string::npos || line.find("+err") != std::string::npos || line.find("-err") != std::string::npos || line.find("/os: error") != std::string::npos || line.find("trust-violation") != std::string::npos) {
                 ggs_print_info("server error: " + line, options);
             }
         }
@@ -2297,6 +2297,51 @@ bool ggs_try_send_pending_move(
     return true;
 }
 
+struct GGS_Sent_Move {
+    GGS_Board board;
+    bool retried;
+};
+
+using GGS_Sent_Move_Table = std::unordered_map<std::string, GGS_Sent_Move>; // game id -> move awaiting the server update
+
+void ggs_record_sent_move(GGS_Sent_Move_Table *sent_moves, const GGS_Board &ggs_board) {
+    (*sent_moves)[ggs_board.game_id] = GGS_Sent_Move{ggs_board, false};
+}
+
+// "/os: error <game id> <reason>" means the server rejected our move and our clock keeps running.
+// Answer once with a 1-ply move, without eval and time so that only the move itself can be rejected.
+bool ggs_retry_rejected_move(const std::string &line, GGS_Sent_Move_Table *sent_moves, SOCKET &sock, Options *options) {
+    std::vector<std::string> words = split_by_space(line);
+    if (words.size() < 3 || words[0] != "/os:" || words[1] != "error") {
+        return false;
+    }
+    auto it = sent_moves->find(words[2]);
+    if (it == sent_moves->end()) {
+        return false;
+    }
+    if (it->second.retried) {
+        ggs_print_info("resent move also rejected game " + words[2], options);
+        sent_moves->erase(it);
+        return false;
+    }
+    it->second.retried = true;
+    Board board = it->second.board.board;
+    if (board.is_end()) {
+        return false;
+    }
+    std::string move_text = "pa";
+    if (board.get_legal()) {
+        Search_result result = ai(board, 1, false, 0, false, false);
+        if (!ggs_is_legal_hint(board, result.policy)) {
+            result = ggs_fallback_search_result(board);
+        }
+        move_text = idx_to_coord(result.policy);
+    }
+    ggs_send_message(sock, "t /os play " + words[2] + " " + move_text + "\n", options);
+    ggs_print_info("move rejected; resent 1-ply move game " + words[2] + " move " + move_text, options);
+    return true;
+}
+
 void ggs_launch_ai_search(
     std::future<Search_result> ai_futures[],
     bool ai_searchings[],
@@ -2580,6 +2625,7 @@ void ggs_client(Options *options) {
     GGS_Pending_Move pending_moves[2];
     GGS_Pending_Search pending_searches[2];
     GGS_Synchro_Search_Record synchro_search_records[2];
+    GGS_Sent_Move_Table sent_moves;
     std::future<std::vector<Ponder_elem>> ponder_futures[2][GGS_N_PONDER_PARALLEL];
     bool ponder_searchings[2] = {false, false};
     GGS_Board ggs_boards[2][HW2 + 1];
@@ -2682,6 +2728,7 @@ void ggs_client(Options *options) {
                         ggs_print_info("match start!", options);
                         match_playing = true;
                         playing_same_board = true;
+                        sent_moves.clear();
                         for (int i = 0; i < 2; ++i) {
                             ai_searchings[i] = false;
                             pending_moves[i].active = false;
@@ -2796,6 +2843,7 @@ void ggs_client(Options *options) {
                     if (ggs_is_match_end(os_info, options->ggs_username)) {
                         ggs_print_info("match end!", options);
                         match_playing = false;
+                        sent_moves.clear();
                         for (int i = 0; i < 2; ++i) {
                             ai_searchings[i] = false;
                             pending_moves[i].active = false;
@@ -2905,8 +2953,9 @@ void ggs_client(Options *options) {
                         ggs_board.received_time = server_replies_received_time;
                         if (ggs_board.is_valid()) {
                             if (ggs_board.player_black == options->ggs_username || ggs_board.player_white == options->ggs_username) { // related to me
+                                sent_moves.erase(ggs_board.game_id); // a new position means our last move was accepted
                                 ggs_apply_board_clock(&ggs_board, &ggs_clock_params, options);
-                                bool need_to_move = 
+                                bool need_to_move =
                                     (ggs_board.player_black == options->ggs_username && ggs_board.player_to_move == BLACK) || 
                                     (ggs_board.player_white == options->ggs_username && ggs_board.player_to_move == WHITE);
                                 if (ggs_board.is_synchro) { // synchro game
@@ -2986,6 +3035,16 @@ void ggs_client(Options *options) {
                     }
                 }
             }
+            // rejected moves
+            for (std::string server_reply: server_replies) {
+                std::stringstream ss(server_reply);
+                std::string line;
+                while (std::getline(ss, line, '\n')) {
+                    if (ggs_retry_rejected_move(line, &sent_moves, sock, options)) {
+                        last_sent_time = tim();
+                    }
+                }
+            }
         }
         for (int i = 0; i < 2; ++i) {
             if (ggs_try_launch_pending_search(&pending_searches[i], ai_futures, ai_searchings, ggs_boards_searching, move_hints, ponder_results, synchro_search_records, contest_books, &contest_root_table, options)) {
@@ -3020,6 +3079,7 @@ void ggs_client(Options *options) {
                                 );
                             } else {
                                 ggs_send_move(ggs_boards_searching[i], sock, search_result, options);
+                                ggs_record_sent_move(&sent_moves, ggs_boards_searching[i]);
                                 last_sent_time = tim();
                             }
                         }
@@ -3048,6 +3108,7 @@ void ggs_client(Options *options) {
         }
         for (int i = 0; i < 2; ++i) {
             if (ggs_try_send_pending_move(&pending_moves[i], move_hints, synchro_search_records, sock, options)) {
+                ggs_record_sent_move(&sent_moves, pending_moves[i].board);
                 last_sent_time = tim();
             }
         }
