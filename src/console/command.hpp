@@ -360,7 +360,7 @@ void contest_book_set_analyze_alt(Analyze_result *result, const Search_result &s
     result->alt_probability = search_result.probability;
 }
 
-bool contest_book_analyze_result(const Board &board, const Contest_book &contest_book, int level, int played_move, Analyze_result *result) {
+bool contest_book_analyze_result(const Board &board, const Contest_book &contest_book, const Options *options, int played_move, Analyze_result *result) {
     Contest_book_entry entry;
     if (!contest_book.get(board, &entry)) {
         return false;
@@ -394,7 +394,7 @@ bool contest_book_analyze_result(const Board &board, const Contest_book &contest
         }
     }
     if (result->played_score == SCORE_UNDEFINED) {
-        Search_result played_search = ai_legal(board, level, true, 0, true, false, 1ULL << played_move);
+        Search_result played_search = ai_legal_with_settings(board, options, true, false, 1ULL << played_move);
         if (!is_valid_policy(played_search.policy)) {
             return false;
         }
@@ -402,7 +402,7 @@ bool contest_book_analyze_result(const Board &board, const Contest_book &contest
     }
     uint64_t non_book_alt_legal = (legal & ~(1ULL << played_move)) & ~book_legal;
     if (non_book_alt_legal) {
-        Search_result alt_search = ai_legal(board, level, true, 0, true, false, non_book_alt_legal);
+        Search_result alt_search = ai_legal_with_settings(board, options, true, false, non_book_alt_legal);
         if (is_valid_policy(alt_search.policy) && alt_search.value > result->alt_score) {
             contest_book_set_analyze_alt(result, alt_search);
         }
@@ -537,7 +537,7 @@ inline void analyze(Board_info *board, Options *options, State *state) {
         if (pop_count_ull(played_board) == 1) {
             uint_fast8_t played_move = ctz(played_board);
             Analyze_result result;
-            bool contest_book_used = options->contest_book && contest_book_analyze_result(n_board, state->contest_book, options->level, played_move, &result);
+            bool contest_book_used = options->contest_book && contest_book_analyze_result(n_board, state->contest_book, options, played_move, &result);
             if (contest_book_used) {
                 if (options->show_log) {
                     std::cerr << "contest book analyzed played " << idx_to_coord(played_move)
@@ -546,7 +546,12 @@ inline void analyze(Board_info *board, Options *options, State *state) {
                               << std::endl;
                 }
             } else {
-                result = ai_analyze(n_board, options->level, true, played_move);
+                Depth_prob_range_setting setting;
+                if (get_depth_prob_range_setting(options, n_board, &setting)) {
+                    result = ai_analyze_depth(n_board, setting.depth, setting.mpc_level, true, played_move);
+                } else {
+                    result = ai_analyze(n_board, options->level, true, played_move);
+                }
             }
             std::string judge = "";
             ++summary[board->players[i]].n_ply;

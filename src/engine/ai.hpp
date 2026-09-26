@@ -4641,19 +4641,16 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
 }
 
 /*
-    @brief Search for analyze command
+    @brief Search for analyze command with explicit depth and selectivity
 
     @param board                board to solve
-    @param level                level of AI
+    @param depth                search depth (capped by the number of empty squares)
+    @param mpc_level            MPC level
     @param use_multi_thread     search in multi thread?
-    @return the result in Search_result structure
+    @param played_move          move played in the game
+    @return the result in Analyze_result structure
 */
-
-Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move) {
-    int depth;
-    bool is_mid_search;
-    uint_fast8_t mpc_level;
-    get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+Analyze_result ai_analyze_depth(Board board, int depth, uint_fast8_t mpc_level, bool use_multi_thread, uint_fast8_t played_move) {
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
     bool searching = true;
@@ -4672,6 +4669,23 @@ Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fa
     Analyze_result res = first_nega_scout_analyze(&search, -SCORE_MAX, SCORE_MAX, depth, is_end_search, clogs, clog_depth, played_move, strt, &searching);
     //thread_pool.tell_finish_using();
     return res;
+}
+
+/*
+    @brief Search for analyze command
+
+    @param board                board to solve
+    @param level                level of AI
+    @param use_multi_thread     search in multi thread?
+    @param played_move          move played in the game
+    @return the result in Analyze_result structure
+*/
+Analyze_result ai_analyze(Board board, int level, bool use_multi_thread, uint_fast8_t played_move) {
+    int depth;
+    bool is_mid_search;
+    uint_fast8_t mpc_level;
+    get_level(level, board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+    return ai_analyze_depth(board, depth, mpc_level, use_multi_thread, played_move);
 }
 
 
