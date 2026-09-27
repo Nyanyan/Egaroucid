@@ -693,26 +693,54 @@ ANALYSIS_FIELDS = ("played_score", "played_depth", "alt_move", "alt_score", "alt
 class PositionTable:
     """Analysis results of already analyzed positions, keyed by (board, played move).
 
-    The two games of a synchro match start from the same position and often
-    share their first moves, so the second game can reuse these results.
+    Every result is appended to a JSONL file as soon as the engine reports it,
+    so an interrupted run resumes from the last analyzed move. The two games
+    of a synchro match start from the same position and often share their
+    first moves, so the second game also reuses the results of the first.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, path: Path | None = None, load: bool = True) -> None:
         self._data: dict[tuple[str, str], dict] = {}
         self._lock = threading.Lock()
+        self._file = None
+        if path is not None:
+            if load and path.is_file():
+                for line in path.read_text(encoding="utf-8").splitlines():
+                    try:
+                        entry = json.loads(line)
+                        self._data[(entry["board"], entry["played"])] = entry
+                    except (ValueError, KeyError, TypeError):
+                        pass  # e.g. a line cut off by a crash
+            self._file = open(path, "a", encoding="utf-8")
 
     def __len__(self) -> int:
         return len(self._data)
+
+    def close(self) -> None:
+        if self._file is not None:
+            self._file.close()
+            self._file = None
 
     def get(self, board: str, played: str) -> dict | None:
         with self._lock:
             return self._data.get((board, played))
 
+    def add(self, board: str, played: str, analysis: dict, seconds: float, source: str) -> None:
+        entry = {"board": board, "played": played, **{field: analysis[field] for field in ANALYSIS_FIELDS},
+                 "seconds": round(seconds, 3), "source": source}
+        with self._lock:
+            self._data[(board, played)] = entry
+            if self._file is not None:
+                self._file.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                self._file.flush()
+
     def add_game(self, moves: list[dict], source: str) -> None:
+        """Load the moves of a game analyzed by an older version (kept in memory only)."""
         with self._lock:
             for move in moves:
                 entry = {field: move[field] for field in ANALYSIS_FIELDS}
-                entry["source"] = move.get("reused_from") or source
+                entry.update(board=move["board"], played=move["played"], seconds=move.get("seconds", 0.0),
+                             source=move.get("reused_from") or source)
                 self._data.setdefault((move["board"], move["played"]), entry)
 
 
@@ -746,24 +774,30 @@ def move_result(position: Position, game: SelectedGame, played: str, analysis: d
 
 def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, known: PositionTable) -> list[dict]:
     record = game.record
+    source = game_label(record)
     positions = replay(record).positions
     by_ply = {position.n_discs - 3: position for position in positions}
 
-    # reuse the opening shared with an already analyzed game (e.g. the other game of a synchro match)
-    reused: list[dict] = []
-    for position in positions:
-        entry = known.get(position.board_str, index_to_coord(position.move))
-        if entry is None:
-            break
-        reused.append(entry)
-    n_reused = len(reused)
-    if n_reused:
-        log(f"  {label} 1〜{n_reused}手目は解析済みの局面と同じなので結果を流用します ({reused[0]['source']})")
+    # positions analyzed before: earlier (interrupted) runs of this game, or the same
+    # opening in another game such as the other game of a synchro match
+    missing = [position for position in positions if known.get(position.board_str, index_to_coord(position.move)) is None]
+    n_known = len(positions) - len(missing)
+    if n_known:
+        n_other = sum(1 for position in positions
+                      if (entry := known.get(position.board_str, index_to_coord(position.move))) and entry["source"] != source)
+        log(f"  {label} {n_known}手は解析済み (前回までの途中結果 {n_known - n_other}手, 他の対局からの流用 {n_other}手)")
+
+    mismatches: list[str] = []
 
     def on_row(row: AnalyzeRow) -> None:
         position = by_ply.get(row.ply)
         if position is None:
             return
+        if row.played != index_to_coord(position.move):
+            mismatches.append(f"{position.index + 1}手目の着手が一致しません (ログ {index_to_coord(position.move)} / Egaroucid {row.played})")
+            return
+        analysis = {field: getattr(row, field) for field in ANALYSIS_FIELDS}
+        known.add(position.board_str, row.played, analysis, row.seconds, source)
         is_me = position.side == game.my_color
         loss = max(0, row.alt_score - row.played_score) if row.alt_score is not None else 0
         who = "自分" if is_me else "相手"
@@ -776,28 +810,30 @@ def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, kno
         log(f"  {label} {position.index + 1:>2}手目 {position.empties:>2}空き {color_name(position.side)}({who}) "
             f"{row.played} {signed(row.played_score):>3} [{row.played_depth}] | 他の最善 {alt} | {row.seconds:.1f}秒{mark}")
 
-    rows_by_ply: dict[int, AnalyzeRow] = {}
-    if n_reused < len(positions):
-        start = positions[n_reused]
+    # analyze each run of consecutive missing moves, the last run first as analyze itself goes backward
+    runs: list[list[Position]] = []
+    for position in missing:
+        if runs and runs[-1][-1].index + 1 == position.index:
+            runs[-1].append(position)
+        else:
+            runs.append([position])
+    for run in reversed(runs):
         engine = get_engine()
-        rows = engine.analyze(start.board_str, "".join(record.moves[n_reused:]), on_row)
-        rows_by_ply = {row.ply: row for row in rows}
+        first, last = run[0].index, run[-1].index
+        engine.analyze(run[0].board_str, "".join(record.moves[first:last + 1]), on_row)
         engine_errors = f" (Egaroucid: {' / '.join(engine.errors)})" if engine.errors else ""
+        if mismatches:
+            raise EngineError(mismatches[0] + engine_errors)
+        for position in run:
+            if known.get(position.board_str, index_to_coord(position.move)) is None:
+                raise EngineError(f"{position.index + 1}手目の解析結果がありません{engine_errors}")
 
     results: list[dict] = []
     for position in positions:
         played = index_to_coord(position.move)
-        if position.index < n_reused:
-            entry = reused[position.index]
-            results.append(move_result(position, game, played, entry, 0.0, entry["source"]))
-            continue
-        row = rows_by_ply.get(position.n_discs - 3)
-        if row is None:
-            raise EngineError(f"{position.index + 1}手目の解析結果がありません{engine_errors}")
-        if row.played != played:
-            raise EngineError(f"{position.index + 1}手目の着手が一致しません (ログ {played} / Egaroucid {row.played}){engine_errors}")
-        analysis = {field: getattr(row, field) for field in ANALYSIS_FIELDS}
-        results.append(move_result(position, game, played, analysis, row.seconds, None))
+        entry = known.get(position.board_str, played)
+        reused_from = None if entry["source"] == source else entry["source"]
+        results.append(move_result(position, game, played, entry, 0.0 if reused_from else entry.get("seconds", 0.0), reused_from))
     return results
 
 
@@ -1283,7 +1319,8 @@ def main() -> int:
     (out_dir / "cache").mkdir(parents=True, exist_ok=True)
 
     settings_key = schedule_cache_key(schedule, args.book)
-    known_positions = PositionTable()
+    # every analyzed position is appended here immediately; --force ignores (but keeps) earlier results
+    known_positions = PositionTable(out_dir / "cache" / f"positions_{settings_key[:16]}.jsonl", load=not args.force)
     if not args.force:
         for path in sorted((out_dir / "cache").glob("*.json")):
             try:
@@ -1353,15 +1390,15 @@ def main() -> int:
                 local.engine.kill()
                 local.engine = None
             return
-        seconds = time.perf_counter() - start
+        elapsed = time.perf_counter() - start
+        seconds = sum(move["seconds"] for move in moves if not move.get("reused_from"))  # includes interrupted runs
         path.write_text(json.dumps({"game_id": record.game_id, "label": game_label(record), "source": str(record.source),
                                     "settings_key": settings_key, "seconds": seconds, "engine": engine_desc,
                                     "command": cmd, "moves": moves},
                                    ensure_ascii=False, indent=1), encoding="utf-8")
-        known_positions.add_game(moves, game_label(record))
         analyses[no] = GameAnalysis(no, game, moves, game_replay.final_cells, game_replay.terminal, seconds)
         n_reused = sum(1 for move in moves if move.get("reused_from"))
-        log(f"{label} 解析完了 ({seconds:.0f}秒" + (f", {n_reused}局面は流用" if n_reused else "") + ")")
+        log(f"{label} 解析完了 (今回 {elapsed:.0f}秒, 合計 {seconds:.0f}秒" + (f", {n_reused}局面は流用" if n_reused else "") + ")")
 
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) if args.jobs > 1 else None
     try:
@@ -1395,7 +1432,7 @@ def main() -> int:
         if executor is not None:
             executor.shutdown(wait=True, cancel_futures=True)
         log("")
-        log("中断しました。同じコマンドをもう一度実行すると、解析済みの対局を飛ばして続きから再開します。")
+        log("中断しました。同じコマンドをもう一度実行すると、解析済みの局面を飛ばして続きから再開します。")
         return 130
     finally:
         if executor is not None:
@@ -1403,6 +1440,7 @@ def main() -> int:
         with engines_lock:
             for engine in engines:
                 engine.close()
+        known_positions.close()
 
     ordered = [analyses[no] for no in sorted(analyses)]
     write_report(out_dir / "report.md", ordered, failures, args, schedule, engine_desc, stats)
