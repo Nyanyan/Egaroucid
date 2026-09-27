@@ -263,7 +263,7 @@ struct GGS_Synchro_Time_Context {
     int pair_n_discs;
     int pair_value;
     int pair_depth;
-    int pair_probability;
+    double pair_probability;
     bool pair_is_end_search;
     bool pair_value_is_proven;
 
@@ -448,7 +448,7 @@ std::string ggs_search_result_summary(
         " move " + ggs_policy_to_text(search_result.policy) +
         " value " + std::to_string(search_result.value) +
         " depth " + std::to_string(search_result.depth) +
-        "@" + std::to_string(search_result.probability) + "%" +
+        "@" + probability_to_str(search_result.probability) + "%" +
         " time " + std::to_string(search_result.time) +
         " nodes " + std::to_string(search_result.nodes) +
         " nps " + std::to_string(search_result.nps) +
@@ -594,7 +594,7 @@ uint64_t ggs_adjust_remaining_time_for_synchro_pair(
         " pair_discs " + std::to_string(context.pair_n_discs) +
         " pair_value " + std::to_string(context.pair_value) +
         " pair_depth " + std::to_string(context.pair_depth) +
-        "@" + std::to_string(context.pair_probability) + "%" +
+        "@" + probability_to_str(context.pair_probability) + "%" +
         " reason " + reason +
         " phase_scale " + std::to_string(phase_scale) +
         " bonus " + std::to_string(bonus) +
@@ -634,7 +634,7 @@ void ggs_apply_move_hint_to_search_result(
         " to " + ggs_policy_to_text(hint_policy) +
         " value " + std::to_string(search_result->value) +
         " depth " + std::to_string(search_result->depth) +
-        "@" + std::to_string(search_result->probability) + "%" +
+        "@" + probability_to_str(search_result->probability) + "%" +
         " hintx" + std::to_string(hint_count),
         options
     );
@@ -1990,7 +1990,7 @@ Search_result ggs_search(
                 ggs_print_debug(
                     "ggs synchro hint overrides search " + idx_to_coord(search_result.policy) + " -> " + idx_to_coord(hint_policy) +
                     " value " + std::to_string(search_result.value) +
-                    " depth " + std::to_string(search_result.depth) + "@" + std::to_string(search_result.probability) + "% " +
+                    " depth " + std::to_string(search_result.depth) + "@" + probability_to_str(search_result.probability) + "% " +
                     ggs_board.board.to_str(),
                     options
                 );
@@ -2049,7 +2049,7 @@ void ggs_send_move(GGS_Board &ggs_board, SOCKET &sock, Search_result search_resu
         if (search_result.depth == SEARCH_BOOK) {
             msg += " depth book";
         } else {
-            msg += " depth " + std::to_string(search_result.depth) + "@" + std::to_string(search_result.probability) + "%";
+            msg += " depth " + std::to_string(search_result.depth) + "@" + probability_to_str(search_result.probability) + "%";
         }
         msg +=
             " time " + std::to_string(search_result.time) + "ms" +

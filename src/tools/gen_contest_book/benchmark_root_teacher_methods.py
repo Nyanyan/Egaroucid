@@ -57,7 +57,7 @@ LEVEL_33 = 33
 BOOTSTRAP_REPETITIONS = 100_000
 ANALYZE_RESULT_RE = re.compile(
     r"^\|\s*\d+\|\s*(?:Black|White)\|\s*(?P<move>[a-h][1-8])"
-    r"\|\s*(?P<depth>\d+@\d+%)\|\s*(?P<score>[+-]?\d+)\|",
+    r"\|\s*(?P<depth>\d+@\d+(?:\.\d+)?%)\|\s*(?P<score>[+-]?\d+)\|",
     re.MULTILINE,
 )
 TIME_METHOD = "time_managed_search"

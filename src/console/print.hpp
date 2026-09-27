@@ -254,7 +254,7 @@ inline void print_search_result_body(Search_result result, const Options *option
         std::string level_str = get_search_level_str(result, options);
         std::string depth_str = "-";
         if (result.depth != SEARCH_BOOK) {
-            depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
+            depth_str = std::to_string(result.depth) + "@" + probability_to_str(result.probability) + "%";
         }
         std::cout << "|";
         std::cout << std::right << std::setw(SEARCH_RESULT_TAB_SIZE) << level_str;
@@ -307,7 +307,7 @@ inline void print_search_result_debug(Search_result result, const Options *optio
         std::string level_str = get_search_level_str(result, options);
         std::string depth_str = "-";
         if (result.depth != SEARCH_BOOK) {
-            depth_str = std::to_string(result.depth) + "@" + std::to_string(result.probability) + "%";
+            depth_str = std::to_string(result.depth) + "@" + probability_to_str(result.probability) + "%";
         }
         std::cerr << "level " << level_str << " depth " << depth_str << " " << idx_to_coord(result.policy) << " " << result.value;
     }
@@ -348,7 +348,7 @@ inline void print_analyze_body(Analyze_result result, int ply, int player, std::
     if (result.played_depth == SEARCH_BOOK)
         std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Book";
     else{
-        s = std::to_string(result.played_depth) + "@" + std::to_string(result.played_probability) + "%";
+        s = std::to_string(result.played_depth) + "@" + probability_to_str(result.played_probability) + "%";
         std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
     }
     std::cout << "|";
@@ -364,7 +364,7 @@ inline void print_analyze_body(Analyze_result result, int ply, int player, std::
         if (result.alt_depth == SEARCH_BOOK)
             std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << "Book";
         else{
-            s = std::to_string(result.alt_depth) + "@" + std::to_string(result.alt_probability) + "%";
+            s = std::to_string(result.alt_depth) + "@" + probability_to_str(result.alt_probability) + "%";
             std::cout << std::right << std::setw(ANALYZE_TAB_SIZE) << s;
         }
         std::cout << "|";

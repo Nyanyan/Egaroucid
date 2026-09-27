@@ -198,7 +198,7 @@ struct AI_TL_Iteration_Diagnostics {
     bool next_selectivity_incomplete;
     uint64_t reserved_time_msec;
     int attempted_depth;
-    int attempted_probability;
+    double attempted_probability;
 #if IS_GGS_TOURNAMENT
     bool early_pair_exact_attempted;
     uint64_t early_pair_exact_budget;
@@ -432,7 +432,7 @@ inline bool ai_tl_ggs_should_hold_match_reserve(
     AI_TL_Iteration_Diagnostics *diagnostics,
     const Search_result &result,
     int attempted_depth,
-    int attempted_probability
+    double attempted_probability
 ) {
     if (
         diagnostics == nullptr ||
@@ -700,8 +700,8 @@ inline bool ai_tl_ggs_can_retry_alt_verify(int last_verify_depth, int main_depth
 inline bool ai_tl_ggs_should_use_main_on_verify_timeout(
     bool main_is_end_search,
     bool previous_is_end_search,
-    int main_probability,
-    int previous_probability,
+    double main_probability,
+    double previous_probability,
     bool new_full_complete,
     bool previous_nws_complete,
     int previous_nws_value,
@@ -722,7 +722,7 @@ inline bool ai_tl_ggs_should_use_main_on_verify_timeout(
 
 inline bool ai_tl_ggs_can_keep_previous_on_verify_timeout(
     uint64_t time_limit,
-    int previous_probability,
+    double previous_probability,
     int previous_depth,
     int main_depth
 ) {
@@ -4777,7 +4777,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
                 search_legal ^= 1ULL << elem.policy;
                 values[elem.policy] = elem.value;
                 if (elem.is_end_search) {
-                    hint_types[elem.policy] = elem.probability;
+                    hint_types[elem.policy] = (int)elem.probability;
                 } else{
                     hint_types[elem.policy] = search_level;
                 }

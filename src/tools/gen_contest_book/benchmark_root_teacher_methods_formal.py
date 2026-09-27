@@ -78,7 +78,7 @@ BOOTSTRAP_SEED_DOMAIN = "Egaroucid formal root-teacher bootstrap-seed v1"
 
 ANALYZE_RESULT_RE = re.compile(
     r"^\|\s*\d+\|\s*(?:Black|White)\|\s*(?P<move>[a-h][1-8])"
-    r"\|\s*(?P<depth>\d+@\d+%)\|\s*(?P<score>[+-]?\d+)\|",
+    r"\|\s*(?P<depth>\d+@\d+(?:\.\d+)?%)\|\s*(?P<score>[+-]?\d+)\|",
     re.MULTILINE,
 )
 STARTUP_SEED_LOG_PREFIX = "random seed = "

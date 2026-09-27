@@ -2369,7 +2369,7 @@ private:
             return AI_TYPE_BOOK;
         }
         if (search_result.is_end_search) {
-            return search_result.probability;
+            return (int)search_result.probability;
         }
         return search_result.depth;
     }

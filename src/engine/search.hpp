@@ -299,7 +299,7 @@ inline void eval_pass_endsearch(Eval_search *eval);
     @param clog_nodes           number of nodes visited for clog search
     @param nps                  NPS (Nodes Per Second)
     @param is_end_search        search till the end?
-    @param probability          MPC (Multi-ProbCut) probability in integer [%]
+    @param probability          MPC (Multi-ProbCut) probability [%]
     @param is_exact_lower_bound value is a 100% lower-bound proof, not an exact score
 */
 struct Search_result {
@@ -313,7 +313,7 @@ struct Search_result {
     uint64_t clog_nodes;
     uint64_t nps;
     bool is_end_search;
-    int probability;
+    double probability;
     bool is_exact_lower_bound;
 
     Search_result() 
@@ -356,11 +356,11 @@ struct Analyze_result {
     int played_move;
     int played_score;
     int played_depth;
-    int played_probability;
+    double played_probability;
     int alt_move;
     int alt_score;
     int alt_depth;
-    int alt_probability;
+    double alt_probability;
 };
 
 /*

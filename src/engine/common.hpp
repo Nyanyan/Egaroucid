@@ -449,6 +449,20 @@ std::string to_fixed2_str(double value) {
 }
 
 /*
+    @brief Format an MPC probability
+
+    std::to_string would print 99.9 as "99.900000".
+
+    @param probability          MPC probability [%]
+    @return probability as string such as "74", "99.9" or "100"
+*/
+std::string probability_to_str(double probability) {
+    std::ostringstream ss;
+    ss << probability;
+    return ss.str();
+}
+
+/*
     @brief Generate time in string
 
     @param t                    time in [ms]

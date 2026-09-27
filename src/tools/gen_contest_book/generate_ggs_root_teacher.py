@@ -90,7 +90,7 @@ RESULT_RE = re.compile(
     r"(?P<time>[^|]+)\|\s*(?P<nodes>\d+)\|\s*(?P<nps>\d+)\|\s*$",
     re.MULTILINE,
 )
-DEPTH_RE = re.compile(r"(?P<depth>\d+)@(?P<selectivity>\d+)%")
+DEPTH_RE = re.compile(r"(?P<depth>\d+)@(?P<selectivity>\d+(?:\.\d+)?)%")
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
@@ -999,10 +999,10 @@ def validate_quality(result: dict[str, int | str], min_depth: int, min_selectivi
     if depth is None:
         raise ValueError(f"invalid teacher depth {result['depth']!r}")
     actual_depth = int(depth.group("depth"))
-    actual_selectivity = int(depth.group("selectivity"))
+    actual_selectivity = float(depth.group("selectivity"))
     if actual_depth < min_depth or actual_selectivity < min_selectivity:
         raise ValueError(
-            f"teacher search quality {actual_depth}@{actual_selectivity}% is below "
+            f"teacher search quality {actual_depth}@{depth.group('selectivity')}% is below "
             f"{min_depth}@{min_selectivity}%"
         )
 
