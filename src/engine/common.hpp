@@ -434,6 +434,21 @@ std::string idx_to_coord(int idx) {
 }
 
 /*
+    @brief Format a value with 2 decimal places
+
+    Logs use this instead of streaming std::fixed and std::setprecision into
+    std::cerr, which would change how every later log line prints numbers.
+
+    @param value                value to format
+    @return value with 2 decimal places as string
+*/
+std::string to_fixed2_str(double value) {
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(2) << value;
+    return ss.str();
+}
+
+/*
     @brief Generate time in string
 
     @param t                    time in [ms]

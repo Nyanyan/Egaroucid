@@ -2132,10 +2132,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                       << " elapsed " << elapsed_after_iteration
                       << " iteration " << previous_iteration_time
                       << " nodes " << main_search.n_nodes
-                      << " growth " << std::fixed << std::setprecision(2) << early_endgame.node_growth
+                      << " growth " << to_fixed2_str(early_endgame.node_growth)
                       << " predicted-next " << early_endgame.predicted_next_mid_msec
                       << " reserve " << early_endgame.endgame_reserve_msec
-                      << " remaining " << remaining_msec << std::defaultfloat << std::endl;
+                      << " remaining " << remaining_msec << std::endl;
         }
         if (baseline_would_continue_mid && !start_early_endgame) { // next: midgame search
 #else
@@ -3676,8 +3676,8 @@ inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
 
     if (show_log) {
         std::cerr << "ggs late ambiguity fallback "
-                  << idx_to_coord(search_result.policy) << "=" << std::fixed << std::setprecision(2) << selected->value
-                  << " -> " << idx_to_coord(best->flip.pos) << "=" << best->value
+                  << idx_to_coord(search_result.policy) << "=" << to_fixed2_str(selected->value)
+                  << " -> " << idx_to_coord(best->flip.pos) << "=" << to_fixed2_str(best->value)
                   << " main " << search_result.value << " depth "
                   << search_result.depth << "@" << search_result.probability << "%" << std::endl;
     }
@@ -3980,9 +3980,9 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
 
     if (show_log) {
         std::cerr << "ggs selfplay resolve result "
-                  << idx_to_coord(result.policy) << "=" << std::fixed << std::setprecision(2) << result.value;
+                  << idx_to_coord(result.policy) << "=" << to_fixed2_str(result.value);
         if (result.second_value != -INF) {
-            std::cerr << " second=" << result.second_value;
+            std::cerr << " second=" << to_fixed2_str(result.second_value);
         }
         std::cerr << " depth " << result.depth << "@" << SELECTIVITY_PERCENTAGE[result.mpc_level] << "%"
                   << " selfplayed " << result.selfplayed_moves << "/" << n_good_moves
@@ -4599,7 +4599,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             std::cerr << "ggs selfplay resolve overrides main "
                       << idx_to_coord(search_result.policy) << "=" << search_result.value
                       << " -> " << idx_to_coord(selfplay_resolve_result.policy) << "="
-                      << std::fixed << std::setprecision(2) << selfplay_resolve_result.value << std::endl;
+                      << to_fixed2_str(selfplay_resolve_result.value) << std::endl;
         }
         search_result.policy = selfplay_resolve_result.policy;
         search_result.value = (int)std::round(selfplay_resolve_result.value);
@@ -5105,7 +5105,7 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
 void print_ponder_result(std::vector<Ponder_elem> move_list) {
     std::cerr << "ponder result" << std::endl;
     for (int i = 0; i < move_list.size(); ++i) {
-        std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
+        std::cerr << "pd " << idx_to_coord(move_list[i].flip.pos) << " value " << to_fixed2_str(move_list[i].value);
         std::cerr << " count " << move_list[i].count << " level " << move_list[i].level << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
         if (move_list[i].is_complete_search) {
             std::cerr << " complete";
@@ -5391,7 +5391,7 @@ std::vector<Ponder_elem> ai_get_values(Board board, bool show_log, uint64_t time
         std::cerr << std::endl;
         std::cerr << "ai_get_values board " << board.to_str() << std::endl;
         for (int i = 0; i < canput; ++i) {
-            std::cerr << "gb " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
+            std::cerr << "gb " << idx_to_coord(move_list[i].flip.pos) << " value " << to_fixed2_str(move_list[i].value);
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
             if (move_list[i].is_complete_search) {
                 std::cerr << " complete";
@@ -5528,7 +5528,7 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
         std::cerr << "ai_align_move_levels searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_align_move_levels board " << board.to_str() << std::endl;
         for (int i = 0; i < n_good_moves; ++i) {
-            std::cerr << "ag " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
+            std::cerr << "ag " << idx_to_coord(move_list[i].flip.pos) << " value " << to_fixed2_str(move_list[i].value);
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
             if (move_list[i].is_complete_search) {
                 std::cerr << " complete";
@@ -5579,7 +5579,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                 std::cerr << "selfplay order established "
                           << idx_to_coord(move_list[order_status.first_idx].flip.pos) << "/"
                           << idx_to_coord(move_list[order_status.second_idx].flip.pos)
-                          << " gap " << std::fixed << std::setprecision(2) << order_status.gap
+                          << " gap " << to_fixed2_str(order_status.gap)
                           << " counts " << move_list[order_status.first_idx].selfplay_count << "/"
                           << move_list[order_status.second_idx].selfplay_count
                           << " time " << tim() - strt << " ms" << std::endl;
@@ -5685,7 +5685,7 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
         std::cerr << "ai_additional_selfplay searched in " << tim() - strt << " ms" << std::endl;
         std::cerr << "ai_additional_selfplay board " << board.to_str() << std::endl;
         for (int i = 0; i < n_good_moves; ++i) {
-            std::cerr << "sm " << idx_to_coord(move_list[i].flip.pos) << " value " << std::fixed << std::setprecision(2) << move_list[i].value;
+            std::cerr << "sm " << idx_to_coord(move_list[i].flip.pos) << " value " << to_fixed2_str(move_list[i].value);
             std::cerr << " count " << move_list[i].count << " depth " << move_list[i].depth << "@" << SELECTIVITY_PERCENTAGE[move_list[i].mpc_level] << "%";
             if (move_list[i].is_complete_search) {
                 std::cerr << " complete";
