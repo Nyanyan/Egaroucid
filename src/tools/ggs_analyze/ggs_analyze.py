@@ -26,6 +26,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_ENGINE = REPO_ROOT / "bin" / "Egaroucid_for_Console_clang.exe"
 DEFAULT_ME = ["egrcd"]
+DEFAULT_HASH_LEVEL = 29
 DEFAULT_OUT_DIR = REPO_ROOT / "bin" / "ggs" / "log" / "analyze"
 VALID_PROBS = ("74", "88", "93", "98", "99", "99.9", "100")
 CACHE_VERSION = 1
@@ -673,13 +674,83 @@ def sign(value: int) -> int:
     return (value > 0) - (value < 0)
 
 
-def analyze_game(engine: Engine, game: SelectedGame, label: str, schedule: Schedule, threshold: int) -> list[dict]:
+def schedule_cache_key(schedule: Schedule, use_book: bool) -> str:
+    payload = {"version": CACHE_VERSION, "dpr": schedule.dpr_args(), "book": use_book}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+
+
+ANALYSIS_FIELDS = ("played_score", "played_depth", "alt_move", "alt_score", "alt_depth")
+
+
+class PositionTable:
+    """Analysis results of already analyzed positions, keyed by (board, played move).
+
+    The two games of a synchro match start from the same position and often
+    share their first moves, so the second game can reuse these results.
+    """
+
+    def __init__(self) -> None:
+        self._data: dict[tuple[str, str], dict] = {}
+        self._lock = threading.Lock()
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def get(self, board: str, played: str) -> dict | None:
+        with self._lock:
+            return self._data.get((board, played))
+
+    def add_game(self, moves: list[dict], source: str) -> None:
+        with self._lock:
+            for move in moves:
+                entry = {field: move[field] for field in ANALYSIS_FIELDS}
+                entry["source"] = move.get("reused_from") or source
+                self._data.setdefault((move["board"], move["played"]), entry)
+
+
+def game_label(record: GameRecord) -> str:
+    return f"{record.finished_at.strftime('%Y-%m-%d %H:%M')} {record.game_id}"
+
+
+def move_result(position: Position, game: SelectedGame, played: str, analysis: dict, seconds: float,
+                reused_from: str | None) -> dict:
+    played_score, alt_score = analysis["played_score"], analysis["alt_score"]
+    loss = max(0, alt_score - played_score) if alt_score is not None else 0
+    if alt_score is not None and alt_score > played_score:
+        best_move, best_score = analysis["alt_move"], alt_score
+    else:
+        best_move, best_score = played, played_score
+    return {
+        "index": position.index,
+        "empties": position.empties,
+        "side": position.side,
+        "is_me": position.side == game.my_color,
+        "board": position.board_str,
+        "played": played,
+        **{field: analysis[field] for field in ANALYSIS_FIELDS},
+        "best_move": best_move,
+        "best_score": best_score,
+        "loss": loss,
+        "seconds": round(seconds, 3),
+        "reused_from": reused_from,
+    }
+
+
+def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, known: PositionTable) -> list[dict]:
     record = game.record
-    game_replay = replay(record)
-    positions = game_replay.positions
+    positions = replay(record).positions
     by_ply = {position.n_discs - 3: position for position in positions}
-    start_side = positions[0].side
-    moves_str = "".join(record.moves)
+
+    # reuse the opening shared with an already analyzed game (e.g. the other game of a synchro match)
+    reused: list[dict] = []
+    for position in positions:
+        entry = known.get(position.board_str, index_to_coord(position.move))
+        if entry is None:
+            break
+        reused.append(entry)
+    n_reused = len(reused)
+    if n_reused:
+        log(f"  {label} 1〜{n_reused}手目は解析済みの局面と同じなので結果を流用します ({reused[0]['source']})")
 
     def on_row(row: AnalyzeRow) -> None:
         position = by_ply.get(row.ply)
@@ -697,39 +768,26 @@ def analyze_game(engine: Engine, game: SelectedGame, label: str, schedule: Sched
         log(f"  {label} {position.index + 1:>2}手目 {position.empties:>2}空き {color_name(position.side)}({who}) "
             f"{row.played} {signed(row.played_score):>3} [{row.played_depth}] | 他の最善 {alt} | {row.seconds:.1f}秒{mark}")
 
-    rows = engine.analyze(record.initial_cells + " " + start_side, moves_str, on_row)
+    rows_by_ply: dict[int, AnalyzeRow] = {}
+    if n_reused < len(positions):
+        start = positions[n_reused]
+        rows = get_engine().analyze(start.board_str, "".join(record.moves[n_reused:]), on_row)
+        rows_by_ply = {row.ply: row for row in rows}
 
-    rows_by_ply = {row.ply: row for row in rows}
     results: list[dict] = []
     for position in positions:
-        ply = position.n_discs - 3
-        row = rows_by_ply.get(ply)
+        played = index_to_coord(position.move)
+        if position.index < n_reused:
+            entry = reused[position.index]
+            results.append(move_result(position, game, played, entry, 0.0, entry["source"]))
+            continue
+        row = rows_by_ply.get(position.n_discs - 3)
         if row is None:
             raise EngineError(f"{position.index + 1}手目の解析結果がありません")
-        if row.played != index_to_coord(position.move):
-            raise EngineError(f"{position.index + 1}手目の着手が一致しません (ログ {index_to_coord(position.move)} / Egaroucid {row.played})")
-        loss = max(0, row.alt_score - row.played_score) if row.alt_score is not None else 0
-        if row.alt_score is not None and row.alt_score > row.played_score:
-            best_move, best_score = row.alt_move, row.alt_score
-        else:
-            best_move, best_score = row.played, row.played_score
-        results.append({
-            "index": position.index,
-            "empties": position.empties,
-            "side": position.side,
-            "is_me": position.side == game.my_color,
-            "board": position.board_str,
-            "played": row.played,
-            "played_score": row.played_score,
-            "played_depth": row.played_depth,
-            "alt_move": row.alt_move,
-            "alt_score": row.alt_score,
-            "alt_depth": row.alt_depth,
-            "best_move": best_move,
-            "best_score": best_score,
-            "loss": loss,
-            "seconds": round(row.seconds, 3),
-        })
+        if row.played != played:
+            raise EngineError(f"{position.index + 1}手目の着手が一致しません (ログ {played} / Egaroucid {row.played})")
+        analysis = {field: getattr(row, field) for field in ANALYSIS_FIELDS}
+        results.append(move_result(position, game, played, analysis, row.seconds, None))
     return results
 
 
@@ -852,7 +910,7 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
     out.append(f"- 作成日時: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     out.append(f"- エンジン: `{args.engine}` ({engine_desc})")
     out.append(f"- スレッド数: {args.threads} × 並列 {args.jobs} / book: {'使用' if args.book else '不使用'}"
-               + (f" / hash level {args.hash}" if args.hash is not None else ""))
+               + f" / hash level {args.hash}")
     out.append("- 解析設定:")
     for phase in schedule.phases:
         out.append(f"  - {phase.describe()}")
@@ -872,6 +930,9 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
                f"(負け {count_matches(games, '負け')}, 引き分け {count_matches(games, '引き分け')})"
                + (f" / 解析失敗 {len(failures)}局" if failures else ""))
     out.append(f"- 読み込んだログ: {stats.files}ファイル, {stats.records}対局 (重複 {stats.duplicates}, 結果不明 {stats.unknown_result})")
+    n_reused = sum(1 for a in analyses for move in a.moves if move.get("reused_from"))
+    if n_reused:
+        out.append(f"- 解析済みの対局と同じ局面 (シンクロ対局の共通の序盤など) は結果を流用: {n_reused}局面")
     out.append(f"- 損失 = その局面での最善手の評価値 − 実際に打った手の評価値 (手番側から見た石差)。"
                f"損失{threshold}以上を「悪手」、1〜{threshold - 1}を「疑問手」と呼びます。")
     out.append("")
@@ -1033,7 +1094,8 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
 
         out.append("<details><summary>全着手の解析</summary>")
         out.append("")
-        out.append("評価は手番側から見た石差。「自分視点」はその手を打つ前の局面を自分から見た評価値。")
+        out.append("評価は手番側から見た石差。「自分視点」はその手を打つ前の局面を自分から見た評価値。"
+                   "時間が「流用」の手は、解析済みの対局の同じ局面の結果を使っています。")
         out.append("")
         out.append("| 手 | 空き | 手番 | 着手 | 評価 | 探索 | 他の最善 | 評価 | 損失 | 自分視点 | 時間(秒) |")
         out.append("|---:|---:|---|---|---:|---|---|---:|---:|---:|---:|")
@@ -1041,7 +1103,8 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
             who = "自分" if move["is_me"] else "相手"
             out.append(f"| {move['index'] + 1} | {move['empties']} | {color_name(move['side'])}({who}) | {move['played']} | "
                        f"{signed(move['played_score'])} | {move['played_depth']} | {move['alt_move'] or '-'} | "
-                       f"{signed(move['alt_score'])} | {move['loss'] or ''} | {signed(a.my_eval(move))} | {move['seconds']:.1f} |")
+                       f"{signed(move['alt_score'])} | {move['loss'] or ''} | {signed(a.my_eval(move))} | "
+                       f"{'流用' if move.get('reused_from') else format(move['seconds'], '.1f')} |")
         out.append("")
         out.append("</details>")
         out.append("")
@@ -1081,7 +1144,7 @@ def write_csvs(out_dir: Path, analyses: list[GameAnalysis], schedule: Schedule, 
         writer.writerow([
             "no", "game_id", "move_no", "empties", "phase", "color", "player", "is_me", "played", "played_score",
             "played_depth", "alt_move", "alt_score", "alt_depth", "best_move", "best_score", "loss", "judge",
-            "result_worsened", "eval_me_before", "board", "seconds",
+            "result_worsened", "eval_me_before", "board", "seconds", "reused_from",
         ])
         for a in analyses:
             record = a.game.record
@@ -1093,7 +1156,7 @@ def write_csvs(out_dir: Path, analyses: list[GameAnalysis], schedule: Schedule, 
                     move["played_score"], move["played_depth"], move["alt_move"] or "", "" if move["alt_score"] is None else move["alt_score"],
                     move["alt_depth"], move["best_move"], move["best_score"], move["loss"],
                     {"悪手": "mistake", "疑問手": "inaccuracy"}.get(judge_text(move, threshold), ""),
-                    int(a.worsened(move)), a.my_eval(move), move["board"], move["seconds"],
+                    int(a.worsened(move)), a.my_eval(move), move["board"], move["seconds"], move.get("reused_from") or "",
                 ])
 
 
@@ -1123,7 +1186,8 @@ def parse_args() -> argparse.Namespace:
     search.add_argument("--engine", type=Path, default=DEFAULT_ENGINE, help=f"Egaroucid for Console の実行ファイル (既定: {DEFAULT_ENGINE})")
     search.add_argument("--threads", type=int, help="1エンジンあたりのスレッド数 (既定: 論理コア数 / --jobs)")
     search.add_argument("--jobs", type=int, default=1, help="同時に動かすエンジンの数 (既定: 1)")
-    search.add_argument("--hash", type=int, help="置換表のハッシュレベル (-hash, 既定はエンジンの既定値)")
+    search.add_argument("--hash", type=int, default=DEFAULT_HASH_LEVEL,
+                        help=f"置換表のハッシュレベル (-hash, 既定: {DEFAULT_HASH_LEVEL})")
     search.add_argument("--book", action="store_true", help="book を使う (既定では使わず全局面を探索)")
     search.add_argument("--mid-depth", type=int, default=35, help="中盤探索の深さ (既定: 35)")
     search.add_argument("--mid-prob", default="74", choices=VALID_PROBS, help="中盤探索の MPC 確率 (既定: 74)")
@@ -1195,9 +1259,7 @@ def main() -> int:
     cmd = [str(engine_path), "-quiet", "-nocontestbook", "-t", str(args.threads)]
     if not args.book:
         cmd.append("-nobook")
-    if args.hash is not None:
-        cmd += ["-hash", str(args.hash)]
-    cmd += schedule.dpr_args() + args.engine_arg
+    cmd += ["-hash", str(args.hash)] + schedule.dpr_args() + args.engine_arg
 
     log("")
     log(f"エンジン: {engine_path} ({engine_desc})")
@@ -1209,6 +1271,17 @@ def main() -> int:
 
     out_dir = args.out
     (out_dir / "cache").mkdir(parents=True, exist_ok=True)
+
+    settings_key = schedule_cache_key(schedule, args.book)
+    known_positions = PositionTable()
+    if not args.force:
+        for path in sorted((out_dir / "cache").glob("*.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if data.get("settings_key") == settings_key:
+                    known_positions.add_game(data["moves"], data.get("label", data["game_id"]))
+            except (OSError, ValueError, KeyError):
+                pass
 
     analyses: dict[int, GameAnalysis] = {}
     failures: list[tuple[SelectedGame, str]] = []
@@ -1253,7 +1326,7 @@ def main() -> int:
         start = time.perf_counter()
         try:
             game_replay = replay(record)
-            moves = analyze_game(get_engine(), game, label, schedule, args.mistake_threshold)
+            moves = analyze_game(get_engine, game, label, args.mistake_threshold, known_positions)
         except (ValueError, EngineError) as e:
             engine = getattr(local, "engine", None)
             if isinstance(e, EngineError) and engine is not None:
@@ -1271,11 +1344,14 @@ def main() -> int:
                 local.engine = None
             return
         seconds = time.perf_counter() - start
-        path.write_text(json.dumps({"game_id": record.game_id, "source": str(record.source), "seconds": seconds,
-                                    "engine": engine_desc, "command": cmd, "moves": moves},
+        path.write_text(json.dumps({"game_id": record.game_id, "label": game_label(record), "source": str(record.source),
+                                    "settings_key": settings_key, "seconds": seconds, "engine": engine_desc,
+                                    "command": cmd, "moves": moves},
                                    ensure_ascii=False, indent=1), encoding="utf-8")
+        known_positions.add_game(moves, game_label(record))
         analyses[no] = GameAnalysis(no, game, moves, game_replay.final_cells, game_replay.terminal, seconds)
-        log(f"{label} 解析完了 ({seconds:.0f}秒)")
+        n_reused = sum(1 for move in moves if move.get("reused_from"))
+        log(f"{label} 解析完了 ({seconds:.0f}秒" + (f", {n_reused}局面は流用" if n_reused else "") + ")")
 
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) if args.jobs > 1 else None
     try:
@@ -1285,7 +1361,15 @@ def main() -> int:
                 if stopping.is_set():
                     raise KeyboardInterrupt
         else:
-            waiting = {executor.submit(run, *item) for item in pending}
+            by_match: dict[int, list[tuple[int, SelectedGame, Path]]] = {}
+            for item in pending:
+                by_match.setdefault(item[1].match_no, []).append(item)
+
+            def run_match(items: list[tuple[int, SelectedGame, Path]]) -> None:
+                for item in items:
+                    run(*item)
+
+            waiting = {executor.submit(run_match, items) for items in by_match.values()}
             while waiting:
                 # poll with a timeout so that Ctrl+C reaches the main thread on Windows
                 done, waiting = concurrent.futures.wait(waiting, timeout=0.5)
