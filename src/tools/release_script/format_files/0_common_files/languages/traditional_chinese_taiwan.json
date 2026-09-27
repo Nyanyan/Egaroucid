@@ -272,7 +272,8 @@
             "value": "評分值",
             "sum_of_loss": "總損失值",
             "show_random_board_graph": "顯示隨機局面圖表",
-            "endgame_error": "終局錯誤",
+            "endgame_error": "累計子損",
+            "endgame_error_1_to_current": "1~目前局面",
             "endgame_error_40_to_60": "40~60手",
             "endgame_error_41_to_60": "41~60手"
         },

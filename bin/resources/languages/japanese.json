@@ -274,7 +274,8 @@
             "value": "評価値",
             "sum_of_loss": "累積石損",
             "show_random_board_graph": "ランダム局面のグラフを表示",
-            "endgame_error": "終盤石損",
+            "endgame_error": "累積石損",
+            "endgame_error_1_to_current": "1手目~現在",
             "endgame_error_40_to_60": "40~60手目",
             "endgame_error_41_to_60": "41~60手目"
         },

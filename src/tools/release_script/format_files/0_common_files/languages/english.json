@@ -272,7 +272,8 @@
             "value": "Evaluation",
             "sum_of_loss": "Sum of Loss",
             "show_random_board_graph": "Show Random Position Graph",
-            "endgame_error": "Endgame Error",
+            "endgame_error": "Cumulative Error",
+            "endgame_error_1_to_current": "Move 1-Current",
             "endgame_error_40_to_60": "Move 40-60",
             "endgame_error_41_to_60": "Move 41-60"
         },

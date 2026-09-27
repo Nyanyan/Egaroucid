@@ -14,6 +14,7 @@
 #include <vector>
 #include "./../../engine/board.hpp"
 #include "language.hpp"
+#include "graph_error.hpp"
 #include "./const/gui_common.hpp"
 
 constexpr Color graph_color = Color(51, 51, 51);
@@ -75,7 +76,7 @@ private:
     double dx;
 
 public:
-    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_40_to_60, int graph_highlight_n_discs, int graph_value_start_n_discs) {
+    void draw(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int n_discs, int graph_branch, bool show_graph, int level, Font font, int color_type, bool show_graph_sum_of_loss, bool show_endgame_error, bool show_endgame_error_1_to_current, bool show_endgame_error_40_to_60, int graph_highlight_n_discs, int graph_value_start_n_discs, int current_error_start_n_discs) {
         std::vector<History_elem> graph_nodes1 = nodes1;
         std::vector<History_elem> graph_nodes2 = nodes2;
         if (graph_value_start_n_discs != -1) {
@@ -137,17 +138,29 @@ public:
             }
         } else { // endgame error
             int endgame_error_black = 0, endgame_error_white = 0;
-            bool endgame_error_calculated = calc_endgame_error(graph_nodes1, graph_nodes2, &endgame_error_black, &endgame_error_white, show_endgame_error_40_to_60);
-            int endgame_error_cy = sy - 48;
-            int endgame_error_cx = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2;
+            bool endgame_error_calculated;
+            bool endgame_error_complete = true;
+            if (show_endgame_error_1_to_current) {
+                const Graph_error_result result = calc_current_endgame_error(nodes1, nodes2, graph_branch, n_discs, current_error_start_n_discs);
+                endgame_error_black = result.black;
+                endgame_error_white = result.white;
+                endgame_error_complete = result.complete;
+                endgame_error_calculated = true;
+            } else {
+                endgame_error_calculated = calc_endgame_error(graph_nodes1, graph_nodes2, &endgame_error_black, &endgame_error_white, show_endgame_error_40_to_60);
+            }
+            const int endgame_error_cy = sy - 44;
+            const int endgame_error_cx = sx + GRAPH_RECT_DX + GRAPH_RECT_WIDTH / 2;
             constexpr int ENDGAME_ERROR_DISC_RADIUS = 7;
-            font(language.get("display", "graph", "endgame_error")).draw(11, Arg::rightCenter(endgame_error_cx - 73, endgame_error_cy), Palette::White);
+            font(language.get("display", "graph", "endgame_error") + U": " + get_endgame_error_range_label(show_endgame_error_1_to_current, show_endgame_error_40_to_60)).draw(11, Arg::center(endgame_error_cx, endgame_error_cy - 16), Palette::White);
             Line(endgame_error_cx, endgame_error_cy - 7, endgame_error_cx, endgame_error_cy + 7).draw(2, graph_color);
             Circle(endgame_error_cx - 60, endgame_error_cy, ENDGAME_ERROR_DISC_RADIUS).draw(Palette::Black);
             Circle(endgame_error_cx + 60, endgame_error_cy, ENDGAME_ERROR_DISC_RADIUS).draw(Palette::White);
             if (endgame_error_calculated) {
-                font(-endgame_error_black).draw(16, Arg::rightCenter(endgame_error_cx - 10, endgame_error_cy), Palette::White);
-                font(-endgame_error_white).draw(16, Arg::leftCenter(endgame_error_cx + 10, endgame_error_cy), Palette::White);
+                // Loss is displayed as -error, so an incomplete error lower bound becomes "less than or equal".
+                const String incomplete_prefix = endgame_error_complete ? U"" : U"≤ ";
+                font(incomplete_prefix + Format(-endgame_error_black)).draw(16, Arg::rightCenter(endgame_error_cx - 10, endgame_error_cy), Palette::White);
+                font(incomplete_prefix + Format(-endgame_error_white)).draw(16, Arg::leftCenter(endgame_error_cx + 10, endgame_error_cy), Palette::White);
             } else {
                 font(U"-").draw(16, Arg::rightCenter(endgame_error_cx - 10, endgame_error_cy), Palette::White);
                 font(U"-").draw(16, Arg::leftCenter(endgame_error_cx + 10, endgame_error_cy), Palette::White);
@@ -406,6 +419,46 @@ private:
                 el.v *= -1;
             }
         }
+    }
+
+    String get_endgame_error_range_label(bool show_endgame_error_1_to_current, bool show_endgame_error_40_to_60) const {
+        if (show_endgame_error_1_to_current) {
+            return language.get("display", "graph", "endgame_error_1_to_current");
+        }
+        if (show_endgame_error_40_to_60) {
+            return language.get("display", "graph", "endgame_error_40_to_60");
+        }
+        return language.get("display", "graph", "endgame_error_41_to_60");
+    }
+
+    std::vector<Graph_error_sample> to_graph_error_samples(const std::vector<History_elem>& nodes) const {
+        std::vector<Graph_error_sample> result;
+        result.reserve(nodes.size());
+        for (const History_elem& node : nodes) {
+            result.emplace_back(Graph_error_sample{
+                node.board.n_discs(),
+                node.v,
+                -SCORE_MAX <= node.v && node.v <= SCORE_MAX
+            });
+        }
+        return result;
+    }
+
+    Graph_error_result calc_current_endgame_error(
+        const std::vector<History_elem>& nodes1,
+        const std::vector<History_elem>& nodes2,
+        int graph_branch,
+        int current_n_discs,
+        int start_n_discs
+    ) const {
+        const std::vector<Graph_error_sample> samples = get_current_error_samples(
+            to_graph_error_samples(nodes1),
+            to_graph_error_samples(nodes2),
+            graph_branch == GRAPH_MODE_INSPECT,
+            current_n_discs,
+            start_n_discs
+        );
+        return calc_current_error(samples, current_n_discs);
     }
 
     bool calc_endgame_error(std::vector<History_elem> nodes1, std::vector<History_elem> nodes2, int *endgame_error_black, int *endgame_error_white, bool show_endgame_error_40_to_60) {

@@ -274,7 +274,8 @@
             "value": "双方估值变化",
             "sum_of_loss": "双方累计子损",
             "show_random_board_graph": "显示随机局面图像",
-            "endgame_error": "终局错误",
+            "endgame_error": "累计子损",
+            "endgame_error_1_to_current": "1~当前局面",
             "endgame_error_40_to_60": "40~60手",
             "endgame_error_41_to_60": "41~60手"
         },
