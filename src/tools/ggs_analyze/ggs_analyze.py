@@ -1013,17 +1013,16 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
 
         out.append("### 相手別")
         out.append("")
-        out.append("| 相手 | 局数 | 負けマッチ | 引き分けマッチ | 自分の損失合計 | 相手の損失合計 | 開始局面で既に不利な局 |")
-        out.append("|---|---:|---:|---:|---:|---:|---:|")
+        out.append("| 相手 | 局数 | 負けマッチ | 引き分けマッチ | 自分の損失合計 | 相手の損失合計 |")
+        out.append("|---|---:|---:|---:|---:|---:|")
         opponents = sorted({a.game.opponent for a in analyses}, key=str.casefold)
         for opponent in opponents:
             games_vs = [a for a in analyses if a.game.opponent == opponent]
             my_loss = sum(move["loss"] for a in games_vs for move in a.side_moves(True))
             opp_loss = sum(move["loss"] for a in games_vs for move in a.side_moves(False))
-            bad_start = sum(1 for a in games_vs if a.start_eval is not None and a.start_eval < 0)
             selected_vs = [a.game for a in games_vs]
             out.append(f"| {md_escape(opponent)} | {len(games_vs)} | {count_matches(selected_vs, '負け')} | "
-                       f"{count_matches(selected_vs, '引き分け')} | {my_loss} | {opp_loss} | {bad_start} |")
+                       f"{count_matches(selected_vs, '引き分け')} | {my_loss} | {opp_loss} |")
         out.append("")
 
         if args.unit == "match":
