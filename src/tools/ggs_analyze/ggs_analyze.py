@@ -565,24 +565,6 @@ class Schedule:
             args += ["-dpr", str(move_start), str(move_end), str(phase.depth), phase.prob]
         return args
 
-    def phase_of(self, empties: int) -> Phase | None:
-        for phase in self.phases:
-            if phase.empties_lo <= empties <= phase.empties_hi:
-                return phase
-        return None
-
-    def phase_kind(self, empties: int) -> str:
-        phase = self.phase_of(empties)
-        return phase.kind if phase else "mid"
-
-    def phase_label(self, kind: str) -> str:
-        spans = [phase for phase in self.phases if phase.kind == kind]
-        if not spans:
-            return kind
-        hi, lo = spans[0].empties_hi, spans[-1].empties_lo
-        name = {"mid": "中盤探索", "end": "終盤読み切り(MPC)", "exact": "完全読み"}[kind]
-        return f"{name} ({hi}〜{lo}空き)"
-
 
 # ---------------------------------------------------------------------------
 # Egaroucid for Console
@@ -1203,21 +1185,6 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
         out.append(f"| 1手あたり平均損失 | {mine['loss_avg']:.3f} | {opp['loss_avg']:.3f} |")
         out.append("")
 
-        out.append("### 解析の探索フェーズ別の損失 (自分の手)")
-        out.append("")
-        out.append("| フェーズ | 着手数 | 損失あり | 悪手 | 損失合計 | 1手あたり |")
-        out.append("|---|---:|---:|---:|---:|---:|")
-        for kind in ("mid", "end", "exact"):
-            moves = [move for move in all_mine if schedule.phase_kind(move["empties"]) == kind]
-            if not moves and not any(phase.kind == kind for phase in schedule.phases):
-                continue
-            s = side_stats(moves, threshold)
-            out.append(f"| {schedule.phase_label(kind)} | {s['moves']} | {s['mistakes'] + s['inaccuracies']} | "
-                       f"{s['mistakes']} | {s['loss_total']} | {s['loss_avg']:.3f} |")
-        out.append("")
-
-        write_timing_section(out, analyses, threshold, n_client_logs)
-
         out.append("### 相手別")
         out.append("")
         out.append("| 相手 | 局数 | 負けマッチ | 引き分けマッチ | 自分の損失合計 | 相手の損失合計 |")
@@ -1231,6 +1198,8 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
             out.append(f"| {md_escape(opponent)} | {len(games_vs)} | {count_matches(selected_vs, '負け')} | "
                        f"{count_matches(selected_vs, '引き分け')} | {my_loss} | {opp_loss} |")
         out.append("")
+
+        write_timing_section(out, analyses, threshold, n_client_logs)
 
         if args.unit == "match":
             out.append("## マッチ一覧")
@@ -1374,7 +1343,7 @@ def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
-def write_csvs(out_dir: Path, analyses: list[GameAnalysis], schedule: Schedule, threshold: int) -> None:
+def write_csvs(out_dir: Path, analyses: list[GameAnalysis], threshold: int) -> None:
     with open(out_dir / "games.csv", "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -1407,7 +1376,7 @@ def write_csvs(out_dir: Path, analyses: list[GameAnalysis], schedule: Schedule, 
     with open(out_dir / "moves.csv", "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([
-            "no", "game_id", "move_no", "discs", "empties", "phase", "color", "player", "is_me", "played", "played_score",
+            "no", "game_id", "move_no", "discs", "empties", "color", "player", "is_me", "played", "played_score",
             "played_depth", "alt_move", "alt_score", "alt_depth", "best_move", "best_score", "loss", "judge",
             "result_worsened", "eval_me_before", "board", "seconds", "reused_from",
             "game_depth", "game_value", "game_time_ms", "game_search",
@@ -1418,7 +1387,7 @@ def write_csvs(out_dir: Path, analyses: list[GameAnalysis], schedule: Schedule, 
                 player = record.black if move["side"] == "X" else record.white
                 game = move.get("game")
                 writer.writerow([
-                    a.no, record.game_id, move["index"] + 1, discs_before(move), move["empties"], schedule.phase_kind(move["empties"]),
+                    a.no, record.game_id, move["index"] + 1, discs_before(move), move["empties"],
                     "black" if move["side"] == "X" else "white", player, int(move["is_me"]), move["played"],
                     move["played_score"], move["played_depth"], move["alt_move"] or "", "" if move["alt_score"] is None else move["alt_score"],
                     move["alt_depth"], move["best_move"], move["best_score"], move["loss"],
@@ -1706,7 +1675,7 @@ def main() -> int:
     n_matched = sum(client_index.annotate(a.game.record, a.moves) for a in ordered)
     log(f"対局時の読み: クライアントログ {len(client_logs)}ファイルから {n_matched}/{len(ordered)}局を対応付けました")
     write_report(out_dir / "report.md", ordered, failures, unanalyzed, args, schedule, engine_lines, stats, len(client_logs))
-    write_csvs(out_dir, ordered, schedule, args.mistake_threshold)
+    write_csvs(out_dir, ordered, args.mistake_threshold)
     log("")
     log(f"レポート: {out_dir / 'report.md'}")
     log(f"CSV: {out_dir / 'games.csv'}, {out_dir / 'moves.csv'}")
