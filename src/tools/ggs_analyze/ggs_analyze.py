@@ -37,6 +37,8 @@ START_BOARD = "---------------------------OX------XO--------------------------- 
 LOG_FIELD_RE = re.compile(r"^(black|white|initial board|transcript|black's score):\s*(.*)$")
 FILE_DATETIME_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})-(\d{2})=(\d{2})=(\d{2})")
 PROMPT_RE = re.compile(r"^(?:>\s*)+")
+# Hash levels without resources/hash/hashN.eghs (e.g. 29) fall back to random hash numbers
+BENIGN_ENGINE_ERROR_RE = re.compile(r"you can ignore this error|can't open hash\d+\.eghs")
 ANALYZE_ROW_RE = re.compile(
     r"^\|\s*(\d+)\|\s*(Black|White)\|\s*([a-h][1-8])\|\s*([^|]*?)\s*\|\s*([+-]?\d+)\|"
     r"\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|"
@@ -542,6 +544,7 @@ def parse_analyze_row(line: str) -> AnalyzeRow | None:
 class Engine:
     def __init__(self, cmd: list[str], cwd: Path) -> None:
         self.cmd = cmd
+        self.errors: list[str] = []
         self.proc = subprocess.Popen(
             cmd,
             cwd=cwd,
@@ -575,10 +578,15 @@ class Engine:
         rows: list[AnalyzeRow] = []
         last_time = time.perf_counter()
         in_summary = False
+        self.errors = []
         while True:
             line = self.readline()
             if "[ERROR]" in line:
-                raise EngineError(line.strip())
+                # a failed setboard / play shows up as missing or mismatched rows, checked by the caller
+                if not BENIGN_ENGINE_ERROR_RE.search(line):
+                    self.errors.append(line.strip())
+                    log(f"  [Egaroucid] {line.strip()}")
+                continue
             if in_summary:
                 if line.startswith("|") and "White" in line:
                     return rows
@@ -771,8 +779,10 @@ def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, kno
     rows_by_ply: dict[int, AnalyzeRow] = {}
     if n_reused < len(positions):
         start = positions[n_reused]
-        rows = get_engine().analyze(start.board_str, "".join(record.moves[n_reused:]), on_row)
+        engine = get_engine()
+        rows = engine.analyze(start.board_str, "".join(record.moves[n_reused:]), on_row)
         rows_by_ply = {row.ply: row for row in rows}
+        engine_errors = f" (Egaroucid: {' / '.join(engine.errors)})" if engine.errors else ""
 
     results: list[dict] = []
     for position in positions:
@@ -783,9 +793,9 @@ def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, kno
             continue
         row = rows_by_ply.get(position.n_discs - 3)
         if row is None:
-            raise EngineError(f"{position.index + 1}手目の解析結果がありません")
+            raise EngineError(f"{position.index + 1}手目の解析結果がありません{engine_errors}")
         if row.played != played:
-            raise EngineError(f"{position.index + 1}手目の着手が一致しません (ログ {played} / Egaroucid {row.played})")
+            raise EngineError(f"{position.index + 1}手目の着手が一致しません (ログ {played} / Egaroucid {row.played}){engine_errors}")
         analysis = {field: getattr(row, field) for field in ANALYSIS_FIELDS}
         results.append(move_result(position, game, played, analysis, row.seconds, None))
     return results
