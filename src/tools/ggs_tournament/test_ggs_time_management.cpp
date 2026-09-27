@@ -64,7 +64,7 @@ void test_extra_time_is_not_budgeted_for_normal_search() {
 
 void test_cap_is_continuous_at_reserve() {
     constexpr double remaining_moves = 17.0;
-    constexpr uint64_t reserve = 17400ULL;
+    constexpr uint64_t reserve = 14900ULL; // 3000 + 700 * 17
     constexpr uint64_t requested = 10000ULL;
 
     const uint64_t below = time_management_ggs_cap_time_limit(
@@ -79,7 +79,7 @@ void test_cap_is_continuous_at_reserve() {
     require(at >= below, "cap decreased at the reserve boundary");
     require(above >= at, "cap decreased immediately above the reserve boundary");
     require(above - below <= 2ULL, "reserve boundary must be continuous");
-    require_equal(at, 4350ULL, "reserve boundary retains the low-time cap");
+    require_equal(at, 3725ULL, "reserve boundary retains the low-time cap");
 
     uint64_t previous = time_management_ggs_cap_time_limit(
         requested, 10000ULL, remaining_moves
@@ -644,13 +644,13 @@ void test_ggs_plan_phases() {
 
 void test_ggs_plan_shares() {
     // 50, 48, ..., 30: 11 planned own moves, weights 6600 + 4400 + 5 * 4000 + 7000 + 3 * 2500.
-    require_equal(time_management_ggs_make_plan(50, 56500ULL).share_msec, 6469ULL, "first move share of a fresh 1:00 clock");
+    require_equal(time_management_ggs_make_plan(50, 56500ULL).share_msec, 7528ULL, "first move share of a fresh 1:00 clock");
     // 40, 38 midgame, 36 early endgame, 34, 32, 30 pre-complete.
-    require_equal(time_management_ggs_make_plan(40, 33000ULL).share_msec, 4106ULL, "midgame share");
-    require_equal(time_management_ggs_make_plan(36, 23600ULL).share_msec, 7000ULL, "early endgame share");
-    require_equal(time_management_ggs_make_plan(33, 15000ULL).share_msec, 2100ULL, "pre-complete share");
+    require_equal(time_management_ggs_make_plan(40, 33000ULL).share_msec, 5137ULL, "midgame share");
+    require_equal(time_management_ggs_make_plan(36, 18400ULL).share_msec, 7000ULL, "early endgame share");
+    require_equal(time_management_ggs_make_plan(33, 10100ULL).share_msec, 2100ULL, "pre-complete share");
     require_equal(time_management_ggs_make_plan(28, 30000ULL).share_msec, 0ULL, "late moves are not planned");
-    require_equal(time_management_ggs_make_plan(33, 8000ULL).share_msec, 0ULL, "no share below the planned reserves");
+    require_equal(time_management_ggs_make_plan(33, 3700ULL).share_msec, 0ULL, "no share below the planned reserves");
 
     uint64_t previous = 0ULL;
     for (uint64_t remaining = 0ULL; remaining <= 60000ULL; remaining += 250ULL) {

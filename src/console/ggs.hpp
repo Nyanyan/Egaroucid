@@ -95,21 +95,22 @@ struct GGS_Clock_Params {
           extension_add(true) {}
 };
 
+// Trust mode charges the client-measured move time, so network lag no longer eats into this margin.
 inline uint64_t ggs_time_safety_margin_msec(uint64_t remaining_time_msec) {
     if (remaining_time_msec > 120000ULL) {
-        return 6000ULL;
+        return 3000ULL;
     }
     if (remaining_time_msec > 60000ULL) {
-        return 5000ULL;
-    }
-    if (remaining_time_msec > 30000ULL) {
-        return 3500ULL;
-    }
-    if (remaining_time_msec > 10000ULL) {
         return 2500ULL;
     }
-    if (remaining_time_msec > 3000ULL) {
+    if (remaining_time_msec > 30000ULL) {
+        return 2000ULL;
+    }
+    if (remaining_time_msec > 10000ULL) {
         return 1500ULL;
+    }
+    if (remaining_time_msec > 3000ULL) {
+        return 1000ULL;
     }
     if (remaining_time_msec > 1000ULL) {
         return 1000ULL;

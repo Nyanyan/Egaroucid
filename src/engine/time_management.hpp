@@ -64,7 +64,7 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
         #define TIME_MANAGEMENT_GGS_ENDGAME_USE_TIME_COE 0.19
     #endif
     #ifndef TIME_MANAGEMENT_GGS_TARGET_SAFE_REMAINING_MSEC
-        #define TIME_MANAGEMENT_GGS_TARGET_SAFE_REMAINING_MSEC 5500.0
+        #define TIME_MANAGEMENT_GGS_TARGET_SAFE_REMAINING_MSEC 3000.0
     #endif
     #ifndef TIME_MANAGEMENT_GGS_SHORTAGE_SOFT_MSEC_PER_MOVE
         #define TIME_MANAGEMENT_GGS_SHORTAGE_SOFT_MSEC_PER_MOVE 2600.0
@@ -132,17 +132,18 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     // Phase plan for s8r14 games. Each own move before the late endgame gets a
     // share of the distributable clock proportional to its phase weight. The
     // weights are the intended search time per move (ms) in a 1:00 game.
-    // Measured on 2026-09-25 (192 games against nyanyan): GGS charged about
-    // 0.38 s per own move beyond the search, and the own moves at 28 empties
-    // or less took at most 8.4 s in total including that overhead.
+    // Without trust mode GGS charged about 0.4 s of network lag per own move
+    // beyond the search. Trust mode charges the client-measured time instead,
+    // so the overhead is only local processing. In the 2026-09-26 tournament
+    // the own moves at 28 empties or less searched at most 1.9 s in total.
     #ifndef TIME_MANAGEMENT_GGS_PLAN_ENABLED
         #define TIME_MANAGEMENT_GGS_PLAN_ENABLED true
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PLAN_MOVE_OVERHEAD_MSEC
-        #define TIME_MANAGEMENT_GGS_PLAN_MOVE_OVERHEAD_MSEC 400.0
+        #define TIME_MANAGEMENT_GGS_PLAN_MOVE_OVERHEAD_MSEC 100.0
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PLAN_LATE_RESERVE_MSEC
-        #define TIME_MANAGEMENT_GGS_PLAN_LATE_RESERVE_MSEC 7500.0
+        #define TIME_MANAGEMENT_GGS_PLAN_LATE_RESERVE_MSEC 3500.0
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MIN_N_EMPTY
         #define TIME_MANAGEMENT_GGS_PLAN_MIDGAME_MIN_N_EMPTY 37
