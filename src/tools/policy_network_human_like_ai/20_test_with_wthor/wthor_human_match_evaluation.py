@@ -110,7 +110,7 @@ def split_position_count(total: int, data_split: str) -> int:
 def load_position_groups(
     dat_files: Sequence[Path],
     available_positions: int,
-    positions: int,
+    positions: int | None,
     data_split: str,
     split_seed: int,
     sample_seed: int,
@@ -125,6 +125,10 @@ def load_position_groups(
         positions,
         sample_seed,
     )
+    if positions is None:
+        positions = split_positions
+    if selected is None:
+        selected = np.arange(split_positions, dtype=np.int64)
     if selected is None or len(selected) != positions:
         raise RuntimeError(
             f"expected {positions} selected positions, got "

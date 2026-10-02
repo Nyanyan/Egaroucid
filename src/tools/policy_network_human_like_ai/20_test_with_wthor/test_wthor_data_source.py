@@ -71,7 +71,8 @@ class DataSourceTest(unittest.TestCase):
             os.environ, {"POLICY_DATA_ROOT": directory}, clear=True,
         ):
             parser = make_argparser()
-            args = parser.parse_args(["20"])
+            args = parser.parse_args([])
+            self.assertIsNone(args.positions)
             resolve_board_data_args(args, parser)
             args.board_data_dir.mkdir(parents=True)
             path = args.board_data_dir / "0000000.dat"
@@ -81,6 +82,10 @@ class DataSourceTest(unittest.TestCase):
             )
         self.assertEqual(20, available)
         self.assertEqual(20, sum(group.sample_count for group in groups))
+
+    def test_explicit_position_count_still_samples(self):
+        from wthor_human_match_experiment import make_argparser
+        self.assertEqual(7, make_argparser().parse_args(["7"]).positions)
 
 
 if __name__ == "__main__":

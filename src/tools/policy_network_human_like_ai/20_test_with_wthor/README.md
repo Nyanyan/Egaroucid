@@ -1,7 +1,8 @@
 # WTHOR human move evaluation
 
-Run `run_random_wthor_blend_experiment.py N` to evaluate the same sampled WTHOR
-positions with:
+Run `run_random_wthor_blend_experiment.py` to evaluate every position in the test
+data. Specify an optional positional count `N` only when sampling is wanted.
+The same positions are evaluated with:
 
 - Blended policies at alpha = 0, 0.2, 0.4, 0.6, 0.8, 1.
 - Egaroucid for Console at levels **1, 5, 9, 13, 17**. Level 21 is reported as alpha = 0.
@@ -20,7 +21,7 @@ $env:POLICY_DATA_ROOT = Join-Path $env:EGAROUCID_DATA '20261002_policy_network_h
 For example, from this directory:
 
 ```powershell
-python run_random_wthor_blend_experiment.py 10000 `
+python run_random_wthor_blend_experiment.py `
   --dataset WTHOR_1977_2024 `
   --weights ../10_train_policy_network/trained/model/policy_network_weights.bin `
   --workers 32 --egaroucid-threads 1 --edax-threads 1 `
@@ -29,8 +30,9 @@ python run_random_wthor_blend_experiment.py 10000 `
 
 `--workers` is the total limit for Egaroucid and Edax combined, and must be
 at least 12 to start all engine/level combinations. For a 32-thread machine
-with one search thread per process, use `--workers 32`. The prepared `test` directory is sampled directly
-(`--data-split all`, sample seed 613); it is not split again. The policy-only
+with one search thread per process, use `--workers 32`. All positions in the prepared `test` directory are evaluated by default
+(`--data-split all`); it is not split again. To sample instead, explicitly pass
+`N` after the script name (sample seed 613). The policy-only
 evaluator uses the same data source and `--dataset` option.
 `--board-data-dir` overrides the environment and dataset selection. Use an
 explicit `--data-split test` only when resplitting legacy unsplit input.

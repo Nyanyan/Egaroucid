@@ -363,8 +363,10 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "positions",
         metavar="N",
+        nargs="?",
+        default=None,
         type=positive_int,
-        help="評価する標本局面数",
+        help="標本抽出する局面数。省略時は入力testデータ全件を評価",
     )
     parser.add_argument(
         "--data-split",
@@ -506,7 +508,7 @@ def main() -> None:
         available_positions,
         args.data_split,
     )
-    if args.positions > selected_split_positions:
+    if args.positions is not None and args.positions > selected_split_positions:
         raise ValueError(
             f"N={args.positions} exceeds the {args.data_split} split size "
             f"of {selected_split_positions}"
@@ -526,6 +528,8 @@ def main() -> None:
         args.split_seed,
         args.sample_seed,
     )
+    if args.positions is None:
+        args.positions = split_positions
     load_elapsed = time.perf_counter() - load_start
     maximum_useful_processes = (len(CONSOLE_LEVELS) + len(EDAX_LEVELS)) * len(groups)
     workers = min(workers, maximum_useful_processes)
