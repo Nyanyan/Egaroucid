@@ -1,4 +1,4 @@
-"""Locate the prepared human-move test split without machine-specific paths."""
+"""Locate the unaugmented human-move test split without machine-specific paths."""
 
 import argparse
 import os
@@ -28,17 +28,17 @@ def default_board_data_dir(dataset: str = DEFAULT_DATASET) -> Path:
         raise ValueError(
             "set POLICY_DATA_ROOT or EGAROUCID_DATA, or pass --board-data-dir"
         )
-    return data_root / "board_split_increased" / dataset / "test"
+    return data_root / "board_split" / dataset / "test"
 
 
 def add_board_data_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--dataset", type=dataset_name, default=DEFAULT_DATASET,
-        help=f"Dataset under $POLICY_DATA_ROOT/board_split_increased (default: {DEFAULT_DATASET}).",
+        help=f"Unaugmented dataset under $POLICY_DATA_ROOT/board_split (default: {DEFAULT_DATASET}).",
     )
     parser.add_argument(
         "--board-data-dir", type=Path, default=None,
-        help="Override $POLICY_DATA_ROOT/board_split_increased/<dataset>/test. "
+        help="Override $POLICY_DATA_ROOT/board_split/<dataset>/test. "
              "POLICY_DATA_ROOT defaults to $EGAROUCID_DATA/" + DEFAULT_DATA_SUBDIRECTORY + ".",
     )
 

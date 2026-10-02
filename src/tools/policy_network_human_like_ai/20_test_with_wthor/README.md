@@ -1,81 +1,56 @@
-# WTHOR human move evaluation
+# WTHORの人間の着手との一致度評価
 
-Run `run_random_wthor_blend_experiment.py` to evaluate every position in the test
-data. Specify an optional positional count `N` only when sampling is wanted.
-The same positions are evaluated with:
+`run_random_wthor_blend_experiment.py` を実行すると、testデータ全件を次の設定で評価できます。局面数 `N` を明示した場合だけ、N局面を標本抽出します。
 
-- Blended policies at alpha = 0, 0.2, 0.4, 0.6, 0.8, 1.
-- Egaroucid for Console at levels **1, 5, 9, 13, 17**. Level 21 is reported as alpha = 0.
-- Edax at levels **1, 5, 9, 13, 17, 21**.
+- alpha = 0, 0.2, 0.4, 0.6, 0.8, 1 の混合方策。
+- レベル **1, 5, 9, 13, 17** のEgaroucid for Console。レベル21の結果はalpha = 0で確認できます。
+- レベル **1, 5, 9, 13, 17, 21** のEdax。
 
-Human move data comes from `$POLICY_DATA_ROOT/board_split_increased/<dataset>/test`.
-Select the dataset with `--dataset` (default: `WTHOR_1977_2024`). If
-`POLICY_DATA_ROOT` is unset, the root is
-`$EGAROUCID_DATA/20261002_policy_network_human_like_data`. To share the data
-processing root explicitly:
+人間の着手データには、環境変数 `POLICY_DATA_ROOT` 配下の水増し前のデータ `board_split/<データセット名>/test` を使用します。データセット名は `--dataset` で選択でき、既定値は `WTHOR_1977_2024` です。`EGAROUCID_DATA=E:\egaroucid_data` の環境では、既定の参照先は `E:\egaroucid_data\20261002_policy_network_human_like_data\board_split\WTHOR_1977_2024\test` です。
+
+`POLICY_DATA_ROOT` を省略した場合は、`EGAROUCID_DATA` 配下の `20261002_policy_network_human_like_data` をデータルートにします。データ加工側と参照先をそろえる場合は、次のように設定できます。
 
 ```powershell
 $env:POLICY_DATA_ROOT = Join-Path $env:EGAROUCID_DATA '20261002_policy_network_human_like_data'
 ```
 
-For example, from this directory:
+このディレクトリから、次のコマンドを実行します。
 
 ```powershell
 python run_random_wthor_blend_experiment.py `
   --dataset WTHOR_1977_2024 `
-  --weights ../10_train_policy_network/trained/model/policy_network_weights.bin `
+  --weights ../10_train_policy_network/trained/wthor_final_arch_512x4_e50/selected_policy_network_weights.bin `
   --workers 32 --egaroucid-threads 1 --edax-threads 1 `
   --output-dir output/human_match_WTHOR_1977_2024
 ```
 
-Agreement defaults to top-1 only. Add `--top3` to calculate and include top-3
-in progress, final output, CSV, and JSON. Standalone engine searches request one
-move by default, or three with `--top3`. The blend still requests all legal moves
-at Egaroucid level 21 for likelihood. Use a separate output directory when changing
-this setting because the requested hint counts are part of the cache identity.
+上記の重みファイルは、`--weights` を省略した場合の既定値でもあります。別の学習済みモデルを評価する場合は、そのモデルの重みファイルを指定してください。コマンド末尾に `--dry-run` を追加すると、探索を行わずに標本の読み込みと実行構成を確認できます。
+
+一致率は既定でtop-1だけを測定し、top-3は計算・表示・CSV・JSON出力を行いません。top-3も必要な場合は `--top3` を追加してください。比較用エンジンには既定で1手、`--top3` 指定時は3手を要求します。混合方策の尤度計算に使うEgaroucidレベル21は、どちらの場合も全合法手を探索します。候補手数が変わるため、top-3の設定を切り替える場合は別の出力先を指定してください。
+
+`--workers` はEgaroucidとEdaxを合わせた探索プロセス数の上限です。両エンジンの全12設定を最初から動かすため、12以上を指定してください。32スレッドの環境で各エンジンを1スレッドで動かす場合は、`--workers 32` で合計32プロセス以内になります。
 
 Policy Networkの推論後に行う集計準備では、合法手と盤面の対称性を4,096状態ずつまとめて計算します。この結果はEgaroucid・Edaxの途中集計と最終検算で共有します。準備の開始・完了時と `--progress-interval-sec` の間隔で、処理件数、進捗率、経過時間、処理速度、推定残り時間を表示します。準備にかかった時間は結果JSONの `timing.agreement_preparation_sec` に記録します。
 
-`--workers` is the total limit for Egaroucid and Edax combined, and must be
-at least 12 to start all engine/level combinations. For a 32-thread machine
-with one search thread per process, use `--workers 32`. All positions in the prepared `test` directory are evaluated by default
-(`--data-split all`); it is not split again. To sample instead, explicitly pass
-`N` after the script name (sample seed 613). The policy-only
-evaluator uses the same data source and `--dataset` option.
-`--board-data-dir` overrides the environment and dataset selection. Use an
-explicit `--data-split test` only when resplitting legacy unsplit input.
-Edax defaults to `bin/versions/edax_4_6/wEdax-x86-64.exe`, with `data/eval.dat`
-beside the executable. Override with `--edax-exe` and `--edax-eval-file`.
-`--edax-workers` caps Edax within the shared `--workers` limit; it does not
-add extra processes. Both engines start concurrently and reuse freed slots.
-Progress reports combine blend, Egaroucid for Console, and Edax results in one
-block per update, retaining finished engines in subsequent reports.
-When migrating from the old sequential version, use a new output directory such
-as `output/human_match_parallel`. Edax uses
-`-n` for thread count, a 22-bit hash table, and disables book and pondering.
-`--edax-timeout-sec` and `--edax-retries` control failed-search handling.
+入力はすでに分割済みの `test` なので、既定では追加の分割や標本抽出を行わず、全件を評価します（`--data-split all`）。短時間の確認などで標本抽出が必要な場合は、スクリプト名の直後に局面数 `N` を指定してください（抽出シード値613）。別のデータセットを使う場合は `--dataset` の値を変更してください。モデル単体の評価も、同じ参照先と `--dataset` を使用します。
 
-Each distinct board and side is searched once per level; repeated human samples
-retain their multiplicity. Edax caches are separate from Egaroucid caches and
-record executable/evaluation-data hashes and search settings. Changing experiment
-conditions requires a different output directory. Historical results in
-`RESULTS.md` describe their original conditions and are not recomputed.
+任意の盤面データを直接指定する場合は、`--board-data-dir` が環境変数と `--dataset` より優先されます。従来の未分割データに対して再分割を行う場合に限り、`--data-split test` などを指定してください。
 
-Console level 21 has the same result as alpha = 0, so its duplicate row is omitted
-from progress, final console output, CSV, and JSON comparison results. Level 21
-is still searched for the blend. This display change preserves the search
-identity: existing parallel-run caches can be reused with the same settings
-and output directory.
+Edaxの実行ファイルの既定パスは `bin/versions/edax_4_6/wEdax-x86-64.exe` で、実行ファイルと同じディレクトリ内の `data/eval.dat` を評価データとして使用します。これらのパスは `--edax-exe` と `--edax-eval-file` で変更できます。
 
-## Agreement and likelihood
+`--edax-workers` は、共有する `--workers` 枠の内数としてEdaxの上限を指定します。両エンジンを並行して起動し、完了した探索の枠を再利用します。進捗は1つのログにまとめ、混合方策・Egaroucid for Console・Edaxの一致率を同じ更新で表示します。片方のエンジンが完了した後も、その結果を表示し続けます。逐次実行だった旧版から移行する場合は、出力先に `output/human_match_parallel` などの新しいディレクトリを指定してください。
 
-Top-1 and optional top-3 agreement retain the existing board-symmetry-aware definition:
-a prediction matches if a symmetry preserving both players' stones maps the
-observed human move to it. Engine baselines use their native `hint 1` output
-order (`hint 3` with `--top3`). Egaroucid level 21 supplies the all-legal-move hints required by the blend.
+Egaroucid for Consoleのレベル21はalpha = 0と同じ結果なので、進捗・最終表示・CSV・JSONの比較結果から重複行を省きます。混合方策に必要なレベル21の探索は引き続き行います。この表示変更によって探索条件は変わらないため、すでに並行実行版を使っている場合は、同じ出力先と実行条件でキャッシュを再利用できます。
 
-Likelihood answers: **What probability did the method assign to the exact move
-the human actually played?** For every alpha, compute
+Edaxでは `-n` でスレッド数を指定し、22ビットのハッシュテーブルを使用します。また、定石ブックと先読み（pondering）は無効にします。探索に失敗した場合の処理は、`--edax-timeout-sec` と `--edax-retries` で調整できます。
+
+盤面と手番の組み合わせごとに、各レベルで1回だけ探索します。ただし、人間の着手サンプルに重複がある場合は、その出現回数を集計に反映します。EdaxのキャッシュはEgaroucidのキャッシュと分けて保存し、実行ファイルと評価データのハッシュ、および探索設定を記録します。実験条件を変更する場合は、別の出力ディレクトリを使用してください。`RESULTS.md` にある過去の結果には当時の条件が記載されており、再計算は行いません。
+
+## 一致率と尤度
+
+Top-1と、任意で有効にするTop-3の一致率には、従来どおり盤面の対称性を考慮した定義を使用します。両プレイヤーの石の配置を保つ対称変換によって、人間が実際に選んだ手を予測手に対応させられる場合、一致とみなします。比較用のエンジン単体の評価では、各エンジンの `hint 1`（`--top3` 指定時は `hint 3`）の出力順序をそのまま使用します。Egaroucidのレベル21は、混合方策に必要な全合法手のヒントを計算します。
+
+尤度は、**人間が実際に選んだその手に、各手法がどれだけの確率を与えたか**を表します。alphaごとに、次の式で計算します。
 
 ```text
 z(move) = alpha * network_logit(move)
@@ -83,47 +58,33 @@ z(move) = alpha * network_logit(move)
 p(move) = exp(z(move)) / sum(exp(z(legal_move)))
 ```
 
-The implementation computes log-softmax stably over **all legal moves**, then
-looks up the observed move. Symmetry-equivalent moves are not summed for this
-metric. Thus, on an initial board with four equally likely moves, agreement is
-100% but the observed move's likelihood is 25%.
+実装では、**全合法手**を対象に数値的に安定した方法でlog-softmaxを計算し、その後、人間が選んだ手の値を取り出します。この指標では、対称性によって等価になる手の確率を合算しません。そのため、4つの手の確率が等しい初期盤面では、一致率は100%ですが、人間が選んだ手の尤度は25%になります。
 
-The blend CSV and JSON include these fields for each alpha:
+混合方策のCSVとJSONには、alphaごとに次のフィールドを出力します。
 
-| Field | Meaning |
+| フィールド | 意味 |
 | --- | --- |
-| `mean_likelihood` | Arithmetic mean of observed-move probabilities, from 0 to 1 |
-| `mean_likelihood_percent` | The same mean expressed as a percentage |
-| `mean_log_likelihood` | Mean natural log probability, in nats per position |
-| `negative_log_likelihood` | Negative mean log probability; lower is better |
+| `mean_likelihood` | 人間が選んだ手の確率の算術平均。範囲は0〜1 |
+| `mean_likelihood_percent` | 上記の平均を百分率で表した値 |
+| `mean_log_likelihood` | 人間が選んだ手の確率の自然対数を平均した値。単位は局面あたりのnat |
+| `negative_log_likelihood` | 平均対数確率の符号を反転した値。小さいほどよい |
 
-Every valid position sample has equal weight, including repeated boards with
-different human moves. These averages are not the product of all probabilities.
-Alpha 1 measures the policy network alone; alpha 0 measures the score-softmax
-policy used by the blend. The standalone engine baseline rows only report
-agreement: their limited hints are insufficient to normalize a full probability
-distribution. Empty samples have null likelihood fields. The policy-only
-evaluator also emits null log metrics when an observed probability is exactly
-zero, rather than writing nonstandard JSON infinities.
+有効な局面サンプルは、すべて同じ重みで集計します。同じ盤面でも人間が選んだ手が異なるサンプルは、それぞれ集計対象になります。ここで求める平均値は、全サンプルの確率を掛け合わせた値ではありません。
 
-## Outputs and validation
+alpha = 1 は方策ネットワーク単体を、alpha = 0 は混合方策で使用する評価値のsoftmax方策を評価します。一方、比較用のエンジン単体の行には一致率だけを出力します。上位の候補手だけでは、全合法手の確率分布を正規化できないためです。
 
-- `random_wthor_blend_summary.csv`: blend agreement and likelihood.
-- `random_wthor_console_level_summary.csv`: Egaroucid agreement by level.
-- `random_wthor_edax_level_summary.csv`: Edax agreement by level.
-- `random_wthor_blend_summary.json`: all results, definitions, settings and timings.
+サンプルがない場合、尤度のフィールドはnullになります。また、方策ネットワーク単体の評価では、人間が選んだ手の確率が厳密に0の場合、対数指標をnullとして出力します。これは、JSONの標準にない無限大の値を出力しないためです。
 
-The policy-only `evaluate_wthor_human_match.py` also reports likelihood in its
-JSON and its overall / ten-move-bucket CSVs, after conditioning probabilities on
-legal moves. It also defaults to top-1; use `--top-n 1,3` to include top-3.
-Use `run_random_wthor_blend_experiment.py` for the comparison above.
+## 出力と検証
 
-The old top-N evaluator, shard runner/merger, duplicate analyzer, blend CLI and
-legacy-only tests are archived locally in `legacy/`, which is ignored by Git.
-The current `evaluate_wthor_blend_human_match.py` retains only shared board
-readers, sampling and ranking helpers needed by active evaluations and launchers.
-Use `run_random_wthor_blend_experiment.py` or `evaluate_wthor_human_match.py`
-as the current command-line entry points.
+- `random_wthor_blend_summary.csv`: 混合方策の一致率と尤度。
+- `random_wthor_console_level_summary.csv`: Egaroucidのレベル別一致率。
+- `random_wthor_edax_level_summary.csv`: Edaxのレベル別一致率。
+- `random_wthor_blend_summary.json`: すべての結果、定義、設定、処理時間。
+
+方策ネットワーク単体を評価する `evaluate_wthor_human_match.py` も、合法手に条件づけて確率を正規化したうえで、JSONと全体集計・10手ごとの区間集計のCSVに尤度を出力します。一致率は既定でtop-1のみで、top-3も必要な場合は `--top-n 1,3` を指定します。上記の比較には `run_random_wthor_blend_experiment.py` を使用してください。
+
+旧版のTop-N評価器、シャード実行・結合、重複解析、旧ブレンド評価器とその専用テストは `legacy/` に退避しています。このフォルダはGitの管理対象外です。現行の `evaluate_wthor_blend_human_match.py` には、現行評価から参照される盤面読み込み・標本抽出・順位計算などの共通処理だけを残しています。実行用CLIは `run_random_wthor_blend_experiment.py` と `evaluate_wthor_human_match.py` を使用してください。
 
 ```powershell
 python -m unittest discover -s . -p 'test_*.py'
@@ -131,5 +92,4 @@ $env:WTHOR_EDAX_INTEGRATION = '1'
 python -m unittest test_wthor_edax
 ```
 
-The optional integration test invokes the local Edax binary at all six levels
-on late-game positions with both colors to move.
+任意で実行する結合テストでは、ローカルのEdax実行ファイルを使用し、黒番・白番それぞれの終盤局面を全6レベルで探索します。

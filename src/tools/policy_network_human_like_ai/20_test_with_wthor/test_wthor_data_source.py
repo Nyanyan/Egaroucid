@@ -18,14 +18,14 @@ class DataSourceTest(unittest.TestCase):
     def test_policy_root_takes_precedence_and_dataset_is_selectable(self):
         with patch.dict(os.environ, {"POLICY_DATA_ROOT": "prepared", "EGAROUCID_DATA": "old"}, clear=True):
             self.assertEqual(
-                Path("prepared/board_split_increased/another_dataset/test"),
+                Path("prepared/board_split/another_dataset/test"),
                 default_board_data_dir("another_dataset"),
             )
 
     def test_egaroucid_root_fallback_uses_prepared_test_split(self):
         with patch.dict(os.environ, {"EGAROUCID_DATA": "data"}, clear=True):
             self.assertEqual(
-                Path("data/20261002_policy_network_human_like_data/board_split_increased/WTHOR_1977_2024/test"),
+                Path("data/20261002_policy_network_human_like_data/board_split/WTHOR_1977_2024/test"),
                 default_board_data_dir(),
             )
 
@@ -43,7 +43,7 @@ class DataSourceTest(unittest.TestCase):
                     parser = module.make_argparser()
                     args = parser.parse_args(positional + ["--dataset", "selected"])
                     resolve_board_data_args(args, parser)
-                    self.assertEqual(Path("prepared/board_split_increased/selected/test"), args.board_data_dir)
+                    self.assertEqual(Path("prepared/board_split/selected/test"), args.board_data_dir)
                 with patch.dict(os.environ, {}, clear=True):
                     parser = module.make_argparser()
                     args = parser.parse_args(positional + ["--board-data-dir", "chosen"])
