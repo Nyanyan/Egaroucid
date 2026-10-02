@@ -1360,9 +1360,28 @@ class Book {
             int64_t n_removed = 0;
             bool changed = true;
             std::vector<Board> boards;
+            // number of exported boards for each number of discs: the numbers of discs without boards are skipped
+            // (every number of discs needs a scan of the whole table)
+            std::vector<std::vector<uint32_t>> n_boards_segment(book.N_SEGMENTS, std::vector<uint32_t>(HW2 + 1, 0));
+            parallel_for_segments([this, &n_boards_segment](int segment_idx) {
+                book.for_each_in_segment(segment_idx, [&n_boards_segment, segment_idx](const Board &board, Book_elem &book_elem) {
+                    if (book_elem.exported) {
+                        ++n_boards_segment[segment_idx][board.n_discs()];
+                    }
+                });
+            });
+            uint64_t n_boards_discs[HW2 + 1] = {};
+            for (const std::vector<uint32_t> &n_boards: n_boards_segment) {
+                for (int n_discs = 0; n_discs <= HW2; ++n_discs) {
+                    n_boards_discs[n_discs] += n_boards[n_discs];
+                }
+            }
             while (changed) {
                 changed = false;
                 for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
+                    if (n_boards_discs[n_discs] == 0) {
+                        continue;
+                    }
                     std::cerr << "checking leaves for Edax export, discs " << n_discs << " removed " << n_removed << std::endl;
                     for (int segment_idx = 0; segment_idx < book.N_SEGMENTS; ++segment_idx) {
                         book.get_keys_in_segment_if(segment_idx, boards, [n_discs](const Board &board, const Book_elem &book_elem) {
@@ -1394,8 +1413,54 @@ class Book {
                         }
                     }
                 }
+                if (changed) {
+                    // The loop is repeated until no board is removed, but one pass is enough in practice:
+                    // a board removes only a board with 1 more disc, so the boards with (d + 1) discs are removed only
+                    // while the boards with d discs are processed, and a board which was processed once does not
+                    // remove another board (it has a leaf candidate after that, and leaf candidates only increase).
+                    // So, instead of running the whole pass again only to see that nothing changes
+                    // (it took the same time as the first pass), it is checked in parallel whether a board still needs a removal.
+                    changed = edax_export_needs_leaf_demotion_without_additional_calculation(stop_saving);
+                }
             }
             return n_removed;
+        }
+
+        /*
+            @brief check if there is a board which still removes its link from Edax export
+
+            Same condition as one more pass of remove_leaf_demoted_edax_export_boards_without_additional_calculation()
+            removing a board. Nothing is modified, so the boards are checked in parallel.
+
+            @return true if another pass is needed
+        */
+        inline bool edax_export_needs_leaf_demotion_without_additional_calculation(bool *stop_saving) {
+            std::atomic<bool> needed(false);
+            parallel_for_segments([this, stop_saving, &needed](int segment_idx) {
+                if (needed.load(std::memory_order_relaxed) || (stop_saving && *stop_saving)) {
+                    return;
+                }
+                std::vector<Board> boards;
+                book.get_keys_in_segment_if(segment_idx, boards, [](const Board &board, const Book_elem &book_elem) {
+                    return book_elem.exported;
+                });
+                for (const Board &board: boards) {
+                    if (needed.load(std::memory_order_relaxed) || (stop_saving && *stop_saving)) {
+                        return;
+                    }
+                    Book_elem book_elem, child_elem;
+                    Board child_to_remove;
+                    if (
+                        book.get(board, &book_elem) && book_elem.exported && 
+                        find_leaf_demoted_edax_child_without_additional_calculation(board, book_elem, &child_to_remove) && 
+                        book.get(representative_board(child_to_remove), &child_elem) && child_elem.exported // the pass would remove this board
+                    ) {
+                        needed.store(true, std::memory_order_relaxed);
+                        return;
+                    }
+                }
+            });
+            return needed.load();
         }
 
         /*
