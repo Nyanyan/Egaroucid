@@ -710,6 +710,7 @@ def collect_hints(
     cancellation_event=None,
     progress_lock=None,
     shared_slots=None,
+    print_progress: bool = True,
 ) -> Tuple[
     Dict[int, Dict[StateKey, HintData]],
     Dict[int, dict],
@@ -1034,6 +1035,10 @@ def collect_hints(
 
         def report_progress(final: bool = False) -> None:
             snapshot = progress_snapshot(final=final)
+            if not print_progress:
+                if progress_callback is not None:
+                    progress_callback(snapshot)
+                return
             eta = snapshot["eta_sec"]
             eta_text = (
                 format_duration(eta)

@@ -18,6 +18,50 @@ from wthor_human_match_experiment import EdaxProgressReporter
 
 
 class EngineComparisonTest(unittest.TestCase):
+    @staticmethod
+    def progress(engine, completed=0, final=False, total=10):
+        return {
+            "engine": engine, "final": final,
+            "completed_states": completed, "total_states": total,
+            "elapsed_sec": 30.0, "eta_sec": 0.0 if final else 60.0,
+            "active_tasks_by_level": {} if final else {21: 1},
+            "completed_tasks": int(final), "submitted_tasks": 1,
+            "active_tasks": int(not final), "cache_hits": 0, "retry_count": 0,
+            "seconds_since_last_hint": 1.0, "cpu": {"available": False},
+        }
+
+    def test_progress_combines_updates_and_retains_finished_engine(self):
+        reporter = comparison.ComparisonProgressReporter(
+            ("egaroucid", "edax"),
+            {engine: lambda row: [f"metric {row['engine']} {row['completed_states']}"]
+             for engine in ("egaroucid", "edax")},
+        )
+        output = io.StringIO()
+        with redirect_stderr(output):
+            reporter.report(self.progress("edax", 2))
+            self.assertEqual("", output.getvalue())
+            reporter.report(self.progress("egaroucid", 3))
+            first = output.getvalue()
+            self.assertIn("5/20", first)
+            self.assertIn("metric egaroucid 3\nmetric edax 2", first)
+            reporter.report(self.progress("edax", 10, final=True))
+            self.assertEqual(first, output.getvalue())
+            reporter.report(self.progress("egaroucid", 7))
+            reporter.report(self.progress("egaroucid", 10, final=True))
+        self.assertEqual(3, output.getvalue().count("][hint"))
+        self.assertEqual(1, output.getvalue().count("[hint進捗・完了]"))
+        self.assertEqual(2, output.getvalue().count("metric edax 10"))
+        self.assertIn("20/20", output.getvalue())
+
+    def test_fully_cached_engines_emit_one_combined_final_block(self):
+        reporter = comparison.ComparisonProgressReporter(("egaroucid", "edax"))
+        output = io.StringIO()
+        with redirect_stderr(output):
+            reporter.report(self.progress("egaroucid", final=True, total=0))
+            reporter.report(self.progress("edax", final=True, total=0))
+        self.assertEqual(1, output.getvalue().count("[hint進捗・完了]"))
+        self.assertIn("100.0%", output.getvalue())
+
     def test_workers_limit_is_global_and_freed_slots_are_reused(self):
         slots = comparison.SharedEngineSlots(
             32, {"egaroucid": 32, "edax": 32}, {"egaroucid": 6, "edax": 6},
@@ -51,15 +95,19 @@ class EngineComparisonTest(unittest.TestCase):
         barrier = threading.Barrier(2)
         shared = []
 
-        def collect(groups, *, engine, shared_slots, **kwargs):
+        def collect(groups, *, engine, shared_slots, progress_callback, print_progress, **kwargs):
             shared.append(shared_slots)
+            self.assertFalse(print_progress)
             barrier.wait(timeout=3)
+            progress_callback(self.progress(engine, 10, final=True))
             return engine
 
         options = {engine: {"levels": EDAX_LEVELS, "workers": 32}
                    for engine in ("egaroucid", "edax")}
-        with patch.object(comparison, "collect_hints", side_effect=collect):
+        output = io.StringIO()
+        with patch.object(comparison, "collect_hints", side_effect=collect), redirect_stderr(output):
             results = comparison.collect_comparison_hints([], 32, options)
+        self.assertEqual(1, output.getvalue().count("[hint進捗・完了]"))
         self.assertEqual({"egaroucid", "edax"}, set(results))
         self.assertIs(shared[0], shared[1])
         for engine, (result, elapsed) in results.items():

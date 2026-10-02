@@ -59,7 +59,7 @@ class ProgressReportingTest(unittest.TestCase):
             ),
         )
 
-    def test_report_uses_one_line_per_calculated_model(self):
+    def test_report_uses_one_line_per_model_including_pending_levels(self):
         metrics = FakeIncrementalMetrics()
         for alpha in BLEND_PARAMS:
             metrics.blend[alpha] = metric(10, 6, 9)
@@ -79,24 +79,23 @@ class ProgressReportingTest(unittest.TestCase):
         text = output.getvalue()
         for alpha in BLEND_PARAMS:
             self.assertEqual(1, text.count(f"[blend alpha={alpha:.1f}]"))
-        self.assertEqual(1, text.count("[Console level=21]"))
-        self.assertNotIn("[Console level= 1]", text)
+        self.assertEqual(1, text.count("[Egaroucid for Console level=21]"))
+        self.assertIn("[Egaroucid for Console level= 1] 未算出 (n=0)", text)
         self.assertIn(
             "top-1 60.000% [31.267%, 83.182%] "
             "| top-3 90.000% [59.585%, 98.212%] | n=10",
             text,
         )
         self.assertIn("| hint 1/100", text)
-        self.assertNotIn("未算出", text)
         self.assertNotIn("注意", text)
         model_lines = [
             line
             for line in text.splitlines()
-            if "[blend alpha=" in line or "[Console level=" in line
+            if "[blend alpha=" in line or "[Egaroucid for Console level=" in line
         ]
-        self.assertEqual(len(BLEND_PARAMS) + 1, len(model_lines))
+        self.assertEqual(len(BLEND_PARAMS) + len(CONSOLE_LEVELS), len(model_lines))
 
-    def test_report_waits_for_first_calculated_model_without_noise(self):
+    def test_report_shows_pending_models_before_first_result(self):
         metrics = FakeIncrementalMetrics()
         reporter = AgreementProgressReporter(metrics)
         output = io.StringIO()
@@ -104,7 +103,10 @@ class ProgressReportingTest(unittest.TestCase):
         with redirect_stderr(output):
             reporter.report({"final": False})
 
-        self.assertEqual("  一致率: 初回hint結果待ち\n", output.getvalue())
+        self.assertEqual(
+            len(BLEND_PARAMS) + len(CONSOLE_LEVELS),
+            output.getvalue().count("未算出 (n=0)"),
+        )
 
     def test_rows_are_forwarded_to_incremental_metrics(self):
         metrics = FakeIncrementalMetrics()

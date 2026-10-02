@@ -139,7 +139,7 @@ class AgreementProgressReporter:
         for state_key, hint in rows:
             self.metrics.add_hint(level, tuple(state_key), hint)
 
-    def report(self, progress: dict) -> None:
+    def format_lines(self, progress: dict) -> list:
         blend_metrics, console_metrics, _, _ = self.metrics.snapshot()
         reported_by_level = progress.get("reported_hints_by_level", {})
         target_by_level = progress.get("target_hints_by_level", {})
@@ -160,8 +160,6 @@ class AgreementProgressReporter:
         lines = []
         for alpha in BLEND_PARAMS:
             metric = blend_metrics[alpha]
-            if int(metric["positions"]) == 0:
-                continue
             lines.append(
                 f"  [blend alpha={alpha:.1f}] "
                 f"{format_live_metric(metric)}"
@@ -169,16 +167,15 @@ class AgreementProgressReporter:
             )
         for level in CONSOLE_LEVELS:
             metric = console_metrics[level]
-            if int(metric["positions"]) == 0:
-                continue
             lines.append(
-                f"  [Console level={level:2d}] "
+                f"  [Egaroucid for Console level={level:2d}] "
                 f"{format_live_metric(metric)}"
                 f"{hint_progress(level)}"
             )
-        if not lines:
-            lines.append("  一致率: 初回hint結果待ち")
-        sys.stderr.write("\n".join(lines) + "\n")
+        return lines
+
+    def report(self, progress: dict) -> None:
+        sys.stderr.write("\n".join(self.format_lines(progress)) + "\n")
         sys.stderr.flush()
 
 
@@ -190,7 +187,7 @@ class EdaxProgressReporter:
         for state_key, hint in rows:
             self.metrics.add_hint(level, tuple(state_key), hint)
 
-    def report(self, progress):
+    def format_lines(self, progress):
         metrics = self.metrics.snapshot()
         reported = progress.get("reported_hints_by_level", {})
         targets = progress.get("target_hints_by_level", {})
@@ -201,7 +198,10 @@ class EdaxProgressReporter:
                 if level in targets else ""
             )
             lines.append(f"  [Edax level={level:2d}] {format_live_metric(metrics[level])}{suffix}")
-        sys.stderr.write("\n".join(lines) + "\n")
+        return lines
+
+    def report(self, progress):
+        sys.stderr.write("\n".join(self.format_lines(progress)) + "\n")
         sys.stderr.flush()
 
 
@@ -635,7 +635,6 @@ def main() -> None:
             "max_retries": args.egaroucid_retries,
             "progress_interval_sec": args.progress_interval_sec,
             "on_rows": progress_reporter.accept_rows,
-            "progress_callback": progress_reporter.report,
         },
         "edax": {
             "levels": EDAX_LEVELS, "output_dir": edax_dir,
@@ -647,8 +646,10 @@ def main() -> None:
             "progress_interval_sec": args.progress_interval_sec,
             "edax_eval_file": Path(edax_config["eval_file"]),
             "on_rows": edax_reporter.accept_rows,
-            "progress_callback": edax_reporter.report,
         },
+    }, metric_formatters={
+        "egaroucid": progress_reporter.format_lines,
+        "edax": edax_reporter.format_lines,
     })
     hint_elapsed = time.perf_counter() - hint_start
     (hints, cache_stats, level_timing, cpu_stats), egaroucid_elapsed = engine_searches["egaroucid"]
