@@ -438,6 +438,9 @@ std::pair<Board, int> import_board_processing(std::string board_str, bool *faile
         board.translate_from_arr(bd_arr, player);
         if (!board.is_end() && board.get_legal() == 0) {
             board.pass();
+            // The player to move changes with the pass.
+            // (Without this, board.player became the discs of the other color and the colors were swapped on the screen.)
+            player ^= 1;
         }
     }
     return std::make_pair(board, player);

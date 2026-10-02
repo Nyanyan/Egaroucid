@@ -2065,7 +2065,8 @@ private:
                         ai_calculation_interrupted = false;
                         return;
                     }
-                    if (1 & (legal >> search_result.policy)) {
+                    // policy is MOVE_UNDEFINED (125) when the search was stopped: shifting by 64 or more is undefined
+                    if (is_valid_policy(search_result.policy) && (1 & (legal >> search_result.policy))) {
                         int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == BLACK ? 1 : -1;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
