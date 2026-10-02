@@ -34,6 +34,8 @@ move by default, or three with `--top3`. The blend still requests all legal move
 at Egaroucid level 21 for likelihood. Use a separate output directory when changing
 this setting because the requested hint counts are part of the cache identity.
 
+Policy Networkの推論後に行う集計準備では、合法手と盤面の対称性を4,096状態ずつまとめて計算します。この結果はEgaroucid・Edaxの途中集計と最終検算で共有します。準備の開始・完了時と `--progress-interval-sec` の間隔で、処理件数、進捗率、経過時間、処理速度、推定残り時間を表示します。準備にかかった時間は結果JSONの `timing.agreement_preparation_sec` に記録します。
+
 `--workers` is the total limit for Egaroucid and Edax combined, and must be
 at least 12 to start all engine/level combinations. For a 32-thread machine
 with one search thread per process, use `--workers 32`. All positions in the prepared `test` directory are evaluated by default

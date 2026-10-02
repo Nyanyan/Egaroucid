@@ -9,7 +9,9 @@ import hashlib
 import math
 from pathlib import Path
 import sys
-from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
+import time
+from types import MappingProxyType
+from typing import Callable, Dict, Iterable, List, Mapping, Sequence, Tuple
 
 import numpy as np
 
@@ -27,6 +29,8 @@ from blend_policy_with_egaroucid import (  # noqa: E402
     require_complete_egaroucid_scores,
 )
 import evaluate_wthor_blend_human_match as wthor  # noqa: E402
+from evaluate_wthor_human_match import calc_legal_batch, legal_bitboard_to_mask
+from policy_accuracy import TRANSFORM_MAPS, transform_bitboards
 from wthor_likelihood import legal_log_probabilities, likelihood_summary
 
 
@@ -68,6 +72,15 @@ class HintData:
 class _PreparedPositionGroup:
     legal: Tuple[int, ...]
     valid_targets: Tuple[Tuple[int, Tuple[int, ...], int], ...]
+
+
+@dataclass(frozen=True)
+class PreparedAgreementGroups:
+    """Read-only board data shared by both engines and final verification."""
+
+    groups_by_key: Mapping[StateKey, Tuple[_PreparedPositionGroup, ...]]
+    invalid_policy_samples: int
+    illegal_label_samples: int
 
 
 def wilson_interval(
@@ -262,43 +275,76 @@ def _merge_metric(destination: dict, source: dict) -> None:
             destination[field] += source[field]
 
 
-def _prepare_position_group(
-    group: PositionGroup,
-) -> Tuple[_PreparedPositionGroup, int, int]:
-    state = BoardState(group.black, group.white, group.side)
-    legal = tuple(state.legal_policies(group.side))
-    legal_set = set(legal)
-    player, opponent = state.player_opponent_bits(group.side)
-    valid_targets = []
+def prepare_position_groups(
+    groups: Sequence[PositionGroup],
+    *,
+    batch_size: int = 4096,
+    progress_interval_sec: float = 10.0,
+    on_progress: Callable[[int, int, float], None] | None = None,
+) -> PreparedAgreementGroups:
+    """Batch legal moves and board symmetries with bounded NumPy temporaries.
+
+    Symmetries are checked once per board, including boards with multiple human
+    labels. Callbacks receive (completed groups, total groups, elapsed seconds)
+    at startup, at the requested interval, and on completion.
+    """
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive")
+    if not math.isfinite(progress_interval_sec) or progress_interval_sec < 0:
+        raise ValueError("progress_interval_sec must be finite and nonnegative")
+    groups_by_key: Dict[StateKey, Tuple[_PreparedPositionGroup, ...]] = {}
     invalid_policy_samples = 0
     illegal_label_samples = 0
-    for policy, count in group.policy_counts:
-        if policy < 0 or policy >= POLICY_SIZE:
-            invalid_policy_samples += count
-            continue
-        if policy not in legal_set:
-            illegal_label_samples += count
-            continue
-        valid_targets.append(
-            (
-                policy,
-                tuple(
-                    wthor.equivalent_targets(
-                        player,
-                        opponent,
-                        policy,
-                    )
-                ),
-                count,
-            )
+    # Python integers avoid scalar NumPy indexing for each individual label.
+    mappings = tuple(tuple(map(int, mapping)) for mapping in TRANSFORM_MAPS[1:])
+    total = len(groups)
+    started = last_report = time.perf_counter()
+    if on_progress is not None:
+        on_progress(0, total, 0.0)
+    for start in range(0, total, batch_size):
+        batch = groups[start : start + batch_size]
+        player = np.fromiter(
+            (g.black if g.side == wthor.BLACK else g.white for g in batch),
+            dtype=np.uint64, count=len(batch),
         )
-    return (
-        _PreparedPositionGroup(
-            legal=legal,
-            valid_targets=tuple(valid_targets),
-        ),
-        invalid_policy_samples,
-        illegal_label_samples,
+        opponent = np.fromiter(
+            (g.white if g.side == wthor.BLACK else g.black for g in batch),
+            dtype=np.uint64, count=len(batch),
+        )
+        legal_masks = legal_bitboard_to_mask(calc_legal_batch(player, opponent))
+        invariant = np.empty((len(batch), len(mappings)), dtype=bool)
+        for index, mapping in enumerate(TRANSFORM_MAPS[1:]):
+            invariant[:, index] = (
+                (transform_bitboards(player, mapping) == player)
+                & (transform_bitboards(opponent, mapping) == opponent)
+            )
+        for group, legal_mask, symmetries in zip(batch, legal_masks, invariant):
+            legal = tuple(np.flatnonzero(legal_mask).tolist())
+            board_mappings = [mappings[i] for i in np.flatnonzero(symmetries)]
+            valid_targets = []
+            for policy, count in group.policy_counts:
+                if policy < 0 or policy >= POLICY_SIZE:
+                    invalid_policy_samples += count
+                    continue
+                if not legal_mask[policy]:
+                    illegal_label_samples += count
+                    continue
+                targets = (policy,)
+                if board_mappings:
+                    targets = tuple(sorted({policy, *(m[policy] for m in board_mappings)}))
+                valid_targets.append((policy, targets, count))
+            prepared = _PreparedPositionGroup(legal, tuple(valid_targets))
+            key = group.key
+            groups_by_key[key] = groups_by_key.get(key, ()) + (prepared,)
+        completed = start + len(batch)
+        now = time.perf_counter()
+        if on_progress is not None and (
+            completed == total or now - last_report >= progress_interval_sec
+        ):
+            on_progress(completed, total, now - started)
+            last_report = now
+    return PreparedAgreementGroups(
+        MappingProxyType(groups_by_key), invalid_policy_samples, illegal_label_samples,
     )
 
 
@@ -316,23 +362,19 @@ class IncrementalAgreementMetrics:
         policy_logits: Mapping[StateKey, np.ndarray],
         score_temperature: float,
         top_n_values: Sequence[int] = TOP_N_VALUES,
+        *,
+        prepared_groups: PreparedAgreementGroups | None = None,
     ) -> None:
         if not math.isfinite(score_temperature) or score_temperature <= 0.0:
             raise ValueError("score_temperature must be finite and positive")
         self._top_n_values = tuple(top_n_values)
         self._policy_logits = policy_logits
         self._score_temperature = score_temperature
-        self._groups_by_key: Dict[
-            StateKey,
-            List[_PreparedPositionGroup],
-        ] = {}
-        self.invalid_policy_samples = 0
-        self.illegal_label_samples = 0
-        for group in groups:
-            prepared, invalid, illegal = _prepare_position_group(group)
-            self._groups_by_key.setdefault(group.key, []).append(prepared)
-            self.invalid_policy_samples += invalid
-            self.illegal_label_samples += illegal
+        if prepared_groups is None:
+            prepared_groups = prepare_position_groups(groups)
+        self._groups_by_key = prepared_groups.groups_by_key
+        self.invalid_policy_samples = prepared_groups.invalid_policy_samples
+        self.illegal_label_samples = prepared_groups.illegal_label_samples
 
         self._blend_metrics = {
             alpha: empty_metric(with_likelihood=True, top_n_values=self._top_n_values)
@@ -496,12 +538,15 @@ def evaluate_agreement(
     policy_logits: Dict[StateKey, np.ndarray],
     score_temperature: float,
     top_n_values: Sequence[int] = TOP_N_VALUES,
+    *,
+    prepared_groups: PreparedAgreementGroups | None = None,
 ) -> Tuple[dict, Dict[int, dict], int, int]:
     metrics = IncrementalAgreementMetrics(
         groups,
         policy_logits,
         score_temperature,
         top_n_values,
+        prepared_groups=prepared_groups,
     )
     for group in groups:
         metrics.add_hint(
@@ -519,12 +564,11 @@ def evaluate_agreement(
 class IncrementalEngineAgreementMetrics:
     """Accumulate native engine rankings once per level and board state."""
 
-    def __init__(self, groups, levels, top_n_values=TOP_N_VALUES):
+    def __init__(self, groups, levels, top_n_values=TOP_N_VALUES, *, prepared_groups=None):
         self._top_n_values = tuple(top_n_values)
-        self._groups = {}
-        for group in groups:
-            prepared, _, _ = _prepare_position_group(group)
-            self._groups.setdefault(group.key, []).append(prepared)
+        if prepared_groups is None:
+            prepared_groups = prepare_position_groups(groups)
+        self._groups = prepared_groups.groups_by_key
         self._metrics = {level: empty_metric(top_n_values=self._top_n_values) for level in levels}
         self._seen = set()
 
@@ -552,9 +596,11 @@ class IncrementalEngineAgreementMetrics:
         return {level: _copy_metric(metric) for level, metric in self._metrics.items()}
 
 
-def evaluate_engine_agreement(groups, hints, top_n_values=TOP_N_VALUES):
+def evaluate_engine_agreement(groups, hints, top_n_values=TOP_N_VALUES, *, prepared_groups=None):
     """Evaluate standalone top-N hints without treating level 21 as a blend."""
-    metrics = IncrementalEngineAgreementMetrics(groups, hints, top_n_values)
+    metrics = IncrementalEngineAgreementMetrics(
+        groups, hints, top_n_values, prepared_groups=prepared_groups,
+    )
     for level, level_hints in hints.items():
         for group in groups:
             metrics.add_hint(level, group.key, level_hints[group.key])

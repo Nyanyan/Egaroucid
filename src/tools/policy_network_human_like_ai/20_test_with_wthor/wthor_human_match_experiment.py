@@ -38,6 +38,7 @@ from wthor_human_match_evaluation import (
     make_level21_reuse_validation,
     metrics_to_result,
     predict_policy_logits,
+    prepare_position_groups,
     split_position_count,
     validate_aggregate_counts,
     wilson_interval,
@@ -96,6 +97,16 @@ def report_stage(message: str) -> None:
         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}][段階] {message}",
         file=sys.stderr,
         flush=True,
+    )
+
+
+def report_preparation_progress(completed: int, total: int, elapsed: float) -> None:
+    rate = completed / elapsed if elapsed > 0 else 0.0
+    remaining = format_duration((total - completed) / rate) if rate > 0 else "未算出"
+    percent = 100.0 * completed / total if total else 100.0
+    report_stage(
+        f"一致率の集計準備 {completed:,}/{total:,}状態 ({percent:.1f}%) "
+        f"経過={format_duration(elapsed)} 速度={rate:,.0f}状態/秒 残り={remaining}"
     )
 
 
@@ -439,7 +450,7 @@ def make_argparser() -> argparse.ArgumentParser:
         type=positive_float,
         default=30.0,
         help=(
-            "標準エラーへ探索進捗と暫定一致率を表示する間隔"
+            "標準エラーへ集計準備・探索の進捗と暫定一致率を表示する間隔"
             "（既定値: 30秒）"
         ),
     )
@@ -601,14 +612,27 @@ def main() -> None:
         "Policy Networkの推論を完了 "
         f"({format_duration(policy_elapsed)})"
     )
+    report_stage("一致率の集計準備を開始（合法手・対称性を両エンジン共通で一括計算）")
+    preparation_start = time.perf_counter()
+    prepared_groups = prepare_position_groups(
+        groups,
+        progress_interval_sec=args.progress_interval_sec,
+        on_progress=report_preparation_progress,
+    )
+    preparation_elapsed = time.perf_counter() - preparation_start
+    report_stage(f"一致率の集計準備を完了 ({format_duration(preparation_elapsed)})")
     live_metrics = IncrementalAgreementMetrics(
         groups,
         policy_logits,
         args.score_temperature,
         top_n_values=evaluation_top_n(args),
+        prepared_groups=prepared_groups,
     )
     progress_reporter = AgreementProgressReporter(live_metrics)
-    edax_live_metrics = IncrementalEngineAgreementMetrics(groups, EDAX_LEVELS, evaluation_top_n(args))
+    edax_live_metrics = IncrementalEngineAgreementMetrics(
+        groups, EDAX_LEVELS, evaluation_top_n(args),
+        prepared_groups=prepared_groups,
+    )
     edax_reporter = EdaxProgressReporter(edax_live_metrics)
     edax_dir = (getattr(args, "hint_cache_dir", None) or output_dir) / "edax"
     edax_dir.mkdir(parents=True, exist_ok=True)
@@ -650,7 +674,10 @@ def main() -> None:
     hint_elapsed = time.perf_counter() - hint_start
     (hints, cache_stats, level_timing, cpu_stats), egaroucid_elapsed = engine_searches["egaroucid"]
     (edax_hints, edax_cache_stats, edax_timing, edax_cpu_stats), edax_elapsed = engine_searches["edax"]
-    edax_metrics = evaluate_engine_agreement(groups, edax_hints, evaluation_top_n(args))
+    edax_metrics = evaluate_engine_agreement(
+        groups, edax_hints, evaluation_top_n(args),
+        prepared_groups=prepared_groups,
+    )
     if edax_live_metrics.snapshot() != edax_metrics:
         raise RuntimeError("Edaxの途中集計値と最終一致率が一致しません")
     edax_rows = [
@@ -675,6 +702,7 @@ def main() -> None:
         policy_logits,
         args.score_temperature,
         top_n_values=evaluation_top_n(args),
+        prepared_groups=prepared_groups,
     )
     if not agreement_results_equal(live_metrics.result(), (
         blend_metrics,
@@ -843,6 +871,7 @@ def main() -> None:
             "egaroucid_hint_evaluation_sec": egaroucid_elapsed,
             "edax_hint_evaluation_sec": edax_elapsed,
             "policy_inference_sec": policy_elapsed,
+            "agreement_preparation_sec": preparation_elapsed,
             "aggregation_sec": aggregate_elapsed,
         },
         "resources": {
