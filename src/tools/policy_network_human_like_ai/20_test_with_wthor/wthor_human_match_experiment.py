@@ -339,7 +339,7 @@ def make_argparser() -> argparse.ArgumentParser:
         help=(
             "同時に動かすConsoleプロセス数。省略時は"
             "論理CPU数 // --egaroucid-threads。全levelを同時に"
-            "開始するため11以上が必要"
+            f"開始するため{len(CONSOLE_LEVELS)}以上が必要"
         ),
     )
     parser.add_argument(
@@ -405,7 +405,7 @@ def require_all_levels_to_start(workers: int) -> int:
     minimum_workers = len(CONSOLE_LEVELS)
     if workers < minimum_workers:
         raise ValueError(
-            "level 1から21の専用Consoleを同時に起動するため、"
+            f"level {','.join(map(str, CONSOLE_LEVELS))}の専用Consoleを同時に起動するため、"
             f"--workersには{minimum_workers}以上を指定してください: "
             f"workers={workers}"
         )
@@ -499,7 +499,7 @@ def main() -> None:
     print("論理CPUスレッド", logical_cpus, flush=True)
     print("level 21", "ブレンドとConsole単体で共有", flush=True)
     print(
-        "level 1-19のConsole",
+        "level 1,5,9,13,17のConsole",
         "cold cache開始時は各level 1プロセスを常駐",
         flush=True,
     )
@@ -512,7 +512,7 @@ def main() -> None:
     print(
         "hint候補数",
         f"level 21={ALL_LEGAL_HINT_COUNT}（全合法手）、"
-        f"level 1-19={CONSOLE_ONLY_HINT_COUNT}（top-3測定分）",
+        f"level 1,5,9,13,17={CONSOLE_ONLY_HINT_COUNT}（top-3測定分）",
         flush=True,
     )
     print("出力先", output_dir, flush=True)
@@ -669,7 +669,7 @@ def main() -> None:
         },
         "egaroucid_policy_support": {
             "blend_level_21": "all_legal_moves",
-            "standalone_levels_1_to_19": "top_3_moves",
+            "standalone_levels_1_5_9_13_17": "top_3_moves",
             "standalone_level_21": (
                 "reused_from_all_legal_blend_evaluation"
             ),
@@ -779,7 +779,7 @@ def main() -> None:
                 "変換前出力 + (1-alpha) * "
                 "(Egaroucid評価値 / temperature) で計算する"
             ),
-            "standalone_levels_1_to_19": (
+            "standalone_levels_1_5_9_13_17": (
                 "Consoleへ直接要求したhint 3の出力順"
             ),
             "standalone_level_21": (

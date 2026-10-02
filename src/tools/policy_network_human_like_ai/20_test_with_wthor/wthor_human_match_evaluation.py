@@ -30,7 +30,7 @@ import evaluate_wthor_blend_human_match as wthor  # noqa: E402
 
 
 BLEND_PARAMS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
-CONSOLE_LEVELS = (1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21)
+CONSOLE_LEVELS = (1, 5, 9, 13, 17, 21)
 CONSOLE_REFERENCE_LEVEL = 21
 TOP_N_VALUES = (1, 3)
 CONSOLE_ONLY_HINT_COUNT = max(TOP_N_VALUES)

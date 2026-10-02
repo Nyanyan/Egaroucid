@@ -31,6 +31,7 @@ from wthor_hint_pipeline import (
 from wthor_human_match_evaluation import (
     ALL_LEGAL_HINT_COUNT,
     CONSOLE_ONLY_HINT_COUNT,
+    CONSOLE_LEVELS,
     HintData,
     PositionGroup,
     egaroucid_log_scores,
@@ -159,9 +160,10 @@ class FakeActorExecutor:
 
 class HumanMatchExperimentTest(unittest.TestCase):
     def test_at_least_one_worker_per_level_is_required(self) -> None:
-        with self.assertRaisesRegex(ValueError, "11以上"):
-            require_all_levels_to_start(10)
-        self.assertEqual(11, require_all_levels_to_start(11))
+        self.assertEqual((1, 5, 9, 13, 17, 21), CONSOLE_LEVELS)
+        with self.assertRaisesRegex(ValueError, "6以上"):
+            require_all_levels_to_start(5)
+        self.assertEqual(6, require_all_levels_to_start(6))
 
     def test_duplicate_states_are_grouped_without_losing_labels(self) -> None:
         state = BoardState.initial()
@@ -204,18 +206,18 @@ class HumanMatchExperimentTest(unittest.TestCase):
     def test_initial_actor_levels_prioritize_level21_until_it_is_cached(
         self,
     ) -> None:
-        all_levels = list(range(1, 22, 2))
+        all_levels = list(CONSOLE_LEVELS)
         cold_start = make_initial_actor_levels(
             all_levels,
             {level: 100 for level in all_levels},
             workers=16,
         )
-        self.assertEqual(6, cold_start.count(21))
+        self.assertEqual(11, cold_start.count(21))
         self.assertEqual(
-            {level: 1 for level in range(1, 20, 2)},
+            {level: 1 for level in CONSOLE_LEVELS[:-1]},
             {
                 level: cold_start.count(level)
-                for level in range(1, 20, 2)
+                for level in CONSOLE_LEVELS[:-1]
             },
         )
         self.assertEqual(
