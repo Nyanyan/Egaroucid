@@ -77,6 +77,7 @@ CONSOLE_SUMMARY_FIELDS = (
     "top3_ci95_upper",
     "elapsed_sec",
     "engine_seconds",
+    *LIKELIHOOD_FIELDS,
 )
 
 
@@ -114,6 +115,10 @@ def evaluation_top_n(args) -> tuple:
     return (1, 3) if getattr(args, "top3", False) else (1,)
 
 
+def standalone_hint_count(args) -> int:
+    return ALL_LEGAL_HINT_COUNT if getattr(args, "engine_likelihood", False) else max(evaluation_top_n(args))
+
+
 def format_live_metric(metric: dict) -> str:
     positions = int(metric["positions"])
     if positions == 0:
@@ -137,7 +142,10 @@ def format_summary_accuracy(row: dict) -> str:
 
 
 def format_console_summary_line(row: dict) -> str:
-    return f"level {row['level']:2d}: {format_summary_accuracy(row)}"
+    text = f"level {row['level']:2d}: {format_summary_accuracy(row)}"
+    if "mean_likelihood_percent" in row:
+        text += f", likelihood {row['mean_likelihood_percent']:.3f}% (NLL {row['negative_log_likelihood']:.6f})"
+    return text
 
 
 class AgreementProgressReporter:
@@ -253,7 +261,7 @@ def default_output_dir(
             f"_seed{args.sample_seed}_workers{workers}"
             f"_threads{args.egaroucid_threads}"
             f"_blendhint{ALL_LEGAL_HINT_COUNT}"
-            f"_consolehint{max(evaluation_top_n(args))}"
+            f"_consolehint{standalone_hint_count(args)}"
             f"_v{SUMMARY_VERSION}"
         )
     )
@@ -273,7 +281,7 @@ def make_experiment_identity(
     sample_hash: str,
     sample_records_hash: str,
 ) -> dict:
-    return {
+    identity = {
         "identity_version": 7,
         "summary_version": SUMMARY_VERSION,
         "positions": args.positions,
@@ -288,7 +296,7 @@ def make_experiment_identity(
             str(level): (
                 ALL_LEGAL_HINT_COUNT
                 if level == CONSOLE_REFERENCE_LEVEL
-                else max(evaluation_top_n(args))
+                else standalone_hint_count(args)
             )
             for level in CONSOLE_LEVELS
         },
@@ -310,6 +318,10 @@ def make_experiment_identity(
         "score_temperature": args.score_temperature,
         "blend_params": list(BLEND_PARAMS),
     }
+    if getattr(args, "engine_likelihood", False):
+        identity["engine_likelihood"] = True
+        identity["top_n_values"] = list(evaluation_top_n(args))
+    return identity
 
 
 def ensure_experiment_identity(
@@ -354,7 +366,7 @@ def make_edax_identity(args, workers):
         "threads": args.edax_threads,
         "workers": min(args.edax_workers or workers, workers, len(EDAX_LEVELS) * args.positions),
         "hash_bits": EDAX_HASH_BITS,
-        "hint_count": max(evaluation_top_n(args)),
+        "hint_count": standalone_hint_count(args),
         "book": False,
         "ponder": False,
     }
@@ -383,6 +395,8 @@ def make_argparser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--top3", action="store_true",
                         help="Include top-3 agreement (default: top-1 only)")
+    parser.add_argument("--engine-likelihood", action="store_true",
+                        help="Search all legal moves at every engine level and report score-softmax likelihood")
     parser.add_argument("--split-seed", type=int, default=613)
     parser.add_argument("--sample-seed", type=int, default=613)
     add_board_data_arguments(parser)
@@ -579,7 +593,7 @@ def main() -> None:
     print(
         "hint候補数",
         f"level 21={ALL_LEGAL_HINT_COUNT}（全合法手）、"
-        f"level 1,5,9,13,17={max(evaluation_top_n(args))}（一致率測定分）",
+        f"level 1,5,9,13,17={standalone_hint_count(args)}",
         flush=True,
     )
     print("出力先", output_dir, flush=True)
@@ -626,12 +640,13 @@ def main() -> None:
         policy_logits,
         args.score_temperature,
         top_n_values=evaluation_top_n(args),
+        engine_likelihood=args.engine_likelihood,
         prepared_groups=prepared_groups,
     )
     progress_reporter = AgreementProgressReporter(live_metrics)
     edax_live_metrics = IncrementalEngineAgreementMetrics(
-        groups, EDAX_LEVELS, evaluation_top_n(args),
-        prepared_groups=prepared_groups,
+        groups, EDAX_LEVELS, evaluation_top_n(args), args.engine_likelihood,
+        args.score_temperature, prepared_groups=prepared_groups,
     )
     edax_reporter = EdaxProgressReporter(edax_live_metrics)
     edax_dir = (getattr(args, "hint_cache_dir", None) or output_dir) / "edax"
@@ -652,7 +667,7 @@ def main() -> None:
             "timeout_sec": args.egaroucid_timeout_sec,
             "max_retries": args.egaroucid_retries,
             "progress_interval_sec": args.progress_interval_sec,
-            "standalone_hint_count": max(evaluation_top_n(args)),
+            "standalone_hint_count": standalone_hint_count(args),
             "on_rows": progress_reporter.accept_rows,
         },
         "edax": {
@@ -663,7 +678,7 @@ def main() -> None:
             "timeout_sec": args.edax_timeout_sec,
             "max_retries": args.edax_retries,
             "progress_interval_sec": args.progress_interval_sec,
-            "standalone_hint_count": max(evaluation_top_n(args)),
+            "standalone_hint_count": standalone_hint_count(args),
             "edax_eval_file": Path(edax_config["eval_file"]),
             "on_rows": edax_reporter.accept_rows,
         },
@@ -675,10 +690,10 @@ def main() -> None:
     (hints, cache_stats, level_timing, cpu_stats), egaroucid_elapsed = engine_searches["egaroucid"]
     (edax_hints, edax_cache_stats, edax_timing, edax_cpu_stats), edax_elapsed = engine_searches["edax"]
     edax_metrics = evaluate_engine_agreement(
-        groups, edax_hints, evaluation_top_n(args),
-        prepared_groups=prepared_groups,
+        groups, edax_hints, evaluation_top_n(args), args.engine_likelihood,
+        args.score_temperature, prepared_groups=prepared_groups,
     )
-    if edax_live_metrics.snapshot() != edax_metrics:
+    if not agreement_results_equal((edax_live_metrics.snapshot(), {}, 0, 0), (edax_metrics, {}, 0, 0)):
         raise RuntimeError("Edaxの途中集計値と最終一致率が一致しません")
     edax_rows = [
         make_console_level_summary_row(
@@ -702,6 +717,7 @@ def main() -> None:
         policy_logits,
         args.score_temperature,
         top_n_values=evaluation_top_n(args),
+        engine_likelihood=args.engine_likelihood,
         prepared_groups=prepared_groups,
     )
     if not agreement_results_equal(live_metrics.result(), (
@@ -790,13 +806,13 @@ def main() -> None:
             str(level): (
                 ALL_LEGAL_HINT_COUNT
                 if level == CONSOLE_REFERENCE_LEVEL
-                else max(evaluation_top_n(args))
+                else standalone_hint_count(args)
             )
             for level in CONSOLE_LEVELS
         },
         "egaroucid_policy_support": {
             "blend_level_21": "all_legal_moves",
-            "standalone_levels_1_5_9_13_17": f"top_{max(evaluation_top_n(args))}_moves",
+            "standalone_levels_1_5_9_13_17": "all_legal_moves" if args.engine_likelihood else f"top_{max(evaluation_top_n(args))}_moves",
         },
         "level21_reuse_validation": level21_validation,
         "execution": {
@@ -891,7 +907,8 @@ def main() -> None:
         "likelihood_definition": {
             **LIKELIHOOD_DEFINITION,
             "blend_policy": "softmax(alpha * network_logits + (1-alpha) * engine_scores / temperature) over legal moves",
-            "reported_for": "blend alphas including 0 (engine score softmax) and 1 (policy network)",
+            "reported_for": "all participants" if args.engine_likelihood else "blend alphas including 0 (engine score softmax) and 1 (policy network)",
+            "engine_policy": "softmax(native engine scores / temperature) over all legal moves; descriptive score-based probabilities, not calibrated human probabilities",
         },
         "confidence_interval": {
             "method": "Wilson score interval",
@@ -915,9 +932,9 @@ def main() -> None:
                 "(Egaroucid評価値 / temperature) で計算する"
             ),
             "standalone_levels_1_5_9_13_17": (
-                f"Consoleへ直接要求したhint {max(evaluation_top_n(args))}の出力順"
+                f"Consoleへ直接要求したhint {standalone_hint_count(args)}の出力順"
             ),
-            "edax": f"Edax native hint {max(evaluation_top_n(args))} output order; book and pondering disabled",
+            "edax": f"Edax native hint {standalone_hint_count(args)} output order; book and pondering disabled",
             "alpha_zero_tie_break": "Consoleのhint出力順",
             "other_tie_break": "合法手の固定順",
         },

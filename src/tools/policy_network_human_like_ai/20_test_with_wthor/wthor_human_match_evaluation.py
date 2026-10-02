@@ -362,12 +362,14 @@ class IncrementalAgreementMetrics:
         policy_logits: Mapping[StateKey, np.ndarray],
         score_temperature: float,
         top_n_values: Sequence[int] = TOP_N_VALUES,
+        engine_likelihood: bool = False,
         *,
         prepared_groups: PreparedAgreementGroups | None = None,
     ) -> None:
         if not math.isfinite(score_temperature) or score_temperature <= 0.0:
             raise ValueError("score_temperature must be finite and positive")
         self._top_n_values = tuple(top_n_values)
+        self._engine_likelihood = engine_likelihood
         self._policy_logits = policy_logits
         self._score_temperature = score_temperature
         if prepared_groups is None:
@@ -381,7 +383,7 @@ class IncrementalAgreementMetrics:
             for alpha in BLEND_PARAMS
         }
         self._console_metrics = {
-            level: empty_metric(top_n_values=self._top_n_values)
+            level: empty_metric(with_likelihood=engine_likelihood, top_n_values=self._top_n_values)
             for level in CONSOLE_LEVELS
             if level != CONSOLE_REFERENCE_LEVEL
         }
@@ -459,16 +461,17 @@ class IncrementalAgreementMetrics:
                     additions[alpha],
                 )
         else:
-            addition = empty_metric(top_n_values=self._top_n_values)
+            addition = empty_metric(with_likelihood=self._engine_likelihood, top_n_values=self._top_n_values)
             for prepared in prepared_groups:
                 legal = prepared.legal
                 scores = egaroucid_log_scores(
                     hint,
                     legal,
                     self._score_temperature,
-                    require_all_legal=False,
+                    require_all_legal=self._engine_likelihood,
                 )
-                for _, targets, count in prepared.valid_targets:
+                log_probs = legal_log_probabilities(scores, legal) if self._engine_likelihood else None
+                for policy, targets, count in prepared.valid_targets:
                     rank = wthor.rank_for_distribution(
                         scores,
                         legal,
@@ -476,6 +479,9 @@ class IncrementalAgreementMetrics:
                         hint.move_order,
                     )
                     add_rank(addition, rank, count)
+                    if log_probs is not None:
+                        addition["likelihood_sum"] += count * math.exp(float(log_probs[policy]))
+                        addition["log_likelihood_sum"] += count * float(log_probs[policy])
             _merge_metric(self._console_metrics[level], addition)
 
         self._seen_hints.add(identity)
@@ -538,6 +544,7 @@ def evaluate_agreement(
     policy_logits: Dict[StateKey, np.ndarray],
     score_temperature: float,
     top_n_values: Sequence[int] = TOP_N_VALUES,
+    engine_likelihood: bool = False,
     *,
     prepared_groups: PreparedAgreementGroups | None = None,
 ) -> Tuple[dict, Dict[int, dict], int, int]:
@@ -546,6 +553,7 @@ def evaluate_agreement(
         policy_logits,
         score_temperature,
         top_n_values,
+        engine_likelihood,
         prepared_groups=prepared_groups,
     )
     for group in groups:
@@ -564,12 +572,16 @@ def evaluate_agreement(
 class IncrementalEngineAgreementMetrics:
     """Accumulate native engine rankings once per level and board state."""
 
-    def __init__(self, groups, levels, top_n_values=TOP_N_VALUES, *, prepared_groups=None):
+    def __init__(self, groups, levels, top_n_values=TOP_N_VALUES, engine_likelihood=False, score_temperature=1.0, *, prepared_groups=None):
+        if not math.isfinite(score_temperature) or score_temperature <= 0:
+            raise ValueError("score_temperature must be finite and positive")
         self._top_n_values = tuple(top_n_values)
+        self._engine_likelihood = engine_likelihood
+        self._score_temperature = score_temperature
         if prepared_groups is None:
             prepared_groups = prepare_position_groups(groups)
         self._groups = prepared_groups.groups_by_key
-        self._metrics = {level: empty_metric(top_n_values=self._top_n_values) for level in levels}
+        self._metrics = {level: empty_metric(with_likelihood=engine_likelihood, top_n_values=self._top_n_values) for level in levels}
         self._seen = set()
 
     def add_hint(self, level, state_key, hint):
@@ -580,14 +592,21 @@ class IncrementalEngineAgreementMetrics:
         identity = (level, state_key)
         if identity in self._seen:
             return False
-        addition = empty_metric(top_n_values=self._top_n_values)
+        addition = empty_metric(with_likelihood=self._engine_likelihood, top_n_values=self._top_n_values)
         for prepared in self._groups[state_key]:
-            for _, targets, count in prepared.valid_targets:
+            log_probs = None
+            if self._engine_likelihood:
+                scores = egaroucid_log_scores(hint, prepared.legal, self._score_temperature, require_all_legal=True)
+                log_probs = legal_log_probabilities(scores, prepared.legal)
+            for policy, targets, count in prepared.valid_targets:
                 rank = min(
                     (index for index, move in enumerate(hint.move_order, 1) if move in targets),
                     default=POLICY_SIZE + 1,
                 )
                 add_rank(addition, rank, count)
+                if log_probs is not None:
+                    addition["likelihood_sum"] += count * math.exp(float(log_probs[policy]))
+                    addition["log_likelihood_sum"] += count * float(log_probs[policy])
         _merge_metric(self._metrics[level], addition)
         self._seen.add(identity)
         return True
@@ -596,10 +615,11 @@ class IncrementalEngineAgreementMetrics:
         return {level: _copy_metric(metric) for level, metric in self._metrics.items()}
 
 
-def evaluate_engine_agreement(groups, hints, top_n_values=TOP_N_VALUES, *, prepared_groups=None):
+def evaluate_engine_agreement(groups, hints, top_n_values=TOP_N_VALUES, engine_likelihood=False, score_temperature=1.0, *, prepared_groups=None):
     """Evaluate standalone top-N hints without treating level 21 as a blend."""
     metrics = IncrementalEngineAgreementMetrics(
-        groups, hints, top_n_values, prepared_groups=prepared_groups,
+        groups, hints, top_n_values, engine_likelihood, score_temperature,
+        prepared_groups=prepared_groups,
     )
     for level, level_hints in hints.items():
         for group in groups:
@@ -696,6 +716,9 @@ def make_console_level_summary_row(
 ) -> dict:
     return {
         "level": level,
+        **{key: value for row in result.get("likelihood", [])
+           if float(row["blend_param"]) == 0.0
+           for key, value in row.items() if key != "blend_param"},
         **_accuracy_summary({
             int(row["top_n"]): row for row in result["topn"]
             if float(row["blend_param"]) == 0.0
