@@ -19,6 +19,15 @@
 #include <algorithm>
 #include "board.hpp"
 
+#if defined(__GNUC__) || defined(__clang__)
+    #define BOOK_TABLE_PREFETCH(addr) __builtin_prefetch((const void*)(addr))
+#elif defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
+    #include <xmmintrin.h>
+    #define BOOK_TABLE_PREFETCH(addr) _mm_prefetch((const char*)(addr), _MM_HINT_T0)
+#else
+    #define BOOK_TABLE_PREFETCH(addr)
+#endif
+
 /*
     @brief Hash function for book
 
@@ -352,7 +361,34 @@ class Board_table {
             @return registered?
         */
         inline bool get(const Board &key, Value *res) const {
-            const uint64_t hash = book_hash_board(key.player, key.opponent);
+            return get(key, book_hash_board(key.player, key.opponent), res);
+        }
+
+        /*
+            @brief load the memory to be read by get() into the cache
+
+            When several boards are searched, call this for all boards first.
+            The table is much larger than the cache with a big book, and this hides most of the memory latency.
+
+            @param hash                 book_hash_board() of the board
+        */
+        inline void prefetch(uint64_t hash) const {
+            const Segment &segment = segments[segment_idx(hash)];
+            Segment_guard guard(segment);
+            if (segment.n_groups) {
+                BOOK_TABLE_PREFETCH(segment.ctrl + (size_t)home_group(hash, segment.n_groups) * GROUP_SIZE);
+            }
+        }
+
+        /*
+            @brief get registered value with precalculated hash
+
+            @param key                  board
+            @param hash                 book_hash_board() of the board
+            @param res                  the value is copied here if the board is registered
+            @return registered?
+        */
+        inline bool get(const Board &key, uint64_t hash, Value *res) const {
             const Segment &segment = segments[segment_idx(hash)];
             Segment_guard guard(segment);
             uint32_t slot = find_slot(segment, key, hash);

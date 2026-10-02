@@ -39,12 +39,17 @@ std::vector<Commandline_option> get_commandline_options(int argc, char* argv[]) 
         for (i = 0; i < N_COMMANDLINE_OPTIONS; ++i) {
             if (std::find(commandline_option_data[i].names.begin(), commandline_option_data[i].names.end(), argv_string[idx]) != commandline_option_data[i].names.end()) {
                 std::vector<std::string> args;
+                const std::string option_name = argv_string[idx];
                 for (int j = 0; j < commandline_option_data[i].n_args; ++j) {
                     ++idx;
                     if (idx >= argc) {
                         break;
                     }
                     args.emplace_back(argv_string[idx]);
+                }
+                if ((int)args.size() < commandline_option_data[i].n_args) { // arguments are used without checking the number
+                    std::cerr << "[ERROR] [FATAL] commandline option " << option_name << " requires " << commandline_option_data[i].n_args << " argument(s): " << commandline_option_data[i].arg << std::endl;
+                    std::exit(1);
                 }
                 res.emplace_back(Commandline_option(commandline_option_data[i].id, args));
                 break;

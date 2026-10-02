@@ -262,14 +262,44 @@ class Book {
         */
         bool init(std::string file, bool show_log, bool *stop_loading) {
             delete_all();
-            if (!import_file_egbk3(file, show_log, stop_loading)) { // try egbk3 format
-                std::cerr << "failed egbk3 formatted book. trying egbk2 format." << std::endl;
-                if (!import_file_egbk2(file, show_log, stop_loading)) { // try egbk2 format
-                    std::cerr << "failed egbk2 formatted book. trying egbk format." << std::endl;
-                    return import_file_egbk(file, 1, show_log, stop_loading); // try egbk format
-                }
+            // The format is determined with the header.
+            // A broken egbk3 / egbk2 book must not be read as egbk format, which has no header (garbage would be imported).
+            int book_version = get_egaroucid_book_version(file);
+            if (book_version == 3 || book_version == BOOK_VERSION_CANT_OPEN) {
+                return import_file_egbk3(file, show_log, stop_loading);
             }
-            return true;
+            if (book_version == 2) {
+                std::cerr << "not egbk3 formatted book. trying egbk2 format." << std::endl;
+                return import_file_egbk2(file, show_log, stop_loading);
+            }
+            if (book_version == BOOK_VERSION_NO_HEADER) {
+                std::cerr << "not egbk3 / egbk2 formatted book. trying egbk format." << std::endl;
+                return import_file_egbk(file, 1, show_log, stop_loading);
+            }
+            std::cerr << "[ERROR] unknown Egaroucid book version " << book_version << std::endl;
+            return false;
+        }
+
+        /*
+            @brief get the version of Egaroucid-formatted book written in the header
+
+            @param file                 book file
+            @return version, BOOK_VERSION_NO_HEADER if the file has no header, BOOK_VERSION_CANT_OPEN if the file can't be opened
+        */
+        static constexpr int BOOK_VERSION_NO_HEADER = 0;
+        static constexpr int BOOK_VERSION_CANT_OPEN = -1;
+        inline int get_egaroucid_book_version(const std::string &file) {
+            FILE* fp;
+            if (!file_open(&fp, file.c_str(), "rb")) {
+                return BOOK_VERSION_CANT_OPEN;
+            }
+            char header[10];
+            size_t n_read = fread(header, 1, 10, fp);
+            fclose(fp);
+            if (n_read < 10 || memcmp(header, "DICUORAGE", 9) != 0) {
+                return BOOK_VERSION_NO_HEADER;
+            }
+            return (unsigned char)header[9];
         }
 
         inline bool import_book_extension_determination(std::string file, int level, bool *stop) {
@@ -605,7 +635,9 @@ class Book {
             int percent = -1;
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading) {
-                    break;
+                    std::cerr << "stop loading book" << std::endl;
+                    fclose(fp);
+                    return false;
                 }
                 int n_percent = (double)i / n_boards * 100;
                 if (n_percent > percent && show_log) {
@@ -724,6 +756,14 @@ class Book {
                 fclose(fp);
                 return false;
             }
+            // this format has no header: check the file size not to import a file which is not a book
+            constexpr int64_t n_bytes_per_board = 17;
+            int64_t file_size = book_get_file_size(fp);
+            if (n_boards < 0 || (file_size >= 0 && file_size != 4 + n_bytes_per_board * n_boards)) {
+                std::cerr << "[ERROR] This is not Egaroucid book (egbk format), " << n_boards << " boards expected but file size is " << file_size << std::endl;
+                fclose(fp);
+                return false;
+            }
             if (show_log) {
                 std::cerr << n_boards << " boards to read" << std::endl;
             }
@@ -731,7 +771,9 @@ class Book {
             int percent = -1;
             for (int i = 0; i < n_boards; ++i) {
                 if (*stop_loading) {
-                    break;
+                    std::cerr << "stop loading book" << std::endl;
+                    fclose(fp);
+                    return false;
                 }
                 int n_percent = (double)i / n_boards * 100;
                 if (n_percent > percent && show_log) {
@@ -1886,18 +1928,57 @@ class Book {
             @return vector of moves
         */
         inline std::vector<Book_value> get_all_moves_with_value(Board *b) {
-            std::vector<Book_value> policies;
+            // boards to search: same rule as get_moved_board_value()
+            struct Moved_board {
+                Board board;        // representative board to search first
+                uint64_t hash;
+                Board end_board;    // representative board to search next (game over only)
+                uint64_t end_hash;
+                int policy;
+                bool passed;
+                bool is_end;
+            };
+            Moved_board moved_boards[HW2];
+            int n_moved_boards = 0;
             uint64_t legal = b->get_legal();
             Flip flip;
+            // 1st step: calculate boards to search and load the memory into the cache
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
                 calc_flip(&flip, b, cell);
-                b->move_board(&flip);
-                    Book_value book_value;
-                    book_value.policy = cell;
-                    if (get_moved_board_value(b, &book_value.value)) {
-                        policies.emplace_back(book_value);
+                Board moved_board = b->move_copy(&flip);
+                Moved_board &elem = moved_boards[n_moved_boards++];
+                elem.policy = cell;
+                elem.passed = moved_board.get_legal() == 0;
+                elem.is_end = elem.passed && calc_legal(moved_board.opponent, moved_board.player) == 0;
+                if (elem.is_end) {
+                    elem.board = representative_board(moved_board);
+                    moved_board.pass();
+                    elem.end_board = representative_board(moved_board);
+                    elem.end_hash = book_hash_board(elem.end_board.player, elem.end_board.opponent);
+                    book.prefetch(elem.end_hash);
+                } else {
+                    if (elem.passed) {
+                        moved_board.pass();
                     }
-                b->undo_board(&flip);
+                    elem.board = representative_board(moved_board);
+                }
+                elem.hash = book_hash_board(elem.board.player, elem.board.opponent);
+                book.prefetch(elem.hash);
+            }
+            // 2nd step: search
+            std::vector<Book_value> policies;
+            Book_elem book_elem;
+            for (int i = 0; i < n_moved_boards; ++i) {
+                const Moved_board &elem = moved_boards[i];
+                Book_value book_value;
+                book_value.policy = elem.policy;
+                if (book.get(elem.board, elem.hash, &book_elem)) {
+                    book_value.value = (elem.passed && !elem.is_end) ? book_elem.value : -book_elem.value;
+                    policies.emplace_back(book_value);
+                } else if (elem.is_end && book.get(elem.end_board, elem.end_hash, &book_elem)) {
+                    book_value.value = book_elem.value;
+                    policies.emplace_back(book_value);
+                }
             }
             return policies;
         }
@@ -2464,7 +2545,11 @@ class Book {
                     if (link_error <= max_error_per_move && link_error <= remaining_error) {
                         calc_flip(&flip, &board, link.policy);
                         board.move_board(&flip);
-                            Board n_unique_board = representative_board(board);
+                            Board n_board = board.copy();
+                            if (n_board.get_legal() == 0 && !n_board.is_end()) { // pass: the passed board is registered in book
+                                n_board.pass();
+                            }
+                            Board n_unique_board = representative_board(n_board);
                             int new_remaining_error = remaining_error - link_error;
                             // auto keep_itr = keep_list.find(n_unique_board);
                             // bool is_new_board = (keep_itr == keep_list.end());
@@ -2498,14 +2583,14 @@ class Book {
             if (!(*doing)) {
                 return;
             }
-            if (!contain(board)) {
-                return;
-            }
-            if (board.get_legal() == 0) {
+            if (board.get_legal() == 0) { // the passed board is registered in book
                 board.pass();
                 if (board.get_legal() == 0) {
                     return;
                 }
+            }
+            if (!contain(board)) {
+                return;
             }
             Book_elem book_elem = get(board);
             // already seen
@@ -2513,6 +2598,7 @@ class Book {
                 return;
             }
             flag_book_elem(board);
+            book_elem.seen = true; // keep the flag when this element is registered again
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
             if (keep_list.find(representative_board(board)) != keep_list.end()) {
@@ -2523,10 +2609,10 @@ class Book {
                         bool is_end = board.is_end();
                         bool passed = board.get_legal() == 0;
                         bool will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
-                        if (is_end) {
+                        if (is_end) { // kept if either of the board and the passed board is in the keep list
                             will_be_deleted = keep_list.find(representative_board(board)) == keep_list.end();
                             board.pass();
-                                will_be_deleted |= keep_list.find(representative_board(board)) == keep_list.end();
+                                will_be_deleted &= keep_list.find(representative_board(board)) == keep_list.end();
                             board.pass();
                         } else if (passed) {
                             board.pass();
@@ -2637,6 +2723,7 @@ class Book {
                 std::cerr << "done depth " << depth << " next task " << root_list.size() << " keep " << keep_list.size() << std::endl;
             }
             std::cerr << "keep " << keep_list.size() << " boards, updating leaves" << std::endl;
+            reset_seen();
             reduce_book_update_leaves(root_board, keep_list, doing);
             reset_seen();
             reduce_book_delete_unflagged_moves(root_board, &n_delete, keep_list, doing);
@@ -2650,14 +2737,14 @@ class Book {
             if (!(*doing)) {
                 return;
             }
-            if (!contain(board)) {
-                return;
-            }
-            if (board.get_legal() == 0) {
+            if (board.get_legal() == 0) { // the passed board is registered in book
                 board.pass();
                 if (board.get_legal() == 0) {
                     return;
                 }
+            }
+            if (!contain(board)) {
+                return;
             }
             Book_elem book_elem = get(board);
             // already seen
@@ -2751,7 +2838,8 @@ class Book {
             }
             std::vector<Book_value> links = get_all_moves_with_value(&board);
             Flip flip;
-            if (links.size() && (board.get_legal() & (1ULL << book_elem.leaf.move))) {
+            bool leaf_valid = is_valid_policy(book_elem.leaf.move) && is_valid_score(book_elem.leaf.value) && (board.get_legal() & (1ULL << book_elem.leaf.move));
+            if (links.size() && leaf_valid && !has_book_value_policy(links, book_elem.leaf.move)) {
                 int link_max = -SCORE_INF;
                 for (Book_value &link: links) {
                     link_max = std::max(link_max, link.value);
@@ -2761,11 +2849,16 @@ class Book {
                     //std::cerr << (int)book_elem.value << " " << link_max << " " << idx_to_coord(book_elem.leaf.move) << " " << (int)book_elem.leaf.value << std::endl;
                     calc_flip(&flip, &board, book_elem.leaf.move);
                     board.move_board(&flip);
+                        Board new_board = board.copy();
                         Book_elem new_elem;
                         new_elem.level = book_elem.leaf.level;
                         new_elem.seen = false;
                         new_elem.value = -book_elem.leaf.value;
-                        reg(&board, new_elem);
+                        if (new_board.get_legal() == 0 && !new_board.is_end()) { // pass: the passed board is registered in book
+                            new_board.pass();
+                            new_elem.value = book_elem.leaf.value;
+                        }
+                        reg(&new_board, new_elem);
                         ++res;
                         res += upgrade_better_leaves_rec(board, stop);
                     board.undo_board(&flip);
@@ -2837,7 +2930,7 @@ class Book {
             Board representive_board = representative_board(board, &rotate_idx);
             int8_t rotated_policy = policy;
             if (is_valid_policy(policy)) {
-                rotated_policy = convert_coord_from_representative_board((int)policy, rotate_idx);
+                rotated_policy = convert_coord_to_representative_board((int)policy, rotate_idx);
             }
             Leaf leaf;
             leaf.value = value;
@@ -3073,7 +3166,7 @@ class Book {
         inline int register_symmetric_book(Board b, Book_elem elem) {
             int idx;
             Board representive_board = representative_board(b, &idx);
-            if (elem.leaf.move != MOVE_UNDEFINED) {
+            if (is_valid_policy(elem.leaf.move)) { // do not convert special values (MOVE_NOMOVE etc.)
                 elem.leaf.move = convert_coord_to_representative_board(elem.leaf.move, idx);
             }
             return register_representative(representive_board, elem);
@@ -3093,7 +3186,7 @@ class Book {
         inline int merge(Board b, Book_elem elem) {
             int idx;
             Board representive_board = representative_board(b, &idx);
-            if (elem.leaf.move != MOVE_UNDEFINED) {
+            if (is_valid_policy(elem.leaf.move)) { // do not convert special values (MOVE_NOMOVE etc.)
                 elem.leaf.move = convert_coord_to_representative_board(elem.leaf.move, idx);
             }
             return book.upsert(representive_board, elem, [&elem](Book_elem &registered) {
