@@ -734,6 +734,24 @@ class Board_table {
 
             Used for iterating safely while the table is modified.
         */
+        /*
+            @brief copy the boards in a segment which satisfy pred(const Board&, const Value&)
+
+            pred must not access this table (the segment is locked).
+        */
+        template<class F>
+        inline void get_keys_in_segment_if(int segment_idx_, std::vector<Board> &res, F &&pred) const {
+            res.clear();
+            const Segment &segment = segments[segment_idx_];
+            Segment_guard guard(segment);
+            const uint32_t capacity = segment.n_groups * GROUP_SIZE;
+            for (uint32_t slot = 0; slot < capacity; ++slot) {
+                if (segment.ctrl[slot] < CTRL_EMPTY && pred((const Board&)segment.keys[slot], (const Value&)segment.values[slot])) {
+                    res.emplace_back(segment.keys[slot]);
+                }
+            }
+        }
+
         inline void get_keys_in_segment(int segment_idx_, std::vector<Board> &res) const {
             res.clear();
             const Segment &segment = segments[segment_idx_];

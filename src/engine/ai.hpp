@@ -1408,7 +1408,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
         uint64_t search_legal = legal;
         for (int i = 0; i < n_display && search_legal && global_searching; ++i) {
             Search_result elem = ai_legal(board, search_level, use_book, book_acc_level, use_multi_thread, false, search_legal);
-            if (global_searching && (search_legal & (1ULL << elem.policy))) {
+            if (global_searching && is_valid_policy(elem.policy) && (search_legal & (1ULL << elem.policy))) {
                 search_legal ^= 1ULL << elem.policy;
                 values[elem.policy] = elem.value;
                 if (elem.is_end_search) {
