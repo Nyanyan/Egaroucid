@@ -90,10 +90,10 @@ class PreparedSplit:
             for offset in range(0, len(samples), batch_size):
                 yield samples[offset:offset + batch_size]
 
-    def as_dataset(self, batch_size: int, *, shuffle: bool = False, seed: int = 613):
+    def as_dataset(self, batch_size: int, *, shuffle: bool = False, seed: int = 613, initial_epoch: int = 0):
         import tensorflow as tf
 
-        epoch = 0
+        epoch = initial_epoch
 
         def generate():
             nonlocal epoch

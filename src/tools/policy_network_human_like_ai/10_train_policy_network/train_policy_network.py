@@ -29,6 +29,7 @@ from tensorflow.keras.regularizers import l2 as keras_l2
 
 from paper_policy_models import PAPER_FILTERS, build_paper_model
 from prepared_policy_data import add_data_arguments, resolve_board_split_dir, load_prepared_splits
+from training_runtime import TrainingRuntime, check_training_identity
 
 HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
@@ -274,14 +275,19 @@ def train_one_model(spec: ModelSpec, splits: dict, args: argparse.Namespace, out
     print(f"\n=== training {spec.name} ===", flush=True)
     print(f"tensorflow {tf_version}; params {model.count_params()}")
     model.summary()
-    history = model.fit(
-        splits["train"].as_dataset(args.batch_size, shuffle=True, seed=args.seed),
-        validation_data=splits["val"].as_dataset(args.batch_size),
-        epochs=args.epochs,
-        callbacks=[CSVLogger(str(run_dir / "keras_log.csv"))],
-        verbose=2,
-    )
-    save_history_csv(history, run_dir / "history.csv")
+    runtime = TrainingRuntime(model, run_dir, args.epochs,
+                              (splits["train"].positions + args.batch_size - 1) // args.batch_size,
+                              args.progress_interval_sec, args.checkpoint)
+    if runtime.initial_epoch < args.epochs:
+        model.fit(
+            splits["train"].as_dataset(args.batch_size, shuffle=True, seed=args.seed, initial_epoch=runtime.initial_epoch),
+            validation_data=splits["val"].as_dataset(args.batch_size),
+            epochs=args.epochs,
+            initial_epoch=runtime.initial_epoch,
+            callbacks=[runtime, CSVLogger(str(run_dir / "keras_log.csv"), append=bool(runtime.initial_epoch))],
+            verbose=2,
+        )
+    runtime.write_history()
     model.save(run_dir / "model.h5")
     weights_file = run_dir / "policy_network_weights.bin"
     if spec.architecture == "mlp":
@@ -290,10 +296,10 @@ def train_one_model(spec: ModelSpec, splits: dict, args: argparse.Namespace, out
         weights_file.unlink(missing_ok=True)
     result = {
         "name": spec.name, "spec": asdict(spec), "params": int(model.count_params()),
-        "epochs_ran": len(history.epoch), "adopted_epoch": len(history.epoch),
+        "epochs_ran": len(runtime.records), "adopted_epoch": len(runtime.records),
         "adoption_rule": "use_model_after_requested_epoch_count",
-        "validation_loss": float(history.history["val_loss"][-1]),
-        "final_loss": float(history.history["loss"][-1]),
+        "validation_loss": runtime.records[-1]["val_loss"],
+        "final_loss": runtime.records[-1]["loss"],
         "precision": args.precision,
         "steps_per_execution": args.steps_per_execution,
         "output_dir": str(run_dir),
@@ -384,14 +390,19 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--precision", choices=("float32", "mixed_float16"), default="float32")
     parser.add_argument("--steps-per-execution", type=int, default=1)
+    parser.add_argument("--progress-interval-sec", type=float, default=30)
+    parser.add_argument("--checkpoint", action="store_true", help="Save model and optimizer at each epoch boundary")
+    parser.add_argument("--resume-training", action="store_true", help="Resume the same settings/data/code from an epoch checkpoint")
     return parser
 
 
 def main() -> None:
     parser = make_argparser()
     args = parser.parse_args()
-    if args.steps_per_execution < 1:
-        parser.error("steps-per-execution must be positive")
+    if args.steps_per_execution < 1 or args.progress_interval_sec <= 0:
+        parser.error("steps-per-execution and progress-interval-sec must be positive")
+    if args.resume_training and not args.checkpoint:
+        parser.error("--resume-training requires --checkpoint")
     tf.keras.mixed_precision.set_global_policy(args.precision)
     specs = parse_model_specs(args.configs, args)
     has_cnn = any(spec.architecture != "mlp" for spec in specs)
@@ -415,8 +426,7 @@ def main() -> None:
     set_reproducible_seed(args.seed)
     output_dir = args.output_dir if args.output_dir is not None else default_output_dir()
     # Refuse to mix an earlier selected model or test report with a new run.
-    if output_dir.exists() and any(output_dir.iterdir()):
-        raise FileExistsError("output directory is not empty; choose a new --output-dir")
+    check_training_identity(output_dir, directory, args)
     splits = load_prepared_splits(directory, caps, args.seed, output_dir)
     try:
         results = []
