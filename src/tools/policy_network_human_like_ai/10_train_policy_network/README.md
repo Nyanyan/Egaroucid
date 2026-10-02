@@ -1,86 +1,160 @@
-# WTHORポリシーネットワーク学習
+# 分割済みデータによるポリシーネットワーク学習
 
 関連issue: #613
 
-このディレクトリでは、WTHOR棋譜から展開した局面を使い、人間の着手を予測する
-Othello/Reversi用のポリシーネットワークを学習します。
+`train_policy_network.py` は、前処理済みのtrainで学習し、valでモデルを選択した後、testで最終評価します。
+データ作成の手順は [00_data_processing](../00_data_processing/README.md) を参照してください。
 
-WTHORデータの読み込み・棋譜分割・入力特徴量の作成は、[00_data_processing](../00_data_processing/README.md) で行います。
+## データの場所と切り替え
 
-raw_dataから作った新しいデータには、`--board-split-dir <データルート>/board_split_increased/<データセット名>` を指定します。
-01〜04で生成済みのtrain・val・testをそのまま読み込み、8倍化した局面を再分割しません。
-水増し前のデータを使う場合は `board_split/<データセット名>` を指定してください。
-この指定は、旧データ用の `--wthor`、`--data-root`、`--split-manifest`、件数上限、`--split-mode sampled` と併用できません。
-使用データの記録は `prepared_dataset.json` に保存します。実行例は [データ加工のREADME](../00_data_processing/README.md) を参照してください。
-以下の `records1` と学習BATの説明は、以前の展開済みWTHORデータを使う手順です。
+データの場所は環境変数から取得します。環境固有の絶対パスは、コードや文書へ書かず、実行環境に設定してください。
 
-このREADMEは現在の学習手順を説明します。RESULTSと保存済みモデルは、変更前の局面単位の分割による実験結果です。
-棋譜単位の分割で評価するには、新しい出力先で再学習してください。
-以前の作業記録はローカルアーカイブ
-`src/tools/policy_network_human_like_ai/report/legacy` に移動済みで、現行の採用判断には使いません。
+| 設定 | 内容・既定値 |
+| --- | --- |
+| `POLICY_DATA_ROOT` | `board_split_increased` を含むデータルート |
+| `EGAROUCID_DATA` | `POLICY_DATA_ROOT` が未設定の場合、この配下の `20261002_policy_network_human_like_data` を使う |
+| `POLICY_DATASET` | データセット名。既定値は `WTHOR_1977_2024` |
+| `--data-root` / `--dataset` | 対応する環境変数より優先する引数 |
+| `--board-split-dir` | stage 03/04のデータセットディレクトリを直接指定する場合に使用 |
 
-## 用語
-
-- `games` は、1局分の完全な棋譜を意味します。
-- `局面サンプル` は、board-dataのバイナリファイルに保存された展開済み局面を意味します。
-  学習時の入力は局面サンプルですが、train・validation・test の分割は棋譜単位で行います。
-- `records1` などの既存ディレクトリ名は、現在のデータ配置の一部であるため、パス名としてのみ使います。
-
-## 入力
-
-入力は黒白固定ではなく、手番目線です。
-
-- 手番側の石がある64マス
-- 相手側の石がある64マス
-- 合計128個の浮動小数点入力
-
-board-dataのバイナリデータには `player` と `opponent` として保存されているため、学習コードはそれをそのまま使います。
-
-## データセットと分割
-
-入力データ:
+通常の読み込み先は次の構成です。
 
 ```text
-$EGAROUCID_DATA/train_data/board_data/records1
+$POLICY_DATA_ROOT/board_split_increased/$POLICY_DATASET/
+  manifest.json
+  train/*.dat, *.game_ids
+  val/*.dat, *.game_ids
+  test/*.dat, *.game_ids
 ```
 
-既定でWTHOR由来の全棋譜を読み込みます。`--wthor` は同じ入力を使う互換オプションです。
-seed `613` で棋譜の順序をシャッフルし、棋譜数の5%ずつを validation と test、残りを train に割り当てます。
-5%に満たない端数は切り捨て、残りを train に含めます。
-同じ棋譜から生成された局面は、すべて同じ分割に所属します。
+既存の `EGAROUCID_DATA` を使う場合は、データセット名だけ設定すれば起動できます。
+データルートを明示したい場合も、環境変数から組み立てられます。
 
-現在のデータと既定の seed では、次のように分かれます。
-棋譜ごとの手数が異なるため、局面数の割合は90%・5%・5%から少しずれます。
+```powershell
+$env:POLICY_DATA_ROOT = Join-Path $env:EGAROUCID_DATA '20261002_policy_network_human_like_data'
+$env:POLICY_DATASET = 'WTHOR_1977_2024'
+```
 
-| 用途 | 棋譜数 | 局面サンプル数 |
+別のデータセットへ切り替えるときは、`POLICY_DATASET` または `--dataset` を変更してください。
+水増し前のstage 03を使う場合は、`--board-split-dir` に `$env:POLICY_DATA_ROOT/board_split/<データセット名>` を渡します。
+
+## 学習と最終評価
+
+分割は前処理で確定したものを使います。学習時に棋譜や8倍化済み局面を再分割しません。
+開始時にmanifestのSHA-256、ファイル一覧、件数、棋譜IDを確認し、分割をまたぐ同一棋譜を検出した場合は停止します。
+
+`WTHOR_1977_2024` の2026年10月2日時点のmanifestには、次の件数が記録されています。
+
+| 用途 | 棋譜数 | 8倍化後の局面数 |
 | --- | ---: | ---: |
-| train | 120,763 | 7,231,670 |
-| validation | 6,709 | 401,726 |
-| test | 6,709 | 401,886 |
-| 合計 | 134,181 | 8,035,282 |
+| train | 120,768 | 57,856,696 |
+| val | 6,707 | 3,213,200 |
+| test | 6,706 | 3,212,360 |
 
-WTHORのboard dataは棋譜順に並んでいるため、初期局面から棋譜の境界を復元します。
-複数の `.dat` ファイルにまたがる棋譜も、同じ棋譜として扱います。
-この実験では初期局面を含むWTHORデータを使い、`transcript_release/0002` の棋譜は使いません。
-棋譜を識別できないデータはエラーとして扱います。
+入力は手番側64マスと相手側64マスの計128特徴量です。
+全局面の特徴量をメモリに展開すると大きくなるため、19バイトの局面レコードをメモリマップし、バッチごとに変換します。
+trainは各エポックでブロックの順番とブロック内の局面をシャッフルします。ブロックは約65,536局面です。
+valとtestは固定順序で評価します。
 
-分割モードの既定値は `--split-mode game` です。従来の `shuffled` も同じ棋譜単位の分割になります。
-`sampled` は、棋譜単位で分割した後、それぞれの分割内から重複なしで局面を抽出します。
-`--max-train-samples` と `--max-val-samples` は `sampled` の場合だけ有効です。
-`--max-position-samples` を指定すると、上限内に収まる棋譜を先頭から丸ごと読み込み、その集合を分割します。
-上限が棋譜の途中に来た場合、その棋譜は含めません。
+各構成では指定したエポック数まで学習し、最終エポックのモデルを保存します。
+複数構成を指定した場合は、valの1位一致率、上位3手一致率、パラメータ数の少なさの順で代表モデルを選びます。
+その後、保存した代表モデルを読み直し、testを一度だけ評価します。
+`run_training_experiments.py` は構成ごとに独立した実行を行うため、各実行でtest評価を行います。
+構成間で代表モデルを選び、testを一度だけ評価したい場合は、学習スクリプトの `--configs` に複数構成を渡してください。
 
-出力先の `dataset_split.json` に seed・比率・棋譜数・局面数・入力ファイルのSHA-256を保存します。
-また、`dataset_split.npz` に各分割の局面インデックスを保存するため、再評価でも学習時と同じ分割を使えます。
+## 実行例
 
-## モデル採用ルール
+以下は、このディレクトリで実行する例です。
 
-各学習条件では、指定したエポック数まで必ず学習し、学習完了時点のモデルだけを使います。
-途中エポックのモデルは採用しません。
+```powershell
+python train_policy_network.py --configs 512x4 --epochs 50
+python train_policy_network.py --dataset another_dataset --configs conv8_bn --epochs 50
+python train_policy_network.py --configs 512x4,conv8_bn --epochs 50
+```
 
-複数のモデル構成を比較するときは、それぞれ指定エポック数まで学習した後のモデルを検証データで評価します。
-代表モデルは、検証データ1位一致率が最も高い構成です。同率の場合は、検証データ上位3手一致率、パラメータ数の少なさの順で比較します。
-テストデータは代表モデルを決めるためには使わず、採用後の最終確認にだけ使います。
+件数上限の既定値はなく、train・val・testを全件使用します。
+短い動作確認に限り、各分割からseedに基づいて重複なしで抽出できます。分割の所属は変わりません。
+
+```powershell
+python train_policy_network.py --configs 64x3 --epochs 1 `
+  --max-train-samples 65536 --max-val-samples 8192 --max-test-samples 8192
+```
+
+上限を指定した結果は抽出した局面の評価です。test全件で確認する場合は `--max-test-samples` を省略してください。
+
+Windowsでは次のBATファイルでも学習できます。
+
+| BATファイル | モデル | 既定エポック数 | 既定バッチサイズ |
+| --- | --- | ---: | ---: |
+| `train_dense512.bat` | Dense 512×4、LeakyReLU 0.03 | 50 | 8192 |
+| `train_conv4.bat` | Conv4 | 50 | 256 |
+| `train_conv6.bat` | Conv6 | 50 | 256 |
+| `train_conv8.bat` | Conv8 | 50 | 256 |
+| `train_conv8_bn.bat` | Conv8＋BN | 50 | 256 |
+
+BATは共通の `train_prepared.bat` を呼び、同じ環境変数とデータ分割を使います。
+`EPOCHS`、`BATCH_SIZE`、`SEED` は環境変数で変更できます。
+`POLICY_PYTHON` でTensorFlowを導入したPythonを選択し、`POLICY_NO_PAUSE=1` で終了時のキー入力待ちを省略できます。
+`train_other_paper_models.bat` はConv4、Conv6、Conv8を順に実行し、失敗した場合は停止します。
+
+## 出力
+
+通常の保存先は `trained/<実行日時>`、BATでは `trained/prepared_<モデル名・エポック数・実行日時>` です。
+`--output-dir` で変更できます。既存結果との混在を防ぐため、空のディレクトリを指定してください。
+
+| ファイル | 内容 |
+| --- | --- |
+| `prepared_dataset.json` | データセット名、manifestのSHA-256、分割ごとの使用件数・抽出seed・抽出インデックスのSHA-256 |
+| `<モデル名>/history.csv`, `keras_log.csv` | 各エポックのtrain/val損失 |
+| `<モデル名>/model.h5`, `summary.json` | 最終エポックのモデルと結果 |
+| `<モデル名>/split_topn_accuracy.json`, `.csv` | モデル選択に使ったval一致率 |
+| `results.json`, `.csv` | 各構成の比較結果 |
+| `selected_model.h5`, `selected_summary.json` | 採用モデルとval/test結果 |
+| `test_metrics.json`, `test_topn_accuracy.csv` | 採用後のtest件数、上位n手一致率、交差エントロピー |
+| `selected_policy_network_weights.bin` | 全結合モデルのC++向け重み。CNNはH5を使用 |
+
+testの交差エントロピーは、合法手マスク前の出力確率と記録された着手から計算します。
+BATの実行ログと最大メインメモリ使用量は `train_log` に保存します。GPUメモリ量は含みません。
+
+旧records1読み込み・再分割を行っていた学習コード、旧BAT、旧READMEは、ローカルの `legacy/prepared_split_migration` に退避しています。
+このフォルダはGitのignore対象です。
+
+## モデルのアーキテクチャ
+
+`--configs` で、既存の全結合モデルと論文のCNNを選べます。複数指定する場合はカンマで区切ります。
+たとえば `--configs 512x4,conv8_bn` では、同じ棋譜分割を使って両方のモデルを学習します。
+
+CNNは Liskowski・Jaśkowski・Krawiec の
+[*Learning to Play Othello With Deep Neural Networks*](https://doi.org/10.1109/TG.2018.2799997)
+（2018年、Table I・V、pp. 357–359）の構成に基づきます。
+
+| 指定名 | 畳み込み層のチャネル数 | Batch Normalization |
+| --- | --- | --- |
+| `conv4` | 64 → 64 → 128 → 128 | なし |
+| `conv6` | 64 → 64 → 128 → 128 → 256 → 256 | なし |
+| `conv8` | 64 → 64 → 128 → 128 → 256 → 256 → 256 → 256 | なし |
+| `conv8_bn` | Conv8と同じ | あり |
+
+`Conv8+BN` と `conv8-bn` も `conv8_bn` の別名として使えます。
+各CNNは、手番側と相手側の石を表す8×8×2の入力に対して、3×3の畳み込み、stride 1、ゼロパディング、ReLUを使います。
+途中の盤面サイズは8×8に保ち、プーリングは使いません。
+最後は全結合128ユニット（ReLU）と、全結合60ユニット（softmax）です。
+重みはHe初期化、バイアスはゼロ初期化とし、dropoutは使いません。
+
+論文の60出力は、初期配置で埋まっている中央4マスを除いた着手候補に対応します。
+本実装も60出力で学習し、既存の評価・推論処理に渡す際は、中央4マスへ確率0を挿入して64出力に変換します。
+この変換には学習パラメータがなく、入力の128特徴量と既存の着手番号もそのまま使えます。
+
+BNの具体的な配置と数値設定は論文本文に指定がないため、本実装では各畳み込み層と隠れ全結合層に
+「線形演算 → BN → ReLU」を適用します。BNは `momentum=0.99`、`epsilon=0.001` とし、BNの前のバイアスを省略します。
+論文で案内されている[著者のリポジトリ](https://github.com/pliskowski/deep-othello)は、2026年10月1日の確認時点では空で、実装の照合はできていません。
+
+学習にはAdamと前処理で保存した分割を使います。対称変換による8倍化は前処理の04で行います。
+論文のSGD＋momentum、学習率スケジュール、baggingは再現していません。
+CNNでも `--learning-rate` と `--l2` を指定できます。`--alpha` と `--dropout` は全結合モデルにだけ適用されます。
+
+CNNを含む実行では、学習・予測の既定バッチサイズはともに256です。明示した値がある場合はそちらを使います。
+全結合モデルだけの場合は、従来どおり学習4096・予測8192です。
 
 ## 一致率
 
@@ -97,52 +171,28 @@ WTHORで実際に打たれた手と、その手をこれらの変換で移した
 
 盤面に該当する対称性がなければ、実際に打たれた1手だけが一致対象になります。
 
-## 最大メインメモリ使用量
+## 動作確認（2026年10月2日）
 
-RESULTSの「最大メインメモリ使用量(MiB)」は、学習コマンド実行中に `resource_monitor.py` が観測した最大のメインメモリ使用量です。
-GPUメモリ量ではなく、モデルファイルサイズでもありません。
-
-## 学習コマンド例
-
-raw_dataから学習する場合は、[データ加工のREADME](../00_data_processing/README.md) に従って01〜04を実行し、
-学習コマンドの `--board-split-dir` に生成先を指定します。
-
-以前の学習で保存した分割結果を再利用する場合は、`--split-manifest` にその `dataset_split.json` を指定します。
-入力のSHA-256を照合したうえで同じ棋譜分割を再利用できます。
-分割のseed・比率は保存済みの設定を使い、学習時の件数上限や `--split-mode sampled` は併用できません。
-
-512×4のモデルを棋譜単位の分割で学習する例:
+`WTHOR_1977_2024` のtrain・val・test全件を使い、64×3モデルを1エポック学習して確認しました。
+これは読み込みから最終評価までの動作確認であり、BAT既定の50エポック学習結果ではありません。
 
 ```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\run_with_resource_log.py `
-  --log src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_game_split_512x4_e50.log `
-  --summary src\tools\policy_network_human_like_ai\10_train_policy_network\train_log\wthor_game_split_512x4_e50_resource.json `
-  -- python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py `
-    --wthor `
-    --split-mode game `
-    --configs w512_d4_a0.03:512:4:0.03:0.0:0.0:0.001 `
-    --epochs 50 `
-    --batch-size 8192 `
-    --eval-batch-size 65536 `
-    --predict-batch-size 8192 `
-    --output-dir src\tools\policy_network_human_like_ai\10_train_policy_network\trained\wthor_game_split_512x4_e50
+python -u run_with_resource_log.py `
+  --log train_log/prepared_full_check.log `
+  --summary train_log/prepared_full_check_resource.json `
+  -- python -u train_policy_network.py --configs 64x3 --epochs 1 `
+  --output-dir train_log/prepared_full_check
 ```
 
-代表モデルの生成物は `selected_model.h5` と `selected_policy_network_weights.bin` です。
+| 項目 | 結果 |
+| --- | ---: |
+| test評価局面数 | 3,212,360 |
+| test Top-1一致率 | 37.499% |
+| test Top-3一致率 | 68.635% |
+| test Top-5一致率 | 84.737% |
+| test交差エントロピー | 2.037945 |
+| 読み込み・学習・評価の合計時間 | 84.93秒 |
+| 最大メインメモリ使用量 | 3742.89 MiB |
 
-## 保存済みモデルの再評価
-
-モデルサイズ比較で保存した8モデルを、上記の一致率だけで検証データとテストデータに再評価するコマンド:
-
-```powershell
-python src\tools\policy_network_human_like_ai\10_train_policy_network\evaluate_model_size_experiment.py
-```
-
-`EGAROUCID_DATA` を使わない場合は、`--board-data-dir` でboard dataのディレクトリを指定します。
-集計結果は次のファイルに保存されます。
-
-- `model_size_results.json`: ヒット数、局面サンプル数、分割・入力・モデル・評価コードのSHA-256を含む完全な結果
-- `model_size_results.csv`: モデルごとの一致率とリソース使用量の一覧
-
-モデルごとの詳細な評価結果は
-`../20_test_with_wthor/output/model_size_symmetry_aware` に生成されます。
+さらに、Conv4のBATをtrain 512局面・val/test各256局面、1エポックで実行し、モデル保存とtest評価の完了を確認しました。
+学習側の自動テスト20件と、前処理側の自動テスト18件も成功しています。
