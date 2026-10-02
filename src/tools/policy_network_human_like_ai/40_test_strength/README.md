@@ -4,6 +4,8 @@
 
 Egaroucid for Console、Edax 4.6、Policy NetworkをEgaroucidの方策へ混合した各αを、XOT局面から総当たりで対戦させる。既定ではEgaroucidをlevel 1、5、9、13、17、Edaxをlevel 1、5、9、13、17、21、ブレンド方策をα=0.0から1.0まで0.2刻みで参加させる。合計17参加者である。
 
+**各組のマッチ数は`--match-sets-per-pair N`で指定する。既定値は500。1マッチ（1対戦セット）は先後を入れ替えた2局なので、`--match-sets-per-pair 100`なら各組100マッチ・200局になる。** 実行例は[各組のマッチ数を指定する](#各組のマッチ数を指定する)を参照。
+
 ## 対戦セットと統計単位
 
 1対戦セットでは、同じXOT局面から同じ2参加者が色を入れ替えて2局行う。参加者0から見た2局の石差を平均し、その符号でセットの勝ち・引き分け・負けを決める。
@@ -73,6 +75,33 @@ Python環境には`numpy`、`psutil`、`tensorflow`が必要である。既定�
 
 ## 実行方法
 
+以下の実行例は`Egaroucid`リポジトリのルートから実行する。
+
+### 各組のマッチ数を指定する
+
+`--match-sets-per-pair N`は、すべての対戦相手の組合せに共通するマッチ数を指定する。`N`には1以上の整数を渡す。1マッチでは同じXOT局面から先後を入れ替えて2局行うため、各組の実対局数は`2 × N`となる。
+
+| 指定例 | 各組のマッチ数（対戦セット数） | 各組の実対局数 |
+| --- | ---: | ---: |
+| `--match-sets-per-pair 50` | 50 | 100局 |
+| `--match-sets-per-pair 100` | 100 | 200局 |
+| `--match-sets-per-pair 250` | 250 | 500局 |
+| `--match-sets-per-pair 500`（省略時の既定値） | 500 | 1,000局 |
+| `--match-sets-per-pair 1000` | 1,000 | 2,000局 |
+
+例えば、既定の17参加者で各組100マッチにする場合は次のように実行する。136組合せがあるため、全体では13,600マッチ・27,200局になる。
+
+```powershell
+python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
+  --match-sets-per-pair 100 `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_100sets_17players_edax `
+  --dry-run
+```
+
+設定を確認したら`--dry-run`を外して対戦を開始する。XOTファイルには`N`個以上の異なる合法な棋譜が必要であり、既定のファイル以外を使う場合は`--openings`で指定する。再開時は同じ`N`・出力先・その他の条件で`--resume`を付ける。`N`を変更する場合は新しい出力先を指定する。
+
+`--max-match-sets`は大会全体のマッチ数を途中で打ち切る上限、`--parallel-match-sets`は同時に実行するマッチ数である。各組に指定数のマッチを行わせる場合は、`--match-sets-per-pair`を指定し、`--max-match-sets`は省略する。
+
 ### Edax 4.6の設定を変更する
 
 Edaxは次の配置を既定で参照する。評価データは絶対パスで渡すため、Edaxのフォルダへ移動して起動する必要はない。
@@ -87,6 +116,7 @@ bin/versions/edax_4_6/data/eval.dat
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
   --edax-levels 1,3,5 `
+  --match-sets-per-pair 500 `
   --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_edax_1_3_5 `
   --dry-run
 ```
@@ -125,6 +155,7 @@ Edax同士で比較する場合は、`--baseline-levels= --alphas= --edax-levels
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
+  --match-sets-per-pair 500 `
   --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_17players_edax `
   --dry-run
 ```
@@ -133,6 +164,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
+  --match-sets-per-pair 500 `
   --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_17players_edax
 ```
 
@@ -140,6 +172,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
+  --match-sets-per-pair 500 `
   --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_17players_edax `
   --resume
 ```
