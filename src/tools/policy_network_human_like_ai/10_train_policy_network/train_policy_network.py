@@ -7,8 +7,9 @@ Related issue: #613
 Input features are side-to-move bitboards:
   [player-to-move exists on 64 squares, opponent exists on 64 squares]
 
-Training splits whole games into train/validation/test (90%/5%/5%).
-Current WTHOR direct training reads expanded position samples from:
+Use --board-split-dir for numbered pipeline stage 03/04 output. Its game
+partitions are loaded unchanged, including after eightfold augmentation.
+The legacy WTHOR direct-training mode reads expanded position samples from:
   $EGAROUCID_DATA/train_data/board_data/records1
 
 Data preprocessing is implemented in ../00_data_processing.
@@ -58,7 +59,7 @@ from policy_data import (  # noqa: E402
     shift_east, shift_west, shift_north, shift_south, shift_ne, shift_nw, shift_se, shift_sw,
     calc_legal_batch, legal_bitboard_to_mask, valid_policy_mask,
     position_samples_to_targets, position_samples_to_split_arrays,
-    load_game_three_way_split, load_shuffled_three_way_split, split_counts,
+    load_game_three_way_split, load_shuffled_three_way_split, load_prepared_board_splits, split_counts,
 )
 
 from policy_accuracy import (  # noqa: E402
@@ -302,7 +303,8 @@ def train_one_model(
         "validation_loss": float(history.history["val_loss"][adopted_idx]),
         "final_loss": float(history.history["loss"][-1]),
         "output_dir": str(run_dir),
-        "dataset_split_manifest": str(output_dir / "dataset_split.json"),
+        "dataset_split_manifest": str(output_dir / "dataset_split.json") if args.board_split_dir is None else None,
+        "prepared_dataset_manifest": str(output_dir / "prepared_dataset.json") if args.board_split_dir is not None else None,
     }
     if split_eval_data is not None and not args.no_split_topn:
         n_values = sorted(set(args.top_n))
@@ -399,6 +401,7 @@ def default_wthor_data_root() -> Path:
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train compact Othello policy networks with tensorflow.keras for the human-like AI study.")
     parser.add_argument("--data-root", type=Path, default=None, help="Default: $EGAROUCID_DATA/train_data/board_data (WTHOR records1).")
+    parser.add_argument("--board-split-dir", type=Path, default=None, help="Dataset directory produced by stage 03/04; load its train/val/test unchanged.")
     parser.add_argument("--board-data-index-start", type=int, default=1)
     parser.add_argument("--board-data-index-end", type=int, default=1)
     parser.add_argument("--wthor", action="store_true", help="Compatibility option: select records1, which is already the default.")
@@ -431,36 +434,44 @@ def main() -> None:
     set_reproducible_seed(args.seed)
     enable_memory_growth()
 
-    data_root = args.data_root if args.data_root is not None else default_data_root()
-    if args.wthor:
-        args.board_data_index_start = 1
-        args.board_data_index_end = 1
     output_dir = args.output_dir if args.output_dir is not None else default_output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("tensorflow version", tf_version)
-    print("data_root", data_root)
-    print("output_dir", output_dir)
-    print("issue", "#613")
-    print("split_mode", args.split_mode)
+    if args.board_split_dir is not None:
+        if (args.data_root is not None or args.wthor or args.split_manifest is not None
+                or args.max_position_samples is not None or args.split_mode == "sampled"):
+            raise ValueError("--board-split-dir already contains partitions; do not combine it with legacy source or resplitting options")
+        print("prepared_board_splits", args.board_split_dir)
+        split_eval_data = load_prepared_board_splits(args.board_split_dir, args.seed, output_dir)
+    else:
+        data_root = args.data_root if args.data_root is not None else default_data_root()
+        if args.wthor:
+            args.board_data_index_start = 1
+            args.board_data_index_end = 1
 
-    files = discover_board_files(data_root, args.board_data_index_start, args.board_data_index_end)
-    print(f"board files {len(files)}")
-    print(f"total_position_samples {sum(f.n_position_samples for f in files)}")
+        print("tensorflow version", tf_version)
+        print("data_root", data_root)
+        print("output_dir", output_dir)
+        print("issue", "#613")
+        print("split_mode", args.split_mode)
 
-    print(
-        "game split ratios "
-        f"train={args.train_ratio} val={args.val_ratio} test={args.test_ratio} "
-        f"max_position_samples={args.max_position_samples}"
-    )
-    sample_caps = None
-    if args.split_mode == "sampled":
-        sample_caps = {"train": args.max_train_samples, "val": args.max_val_samples}
-    split_eval_data = load_game_three_way_split(
-        files, args.train_ratio, args.val_ratio, args.test_ratio, args.seed,
-        args.max_position_samples, sample_caps, output_dir,
-        args.split_manifest,
-    )
+        files = discover_board_files(data_root, args.board_data_index_start, args.board_data_index_end)
+        print(f"board files {len(files)}")
+        print(f"total_position_samples {sum(f.n_position_samples for f in files)}")
+
+        print(
+            "game split ratios "
+            f"train={args.train_ratio} val={args.val_ratio} test={args.test_ratio} "
+            f"max_position_samples={args.max_position_samples}"
+        )
+        sample_caps = None
+        if args.split_mode == "sampled":
+            sample_caps = {"train": args.max_train_samples, "val": args.max_val_samples}
+        split_eval_data = load_game_three_way_split(
+            files, args.train_ratio, args.val_ratio, args.test_ratio, args.seed,
+            args.max_position_samples, sample_caps, output_dir,
+            args.split_manifest,
+        )
     x_train = split_eval_data["train"].x
     p_train = split_eval_data["train"].policy
     x_val = split_eval_data["val"].x

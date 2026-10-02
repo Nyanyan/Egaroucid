@@ -33,6 +33,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--max-val-samples", type=int, default=200_000)
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--data-root", type=Path, default=None)
+    parser.add_argument("--board-split-dir", type=Path, default=None)
     parser.add_argument("--board-data-index-start", type=int, default=1)
     parser.add_argument("--board-data-index-end", type=int, default=1)
     parser.add_argument("--split-manifest", type=Path, default=None)
@@ -74,6 +75,8 @@ def main() -> None:
         ]
         if args.data_root is not None:
             cmd.extend(["--data-root", str(args.data_root)])
+        if args.board_split_dir is not None:
+            cmd.extend(["--board-split-dir", str(args.board_split_dir)])
         if args.split_manifest is not None:
             cmd.extend(["--split-manifest", str(args.split_manifest)])
 

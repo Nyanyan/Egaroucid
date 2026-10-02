@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare reproducible game-level splits of the existing WTHOR board data."""
+"""Legacy records1 splitter. For new raw data use numbered stages 01 through 04."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""WTHOR board loading and policy features, shared by preprocessing and training."""
+"""Board loading and policy features, shared by preprocessing and training."""
 
 from __future__ import annotations
 
@@ -188,3 +188,39 @@ def load_game_three_way_split(
 
 # Keep callers of the old entry point on the same game-level split.
 load_shuffled_three_way_split = load_game_three_way_split
+
+
+def load_prepared_board_splits(directory: Path, seed: int, output_dir: Optional[Path] = None) -> Dict[str, SplitArrays]:
+    """Load stage 03/04 membership as-is; never split augmented positions again."""
+    from pipeline_common import SPLIT_NAMES, load_manifest, source_info
+
+    stage = json.loads((directory / "manifest.json").read_text(encoding="utf-8")).get("stage")
+    if stage not in ("board_split", "board_split_increased"):
+        raise ValueError("--board-split-dir must point to stage 03 or stage 04 output")
+    manifest = load_manifest(directory, stage)
+    results, previous_games = {}, set()
+    rng = np.random.default_rng(seed)
+    for name in SPLIT_NAMES:
+        chunks, game_ids = [], set()
+        for path in sorted((directory / name).glob("*.dat")):
+            size = path.stat().st_size
+            ids_path = path.with_suffix(".game_ids")
+            if size % BOARD_SAMPLE_SIZE or ids_path.stat().st_size != size // BOARD_SAMPLE_SIZE * 8:
+                raise ValueError(f"incomplete board data or game IDs in {path}")
+            chunks.append(np.fromfile(path, dtype=BOARD_DTYPE))
+            game_ids.update(np.unique(np.fromfile(ids_path, dtype="<u8")).tolist())
+        if not chunks:
+            raise ValueError(f"no board data in prepared split {name}")
+        samples = np.concatenate(chunks)
+        expected = manifest["splits"][name]
+        if len(samples) != expected["positions"] or len(game_ids) != expected["games"]:
+            raise ValueError(f"prepared split counts do not match for {name}")
+        if game_ids & previous_games:
+            raise ValueError("the same original game occurs in multiple prepared splits")
+        previous_games.update(game_ids)
+        results[name] = position_samples_to_split_arrays(samples[rng.permutation(len(samples))])
+    if output_dir is not None:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "prepared_dataset.json").write_text(
+            json.dumps({"source": source_info(directory), "dataset": manifest}, indent=2), encoding="utf-8")
+    return results

@@ -7,6 +7,13 @@ Othello/Reversi用のポリシーネットワークを学習します。
 
 WTHORデータの読み込み・棋譜分割・入力特徴量の作成は、[00_data_processing](../00_data_processing/README.md) で行います。
 
+raw_dataから作った新しいデータには、`--board-split-dir <データルート>/board_split_increased/<データセット名>` を指定します。
+01〜04で生成済みのtrain・val・testをそのまま読み込み、8倍化した局面を再分割しません。
+水増し前のデータを使う場合は `board_split/<データセット名>` を指定してください。
+この指定は、旧データ用の `--wthor`、`--data-root`、`--split-manifest`、件数上限、`--split-mode sampled` と併用できません。
+使用データの記録は `prepared_dataset.json` に保存します。実行例は [データ加工のREADME](../00_data_processing/README.md) を参照してください。
+以下の `records1` と学習BATの説明は、以前の展開済みWTHORデータを使う手順です。
+
 このREADMEは現在の学習手順を説明します。RESULTSと保存済みモデルは、変更前の局面単位の分割による実験結果です。
 棋譜単位の分割で評価するには、新しい出力先で再学習してください。
 以前の作業記録はローカルアーカイブ
