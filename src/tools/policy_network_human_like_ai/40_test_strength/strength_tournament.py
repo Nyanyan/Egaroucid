@@ -606,7 +606,7 @@ def ensure_manifest(
         return
     if resume and results_exist:
         raise ValueError(
-            "cannot safely resume results without strength_manifest.json; "
+            f"cannot safely resume results without {path.name}; "
             "use a new --output-dir"
         )
     atomic_write_json(path, manifest)

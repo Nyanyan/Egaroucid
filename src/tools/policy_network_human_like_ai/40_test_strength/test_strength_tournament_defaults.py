@@ -822,7 +822,12 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             openings_path = root / "openings.txt"
             openings_path.write_text(OPENING + "\n", encoding="utf-8")
             output_dir = root / "output"
+            # This dry-run/completed-resume test never starts an engine.
+            engine_path = root / "engine.exe"
+            engine_path.write_bytes(b"engine fixture")
             common = [
+                "--egaroucid-exe",
+                str(engine_path),
                 "--baseline-levels",
                 "1,3",
                 "--alphas",
@@ -874,6 +879,73 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
                 if "--policy-server-port" in player["command"]
             ]
             self.assertFalse(blend_commands)
+
+    def test_first_resume_and_empty_log_retry_create_runtime_manifest(self) -> None:
+        for preflight in (False, True):
+            for empty_log in (False, True):
+                with self.subTest(preflight=preflight, empty_log=empty_log):
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        root = Path(temp_dir)
+                        engine = root / "engine.exe"
+                        engine.write_bytes(b"unused engine fixture")
+                        openings = root / "openings.txt"
+                        openings.write_text(OPENING + "\n", encoding="utf-8")
+                        output = root / "output"
+                        output.mkdir()
+                        common = ["--egaroucid-exe", str(engine), "--openings", str(openings),
+                                  "--output-dir", str(output), "--baseline-levels", "1,3",
+                                  "--alphas", "", "--edax-levels=", "--match-sets-per-pair", "1",
+                                  "--policy-backend", "numpy", "--no-performance-monitor", "--resume"]
+                        with patch("battle_blend_strength.available_memory_mib", return_value=1e9), \
+                                patch("battle_blend_strength.GameRunner") as runner, \
+                                redirect_stdout(io.StringIO()):
+                            if preflight:
+                                battle_blend_strength.run_tournament(
+                                    battle_blend_strength.make_argparser().parse_args(common + ["--dry-run"]))
+                            if empty_log:
+                                (output / "strength_games.jsonl").touch()
+
+                            def play(task, p0_is_black):
+                                self.assertTrue((output / "strength_runtime_manifest.json").is_file())
+                                return game_result(p0_is_black, 4 if p0_is_black else -2)
+
+                            runner.return_value.play_single_game.side_effect = play
+                            args = battle_blend_strength.make_argparser().parse_args(common)
+                            battle_blend_strength.run_tournament(args)
+                            self.assertEqual(2, runner.return_value.play_single_game.call_count)
+                            raw_before = (output / "strength_games.jsonl").read_bytes()
+                            battle_blend_strength.run_tournament(args)
+                            self.assertEqual(raw_before, (output / "strength_games.jsonl").read_bytes())
+                        progress = json.loads((output / "strength_progress.json").read_text())
+                        self.assertEqual(0, progress["remaining_match_sets"])
+                        self.assertEqual("already_complete", progress["stop_reason"])
+
+    def test_resume_with_played_games_still_requires_runtime_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            engine = root / "engine.exe"
+            engine.write_bytes(b"unused engine fixture")
+            openings = root / "openings.txt"
+            openings.write_text(OPENING + "\n" + OPENING[:-2] + "\n", encoding="utf-8")
+            output = root / "output"
+            common = ["--egaroucid-exe", str(engine), "--openings", str(openings),
+                      "--output-dir", str(output), "--baseline-levels", "1,3", "--alphas", "",
+                      "--edax-levels=", "--match-sets-per-pair", "2", "--policy-backend", "numpy", "--resume"]
+            with patch("battle_blend_strength.available_memory_mib", return_value=1e9), \
+                    patch("battle_blend_strength.GameRunner") as runner, \
+                    redirect_stdout(io.StringIO()):
+                battle_blend_strength.run_tournament(
+                    battle_blend_strength.make_argparser().parse_args(common + ["--dry-run"]))
+                task = make_match_set_tasks(2, battle_blend_strength.read_openings(openings, 57), 2, 57)[0]
+                store = ResultStore(output)
+                store.open()
+                store.append_result(task, combine_color_games(task, [game_result(True, 4), game_result(False, -2)]))
+                store.close()
+                raw_before = (output / "strength_games.jsonl").read_bytes()
+                with self.assertRaisesRegex(ValueError, "strength_runtime_manifest.json"):
+                    battle_blend_strength.run_tournament(battle_blend_strength.make_argparser().parse_args(common))
+                runner.assert_not_called()
+                self.assertEqual(raw_before, (output / "strength_games.jsonl").read_bytes())
 
 
 if __name__ == "__main__":

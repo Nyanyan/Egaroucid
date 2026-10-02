@@ -1154,7 +1154,7 @@ def run_tournament(args: argparse.Namespace) -> None:
         manifest_path,
         manifest,
         resume=args.resume,
-        results_exist=results_path.exists(),
+        results_exist=results_path.exists() and results_path.stat().st_size > 0,
     )
     experiment_id = str(manifest["experiment_id"])
     run_id = (
@@ -1349,7 +1349,6 @@ def run_tournament(args: argparse.Namespace) -> None:
 
     manager = ProcessManager(args.minimum_available_memory_mib)
     monitor: Optional[PerformanceMonitor] = None
-    store.open()
     start_time = time.time()
     stop_reason = "finished"
     fatal_error: Optional[BaseException] = None
@@ -1388,8 +1387,12 @@ def run_tournament(args: argparse.Namespace) -> None:
             args.output_dir / "strength_runtime_manifest.json",
             runtime_manifest,
             resume=args.resume,
-            results_exist=results_path.exists(),
+            results_exist=bool(loaded_results),
         )
+        # --resume is also used on the first run. Bind the runtime before
+        # creating the append log, and require its prior identity only when
+        # validated match results were actually loaded (not for an empty log).
+        store.open()
         specs = build_player_specs(
             args,
             baseline_levels,
