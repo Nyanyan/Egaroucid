@@ -3281,12 +3281,12 @@ inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
     return best;
 }
 
-// Disabled by default. It gates on this game's best value alone, which says
-// little in a synchro match, and in the August 3-minute logs it spent a median
-// 10.5 s on 11,014 moves but replaced the main search's move only 11 times.
-// Build with -DEGAROUCID_GGS_SELFPLAY_RESOLVE=1 to bring it back.
+// Plays the close root candidates out before the main search. It compares the
+// candidates with each other only: in a synchro match one game's value says
+// little about the match, so neither the gate, the time nor the override
+// depends on it. Build with -DEGAROUCID_GGS_SELFPLAY_RESOLVE=0 to turn it off.
 #ifndef EGAROUCID_GGS_SELFPLAY_RESOLVE
-    #define EGAROUCID_GGS_SELFPLAY_RESOLVE 0
+    #define EGAROUCID_GGS_SELFPLAY_RESOLVE 1
 #endif
 constexpr bool AI_TL_GGS_SELFPLAY_RESOLVE_ENABLED = EGAROUCID_GGS_SELFPLAY_RESOLVE != 0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY = 36;
@@ -3296,27 +3296,17 @@ constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME_LIMIT = 20000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REMAINING_TIME = 70000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME = 6000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_MAX_TIME = 20000ULL;
-constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME = 11000ULL;
-constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_VALUE_MAX_TIME = 22000ULL;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_TIME_COE = 0.65;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_TIME_COE = 0.45;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME_LIMIT = 10000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_REMAINING_TIME = 25000ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME = 3500ULL;
 constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_TIME = 9000ULL;
-constexpr uint64_t AI_TL_GGS_SELFPLAY_RESOLVE_LATE_WIDE_VALUE_MAX_TIME = 6500ULL;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_TIME_COE = 0.42;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE = 3.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX = 4.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_NEGATIVE_MAX = 20.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_BEST_POSITIVE_MAX = 12.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_NEGATIVE_MAX = 20.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_POSITIVE_MAX = 18.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_MIN_RESULT_GAP = 1.0;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SINGLE_PASS_MIN_RESULT_GAP = 2.5;
 constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN = 0.0;
-constexpr double AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN = 1.0;
-constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_MIN_OVERRIDE_DEPTH = 22;
+constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_INITIAL_LEVEL = 21;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_GOOD_MOVES = 4;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_GOOD_MOVES = 3;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_SELFPLAYED_TOP_MOVES = 2;
@@ -3330,7 +3320,6 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
     int depth;
     uint_fast8_t mpc_level;
     bool is_endgame_search;
-    bool wide_value;
     int n_good_moves;
     int selfplayed_moves;
     int top_selfplay_count;
@@ -3349,7 +3338,6 @@ struct AI_TL_GGS_Selfplay_Resolve_Result {
           depth(0),
           mpc_level(MPC_74_LEVEL),
           is_endgame_search(false),
-          wide_value(false),
           n_good_moves(0),
           selfplayed_moves(0),
           top_selfplay_count(0),
@@ -3472,51 +3460,10 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
             best_value = std::max(best_value, elem.value);
         }
     }
-    const bool late_midgame = (HW2 - board.n_discs()) < AI_TL_GGS_SELFPLAY_RESOLVE_FULL_MIN_N_EMPTY;
-    const double best_negative_max = late_midgame ?
-        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_NEGATIVE_MAX :
-        AI_TL_GGS_SELFPLAY_RESOLVE_BEST_NEGATIVE_MAX;
-    const double best_positive_max = late_midgame ?
-        AI_TL_GGS_SELFPLAY_RESOLVE_LATE_BEST_POSITIVE_MAX :
-        AI_TL_GGS_SELFPLAY_RESOLVE_BEST_POSITIVE_MAX;
-    if (
-        best_value == -INF ||
-        best_value < -best_negative_max ||
-        best_value > best_positive_max
-    ) {
+    if (best_value == -INF) {
         return result;
     }
-    result.wide_value =
-        best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ||
-        AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX < best_value;
-    if (result.wide_value) {
-        const bool bad_wide_value = best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX;
-        const uint64_t wide_max_time = bad_wide_value ?
-            (late_midgame ?
-                AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_TIME :
-                AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_VALUE_MAX_TIME) :
-            (late_midgame ?
-                AI_TL_GGS_SELFPLAY_RESOLVE_LATE_WIDE_VALUE_MAX_TIME :
-                AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_MAX_TIME);
-        if (bad_wide_value) {
-            const uint64_t remaining_divisor = late_midgame ? 10ULL : 8ULL;
-            const uint64_t bad_wide_time = std::min<uint64_t>(
-                wide_max_time,
-                std::min<uint64_t>(
-                    (uint64_t)((double)time_limit * AI_TL_GGS_SELFPLAY_RESOLVE_BAD_WIDE_TIME_COE),
-                    remaining_time_msec / remaining_divisor
-                )
-            );
-            selfplay_time = std::max(selfplay_time, bad_wide_time);
-        }
-        const uint64_t min_time = late_midgame ?
-            AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MIN_TIME :
-            AI_TL_GGS_SELFPLAY_RESOLVE_MIN_TIME;
-        selfplay_time = std::min<uint64_t>(selfplay_time, wide_max_time);
-        if (selfplay_time < min_time) {
-            return result;
-        }
-    }
+    const bool late_midgame = (HW2 - board.n_discs()) < AI_TL_GGS_SELFPLAY_RESOLVE_FULL_MIN_N_EMPTY;
 
     int n_good_moves = 0;
     for (const Ponder_elem &elem: move_list) {
@@ -3538,8 +3485,6 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
                   << " n_good_moves " << n_good_moves
                   << " best " << best_value << std::endl;
     }
-    const int selfplay_initial_level =
-        !late_midgame && best_value < -AI_TL_GGS_SELFPLAY_RESOLVE_FULL_TIME_ABS_MAX ? 22 : 21;
     result.allocated_time = selfplay_time;
     std::vector<Ponder_elem> selfplay_move_list = ai_additional_selfplay(
         board,
@@ -3549,7 +3494,7 @@ inline AI_TL_GGS_Selfplay_Resolve_Result ai_time_limit_ggs_selfplay_resolve(
         AI_TL_GGS_SELFPLAY_RESOLVE_CLOSE_VALUE,
         selfplay_time,
         thread_id,
-        selfplay_initial_level,
+        AI_TL_GGS_SELFPLAY_RESOLVE_INITIAL_LEVEL,
         &result.elapsed_time,
         &result.early_confident
     );
@@ -4186,15 +4131,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         is_valid_policy(search_result.policy) &&
         selfplay_resolve_result.policy != search_result.policy &&
         ai_time_limit_ggs_selfplay_resolve_is_confident(selfplay_resolve_result) &&
-        (
-            !selfplay_resolve_result.wide_value ||
-            selfplay_resolve_result.is_endgame_search ||
-            selfplay_resolve_result.depth >= AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_MIN_OVERRIDE_DEPTH
-        ) &&
-        selfplay_resolve_result.value >= search_result.value +
-            (selfplay_resolve_result.wide_value ?
-                AI_TL_GGS_SELFPLAY_RESOLVE_WIDE_VALUE_SWITCH_MARGIN :
-                AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN)
+        selfplay_resolve_result.value >= search_result.value + AI_TL_GGS_SELFPLAY_RESOLVE_SWITCH_MARGIN
     ) {
         if (show_log) {
             std::cerr << "ggs selfplay resolve overrides main "
