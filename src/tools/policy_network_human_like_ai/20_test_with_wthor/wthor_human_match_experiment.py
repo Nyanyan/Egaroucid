@@ -281,6 +281,7 @@ def make_experiment_identity(
     sample_hash: str,
     sample_records_hash: str,
 ) -> dict:
+    model = getattr(args, "model", None)
     identity = {
         "identity_version": 7,
         "summary_version": SUMMARY_VERSION,
@@ -313,15 +314,28 @@ def make_experiment_identity(
             "level_fixed_persistent_actors_with_atomic_per_level_"
             "cursor_elastic_after_level21_v1"
         ),
-        "weights": str(args.weights.resolve()),
-        "weights_sha256": file_sha256(args.weights),
+        "weights": str(args.weights.resolve()) if model is None else None,
+        "weights_sha256": file_sha256(args.weights) if model is None else None,
         "score_temperature": args.score_temperature,
         "blend_params": list(BLEND_PARAMS),
     }
+    if model is not None:
+        identity["model"] = str(model.resolve())
+        identity["model_sha256"] = file_sha256(model)
     if getattr(args, "engine_likelihood", False):
         identity["engine_likelihood"] = True
         identity["top_n_values"] = list(evaluation_top_n(args))
+    split_manifest = getattr(args, "split_manifest", None)
+    if split_manifest is not None:
+        identity["split_manifest_sha256"] = file_sha256(split_manifest)
     return identity
+
+
+def hint_experiment_identity(identity: dict) -> dict:
+    """Only search inputs affect shared hints, never neural-network weights."""
+    excluded = {"weights", "weights_sha256", "model", "model_sha256",
+                "split_manifest_sha256", "score_temperature", "blend_params"}
+    return {key: value for key, value in identity.items() if key not in excluded}
 
 
 def ensure_experiment_identity(
@@ -399,6 +413,12 @@ def make_argparser() -> argparse.ArgumentParser:
                         help="Search all legal moves at every engine level and report score-softmax likelihood")
     parser.add_argument("--split-seed", type=int, default=613)
     parser.add_argument("--sample-seed", type=int, default=613)
+    parser.add_argument("--split-manifest", type=Path, default=None,
+                        help="Reuse the exact game split saved during training")
+    parser.add_argument("--model", type=Path, default=None,
+                        help="Keras H5 model; takes precedence over --weights")
+    parser.add_argument("--hint-cache-dir", type=Path, default=None,
+                        help="Share identical engine hints between model evaluations; run sequentially")
     add_board_data_arguments(parser)
     parser.add_argument(
         "--weights",
@@ -531,7 +551,7 @@ def main() -> None:
         available_positions,
         args.data_split,
     )
-    if args.positions is not None and args.positions > selected_split_positions:
+    if args.split_manifest is None and args.positions is not None and args.positions > selected_split_positions:
         raise ValueError(
             f"N={args.positions} exceeds the {args.data_split} split size "
             f"of {selected_split_positions}"
@@ -550,6 +570,7 @@ def main() -> None:
         args.data_split,
         args.split_seed,
         args.sample_seed,
+        args.split_manifest,
     )
     if args.positions is None:
         args.positions = split_positions
@@ -613,6 +634,12 @@ def main() -> None:
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     ensure_experiment_identity(output_dir, experiment_identity)
+    hint_dir = args.hint_cache_dir or output_dir
+    if args.hint_cache_dir is not None:
+        if hint_dir.resolve() == output_dir.resolve():
+            raise ValueError("--hint-cache-dir must differ from --output-dir")
+        hint_dir.mkdir(parents=True, exist_ok=True)
+        ensure_experiment_identity(hint_dir, hint_experiment_identity(experiment_identity))
 
     report_stage("Policy Networkの推論を開始")
     policy_start = time.perf_counter()
@@ -620,6 +647,7 @@ def main() -> None:
         groups,
         args.weights,
         args.policy_batch_size,
+        args.model,
     )
     policy_elapsed = time.perf_counter() - policy_start
     report_stage(
@@ -661,7 +689,7 @@ def main() -> None:
     hint_start = time.perf_counter()
     engine_searches = collect_comparison_hints(groups, workers, {
         "egaroucid": {
-            "levels": CONSOLE_LEVELS, "output_dir": output_dir, "workers": workers,
+            "levels": CONSOLE_LEVELS, "output_dir": hint_dir, "workers": workers,
             "egaroucid_exe": args.egaroucid_exe,
             "egaroucid_threads": args.egaroucid_threads,
             "timeout_sec": args.egaroucid_timeout_sec,

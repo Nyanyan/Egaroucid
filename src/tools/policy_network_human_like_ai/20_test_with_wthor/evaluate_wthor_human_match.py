@@ -32,6 +32,8 @@ from wthor_likelihood import (
 HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
 
+sys.path.insert(0, str(HUMAN_LIKE_AI_DIR / "00_data_processing"))
+from wthor_dataset import load_manifest_positions  # noqa: E402
 from policy_accuracy import (  # noqa: E402
     equivalent_policy_mask,
     symmetry_aware_policy_ranks,
@@ -340,8 +342,15 @@ def write_csv(path: Path, rows: Sequence[dict], fields: Sequence[str]) -> None:
 
 
 def evaluate(args: argparse.Namespace) -> dict:
+    split_manifest = getattr(args, "split_manifest", None)
+    if split_manifest is not None and args.max_positions is not None:
+        raise ValueError("--split-manifest cannot be combined with --max-positions")
     n_values = sorted(set(args.top_n))
-    model = load_keras_model(args.model) if args.model is not None and args.model.exists() else None
+    if args.model is not None and not args.model.is_file():
+        raise FileNotFoundError(f"Keras model does not exist: {args.model}")
+    if args.model is None and args.weights is None:
+        raise ValueError("provide --model for a Keras model or --weights for MLP binary weights")
+    model = load_keras_model(args.model) if args.model is not None else None
     binary_network = None if model is not None else BinaryPolicyNetwork(args.weights)
     model_source = str(args.model) if model is not None else str(args.weights)
     dat_files = discover_dat_files(args.board_data_dir)
@@ -349,14 +358,24 @@ def evaluate(args: argparse.Namespace) -> dict:
         dat_files,
         args.max_positions,
     )
-    selected_global_positions, split_positions = choose_data_split_positions(
-        available_positions,
-        args.data_split,
-        args.train_ratio,
-        args.val_ratio,
-        args.test_ratio,
-        args.split_seed,
-    )
+    if split_manifest is not None:
+        selected_global_positions, manifest = load_manifest_positions(
+            split_manifest, dat_files, args.data_split,
+        )
+        split_positions = len(selected_global_positions)
+        args.split_seed = manifest["seed"]
+        args.train_ratio = manifest["ratios"]["train"]
+        args.val_ratio = manifest["ratios"]["val"]
+        args.test_ratio = manifest["ratios"]["test"]
+    else:
+        selected_global_positions, split_positions = choose_data_split_positions(
+            available_positions,
+            args.data_split,
+            args.train_ratio,
+            args.val_ratio,
+            args.test_ratio,
+            args.split_seed,
+        )
     selected_position_set_sha256 = (
         hashlib.sha256(
             selected_global_positions.astype(
@@ -483,6 +502,8 @@ def evaluate(args: argparse.Namespace) -> dict:
         "board_data_dir": str(args.board_data_dir),
         "model_source": model_source,
         "data_split": args.data_split,
+        "split_unit": "game" if split_manifest is not None else "position",
+        "split_manifest": str(split_manifest) if split_manifest is not None else None,
         "split_seed": (
             args.split_seed
             if args.data_split != "all"
@@ -543,7 +564,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate WTHOR human move agreement with symmetry-aware matching.")
     add_board_data_arguments(parser)
     parser.add_argument("--model", type=Path, default=None)
-    parser.add_argument("--weights", type=Path, required=True)
+    parser.add_argument("--weights", type=Path, default=None, help="MLP binary weights; optional when --model is provided.")
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1"))
     parser.add_argument(
         "--data-split",
@@ -551,6 +572,7 @@ def make_argparser() -> argparse.ArgumentParser:
         default="all",
     )
     parser.add_argument("--split-seed", type=int, default=613)
+    parser.add_argument("--split-manifest", type=Path, default=None, help="Reuse dataset_split.json from game-level training; required for its train/val/test evaluation.")
     parser.add_argument("--train-ratio", type=float, default=0.8)
     parser.add_argument("--val-ratio", type=float, default=0.1)
     parser.add_argument("--test-ratio", type=float, default=0.1)
@@ -566,6 +588,8 @@ def make_argparser() -> argparse.ArgumentParser:
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = make_argparser()
     args = parser.parse_args(argv)
+    if args.model is None and args.weights is None:
+        parser.error("provide --model or --weights")
     resolve_board_data_args(args, parser)
     return args
 

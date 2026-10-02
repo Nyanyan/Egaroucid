@@ -127,17 +127,24 @@ def load_position_groups(
     data_split: str,
     split_seed: int,
     sample_seed: int,
+    split_manifest: Path = None,
 ) -> Tuple[List[PositionGroup], int, str, str]:
-    selected, split_positions = wthor.choose_data_split_positions(
-        available_positions,
-        data_split,
-        TRAIN_RATIO,
-        VAL_RATIO,
-        TEST_RATIO,
-        split_seed,
-        positions,
-        sample_seed,
-    )
+    if split_manifest is not None:
+        sys.path.insert(0, str(SCRIPT_DIR.parent / "00_data_processing"))
+        from wthor_dataset import load_manifest_positions
+        members, _ = load_manifest_positions(split_manifest, dat_files, data_split)
+        split_positions = len(members)
+        if positions is None:
+            positions = split_positions
+        if positions > split_positions:
+            raise ValueError(f"N={positions} exceeds saved {data_split} size {split_positions}")
+        selected = (np.sort(members) if positions == split_positions else
+                    np.sort(np.random.default_rng(sample_seed).choice(members, positions, replace=False)))
+    else:
+        selected, split_positions = wthor.choose_data_split_positions(
+            available_positions, data_split, TRAIN_RATIO, VAL_RATIO, TEST_RATIO,
+            split_seed, positions, sample_seed,
+        )
     if positions is None:
         positions = split_positions
     if selected is None:
@@ -197,8 +204,15 @@ def predict_policy_logits(
     groups: Sequence[PositionGroup],
     weights: Path,
     batch_size: int,
+    model: Path = None,
 ) -> Dict[StateKey, np.ndarray]:
-    network = BinaryPolicyNetwork(weights)
+    if model is not None:
+        from policy_batch_server import PolicyBackend
+        network = PolicyBackend("tensorflow", weights, model, output="logits")
+        predict = network.predict
+    else:
+        network = BinaryPolicyNetwork(weights)
+        predict = network.predict_logits
     logits: Dict[StateKey, np.ndarray] = {}
     for start in range(0, len(groups), batch_size):
         batch = groups[start : start + batch_size]
@@ -212,7 +226,7 @@ def predict_policy_logits(
             ],
             axis=0,
         )
-        batch_logits = network.predict_logits(features)
+        batch_logits = predict(features)
         for group, policy_logits in zip(batch, batch_logits):
             logits[group.key] = policy_logits.astype(
                 np.float64,
