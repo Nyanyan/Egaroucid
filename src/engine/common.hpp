@@ -213,7 +213,9 @@ std::mt19937 raw_myrandom(tim());
     @return random value from 0.0 to 1.0 (not including 1.0)
 */
 inline double myrandom() {
-    return (double)raw_myrandom() / std::mt19937::max();
+    // divide by max + 1: with max, 1.0 was returned once in 2^32 times,
+    // and myrandrange(s, e) returned e (out of range of an array when used as an index)
+    return (double)raw_myrandom() / ((double)std::mt19937::max() + 1.0);
 }
 
 /*

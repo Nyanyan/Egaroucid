@@ -871,7 +871,10 @@ struct AI_TL_Array {
     }
 };
 
-AI_TL_Array ai_tl_array;
+// This array is used only by the time-limit search which is commented out below.
+// As a global variable it took about 390 MB (1,000,000 elements * 384 bytes) in every process,
+// and all elements were initialized at startup. Define it again when that search is enabled.
+// AI_TL_Array ai_tl_array;
 
 
 // Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
