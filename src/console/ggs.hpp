@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 #include "./../engine/engine_all.hpp"
@@ -689,10 +690,15 @@ inline std::string ggs_line_value(const std::string &line, const std::string &pr
     return ggs_line_starts_with(line, prefix) ? line.substr(prefix.size()) : "";
 }
 
+// The main loop and the search threads both log. Each write opens the file
+// in append mode, so without this lock concurrent writes overwrite each other.
+std::mutex ggs_log_mutex;
+
 inline void ggs_write_log_lines(const std::string &prefix, const std::string &str, Options *options) {
     if (!options->ggs_log_to_file) {
         return;
     }
+    std::lock_guard<std::mutex> lock(ggs_log_mutex);
     std::ofstream ofs(options->ggs_log_file, std::ios::app);
     if (!ofs) {
         return;
@@ -711,6 +717,7 @@ inline bool ggs_verbose_log(const Options *options) {
 inline void ggs_print_colored_lines(const std::string &prefix, const std::string &str, Options *options, const std::string &color) {
     std::stringstream ss(str);
     std::string line;
+    std::lock_guard<std::mutex> lock(ggs_log_mutex);
     std::ofstream ofs;
     if (options->ggs_log_to_file) {
         ofs.open(options->ggs_log_file, std::ios::app);
