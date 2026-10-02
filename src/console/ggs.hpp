@@ -286,8 +286,6 @@ constexpr int GGS_VERIFIED_ANALYSIS_HINT_WEIGHT = 9;
 #if IS_GGS_TOURNAMENT
 constexpr size_t GGS_TOURNAMENT_GAME_LOG_HINT_MAX_FILES = 256;
 constexpr int GGS_SYNCHRO_PAIR_CONTEXT_MAX_DISC_GAP = 12;
-constexpr int GGS_SYNCHRO_PAIR_TIME_BOOST_MAX_DISC = 36;
-constexpr uint64_t GGS_SYNCHRO_PAIR_TIME_BOOST_MIN_RAW_REMAINING = 45000ULL;
 #endif
 
 inline std::string ggs_move_hint_key(const Board &board) {
@@ -532,84 +530,6 @@ GGS_Synchro_Time_Context ggs_make_synchro_time_context(
     context.pair_is_end_search = pair_record.result.is_end_search;
     context.pair_value_is_proven = ai_search_result_has_proven_lower_bound(pair_record.n_discs, pair_record.result);
     return context;
-}
-
-uint64_t ggs_adjust_remaining_time_for_synchro_pair(
-    const GGS_Board &ggs_board,
-    uint64_t remaining_time_msec,
-    uint64_t raw_remaining_time_msec,
-    const GGS_Synchro_Time_Context &context,
-    Options *options
-) {
-#if IS_GGS_TOURNAMENT
-    if (
-        !context.has_pair_result ||
-        ggs_board.board.n_discs() > GGS_SYNCHRO_PAIR_TIME_BOOST_MAX_DISC ||
-        raw_remaining_time_msec < GGS_SYNCHRO_PAIR_TIME_BOOST_MIN_RAW_REMAINING
-    ) {
-        return remaining_time_msec;
-    }
-
-    double bonus_coe = 0.0;
-    uint64_t bonus_cap = 0ULL;
-    std::string reason;
-    if (context.pair_value <= -8) {
-        bonus_coe = 0.45;
-        bonus_cap = 70000ULL;
-        reason = "large_deficit";
-    } else if (context.pair_value <= -5) {
-        bonus_coe = 0.35;
-        bonus_cap = 55000ULL;
-        reason = "deficit";
-    } else if (context.pair_value >= 24) {
-        bonus_coe = 0.28;
-        bonus_cap = 45000ULL;
-        reason = "large_surplus_guard";
-    } else if (context.pair_value >= 13 && ggs_board.board.n_discs() <= 34) {
-        bonus_coe = 0.18;
-        bonus_cap = 30000ULL;
-        reason = "surplus_guard";
-    } else if (context.pair_value <= 4) {
-        bonus_coe = 0.22;
-        bonus_cap = 35000ULL;
-        reason = "thin_margin";
-    } else if (context.pair_value <= 12 && ggs_board.board.n_discs() <= 28) {
-        bonus_coe = 0.10;
-        bonus_cap = 18000ULL;
-        reason = "protect_surplus";
-    } else {
-        return remaining_time_msec;
-    }
-
-    const double phase_scale = time_management_ggs_pair_boost_phase_scale(ggs_board.board.n_discs());
-    uint64_t bonus = std::min<uint64_t>(bonus_cap, (uint64_t)((double)raw_remaining_time_msec * bonus_coe));
-    bonus = (uint64_t)((double)bonus * phase_scale);
-    if (bonus == 0ULL) {
-        return remaining_time_msec;
-    }
-    uint64_t adjusted_remaining_time_msec = remaining_time_msec + bonus;
-    ggs_print_info(
-        "synchro pair time boost game " + ggs_board.game_id +
-        " pair " + context.pair_game_id +
-        " pair_discs " + std::to_string(context.pair_n_discs) +
-        " pair_value " + std::to_string(context.pair_value) +
-        " pair_depth " + std::to_string(context.pair_depth) +
-        "@" + probability_to_str(context.pair_probability) + "%" +
-        " reason " + reason +
-        " phase_scale " + std::to_string(phase_scale) +
-        " bonus " + std::to_string(bonus) +
-        " limit " + std::to_string(remaining_time_msec) +
-        "->" + std::to_string(adjusted_remaining_time_msec),
-        options
-    );
-    return adjusted_remaining_time_msec;
-#else
-    (void)ggs_board;
-    (void)raw_remaining_time_msec;
-    (void)context;
-    (void)options;
-    return remaining_time_msec;
-#endif
 }
 
 void ggs_apply_move_hint_to_search_result(
@@ -1905,16 +1825,6 @@ Search_result ggs_search(
             ai_match_context.pair_value = synchro_time_context.pair_value;
             ai_match_context.real_remaining_time_msec = remaining_time_msec;
         }
-        // The phase plan must see the real clock, not the pair-boosted one.
-        const uint64_t plan_remaining_time_msec = remaining_time_msec;
-        remaining_time_msec = ggs_adjust_remaining_time_for_synchro_pair(
-            ggs_board,
-            remaining_time_msec,
-            raw_remaining_time_msec,
-            synchro_time_context,
-            options
-        );
-
         // // special code for s8r14 5 min
         uint64_t strt = tim();
         // if (ggs_board.board.n_discs() == 14 && remaining_time_msec > 30000) {
@@ -1948,7 +1858,6 @@ Search_result ggs_search(
             " raw " + std::to_string(raw_remaining_time_msec) +
             " safety " + std::to_string(safety_margin) +
             " limit " + std::to_string(remaining_time_msec) +
-            " plan " + std::to_string(plan_remaining_time_msec) +
             " inc " + std::to_string(ggs_board.clock.increment_msec) +
             " ext " + std::to_string(ggs_board.clock.extension_msec) +
             (synchro_time_context.has_pair_result ?
@@ -1982,8 +1891,7 @@ Search_result ggs_search(
                 remaining_time_msec,
                 thread_id,
                 searching,
-                ai_match_context.has_pair_result ? &ai_match_context : nullptr,
-                ggs_subtract_elapsed_or_floor(plan_remaining_time_msec, tim() - strt)
+                ai_match_context.has_pair_result ? &ai_match_context : nullptr
             );
             const uint64_t legal = ggs_board.board.get_legal();
             if (ggs_should_override_with_hint(ggs_board.board, hint_policy, hint_count, search_result)) {

@@ -44,16 +44,6 @@ void require_near(double actual, double expected, const std::string &message) {
     }
 }
 
-void test_pair_boost_phase_scale() {
-    require_near(time_management_ggs_pair_boost_phase_scale(14), 0.60, "disc 14 scale");
-    require_near(time_management_ggs_pair_boost_phase_scale(16), 0.60, "disc 16 scale");
-    require_near(time_management_ggs_pair_boost_phase_scale(17), 0.65, "disc 17 scale");
-    require_near(time_management_ggs_pair_boost_phase_scale(20), 0.80, "disc 20 scale");
-    require_near(time_management_ggs_pair_boost_phase_scale(23), 0.95, "disc 23 scale");
-    require_near(time_management_ggs_pair_boost_phase_scale(24), 1.00, "disc 24 scale");
-    require_near(time_management_ggs_pair_boost_phase_scale(40), 1.00, "late scale");
-}
-
 void test_extra_time_is_not_budgeted_for_normal_search() {
     require_near(
         TIME_MANAGEMENT_GGS_REMAINING_MOVES_EXTRA,
@@ -715,11 +705,6 @@ void test_ggs_plan_time_limits() {
         calc_time_limit_ply(board_with_empties(50), 56500ULL, false) <= time_management_ggs_make_plan(50, 56500ULL).share_msec,
         "first move stays within its share"
     );
-    // A pair-boosted allocation clock must not enlarge the planned share.
-    require(
-        calc_time_limit_ply(board_with_empties(49), 90000ULL, false, 56500ULL) <= time_management_ggs_make_plan(49, 56500ULL).share_msec,
-        "the plan uses the real clock"
-    );
 }
 
 void test_ybwc_end_split_depth() {
@@ -781,7 +766,6 @@ int main() {
 #endif
         stability_init();
         test_cap_is_continuous_at_reserve();
-        test_pair_boost_phase_scale();
         test_extra_time_is_not_budgeted_for_normal_search();
         test_pair_outcome_exact_nws_policy();
         test_pair_outcome_exact_nws_search();

@@ -2902,10 +2902,8 @@ constexpr int AI_TL_GGS_AMBIGUITY_MIN_RELIABLE_DEPTH = 20;
 constexpr int AI_TL_GGS_AMBIGUITY_DEPTH_LAG_TOLERANCE = 8;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS = 3000ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE = 2600ULL;
-constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BONUS = 6500ULL;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS = 22000ULL;
 constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE = 2.20;
-constexpr double AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BEST_ABS_VALUE = 4.0;
 constexpr int AI_TL_GGS_AMBIGUITY_EARLY_CAP_MIN_N_EMPTY = 49;
 constexpr uint64_t AI_TL_GGS_AMBIGUITY_EARLY_MAX_BONUS = 6000ULL;
 constexpr int AI_TL_GGS_END_BOUNDARY_RESERVE_MIN_N_EMPTY = 34;
@@ -3141,13 +3139,6 @@ inline uint64_t ai_time_limit_ggs_ambiguity_boost(const Board &board, const std:
         uint64_t bonus = AI_TL_GGS_AMBIGUITY_UNRELIABLE_BASE_BONUS +
                          AI_TL_GGS_AMBIGUITY_UNRELIABLE_BONUS_PER_CLOSE_MOVE * (uint64_t)(close_moves - 1);
         const double second_gap = best_value - second_value;
-        if (
-            -AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BEST_ABS_VALUE <= best_value &&
-            best_value <= AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BEST_ABS_VALUE &&
-            second_gap <= AI_TL_ADDITIONAL_SEARCH_THRESHOLD
-        ) {
-            bonus += AI_TL_GGS_AMBIGUITY_UNRELIABLE_TINY_GAP_BONUS;
-        }
         bonus = std::min<uint64_t>(bonus, AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS);
         bonus = std::min<uint64_t>(bonus, (uint64_t)((double)time_limit * AI_TL_GGS_AMBIGUITY_UNRELIABLE_MAX_BONUS_COE));
 
@@ -3881,15 +3872,11 @@ inline AI_TL_GGS_Pair_Outcome_Proof ai_tl_ggs_pair_target_nws(
 }
 #endif
 
-// plan_remaining_time_msec: see calc_time_limit_ply.
-Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching, const AI_Time_Limit_Match_Context *match_context = nullptr, uint64_t plan_remaining_time_msec = 0ULL) {
-    uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log, plan_remaining_time_msec);
+Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching, const AI_Time_Limit_Match_Context *match_context = nullptr) {
+    uint64_t time_limit = calc_time_limit_ply(board, remaining_time_msec, show_log);
 #if IS_GGS_TOURNAMENT
     const uint64_t allocated_time_limit = time_limit;
-    const Time_management_ggs_plan ggs_plan = time_management_ggs_make_plan(
-        HW2 - board.n_discs(),
-        plan_remaining_time_msec ? plan_remaining_time_msec : remaining_time_msec
-    );
+    const Time_management_ggs_plan ggs_plan = time_management_ggs_make_plan(HW2 - board.n_discs(), remaining_time_msec);
     // Whole-move bound (probe and boosts included) protecting later phases.
     const uint64_t ggs_plan_move_cap = time_management_ggs_plan_move_cap(ggs_plan, allocated_time_limit);
     AI_TL_Iteration_Diagnostics iteration_diagnostics;

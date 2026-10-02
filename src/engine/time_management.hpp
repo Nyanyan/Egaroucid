@@ -120,15 +120,6 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_TIME
         #define TIME_MANAGEMENT_GGS_LATE_ENDGAME_FORCE_MAX_TIME 20000.0
     #endif
-    #ifndef TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE
-        #define TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE 0.60
-    #endif
-    #ifndef TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX
-        #define TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX 16
-    #endif
-    #ifndef TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC
-        #define TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC 24
-    #endif
     // Phase plan for s8r14 games. Each own move before the late endgame gets a
     // share of the distributable clock proportional to its phase weight. The
     // weights are the intended search time per move (ms) in a 1:00 game.
@@ -215,20 +206,6 @@ inline uint64_t time_management_ggs_cap_time_limit(uint64_t time_limit, uint64_t
     );
     const double max_use_time = std::max(low_time_cap, surplus_cap);
     return std::max<uint64_t>(1ULL, std::min<uint64_t>(time_limit, (uint64_t)std::max(1.0, max_use_time)));
-}
-
-inline double time_management_ggs_pair_boost_phase_scale(int n_discs) {
-    if (n_discs <= TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX) {
-        return TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE;
-    }
-    if (n_discs >= TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC) {
-        return 1.0;
-    }
-    const double progress =
-        (double)(n_discs - TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX) /
-        (double)(TIME_MANAGEMENT_GGS_PAIR_BOOST_FULL_DISC - TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_DISC_MAX);
-    return TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE +
-           (1.0 - TIME_MANAGEMENT_GGS_PAIR_BOOST_EARLY_SCALE) * progress;
 }
 
 enum class Time_management_ggs_phase {
@@ -376,9 +353,7 @@ inline uint64_t time_management_ggs_ramped_endgame_force_time(
 }
 #endif
 
-// plan_remaining_time_msec: the clock used for the GGS phase plan when the
-// allocation clock was temporarily enlarged (synchro pair boost); 0 = same.
-uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log, uint64_t plan_remaining_time_msec = 0ULL) {
+uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bool show_log) {
     int n_empties = HW2 - board.n_discs();
     double remaining_moves = (double)(n_empties + 1) / 2.0;
     uint64_t remaining_time_msec_margin = remaining_time_msec;
@@ -392,12 +367,7 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
 
 #if IS_GGS_TOURNAMENT
     const double ggs_time_scale = time_management_ggs_shortage_scale(remaining_time_msec, remaining_moves);
-    const Time_management_ggs_plan ggs_plan = time_management_ggs_make_plan(
-        n_empties,
-        plan_remaining_time_msec ? plan_remaining_time_msec : remaining_time_msec
-    );
-#else
-    (void)plan_remaining_time_msec;
+    const Time_management_ggs_plan ggs_plan = time_management_ggs_make_plan(n_empties, remaining_time_msec);
 #endif
 
 #if IS_GGS_TOURNAMENT
