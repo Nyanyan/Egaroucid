@@ -544,7 +544,7 @@ def make_argparser() -> argparse.ArgumentParser:
     add_board_data_arguments(parser)
     parser.add_argument("--model", type=Path, default=None)
     parser.add_argument("--weights", type=Path, required=True)
-    parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,4,5,8,10,16"))
+    parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1"))
     parser.add_argument(
         "--data-split",
         choices=("all", "train", "val", "test"),

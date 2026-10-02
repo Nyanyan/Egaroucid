@@ -711,6 +711,7 @@ def collect_hints(
     progress_lock=None,
     shared_slots=None,
     print_progress: bool = True,
+    standalone_hint_count: int = CONSOLE_ONLY_HINT_COUNT,
 ) -> Tuple[
     Dict[int, Dict[StateKey, HintData]],
     Dict[int, dict],
@@ -727,7 +728,7 @@ def collect_hints(
         return (
             ALL_LEGAL_HINT_COUNT
             if engine == "egaroucid" and level == CONSOLE_REFERENCE_LEVEL
-            else CONSOLE_ONLY_HINT_COUNT
+            else standalone_hint_count
         )
 
     state_keys = [group.key for group in groups]

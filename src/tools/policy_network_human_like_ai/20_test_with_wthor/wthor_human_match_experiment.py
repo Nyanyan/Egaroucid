@@ -26,7 +26,6 @@ from wthor_human_match_evaluation import (
     ALL_LEGAL_HINT_COUNT,
     BLEND_PARAMS,
     CONSOLE_LEVELS,
-    CONSOLE_ONLY_HINT_COUNT,
     CONSOLE_REFERENCE_LEVEL,
     IncrementalAgreementMetrics,
     IncrementalEngineAgreementMetrics,
@@ -100,37 +99,34 @@ def report_stage(message: str) -> None:
     )
 
 
+def evaluation_top_n(args) -> tuple:
+    return (1, 3) if getattr(args, "top3", False) else (1,)
+
+
 def format_live_metric(metric: dict) -> str:
     positions = int(metric["positions"])
     if positions == 0:
         return "未算出 (n=0)"
-    top1_hits = int(metric["hits"][1])
-    top3_hits = int(metric["hits"][3])
-    top1 = top1_hits / positions
-    top3 = top3_hits / positions
-    top1_lower, top1_upper = wilson_interval(top1_hits, positions)
-    top3_lower, top3_upper = wilson_interval(top3_hits, positions)
-    likelihood = (
-        f" | likelihood {metric['likelihood_sum'] / positions:.3%}"
-        if "likelihood_sum" in metric else ""
-    )
-    return (
-        f"top-1 {top1:.3%} [{top1_lower:.3%}, {top1_upper:.3%}] "
-        f"| top-3 {top3:.3%} [{top3_lower:.3%}, {top3_upper:.3%}] "
-        f"| n={positions:,}{likelihood}"
+    parts = []
+    for top_n, hits in sorted(metric["hits"].items()):
+        lower, upper = wilson_interval(int(hits), positions)
+        parts.append(f"top-{top_n} {hits / positions:.3%} [{lower:.3%}, {upper:.3%}]")
+    parts.append(f"n={positions:,}")
+    if "likelihood_sum" in metric:
+        parts.append(f"likelihood {metric['likelihood_sum'] / positions:.3%}")
+    return " | ".join(parts)
+
+
+def format_summary_accuracy(row: dict) -> str:
+    return ", ".join(
+        f"top-{top_n} {row[f'top{top_n}_accuracy']:.3%} "
+        f"[{row[f'top{top_n}_ci95_lower']:.3%}, {row[f'top{top_n}_ci95_upper']:.3%}]"
+        for top_n in (1, 3) if f"top{top_n}_accuracy" in row
     )
 
 
 def format_console_summary_line(row: dict) -> str:
-    return (
-        f"level {row['level']:2d}: "
-        f"top-1 {row['top1_accuracy']:.3%} "
-        f"[{row['top1_ci95_lower']:.3%}, "
-        f"{row['top1_ci95_upper']:.3%}], "
-        f"top-3 {row['top3_accuracy']:.3%} "
-        f"[{row['top3_ci95_lower']:.3%}, "
-        f"{row['top3_ci95_upper']:.3%}]"
-    )
+    return f"level {row['level']:2d}: {format_summary_accuracy(row)}"
 
 
 class AgreementProgressReporter:
@@ -246,7 +242,7 @@ def default_output_dir(
             f"_seed{args.sample_seed}_workers{workers}"
             f"_threads{args.egaroucid_threads}"
             f"_blendhint{ALL_LEGAL_HINT_COUNT}"
-            f"_consolehint{CONSOLE_ONLY_HINT_COUNT}"
+            f"_consolehint{max(evaluation_top_n(args))}"
             f"_v{SUMMARY_VERSION}"
         )
     )
@@ -281,7 +277,7 @@ def make_experiment_identity(
             str(level): (
                 ALL_LEGAL_HINT_COUNT
                 if level == CONSOLE_REFERENCE_LEVEL
-                else CONSOLE_ONLY_HINT_COUNT
+                else max(evaluation_top_n(args))
             )
             for level in CONSOLE_LEVELS
         },
@@ -347,7 +343,7 @@ def make_edax_identity(args, workers):
         "threads": args.edax_threads,
         "workers": min(args.edax_workers or workers, workers, len(EDAX_LEVELS) * args.positions),
         "hash_bits": EDAX_HASH_BITS,
-        "hint_count": CONSOLE_ONLY_HINT_COUNT,
+        "hint_count": max(evaluation_top_n(args)),
         "book": False,
         "ponder": False,
     }
@@ -374,6 +370,8 @@ def make_argparser() -> argparse.ArgumentParser:
         default="all",
         help="入力ディレクトリ内の追加分割。分割済みtest全体を使う既定値はall",
     )
+    parser.add_argument("--top3", action="store_true",
+                        help="Include top-3 agreement (default: top-1 only)")
     parser.add_argument("--split-seed", type=int, default=613)
     parser.add_argument("--sample-seed", type=int, default=613)
     add_board_data_arguments(parser)
@@ -570,7 +568,7 @@ def main() -> None:
     print(
         "hint候補数",
         f"level 21={ALL_LEGAL_HINT_COUNT}（全合法手）、"
-        f"level 1,5,9,13,17={CONSOLE_ONLY_HINT_COUNT}（top-3測定分）",
+        f"level 1,5,9,13,17={max(evaluation_top_n(args))}（一致率測定分）",
         flush=True,
     )
     print("出力先", output_dir, flush=True)
@@ -607,9 +605,10 @@ def main() -> None:
         groups,
         policy_logits,
         args.score_temperature,
+        top_n_values=evaluation_top_n(args),
     )
     progress_reporter = AgreementProgressReporter(live_metrics)
-    edax_live_metrics = IncrementalEngineAgreementMetrics(groups, EDAX_LEVELS)
+    edax_live_metrics = IncrementalEngineAgreementMetrics(groups, EDAX_LEVELS, evaluation_top_n(args))
     edax_reporter = EdaxProgressReporter(edax_live_metrics)
     edax_dir = (getattr(args, "hint_cache_dir", None) or output_dir) / "edax"
     edax_dir.mkdir(parents=True, exist_ok=True)
@@ -629,6 +628,7 @@ def main() -> None:
             "timeout_sec": args.egaroucid_timeout_sec,
             "max_retries": args.egaroucid_retries,
             "progress_interval_sec": args.progress_interval_sec,
+            "standalone_hint_count": max(evaluation_top_n(args)),
             "on_rows": progress_reporter.accept_rows,
         },
         "edax": {
@@ -639,6 +639,7 @@ def main() -> None:
             "timeout_sec": args.edax_timeout_sec,
             "max_retries": args.edax_retries,
             "progress_interval_sec": args.progress_interval_sec,
+            "standalone_hint_count": max(evaluation_top_n(args)),
             "edax_eval_file": Path(edax_config["eval_file"]),
             "on_rows": edax_reporter.accept_rows,
         },
@@ -649,7 +650,7 @@ def main() -> None:
     hint_elapsed = time.perf_counter() - hint_start
     (hints, cache_stats, level_timing, cpu_stats), egaroucid_elapsed = engine_searches["egaroucid"]
     (edax_hints, edax_cache_stats, edax_timing, edax_cpu_stats), edax_elapsed = engine_searches["edax"]
-    edax_metrics = evaluate_engine_agreement(groups, edax_hints)
+    edax_metrics = evaluate_engine_agreement(groups, edax_hints, evaluation_top_n(args))
     if edax_live_metrics.snapshot() != edax_metrics:
         raise RuntimeError("Edaxの途中集計値と最終一致率が一致しません")
     edax_rows = [
@@ -673,6 +674,7 @@ def main() -> None:
         hints,
         policy_logits,
         args.score_temperature,
+        top_n_values=evaluation_top_n(args),
     )
     if not agreement_results_equal(live_metrics.result(), (
         blend_metrics,
@@ -737,6 +739,7 @@ def main() -> None:
         "requested_positions": args.positions,
         "board_data_dir": str(args.board_data_dir),
         "evaluated_positions": blend_rows[0]["positions"],
+        "top_n_values": list(evaluation_top_n(args)),
         "unique_states": len(groups),
         "duplicate_samples_reused": args.positions - len(groups),
         "sample_global_indices_sha256": sample_hash,
@@ -759,13 +762,13 @@ def main() -> None:
             str(level): (
                 ALL_LEGAL_HINT_COUNT
                 if level == CONSOLE_REFERENCE_LEVEL
-                else CONSOLE_ONLY_HINT_COUNT
+                else max(evaluation_top_n(args))
             )
             for level in CONSOLE_LEVELS
         },
         "egaroucid_policy_support": {
             "blend_level_21": "all_legal_moves",
-            "standalone_levels_1_5_9_13_17": "top_3_moves",
+            "standalone_levels_1_5_9_13_17": f"top_{max(evaluation_top_n(args))}_moves",
         },
         "level21_reuse_validation": level21_validation,
         "execution": {
@@ -883,9 +886,9 @@ def main() -> None:
                 "(Egaroucid評価値 / temperature) で計算する"
             ),
             "standalone_levels_1_5_9_13_17": (
-                "Consoleへ直接要求したhint 3の出力順"
+                f"Consoleへ直接要求したhint {max(evaluation_top_n(args))}の出力順"
             ),
-            "edax": "Edax native hint 3 output order; book and pondering disabled",
+            "edax": f"Edax native hint {max(evaluation_top_n(args))} output order; book and pondering disabled",
             "alpha_zero_tie_break": "Consoleのhint出力順",
             "other_tie_break": "合法手の固定順",
         },
@@ -899,16 +902,16 @@ def main() -> None:
     write_csv(
         output_dir / "random_wthor_blend_summary.csv",
         blend_rows,
-        SUMMARY_FIELDS,
+        [field for field in SUMMARY_FIELDS if field in blend_rows[0]],
     )
     write_csv(
         output_dir / "random_wthor_console_level_summary.csv",
         console_rows,
-        CONSOLE_SUMMARY_FIELDS,
+        [field for field in CONSOLE_SUMMARY_FIELDS if field in console_rows[0]],
     )
     write_csv(
         output_dir / "random_wthor_edax_level_summary.csv",
-        edax_rows, CONSOLE_SUMMARY_FIELDS,
+        edax_rows, [field for field in CONSOLE_SUMMARY_FIELDS if field in edax_rows[0]],
     )
     with (
         output_dir / "random_wthor_blend_summary.json"
@@ -921,12 +924,7 @@ def main() -> None:
     for row in blend_rows:
         print(
             f"alpha={row['alpha']:.1f}: "
-            f"top-1 {row['top1_accuracy']:.3%} "
-            f"[{row['top1_ci95_lower']:.3%}, "
-            f"{row['top1_ci95_upper']:.3%}], "
-            f"top-3 {row['top3_accuracy']:.3%} "
-            f"[{row['top3_ci95_lower']:.3%}, "
-            f"{row['top3_ci95_upper']:.3%}], "
+            f"{format_summary_accuracy(row)}, "
             f"likelihood {row['mean_likelihood_percent']:.3f}% "
             f"(NLL {row['negative_log_likelihood']:.6f})"
         )

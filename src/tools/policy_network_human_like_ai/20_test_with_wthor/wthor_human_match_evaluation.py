@@ -225,10 +225,10 @@ def egaroucid_log_scores(
     return scores
 
 
-def empty_metric(with_likelihood=False) -> dict:
+def empty_metric(with_likelihood=False, top_n_values=TOP_N_VALUES) -> dict:
     metric = {
         "positions": 0,
-        "hits": {top_n: 0 for top_n in TOP_N_VALUES},
+        "hits": {top_n: 0 for top_n in top_n_values},
     }
     if with_likelihood:
         metric.update(likelihood_sum=0.0, log_likelihood_sum=0.0)
@@ -237,7 +237,7 @@ def empty_metric(with_likelihood=False) -> dict:
 
 def add_rank(metric: dict, rank: int, count: int) -> None:
     metric["positions"] += count
-    for top_n in TOP_N_VALUES:
+    for top_n in metric["hits"]:
         if rank <= top_n:
             metric["hits"][top_n] += count
 
@@ -248,14 +248,14 @@ def _copy_metric(metric: dict) -> dict:
         "positions": int(metric["positions"]),
         "hits": {
             top_n: int(metric["hits"][top_n])
-            for top_n in TOP_N_VALUES
+            for top_n in metric["hits"]
         },
     }
 
 
 def _merge_metric(destination: dict, source: dict) -> None:
     destination["positions"] += source["positions"]
-    for top_n in TOP_N_VALUES:
+    for top_n in destination["hits"]:
         destination["hits"][top_n] += source["hits"][top_n]
     for field in ("likelihood_sum", "log_likelihood_sum"):
         if field in source:
@@ -315,9 +315,11 @@ class IncrementalAgreementMetrics:
         groups: Sequence[PositionGroup],
         policy_logits: Mapping[StateKey, np.ndarray],
         score_temperature: float,
+        top_n_values: Sequence[int] = TOP_N_VALUES,
     ) -> None:
         if not math.isfinite(score_temperature) or score_temperature <= 0.0:
             raise ValueError("score_temperature must be finite and positive")
+        self._top_n_values = tuple(top_n_values)
         self._policy_logits = policy_logits
         self._score_temperature = score_temperature
         self._groups_by_key: Dict[
@@ -333,11 +335,11 @@ class IncrementalAgreementMetrics:
             self.illegal_label_samples += illegal
 
         self._blend_metrics = {
-            alpha: empty_metric(with_likelihood=True)
+            alpha: empty_metric(with_likelihood=True, top_n_values=self._top_n_values)
             for alpha in BLEND_PARAMS
         }
         self._console_metrics = {
-            level: empty_metric()
+            level: empty_metric(top_n_values=self._top_n_values)
             for level in CONSOLE_LEVELS
             if level != CONSOLE_REFERENCE_LEVEL
         }
@@ -365,7 +367,7 @@ class IncrementalAgreementMetrics:
         prepared_groups = self._groups_by_key[state_key]
         if level == CONSOLE_REFERENCE_LEVEL:
             additions = {
-                alpha: empty_metric(with_likelihood=True)
+                alpha: empty_metric(with_likelihood=True, top_n_values=self._top_n_values)
                 for alpha in BLEND_PARAMS
             }
             network_scores = self._policy_logits[state_key]
@@ -415,7 +417,7 @@ class IncrementalAgreementMetrics:
                     additions[alpha],
                 )
         else:
-            addition = empty_metric()
+            addition = empty_metric(top_n_values=self._top_n_values)
             for prepared in prepared_groups:
                 legal = prepared.legal
                 scores = egaroucid_log_scores(
@@ -493,11 +495,13 @@ def evaluate_agreement(
     hints: Dict[int, Dict[StateKey, HintData]],
     policy_logits: Dict[StateKey, np.ndarray],
     score_temperature: float,
+    top_n_values: Sequence[int] = TOP_N_VALUES,
 ) -> Tuple[dict, Dict[int, dict], int, int]:
     metrics = IncrementalAgreementMetrics(
         groups,
         policy_logits,
         score_temperature,
+        top_n_values,
     )
     for group in groups:
         metrics.add_hint(
@@ -515,12 +519,13 @@ def evaluate_agreement(
 class IncrementalEngineAgreementMetrics:
     """Accumulate native engine rankings once per level and board state."""
 
-    def __init__(self, groups, levels):
+    def __init__(self, groups, levels, top_n_values=TOP_N_VALUES):
+        self._top_n_values = tuple(top_n_values)
         self._groups = {}
         for group in groups:
             prepared, _, _ = _prepare_position_group(group)
             self._groups.setdefault(group.key, []).append(prepared)
-        self._metrics = {level: empty_metric() for level in levels}
+        self._metrics = {level: empty_metric(top_n_values=self._top_n_values) for level in levels}
         self._seen = set()
 
     def add_hint(self, level, state_key, hint):
@@ -531,7 +536,7 @@ class IncrementalEngineAgreementMetrics:
         identity = (level, state_key)
         if identity in self._seen:
             return False
-        addition = empty_metric()
+        addition = empty_metric(top_n_values=self._top_n_values)
         for prepared in self._groups[state_key]:
             for _, targets, count in prepared.valid_targets:
                 rank = min(
@@ -547,9 +552,9 @@ class IncrementalEngineAgreementMetrics:
         return {level: _copy_metric(metric) for level, metric in self._metrics.items()}
 
 
-def evaluate_engine_agreement(groups, hints):
+def evaluate_engine_agreement(groups, hints, top_n_values=TOP_N_VALUES):
     """Evaluate standalone top-N hints without treating level 21 as a blend."""
-    metrics = IncrementalEngineAgreementMetrics(groups, hints)
+    metrics = IncrementalEngineAgreementMetrics(groups, hints, top_n_values)
     for level, level_hints in hints.items():
         for group in groups:
             metrics.add_hint(level, group.key, level_hints[group.key])
@@ -559,7 +564,7 @@ def evaluate_engine_agreement(groups, hints):
 def metrics_to_result(metrics: Dict[float, dict]) -> dict:
     topn = []
     for parameter, metric in metrics.items():
-        for top_n in TOP_N_VALUES:
+        for top_n in metric["hits"]:
             positions = int(metric["positions"])
             hits = int(metric["hits"][top_n])
             topn.append(
@@ -602,6 +607,21 @@ def agreement_results_equal(first, second):
     return True
 
 
+def _accuracy_summary(topn: Mapping[int, dict]) -> dict:
+    positions = int(topn[1]["positions"])
+    result = {"positions": positions}
+    for top_n, metric in sorted(topn.items()):
+        hits = int(metric["hits"])
+        lower, upper = wilson_interval(hits, positions)
+        result.update({
+            f"top{top_n}_hits": hits,
+            f"top{top_n}_accuracy": hits / positions if positions else 0.0,
+            f"top{top_n}_ci95_lower": lower,
+            f"top{top_n}_ci95_upper": upper,
+        })
+    return result
+
+
 def make_blend_summary_rows(result: dict) -> List[dict]:
     likelihood = {
         round(float(row["blend_param"]), 10): {
@@ -609,45 +629,17 @@ def make_blend_summary_rows(result: dict) -> List[dict]:
         }
         for row in result.get("likelihood", [])
     }
-    topn = {
-        (round(float(row["blend_param"]), 10), int(row["top_n"])): row
-        for row in result["topn"]
-    }
-    rows = []
-    for alpha in BLEND_PARAMS:
-        top1 = topn[(round(alpha, 10), 1)]
-        top3 = topn[(round(alpha, 10), 3)]
-        positions = int(top1["positions"])
-        top1_hits = int(top1["hits"])
-        top3_hits = int(top3["hits"])
-        top1_lower, top1_upper = wilson_interval(
-            top1_hits,
-            positions,
-        )
-        top3_lower, top3_upper = wilson_interval(
-            top3_hits,
-            positions,
-        )
-        rows.append(
-            {
-                "alpha": alpha,
-                **likelihood.get(round(alpha, 10), {}),
-                "positions": positions,
-                "top1_hits": top1_hits,
-                "top1_accuracy": (
-                    top1_hits / positions if positions else 0.0
-                ),
-                "top1_ci95_lower": top1_lower,
-                "top1_ci95_upper": top1_upper,
-                "top3_hits": top3_hits,
-                "top3_accuracy": (
-                    top3_hits / positions if positions else 0.0
-                ),
-                "top3_ci95_lower": top3_lower,
-                "top3_ci95_upper": top3_upper,
-            }
-        )
-    return rows
+    return [
+        {
+            "alpha": alpha,
+            **likelihood.get(round(alpha, 10), {}),
+            **_accuracy_summary({
+                int(row["top_n"]): row for row in result["topn"]
+                if round(float(row["blend_param"]), 10) == round(alpha, 10)
+            }),
+        }
+        for alpha in BLEND_PARAMS
+    ]
 
 
 def make_console_level_summary_row(
@@ -656,33 +648,12 @@ def make_console_level_summary_row(
     elapsed_sec: float,
     engine_seconds: float = 0.0,
 ) -> dict:
-    topn = {
-        int(row["top_n"]): row
-        for row in result["topn"]
-        if float(row["blend_param"]) == 0.0
-    }
-    top1 = topn[1]
-    top3 = topn[3]
-    positions = int(top1["positions"])
-    top1_hits = int(top1["hits"])
-    top3_hits = int(top3["hits"])
-    top1_lower, top1_upper = wilson_interval(top1_hits, positions)
-    top3_lower, top3_upper = wilson_interval(top3_hits, positions)
     return {
         "level": level,
-        "positions": positions,
-        "top1_hits": top1_hits,
-        "top1_accuracy": (
-            top1_hits / positions if positions else 0.0
-        ),
-        "top1_ci95_lower": top1_lower,
-        "top1_ci95_upper": top1_upper,
-        "top3_hits": top3_hits,
-        "top3_accuracy": (
-            top3_hits / positions if positions else 0.0
-        ),
-        "top3_ci95_lower": top3_lower,
-        "top3_ci95_upper": top3_upper,
+        **_accuracy_summary({
+            int(row["top_n"]): row for row in result["topn"]
+            if float(row["blend_param"]) == 0.0
+        }),
         "elapsed_sec": float(elapsed_sec),
         "engine_seconds": float(engine_seconds),
     }
@@ -703,8 +674,7 @@ def make_level21_reuse_validation(
     fields = (
         "positions",
         "top1_hits",
-        "top3_hits",
-    )
+    ) + (("top3_hits",) if "top3_hits" in alpha_zero else ())
     return {
         "reference_console_level": CONSOLE_REFERENCE_LEVEL,
         "source": "same level-21 hint results as blend alpha=0.0",
@@ -733,7 +703,7 @@ def validate_aggregate_counts(
     for row in [*blend_rows, *console_rows]:
         positions = int(row["positions"])
         top1_hits = int(row["top1_hits"])
-        top3_hits = int(row["top3_hits"])
+        top3_hits = int(row.get("top3_hits", top1_hits))
         if positions != valid_positions:
             raise RuntimeError(
                 "agreement denominator mismatch: "

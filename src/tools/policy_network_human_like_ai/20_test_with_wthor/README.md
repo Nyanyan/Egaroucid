@@ -28,6 +28,12 @@ python run_random_wthor_blend_experiment.py `
   --output-dir output/human_match_WTHOR_1977_2024
 ```
 
+Agreement defaults to top-1 only. Add `--top3` to calculate and include top-3
+in progress, final output, CSV, and JSON. Standalone engine searches request one
+move by default, or three with `--top3`. The blend still requests all legal moves
+at Egaroucid level 21 for likelihood. Use a separate output directory when changing
+this setting because the requested hint counts are part of the cache identity.
+
 `--workers` is the total limit for Egaroucid and Edax combined, and must be
 at least 12 to start all engine/level combinations. For a 32-thread machine
 with one search thread per process, use `--workers 32`. All positions in the prepared `test` directory are evaluated by default
@@ -61,10 +67,10 @@ and output directory.
 
 ## Agreement and likelihood
 
-Top-1 and top-3 agreement retain the existing board-symmetry-aware definition:
+Top-1 and optional top-3 agreement retain the existing board-symmetry-aware definition:
 a prediction matches if a symmetry preserving both players' stones maps the
-observed human move to it. Engine baselines use their native `hint 3` output
-order. Egaroucid level 21 supplies the all-legal-move hints required by the blend.
+observed human move to it. Engine baselines use their native `hint 1` output
+order (`hint 3` with `--top3`). Egaroucid level 21 supplies the all-legal-move hints required by the blend.
 
 Likelihood answers: **What probability did the method assign to the exact move
 the human actually played?** For every alpha, compute
@@ -93,7 +99,7 @@ Every valid position sample has equal weight, including repeated boards with
 different human moves. These averages are not the product of all probabilities.
 Alpha 1 measures the policy network alone; alpha 0 measures the score-softmax
 policy used by the blend. The standalone engine baseline rows only report
-agreement: their top-3 hints are insufficient to normalize a full probability
+agreement: their limited hints are insufficient to normalize a full probability
 distribution. Empty samples have null likelihood fields. The policy-only
 evaluator also emits null log metrics when an observed probability is exactly
 zero, rather than writing nonstandard JSON infinities.
@@ -107,7 +113,8 @@ zero, rather than writing nonstandard JSON infinities.
 
 The policy-only `evaluate_wthor_human_match.py` also reports likelihood in its
 JSON and its overall / ten-move-bucket CSVs, after conditioning probabilities on
-legal moves. Use `run_random_wthor_blend_experiment.py` for the comparison above.
+legal moves. It also defaults to top-1; use `--top-n 1,3` to include top-3.
+Use `run_random_wthor_blend_experiment.py` for the comparison above.
 
 The old top-N evaluator, shard runner/merger, duplicate analyzer, blend CLI and
 legacy-only tests are archived locally in `legacy/`, which is ignored by Git.
