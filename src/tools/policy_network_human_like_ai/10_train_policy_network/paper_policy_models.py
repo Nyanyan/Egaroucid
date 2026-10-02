@@ -32,14 +32,14 @@ def expand_paper_policy(probabilities):
     Only built-in Keras layers are used, so .h5 files load without custom_objects.
     The three contiguous runs are 0..26, 29..34, and 37..63.
     """
-    column = Reshape((60, 1), name="policy60_column")(probabilities)
-    first = Cropping1D((0, 33), name="policy_first27")(column)
-    middle = Cropping1D((27, 27), name="policy_middle6")(column)
-    last = Cropping1D((33, 0), name="policy_last27")(column)
-    first = ZeroPadding1D((0, 2), name="policy_zero_d5_e5")(first)
-    middle = ZeroPadding1D((0, 2), name="policy_zero_d4_e4")(middle)
-    joined = Concatenate(axis=1, name="policy64_column")([first, middle, last])
-    return Flatten(name="policy")(joined)
+    column = Reshape((60, 1), name="policy60_column", dtype="float32")(probabilities)
+    first = Cropping1D((0, 33), name="policy_first27", dtype="float32")(column)
+    middle = Cropping1D((27, 27), name="policy_middle6", dtype="float32")(column)
+    last = Cropping1D((33, 0), name="policy_last27", dtype="float32")(column)
+    first = ZeroPadding1D((0, 2), name="policy_zero_d5_e5", dtype="float32")(first)
+    middle = ZeroPadding1D((0, 2), name="policy_zero_d4_e4", dtype="float32")(middle)
+    joined = Concatenate(axis=1, name="policy64_column", dtype="float32")([first, middle, last])
+    return Flatten(name="policy", dtype="float32")(joined)
 
 
 def build_paper_model(architecture: str, name: str, l2_value: float) -> Model:
@@ -70,7 +70,7 @@ def build_paper_model(architecture: str, name: str, l2_value: float) -> Model:
     x = ReLU(name="fc128_relu")(x)
     logits = Dense(
         60, kernel_initializer="he_normal", bias_initializer="zeros",
-        kernel_regularizer=regularizer, name="policy_logits60",
+        kernel_regularizer=regularizer, name="policy_logits60", dtype="float32",
     )(x)
-    probabilities = Softmax(name="policy60")(logits)
+    probabilities = Softmax(name="policy60", dtype="float32")(logits)
     return Model(inputs, expand_paper_policy(probabilities), name=name)

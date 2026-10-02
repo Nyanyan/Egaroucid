@@ -199,10 +199,10 @@ def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
     return specs
 
 
-def build_model(spec: ModelSpec) -> Model:
+def build_model(spec: ModelSpec, steps_per_execution: int = 1) -> Model:
     if spec.architecture != "mlp":
         model = build_paper_model(spec.architecture, spec.name, spec.l2)
-        compile_model(model, spec.learning_rate)
+        compile_model(model, spec.learning_rate, steps_per_execution)
         return model
     kernel_regularizer = keras_l2(spec.l2) if spec.l2 > 0.0 else None
     inputs = Input(shape=(INPUT_SIZE,), name="board")
@@ -217,17 +217,18 @@ def build_model(spec: ModelSpec) -> Model:
         x = LeakyReLU(alpha=spec.alpha, name=f"trunk_leaky_relu_{layer_idx}")(x)
         if spec.dropout > 0.0:
             x = Dropout(spec.dropout, name=f"trunk_dropout_{layer_idx}")(x)
-    logits = Dense(POLICY_SIZE, name="policy_logits")(x)
-    outputs = Softmax(name="policy")(logits)
+    logits = Dense(POLICY_SIZE, name="policy_logits", dtype="float32")(x)
+    outputs = Softmax(name="policy", dtype="float32")(logits)
     model = Model(inputs=inputs, outputs=outputs, name=spec.name)
-    compile_model(model, spec.learning_rate)
+    compile_model(model, spec.learning_rate, steps_per_execution)
     return model
 
 
-def compile_model(model: Model, learning_rate: float) -> None:
+def compile_model(model: Model, learning_rate: float, steps_per_execution: int = 1) -> None:
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        steps_per_execution=steps_per_execution,
     )
 
 
@@ -267,7 +268,7 @@ def save_history_csv(history: tf.keras.callbacks.History, out_file: Path) -> Non
 def train_one_model(spec: ModelSpec, splits: dict, args: argparse.Namespace, output_dir: Path) -> dict:
     tf.keras.backend.clear_session()
     set_reproducible_seed(args.seed)
-    model = build_model(spec)
+    model = build_model(spec, args.steps_per_execution)
     run_dir = output_dir / spec.name
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"\n=== training {spec.name} ===", flush=True)
@@ -293,6 +294,8 @@ def train_one_model(spec: ModelSpec, splits: dict, args: argparse.Namespace, out
         "adoption_rule": "use_model_after_requested_epoch_count",
         "validation_loss": float(history.history["val_loss"][-1]),
         "final_loss": float(history.history["loss"][-1]),
+        "precision": args.precision,
+        "steps_per_execution": args.steps_per_execution,
         "output_dir": str(run_dir),
         "prepared_dataset_manifest": str(output_dir / "prepared_dataset.json"),
         "binary_weights": str(weights_file) if spec.architecture == "mlp" else None,
@@ -379,12 +382,17 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-batch-size", type=int, default=65536)
     parser.add_argument("--predict-batch-size", type=int, default=None, help="Default: 256 when configs include a CNN, otherwise 8192.")
     parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument("--precision", choices=("float32", "mixed_float16"), default="float32")
+    parser.add_argument("--steps-per-execution", type=int, default=1)
     return parser
 
 
 def main() -> None:
     parser = make_argparser()
     args = parser.parse_args()
+    if args.steps_per_execution < 1:
+        parser.error("steps-per-execution must be positive")
+    tf.keras.mixed_precision.set_global_policy(args.precision)
     specs = parse_model_specs(args.configs, args)
     has_cnn = any(spec.architecture != "mlp" for spec in specs)
     if args.batch_size is None:
