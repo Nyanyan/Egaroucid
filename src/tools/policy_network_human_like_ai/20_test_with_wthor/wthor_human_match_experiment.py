@@ -14,6 +14,7 @@ import time
 from typing import Sequence
 
 import evaluate_wthor_blend_human_match as wthor
+from wthor_edax import DEFAULT_EDAX_EXE, EDAX_HASH_BITS, EDAX_LEVELS
 from wthor_hint_pipeline import (
     check_memory,
     collect_hints,
@@ -27,6 +28,7 @@ from wthor_human_match_evaluation import (
     CONSOLE_REFERENCE_LEVEL,
     IncrementalAgreementMetrics,
     evaluate_agreement,
+    evaluate_engine_agreement,
     load_position_groups,
     make_blend_summary_rows,
     make_console_level_summary_row,
@@ -40,7 +42,7 @@ from wthor_human_match_evaluation import (
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SUMMARY_VERSION = 5
+SUMMARY_VERSION = 6
 SUMMARY_FIELDS = (
     "alpha",
     "positions",
@@ -229,7 +231,7 @@ def make_experiment_identity(
     sample_records_hash: str,
 ) -> dict:
     return {
-        "identity_version": 5,
+        "identity_version": 6,
         "summary_version": SUMMARY_VERSION,
         "positions": args.positions,
         "data_split": args.data_split,
@@ -248,6 +250,7 @@ def make_experiment_identity(
             for level in CONSOLE_LEVELS
         },
         "nobook": True,
+        "edax": make_edax_identity(args, workers),
         "clear_cache_between_positions": False,
         "egaroucid_exe": str(args.egaroucid_exe.resolve()),
         "egaroucid_exe_sha256": file_sha256(args.egaroucid_exe),
@@ -284,7 +287,7 @@ def ensure_experiment_identity(
                 f"別の--output-dirを指定してください: differing={differing}"
             )
         return
-    if any(output_dir.glob("hint_score_cache_level*.sqlite3")):
+    if any(output_dir.glob("*hint_score_cache_level*.sqlite3")):
         raise ValueError(
             "実験条件メタデータのないhintキャッシュが出力先にあります。"
             "別の--output-dirを指定してください"
@@ -293,11 +296,31 @@ def ensure_experiment_identity(
         json.dump(identity, identity_file, ensure_ascii=False, indent=2)
 
 
+def make_edax_identity(args, workers):
+    exe = getattr(args, "edax_exe", None)
+    if exe is None:
+        return None
+    eval_file = args.edax_eval_file or exe.resolve().parent / "data" / "eval.dat"
+    return {
+        "levels": list(EDAX_LEVELS),
+        "exe": str(exe.resolve()),
+        "exe_sha256": file_sha256(exe),
+        "eval_file": str(eval_file.resolve()),
+        "eval_sha256": file_sha256(eval_file),
+        "threads": args.edax_threads,
+        "workers": min(args.edax_workers or workers, len(EDAX_LEVELS) * args.positions),
+        "hash_bits": EDAX_HASH_BITS,
+        "hint_count": CONSOLE_ONLY_HINT_COUNT,
+        "book": False,
+        "ponder": False,
+    }
+
+
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "WTHORからN局面を無作為抽出し、ブレンド方策と"
-            "Egaroucid各levelの人間着手一致率を測定します。"
+            "Egaroucid・Edax各levelの人間着手一致率を測定します。"
         )
     )
     parser.add_argument(
@@ -342,6 +365,14 @@ def make_argparser() -> argparse.ArgumentParser:
             f"開始するため{len(CONSOLE_LEVELS)}以上が必要"
         ),
     )
+    parser.add_argument("--edax-exe", type=Path, default=DEFAULT_EDAX_EXE)
+    parser.add_argument("--edax-eval-file", type=Path, default=None,
+                        help="Defaults to data/eval.dat beside the Edax executable")
+    parser.add_argument("--edax-workers", type=positive_int, default=None,
+                        help="Edax process limit; defaults to --workers")
+    parser.add_argument("--edax-threads", type=positive_int, default=1)
+    parser.add_argument("--edax-timeout-sec", type=positive_float, default=1800.0)
+    parser.add_argument("--edax-retries", type=int, choices=range(0, 6), default=2)
     parser.add_argument(
         "--egaroucid-threads",
         type=positive_int,
@@ -516,6 +547,10 @@ def main() -> None:
         flush=True,
     )
     print("出力先", output_dir, flush=True)
+    experiment_identity = make_experiment_identity(args, workers, sample_hash, sample_records_hash)
+    edax_config = experiment_identity["edax"]
+    print("Edax levels", ",".join(map(str, EDAX_LEVELS)), flush=True)
+    print("Edax worker", edax_config["workers"], flush=True)
     if args.dry_run:
         report_stage("dry-runを完了（探索は未実行）")
         return
@@ -526,12 +561,6 @@ def main() -> None:
         args.minimum_remaining_memory_mib,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
-    experiment_identity = make_experiment_identity(
-        args,
-        workers,
-        sample_hash,
-        sample_records_hash,
-    )
     ensure_experiment_identity(output_dir, experiment_identity)
 
     report_stage("Policy Networkの推論を開始")
@@ -573,6 +602,35 @@ def main() -> None:
         "Egaroucidによるhint探索を完了 "
         f"({format_duration(hint_elapsed)})"
     )
+
+    report_stage("Edaxによるhint探索を開始")
+    edax_start = time.perf_counter()
+    # Engine phases run sequentially, each within its own process budget.
+    check_memory(edax_config["workers"], 192.0, args.minimum_remaining_memory_mib)
+    edax_dir = (getattr(args, "hint_cache_dir", None) or output_dir) / "edax"
+    edax_dir.mkdir(parents=True, exist_ok=True)
+    ensure_experiment_identity(edax_dir, {
+        "edax": edax_config,
+        "sample_global_indices_sha256": sample_hash,
+        "sample_records_sha256": sample_records_hash,
+        "partition": experiment_identity["partition"],
+    })
+    edax_hints, edax_cache_stats, edax_timing, edax_cpu_stats = collect_hints(
+        groups, EDAX_LEVELS, edax_dir, edax_config["workers"],
+        args.edax_exe, args.edax_threads, args.edax_timeout_sec,
+        args.edax_retries, args.progress_interval_sec,
+        engine="edax", edax_eval_file=Path(edax_config["eval_file"]),
+    )
+    edax_elapsed = time.perf_counter() - edax_start
+    edax_metrics = evaluate_engine_agreement(groups, edax_hints)
+    edax_rows = [
+        make_console_level_summary_row(
+            level, metrics_to_result({0.0: edax_metrics[level]}),
+            edax_timing[level]["elapsed_sec"], edax_timing[level]["engine_seconds"],
+        )
+        for level in EDAX_LEVELS
+    ]
+    report_stage(f"Edaxによるhint探索を完了 ({format_duration(edax_elapsed)})")
 
     report_stage("最終一致率の検算と集計を開始")
     aggregate_start = time.perf_counter()
@@ -626,7 +684,7 @@ def main() -> None:
     validate_aggregate_counts(
         args.positions,
         blend_rows,
-        console_rows,
+        [*console_rows, *edax_rows],
         invalid_policy_samples,
         illegal_label_samples,
     )
@@ -658,6 +716,11 @@ def main() -> None:
         "sample_seed": args.sample_seed,
         "blend_params": list(BLEND_PARAMS),
         "console_levels": list(CONSOLE_LEVELS),
+        "edax_levels": list(EDAX_LEVELS),
+        "edax_level_results": edax_rows,
+        "edax_cache_stats_by_level": edax_cache_stats,
+        "edax_level_timing": edax_timing,
+        "edax_resources": edax_cpu_stats,
         "blend_console_hint_count": ALL_LEGAL_HINT_COUNT,
         "console_hint_count_by_level": {
             str(level): (
@@ -741,6 +804,7 @@ def main() -> None:
             "elapsed_sec": elapsed_sec,
             "sample_loading_sec": load_elapsed,
             "hint_evaluation_sec": hint_elapsed,
+            "edax_hint_evaluation_sec": edax_elapsed,
             "policy_inference_sec": policy_elapsed,
             "aggregation_sec": aggregate_elapsed,
         },
@@ -785,6 +849,7 @@ def main() -> None:
             "standalone_level_21": (
                 "ブレンド用hint 64の先頭3手"
             ),
+            "edax": "Edax native hint 3 output order; book and pondering disabled",
             "alpha_zero_tie_break": "Consoleのhint出力順",
             "other_tie_break": "合法手の固定順",
         },
@@ -804,6 +869,10 @@ def main() -> None:
         output_dir / "random_wthor_console_level_summary.csv",
         console_rows,
         CONSOLE_SUMMARY_FIELDS,
+    )
+    write_csv(
+        output_dir / "random_wthor_edax_level_summary.csv",
+        edax_rows, CONSOLE_SUMMARY_FIELDS,
     )
     with (
         output_dir / "random_wthor_blend_summary.json"
@@ -826,6 +895,10 @@ def main() -> None:
     print()
     print("Console単体")
     for row in console_rows:
+        print(format_console_summary_line(row))
+    print()
+    print("Edax単体")
+    for row in edax_rows:
         print(format_console_summary_line(row))
     print()
     print("hint評価時間", format_duration(hint_elapsed))

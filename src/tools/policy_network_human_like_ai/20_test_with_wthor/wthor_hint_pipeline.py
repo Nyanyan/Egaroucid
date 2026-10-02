@@ -36,6 +36,7 @@ from wthor_human_match_evaluation import (  # noqa: E402
     PositionGroup,
     StateKey,
 )
+from wthor_edax import EdaxHintRunner  # noqa: E402
 
 
 _HINT_CANCEL_EVENT = None
@@ -61,6 +62,8 @@ class HintTask:
     actor_id: Optional[int] = None
     shared_work: bool = False
     initial_state: Optional[StateKey] = None
+    engine: str = "egaroucid"
+    edax_eval_file: Optional[str] = None
 
 
 HintRowsCallback = Callable[
@@ -493,13 +496,18 @@ def run_hint_task(task: HintTask) -> dict:
             side = state_key[2]
             for attempt in range(task.max_retries + 1):
                 if runner is None:
-                    runner = EgaroucidHintRunner(
+                    runner_class = EdaxHintRunner if task.engine == "edax" else EgaroucidHintRunner
+                    runner_options = (
+                        {"eval_file": task.edax_eval_file} if task.engine == "edax" else {}
+                    )
+                    runner = runner_class(
                         Path(task.egaroucid_exe),
                         level=task.level,
                         threads=task.egaroucid_threads,
                         timeout_sec=task.timeout_sec,
                         persistent=True,
                         cancel_event=_HINT_CANCEL_EVENT,
+                        **runner_options,
                     )
                 try:
                     scores, raw_hint = runner.hint_scores(
@@ -688,6 +696,9 @@ def collect_hints(
     progress_interval_sec: float,
     on_rows: Optional[HintRowsCallback] = None,
     progress_callback: Optional[HintProgressCallback] = None,
+    *,
+    engine: str = "egaroucid",
+    edax_eval_file: Optional[Path] = None,
 ) -> Tuple[
     Dict[int, Dict[StateKey, HintData]],
     Dict[int, dict],
@@ -696,6 +707,15 @@ def collect_hints(
 ]:
     if progress_interval_sec <= 0.0:
         raise ValueError("progress_interval_sec must be positive")
+    if engine not in ("egaroucid", "edax"):
+        raise ValueError(f"unsupported hint engine: {engine}")
+
+    def hint_count_for_level(level):
+        return (
+            ALL_LEGAL_HINT_COUNT
+            if engine == "egaroucid" and level == CONSOLE_REFERENCE_LEVEL
+            else CONSOLE_ONLY_HINT_COUNT
+        )
 
     state_keys = [group.key for group in groups]
     state_index_by_key = {
@@ -724,17 +744,13 @@ def collect_hints(
             cache = HintCache(
                 output_dir
                 / (
-                    f"hint_score_cache_level{level}"
-                    f"_hint{ALL_LEGAL_HINT_COUNT if level == CONSOLE_REFERENCE_LEVEL else CONSOLE_ONLY_HINT_COUNT}"
+                    f"{'edax_' if engine == 'edax' else ''}hint_score_cache_level{level}"
+                    f"_hint{hint_count_for_level(level)}"
                     ".sqlite3"
                 )
             )
             caches[level] = cache
-            hint_count = (
-                ALL_LEGAL_HINT_COUNT
-                if level == CONSOLE_REFERENCE_LEVEL
-                else CONSOLE_ONLY_HINT_COUNT
-            )
+            hint_count = hint_count_for_level(level)
             cached = cache.load(level, hint_count, state_keys)
             hints[level] = cached
             missing_by_level[level] = [
@@ -830,11 +846,7 @@ def collect_hints(
                 raise RuntimeError(
                     f"received hint rows for unexpected level {level}"
                 )
-            expected_hint_count = (
-                ALL_LEGAL_HINT_COUNT
-                if level == CONSOLE_REFERENCE_LEVEL
-                else CONSOLE_ONLY_HINT_COUNT
-            )
+            expected_hint_count = hint_count_for_level(level)
             if hint_count != expected_hint_count:
                 raise RuntimeError(
                     f"level {level}: expected hint_count "
@@ -1201,11 +1213,7 @@ def collect_hints(
                         return False
                     task = HintTask(
                         level=level,
-                        hint_count=(
-                            ALL_LEGAL_HINT_COUNT
-                            if level == CONSOLE_REFERENCE_LEVEL
-                            else CONSOLE_ONLY_HINT_COUNT
-                        ),
+                        hint_count=hint_count_for_level(level),
                         states=(),
                         egaroucid_exe=str(egaroucid_exe),
                         egaroucid_threads=egaroucid_threads,
@@ -1214,6 +1222,8 @@ def collect_hints(
                         actor_id=next_actor_id,
                         shared_work=True,
                         initial_state=initial_state,
+                        engine=engine,
+                        edax_eval_file=str(edax_eval_file) if edax_eval_file is not None else None,
                     )
                     next_actor_id += 1
                     future = executor.submit(run_hint_task, task)

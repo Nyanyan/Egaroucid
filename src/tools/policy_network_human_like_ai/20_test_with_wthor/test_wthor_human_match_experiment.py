@@ -357,7 +357,7 @@ class HumanMatchExperimentTest(unittest.TestCase):
                     {"workers": 32},
                 )
 
-    def test_v5_identity_records_elastic_level_actor_partition(self) -> None:
+    def test_identity_records_elastic_level_actor_partition(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             executable = temp_path / "egaroucid.exe"
@@ -382,14 +382,14 @@ class HumanMatchExperimentTest(unittest.TestCase):
                 sample_records_hash="records",
             )
 
-        self.assertEqual(5, SUMMARY_VERSION)
-        self.assertEqual(5, identity["identity_version"])
+        self.assertEqual(6, SUMMARY_VERSION)
+        self.assertEqual(6, identity["identity_version"])
         self.assertEqual(
             "level_fixed_persistent_actors_with_atomic_per_level_"
             "cursor_elastic_after_level21_v1",
             identity["partition"],
         )
-        self.assertTrue(default_output_dir(args, 16).name.endswith("_v5"))
+        self.assertTrue(default_output_dir(args, 16).name.endswith(f"_v{SUMMARY_VERSION}"))
 
     def test_top3_hint_is_valid_for_standalone_console_metrics(self) -> None:
         state = BoardState.initial()

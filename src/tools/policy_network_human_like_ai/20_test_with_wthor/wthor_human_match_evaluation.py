@@ -487,6 +487,22 @@ def evaluate_agreement(
     return metrics.result()
 
 
+def evaluate_engine_agreement(groups, hints):
+    """Evaluate standalone top-N hints without treating level 21 as a blend."""
+    metrics = {level: empty_metric() for level in hints}
+    for group in groups:
+        prepared, _, _ = _prepare_position_group(group)
+        for level, level_hints in hints.items():
+            hint = level_hints[group.key]
+            for targets, count in prepared.valid_targets:
+                rank = min(
+                    (index for index, move in enumerate(hint.move_order, 1) if move in targets),
+                    default=POLICY_SIZE + 1,
+                )
+                add_rank(metrics[level], rank, count)
+    return metrics
+
+
 def metrics_to_result(metrics: Dict[float, dict]) -> dict:
     topn = []
     for parameter, metric in metrics.items():
