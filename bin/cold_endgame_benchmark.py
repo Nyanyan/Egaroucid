@@ -563,7 +563,7 @@ def parse_end_iterations(
             end_last_time_ms = int(terminated_match.group(1))
         # A completed root search can be followed on the same log line by an
         # auxiliary policy-verification timeout (for example,
-        # "value ... narrow-alt@88% terminated").  Only a root tail that
+        # "value ... defensive-alt@88% terminated").  Only a root tail that
         # starts with "terminated" means the end iteration itself timed out.
         if tail.lstrip().lower().startswith("terminated") or "value" not in tail.lower():
             continue
