@@ -4,7 +4,7 @@ Run `run_random_wthor_blend_experiment.py N` to evaluate the same sampled WTHOR
 positions with:
 
 - Blended policies at alpha = 0, 0.2, 0.4, 0.6, 0.8, 1.
-- Egaroucid at levels **1, 5, 9, 13, 17, 21**.
+- Egaroucid for Console at levels **1, 5, 9, 13, 17**. Level 21 is reported as alpha = 0.
 - Edax at levels **1, 5, 9, 13, 17, 21**.
 
 For example, from this directory:
@@ -25,9 +25,10 @@ Edax defaults to `bin/versions/edax_4_6/wEdax-x86-64.exe`, with `data/eval.dat`
 beside the executable. Override with `--edax-exe` and `--edax-eval-file`.
 `--edax-workers` caps Edax within the shared `--workers` limit; it does not
 add extra processes. Both engines start concurrently and reuse freed slots.
-Progress reports show engine names and Edax agreement for each level.
-The worker semantics changed, so use a new output directory such as
-`output/human_match_parallel` for this version. Edax uses
+Progress reports combine blend, Egaroucid for Console, and Edax results in one
+block per update, retaining finished engines in subsequent reports.
+When migrating from the old sequential version, use a new output directory such
+as `output/human_match_parallel`. Edax uses
 `-n` for thread count, a 22-bit hash table, and disables book and pondering.
 `--edax-timeout-sec` and `--edax-retries` control failed-search handling.
 
@@ -37,12 +38,18 @@ record executable/evaluation-data hashes and search settings. Changing experimen
 conditions requires a different output directory. Historical results in
 `RESULTS.md` describe their original conditions and are not recomputed.
 
+Console level 21 has the same result as alpha = 0, so its duplicate row is omitted
+from progress, final console output, CSV, and JSON comparison results. Level 21
+is still searched for the blend. This display change preserves the search
+identity: existing parallel-run caches can be reused with the same settings
+and output directory.
+
 ## Agreement and likelihood
 
 Top-1 and top-3 agreement retain the existing board-symmetry-aware definition:
 a prediction matches if a symmetry preserving both players' stones maps the
 observed human move to it. Engine baselines use their native `hint 3` output
-order. Egaroucid level 21 reuses the all-legal-move hints required by the blend.
+order. Egaroucid level 21 supplies the all-legal-move hints required by the blend.
 
 Likelihood answers: **What probability did the method assign to the exact move
 the human actually played?** For every alpha, compute

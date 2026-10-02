@@ -7,6 +7,7 @@ import unittest
 from wthor_human_match_evaluation import BLEND_PARAMS, CONSOLE_LEVELS
 from wthor_human_match_experiment import (
     AgreementProgressReporter,
+    CONSOLE_RESULT_LEVELS,
     format_console_summary_line,
     format_live_metric,
     make_argparser,
@@ -79,7 +80,7 @@ class ProgressReportingTest(unittest.TestCase):
         text = output.getvalue()
         for alpha in BLEND_PARAMS:
             self.assertEqual(1, text.count(f"[blend alpha={alpha:.1f}]"))
-        self.assertEqual(1, text.count("[Egaroucid for Console level=21]"))
+        self.assertNotIn("[Egaroucid for Console level=21]", text)
         self.assertIn("[Egaroucid for Console level= 1] 未算出 (n=0)", text)
         self.assertIn(
             "top-1 60.000% [31.267%, 83.182%] "
@@ -93,7 +94,7 @@ class ProgressReportingTest(unittest.TestCase):
             for line in text.splitlines()
             if "[blend alpha=" in line or "[Egaroucid for Console level=" in line
         ]
-        self.assertEqual(len(BLEND_PARAMS) + len(CONSOLE_LEVELS), len(model_lines))
+        self.assertEqual(len(BLEND_PARAMS) + len(CONSOLE_RESULT_LEVELS), len(model_lines))
 
     def test_report_shows_pending_models_before_first_result(self):
         metrics = FakeIncrementalMetrics()
@@ -104,7 +105,7 @@ class ProgressReportingTest(unittest.TestCase):
             reporter.report({"final": False})
 
         self.assertEqual(
-            len(BLEND_PARAMS) + len(CONSOLE_LEVELS),
+            len(BLEND_PARAMS) + len(CONSOLE_RESULT_LEVELS),
             output.getvalue().count("未算出 (n=0)"),
         )
 

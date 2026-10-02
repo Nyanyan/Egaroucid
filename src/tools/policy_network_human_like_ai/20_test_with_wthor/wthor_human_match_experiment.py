@@ -47,6 +47,9 @@ from wthor_likelihood import LIKELIHOOD_DEFINITION, LIKELIHOOD_FIELDS
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SUMMARY_VERSION = 8
+CONSOLE_RESULT_LEVELS = tuple(
+    level for level in CONSOLE_LEVELS if level != CONSOLE_REFERENCE_LEVEL
+)
 SUMMARY_FIELDS = (
     "alpha",
     "positions",
@@ -165,7 +168,7 @@ class AgreementProgressReporter:
                 f"{format_live_metric(metric)}"
                 f"{hint_progress(CONSOLE_REFERENCE_LEVEL)}"
             )
-        for level in CONSOLE_LEVELS:
+        for level in CONSOLE_RESULT_LEVELS:
             metric = console_metrics[level]
             lines.append(
                 f"  [Egaroucid for Console level={level:2d}] "
@@ -560,7 +563,7 @@ def main() -> None:
     )
     print("探索スレッド数の上限", search_thread_budget, flush=True)
     print("論理CPUスレッド", logical_cpus, flush=True)
-    print("level 21", "ブレンドとConsole単体で共有", flush=True)
+    print("Egaroucid level 21", "ブレンド用（単体結果はalpha=0.0）", flush=True)
     print(
         "level 1,5,9,13,17のConsole",
         "cold cache開始時は各level 1プロセスを常駐",
@@ -715,6 +718,8 @@ def main() -> None:
         raise RuntimeError(
             "level 21 and blend alpha=0.0 aggregate counts differ"
         )
+    # Keep the reuse check, but report the reference engine only as alpha=0.0.
+    console_rows = [row for row in console_rows if row["level"] in CONSOLE_RESULT_LEVELS]
     validate_aggregate_counts(
         args.positions,
         blend_rows,
@@ -749,7 +754,8 @@ def main() -> None:
         "split_seed": args.split_seed,
         "sample_seed": args.sample_seed,
         "blend_params": list(BLEND_PARAMS),
-        "console_levels": list(CONSOLE_LEVELS),
+        "console_levels": list(CONSOLE_RESULT_LEVELS),
+        "egaroucid_hint_levels": list(CONSOLE_LEVELS),
         "edax_levels": list(EDAX_LEVELS),
         "edax_level_results": edax_rows,
         "edax_cache_stats_by_level": edax_cache_stats,
@@ -767,9 +773,6 @@ def main() -> None:
         "egaroucid_policy_support": {
             "blend_level_21": "all_legal_moves",
             "standalone_levels_1_5_9_13_17": "top_3_moves",
-            "standalone_level_21": (
-                "reused_from_all_legal_blend_evaluation"
-            ),
         },
         "level21_reuse_validation": level21_validation,
         "execution": {
@@ -889,9 +892,6 @@ def main() -> None:
             "standalone_levels_1_5_9_13_17": (
                 "Consoleへ直接要求したhint 3の出力順"
             ),
-            "standalone_level_21": (
-                "ブレンド用hint 64の先頭3手"
-            ),
             "edax": "Edax native hint 3 output order; book and pondering disabled",
             "alpha_zero_tie_break": "Consoleのhint出力順",
             "other_tie_break": "合法手の固定順",
@@ -938,7 +938,7 @@ def main() -> None:
             f"(NLL {row['negative_log_likelihood']:.6f})"
         )
     print()
-    print("Console単体")
+    print("Egaroucid for Console単体")
     for row in console_rows:
         print(format_console_summary_line(row))
     print()
