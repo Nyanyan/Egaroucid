@@ -351,7 +351,8 @@ def validate_input_files(args: argparse.Namespace, alphas: Sequence[float]) -> N
         required["Edax executable"] = Path(args.edax_exe)
         required["Edax evaluation data"] = edax_eval_path(args)
     if any(alpha > 0.0 for alpha in alphas):
-        required["policy weights"] = Path(args.weights)
+        if args.policy_backend == "numpy":
+            required["policy weights"] = Path(args.weights)
         if args.policy_backend == "tensorflow":
             required["policy model"] = policy_model_path(args)
             if importlib.util.find_spec("tensorflow") is None:
@@ -456,6 +457,8 @@ def start_policy_server(
         ),
     ]
     environment = os.environ.copy()
+    if args.logit_blend:
+        command.extend(["--output", "logits"])
     environment["TF_CPP_MIN_LOG_LEVEL"] = "2"
     environment["OPENBLAS_NUM_THREADS"] = str(
         args.policy_inference_threads
@@ -580,6 +583,8 @@ def build_player_specs(
                 command_parts.extend(
                     ["--hint-cache-db", str(hint_cache_db)]
                 )
+            if args.logit_blend:
+                command_parts.append("--logit-blend")
             command = tuple(command_parts)
             setboard_before_genmove = True
         specs.append(
@@ -722,7 +727,8 @@ def build_manifest_configuration(
         inputs["edax_executable"] = file_identity(Path(args.edax_exe))
         inputs["edax_evaluation_data"] = file_identity(edax_eval_path(args))
     if any(alpha > 0.0 for alpha in alphas):
-        inputs["policy_weights"] = file_identity(Path(args.weights))
+        if args.policy_backend == "numpy":
+            inputs["policy_weights"] = file_identity(Path(args.weights))
         if args.policy_backend == "tensorflow":
             inputs["policy_model"] = file_identity(policy_model_path(args))
     inputs["implementation_sources"] = implementation_file_identities()
@@ -771,6 +777,7 @@ def build_manifest_configuration(
             "engine_threads": args.engine_threads,
             "blend_egaroucid_level": args.blend_egaroucid_level,
             "score_temperature": args.score_temperature,
+            "logit_blend": args.logit_blend,
             "hint_cache": not args.no_hint_cache,
             "gtp_command_timeout_sec": args.gtp_command_timeout_sec,
             "egaroucid_hint_timeout_sec": (
@@ -1015,6 +1022,8 @@ def make_argparser() -> argparse.ArgumentParser:
         help="Timeout used inside each blended engine for one hint command.",
     )
     parser.add_argument("--score-temperature", type=float, default=1.0)
+    parser.add_argument("--logit-blend", action="store_true",
+                        help="Blend logits and engine scores before softmax to avoid underflow")
     parser.add_argument(
         "--openings",
         type=Path,

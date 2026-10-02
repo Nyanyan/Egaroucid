@@ -71,7 +71,10 @@ def boards_to_features(requests: list["InferenceRequest"]) -> np.ndarray:
 
 
 class PolicyBackend:
-    def __init__(self, backend: str, weights: Path, model: Path):
+    def __init__(self, backend: str, weights: Path, model: Path, output: str = "probabilities"):
+        if output not in ("probabilities", "logits"):
+            raise ValueError(f"unknown policy output: {output}")
+        self.output = output
         self.name = backend
         self.device = "CPU"
         self.version = str(np.__version__)
@@ -86,6 +89,10 @@ class PolicyBackend:
                 for gpu in gpus:
                     tf.config.experimental.set_memory_growth(gpu, True)
                 keras_model = tf.keras.models.load_model(model, compile=False)
+                if output == "logits":
+                    layer_names = {layer.name for layer in keras_model.layers}
+                    logit_name = "policy_logits60" if "policy_logits60" in layer_names else "policy_logits"
+                    keras_model = tf.keras.Model(keras_model.input, keras_model.get_layer(logit_name).output)
 
                 @tf.function(
                     input_signature=[tf.TensorSpec(shape=(None, INPUT_SIZE), dtype=tf.float32)],
@@ -111,9 +118,18 @@ class PolicyBackend:
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         if self.tensorflow_infer is not None:
-            return self.tensorflow_infer(x).numpy().astype(np.float32, copy=False)
+            values = self.tensorflow_infer(x).numpy().astype(np.float32, copy=False)
+            if self.output == "logits" and values.shape[1] == 60:
+                # These four occupied initial squares are never legal moves.
+                policies = [p for p in range(64) if p not in (27, 28, 35, 36)]
+                expanded = np.full((len(values), 64), -1.0e30, dtype=np.float32)
+                expanded[:, policies] = values
+                return expanded
+            return values
         if self.binary_network is None:
             raise RuntimeError("policy backend is not initialized")
+        if self.output == "logits":
+            return self.binary_network.predict_logits(x)
         return self.binary_network.predict(x)
 
 
@@ -256,6 +272,7 @@ class PolicyBatchServer:
             inference_sec = self.total_inference_sec
         return {
             "backend": self.backend.name,
+            "output": self.backend.output,
             "backend_version": self.backend.version,
             "device": self.backend.device,
             "host": self.host,
@@ -307,6 +324,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--model", type=Path, default=default_model_file())
     parser.add_argument("--backend", choices=("auto", "tensorflow", "numpy"), default="auto")
+    parser.add_argument("--output", choices=("probabilities", "logits"), default="probabilities")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--max-batch-size", type=int, default=128)
@@ -321,7 +339,7 @@ def main() -> None:
         raise ValueError("--max-batch-size must be positive")
     if args.batch_wait_ms < 0.0:
         raise ValueError("--batch-wait-ms must be non-negative")
-    backend = PolicyBackend(args.backend, args.weights, args.model)
+    backend = PolicyBackend(args.backend, args.weights, args.model, args.output)
     server = PolicyBatchServer(
         args.host,
         args.port,

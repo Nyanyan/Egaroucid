@@ -885,7 +885,9 @@ class BlendedPolicy:
         hint_command_semaphore=None,
         minimum_available_memory_mib: Optional[float] = None,
         estimated_egaroucid_memory_mib: float = 0.0,
+        logit_blend: bool = False,
     ):
+        self.logit_blend = bool(logit_blend)
         self.policy_client = None
         if policy_server_port is not None:
             self.policy_network = None
@@ -1016,6 +1018,8 @@ class BlendedPolicy:
         alpha = float(blend_param)
         if not 0.0 <= alpha <= 1.0:
             raise ValueError("alpha must be in [0, 1]")
+        if self.logit_blend:
+            return self.blended_logit_distribution(state, side, alpha, legal_policies)
         policy_dist = self.policy_distribution(state, side, legal_policies)
         if alpha >= 1.0:
             egaroucid_dist = np.zeros(POLICY_SIZE, dtype=np.float32)
@@ -1024,6 +1028,31 @@ class BlendedPolicy:
         egaroucid_dist = self.egaroucid_distribution(scores, legal_policies)
         blended = geometric_blend_distribution(policy_dist, egaroucid_dist, legal_policies, alpha)
         return blended, policy_dist, egaroucid_dist, scores, raw_hint
+
+    def blended_logit_distribution(self, state, side, alpha, legal_policies):
+        # A managed server in this mode returns raw logits, including for CNNs.
+        if self.policy_client is not None:
+            logits = self.policy_client.predict(state, side)[0]
+        else:
+            logits = self.policy_network.predict_logits(board_to_features(state, side))[0]
+        legal = np.asarray(legal_policies, dtype=np.int64)
+
+        def distribution(values):
+            result = np.zeros(POLICY_SIZE, dtype=np.float64)
+            if len(legal):
+                values = np.asarray(values, dtype=np.float64)
+                exp_values = np.exp(values - np.max(values))
+                result[legal] = exp_values / exp_values.sum()
+            return result
+
+        policy_values = np.asarray(logits[legal], dtype=np.float64)
+        policy_dist = distribution(policy_values)
+        if alpha == 1.0:
+            return policy_dist, policy_dist, np.zeros(POLICY_SIZE), {}, ""
+        scores, raw_hint = self.cached_hint_scores(state, side)
+        score_values = np.asarray([scores[p] / self.score_temperature for p in legal])
+        blended = distribution(alpha * policy_values + (1.0 - alpha) * score_values)
+        return blended, policy_dist, distribution(score_values), scores, raw_hint
 
 
 def distribution_rows(

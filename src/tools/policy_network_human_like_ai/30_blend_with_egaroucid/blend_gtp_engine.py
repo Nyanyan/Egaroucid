@@ -48,6 +48,7 @@ class BlendGtpEngine:
             policy_server_timeout_sec=args.policy_server_timeout_sec,
             score_temperature=args.score_temperature,
             legal_mask_policy=not args.no_legal_mask_policy,
+            logit_blend=args.logit_blend,
             minimum_available_memory_mib=(
                 args.minimum_available_memory_mib
             ),
@@ -209,6 +210,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--policy-server-port", type=int, default=None)
     parser.add_argument("--policy-server-timeout-sec", type=float, default=30.0)
     parser.add_argument("--score-temperature", type=float, default=1.0)
+    parser.add_argument("--logit-blend", action="store_true")
     parser.add_argument(
         "--measure-move-stone-loss",
         action="store_true",
