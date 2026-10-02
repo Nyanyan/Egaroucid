@@ -161,9 +161,10 @@ class FakeActorExecutor:
 class HumanMatchExperimentTest(unittest.TestCase):
     def test_at_least_one_worker_per_level_is_required(self) -> None:
         self.assertEqual((1, 5, 9, 13, 17, 21), CONSOLE_LEVELS)
-        with self.assertRaisesRegex(ValueError, "6以上"):
-            require_all_levels_to_start(5)
-        self.assertEqual(6, require_all_levels_to_start(6))
+        with self.assertRaisesRegex(ValueError, "12以上"):
+            require_all_levels_to_start(6)
+        self.assertEqual(12, require_all_levels_to_start(12))
+        self.assertEqual(32, require_all_levels_to_start(32))
 
     def test_duplicate_states_are_grouped_without_losing_labels(self) -> None:
         state = BoardState.initial()
@@ -382,8 +383,8 @@ class HumanMatchExperimentTest(unittest.TestCase):
                 sample_records_hash="records",
             )
 
-        self.assertEqual(7, SUMMARY_VERSION)
-        self.assertEqual(6, identity["identity_version"])
+        self.assertEqual(8, SUMMARY_VERSION)
+        self.assertEqual(7, identity["identity_version"])
         self.assertEqual(
             "level_fixed_persistent_actors_with_atomic_per_level_"
             "cursor_elastic_after_level21_v1",

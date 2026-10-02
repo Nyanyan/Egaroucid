@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+from contextlib import nullcontext
 from dataclasses import dataclass
 import json
 import multiprocessing
@@ -358,11 +359,14 @@ class CpuMonitor:
                 processes = [root]
             tree_rss = 0
             egaroucid_processes = 0
+            edax_processes = 0
             for process in processes:
                 try:
                     tree_rss += process.memory_info().rss
                     if "egaroucid" in process.name().lower():
                         egaroucid_processes += 1
+                    if "edax" in process.name().lower():
+                        edax_processes += 1
                 except psutil.Error:
                     pass
             memory = psutil.virtual_memory()
@@ -377,6 +381,7 @@ class CpuMonitor:
                     tree_rss / (1024.0 * 1024.0)
                 ),
                 "egaroucid_processes": egaroucid_processes,
+                "edax_processes": edax_processes,
             }
             with self.lock:
                 self.samples.append(sample)
@@ -430,6 +435,9 @@ class CpuMonitor:
                 )
                 if samples
                 else None
+            ),
+            "maximum_edax_processes": (
+                max(row["edax_processes"] for row in samples) if samples else None
             ),
         }
 
@@ -699,6 +707,9 @@ def collect_hints(
     *,
     engine: str = "egaroucid",
     edax_eval_file: Optional[Path] = None,
+    cancellation_event=None,
+    progress_lock=None,
+    shared_slots=None,
 ) -> Tuple[
     Dict[int, Dict[StateKey, HintData]],
     Dict[int, dict],
@@ -709,6 +720,7 @@ def collect_hints(
         raise ValueError("progress_interval_sec must be positive")
     if engine not in ("egaroucid", "edax"):
         raise ValueError(f"unsupported hint engine: {engine}")
+    engine_label = "Edax" if engine == "edax" else "Egaroucid"
 
     def hint_count_for_level(level):
         return (
@@ -977,6 +989,7 @@ def collect_hints(
                 )
             return {
                 "kind": "hint_progress",
+                "engine": engine,
                 "final": final,
                 "completed_states": completed_states,
                 "total_states": total_states,
@@ -1044,11 +1057,12 @@ def collect_hints(
                     f" | 関連メモリ "
                     f"{cpu['process_tree_memory_mib'] / 1024.0:.1f} GiB"
                     f" | Egaroucid {cpu['egaroucid_processes']}"
+                    f" | Edax {cpu['edax_processes']}"
                 )
             progress_kind = "hint進捗・完了" if final else "hint進捗"
             progress_label = (
                 f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
-                f"[{progress_kind}] "
+                f"[{engine_label} {progress_kind}] "
             )
             active_level_text = ", ".join(
                 f"level {level}:{count}"
@@ -1066,7 +1080,7 @@ def collect_hints(
                 f" | 経過 {format_duration(snapshot['elapsed_sec'])}"
                 f" | 概算残り {eta_text}"
                 f" | {snapshot['rate_states_per_sec']:.2f}件/秒",
-                f"  [実行状況] Console完了 "
+                f"  [実行状況] {engine_label}完了 "
                 f"{snapshot['completed_tasks']}"
                 f" | 起動 {snapshot['submitted_tasks']}"
                 f" | 稼働 {snapshot['active_tasks']}"
@@ -1077,12 +1091,11 @@ def collect_hints(
             ]
             if resource_line is not None:
                 lines.append(resource_line)
-            sys.stderr.write(
-                "\n".join(lines) + "\n"
-            )
-            sys.stderr.flush()
-            if progress_callback is not None:
-                progress_callback(snapshot)
+            with progress_lock if progress_lock is not None else nullcontext():
+                sys.stderr.write("\n".join(lines) + "\n")
+                sys.stderr.flush()
+                if progress_callback is not None:
+                    progress_callback(snapshot)
 
         def format_state_key(state_key) -> str:
             try:
@@ -1114,7 +1127,7 @@ def collect_hints(
                     label = "エラー"
                 print(
                     f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
-                    f"[hint{label}] level {event['level']} "
+                    f"[{engine_label} hint{label}] level {event['level']} "
                     f"状態 {format_state_key(event.get('state_key'))} "
                     f"試行 {event['attempt']}/"
                     f"{event['maximum_attempts']}: "
@@ -1145,12 +1158,14 @@ def collect_hints(
                 handle_worker_event(event)
 
         try:
+            if cancellation_event is not None and cancellation_event.is_set():
+                raise InterruptedError(f"{engine_label} hint search cancelled")
             has_work = total_states > 0
             report_progress(final=not has_work)
             next_report_at = started + progress_interval_sec
             if has_work:
                 context = multiprocessing.get_context("spawn")
-                cancel_event = context.Event()
+                cancel_event = cancellation_event if cancellation_event is not None else context.Event()
                 progress_queue = context.Queue()
                 work_cursors_by_level = {
                     level: context.Value("q", 0)
@@ -1188,6 +1203,7 @@ def collect_hints(
                     for level in levels
                 }
                 next_actor_id = 0
+                reserved_task_ids = set()
                 lower_scaling_enabled = (
                     work_counts.get(CONSOLE_REFERENCE_LEVEL, 0) == 0
                 )
@@ -1204,12 +1220,16 @@ def collect_hints(
 
                 def submit_actor(level: int) -> bool:
                     nonlocal next_actor_id, submitted_tasks
+                    if shared_slots is not None and not shared_slots.acquire(engine):
+                        return False
                     initial_state = claim_state_from_cursor(
                         work_states_by_level[level],
                         work_cursors_by_level[level],
                         work_locks_by_level[level],
                     )
                     if initial_state is None:
+                        if shared_slots is not None:
+                            shared_slots.release(engine)
                         return False
                     task = HintTask(
                         level=level,
@@ -1226,7 +1246,14 @@ def collect_hints(
                         edax_eval_file=str(edax_eval_file) if edax_eval_file is not None else None,
                     )
                     next_actor_id += 1
-                    future = executor.submit(run_hint_task, task)
+                    try:
+                        future = executor.submit(run_hint_task, task)
+                    except BaseException:
+                        if shared_slots is not None:
+                            shared_slots.release(engine)
+                        raise
+                    if shared_slots is not None:
+                        reserved_task_ids.add(hint_task_id(task))
                     future_to_task[future] = task
                     pending_futures.add(future)
                     active_actor_counts[level] += 1
@@ -1266,7 +1293,7 @@ def collect_hints(
                         ) is not None:
                             print(
                                 f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
-                                "[hint割当] level 21が完了。空き枠を"
+                                f"[{engine_label} hint割当] level 21が完了。空き枠を"
                                 "残りlevelへ追加割当します。",
                                 file=sys.stderr,
                                 flush=True,
@@ -1290,7 +1317,7 @@ def collect_hints(
                             if level is None:
                                 break
                         if not submit_actor(level):
-                            continue
+                            break
 
                 try:
                     for level in make_initial_actor_levels(
@@ -1298,9 +1325,15 @@ def collect_hints(
                         work_counts,
                         workers,
                     ):
-                        submit_actor(level)
+                        if not submit_actor(level):
+                            break
                     fill_available_slots()
-                    while pending_futures:
+                    while pending_futures or any(
+                        claimed_counts().get(level, 0) < count
+                        for level, count in work_counts.items()
+                    ):
+                        if cancel_event.is_set():
+                            raise InterruptedError(f"{engine_label} hint search cancelled")
                         drain_worker_events(progress_queue)
                         now = time.perf_counter()
                         if now >= next_report_at:
@@ -1311,16 +1344,22 @@ def collect_hints(
                             HINT_EVENT_POLL_INTERVAL_SEC,
                             max(0.0, next_report_at - now),
                         )
-                        done, _ = wait(
-                            pending_futures,
-                            timeout=timeout,
-                            return_when=FIRST_COMPLETED,
-                        )
+                        if pending_futures:
+                            done, _ = wait(
+                                pending_futures, timeout=timeout,
+                                return_when=FIRST_COMPLETED,
+                            )
+                        else:
+                            cancel_event.wait(timeout)
+                            done = set()
                         drain_worker_events(progress_queue)
                         for future in done:
                             pending_futures.remove(future)
                             processed_futures.add(future)
                             task = future_to_task[future]
+                            if shared_slots is not None:
+                                shared_slots.release(engine)
+                                reserved_task_ids.remove(hint_task_id(task))
                             active_actor_counts[task.level] -= 1
                             active_task_ids.discard(hint_task_id(task))
                             try:
@@ -1330,7 +1369,7 @@ def collect_hints(
                                 if task_id not in reported_fatal_task_ids:
                                     print(
                                         f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]"
-                                        f"[hint致命的エラー] level {task.level}: "
+                                        f"[{engine_label} hint致命的エラー] level {task.level}: "
                                         f"{type(exc).__name__}: {exc}",
                                         file=sys.stderr,
                                         flush=True,
@@ -1368,6 +1407,9 @@ def collect_hints(
                     executor.shutdown(wait=True)
                     drain_worker_events(progress_queue)
                 finally:
+                    if shared_slots is not None:
+                        for _ in reserved_task_ids:
+                            shared_slots.release(engine)
                     progress_queue.close()
                     progress_queue.join_thread()
             if has_work:

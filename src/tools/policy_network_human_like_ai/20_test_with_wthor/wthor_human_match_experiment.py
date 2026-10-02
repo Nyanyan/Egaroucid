@@ -16,9 +16,9 @@ from typing import Sequence
 
 import evaluate_wthor_blend_human_match as wthor
 from wthor_edax import DEFAULT_EDAX_EXE, EDAX_HASH_BITS, EDAX_LEVELS
+from wthor_engine_comparison import collect_comparison_hints
 from wthor_hint_pipeline import (
     check_memory,
-    collect_hints,
     format_duration,
 )
 from wthor_human_match_evaluation import (
@@ -28,6 +28,7 @@ from wthor_human_match_evaluation import (
     CONSOLE_ONLY_HINT_COUNT,
     CONSOLE_REFERENCE_LEVEL,
     IncrementalAgreementMetrics,
+    IncrementalEngineAgreementMetrics,
     agreement_results_equal,
     evaluate_agreement,
     evaluate_engine_agreement,
@@ -45,7 +46,7 @@ from wthor_likelihood import LIKELIHOOD_DEFINITION, LIKELIHOOD_FIELDS
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SUMMARY_VERSION = 7
+SUMMARY_VERSION = 8
 SUMMARY_FIELDS = (
     "alpha",
     "positions",
@@ -181,6 +182,29 @@ class AgreementProgressReporter:
         sys.stderr.flush()
 
 
+class EdaxProgressReporter:
+    def __init__(self, metrics):
+        self.metrics = metrics
+
+    def accept_rows(self, level, rows):
+        for state_key, hint in rows:
+            self.metrics.add_hint(level, tuple(state_key), hint)
+
+    def report(self, progress):
+        metrics = self.metrics.snapshot()
+        reported = progress.get("reported_hints_by_level", {})
+        targets = progress.get("target_hints_by_level", {})
+        lines = []
+        for level in EDAX_LEVELS:
+            suffix = (
+                f" | hint {reported.get(level, 0):,}/{targets[level]:,}"
+                if level in targets else ""
+            )
+            lines.append(f"  [Edax level={level:2d}] {format_live_metric(metrics[level])}{suffix}")
+        sys.stderr.write("\n".join(lines) + "\n")
+        sys.stderr.flush()
+
+
 def positive_int(text: str) -> int:
     value = int(text)
     if value <= 0:
@@ -239,7 +263,7 @@ def make_experiment_identity(
     sample_records_hash: str,
 ) -> dict:
     return {
-        "identity_version": 6,
+        "identity_version": 7,
         "summary_version": SUMMARY_VERSION,
         "positions": args.positions,
         "data_split": args.data_split,
@@ -265,6 +289,7 @@ def make_experiment_identity(
         "egaroucid_threads": args.egaroucid_threads,
         "egaroucid_retries": args.egaroucid_retries,
         "workers": workers,
+        "worker_budget": "shared_between_egaroucid_and_edax",
         "partition": (
             "level_fixed_persistent_actors_with_atomic_per_level_"
             "cursor_elastic_after_level21_v1"
@@ -316,7 +341,7 @@ def make_edax_identity(args, workers):
         "eval_file": str(eval_file.resolve()),
         "eval_sha256": file_sha256(eval_file),
         "threads": args.edax_threads,
-        "workers": min(args.edax_workers or workers, len(EDAX_LEVELS) * args.positions),
+        "workers": min(args.edax_workers or workers, workers, len(EDAX_LEVELS) * args.positions),
         "hash_bits": EDAX_HASH_BITS,
         "hint_count": CONSOLE_ONLY_HINT_COUNT,
         "book": False,
@@ -368,16 +393,16 @@ def make_argparser() -> argparse.ArgumentParser:
         type=positive_int,
         default=None,
         help=(
-            "同時に動かすConsoleプロセス数。省略時は"
-            "論理CPU数 // --egaroucid-threads。全levelを同時に"
-            f"開始するため{len(CONSOLE_LEVELS)}以上が必要"
+            "EgaroucidとEdaxを合わせた探索プロセス数の上限。省略時は"
+            "論理CPU数 // max(両エンジンのスレッド数)。全12設定を"
+            "同時に開始するため12以上が必要"
         ),
     )
     parser.add_argument("--edax-exe", type=Path, default=DEFAULT_EDAX_EXE)
     parser.add_argument("--edax-eval-file", type=Path, default=None,
                         help="Defaults to data/eval.dat beside the Edax executable")
     parser.add_argument("--edax-workers", type=positive_int, default=None,
-                        help="Edax process limit; defaults to --workers")
+                        help="Edax cap within the shared --workers budget; defaults to --workers")
     parser.add_argument("--edax-threads", type=positive_int, default=1)
     parser.add_argument("--edax-timeout-sec", type=positive_float, default=1800.0)
     parser.add_argument("--edax-retries", type=int, choices=range(0, 6), default=2)
@@ -441,10 +466,10 @@ def make_argparser() -> argparse.ArgumentParser:
 
 
 def require_all_levels_to_start(workers: int) -> int:
-    minimum_workers = len(CONSOLE_LEVELS)
+    minimum_workers = len(CONSOLE_LEVELS) + len(EDAX_LEVELS)
     if workers < minimum_workers:
         raise ValueError(
-            f"level {','.join(map(str, CONSOLE_LEVELS))}の専用Consoleを同時に起動するため、"
+            "EgaroucidとEdaxの全12設定を同時に起動するため、"
             f"--workersには{minimum_workers}以上を指定してください: "
             f"workers={workers}"
         )
@@ -468,13 +493,16 @@ def main() -> None:
     logical_cpus = os.cpu_count() or 1
     workers = args.workers or max(
         1,
-        logical_cpus // args.egaroucid_threads,
+        logical_cpus // max(args.egaroucid_threads, args.edax_threads),
     )
-    workers = require_all_levels_to_start(workers)
-    search_thread_budget = workers * args.egaroucid_threads
+    try:
+        workers = require_all_levels_to_start(workers)
+    except ValueError as error:
+        parser.error(str(error))
+    search_thread_budget = workers * max(args.egaroucid_threads, args.edax_threads)
     if search_thread_budget > logical_cpus:
         print(
-            "注意: Console探索スレッド総数が論理CPU数を超えます: "
+            "注意: 探索スレッド数の上限が論理CPU数を超えます: "
             f"{search_thread_budget} > {logical_cpus}",
             file=sys.stderr,
             flush=True,
@@ -508,13 +536,9 @@ def main() -> None:
         args.sample_seed,
     )
     load_elapsed = time.perf_counter() - load_start
-    maximum_useful_processes = len(CONSOLE_LEVELS) * len(groups)
+    maximum_useful_processes = (len(CONSOLE_LEVELS) + len(EDAX_LEVELS)) * len(groups)
     workers = min(workers, maximum_useful_processes)
-    search_thread_budget = workers * args.egaroucid_threads
-    initial_level21_processes = min(
-        len(groups),
-        max(1, workers - (len(CONSOLE_LEVELS) - 1)),
-    )
+    search_thread_budget = workers * max(args.egaroucid_threads, args.edax_threads)
     output_dir = args.output_dir or default_output_dir(args, workers)
 
     report_stage(
@@ -528,13 +552,13 @@ def main() -> None:
         f"{args.positions - len(groups):,}局面",
         flush=True,
     )
-    print("Console worker", workers, flush=True)
+    print("両エンジン合計のworker上限", workers, flush=True)
     print(
-        "1 worker当たりの探索スレッド",
+        "Egaroucid 1 worker当たりの探索スレッド",
         args.egaroucid_threads,
         flush=True,
     )
-    print("探索スレッド総数", search_thread_budget, flush=True)
+    print("探索スレッド数の上限", search_thread_budget, flush=True)
     print("論理CPUスレッド", logical_cpus, flush=True)
     print("level 21", "ブレンドとConsole単体で共有", flush=True)
     print(
@@ -544,8 +568,8 @@ def main() -> None:
     )
     print(
         "level 21のConsole",
-        f"cold cache開始時は{initial_level21_processes}プロセス、"
-        "低level完了後の空き枠も使用。level 21完了後は残りlevelへ割当",
+        "各エンジン・levelの起動枠を確保し、残りの共有枠を使用。"
+        "完了した探索の枠は両エンジンで再利用",
         flush=True,
     )
     print(
@@ -558,14 +582,15 @@ def main() -> None:
     experiment_identity = make_experiment_identity(args, workers, sample_hash, sample_records_hash)
     edax_config = experiment_identity["edax"]
     print("Edax levels", ",".join(map(str, EDAX_LEVELS)), flush=True)
-    print("Edax worker", edax_config["workers"], flush=True)
+    print("Edax worker上限（合計worker枠の内数）", edax_config["workers"], flush=True)
+    print("Edax 1 worker当たりの探索スレッド", args.edax_threads, flush=True)
     if args.dry_run:
         report_stage("dry-runを完了（探索は未実行）")
         return
 
     startup_available_memory_mib = check_memory(
         workers,
-        args.estimated_engine_memory_mib,
+        max(args.estimated_engine_memory_mib, 192.0),
         args.minimum_remaining_memory_mib,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -589,32 +614,8 @@ def main() -> None:
         args.score_temperature,
     )
     progress_reporter = AgreementProgressReporter(live_metrics)
-
-    report_stage("Egaroucidによるhint探索を開始")
-    hint_start = time.perf_counter()
-    hints, cache_stats, level_timing, cpu_stats = collect_hints(
-        groups,
-        CONSOLE_LEVELS,
-        output_dir,
-        workers,
-        args.egaroucid_exe,
-        args.egaroucid_threads,
-        args.egaroucid_timeout_sec,
-        args.egaroucid_retries,
-        args.progress_interval_sec,
-        on_rows=progress_reporter.accept_rows,
-        progress_callback=progress_reporter.report,
-    )
-    hint_elapsed = time.perf_counter() - hint_start
-    report_stage(
-        "Egaroucidによるhint探索を完了 "
-        f"({format_duration(hint_elapsed)})"
-    )
-
-    report_stage("Edaxによるhint探索を開始")
-    edax_start = time.perf_counter()
-    # Engine phases run sequentially, each within its own process budget.
-    check_memory(edax_config["workers"], 192.0, args.minimum_remaining_memory_mib)
+    edax_live_metrics = IncrementalEngineAgreementMetrics(groups, EDAX_LEVELS)
+    edax_reporter = EdaxProgressReporter(edax_live_metrics)
     edax_dir = (getattr(args, "hint_cache_dir", None) or output_dir) / "edax"
     edax_dir.mkdir(parents=True, exist_ok=True)
     ensure_experiment_identity(edax_dir, {
@@ -623,14 +624,38 @@ def main() -> None:
         "sample_records_sha256": sample_records_hash,
         "partition": experiment_identity["partition"],
     })
-    edax_hints, edax_cache_stats, edax_timing, edax_cpu_stats = collect_hints(
-        groups, EDAX_LEVELS, edax_dir, edax_config["workers"],
-        args.edax_exe, args.edax_threads, args.edax_timeout_sec,
-        args.edax_retries, args.progress_interval_sec,
-        engine="edax", edax_eval_file=Path(edax_config["eval_file"]),
-    )
-    edax_elapsed = time.perf_counter() - edax_start
+    report_stage(f"Egaroucid・Edaxのhint探索を並行開始（合計{workers} worker以内）")
+    hint_start = time.perf_counter()
+    engine_searches = collect_comparison_hints(groups, workers, {
+        "egaroucid": {
+            "levels": CONSOLE_LEVELS, "output_dir": output_dir, "workers": workers,
+            "egaroucid_exe": args.egaroucid_exe,
+            "egaroucid_threads": args.egaroucid_threads,
+            "timeout_sec": args.egaroucid_timeout_sec,
+            "max_retries": args.egaroucid_retries,
+            "progress_interval_sec": args.progress_interval_sec,
+            "on_rows": progress_reporter.accept_rows,
+            "progress_callback": progress_reporter.report,
+        },
+        "edax": {
+            "levels": EDAX_LEVELS, "output_dir": edax_dir,
+            "workers": edax_config["workers"],
+            "egaroucid_exe": args.edax_exe,
+            "egaroucid_threads": args.edax_threads,
+            "timeout_sec": args.edax_timeout_sec,
+            "max_retries": args.edax_retries,
+            "progress_interval_sec": args.progress_interval_sec,
+            "edax_eval_file": Path(edax_config["eval_file"]),
+            "on_rows": edax_reporter.accept_rows,
+            "progress_callback": edax_reporter.report,
+        },
+    })
+    hint_elapsed = time.perf_counter() - hint_start
+    (hints, cache_stats, level_timing, cpu_stats), egaroucid_elapsed = engine_searches["egaroucid"]
+    (edax_hints, edax_cache_stats, edax_timing, edax_cpu_stats), edax_elapsed = engine_searches["edax"]
     edax_metrics = evaluate_engine_agreement(groups, edax_hints)
+    if edax_live_metrics.snapshot() != edax_metrics:
+        raise RuntimeError("Edaxの途中集計値と最終一致率が一致しません")
     edax_rows = [
         make_console_level_summary_row(
             level, metrics_to_result({0.0: edax_metrics[level]}),
@@ -638,7 +663,7 @@ def main() -> None:
         )
         for level in EDAX_LEVELS
     ]
-    report_stage(f"Edaxによるhint探索を完了 ({format_duration(edax_elapsed)})")
+    report_stage(f"Egaroucid・Edaxのhint探索を完了 ({format_duration(hint_elapsed)})")
 
     report_stage("最終一致率の検算と集計を開始")
     aggregate_start = time.perf_counter()
@@ -748,12 +773,14 @@ def main() -> None:
         "level21_reuse_validation": level21_validation,
         "execution": {
             "architecture": (
-                "single bounded spawn process pool; level-fixed persistent "
+                "concurrent Egaroucid and Edax spawn process pools sharing "
+                "one global engine-slot limit; level-fixed persistent "
                 "Console actors atomically claim states from one cursor per "
                 "level; level 21 consumes released slots until complete, "
                 "then remaining levels scale out into every available slot"
             ),
             "workers": workers,
+            "worker_budget": "shared_between_egaroucid_and_edax",
             "egaroucid_threads_per_worker": args.egaroucid_threads,
             "egaroucid_retries": args.egaroucid_retries,
             "search_thread_budget": search_thread_budget,
@@ -762,9 +789,10 @@ def main() -> None:
             "manager_proxy_hot_path": False,
             "nested_process_pools": False,
             "level21_duplicate_evaluation": False,
-            "initial_level21_processes_cold_cache": (
-                initial_level21_processes
-            ),
+            "startup_slots_reserved_by_engine": {
+                "egaroucid": len(CONSOLE_LEVELS),
+                "edax": min(len(EDAX_LEVELS), edax_config["workers"]),
+            },
             "elastic_lower_scaling_after_level21": True,
             "atomic_state_claim": True,
             "actual_actor_assignment_recorded_at": (
@@ -812,6 +840,7 @@ def main() -> None:
             "elapsed_sec": elapsed_sec,
             "sample_loading_sec": load_elapsed,
             "hint_evaluation_sec": hint_elapsed,
+            "egaroucid_hint_evaluation_sec": egaroucid_elapsed,
             "edax_hint_evaluation_sec": edax_elapsed,
             "policy_inference_sec": policy_elapsed,
             "aggregation_sec": aggregate_elapsed,

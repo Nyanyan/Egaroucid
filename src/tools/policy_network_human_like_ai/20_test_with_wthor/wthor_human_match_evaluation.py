@@ -508,20 +508,48 @@ def evaluate_agreement(
     return metrics.result()
 
 
-def evaluate_engine_agreement(groups, hints):
-    """Evaluate standalone top-N hints without treating level 21 as a blend."""
-    metrics = {level: empty_metric() for level in hints}
-    for group in groups:
-        prepared, _, _ = _prepare_position_group(group)
-        for level, level_hints in hints.items():
-            hint = level_hints[group.key]
+class IncrementalEngineAgreementMetrics:
+    """Accumulate native engine rankings once per level and board state."""
+
+    def __init__(self, groups, levels):
+        self._groups = {}
+        for group in groups:
+            prepared, _, _ = _prepare_position_group(group)
+            self._groups.setdefault(group.key, []).append(prepared)
+        self._metrics = {level: empty_metric() for level in levels}
+        self._seen = set()
+
+    def add_hint(self, level, state_key, hint):
+        if level not in self._metrics:
+            raise ValueError(f"unsupported engine level: {level}")
+        if state_key not in self._groups:
+            raise KeyError(f"unknown state key: {state_key}")
+        identity = (level, state_key)
+        if identity in self._seen:
+            return False
+        addition = empty_metric()
+        for prepared in self._groups[state_key]:
             for _, targets, count in prepared.valid_targets:
                 rank = min(
                     (index for index, move in enumerate(hint.move_order, 1) if move in targets),
                     default=POLICY_SIZE + 1,
                 )
-                add_rank(metrics[level], rank, count)
-    return metrics
+                add_rank(addition, rank, count)
+        _merge_metric(self._metrics[level], addition)
+        self._seen.add(identity)
+        return True
+
+    def snapshot(self):
+        return {level: _copy_metric(metric) for level, metric in self._metrics.items()}
+
+
+def evaluate_engine_agreement(groups, hints):
+    """Evaluate standalone top-N hints without treating level 21 as a blend."""
+    metrics = IncrementalEngineAgreementMetrics(groups, hints)
+    for level, level_hints in hints.items():
+        for group in groups:
+            metrics.add_hint(level, group.key, level_hints[group.key])
+    return metrics.snapshot()
 
 
 def metrics_to_result(metrics: Dict[float, dict]) -> dict:

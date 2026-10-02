@@ -13,16 +13,21 @@ For example, from this directory:
 python run_random_wthor_blend_experiment.py 10000 `
   --board-data-dir "$env:EGAROUCID_DATA/train_data/board_data/records1" `
   --weights ../10_train_policy_network/trained/model/policy_network_weights.bin `
-  --workers 6 --egaroucid-threads 1 --edax-threads 1 `
-  --output-dir output/human_match
+  --workers 32 --egaroucid-threads 1 --edax-threads 1 `
+  --output-dir output/human_match_parallel
 ```
 
-`--workers` must be at least 6. The default data split is `test` (80/10/10
+`--workers` is the total limit for Egaroucid and Edax combined, and must be
+at least 12 to start all engine/level combinations. For a 32-thread machine
+with one search thread per process, use `--workers 32`. The default data split is `test` (80/10/10
 position split, seed 613). Use `--data-split all` to sample the whole input.
 Edax defaults to `bin/versions/edax_4_6/wEdax-x86-64.exe`, with `data/eval.dat`
 beside the executable. Override with `--edax-exe` and `--edax-eval-file`.
-`--edax-workers` defaults to the Egaroucid process budget. The two engine phases
-run sequentially, each using a bounded pool of persistent processes. Edax uses
+`--edax-workers` caps Edax within the shared `--workers` limit; it does not
+add extra processes. Both engines start concurrently and reuse freed slots.
+Progress reports show engine names and Edax agreement for each level.
+The worker semantics changed, so use a new output directory such as
+`output/human_match_parallel` for this version. Edax uses
 `-n` for thread count, a 22-bit hash table, and disables book and pondering.
 `--edax-timeout-sec` and `--edax-retries` control failed-search handling.
 
