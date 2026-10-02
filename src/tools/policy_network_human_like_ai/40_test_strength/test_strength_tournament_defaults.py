@@ -82,12 +82,12 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
 
         self.assertEqual(500, args.match_sets_per_pair)
         self.assertEqual([1, 5, 9, 13, 17], levels)
-        self.assertEqual([1, 5, 9, 13, 17], edax_levels)
+        self.assertEqual([1, 5, 9, 13, 17, 21], edax_levels)
         self.assertEqual([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], alphas)
-        self.assertEqual(16, player_count)
-        self.assertEqual(120, player_count * (player_count - 1) // 2)
-        self.assertEqual(60_000, len(tasks))
-        self.assertEqual(120_000, len(tasks) * 2)
+        self.assertEqual(17, player_count)
+        self.assertEqual(136, player_count * (player_count - 1) // 2)
+        self.assertEqual(68_000, len(tasks))
+        self.assertEqual(136_000, len(tasks) * 2)
         self.assertEqual(20, args.parallel_match_sets)
         self.assertEqual(2, args.baseline_processes_per_player)
         self.assertEqual(10, args.blend_processes_per_player)
@@ -103,7 +103,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         )
         args = run_strength_full.make_argparser().parse_args([])
         self.assertEqual(500, args.match_sets_per_pair)
-        self.assertEqual("xot_500sets_16players_edax", args.output_dir.name)
+        self.assertEqual("xot_500sets_17players_edax", args.output_dir.name)
 
     def test_alpha_is_not_silently_rounded(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args(

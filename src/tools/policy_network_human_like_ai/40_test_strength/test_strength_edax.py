@@ -28,9 +28,9 @@ class EdaxConfigurationTest(unittest.TestCase):
         args = battle.make_argparser().parse_args([])
         levels, alphas = battle.validate_args(args)
         specs = battle.build_player_specs(args, levels, alphas, 0)
-        self.assertEqual(16, len(specs))
+        self.assertEqual(17, len(specs))
         self.assertEqual(
-            ["edax_l1", "edax_l5", "edax_l9", "edax_l13", "edax_l17"],
+            ["edax_l1", "edax_l5", "edax_l9", "edax_l13", "edax_l17", "edax_l21"],
             [spec.name for spec in specs if spec.name.startswith("edax_")],
         )
         self.assertEqual(

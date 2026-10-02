@@ -927,9 +927,9 @@ def make_argparser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--edax-levels",
-        default="1,5,9,13,17",
+        default="1,5,9,13,17,21",
         help=(
-            "Comma-separated Edax levels (0..60); default: 1,5,9,13,17. "
+            "Comma-separated Edax levels (0..60); default: 1,5,9,13,17,21. "
             "Use --edax-levels= to disable Edax."
         ),
     )
@@ -1023,7 +1023,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=SCRIPT_DIR / "output" / "xot_500sets_16players_edax",
+        default=SCRIPT_DIR / "output" / "xot_500sets_17players_edax",
     )
     parser.add_argument(
         "--seed",

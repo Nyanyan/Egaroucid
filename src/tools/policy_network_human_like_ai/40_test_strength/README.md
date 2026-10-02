@@ -2,7 +2,7 @@
 
 関連issue: #613
 
-Egaroucid for Console、Edax 4.6、Policy NetworkをEgaroucidの方策へ混合した各αを、XOT局面から総当たりで対戦させる。既定ではEgaroucidとEdaxをそれぞれlevel 1、5、9、13、17、ブレンド方策をα=0.0から1.0まで0.2刻みで参加させる。合計16参加者である。
+Egaroucid for Console、Edax 4.6、Policy NetworkをEgaroucidの方策へ混合した各αを、XOT局面から総当たりで対戦させる。既定ではEgaroucidをlevel 1、5、9、13、17、Edaxをlevel 1、5、9、13、17、21、ブレンド方策をα=0.0から1.0まで0.2刻みで参加させる。合計17参加者である。
 
 ## 対戦セットと統計単位
 
@@ -17,7 +17,7 @@ Egaroucid for Console、Edax 4.6、Policy NetworkをEgaroucidの方策へ混合�
 
 実対局単位の勝敗も別列へ保存するが、これは記述統計である。対戦相手別のセットスコアと95%信頼区間、およびセット平均石差を主要指標とする。
 
-全組合せには同じset indexで同じXOT局面を割り当てる。そのため、ある参加者の15相手分を単純に7,500個の独立標本としてまとめることはできない。参加者全体のスコアは記述値とする。Eloは0%・100%で任意の無限大や固定clip値にならないよう、対戦済みの各組合せへ0.5勝・0.5敗を加えた有限な相対値である。未対戦の組合せは推定の重みを0とし、対戦済み組合せのグラフが全参加者を連結するまでは途中Eloを表示しない。
+全組合せには同じset indexで同じXOT局面を割り当てる。そのため、ある参加者の16相手分を単純に8,000個の独立標本としてまとめることはできない。参加者全体のスコアは記述値とする。Eloは0%・100%で任意の無限大や固定clip値にならないよう、対戦済みの各組合せへ0.5勝・0.5敗を加えた有限な相対値である。未対戦の組合せは推定の重みを0とし、対戦済み組合せのグラフが全参加者を連結するまでは途中Eloを表示しない。
 
 最終Eloの95%信頼区間は、完了後に`strength_games.jsonl`を再解析して求める。set index、すなわちXOT局面をクラスタとし、同じ復元抽出列を全組合せへ適用するBCaクラスターブートストラップを使う。これにより、同じXOTを共有した組間の相関を保つ。2色の実対局や各組合せを別々に再標本化してはならない。
 
@@ -27,12 +27,12 @@ Egaroucid for Console、Edax 4.6、Policy NetworkをEgaroucidの方策へ混合�
 | --- | ---: |
 | Egaroucid単体 | level 1、5、9、13、17（5参加者） |
 | ブレンド方策 | α=0.0、0.2、0.4、0.6、0.8、1.0（6参加者） |
-| Edax 4.6 | level 1、5、9、13、17（5参加者） |
-| 参加者数 | 16 |
-| 組合せ数 | 120 |
+| Edax 4.6 | level 1、5、9、13、17、21（6参加者） |
+| 参加者数 | 17 |
+| 組合せ数 | 136 |
 | 1組合せ | 500対戦セット、1,000実対局 |
-| 全体 | 60,000対戦セット、120,000実対局 |
-| 各参加者 | 7,500対戦セット、15,000実対局 |
+| 全体 | 68,000対戦セット、136,000実対局 |
+| 各参加者 | 8,000対戦セット、16,000実対局 |
 | XOT | `bin/problem/xot/openingslarge.txt` |
 | XOT shuffle seed | 57 |
 | XOTの割当て | 各組合せへ同じ500局面列を割り当てる |
@@ -48,13 +48,13 @@ Egaroucid for Console、Edax 4.6、Policy NetworkをEgaroucidの方策へ混合�
 | 空きメモリ下限 | 16,384 MiB |
 | 想定マシン | 32論理thread、128 GiB RAM |
 
-重いlevel 21探索を使うブレンド系列へ多くのprocessを割り当てる。Egaroucid単体5参加者とEdax 5参加者は各1セット、ブレンド系列6参加者は各5セットまで同時参加でき、参加者容量から見た上限は20セットである。共有cacheやpolicy serverを待つ実対局があるため、32論理threadに対して40実対局を投入して待ち時間を隠す。探索条件を旧実験と揃えるため、1 process内の探索thread数は1のままである。
+重いlevel 21探索を使うブレンド系列へ多くのprocessを割り当てる。Egaroucid単体5参加者とEdax 6参加者は各1セット、ブレンド系列6参加者は各5セットまで同時参加でき、参加者容量から見た上限は20セットである。共有cacheやpolicy serverを待つ実対局があるため、32論理threadに対して40実対局を投入して待ち時間を隠す。探索条件を旧実験と揃えるため、1 process内の探索thread数は1のままである。
 
-各セットで一時的なthread poolを作る旧構造は廃止した。全実対局を1個の固定thread poolへ投入し、親threadが先後2局を結合する。残り全タスクを毎回走査せず、120組合せ別のqueueを使う。同じset index、すなわち同じXOT局面を全組合せへ一巡させることを最優先し、その中で参加者ごとの残り推定仕事量を使って遅い参加者を早めに処理する。古い局面が参加者容量のため全て待機中の場合だけ、queue内で最も古い未投入局面の1局面先まで投入できる。それ以上の新規投入は禁止する。実行中タスクの完了順によって途中の完了セット数には数セットの差が出るが、一部の組合せだけが何十セットも先行することはない。これにより、並列度を保ちながら、共有hint cacheの局面再利用と途中集計の公平性を保つ。初回のprocess起動時間を通常の対局時間と誤認しないよう、未観測参加者には観測済み時間の中央値を使い、極端な推定値も中央値の0.5倍から2倍へ制限する。
+各セットで一時的なthread poolを作る旧構造は廃止した。全実対局を1個の固定thread poolへ投入し、親threadが先後2局を結合する。残り全タスクを毎回走査せず、136組合せ別のqueueを使う。同じset index、すなわち同じXOT局面を全組合せへ一巡させることを最優先し、その中で参加者ごとの残り推定仕事量を使って遅い参加者を早めに処理する。古い局面が参加者容量のため全て待機中の場合だけ、queue内で最も古い未投入局面の1局面先まで投入できる。それ以上の新規投入は禁止する。実行中タスクの完了順によって途中の完了セット数には数セットの差が出るが、一部の組合せだけが何十セットも先行することはない。これにより、並列度を保ちながら、共有hint cacheの局面再利用と途中集計の公平性を保つ。初回のprocess起動時間を通常の対局時間と誤認しないよう、未観測参加者には観測済み時間の中央値を使い、極端な推定値も中央値の0.5倍から2倍へ制限する。
 
 hintは実験出力先の共有SQLiteだけへ保存する。各Python process内の無制限dict cacheは5日規模の実験でメモリを増やし続けるため使用しない。`--no-hint-cache`を指定した場合はSQLite自体も作成・参照しない。
 
-既定値の最悪時見積りは、重いEgaroucid process 60個、Edax process 10個、Python wrapper 50個、共有policy serverを合わせて82,160 MiBである。さらに16,384 MiBを空きとして残すため、開始時点で約96.2 GiB以上のavailable memoryを要求する。これは128 GiB機向けの設定であり、64 GiB・96 GiB機では並列数と参加者あたりのprocess数を減らす必要がある。起動後も親processと各wrapperが空きメモリを確認し、下限を割る場合は新しいprocess・セットの開始を止める。
+既定値の最悪時見積りは、重いEgaroucid process 60個、Edax process 12個、Python wrapper 50個、共有policy serverを合わせて82,672 MiBである。さらに16,384 MiBを空きとして残すため、開始時点で約96.7 GiB以上のavailable memoryを要求する。これは128 GiB機向けの設定であり、64 GiB・96 GiB機では並列数と参加者あたりのprocess数を減らす必要がある。起動後も親processと各wrapperが空きメモリを確認し、下限を割る場合は新しいprocess・セットの開始を止める。
 
 ## 必要ファイル
 
@@ -82,7 +82,7 @@ bin/versions/edax_4_6/wEdax-x86-64.exe
 bin/versions/edax_4_6/data/eval.dat
 ```
 
-既定のEdax 5レベルを、level 1、3、5の3レベルへ変更する例を示す。以下のコマンドは`Egaroucid`リポジトリのルートから実行する。
+既定のEdax 6レベルを、level 1、3、5の3レベルへ変更する例を示す。以下のコマンドは`Egaroucid`リポジトリのルートから実行する。
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
@@ -106,7 +106,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 | オプション | 用途・既定値 |
 | --- | --- |
-| `--edax-levels` | 0〜60のlevelをカンマ区切りで指定。既定は`1,5,9,13,17`。`--edax-levels=`で不参加にできる |
+| `--edax-levels` | 0〜60のlevelをカンマ区切りで指定。既定は`1,5,9,13,17,21`。`--edax-levels=`で不参加にできる |
 | `--edax-exe` | 実行exeを変更。既定は上記の`wEdax-x86-64.exe` |
 | `--edax-eval-file` | 評価データを変更。既定は指定exeと同じフォルダ内の`data/eval.dat` |
 | `--edax-processes-per-player` | 各Edax levelのprocess数。既定は2、2以上の偶数 |
@@ -117,15 +117,15 @@ Edaxは`edax_l1`などの名前で結果表・Elo集計に参加する。bookと
 
 Edax同士で比較する場合は、`--baseline-levels= --alphas= --edax-levels 1,3`のように指定できる。参加者の合計は2以上必要である。再開には同じ引数と`--resume`を指定し、exeや評価データを変更した場合は新しい出力先を使う。
 
-### 既定の16参加者で実行する
+### 既定の17参加者で実行する
 
-αの6参加者、Egaroucidの5参加者、Edaxの5参加者を指定なしで登録する。旧構成も16参加者だったため、結果の混同を避けて既定の出力先を`xot_500sets_16players_edax`へ変更している。
+αの6参加者、Egaroucidの5参加者、Edaxの6参加者を指定なしで登録する。旧構成の16参加者の結果と混同しないよう、既定の出力先を`xot_500sets_17players_edax`へ変更している。
 
 最初に、ファイル、実験数、並列数、メモリ見積りを確認する。engineやpolicy serverは起動しない。
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_17players_edax `
   --dry-run
 ```
 
@@ -133,14 +133,14 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_17players_edax
 ```
 
 中断後は同じ引数と出力先で`--resume`を付ける。
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_17players_edax `
   --resume
 ```
 
@@ -150,7 +150,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/reanalyze_strength_elo.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_17players_edax `
   --bootstrap-replicates 20000 `
   --bootstrap-seed 613 `
   --workers 16
@@ -174,31 +174,31 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 セットスコアを勝ち1、引き分け0.5、負け0として扱う。平均のt区間は`平均 ± t × 標準偏差 / √N`であり、標準誤差は標本数の平方根に反比例する。[NISTの平均の信頼区間](https://www.itl.nist.gov/div898/handbook/eda/section3/eda352.htm)にある式を用い、本スクリプトの`conservative_score_half_width`で次表を計算した。`N`は独立なXOT局面のセット数とし、計画上の分散を最大の`0.5 × 0.5 = 0.25`に置いている。
 
-| 1組合せのセット数N | 1組合せの実対局 | 95%区間の半幅 | 95%区間の全幅 | 16参加者の全実対局 |
+| 1組合せのセット数N | 1組合せの実対局 | 95%区間の半幅 | 95%区間の全幅 | 17参加者の全実対局 |
 | ---: | ---: | ---: | ---: | ---: |
-| 50 | 100 | ±14.21ポイント | 28.42ポイント | 12,000 |
-| 100 | 200 | ±9.92ポイント | 19.84ポイント | 24,000 |
-| 200 | 400 | ±6.97ポイント | 13.94ポイント | 48,000 |
-| 300 | 600 | ±5.68ポイント | 11.36ポイント | 72,000 |
-| 500（既定） | 1,000 | ±4.39ポイント | 8.79ポイント | 120,000 |
-| 1,000 | 2,000 | ±3.10ポイント | 6.21ポイント | 240,000 |
-| 2,000 | 4,000 | ±2.19ポイント | 4.39ポイント | 480,000 |
-| 5,000 | 10,000 | ±1.39ポイント | 2.77ポイント | 1,200,000 |
-| 10,000 | 20,000 | ±0.98ポイント | 1.96ポイント | 2,400,000 |
+| 50 | 100 | ±14.21ポイント | 28.42ポイント | 13,600 |
+| 100 | 200 | ±9.92ポイント | 19.84ポイント | 27,200 |
+| 200 | 400 | ±6.97ポイント | 13.94ポイント | 54,400 |
+| 300 | 600 | ±5.68ポイント | 11.36ポイント | 81,600 |
+| 500（既定） | 1,000 | ±4.39ポイント | 8.79ポイント | 136,000 |
+| 1,000 | 2,000 | ±3.10ポイント | 6.21ポイント | 272,000 |
+| 2,000 | 4,000 | ±2.19ポイント | 4.39ポイント | 544,000 |
+| 5,000 | 10,000 | ±1.39ポイント | 2.77ポイント | 1,360,000 |
+| 10,000 | 20,000 | ±0.98ポイント | 1.96ポイント | 2,720,000 |
 
 幅を半分にするには、おおむね4倍のセット数が必要になる。全幅10ポイント以内なら約400セット、5ポイント以内なら約1,600セット、2ポイント以内なら約10,000セットが計画上の目安である。まずは既定の500セットで比較し、より狭い区間が必要なら2,000セットを候補にできる。これらは期待する区間幅の目安であり、特定の差を検出できる確率を保証するものではない。
 
-セット数は`--match-sets-per-pair 2000`のように変更する。その場合は、少なくとも2,000個の異なるXOT棋譜と、新しい`--output-dir`を用意する。16参加者では120組合せなので、全実対局数は`240 × N`となる。`--dry-run`の`strength_dry_run.json`にも表の半幅と全幅を保存する。JSONの値は0〜1のスコア単位であり、100倍すると表のパーセントポイントになる。
+セット数は`--match-sets-per-pair 2000`のように変更する。その場合は、少なくとも2,000個の異なるXOT棋譜と、新しい`--output-dir`を用意する。17参加者では136組合せなので、全実対局数は`272 × N`となる。`--dry-run`の`strength_dry_run.json`にも表の半幅と全幅を保存する。JSONの値は0〜1のスコア単位であり、100倍すると表のパーセントポイントになる。
 
 実出力では、観測されたセットスコアの標本分散を使い、全勝・全敗・全引き分けで区間が0幅にならないよう、t区間とWilson区間の両方を含む範囲を採用する。[NISTのWilson区間の説明](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm)も参照。引き分けを0.5としてWilson式へ入れる部分は本実装の補助的な処理であり、一般の三値分布で厳密に95%の被覆率を保証する手法ではない。表も計画用の近似であり、実際の幅は結果によって変わる。例えば500セットが250勝0分250敗なら、実装が出す全幅は約8.80ポイントになる。組合せ別の下限・上限・半幅は`strength_pair_results.csv`へ保存する。
 
-Eloの95%信頼区間の長さは、セット数だけでは決まらず、相手との強さの差や全組合せの結果に依存する。また、15組合せは同じXOT局面列を共有するため相関があり、既定の参加者あたり7,500セットをすべて独立な観測としてこの表へ当てはめることもできない。最終Eloには、set index/XOT局面をクラスタとして全組合せを同時に20,000回再標本化し、各反復で16参加者平均を1500へ中心化したBCa 95%信頼区間を別途出力する。Eloでの全幅は`strength_elo_ci95.csv`の上限と下限の差で確認する。
+Eloの95%信頼区間の長さは、セット数だけでは決まらず、相手との強さの差や全組合せの結果に依存する。また、16組合せは同じXOT局面列を共有するため相関があり、既定の参加者あたり8,000セットをすべて独立な観測としてこの表へ当てはめることもできない。最終Eloには、set index/XOT局面をクラスタとして全組合せを同時に20,000回再標本化し、各反復で17参加者平均を1500へ中心化したBCa 95%信頼区間を別途出力する。Eloでの全幅は`strength_elo_ci95.csv`の上限と下限の差で確認する。
 
-この区間は参加者ごとのpointwise区間であり、16参加者すべてを同時に95%で覆う区間ではない。対象は同じXOT母集団から別の局面列を抽出した場合の変動であり、モデル再学習、探索条件変更、別のopening corpusの不確実性は含まない。2参加者の差は、個別区間の重なりではなく、保存された同一bootstrap反復内のElo差で評価する。
+この区間は参加者ごとのpointwise区間であり、17参加者すべてを同時に95%で覆う区間ではない。対象は同じXOT母集団から別の局面列を抽出した場合の変動であり、モデル再学習、探索条件変更、別のopening corpusの不確実性は含まない。2参加者の差は、個別区間の重なりではなく、保存された同一bootstrap反復内のElo差で評価する。
 
 ## セット数と所要時間（旧参加者構成での参考値）
 
-16参加者ではセット数に120組合せを掛ける。以下の時間は、Edaxを含まない旧構成（Egaroucid 10参加者＋αの6参加者）で測定した値である。現在の構成でも総対局数は同じだが、探索時間は変わるため、所要時間は改めて実測する必要がある。
+16参加者ではセット数に120組合せを掛ける。以下の時間は、Edaxを含まない旧構成（Egaroucid 10参加者＋αの6参加者）で測定した値である。現在の17参加者の構成では総対局数と探索時間が変わるため、所要時間は改めて実測する必要がある。
 
 | 1組合せのセット数 | 全対戦セット | 全実対局 | 最新584セット/時での線形目安 | 2回の短縮ベンチによる幅 |
 | ---: | ---: | ---: | ---: | ---: |
