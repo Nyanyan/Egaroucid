@@ -33,8 +33,9 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--max-val-samples", type=int, default=200_000)
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--data-root", type=Path, default=None)
-    parser.add_argument("--board-data-index-start", type=int, default=0)
-    parser.add_argument("--board-data-index-end", type=int, default=0)
+    parser.add_argument("--board-data-index-start", type=int, default=1)
+    parser.add_argument("--board-data-index-end", type=int, default=1)
+    parser.add_argument("--split-manifest", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=script_dir() / "trained" / "training_runs")
     parser.add_argument("--log-dir", type=Path, default=script_dir() / "train_log")
     return parser
@@ -73,6 +74,8 @@ def main() -> None:
         ]
         if args.data_root is not None:
             cmd.extend(["--data-root", str(args.data_root)])
+        if args.split_manifest is not None:
+            cmd.extend(["--split-manifest", str(args.split_manifest)])
 
         resource = run_monitored_command(cmd, log_path)
         row = {

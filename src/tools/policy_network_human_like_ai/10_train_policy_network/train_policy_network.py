@@ -7,11 +7,12 @@ Related issue: #613
 Input features are side-to-move bitboards:
   [player-to-move exists on 64 squares, opponent exists on 64 squares]
 
+Training splits whole games into train/validation/test (90%/5%/5%).
 Current WTHOR direct training reads expanded position samples from:
   $EGAROUCID_DATA/train_data/board_data/records1
 
-The legacy selected-data path is still available for comparison runs:
-  train_data/board_data/Egaroucid_Train_Data_v2_selected/records0
+Data preprocessing is implemented in ../00_data_processing.
+Use --split-manifest to load a previously prepared WTHOR game split.
 
 Board-data binary sample layout, 19 bytes:
   uint64 player_to_move_bits
@@ -48,49 +49,22 @@ from tensorflow.keras.regularizers import l2 as keras_l2
 HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
 
+sys.path.insert(0, str(HUMAN_LIKE_AI_DIR / "00_data_processing"))
+
+from policy_data import (  # noqa: E402
+    BOARD_DTYPE, BOARD_SAMPLE_SIZE, INPUT_SIZE, POLICY_SIZE,
+    BIT_MASKS, POLICY_BIT_MASKS, FULL, NOT_FILE_A, NOT_FILE_H, SHIFT_FUNCS,
+    BoardFile, SplitArrays, discover_board_files,
+    shift_east, shift_west, shift_north, shift_south, shift_ne, shift_nw, shift_se, shift_sw,
+    calc_legal_batch, legal_bitboard_to_mask, valid_policy_mask,
+    position_samples_to_targets, position_samples_to_split_arrays,
+    load_game_three_way_split, load_shuffled_three_way_split, split_counts,
+)
+
 from policy_accuracy import (  # noqa: E402
     equivalent_policy_mask,
     symmetry_aware_policy_ranks,
 )
-
-
-BOARD_SAMPLE_SIZE = 19
-INPUT_SIZE = 128
-POLICY_SIZE = 64
-
-BOARD_DTYPE = np.dtype(
-    [
-        ("player", "<u8"),
-        ("opponent", "<u8"),
-        ("color", "i1"),
-        ("policy", "i1"),
-        ("score", "i1"),
-    ],
-    align=False,
-)
-assert BOARD_DTYPE.itemsize == BOARD_SAMPLE_SIZE
-
-BIT_MASKS = (np.uint64(1) << np.arange(63, -1, -1, dtype=np.uint64)).reshape(1, 64)
-POLICY_BIT_MASKS = (np.uint64(1) << np.arange(0, 64, dtype=np.uint64)).reshape(1, 64)
-FULL = np.uint64(0xFFFFFFFFFFFFFFFF)
-NOT_FILE_A = np.uint64(0x7F7F7F7F7F7F7F7F)
-NOT_FILE_H = np.uint64(0xFEFEFEFEFEFEFEFE)
-
-
-@dataclass(frozen=True)
-class BoardFile:
-    path: Path
-    n_position_samples: int
-
-
-@dataclass(frozen=True)
-class SplitArrays:
-    x: np.ndarray
-    policy: np.ndarray
-    legal: np.ndarray
-    player: np.ndarray
-    opponent: np.ndarray
-    n_discs: np.ndarray
 
 
 @dataclass(frozen=True)
@@ -116,253 +90,6 @@ def enable_memory_growth() -> None:
             tf.config.experimental.set_memory_growth(gpu, True)
         except RuntimeError:
             pass
-
-
-def discover_board_files(data_root: Path, board_data_index_start: int, board_data_index_end: int) -> List[BoardFile]:
-    files: List[BoardFile] = []
-    for board_data_index in range(board_data_index_start, board_data_index_end + 1):
-        board_data_dir = data_root / f"records{board_data_index}"
-        if not board_data_dir.exists():
-            raise FileNotFoundError(f"missing board data directory: {board_data_dir}")
-        dat_files = sorted(board_data_dir.glob("*.dat"), key=lambda p: (int(p.stem), p.name) if p.stem.isdigit() else (10**9, p.name))
-        if not dat_files:
-            raise FileNotFoundError(f"no .dat files in {board_data_dir}")
-        for path in dat_files:
-            size = path.stat().st_size
-            if size < BOARD_SAMPLE_SIZE:
-                continue
-            if size % BOARD_SAMPLE_SIZE != 0:
-                print(f"warning: {path} size is not divisible by {BOARD_SAMPLE_SIZE}; trailing bytes are ignored")
-            files.append(BoardFile(path=path, n_position_samples=size // BOARD_SAMPLE_SIZE))
-    if not files:
-        raise FileNotFoundError(f"no board data found under {data_root}")
-    return files
-
-
-def shift_east(x: np.ndarray) -> np.ndarray:
-    return (x & NOT_FILE_H) >> np.uint64(1)
-
-
-def shift_west(x: np.ndarray) -> np.ndarray:
-    return (x & NOT_FILE_A) << np.uint64(1)
-
-
-def shift_north(x: np.ndarray) -> np.ndarray:
-    return x >> np.uint64(8)
-
-
-def shift_south(x: np.ndarray) -> np.ndarray:
-    return (x << np.uint64(8)) & FULL
-
-
-def shift_ne(x: np.ndarray) -> np.ndarray:
-    return (x & NOT_FILE_H) >> np.uint64(9)
-
-
-def shift_nw(x: np.ndarray) -> np.ndarray:
-    return (x & NOT_FILE_A) >> np.uint64(7)
-
-
-def shift_se(x: np.ndarray) -> np.ndarray:
-    return ((x & NOT_FILE_H) << np.uint64(7)) & FULL
-
-
-def shift_sw(x: np.ndarray) -> np.ndarray:
-    return ((x & NOT_FILE_A) << np.uint64(9)) & FULL
-
-
-SHIFT_FUNCS = (shift_east, shift_west, shift_north, shift_south, shift_ne, shift_nw, shift_se, shift_sw)
-
-
-def calc_legal_batch(player: np.ndarray, opponent: np.ndarray) -> np.ndarray:
-    empty = ~(player | opponent)
-    legal = np.zeros_like(player, dtype=np.uint64)
-    for shift in SHIFT_FUNCS:
-        x = shift(player) & opponent
-        for _ in range(5):
-            x |= shift(x) & opponent
-        legal |= shift(x) & empty
-    return legal
-
-
-def legal_bitboard_to_mask(legal: np.ndarray) -> np.ndarray:
-    return (legal.reshape(-1, 1) & POLICY_BIT_MASKS) != 0
-
-
-def valid_policy_mask(policies: np.ndarray, legal: np.ndarray) -> Tuple[np.ndarray, int, int]:
-    valid_policy = (0 <= policies) & (policies < POLICY_SIZE)
-    label_bits = np.zeros_like(legal, dtype=np.uint64)
-    label_bits[valid_policy] = np.left_shift(np.uint64(1), policies[valid_policy].astype(np.uint64))
-    legal_label = valid_policy & ((legal & label_bits) != 0)
-    return legal_label, int(np.count_nonzero(~valid_policy)), int(np.count_nonzero(valid_policy & ~legal_label))
-
-
-def allocate_counts(total: int, weights: Sequence[int]) -> List[int]:
-    if total <= 0:
-        return [0 for _ in weights]
-    raw = np.array(weights, dtype=np.float64) * (float(total) / float(sum(weights)))
-    counts = np.floor(raw).astype(np.int64)
-    missing = total - int(counts.sum())
-    if missing > 0:
-        order = np.argsort(-(raw - counts))
-        counts[order[:missing]] += 1
-    return [int(v) for v in counts]
-
-
-def position_samples_to_targets(position_samples: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    player_bits = position_samples["player"].astype(np.uint64, copy=False)
-    opponent_bits = position_samples["opponent"].astype(np.uint64, copy=False)
-    n = len(position_samples)
-    x = np.empty((n, INPUT_SIZE), dtype=np.float32)
-    x[:, :64] = ((player_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
-    x[:, 64:] = ((opponent_bits.reshape(-1, 1) & BIT_MASKS) != 0).astype(np.float32)
-    y_policy = position_samples["policy"].astype(np.int64, copy=False)
-    return x, y_policy
-
-
-def position_samples_to_split_arrays(position_samples: np.ndarray) -> SplitArrays:
-    player_bits = position_samples["player"].astype(np.uint64, copy=False)
-    opponent_bits = position_samples["opponent"].astype(np.uint64, copy=False)
-    x, y_policy = position_samples_to_targets(position_samples)
-    legal = calc_legal_batch(player_bits, opponent_bits)
-    n_discs = np.count_nonzero(x, axis=1).astype(np.int16, copy=False)
-    return SplitArrays(
-        x=x,
-        policy=y_policy,
-        legal=legal,
-        player=player_bits,
-        opponent=opponent_bits,
-        n_discs=n_discs,
-    )
-
-
-def load_position_samples(files: Sequence[BoardFile], max_position_samples: Optional[int]) -> np.ndarray:
-    chunks = []
-    remaining = max_position_samples
-    for board_file in files:
-        n_position_samples = board_file.n_position_samples
-        if remaining is not None:
-            if remaining <= 0:
-                break
-            n_position_samples = min(n_position_samples, remaining)
-            remaining -= n_position_samples
-        if n_position_samples <= 0:
-            continue
-        mmap = np.memmap(board_file.path, dtype=BOARD_DTYPE, mode="r", shape=(board_file.n_position_samples,))
-        chunks.append(np.asarray(mmap[:n_position_samples]).copy())
-    if not chunks:
-        raise ValueError("no position samples loaded")
-    if len(chunks) == 1:
-        return chunks[0]
-    return np.concatenate(chunks)
-
-
-def split_counts(total: int, train_ratio: float, val_ratio: float, test_ratio: float) -> Tuple[int, int, int]:
-    ratio_sum = train_ratio + val_ratio + test_ratio
-    if total <= 0:
-        raise ValueError("total split size must be positive")
-    if ratio_sum <= 0.0:
-        raise ValueError("split ratios must have positive sum")
-    n_train = int(np.floor(total * (train_ratio / ratio_sum)))
-    n_val = int(np.floor(total * (val_ratio / ratio_sum)))
-    n_test = total - n_train - n_val
-    if n_train <= 0 or n_val <= 0 or n_test <= 0:
-        raise ValueError(f"split produced an empty part: train={n_train} val={n_val} test={n_test}")
-    return n_train, n_val, n_test
-
-
-def load_shuffled_three_way_split(
-    files: Sequence[BoardFile],
-    train_ratio: float,
-    val_ratio: float,
-    test_ratio: float,
-    seed: int,
-    max_position_samples: Optional[int],
-) -> Dict[str, SplitArrays]:
-    rng = np.random.default_rng(seed)
-    position_samples = load_position_samples(files, max_position_samples)
-    policies = position_samples["policy"].astype(np.int64, copy=False)
-    valid = (0 <= policies) & (policies < POLICY_SIZE)
-    if not np.all(valid):
-        position_samples = position_samples[valid]
-
-    n_train, n_val, n_test = split_counts(len(position_samples), train_ratio, val_ratio, test_ratio)
-    order = rng.permutation(len(position_samples))
-    train_samples = position_samples[order[:n_train]]
-    val_samples = position_samples[order[n_train : n_train + n_val]]
-    test_samples = position_samples[order[n_train + n_val : n_train + n_val + n_test]]
-    del position_samples, order
-
-    return {
-        "train": position_samples_to_split_arrays(train_samples),
-        "val": position_samples_to_split_arrays(val_samples),
-        "test": position_samples_to_split_arrays(test_samples),
-    }
-
-
-def append_sampled_positions(
-    dest_x: np.ndarray,
-    dest_policy: np.ndarray,
-    offset: int,
-    board_file: BoardFile,
-    indices: np.ndarray,
-) -> int:
-    if len(indices) == 0:
-        return offset
-    mmap = np.memmap(board_file.path, dtype=BOARD_DTYPE, mode="r", shape=(board_file.n_position_samples,))
-    position_samples = np.asarray(mmap[indices])
-    x, y_policy = position_samples_to_targets(position_samples)
-    valid = (0 <= y_policy) & (y_policy < POLICY_SIZE)
-    if not np.all(valid):
-        x = x[valid]
-        y_policy = y_policy[valid]
-    n = len(y_policy)
-    dest_x[offset : offset + n] = x
-    dest_policy[offset : offset + n] = y_policy
-    return offset + n
-
-
-def shuffle_split(
-    x: np.ndarray,
-    policy: np.ndarray,
-    rng: np.random.Generator,
-) -> Tuple[np.ndarray, np.ndarray]:
-    order = rng.permutation(len(policy))
-    return x[order], policy[order]
-
-
-def load_sampled_split(
-    files: Sequence[BoardFile],
-    max_train_samples: int,
-    max_val_samples: int,
-    seed: int,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    rng = np.random.default_rng(seed)
-    weights = [f.n_position_samples for f in files]
-    train_alloc = allocate_counts(max_train_samples, weights)
-    val_alloc = allocate_counts(max_val_samples, weights)
-
-    x_train = np.empty((sum(train_alloc), INPUT_SIZE), dtype=np.float32)
-    p_train = np.empty(sum(train_alloc), dtype=np.int64)
-    x_val = np.empty((sum(val_alloc), INPUT_SIZE), dtype=np.float32)
-    p_val = np.empty(sum(val_alloc), dtype=np.int64)
-
-    train_offset = 0
-    val_offset = 0
-    for i, board_file in enumerate(files):
-        n_train = train_alloc[i]
-        n_val = val_alloc[i]
-        if n_train + n_val == 0:
-            continue
-        indices = rng.integers(0, board_file.n_position_samples, size=n_train + n_val, dtype=np.int64)
-        train_offset = append_sampled_positions(x_train, p_train, train_offset, board_file, np.sort(indices[:n_train]))
-        val_offset = append_sampled_positions(x_val, p_val, val_offset, board_file, np.sort(indices[n_train:]))
-
-    x_train, p_train = x_train[:train_offset], p_train[:train_offset]
-    x_val, p_val = x_val[:val_offset], p_val[:val_offset]
-    x_train, p_train = shuffle_split(x_train, p_train, rng)
-    x_val, p_val = shuffle_split(x_val, p_val, rng)
-    return x_train, p_train, x_val, p_val
 
 
 def parse_top_n(text: str) -> List[int]:
@@ -575,6 +302,7 @@ def train_one_model(
         "validation_loss": float(history.history["val_loss"][adopted_idx]),
         "final_loss": float(history.history["loss"][-1]),
         "output_dir": str(run_dir),
+        "dataset_split_manifest": str(output_dir / "dataset_split.json"),
     }
     if split_eval_data is not None and not args.no_split_topn:
         n_values = sorted(set(args.top_n))
@@ -658,24 +386,28 @@ def repo_root() -> Path:
 
 
 def default_data_root() -> Path:
-    return repo_root() / "train_data" / "board_data" / "Egaroucid_Train_Data_v2_selected"
+    return default_wthor_data_root()
 
 
 def default_wthor_data_root() -> Path:
-    return Path(os.environ["EGAROUCID_DATA"]) / "train_data" / "board_data"
+    data_root = os.environ.get("EGAROUCID_DATA")
+    if not data_root:
+        raise ValueError("set EGAROUCID_DATA or pass --data-root containing WTHOR records1")
+    return Path(data_root) / "train_data" / "board_data"
 
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train compact Othello policy networks with tensorflow.keras for the human-like AI study.")
-    parser.add_argument("--data-root", type=Path, default=default_data_root(), help="default: train_data/board_data/Egaroucid_Train_Data_v2_selected")
-    parser.add_argument("--board-data-index-start", type=int, default=0)
-    parser.add_argument("--board-data-index-end", type=int, default=0)
-    parser.add_argument("--wthor", action="store_true", help="Use $EGAROUCID_DATA/train_data/board_data/records1 as the source.")
-    parser.add_argument("--split-mode", choices=["sampled", "shuffled"], default="sampled", help="sampled keeps the legacy random sampling path; shuffled makes disjoint train/val/test splits.")
-    parser.add_argument("--train-ratio", type=float, default=0.8)
-    parser.add_argument("--val-ratio", type=float, default=0.1)
-    parser.add_argument("--test-ratio", type=float, default=0.1)
-    parser.add_argument("--max-position-samples", type=int, default=None, help="Optional cap before shuffled train/val/test split.")
+    parser.add_argument("--data-root", type=Path, default=None, help="Default: $EGAROUCID_DATA/train_data/board_data (WTHOR records1).")
+    parser.add_argument("--board-data-index-start", type=int, default=1)
+    parser.add_argument("--board-data-index-end", type=int, default=1)
+    parser.add_argument("--wthor", action="store_true", help="Compatibility option: select records1, which is already the default.")
+    parser.add_argument("--split-manifest", type=Path, default=None, help="Reuse a dataset_split.json created by 00_data_processing/prepare_wthor_data.py; its seed and ratios determine the split.")
+    parser.add_argument("--split-mode", choices=["game", "sampled", "shuffled"], default="game", help="All modes split by game. shuffled is an alias for game; sampled caps positions within the disjoint game partitions.")
+    parser.add_argument("--train-ratio", type=float, default=0.9)
+    parser.add_argument("--val-ratio", type=float, default=0.05)
+    parser.add_argument("--test-ratio", type=float, default=0.05)
+    parser.add_argument("--max-position-samples", type=int, default=None, help="Optional cap on source positions; keep only whole games before the game split.")
     parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
     parser.add_argument("--alpha", type=float, default=0.03)
     parser.add_argument("--dropout", type=float, default=0.0)
@@ -683,8 +415,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=4096)
-    parser.add_argument("--max-train-samples", type=int, default=1000000)
-    parser.add_argument("--max-val-samples", type=int, default=100000)
+    parser.add_argument("--max-train-samples", type=int, default=1000000, help="Position cap within the train game partition in sampled mode only.")
+    parser.add_argument("--max-val-samples", type=int, default=100000, help="Position cap within the validation game partition in sampled mode only.")
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,5,10"))
     parser.add_argument("--eval-batch-size", type=int, default=65536)
@@ -699,14 +431,10 @@ def main() -> None:
     set_reproducible_seed(args.seed)
     enable_memory_growth()
 
+    data_root = args.data_root if args.data_root is not None else default_data_root()
     if args.wthor:
-        data_root = default_wthor_data_root()
         args.board_data_index_start = 1
         args.board_data_index_end = 1
-        if args.split_mode == "sampled":
-            args.split_mode = "shuffled"
-    else:
-        data_root = Path(args.data_root)
     output_dir = args.output_dir if args.output_dir is not None else default_output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -720,38 +448,24 @@ def main() -> None:
     print(f"board files {len(files)}")
     print(f"total_position_samples {sum(f.n_position_samples for f in files)}")
 
-    split_eval_data: Optional[Dict[str, SplitArrays]] = None
+    print(
+        "game split ratios "
+        f"train={args.train_ratio} val={args.val_ratio} test={args.test_ratio} "
+        f"max_position_samples={args.max_position_samples}"
+    )
+    sample_caps = None
     if args.split_mode == "sampled":
-        print(f"sampling train={args.max_train_samples} val={args.max_val_samples}")
-        x_train, p_train, x_val, p_val = load_sampled_split(files, args.max_train_samples, args.max_val_samples, args.seed)
-        print("loaded", x_train.shape, p_train.shape, x_val.shape, p_val.shape)
-    else:
-        print(
-            "shuffled split ratios "
-            f"train={args.train_ratio} val={args.val_ratio} test={args.test_ratio} "
-            f"max_position_samples={args.max_position_samples}"
-        )
-        split_eval_data = load_shuffled_three_way_split(
-            files,
-            args.train_ratio,
-            args.val_ratio,
-            args.test_ratio,
-            args.seed,
-            args.max_position_samples,
-        )
-        x_train = split_eval_data["train"].x
-        p_train = split_eval_data["train"].policy
-        x_val = split_eval_data["val"].x
-        p_val = split_eval_data["val"].policy
-        print(
-            "loaded",
-            x_train.shape,
-            p_train.shape,
-            x_val.shape,
-            p_val.shape,
-            split_eval_data["test"].x.shape,
-            split_eval_data["test"].policy.shape,
-        )
+        sample_caps = {"train": args.max_train_samples, "val": args.max_val_samples}
+    split_eval_data = load_game_three_way_split(
+        files, args.train_ratio, args.val_ratio, args.test_ratio, args.seed,
+        args.max_position_samples, sample_caps, output_dir,
+        args.split_manifest,
+    )
+    x_train = split_eval_data["train"].x
+    p_train = split_eval_data["train"].policy
+    x_val = split_eval_data["val"].x
+    p_val = split_eval_data["val"].policy
+    print("loaded", {name: split.x.shape for name, split in split_eval_data.items()})
 
     results = []
     for spec in parse_model_specs(args.configs, args):

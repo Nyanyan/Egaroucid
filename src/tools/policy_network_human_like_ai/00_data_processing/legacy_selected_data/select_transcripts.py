@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+Legacy selected-data tool; not part of WTHOR preprocessing.
+
 Select random games from transcript_release/0002 for the human-like policy study.
 
 The selected transcripts are written under:
@@ -25,7 +27,7 @@ GAMES_PER_SOURCE_FILE = 10000
 
 
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[4]
+    return Path(__file__).resolve().parents[5]
 
 
 def default_source_root() -> Path:

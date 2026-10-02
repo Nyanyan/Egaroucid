@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+Legacy selected-data tool; not part of WTHOR preprocessing.
+
 Convert selected transcript_release/0002 games to policy-network board data.
 
 Input:
@@ -7,6 +9,7 @@ Input:
 
 Output:
   train_data/board_data/Egaroucid_Train_Data_v2_selected/records0/*.dat
+  Matching *.game_ids files contain one little-endian uint64 game ID per sample.
 
 Moves before each file's random_depth are played but not written, following
 the dataset recommendation to exclude the random opening segment from training.
@@ -31,7 +34,7 @@ WHITE = 1
 
 
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[4]
+    return Path(__file__).resolve().parents[5]
 
 
 def default_input_root() -> Path:
@@ -207,6 +210,7 @@ def main() -> None:
     out_idx = 0
     position_samples_in_file = 0
     out = (args.output_root / f"{out_idx}.dat").open("wb")
+    game_ids_out = (args.output_root / f"{out_idx}.game_ids").open("wb")
     total_games = 0
     valid_games = 0
     total_position_samples = 0
@@ -234,14 +238,18 @@ def main() -> None:
                     for position_sample in position_samples:
                         if position_samples_in_file >= args.position_samples_per_file:
                             out.close()
+                            game_ids_out.close()
                             out_idx += 1
                             position_samples_in_file = 0
                             out = (args.output_root / f"{out_idx}.dat").open("wb")
+                            game_ids_out = (args.output_root / f"{out_idx}.game_ids").open("wb")
                         out.write(pack_position_sample(position_sample))
+                        game_ids_out.write(struct.pack("<Q", total_games - 1))
                         position_samples_in_file += 1
                         total_position_samples += 1
     finally:
         out.close()
+        game_ids_out.close()
 
     write_csv(args.output_root / "invalid_games.csv", invalid_rows)
     summary = {
@@ -252,6 +260,7 @@ def main() -> None:
         "invalid_games": len(invalid_rows),
         "total_position_samples": total_position_samples,
         "position_samples_per_file": args.position_samples_per_file,
+        "game_ids_format": "uint64_le_per_position_scoped_to_records_directory",
         "output_files": out_idx + 1 if total_position_samples else 0,
         "random_depth_valid_game_counts": dict(sorted(depth_counts.items(), key=lambda kv: int(kv[0]))),
     }

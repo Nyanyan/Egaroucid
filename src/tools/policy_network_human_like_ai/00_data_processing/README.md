@@ -1,47 +1,59 @@
-# ポリシーネットワーク用データの加工
+# WTHORデータの加工
 
-棋譜の抽出と盤面データへの変換は、このディレクトリで行います。
-加工後のデータを使った学習手順は、[10_train_policy_network](../10_train_policy_network/README.md) に記載しています。
+この実験では、WTHORの人間棋譜を使います。入力は、すでに盤面へ展開された次のデータです。
 
-## 加工スクリプト
+```text
+$EGAROUCID_DATA/train_data/board_data/records1/*.dat
+```
 
-| スクリプト | 処理 |
+`transcript_release/0002` は、この実験の入力には使いません。
+
+## データの読み込みと分割
+
+このディレクトリの `prepare_wthor_data.py` で、WTHORの棋譜を train・validation・test に分割します。
+PythonとNumPyが必要です。次のコマンドは、リポジトリルートの `Egaroucid` ディレクトリから実行します。
+
+```powershell
+python src\tools\policy_network_human_like_ai\00_data_processing\prepare_wthor_data.py
+```
+
+既定では全棋譜を読み、seed 613でシャッフルして、棋譜数の90%・5%・5%に分けます。
+validationとtestの端数は切り捨て、残りをtrainへ割り当てます。
+同じ棋譜の局面は、すべて同じ分割に所属します。元のWTHORデータは変更しません。
+
+分割結果は、このディレクトリの `output/wthor` に保存します。
+
+- `dataset_split.json`: seed、分割比率、棋譜数、局面数、入力ファイルと局面インデックスのSHA-256。
+- `dataset_split.npz`: 各分割に含める局面のインデックス。
+
+別の場所にあるWTHORデータを使う場合は `--board-data-dir`、保存先を変える場合は `--output-dir` を指定します。
+動作確認などで件数を抑える場合は `--max-position-samples` を指定します。この上限に収まる棋譜を先頭から丸ごと読み込み、分割します。
+
+## 加工結果を使った学習
+
+学習コマンドには、保存した分割結果を指定します。
+
+```powershell
+python src\tools\policy_network_human_like_ai\10_train_policy_network\train_policy_network.py `
+  --split-manifest src\tools\policy_network_human_like_ai\00_data_processing\output\wthor\dataset_split.json `
+  --configs 512x4 `
+  --epochs 50
+```
+
+学習側も既定でWTHORの `records1` を参照します。既存の `--wthor` オプションも引き続き使えます。
+`--split-manifest` を指定すると、入力のSHA-256を照合してから保存済みの分割を読み込みます。
+その場合、分割のseed・比率・件数上限は加工時の設定を使います。学習時には `--split-mode sampled` や件数上限を併用しないでください。
+再評価に使えるよう、学習結果のディレクトリにも分割ファイルを保存します。
+
+既存の学習BATなど、`--split-manifest` を省略した呼び出しでは、このディレクトリの処理で分割を作ってから学習します。
+詳しい学習条件は [10_train_policy_network](../10_train_policy_network/README.md) を参照してください。
+
+## 実装の配置
+
+| ファイル | 役割 |
 | --- | --- |
-| `select_transcripts.py` | `transcript_release/0002` から指定した数の棋譜を重複なしで抽出します。 |
-| `convert_selected_transcripts_to_board_data.py` | 抽出した棋譜を盤面データへ変換します。ランダム序盤の手は盤面上で再生し、その後の局面だけを書き出します。 |
+| `prepare_wthor_data.py` | WTHORデータの分割結果を保存するコマンド。 |
+| `wthor_dataset.py` | 棋譜の識別、棋譜単位の分割、分割ファイルの保存・照合。 |
+| `policy_data.py` | 盤面データの読み込み、128入力特徴量・合法手などの作成。学習側からも呼び出します。 |
 
-両スクリプトは Python の標準ライブラリだけで実行できます。
-入力・出力の既定パスは、スクリプトの場所から求めたリポジトリルートを基準にします。
-
-## 棋譜の抽出と変換
-
-次の例は、リポジトリルートの `Egaroucid` ディレクトリから PowerShell で実行します。
-まず、seed 613 で10,000局を抽出します。
-
-```powershell
-python src\tools\policy_network_human_like_ai\00_data_processing\select_transcripts.py `
-  --num-games 10000 `
-  --seed 613
-```
-
-抽出元は `train_data/transcript_release/0002`、保存先は
-`train_data/transcript/Egaroucid_Train_Data_v2_selected` です。
-抽出元の各ファイルに10,000局が含まれることを前提にしています。
-保存先には、ランダム序盤の手数ごとの棋譜ファイルと、抽出元を記録した `selection_manifest.csv`、集計した `selection_summary.json` を書き出します。
-
-続いて、抽出した棋譜を盤面データへ変換します。
-
-```powershell
-python src\tools\policy_network_human_like_ai\00_data_processing\convert_selected_transcripts_to_board_data.py
-```
-
-変換後の盤面データは `train_data/board_data/Egaroucid_Train_Data_v2_selected/records0/*.dat` に保存します。
-各局面は、手番側の石・相手側の石・手番の色・着手・最終得点を含む19バイトのデータです。
-また、変換結果を `conversion_summary.json` に、不正な棋譜があればその理由を `invalid_games.csv` に保存します。
-
-保存先を変更する場合は、抽出時の `--output-root` と変換時の `--input-root` に同じパスを指定します。
-変換後の保存先は、変換時の `--output-root` で変更できます。
-両スクリプトとも、出力先ディレクトリがすでに存在する場合は、その中身を削除してから再生成します。
-
-加工が終わったら、[学習ディレクトリ](../10_train_policy_network/README.md) の `train_policy_network.py` を実行します。
-この selected データを学習する場合は `--wthor` を省きます。WTHOR の既存データを学習する場合は、同READMEの `--wthor` を使った手順に従ってください。
+過去の別データ用スクリプトは `legacy_selected_data` に保存しています。WTHORの加工・学習からは呼び出しません。
