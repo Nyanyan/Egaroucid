@@ -166,6 +166,13 @@ class Thread_pool {
         template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
 #endif
         std::future<R> push(bool *pushed, F &&func, const Args &&...args) {
+            // No idle thread: push_task() refuses the task, so return before the task object is created.
+            // (The packaged_task, the copies of the arguments and the state of the future were allocated on the heap
+            //  and discarded at once every time a task was refused.)
+            if (n_idle <= 0) {
+                *pushed = false;
+                return std::future<R>();
+            }
             auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
                 return func(args...);
             });
@@ -181,7 +188,10 @@ class Thread_pool {
 #endif
     std::future<R> push(thread_id_t id, bool *pushed, F &&func, const Args &&...args) {
         //if (id != THREAD_ID_NONE) {
-        if (n_using_thread[id] >= max_thread_size[id]) {
+        // "n_idle <= 0": no idle thread. push_task() refuses the task, so return before the task object is created.
+        // (YBWC tries to split at every younger brother. While all threads were busy, each try allocated
+        //  the packaged_task, the copies of the arguments and the state of the future on the heap and discarded them.)
+        if (n_idle <= 0 || n_using_thread[id] >= max_thread_size[id]) {
             *pushed = false;
             return std::future<R>();
         }
