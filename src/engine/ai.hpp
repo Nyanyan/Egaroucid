@@ -3281,6 +3281,14 @@ inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
     return best;
 }
 
+// Disabled by default. It gates on this game's best value alone, which says
+// little in a synchro match, and in the August 3-minute logs it spent a median
+// 10.5 s on 11,014 moves but replaced the main search's move only 11 times.
+// Build with -DEGAROUCID_GGS_SELFPLAY_RESOLVE=1 to bring it back.
+#ifndef EGAROUCID_GGS_SELFPLAY_RESOLVE
+    #define EGAROUCID_GGS_SELFPLAY_RESOLVE 0
+#endif
+constexpr bool AI_TL_GGS_SELFPLAY_RESOLVE_ENABLED = EGAROUCID_GGS_SELFPLAY_RESOLVE != 0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY = 36;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_FULL_MIN_N_EMPTY = 42;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MAX_N_EMPTY = 50;
@@ -4073,7 +4081,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
             }
         }
     }
-    if (has_ambiguity_move_list && global_searching && *searching) {
+    if (AI_TL_GGS_SELFPLAY_RESOLVE_ENABLED && has_ambiguity_move_list && global_searching && *searching) {
         uint64_t strt_selfplay_resolve = tim();
         selfplay_resolve_result = ai_time_limit_ggs_selfplay_resolve(
             board,
