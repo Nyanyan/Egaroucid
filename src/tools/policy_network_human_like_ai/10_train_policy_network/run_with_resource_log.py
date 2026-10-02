@@ -16,6 +16,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--summary", type=Path, required=True)
     parser.add_argument("--poll-interval-sec", type=float, default=1.0)
+    parser.add_argument("--tee", action="store_true", help="Also stream the child log to the console")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     return parser
 
@@ -27,7 +28,7 @@ def main() -> None:
         command = command[1:]
     if not command:
         raise SystemExit("missing command")
-    summary = run_monitored_command(command, args.log, args.poll_interval_sec)
+    summary = run_monitored_command(command, args.log, args.poll_interval_sec, tee=args.tee)
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     with args.summary.open("w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)

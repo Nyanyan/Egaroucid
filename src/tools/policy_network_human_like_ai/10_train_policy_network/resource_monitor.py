@@ -8,6 +8,8 @@ from ctypes import wintypes
 import datetime as dt
 from pathlib import Path
 import subprocess
+import sys
+import threading
 import time
 from typing import Optional, Sequence
 
@@ -90,6 +92,7 @@ def run_monitored_command(
     log_path: Path,
     poll_interval_sec: float = 1.0,
     cwd: Optional[Path] = None,
+    tee: bool = False,
 ) -> dict:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     start = time.time()
@@ -100,7 +103,19 @@ def run_monitored_command(
         log.write("$ " + command_text(command) + "\n")
         log.write(f"resource_monitor_start {start_iso}\n\n")
         log.flush()
-        proc = subprocess.Popen(command, cwd=str(cwd) if cwd is not None else None, stdout=log, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(command, cwd=str(cwd) if cwd is not None else None,
+                                stdout=subprocess.PIPE if tee else log, stderr=subprocess.STDOUT,
+                                **({"text": True, "encoding": "utf-8", "errors": "replace", "bufsize": 1} if tee else {}))
+        reader = None
+        if tee:
+            def forward():
+                for line in proc.stdout:
+                    log.write(line)
+                    log.flush()
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+            reader = threading.Thread(target=forward, daemon=True)
+            reader.start()
         while True:
             current = rss_bytes(proc.pid)
             if current is not None:
@@ -110,6 +125,9 @@ def run_monitored_command(
                 break
             time.sleep(max(0.1, poll_interval_sec))
         returncode = proc.wait()
+        if reader is not None:
+            reader.join()
+            proc.stdout.close()
         elapsed = time.time() - start
         end_iso = now_iso()
         log.write("\n")

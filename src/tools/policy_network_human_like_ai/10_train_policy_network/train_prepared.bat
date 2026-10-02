@@ -25,10 +25,13 @@ set "RUN_NAME=prepared_%MODEL_NAME%_e%EPOCHS%_%RUN_STAMP%"
 set "OUTPUT_DIR=trained\%RUN_NAME%"
 set "LOG_FILE=train_log\%RUN_NAME%.log"
 set "RESOURCE_FILE=train_log\%RUN_NAME%_resource.json"
+if defined POLICY_TRAIN_OUTPUT set "OUTPUT_DIR=%POLICY_TRAIN_OUTPUT%"
+if defined POLICY_TRAIN_LOG set "LOG_FILE=%POLICY_TRAIN_LOG%"
+if defined POLICY_TRAIN_RESOURCE set "RESOURCE_FILE=%POLICY_TRAIN_RESOURCE%"
 echo Training %MODEL_NAME% for %EPOCHS% epochs. Dataset: %POLICY_DATASET%
 echo Progress: "%LOG_FILE%"
 "%POLICY_PYTHON%" -u run_with_resource_log.py ^
-    --log "%LOG_FILE%" --summary "%RESOURCE_FILE%" ^
+    --log "%LOG_FILE%" --summary "%RESOURCE_FILE%" --tee ^
     -- "%POLICY_PYTHON%" -u train_policy_network.py ^
     --dataset "%POLICY_DATASET%" ^
     --configs "%MODEL_CONFIG%" ^
