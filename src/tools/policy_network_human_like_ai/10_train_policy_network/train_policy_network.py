@@ -1,26 +1,8 @@
 #!/usr/bin/env python3
-"""
-Train a compact policy network for Othello move prediction.
+"""Train on prepared train/val partitions, then evaluate the selected model on test.
 
-Related issue: #613
-
-Input features are side-to-move bitboards:
-  [player-to-move exists on 64 squares, opponent exists on 64 squares]
-
-Use --board-split-dir for numbered pipeline stage 03/04 output. Its game
-partitions are loaded unchanged, including after eightfold augmentation.
-The legacy WTHOR direct-training mode reads expanded position samples from:
-  $EGAROUCID_DATA/train_data/board_data/records1
-
-Data preprocessing is implemented in ../00_data_processing.
-Use --split-manifest to load a previously prepared WTHOR game split.
-
-Board-data binary sample layout, 19 bytes:
-  uint64 player_to_move_bits
-  uint64 opponent_bits
-  int8   player_color
-  int8   policy
-  int8   score
+Resolve data from POLICY_DATA_ROOT/board_split_increased/POLICY_DATASET.
+Preprocessing and partition membership belong to ../00_data_processing.
 """
 
 from __future__ import annotations
@@ -29,14 +11,13 @@ import argparse
 import csv
 import datetime as _dt
 import json
-import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 import random
 import shutil
 import struct
 import sys
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -46,6 +27,8 @@ from tensorflow.keras.layers import Dense, Dropout, Input, LeakyReLU, Softmax
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2 as keras_l2
 
+from paper_policy_models import PAPER_FILTERS, build_paper_model
+from prepared_policy_data import add_data_arguments, resolve_board_split_dir, load_prepared_splits
 
 HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
@@ -53,14 +36,10 @@ sys.path.insert(0, str(HUMAN_LIKE_AI_DIR))
 sys.path.insert(0, str(HUMAN_LIKE_AI_DIR / "00_data_processing"))
 
 from policy_data import (  # noqa: E402
-    BOARD_DTYPE, BOARD_SAMPLE_SIZE, INPUT_SIZE, POLICY_SIZE,
-    BIT_MASKS, POLICY_BIT_MASKS, FULL, NOT_FILE_A, NOT_FILE_H, SHIFT_FUNCS,
-    BoardFile, SplitArrays, discover_board_files,
-    shift_east, shift_west, shift_north, shift_south, shift_ne, shift_nw, shift_se, shift_sw,
-    calc_legal_batch, legal_bitboard_to_mask, valid_policy_mask,
-    position_samples_to_targets, position_samples_to_split_arrays,
-    load_game_three_way_split, load_shuffled_three_way_split, load_prepared_board_splits, split_counts,
+    INPUT_SIZE, POLICY_SIZE, SplitArrays,
+    legal_bitboard_to_mask, valid_policy_mask, position_samples_to_split_arrays,
 )
+
 
 from policy_accuracy import (  # noqa: E402
     equivalent_policy_mask,
@@ -77,6 +56,7 @@ class ModelSpec:
     dropout: float
     l2: float
     learning_rate: float
+    architecture: str = "mlp"
 
 
 def set_reproducible_seed(seed: int) -> None:
@@ -109,14 +89,18 @@ def evaluate_policy_topn_arrays(
     invalid_policy = 0
     illegal_label = 0
     total_hits = {n: 0 for n in n_values}
+    cross_entropy_sum = 0.0
 
-    for start in range(0, len(split.policy), batch_size):
-        end = min(len(split.policy), start + batch_size)
-        probabilities = model.predict(split.x[start:end], batch_size=predict_batch_size, verbose=0)
-        policies = split.policy[start:end]
-        legal = split.legal[start:end]
-        player = split.player[start:end]
-        opponent = split.opponent[start:end]
+    if hasattr(split, "batches"):
+        chunks = (position_samples_to_split_arrays(samples) for samples in split.batches(batch_size))
+    else:
+        chunks = (SplitArrays(**{key: getattr(split, key)[start:start + batch_size]
+                                for key in ("x", "policy", "legal", "player", "opponent", "n_discs")})
+                  for start in range(0, len(split.policy), batch_size))
+    for chunk in chunks:
+        probabilities = model.predict(chunk.x, batch_size=predict_batch_size, verbose=0)
+        policies, legal = chunk.policy, chunk.legal
+        player, opponent = chunk.player, chunk.opponent
         valid, n_invalid_policy, n_illegal_label = valid_policy_mask(policies, legal)
         invalid_policy += n_invalid_policy
         illegal_label += n_illegal_label
@@ -125,6 +109,8 @@ def evaluate_policy_topn_arrays(
 
         probabilities = probabilities[valid]
         policies = policies[valid]
+        label_probabilities = probabilities[np.arange(len(policies)), policies]
+        cross_entropy_sum += float(-np.log(np.clip(label_probabilities, tf.keras.backend.epsilon(), 1.0)).sum(dtype=np.float64))
         legal = legal[valid]
         player = player[valid]
         opponent = opponent[valid]
@@ -150,6 +136,7 @@ def evaluate_policy_topn_arrays(
     return {
         "split": split_name,
         "positions": total_positions,
+        "cross_entropy": cross_entropy_sum / total_positions if total_positions else None,
         "invalid_policy_samples": invalid_policy,
         "illegal_label_samples": illegal_label,
         "agreement_definition": "board_symmetry_aware",
@@ -172,6 +159,14 @@ def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
         token = raw_token.strip()
         if not token:
             continue
+        preset = token.lower().replace("+", "_").replace("-", "_")
+        if preset in PAPER_FILTERS:
+            specs.append(ModelSpec(
+                name=preset, width=128, depth=len(PAPER_FILTERS[preset]),
+                alpha=0.0, dropout=0.0, l2=args.l2,
+                learning_rate=args.learning_rate, architecture=preset,
+            ))
+            continue
         if ":" in token:
             parts = token.split(":")
             if len(parts) < 3:
@@ -185,7 +180,7 @@ def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
             lr = float(parts[6]) if len(parts) > 6 else args.learning_rate
         else:
             if "x" not in token:
-                raise ValueError(f"invalid config '{token}', expected WIDTHxDEPTH")
+                raise ValueError(f"invalid config '{token}', expected WIDTHxDEPTH or one of {', '.join(PAPER_FILTERS)}")
             width_s, depth_s = token.lower().split("x", 1)
             width = int(width_s)
             depth = int(depth_s)
@@ -199,10 +194,16 @@ def parse_model_specs(text: str, args: argparse.Namespace) -> List[ModelSpec]:
         specs.append(ModelSpec(name, width, depth, alpha, dropout, l2_value, lr))
     if not specs:
         raise ValueError("no model configs were provided")
+    if len({spec.name for spec in specs}) != len(specs):
+        raise ValueError("model configs must have distinct output names")
     return specs
 
 
 def build_model(spec: ModelSpec) -> Model:
+    if spec.architecture != "mlp":
+        model = build_paper_model(spec.architecture, spec.name, spec.l2)
+        compile_model(model, spec.learning_rate)
+        return model
     kernel_regularizer = keras_l2(spec.l2) if spec.l2 > 0.0 else None
     inputs = Input(shape=(INPUT_SIZE,), name="board")
     x = inputs
@@ -219,11 +220,15 @@ def build_model(spec: ModelSpec) -> Model:
     logits = Dense(POLICY_SIZE, name="policy_logits")(x)
     outputs = Softmax(name="policy")(logits)
     model = Model(inputs=inputs, outputs=outputs, name=spec.name)
+    compile_model(model, spec.learning_rate)
+    return model
+
+
+def compile_model(model: Model, learning_rate: float) -> None:
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=spec.learning_rate),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
     )
-    return model
 
 
 def _write_dense_layer(f, layer: Dense, activation: int, alpha: float) -> None:
@@ -237,6 +242,8 @@ def _write_dense_layer(f, layer: Dense, activation: int, alpha: float) -> None:
 
 
 def export_binary_weights(model: Model, spec: ModelSpec, out_file: Path) -> None:
+    if spec.architecture != "mlp":
+        raise ValueError("EGR_POLICY_V1 supports only MLP models; use the CNN model.h5 with TensorFlow")
     trunk_layers = [model.get_layer(f"trunk_dense_{i}") for i in range(spec.depth)]
     policy_layer = model.get_layer("policy_logits")
     out_file.parent.mkdir(parents=True, exist_ok=True)
@@ -257,87 +264,49 @@ def save_history_csv(history: tf.keras.callbacks.History, out_file: Path) -> Non
             writer.writerow([epoch_idx + 1] + [history.history[key][epoch_idx] for key in keys])
 
 
-def train_one_model(
-    spec: ModelSpec,
-    x_train: np.ndarray,
-    p_train: np.ndarray,
-    x_val: np.ndarray,
-    p_val: np.ndarray,
-    args: argparse.Namespace,
-    output_dir: Path,
-    split_eval_data: Optional[Dict[str, SplitArrays]] = None,
-) -> dict:
+def train_one_model(spec: ModelSpec, splits: dict, args: argparse.Namespace, output_dir: Path) -> dict:
     tf.keras.backend.clear_session()
+    set_reproducible_seed(args.seed)
     model = build_model(spec)
     run_dir = output_dir / spec.name
     run_dir.mkdir(parents=True, exist_ok=True)
-    print(f"\n=== training {spec.name} ===")
-    print(f"tensorflow {tf_version}")
-    print(f"params {model.count_params()}")
+    print(f"\n=== training {spec.name} ===", flush=True)
+    print(f"tensorflow {tf_version}; params {model.count_params()}")
     model.summary()
-
-    callbacks = [CSVLogger(str(run_dir / "keras_log.csv"))]
     history = model.fit(
-        x_train,
-        p_train,
-        validation_data=(x_val, p_val),
+        splits["train"].as_dataset(args.batch_size, shuffle=True, seed=args.seed),
+        validation_data=splits["val"].as_dataset(args.batch_size),
         epochs=args.epochs,
-        batch_size=args.batch_size,
-        callbacks=callbacks,
+        callbacks=[CSVLogger(str(run_dir / "keras_log.csv"))],
         verbose=2,
     )
-
     save_history_csv(history, run_dir / "history.csv")
-    adopted_epoch = len(history.epoch)
-    adopted_idx = adopted_epoch - 1
     model.save(run_dir / "model.h5")
-    export_binary_weights(model, spec, run_dir / "policy_network_weights.bin")
-
+    weights_file = run_dir / "policy_network_weights.bin"
+    if spec.architecture == "mlp":
+        export_binary_weights(model, spec, weights_file)
+    else:
+        weights_file.unlink(missing_ok=True)
     result = {
-        "name": spec.name,
-        "spec": asdict(spec),
-        "params": int(model.count_params()),
-        "epochs_ran": len(history.epoch),
-        "adopted_epoch": adopted_epoch,
+        "name": spec.name, "spec": asdict(spec), "params": int(model.count_params()),
+        "epochs_ran": len(history.epoch), "adopted_epoch": len(history.epoch),
         "adoption_rule": "use_model_after_requested_epoch_count",
-        "validation_loss": float(history.history["val_loss"][adopted_idx]),
+        "validation_loss": float(history.history["val_loss"][-1]),
         "final_loss": float(history.history["loss"][-1]),
         "output_dir": str(run_dir),
-        "dataset_split_manifest": str(output_dir / "dataset_split.json") if args.board_split_dir is None else None,
-        "prepared_dataset_manifest": str(output_dir / "prepared_dataset.json") if args.board_split_dir is not None else None,
+        "prepared_dataset_manifest": str(output_dir / "prepared_dataset.json"),
+        "binary_weights": str(weights_file) if spec.architecture == "mlp" else None,
     }
-    if split_eval_data is not None and not args.no_split_topn:
-        n_values = sorted(set(args.top_n))
-        split_results = {}
-        all_rows = []
-        for split_name in ("train", "val", "test"):
-            split_result = evaluate_policy_topn_arrays(
-                model,
-                split_name,
-                split_eval_data[split_name],
-                n_values,
-                args.eval_batch_size,
-                args.predict_batch_size,
-            )
-            split_results[split_name] = split_result
-            all_rows.extend(split_result["topn"])
-            top1 = next(row for row in split_result["topn"] if row["top_n"] == min(n_values))
-            print(
-                f"{split_name} legal-masked top-{top1['top_n']} "
-                f"{top1['accuracy'] * 100.0:.3f}% ({top1['hits']}/{top1['positions']})"
-            )
-        result["split_topn"] = split_results
-        val_topn = {int(row["top_n"]): float(row["accuracy"]) for row in split_results["val"]["topn"]}
-        result["validation_top1"] = val_topn.get(1)
-        result["validation_top3"] = val_topn.get(3)
-        result["validation_top5"] = val_topn.get(5)
-        result["validation_top10"] = val_topn.get(10)
-        with (run_dir / "split_topn_accuracy.json").open("w", encoding="utf-8") as f:
-            json.dump(split_results, f, indent=2)
-        write_topn_rows(run_dir / "split_topn_accuracy.csv", all_rows)
-    with (run_dir / "summary.json").open("w") as f:
-        json.dump(result, f, indent=2)
-    print("summary", json.dumps(result, indent=2))
+    validation = evaluate_policy_topn_arrays(model, "val", splits["val"], args.top_n,
+                                            args.eval_batch_size, args.predict_batch_size)
+    result["split_topn"] = {"val": validation}
+    val_topn = {row["top_n"]: row["accuracy"] for row in validation["topn"]}
+    for n in (1, 3, 5, 10):
+        result[f"validation_top{n}"] = val_topn.get(n)
+    (run_dir / "split_topn_accuracy.json").write_text(json.dumps({"val": validation}, indent=2), encoding="utf-8")
+    write_topn_rows(run_dir / "split_topn_accuracy.csv", validation["topn"])
+    (run_dir / "summary.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    print(f"val top-1 {val_topn[1] * 100:.3f}%", flush=True)
     return result
 
 
@@ -369,7 +338,7 @@ def run_selection_key(result: dict) -> Tuple[float, float, int]:
     if result.get("validation_top1") is None or result.get("validation_top3") is None:
         raise ValueError(
             "model selection requires symmetry-aware validation top-1 and top-3; "
-            "do not use --no-split-topn when comparing model configurations"
+            "include top-1 and top-3 when comparing model configurations"
         )
     return (
         float(result["validation_top1"]),
@@ -378,120 +347,94 @@ def run_selection_key(result: dict) -> Tuple[float, float, int]:
     )
 
 
+def save_selected_model(selected: dict, output_dir: Path) -> None:
+    selected_dir = Path(selected["output_dir"])
+    shutil.copyfile(selected_dir / "model.h5", output_dir / "selected_model.h5")
+    weights_file = output_dir / "selected_policy_network_weights.bin"
+    if selected["binary_weights"] is not None:
+        shutil.copyfile(Path(selected["binary_weights"]), weights_file)
+    else:
+        weights_file.unlink(missing_ok=True)
+    with (output_dir / "selected_summary.json").open("w") as f:
+        json.dump(selected, f, indent=2)
+
+
 def default_output_dir() -> Path:
     stamp = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     return Path(__file__).resolve().parent / "trained" / stamp
 
 
-def repo_root() -> Path:
-    return Path(__file__).resolve().parents[4]
-
-
-def default_data_root() -> Path:
-    return default_wthor_data_root()
-
-
-def default_wthor_data_root() -> Path:
-    data_root = os.environ.get("EGAROUCID_DATA")
-    if not data_root:
-        raise ValueError("set EGAROUCID_DATA or pass --data-root containing WTHOR records1")
-    return Path(data_root) / "train_data" / "board_data"
-
-
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train compact Othello policy networks with tensorflow.keras for the human-like AI study.")
-    parser.add_argument("--data-root", type=Path, default=None, help="Default: $EGAROUCID_DATA/train_data/board_data (WTHOR records1).")
-    parser.add_argument("--board-split-dir", type=Path, default=None, help="Dataset directory produced by stage 03/04; load its train/val/test unchanged.")
-    parser.add_argument("--board-data-index-start", type=int, default=1)
-    parser.add_argument("--board-data-index-end", type=int, default=1)
-    parser.add_argument("--wthor", action="store_true", help="Compatibility option: select records1, which is already the default.")
-    parser.add_argument("--split-manifest", type=Path, default=None, help="Reuse a dataset_split.json saved by a previous training run; its seed and ratios determine the split.")
-    parser.add_argument("--split-mode", choices=["game", "sampled", "shuffled"], default="game", help="All modes split by game. shuffled is an alias for game; sampled caps positions within the disjoint game partitions.")
-    parser.add_argument("--train-ratio", type=float, default=0.9)
-    parser.add_argument("--val-ratio", type=float, default=0.05)
-    parser.add_argument("--test-ratio", type=float, default=0.05)
-    parser.add_argument("--max-position-samples", type=int, default=None, help="Optional cap on source positions; keep only whole games before the game split.")
-    parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
+    add_data_arguments(parser)
+    parser.add_argument("--configs", default="64x3,96x3,128x3,96x4", help="Comma-separated MLP specs or paper CNN presets: conv4, conv6, conv8, conv8_bn (Conv8+BN).")
     parser.add_argument("--alpha", type=float, default=0.03)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--l2", type=float, default=0.0)
     parser.add_argument("--learning-rate", type=float, default=0.001)
     parser.add_argument("--epochs", type=int, default=20)
-    parser.add_argument("--batch-size", type=int, default=4096)
-    parser.add_argument("--max-train-samples", type=int, default=1000000, help="Position cap within the train game partition in sampled mode only.")
-    parser.add_argument("--max-val-samples", type=int, default=100000, help="Position cap within the validation game partition in sampled mode only.")
+    parser.add_argument("--batch-size", type=int, default=None, help="Default: 256 when configs include a CNN, otherwise 4096.")
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,5,10"))
     parser.add_argument("--eval-batch-size", type=int, default=65536)
-    parser.add_argument("--predict-batch-size", type=int, default=8192)
-    parser.add_argument("--no-split-topn", action="store_true")
+    parser.add_argument("--predict-batch-size", type=int, default=None, help="Default: 256 when configs include a CNN, otherwise 8192.")
     parser.add_argument("--output-dir", type=Path, default=None)
     return parser
 
 
 def main() -> None:
-    args = make_argparser().parse_args()
-    set_reproducible_seed(args.seed)
+    parser = make_argparser()
+    args = parser.parse_args()
+    specs = parse_model_specs(args.configs, args)
+    has_cnn = any(spec.architecture != "mlp" for spec in specs)
+    if args.batch_size is None:
+        args.batch_size = 256 if has_cnn else 4096
+    if args.predict_batch_size is None:
+        args.predict_batch_size = 256 if has_cnn else 8192
+    if min(args.epochs, args.batch_size, args.eval_batch_size, args.predict_batch_size) <= 0:
+        parser.error("epochs and batch sizes must be positive")
+    if not args.top_n or any(n < 1 or n > POLICY_SIZE for n in args.top_n):
+        parser.error("--top-n must contain values from 1 to 64")
+    args.top_n = sorted(set(args.top_n) | {1, 3})
+    caps = {name: getattr(args, f"max_{name}_samples") for name in ("train", "val", "test")}
+    if any(cap is not None and cap <= 0 for cap in caps.values()):
+        parser.error("sample caps must be positive")
+    try:
+        directory = resolve_board_split_dir(args)
+    except ValueError as exc:
+        parser.error(str(exc))
     enable_memory_growth()
-
+    set_reproducible_seed(args.seed)
     output_dir = args.output_dir if args.output_dir is not None else default_output_dir()
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if args.board_split_dir is not None:
-        if (args.data_root is not None or args.wthor or args.split_manifest is not None
-                or args.max_position_samples is not None or args.split_mode == "sampled"):
-            raise ValueError("--board-split-dir already contains partitions; do not combine it with legacy source or resplitting options")
-        print("prepared_board_splits", args.board_split_dir)
-        split_eval_data = load_prepared_board_splits(args.board_split_dir, args.seed, output_dir)
-    else:
-        data_root = args.data_root if args.data_root is not None else default_data_root()
-        if args.wthor:
-            args.board_data_index_start = 1
-            args.board_data_index_end = 1
-
-        print("tensorflow version", tf_version)
-        print("data_root", data_root)
-        print("output_dir", output_dir)
-        print("issue", "#613")
-        print("split_mode", args.split_mode)
-
-        files = discover_board_files(data_root, args.board_data_index_start, args.board_data_index_end)
-        print(f"board files {len(files)}")
-        print(f"total_position_samples {sum(f.n_position_samples for f in files)}")
-
-        print(
-            "game split ratios "
-            f"train={args.train_ratio} val={args.val_ratio} test={args.test_ratio} "
-            f"max_position_samples={args.max_position_samples}"
-        )
-        sample_caps = None
-        if args.split_mode == "sampled":
-            sample_caps = {"train": args.max_train_samples, "val": args.max_val_samples}
-        split_eval_data = load_game_three_way_split(
-            files, args.train_ratio, args.val_ratio, args.test_ratio, args.seed,
-            args.max_position_samples, sample_caps, output_dir,
-            args.split_manifest,
-        )
-    x_train = split_eval_data["train"].x
-    p_train = split_eval_data["train"].policy
-    x_val = split_eval_data["val"].x
-    p_val = split_eval_data["val"].policy
-    print("loaded", {name: split.x.shape for name, split in split_eval_data.items()})
-
-    results = []
-    for spec in parse_model_specs(args.configs, args):
-        results.append(train_one_model(spec, x_train, p_train, x_val, p_val, args, output_dir, split_eval_data))
-        write_results(results, output_dir)
-
-    selected = results[0] if len(results) == 1 else max(results, key=run_selection_key)
-    selected_dir = Path(selected["output_dir"])
-    shutil.copyfile(selected_dir / "policy_network_weights.bin", output_dir / "selected_policy_network_weights.bin")
-    shutil.copyfile(selected_dir / "model.h5", output_dir / "selected_model.h5")
-    with (output_dir / "selected_summary.json").open("w") as f:
-        json.dump(selected, f, indent=2)
-    print("\n=== selected final-epoch model ===")
-    print(json.dumps(selected, indent=2))
-    print("selected weights", output_dir / "selected_policy_network_weights.bin")
+    # Refuse to mix an earlier selected model or test report with a new run.
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise FileExistsError("output directory is not empty; choose a new --output-dir")
+    splits = load_prepared_splits(directory, caps, args.seed, output_dir)
+    try:
+        results = []
+        for spec in specs:
+            results.append(train_one_model(spec, splits, args, output_dir))
+            write_results(results, output_dir)
+        selected = max(results, key=run_selection_key)
+        save_selected_model(selected, output_dir)
+        # Test is evaluated exactly once, after validation-only model selection.
+        tf.keras.backend.clear_session()
+        model = tf.keras.models.load_model(output_dir / "selected_model.h5")
+        test_result = evaluate_policy_topn_arrays(model, "test", splits["test"], args.top_n,
+                                                 args.eval_batch_size, args.predict_batch_size)
+        test_result["model_name"] = selected["name"]
+        (output_dir / "test_metrics.json").write_text(json.dumps(test_result, indent=2), encoding="utf-8")
+        write_topn_rows(output_dir / "test_topn_accuracy.csv", test_result["topn"])
+        selected["split_topn"]["test"] = test_result
+        (output_dir / "selected_summary.json").write_text(json.dumps(selected, indent=2), encoding="utf-8")
+        print("\n=== selected final-epoch model ===")
+        print("selected model", selected["name"])
+        for row in test_result["topn"]:
+            print(f"test top-{row['top_n']}: {row['accuracy'] * 100:.3f}% ({row['hits']}/{row['positions']})")
+        print("test cross entropy", test_result["cross_entropy"])
+    finally:
+        for split in splits.values():
+            split.close()
 
 
 if __name__ == "__main__":

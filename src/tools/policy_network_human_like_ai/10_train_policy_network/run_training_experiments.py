@@ -14,6 +14,7 @@ from pathlib import Path
 import sys
 
 from resource_monitor import run_monitored_command
+from prepared_policy_data import add_data_arguments
 
 
 def script_dir() -> Path:
@@ -28,15 +29,9 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run policy network training experiments with raw log capture.")
     parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
     parser.add_argument("--epochs", type=int, default=24)
-    parser.add_argument("--batch-size", type=int, default=8192)
-    parser.add_argument("--max-train-samples", type=int, default=2_000_000)
-    parser.add_argument("--max-val-samples", type=int, default=200_000)
+    parser.add_argument("--batch-size", type=int, default=None, help="Default: use the trainer's automatic batch size for each architecture.")
     parser.add_argument("--seed", type=int, default=613)
-    parser.add_argument("--data-root", type=Path, default=None)
-    parser.add_argument("--board-split-dir", type=Path, default=None)
-    parser.add_argument("--board-data-index-start", type=int, default=1)
-    parser.add_argument("--board-data-index-end", type=int, default=1)
-    parser.add_argument("--split-manifest", type=Path, default=None)
+    add_data_arguments(parser)
     parser.add_argument("--output-dir", type=Path, default=script_dir() / "trained" / "training_runs")
     parser.add_argument("--log-dir", type=Path, default=script_dir() / "train_log")
     return parser
@@ -58,18 +53,10 @@ def main() -> None:
             config,
             "--epochs",
             str(args.epochs),
-            "--batch-size",
-            str(args.batch_size),
-            "--max-train-samples",
-            str(args.max_train_samples),
-            "--max-val-samples",
-            str(args.max_val_samples),
             "--seed",
             str(args.seed),
-            "--board-data-index-start",
-            str(args.board_data_index_start),
-            "--board-data-index-end",
-            str(args.board_data_index_end),
+            "--dataset",
+            args.dataset,
             "--output-dir",
             str(run_output_dir),
         ]
@@ -77,8 +64,12 @@ def main() -> None:
             cmd.extend(["--data-root", str(args.data_root)])
         if args.board_split_dir is not None:
             cmd.extend(["--board-split-dir", str(args.board_split_dir)])
-        if args.split_manifest is not None:
-            cmd.extend(["--split-manifest", str(args.split_manifest)])
+        if args.batch_size is not None:
+            cmd.extend(["--batch-size", str(args.batch_size)])
+        for name in ("train", "val", "test"):
+            cap = getattr(args, f"max_{name}_samples")
+            if cap is not None:
+                cmd.extend([f"--max-{name}-samples", str(cap)])
 
         resource = run_monitored_command(cmd, log_path)
         row = {
