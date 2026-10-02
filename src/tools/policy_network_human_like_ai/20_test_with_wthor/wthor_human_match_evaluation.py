@@ -27,6 +27,7 @@ from blend_policy_with_egaroucid import (  # noqa: E402
     require_complete_egaroucid_scores,
 )
 import evaluate_wthor_blend_human_match as wthor  # noqa: E402
+from wthor_likelihood import legal_log_probabilities, likelihood_summary
 
 
 BLEND_PARAMS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
@@ -66,7 +67,7 @@ class HintData:
 @dataclass(frozen=True)
 class _PreparedPositionGroup:
     legal: Tuple[int, ...]
-    valid_targets: Tuple[Tuple[Tuple[int, ...], int], ...]
+    valid_targets: Tuple[Tuple[int, Tuple[int, ...], int], ...]
 
 
 def wilson_interval(
@@ -220,11 +221,14 @@ def egaroucid_log_scores(
     return scores
 
 
-def empty_metric() -> dict:
-    return {
+def empty_metric(with_likelihood=False) -> dict:
+    metric = {
         "positions": 0,
         "hits": {top_n: 0 for top_n in TOP_N_VALUES},
     }
+    if with_likelihood:
+        metric.update(likelihood_sum=0.0, log_likelihood_sum=0.0)
+    return metric
 
 
 def add_rank(metric: dict, rank: int, count: int) -> None:
@@ -236,6 +240,7 @@ def add_rank(metric: dict, rank: int, count: int) -> None:
 
 def _copy_metric(metric: dict) -> dict:
     return {
+        **metric,
         "positions": int(metric["positions"]),
         "hits": {
             top_n: int(metric["hits"][top_n])
@@ -248,6 +253,9 @@ def _merge_metric(destination: dict, source: dict) -> None:
     destination["positions"] += source["positions"]
     for top_n in TOP_N_VALUES:
         destination["hits"][top_n] += source["hits"][top_n]
+    for field in ("likelihood_sum", "log_likelihood_sum"):
+        if field in source:
+            destination[field] += source[field]
 
 
 def _prepare_position_group(
@@ -269,6 +277,7 @@ def _prepare_position_group(
             continue
         valid_targets.append(
             (
+                policy,
                 tuple(
                     wthor.equivalent_targets(
                         player,
@@ -303,6 +312,8 @@ class IncrementalAgreementMetrics:
         policy_logits: Mapping[StateKey, np.ndarray],
         score_temperature: float,
     ) -> None:
+        if not math.isfinite(score_temperature) or score_temperature <= 0.0:
+            raise ValueError("score_temperature must be finite and positive")
         self._policy_logits = policy_logits
         self._score_temperature = score_temperature
         self._groups_by_key: Dict[
@@ -318,7 +329,7 @@ class IncrementalAgreementMetrics:
             self.illegal_label_samples += illegal
 
         self._blend_metrics = {
-            alpha: empty_metric()
+            alpha: empty_metric(with_likelihood=True)
             for alpha in BLEND_PARAMS
         }
         self._console_metrics = {
@@ -350,7 +361,7 @@ class IncrementalAgreementMetrics:
         prepared_groups = self._groups_by_key[state_key]
         if level == CONSOLE_REFERENCE_LEVEL:
             additions = {
-                alpha: empty_metric()
+                alpha: empty_metric(with_likelihood=True)
                 for alpha in BLEND_PARAMS
             }
             network_scores = self._policy_logits[state_key]
@@ -364,18 +375,25 @@ class IncrementalAgreementMetrics:
                 )
                 legal_indices = np.asarray(legal, dtype=np.int64)
                 blend_scores = {}
+                blend_log_probabilities = {}
                 for alpha in BLEND_PARAMS:
                     scores = np.full(
                         POLICY_SIZE,
                         -np.inf,
                         dtype=np.float64,
                     )
-                    scores[legal_indices] = (
-                        alpha * network_scores[legal_indices]
-                        + (1.0 - alpha) * level_scores[legal_indices]
-                    )
+                    if alpha == 0.0:
+                        scores[legal_indices] = level_scores[legal_indices]
+                    elif alpha == 1.0:
+                        scores[legal_indices] = network_scores[legal_indices]
+                    else:
+                        scores[legal_indices] = (
+                            alpha * network_scores[legal_indices]
+                            + (1.0 - alpha) * level_scores[legal_indices]
+                        )
                     blend_scores[alpha] = scores
-                for targets, count in prepared.valid_targets:
+                    blend_log_probabilities[alpha] = legal_log_probabilities(scores, legal)
+                for policy, targets, count in prepared.valid_targets:
                     for alpha, scores in blend_scores.items():
                         rank = wthor.rank_for_distribution(
                             scores,
@@ -384,6 +402,9 @@ class IncrementalAgreementMetrics:
                             hint.move_order if alpha == 0.0 else None,
                         )
                         add_rank(additions[alpha], rank, count)
+                        log_probability = float(blend_log_probabilities[alpha][policy])
+                        additions[alpha]["likelihood_sum"] += count * math.exp(log_probability)
+                        additions[alpha]["log_likelihood_sum"] += count * log_probability
             for alpha in BLEND_PARAMS:
                 _merge_metric(
                     self._blend_metrics[alpha],
@@ -399,7 +420,7 @@ class IncrementalAgreementMetrics:
                     self._score_temperature,
                     require_all_legal=False,
                 )
-                for targets, count in prepared.valid_targets:
+                for _, targets, count in prepared.valid_targets:
                     rank = wthor.rank_for_distribution(
                         scores,
                         legal,
@@ -494,7 +515,7 @@ def evaluate_engine_agreement(groups, hints):
         prepared, _, _ = _prepare_position_group(group)
         for level, level_hints in hints.items():
             hint = level_hints[group.key]
-            for targets, count in prepared.valid_targets:
+            for _, targets, count in prepared.valid_targets:
                 rank = min(
                     (index for index, move in enumerate(hint.move_order, 1) if move in targets),
                     default=POLICY_SIZE + 1,
@@ -520,10 +541,42 @@ def metrics_to_result(metrics: Dict[float, dict]) -> dict:
                     ),
                 }
             )
-    return {"topn": topn}
+    likelihood = [
+        {"blend_param": float(parameter), **likelihood_summary(
+            metric["likelihood_sum"], metric["log_likelihood_sum"], metric["positions"],
+        )}
+        for parameter, metric in metrics.items() if "likelihood_sum" in metric
+    ]
+    return {"topn": topn, "likelihood": likelihood}
+
+
+def agreement_results_equal(first, second):
+    """Counts are exact; floating sums may arrive in a different worker order."""
+    if first[2:] != second[2:]:
+        return False
+    for left, right in zip(first[:2], second[:2]):
+        if left.keys() != right.keys():
+            return False
+        for parameter, metric in left.items():
+            other = right[parameter]
+            if metric.keys() != other.keys():
+                return False
+            for field, value in metric.items():
+                if field in ("likelihood_sum", "log_likelihood_sum"):
+                    if not math.isclose(value, other[field], rel_tol=1e-12, abs_tol=1e-9):
+                        return False
+                elif value != other[field]:
+                    return False
+    return True
 
 
 def make_blend_summary_rows(result: dict) -> List[dict]:
+    likelihood = {
+        round(float(row["blend_param"]), 10): {
+            key: value for key, value in row.items() if key != "blend_param"
+        }
+        for row in result.get("likelihood", [])
+    }
     topn = {
         (round(float(row["blend_param"]), 10), int(row["top_n"])): row
         for row in result["topn"]
@@ -546,6 +599,7 @@ def make_blend_summary_rows(result: dict) -> List[dict]:
         rows.append(
             {
                 "alpha": alpha,
+                **likelihood.get(round(alpha, 10), {}),
                 "positions": positions,
                 "top1_hits": top1_hits,
                 "top1_accuracy": (

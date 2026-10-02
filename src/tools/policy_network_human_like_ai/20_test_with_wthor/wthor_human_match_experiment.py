@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -27,6 +28,7 @@ from wthor_human_match_evaluation import (
     CONSOLE_ONLY_HINT_COUNT,
     CONSOLE_REFERENCE_LEVEL,
     IncrementalAgreementMetrics,
+    agreement_results_equal,
     evaluate_agreement,
     evaluate_engine_agreement,
     load_position_groups,
@@ -39,10 +41,11 @@ from wthor_human_match_evaluation import (
     validate_aggregate_counts,
     wilson_interval,
 )
+from wthor_likelihood import LIKELIHOOD_DEFINITION, LIKELIHOOD_FIELDS
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SUMMARY_VERSION = 6
+SUMMARY_VERSION = 7
 SUMMARY_FIELDS = (
     "alpha",
     "positions",
@@ -54,6 +57,7 @@ SUMMARY_FIELDS = (
     "top3_accuracy",
     "top3_ci95_lower",
     "top3_ci95_upper",
+    *LIKELIHOOD_FIELDS,
 )
 CONSOLE_SUMMARY_FIELDS = (
     "level",
@@ -101,10 +105,14 @@ def format_live_metric(metric: dict) -> str:
     top3 = top3_hits / positions
     top1_lower, top1_upper = wilson_interval(top1_hits, positions)
     top3_lower, top3_upper = wilson_interval(top3_hits, positions)
+    likelihood = (
+        f" | likelihood {metric['likelihood_sum'] / positions:.3%}"
+        if "likelihood_sum" in metric else ""
+    )
     return (
         f"top-1 {top1:.3%} [{top1_lower:.3%}, {top1_upper:.3%}] "
         f"| top-3 {top3:.3%} [{top3_lower:.3%}, {top3_upper:.3%}] "
-        f"| n={positions:,}"
+        f"| n={positions:,}{likelihood}"
     )
 
 
@@ -182,7 +190,7 @@ def positive_int(text: str) -> int:
 
 def positive_float(text: str) -> float:
     value = float(text)
-    if value <= 0.0:
+    if not math.isfinite(value) or value <= 0.0:
         raise argparse.ArgumentTypeError("0より大きい値を指定してください")
     return value
 
@@ -645,12 +653,12 @@ def main() -> None:
         policy_logits,
         args.score_temperature,
     )
-    if live_metrics.result() != (
+    if not agreement_results_equal(live_metrics.result(), (
         blend_metrics,
         console_metrics,
         invalid_policy_samples,
         illegal_label_samples,
-    ):
+    )):
         raise RuntimeError(
             "途中進捗の集計値と全hintから再計算した最終値が一致しません"
         )
@@ -822,6 +830,11 @@ def main() -> None:
                 "人間の実着手から移る合法手を同値手とする。"
             ),
         },
+        "likelihood_definition": {
+            **LIKELIHOOD_DEFINITION,
+            "blend_policy": "softmax(alpha * network_logits + (1-alpha) * engine_scores / temperature) over legal moves",
+            "reported_for": "blend alphas including 0 (engine score softmax) and 1 (policy network)",
+        },
         "confidence_interval": {
             "method": "Wilson score interval",
             "confidence_level": 0.95,
@@ -890,7 +903,9 @@ def main() -> None:
             f"{row['top1_ci95_upper']:.3%}], "
             f"top-3 {row['top3_accuracy']:.3%} "
             f"[{row['top3_ci95_lower']:.3%}, "
-            f"{row['top3_ci95_upper']:.3%}]"
+            f"{row['top3_ci95_upper']:.3%}], "
+            f"likelihood {row['mean_likelihood_percent']:.3f}% "
+            f"(NLL {row['negative_log_likelihood']:.6f})"
         )
     print()
     print("Console単体")

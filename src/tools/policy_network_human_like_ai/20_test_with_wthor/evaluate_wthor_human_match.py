@@ -21,6 +21,10 @@ import sys
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
+from wthor_likelihood import (
+    LIKELIHOOD_DEFINITION, LIKELIHOOD_FIELDS,
+    likelihood_summary, normalize_legal_probabilities,
+)
 
 
 HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
@@ -372,11 +376,15 @@ def evaluate(args: argparse.Namespace) -> dict:
     )
 
     total_valid = 0
+    probability_sum = 0.0
+    log_probability_sum = 0.0
     invalid_policy = 0
     illegal_label = 0
     total_hits = {n: 0 for n in n_values}
     bucket_positions = {move_bucket(i): 0 for i in range(1, 61, 10)}
     bucket_hits = {bucket: {n: 0 for n in n_values} for bucket in bucket_positions}
+    bucket_probability_sum = {bucket: 0.0 for bucket in bucket_positions}
+    bucket_log_probability_sum = {bucket: 0.0 for bucket in bucket_positions}
 
     remaining = available_positions
     file_global_start = 0
@@ -418,6 +426,12 @@ def evaluate(args: argparse.Namespace) -> dict:
             move_numbers = move_numbers[valid]
 
             legal_mask = legal_bitboard_to_mask(legal)
+            normalized = normalize_legal_probabilities(probabilities, legal_mask)
+            human_probabilities = normalized[np.arange(len(policies)), policies]
+            with np.errstate(divide="ignore"):
+                human_log_probabilities = np.log(human_probabilities)
+            probability_sum += float(human_probabilities.sum())
+            log_probability_sum += float(human_log_probabilities.sum())
             equiv_mask = equivalent_policy_mask(player, opponent, policies)
             rank = symmetry_aware_policy_ranks(
                 probabilities,
@@ -432,6 +446,8 @@ def evaluate(args: argparse.Namespace) -> dict:
                 mask = (start <= move_numbers) & (move_numbers <= end)
                 bucket_positions[bucket] += int(np.count_nonzero(mask))
                 if np.any(mask):
+                    bucket_probability_sum[bucket] += float(human_probabilities[mask].sum())
+                    bucket_log_probability_sum[bucket] += float(human_log_probabilities[mask].sum())
                     for n in n_values:
                         bucket_hits[bucket][n] += int(np.count_nonzero(rank[mask] <= n))
 
@@ -450,6 +466,7 @@ def evaluate(args: argparse.Namespace) -> dict:
                 "hits": hits,
                 "positions": total_valid,
                 "accuracy": accuracy,
+                **likelihood_summary(probability_sum, log_probability_sum, total_valid),
             }
         )
     bucket_rows = []
@@ -464,6 +481,9 @@ def evaluate(args: argparse.Namespace) -> dict:
                     "hits": hits,
                     "positions": positions,
                     "accuracy": hits / positions if positions else 0.0,
+                    **likelihood_summary(
+                        bucket_probability_sum[bucket], bucket_log_probability_sum[bucket], positions,
+                    ),
                 }
             )
     result = {
@@ -484,6 +504,8 @@ def evaluate(args: argparse.Namespace) -> dict:
         "split_positions": split_positions,
         "selected_position_set_sha256": selected_position_set_sha256,
         "positions": total_valid,
+        "likelihood": likelihood_summary(probability_sum, log_probability_sum, total_valid),
+        "likelihood_definition": LIKELIHOOD_DEFINITION,
         "agreement_definition": {
             "metric": "board_symmetry_aware",
             "description": (
@@ -510,12 +532,12 @@ def evaluate(args: argparse.Namespace) -> dict:
     write_csv(
         args.output_dir / "wthor_human_match_topn.csv",
         topn_rows,
-        ["top_n", "hits", "positions", "accuracy"],
+        ["top_n", "hits", "positions", "accuracy", *LIKELIHOOD_FIELDS],
     )
     write_csv(
         args.output_dir / "wthor_human_match_by_move10.csv",
         bucket_rows,
-        ["move_bucket", "top_n", "hits", "positions", "accuracy"],
+        ["move_bucket", "top_n", "hits", "positions", "accuracy", *LIKELIHOOD_FIELDS],
     )
     return result
 
@@ -579,6 +601,9 @@ def main() -> None:
             f"top-{row['top_n']:>2}: symmetry-aware "
             f"{row['accuracy'] * 100.0:.3f}%"
         )
+    mean_likelihood = result["likelihood"]["mean_likelihood_percent"]
+    if mean_likelihood is not None:
+        print(f"human-move likelihood: {mean_likelihood:.3f}%")
     print("output_dir", args.output_dir)
 
 

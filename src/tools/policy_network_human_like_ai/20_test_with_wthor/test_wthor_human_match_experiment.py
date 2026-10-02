@@ -382,7 +382,7 @@ class HumanMatchExperimentTest(unittest.TestCase):
                 sample_records_hash="records",
             )
 
-        self.assertEqual(6, SUMMARY_VERSION)
+        self.assertEqual(7, SUMMARY_VERSION)
         self.assertEqual(6, identity["identity_version"])
         self.assertEqual(
             "level_fixed_persistent_actors_with_atomic_per_level_"
