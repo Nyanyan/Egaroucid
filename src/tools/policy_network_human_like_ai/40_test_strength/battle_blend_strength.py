@@ -37,6 +37,7 @@ BIN_DIR = REPO_ROOT / "bin"
 BLEND_DIR = HUMAN_LIKE_DIR / "30_blend_with_egaroucid"
 DEFAULT_EDAX_EXE = BIN_DIR / "versions" / "edax_4_6" / "wEdax-x86-64.exe"
 EDAX_HASH_TABLE_BITS = 22
+PLANNING_MATCH_SET_COUNTS = (50, 100, 200, 300, 500, 1000, 2000, 5000, 10000)
 sys.path.insert(0, str(BLEND_DIR))
 
 from blend_policy_with_egaroucid import (  # noqa: E402
@@ -1272,7 +1273,11 @@ def run_tournament(args: argparse.Namespace) -> None:
                 ),
                 "planning_ci95_half_width_at_50_percent": {
                     str(match_sets): conservative_score_half_width(match_sets)
-                    for match_sets in (50, 100, 200, 300, 500)
+                    for match_sets in PLANNING_MATCH_SET_COUNTS
+                },
+                "planning_ci95_full_width_at_50_percent": {
+                    str(match_sets): 2 * conservative_score_half_width(match_sets)
+                    for match_sets in PLANNING_MATCH_SET_COUNTS
                 },
                 "resume_completed_match_sets": completed_match_sets,
                 "remaining_match_sets": len(remaining_tasks),
