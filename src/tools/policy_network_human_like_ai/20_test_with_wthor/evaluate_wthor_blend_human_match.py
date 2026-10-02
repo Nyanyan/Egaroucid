@@ -13,7 +13,6 @@ import csv
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import json
 import multiprocessing
-import os
 from pathlib import Path
 import queue
 import sys
@@ -23,6 +22,9 @@ import time
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
+from wthor_data_source import (
+    add_board_data_arguments, default_board_data_dir, resolve_board_data_args,
+)
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -48,10 +50,6 @@ from evaluate_wthor_human_match import (  # noqa: E402
     equivalent_policy_mask,
     move_bucket,
 )
-
-def default_board_data_dir() -> Path:
-    return Path(os.environ["EGAROUCID_DATA"]) / "train_data" / "board_data" / "records1"
-
 
 def discover_dat_files(board_data_dir: Path) -> List[Path]:
     files = sorted(board_data_dir.glob("*.dat"), key=lambda p: (int(p.stem), p.name) if p.stem.isdigit() else (10**9, p.name))
@@ -1123,7 +1121,7 @@ def evaluate(
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate WTHOR agreement for blended policy/Egaroucid output.")
-    parser.add_argument("--board-data-dir", type=Path, default=default_board_data_dir())
+    add_board_data_arguments(parser)
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
     parser.add_argument("--egaroucid-level", type=int, default=21)
@@ -1154,7 +1152,9 @@ def make_argparser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    args = make_argparser().parse_args()
+    parser = make_argparser()
+    args = parser.parse_args()
+    resolve_board_data_args(args, parser)
     result = evaluate(args)
     print("weights", result["weights"])
     print("board_data_dir", result["board_data_dir"])

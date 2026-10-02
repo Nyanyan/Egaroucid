@@ -6,6 +6,7 @@ Run WTHOR blended-policy agreement evaluation in resumable shards.
 from __future__ import annotations
 
 import argparse
+from wthor_data_source import add_board_data_arguments, resolve_board_data_args
 import json
 from pathlib import Path
 import subprocess
@@ -16,7 +17,6 @@ from typing import Iterable, List, Optional, Sequence, Tuple
 from evaluate_wthor_blend_human_match import (
     ALL_LEGAL_HINT_COUNT,
     count_position_samples,
-    default_board_data_dir,
     discover_dat_files,
     split_absolute_ranges,
 )
@@ -315,7 +315,7 @@ def merge_shards(output_dir: Path, shard_dirs: Sequence[Path], merge_dir_name: s
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run WTHOR blend agreement in resumable shards.")
-    parser.add_argument("--board-data-dir", type=Path, default=default_board_data_dir())
+    add_board_data_arguments(parser)
     parser.add_argument("--weights", type=Path, default=default_weights_file())
     parser.add_argument("--egaroucid-exe", type=Path, default=default_egaroucid_exe())
     parser.add_argument("--egaroucid-level", type=int, default=21)
@@ -355,7 +355,9 @@ def make_argparser() -> argparse.ArgumentParser:
 
 def main() -> None:
     start_time = time.time()
-    args = make_argparser().parse_args()
+    parser = make_argparser()
+    args = parser.parse_args()
+    resolve_board_data_args(args, parser)
     if args.num_shards <= 0:
         raise ValueError("--num-shards must be positive")
     if args.jobs_per_shard <= 0:

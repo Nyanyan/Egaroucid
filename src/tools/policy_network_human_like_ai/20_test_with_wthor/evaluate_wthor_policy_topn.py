@@ -5,8 +5,7 @@ Evaluate masked top-N policy accuracy on WTHOR board-data position samples.
 Related issue: #613
 
 The default target is WTHOR human game data converted to Egaroucid board-data
-position samples. In the training-data tree, this dataset is currently stored in the
-records1 directory.
+position samples in board_split_increased/<dataset>/test under POLICY_DATA_ROOT.
 """
 
 from __future__ import annotations
@@ -14,13 +13,15 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import os
 from pathlib import Path
 import struct
 import sys
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
+from wthor_data_source import (
+    add_board_data_arguments, default_board_data_dir, resolve_board_data_args,
+)
 
 
 HUMAN_LIKE_AI_DIR = Path(__file__).resolve().parents[1]
@@ -147,10 +148,6 @@ def load_keras_model(path: Path):
         except RuntimeError:
             pass
     return tf.keras.models.load_model(path)
-
-
-def default_board_data_dir() -> Path:
-    return Path(os.environ["EGAROUCID_DATA"]) / "train_data" / "board_data" / "records1"
 
 
 def default_model_file() -> Path:
@@ -387,7 +384,7 @@ def parse_top_n(text: str) -> List[int]:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate legal-masked top-N policy accuracy on WTHOR board data.")
-    parser.add_argument("--board-data-dir", type=Path, default=default_board_data_dir())
+    add_board_data_arguments(parser)
     parser.add_argument("--model", type=Path, default=default_model_file(), help="Keras .h5 model. If missing, --weights is used.")
     parser.add_argument("--weights", type=Path, default=default_weights_file(), help="Binary weights fallback.")
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,4,5,8,10,16"))
@@ -401,7 +398,9 @@ def make_argparser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    args = make_argparser().parse_args()
+    parser = make_argparser()
+    args = parser.parse_args()
+    resolve_board_data_args(args, parser)
     result = evaluate(args)
     print("model_source", result["model_source"])
     print("board_data_dir", result["board_data_dir"])

@@ -7,20 +7,33 @@ positions with:
 - Egaroucid for Console at levels **1, 5, 9, 13, 17**. Level 21 is reported as alpha = 0.
 - Edax at levels **1, 5, 9, 13, 17, 21**.
 
+Human move data comes from `$POLICY_DATA_ROOT/board_split_increased/<dataset>/test`.
+Select the dataset with `--dataset` (default: `WTHOR_1977_2024`). If
+`POLICY_DATA_ROOT` is unset, the root is
+`$EGAROUCID_DATA/20261002_policy_network_human_like_data`. To share the data
+processing root explicitly:
+
+```powershell
+$env:POLICY_DATA_ROOT = Join-Path $env:EGAROUCID_DATA '20261002_policy_network_human_like_data'
+```
+
 For example, from this directory:
 
 ```powershell
 python run_random_wthor_blend_experiment.py 10000 `
-  --board-data-dir "$env:EGAROUCID_DATA/train_data/board_data/records1" `
+  --dataset WTHOR_1977_2024 `
   --weights ../10_train_policy_network/trained/model/policy_network_weights.bin `
   --workers 32 --egaroucid-threads 1 --edax-threads 1 `
-  --output-dir output/human_match_parallel
+  --output-dir output/human_match_WTHOR_1977_2024
 ```
 
 `--workers` is the total limit for Egaroucid and Edax combined, and must be
 at least 12 to start all engine/level combinations. For a 32-thread machine
-with one search thread per process, use `--workers 32`. The default data split is `test` (80/10/10
-position split, seed 613). Use `--data-split all` to sample the whole input.
+with one search thread per process, use `--workers 32`. The prepared `test` directory is sampled directly
+(`--data-split all`, sample seed 613); it is not split again. Other policy
+evaluators and shard tools use the same data source and `--dataset` option.
+`--board-data-dir` overrides the environment and dataset selection. Use an
+explicit `--data-split test` only when resplitting legacy unsplit input.
 Edax defaults to `bin/versions/edax_4_6/wEdax-x86-64.exe`, with `data/eval.dat`
 beside the executable. Override with `--edax-exe` and `--edax-eval-file`.
 `--edax-workers` caps Edax within the shared `--workers` limit; it does not

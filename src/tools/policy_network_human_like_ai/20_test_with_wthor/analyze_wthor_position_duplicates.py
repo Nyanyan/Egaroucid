@@ -9,6 +9,7 @@ side to move. This is different from the side-relative policy-network input.
 from __future__ import annotations
 
 import argparse
+from wthor_data_source import add_board_data_arguments, resolve_board_data_args
 import json
 import os
 from pathlib import Path
@@ -25,7 +26,7 @@ sys.path.insert(0, str(BLEND_DIR))
 
 from blend_policy_with_egaroucid import BLACK, WHITE  # noqa: E402
 from evaluate_wthor_human_match import BOARD_DTYPE, BOARD_SAMPLE_SIZE  # noqa: E402
-from evaluate_wthor_blend_human_match import default_board_data_dir, discover_dat_files  # noqa: E402
+from evaluate_wthor_blend_human_match import discover_dat_files  # noqa: E402
 
 
 HINT_KEY_DTYPE = np.dtype(
@@ -137,7 +138,7 @@ def analyze(args: argparse.Namespace) -> dict:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Count duplicate WTHOR position samples for hint-cache planning.")
-    parser.add_argument("--board-data-dir", type=Path, default=default_board_data_dir())
+    add_board_data_arguments(parser)
     parser.add_argument("--batch-size", type=int, default=1000000)
     parser.add_argument("--max-positions", type=int, default=None)
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output" / "wthor_position_duplicates")
@@ -145,7 +146,9 @@ def make_argparser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    args = make_argparser().parse_args()
+    parser = make_argparser()
+    args = parser.parse_args()
+    resolve_board_data_args(args, parser)
     result = analyze(args)
     print("board_data_dir", result["board_data_dir"])
     print("position_samples", result["position_samples"])

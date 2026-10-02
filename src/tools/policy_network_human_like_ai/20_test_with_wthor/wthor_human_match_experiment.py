@@ -15,6 +15,7 @@ import time
 from typing import Sequence
 
 import evaluate_wthor_blend_human_match as wthor
+from wthor_data_source import add_board_data_arguments, resolve_board_data_args
 from wthor_edax import DEFAULT_EDAX_EXE, EDAX_HASH_BITS, EDAX_LEVELS
 from wthor_engine_comparison import collect_comparison_hints
 from wthor_hint_pipeline import (
@@ -368,19 +369,12 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--data-split",
         choices=("all", "train", "val", "test"),
-        default="test",
+        default="all",
+        help="入力ディレクトリ内の追加分割。分割済みtest全体を使う既定値はall",
     )
     parser.add_argument("--split-seed", type=int, default=613)
     parser.add_argument("--sample-seed", type=int, default=613)
-    parser.add_argument(
-        "--board-data-dir",
-        type=Path,
-        default=None,
-        help=(
-            "盤面データのディレクトリ。省略時は"
-            "%%EGAROUCID_DATA%%/train_data/board_data/records1"
-        ),
-    )
+    add_board_data_arguments(parser)
     parser.add_argument(
         "--weights",
         type=Path,
@@ -483,14 +477,7 @@ def main() -> None:
     configure_output_streams()
     parser = make_argparser()
     args = parser.parse_args()
-    if args.board_data_dir is None:
-        try:
-            args.board_data_dir = wthor.default_board_data_dir()
-        except KeyError:
-            parser.error(
-                "--board-data-dirを指定するか、"
-                "EGAROUCID_DATA環境変数を設定してください"
-            )
+    resolve_board_data_args(args, parser)
     started_at_unix = time.time()
     total_start = time.perf_counter()
     logical_cpus = os.cpu_count() or 1
@@ -512,6 +499,7 @@ def main() -> None:
         )
 
     report_stage("WTHOR標本の確認と読込を開始")
+    print("人間着手データ", args.board_data_dir, flush=True)
     dat_files = wthor.discover_dat_files(args.board_data_dir)
     available_positions = wthor.count_position_samples(dat_files, None)
     selected_split_positions = split_position_count(
@@ -743,6 +731,7 @@ def main() -> None:
         "started_at_unix": started_at_unix,
         "finished_at_unix": time.time(),
         "requested_positions": args.positions,
+        "board_data_dir": str(args.board_data_dir),
         "evaluated_positions": blend_rows[0]["positions"],
         "unique_states": len(groups),
         "duplicate_samples_reused": args.positions - len(groups),

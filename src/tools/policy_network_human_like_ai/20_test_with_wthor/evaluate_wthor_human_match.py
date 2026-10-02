@@ -14,13 +14,15 @@ import argparse
 import csv
 import hashlib
 import json
-import os
 from pathlib import Path
 import struct
 import sys
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
+from wthor_data_source import (
+    add_board_data_arguments, default_board_data_dir, resolve_board_data_args,
+)
 from wthor_likelihood import (
     LIKELIHOOD_DEFINITION, LIKELIHOOD_FIELDS,
     likelihood_summary, normalize_legal_probabilities,
@@ -150,15 +152,6 @@ def load_keras_model(path: Path):
         except RuntimeError:
             pass
     return tf.keras.models.load_model(path)
-
-
-def default_board_data_dir() -> Path:
-    data_root = os.environ.get("EGAROUCID_DATA")
-    if not data_root:
-        raise ValueError(
-            "--board-data-dir is required when EGAROUCID_DATA is not set"
-        )
-    return Path(data_root) / "train_data" / "board_data" / "records1"
 
 
 def discover_dat_files(board_data_dir: Path) -> List[Path]:
@@ -548,7 +541,7 @@ def parse_top_n(text: str) -> List[int]:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate WTHOR human move agreement with symmetry-aware matching.")
-    parser.add_argument("--board-data-dir", type=Path, default=None)
+    add_board_data_arguments(parser)
     parser.add_argument("--model", type=Path, default=None)
     parser.add_argument("--weights", type=Path, required=True)
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,4,5,8,10,16"))
@@ -573,11 +566,7 @@ def make_argparser() -> argparse.ArgumentParser:
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = make_argparser()
     args = parser.parse_args(argv)
-    if args.board_data_dir is None:
-        try:
-            args.board_data_dir = default_board_data_dir()
-        except ValueError as error:
-            parser.error(str(error))
+    resolve_board_data_args(args, parser)
     return args
 
 
