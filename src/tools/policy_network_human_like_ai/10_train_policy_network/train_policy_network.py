@@ -405,7 +405,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--board-data-index-start", type=int, default=1)
     parser.add_argument("--board-data-index-end", type=int, default=1)
     parser.add_argument("--wthor", action="store_true", help="Compatibility option: select records1, which is already the default.")
-    parser.add_argument("--split-manifest", type=Path, default=None, help="Reuse a dataset_split.json created by 00_data_processing/prepare_wthor_data.py; its seed and ratios determine the split.")
+    parser.add_argument("--split-manifest", type=Path, default=None, help="Reuse a dataset_split.json saved by a previous training run; its seed and ratios determine the split.")
     parser.add_argument("--split-mode", choices=["game", "sampled", "shuffled"], default="game", help="All modes split by game. shuffled is an alias for game; sampled caps positions within the disjoint game partitions.")
     parser.add_argument("--train-ratio", type=float, default=0.9)
     parser.add_argument("--val-ratio", type=float, default=0.05)

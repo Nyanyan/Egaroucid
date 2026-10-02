@@ -4,15 +4,12 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest import mock
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parent / "legacy_selected_data"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "10_train_policy_network"))
 
-import convert_selected_transcripts_to_board_data as converter
+from board_test_support import make_game
 from game_dataset import (
     BOARD_DTYPE,
     infer_ordered_game_ids,
@@ -22,23 +19,6 @@ from game_dataset import (
     split_counts,
     split_game_positions,
 )
-
-
-def make_game(seed, max_moves=60):
-    rng = np.random.default_rng(seed)
-    black, white, side = converter.initial_board()
-    rows, moves = [], []
-    for _ in range(max_moves):
-        side, can_move = converter.pass_if_needed(black, white, side)
-        if not can_move:
-            break
-        player, opponent = (black, white) if side == 0 else (white, black)
-        legal = converter.legal_moves(player, opponent)
-        policy = int(rng.choice([p for p in range(64) if legal & (1 << p)]))
-        rows.append((player, opponent, side, policy, 0))
-        moves.append(chr(ord("a") + (63 - policy) % 8) + str((63 - policy) // 8 + 1))
-        black, white, side = converter.apply_move(black, white, side, policy)
-    return np.array(rows, dtype=BOARD_DTYPE), "".join(moves)
 
 
 class GameDatasetTest(unittest.TestCase):
@@ -167,34 +147,15 @@ class GameDatasetTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "data mismatch"):
                 load_manifest_positions(manifest, [path], "test")
 
-    def test_converter_keeps_game_id_across_output_files(self):
-        _, transcript = make_game(11)
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            source = root / "input" / "5"
-            source.mkdir(parents=True)
-            (source / "games.txt").write_text(transcript + "\n" + transcript + "\n", encoding="utf-8")
-            output = root / "output"
-            argv = ["convert", "--input-root", str(root / "input"), "--output-root", str(output), "--position-samples-per-file", "17"]
-            with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(io.StringIO()):
-                converter.main()
-            paths = sorted(output.glob("*.dat"), key=lambda path: int(path.stem))
-            samples, ids = load_game_dataset(paths)
-            positions_per_game = len(transcript) // 2 - 5
-            self.assertEqual(positions_per_game * 2, len(samples))
-            np.testing.assert_array_equal(ids, np.repeat([0, 1], positions_per_game))
+    def test_loaded_partitions(self):
+        import policy_data
 
-    def test_trainer_defaults_and_loaded_partitions(self):
-        import train_policy_network as train
-
-        args = train.make_argparser().parse_args([])
-        self.assertEqual(("game", .9, .05, .05), (args.split_mode, args.train_ratio, args.val_ratio, args.test_ratio))
         indices, _ = split_game_positions(self.samples, self.ids)
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "0.dat"
             self.samples.tofile(path)
             with contextlib.redirect_stdout(io.StringIO()):
-                splits = train.load_game_three_way_split([train.BoardFile(path, len(self.samples))], .9, .05, .05, 613, None)
+                splits = policy_data.load_game_three_way_split([policy_data.BoardFile(path, len(self.samples))], .9, .05, .05, 613, None)
             for name, selected in indices.items():
                 expected = sorted((int(self.samples[i]["player"]), int(self.samples[i]["opponent"]), int(self.samples[i]["policy"])) for i in selected)
                 actual = sorted(zip(splits[name].player.tolist(), splits[name].opponent.tolist(), splits[name].policy.tolist()))

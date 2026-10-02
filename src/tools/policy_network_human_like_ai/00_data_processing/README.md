@@ -125,5 +125,6 @@ python src\tools\policy_network_human_like_ai\10_train_policy_network\train_poli
 読み込み処理は「正規化した棋譜文字列と元の行番号」を返します。
 01が共通のTXT、棋譜ID、元ファイルとの対応、manifestへ変換するため、02〜04を変更する必要はありません。
 
-以前の `prepare_wthor_data.py` は、すでに展開された旧 `records1` 用の互換入口です。
-新しいraw_dataからの加工には01〜04を使ってください。
+旧データ用の選別・変換スクリプトと `prepare_wthor_data.py`、それら専用のテストは、ローカルの `legacy/` に保存しています。
+`legacy/` はGitの管理対象外です。データの加工には01〜04を使ってください。
+現行の学習・評価が使う共通処理とテストは、このディレクトリで引き続き管理します。

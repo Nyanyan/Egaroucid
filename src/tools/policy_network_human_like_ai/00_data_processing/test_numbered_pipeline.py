@@ -16,7 +16,7 @@ from policy_data import calc_legal_batch
 import policy_data
 from policy_accuracy import TRANSFORM_MAPS, transform_bitboards
 from raw_formats import read_wthor_csv
-from test_game_dataset import make_game
+from board_test_support import make_game
 
 
 def load_step(name):

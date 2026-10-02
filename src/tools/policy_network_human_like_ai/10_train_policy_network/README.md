@@ -104,11 +104,12 @@ GPUメモリ量ではなく、モデルファイルサイズでもありませ�
 
 ## 学習コマンド例
 
-分割結果を先に作る場合は、`00_data_processing/prepare_wthor_data.py` を実行し、
-学習コマンドの `--split-manifest` に生成された `dataset_split.json` を指定します。
-これにより、入力のSHA-256を照合したうえで同じ棋譜分割を再利用できます。
+raw_dataから学習する場合は、[データ加工のREADME](../00_data_processing/README.md) に従って01〜04を実行し、
+学習コマンドの `--board-split-dir` に生成先を指定します。
+
+以前の学習で保存した分割結果を再利用する場合は、`--split-manifest` にその `dataset_split.json` を指定します。
+入力のSHA-256を照合したうえで同じ棋譜分割を再利用できます。
 分割のseed・比率は保存済みの設定を使い、学習時の件数上限や `--split-mode sampled` は併用できません。
-手順は [WTHORデータの加工](../00_data_processing/README.md) を参照してください。
 
 512×4のモデルを棋譜単位の分割で学習する例:
 
