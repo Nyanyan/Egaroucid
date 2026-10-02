@@ -108,6 +108,10 @@ constexpr bool AI_TL_GGS_EARLY_PAIR_EXACT_NWS_ENABLED = EGAROUCID_GGS_EARLY_PAIR
 constexpr int AI_TL_GGS_EARLY_PAIR_PROVED_NONE = 0;
 constexpr int AI_TL_GGS_EARLY_PAIR_PROVED_DRAW = 1;
 constexpr int AI_TL_GGS_EARLY_PAIR_PROVED_WIN = 2;
+// Pair-outcome NWS stops once the match result is proven and leaves the exact
+// value unknown. At 28 empties or fewer the complete search fits the budget,
+// so solve the position exactly instead.
+constexpr int AI_TL_GGS_PAIR_OUTCOME_NWS_MIN_N_EMPTY = 29;
 // Temporarily disable match-boundary revalidation for GGS tournament play.
 // Keep the implementation available so it can be re-enabled after evaluation.
 constexpr bool AI_TL_GGS_MATCH_REVALIDATION_ENABLED = false;
@@ -215,6 +219,16 @@ inline int ai_tl_ggs_pair_win_target(int proven_pair_value) {
 
 inline int ai_tl_ggs_pair_draw_target(int proven_pair_value) {
     return -proven_pair_value;
+}
+
+inline bool ai_tl_ggs_pair_outcome_nws_gate(const Board &board, const AI_Time_Limit_Match_Context *context) {
+    return
+        context != nullptr &&
+        context->has_pair_result &&
+        context->pair_value_is_proven &&
+        HW2 - board.n_discs() >= AI_TL_GGS_PAIR_OUTCOME_NWS_MIN_N_EMPTY &&
+        -SCORE_MAX <= ai_tl_ggs_pair_draw_target(context->pair_value) &&
+        ai_tl_ggs_pair_draw_target(context->pair_value) <= SCORE_MAX;
 }
 
 struct AI_TL_GGS_Pair_Outcome_Proof {
@@ -3840,13 +3854,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
         iteration_diagnostics.enable_match_revalidation = true;
         iteration_diagnostics.pair_value = match_context->pair_value;
     }
-    if (
-        match_context != nullptr &&
-        match_context->has_pair_result &&
-        match_context->pair_value_is_proven &&
-        -SCORE_MAX <= ai_tl_ggs_pair_draw_target(match_context->pair_value) &&
-        ai_tl_ggs_pair_draw_target(match_context->pair_value) <= SCORE_MAX
-    ) {
+    if (ai_tl_ggs_pair_outcome_nws_gate(board, match_context)) {
         iteration_diagnostics.enable_pair_outcome_nws = true;
         iteration_diagnostics.pair_value = match_context->pair_value;
     }

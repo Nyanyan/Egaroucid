@@ -285,6 +285,28 @@ void test_pair_outcome_exact_nws_policy() {
     );
 }
 
+void test_pair_outcome_nws_empty_gate() {
+    AI_Time_Limit_Match_Context context;
+    context.has_pair_result = true;
+    context.pair_value_is_proven = true;
+    context.pair_value = -4;
+
+    Board board;
+    require(
+        board.from_str(std::string(35, 'X') + std::string(29, '-') + " O"),
+        "failed to construct 29-empty gate board"
+    );
+    require(ai_tl_ggs_pair_outcome_nws_gate(board, &context), "29 empties allow pair-outcome NWS");
+    require(
+        board.from_str(std::string(36, 'X') + std::string(28, '-') + " O"),
+        "failed to construct 28-empty gate board"
+    );
+    require(
+        !ai_tl_ggs_pair_outcome_nws_gate(board, &context),
+        "28 empties are solved exactly instead of stopping at a match proof"
+    );
+}
+
 void test_pair_outcome_exact_nws_search() {
     Board board;
     require(
@@ -768,6 +790,7 @@ int main() {
         test_cap_is_continuous_at_reserve();
         test_extra_time_is_not_budgeted_for_normal_search();
         test_pair_outcome_exact_nws_policy();
+        test_pair_outcome_nws_empty_gate();
         test_pair_outcome_exact_nws_search();
         test_early_endgame_ramp();
         test_late_endgame_ramp();
