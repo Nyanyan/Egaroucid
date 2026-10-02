@@ -24,17 +24,23 @@ OPENING = "f5d6c3d3c4f4c5b3"
 
 
 class EdaxConfigurationTest(unittest.TestCase):
-    def test_edax_is_optional_and_uses_versions_directory(self):
+    def test_edax_defaults_use_versions_directory_and_can_be_disabled(self):
         args = battle.make_argparser().parse_args([])
         levels, alphas = battle.validate_args(args)
         specs = battle.build_player_specs(args, levels, alphas, 0)
         self.assertEqual(16, len(specs))
+        self.assertEqual(
+            ["edax_l1", "edax_l5", "edax_l9", "edax_l13", "edax_l17"],
+            [spec.name for spec in specs if spec.name.startswith("edax_")],
+        )
         self.assertEqual(
             battle.BIN_DIR / "versions" / "edax_4_6" / "wEdax-x86-64.exe",
             args.edax_exe,
         )
         self.assertEqual(args.edax_exe.parent / "data" / "eval.dat",
                          battle.edax_eval_path(args))
+        args.edax_levels = ""
+        self.assertEqual(11, len(battle.build_player_specs(args, levels, alphas, 0)))
 
     def test_edax_participates_with_native_and_blended_players(self):
         args = battle.make_argparser().parse_args([

@@ -913,12 +913,12 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Run a timeout-safe, resumable XOT round robin for Egaroucid "
-            "levels, blended policies, and optional Edax 4.6 levels."
+            "levels, blended policies, and Edax 4.6 levels."
         )
     )
     parser.add_argument(
         "--baseline-levels",
-        default="1,3,5,7,9,11,13,15,17,19",
+        default="1,5,9,13,17",
     )
     parser.add_argument(
         "--alphas",
@@ -926,8 +926,11 @@ def make_argparser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--edax-levels",
-        default="",
-        help="Comma-separated Edax levels (0..60); empty disables Edax.",
+        default="1,5,9,13,17",
+        help=(
+            "Comma-separated Edax levels (0..60); default: 1,5,9,13,17. "
+            "Use --edax-levels= to disable Edax."
+        ),
     )
     parser.add_argument(
         "--edax-exe",
@@ -1019,7 +1022,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=SCRIPT_DIR / "output" / "xot_500sets_16players",
+        default=SCRIPT_DIR / "output" / "xot_500sets_16players_edax",
     )
     parser.add_argument(
         "--seed",

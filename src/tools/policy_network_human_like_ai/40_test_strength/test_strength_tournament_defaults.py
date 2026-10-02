@@ -70,7 +70,9 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
     def test_defaults_define_the_500_set_tournament(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args([])
         levels, alphas = battle_blend_strength.validate_args(args)
-        player_count = len(levels) + len(alphas)
+        edax_levels = battle_blend_strength.parse_int_list(args.edax_levels)
+        specs = battle_blend_strength.build_player_specs(args, levels, alphas, 0)
+        player_count = len(specs)
         tasks = make_match_set_tasks(
             player_count,
             [OPENING],
@@ -79,6 +81,9 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         )
 
         self.assertEqual(500, args.match_sets_per_pair)
+        self.assertEqual([1, 5, 9, 13, 17], levels)
+        self.assertEqual([1, 5, 9, 13, 17], edax_levels)
+        self.assertEqual([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], alphas)
         self.assertEqual(16, player_count)
         self.assertEqual(120, player_count * (player_count - 1) // 2)
         self.assertEqual(60_000, len(tasks))
@@ -98,7 +103,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         )
         args = run_strength_full.make_argparser().parse_args([])
         self.assertEqual(500, args.match_sets_per_pair)
-        self.assertEqual("xot_500sets_16players", args.output_dir.name)
+        self.assertEqual("xot_500sets_16players_edax", args.output_dir.name)
 
     def test_alpha_is_not_silently_rounded(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args(
@@ -190,7 +195,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
 
     def test_hint_cache_option_controls_the_shared_cache_only(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args(
-            ["--baseline-levels", "", "--alphas", "0.2,0.4"]
+            ["--baseline-levels", "", "--alphas", "0.2,0.4", "--edax-levels="]
         )
         levels, alphas = battle_blend_strength.validate_args(args)
         cached = battle_blend_strength.build_player_specs(
@@ -822,6 +827,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
                 "1,3",
                 "--alphas",
                 "",
+                "--edax-levels=",
                 "--match-sets-per-pair",
                 "1",
                 "--openings",

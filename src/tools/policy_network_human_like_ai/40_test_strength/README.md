@@ -2,7 +2,7 @@
 
 関連issue: #613
 
-Egaroucid for Consoleの各levelと、Policy NetworkをEgaroucidの方策へ混合した各αを、XOT局面から総当たりで対戦させる。`--edax-levels`を指定すると、Edax 4.6の各levelも参加できる。現在の実行コードにはランダムプレイヤーの実装もコマンドラインオプションもない。
+Egaroucid for Console、Edax 4.6、Policy NetworkをEgaroucidの方策へ混合した各αを、XOT局面から総当たりで対戦させる。既定ではEgaroucidとEdaxをそれぞれlevel 1、5、9、13、17、ブレンド方策をα=0.0から1.0まで0.2刻みで参加させる。合計16参加者である。
 
 ## 対戦セットと統計単位
 
@@ -25,9 +25,9 @@ Egaroucid for Consoleの各levelと、Policy NetworkをEgaroucidの方策へ混�
 
 | 項目 | 既定値 |
 | --- | ---: |
-| Egaroucid単体 | level 1、3、5、…、19（10参加者） |
+| Egaroucid単体 | level 1、5、9、13、17（5参加者） |
 | ブレンド方策 | α=0.0、0.2、0.4、0.6、0.8、1.0（6参加者） |
-| Edax 4.6 | 既定では不参加。`--edax-levels`で追加 |
+| Edax 4.6 | level 1、5、9、13、17（5参加者） |
 | 参加者数 | 16 |
 | 組合せ数 | 120 |
 | 1組合せ | 500対戦セット、1,000実対局 |
@@ -40,6 +40,7 @@ Egaroucid for Consoleの各levelと、Policy NetworkをEgaroucidの方策へ混�
 | 同時実対局数 | 最大40 |
 | 実対局worker thread | 40 |
 | Egaroucid単体のprocess/参加者 | 2 |
+| Edaxのprocess/参加者 | 2 |
 | ブレンド系列のprocess/参加者 | 10 |
 | 1 engine processの探索thread | 1 |
 | Policy Network推論 | 1個の共有TensorFlow/GPU server |
@@ -47,13 +48,13 @@ Egaroucid for Consoleの各levelと、Policy NetworkをEgaroucidの方策へ混�
 | 空きメモリ下限 | 16,384 MiB |
 | 想定マシン | 32論理thread、128 GiB RAM |
 
-重いlevel 21探索を使うブレンド系列へ多くのprocessを割り当てる。10個のEgaroucid単体は各1セット、6個のブレンド系列は各5セットまで同時参加でき、参加者容量から見た上限は20セットである。共有cacheやpolicy serverを待つ実対局があるため、32論理threadに対して40実対局を投入して待ち時間を隠す。探索条件を旧実験と揃えるため、1 process内の探索thread数は1のままである。
+重いlevel 21探索を使うブレンド系列へ多くのprocessを割り当てる。Egaroucid単体5参加者とEdax 5参加者は各1セット、ブレンド系列6参加者は各5セットまで同時参加でき、参加者容量から見た上限は20セットである。共有cacheやpolicy serverを待つ実対局があるため、32論理threadに対して40実対局を投入して待ち時間を隠す。探索条件を旧実験と揃えるため、1 process内の探索thread数は1のままである。
 
 各セットで一時的なthread poolを作る旧構造は廃止した。全実対局を1個の固定thread poolへ投入し、親threadが先後2局を結合する。残り全タスクを毎回走査せず、120組合せ別のqueueを使う。同じset index、すなわち同じXOT局面を全組合せへ一巡させることを最優先し、その中で参加者ごとの残り推定仕事量を使って遅い参加者を早めに処理する。古い局面が参加者容量のため全て待機中の場合だけ、queue内で最も古い未投入局面の1局面先まで投入できる。それ以上の新規投入は禁止する。実行中タスクの完了順によって途中の完了セット数には数セットの差が出るが、一部の組合せだけが何十セットも先行することはない。これにより、並列度を保ちながら、共有hint cacheの局面再利用と途中集計の公平性を保つ。初回のprocess起動時間を通常の対局時間と誤認しないよう、未観測参加者には観測済み時間の中央値を使い、極端な推定値も中央値の0.5倍から2倍へ制限する。
 
 hintは実験出力先の共有SQLiteだけへ保存する。各Python process内の無制限dict cacheは5日規模の実験でメモリを増やし続けるため使用しない。`--no-hint-cache`を指定した場合はSQLite自体も作成・参照しない。
 
-既定値の最悪時見積りは、重いEgaroucid process 70個、Python wrapper 50個、共有policy serverを合わせて92,200 MiBである。さらに16,384 MiBを空きとして残すため、開始時点で約106.0 GiB以上のavailable memoryを要求する。これは128 GiB機向けの設定であり、64 GiB・96 GiB機では既定値のまま実行しない。起動後も親processと各wrapperが空きメモリを確認し、下限を割る場合は新しいprocess・セットの開始を止める。
+既定値の最悪時見積りは、重いEgaroucid process 60個、Edax process 10個、Python wrapper 50個、共有policy serverを合わせて82,160 MiBである。さらに16,384 MiBを空きとして残すため、開始時点で約96.2 GiB以上のavailable memoryを要求する。これは128 GiB機向けの設定であり、64 GiB・96 GiB機では並列数と参加者あたりのprocess数を減らす必要がある。起動後も親processと各wrapperが空きメモリを確認し、下限を割る場合は新しいprocess・セットの開始を止める。
 
 ## 必要ファイル
 
@@ -61,6 +62,8 @@ hintは実験出力先の共有SQLiteだけへ保存する。各Python process�
 
 ```text
 bin/versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe
+bin/versions/edax_4_6/wEdax-x86-64.exe
+bin/versions/edax_4_6/data/eval.dat
 bin/problem/xot/openingslarge.txt
 src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_512x4_e50/selected_model.h5
 src/tools/policy_network_human_like_ai/10_train_policy_network/trained/wthor_final_arch_512x4_e50/selected_policy_network_weights.bin
@@ -70,7 +73,7 @@ Python環境には`numpy`、`psutil`、`tensorflow`が必要である。既定�
 
 ## 実行方法
 
-### Edax 4.6を追加する
+### Edax 4.6の設定を変更する
 
 Edaxは次の配置を既定で参照する。評価データは絶対パスで渡すため、Edaxのフォルダへ移動して起動する必要はない。
 
@@ -79,16 +82,16 @@ bin/versions/edax_4_6/wEdax-x86-64.exe
 bin/versions/edax_4_6/data/eval.dat
 ```
 
-既存の16参加者へEdaxのlevel 1、3、5を追加する例を示す。以下のコマンドは`Egaroucid`リポジトリのルートから実行する。
+既定のEdax 5レベルを、level 1、3、5の3レベルへ変更する例を示す。以下のコマンドは`Egaroucid`リポジトリのルートから実行する。
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
   --edax-levels 1,3,5 `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_with_edax `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_edax_1_3_5 `
   --dry-run
 ```
 
-この例では19参加者、171組合せ、85,500対戦セットになる。確認後に`--dry-run`を外すと対戦を開始する。既存の16参加者の結果とは実験条件が異なるため、新しい出力先を指定する。
+この例では14参加者、91組合せ、45,500対戦セットになる。確認後に`--dry-run`を外すと対戦を開始する。既定の構成とは実験条件が異なるため、新しい出力先を指定する。
 
 Egaroucid level 1とEdax level 1だけで、先後2局を確認する場合は次のように指定する。Policy Networkを使わないため、この実行には学習済みモデルやTensorFlowは不要である。
 
@@ -103,7 +106,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 | オプション | 用途・既定値 |
 | --- | --- |
-| `--edax-levels` | 0〜60のlevelをカンマ区切りで指定。既定は空で、Edaxを追加しない |
+| `--edax-levels` | 0〜60のlevelをカンマ区切りで指定。既定は`1,5,9,13,17`。`--edax-levels=`で不参加にできる |
 | `--edax-exe` | 実行exeを変更。既定は上記の`wEdax-x86-64.exe` |
 | `--edax-eval-file` | 評価データを変更。既定は指定exeと同じフォルダ内の`data/eval.dat` |
 | `--edax-processes-per-player` | 各Edax levelのprocess数。既定は2、2以上の偶数 |
@@ -116,11 +119,13 @@ Edax同士で比較する場合は、`--baseline-levels= --alphas= --edax-levels
 
 ### 既定の16参加者で実行する
 
+αの6参加者、Egaroucidの5参加者、Edaxの5参加者を指定なしで登録する。旧構成も16参加者だったため、結果の混同を避けて既定の出力先を`xot_500sets_16players_edax`へ変更している。
+
 最初に、ファイル、実験数、並列数、メモリ見積りを確認する。engineやpolicy serverは起動しない。
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax `
   --dry-run
 ```
 
@@ -128,14 +133,14 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax
 ```
 
 中断後は同じ引数と出力先で`--resume`を付ける。
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax `
   --resume
 ```
 
@@ -145,7 +150,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 ```powershell
 python src/tools/policy_network_human_like_ai/40_test_strength/reanalyze_strength_elo.py `
-  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_16players_edax `
   --bootstrap-replicates 20000 `
   --bootstrap-seed 613 `
   --workers 16
@@ -183,9 +188,9 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 
 この区間は参加者ごとのpointwise区間であり、16参加者すべてを同時に95%で覆う区間ではない。対象は同じXOT母集団から別の局面列を抽出した場合の変動であり、モデル再学習、探索条件変更、別のopening corpusの不確実性は含まない。2参加者の差は、個別区間の重なりではなく、保存された同一bootstrap反復内のElo差で評価する。
 
-## セット数と所要時間
+## セット数と所要時間（旧参加者構成での参考値）
 
-16参加者ではセット数に120組合せを掛ける。
+16参加者ではセット数に120組合せを掛ける。以下の時間は、Edaxを含まない旧構成（Egaroucid 10参加者＋αの6参加者）で測定した値である。現在の構成でも総対局数は同じだが、探索時間は変わるため、所要時間は改めて実測する必要がある。
 
 | 1組合せのセット数 | 全対戦セット | 全実対局 | 最新584セット/時での線形目安 | 2回の短縮ベンチによる幅 |
 | ---: | ---: | ---: | ---: | ---: |
@@ -195,9 +200,9 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 | 300 | 36,000 | 72,000 | 約61.6時間 | 約61.6～67.2時間 |
 | 500 | 60,000 | 120,000 | 約102.7時間（約4.3日） | 約4.3～4.7日 |
 
-32論理thread・128 GiB RAMのこのPCで、既定の20並列・64セットを最新コードで実行した短縮ベンチは394.346秒、584.259セット/時、失敗0件だった。CPU使用率は平均48.1%・最大79.7%、GPUは平均6.5%・最大18.0%、system RAMは最大92.9 GiB、子processは最大99個だった。同じ並列設定での直前の再測定は535.982セット/時であり、表の幅はこの2回を線形外挿したものである。
+32論理thread・128 GiB RAMのこのPCで、旧参加者構成を20並列・64セットで実行した短縮ベンチは394.346秒、584.259セット/時、失敗0件だった。CPU使用率は平均48.1%・最大79.7%、GPUは平均6.5%・最大18.0%、system RAMは最大92.9 GiB、子processは最大99個だった。同じ並列設定での直前の再測定は535.982セット/時であり、表の幅はこの2回を線形外挿したものである。
 
-短い64セットでは開始時のmodel/process準備と、最後の四半期でCPU平均が15.4%まで落ちる打切り特有の並列度低下を大きく含む。一方、4日超の本番では他process、温度、再開の影響も受ける。したがって実運用では約4～5日を確保し、最初の500～1,000セットが完了した後は実行中に表示される実測ETAを優先する。
+短い64セットでは開始時のmodel/process準備と、最後の四半期でCPU平均が15.4%まで落ちる打切り特有の並列度低下を大きく含む。また、長時間の本番では他process、温度、再開の影響も受ける。現在の構成では、最初の500～1,000セットが完了した後に表示される実測ETAを使って所要時間を判断する。
 
 旧実装の非ランダム16参加者換算は50セットあたり約13.2時間だったため、短縮ベンチの範囲では約15～22%短縮した。新実装では、対戦中の石損測定、各セットでのthread生成、全残りtaskの反復走査、終盤に遅い参加者だけを残す単純な投入順を除いた。
 
@@ -235,4 +240,4 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
 | `performance_summary.json` | 全再開区間を結合した資源集計 |
 | `policy_batch_server_stats_<run_id>.json` | 再開区間ごとのpolicy batch統計 |
 
-`RESULTS.md`の先頭には2026-07-21に現行実装・16参加者・50セットで完走した本番結果を記録している。後半の2026-07-18節は旧実装・17参加者の過去結果であり、現行結果とは別の実験である。
+`RESULTS.md`の先頭には2026-07-21に当時の構成・16参加者・50セットで完走した本番結果を記録している。後半の2026-07-18節は旧実装・17参加者の過去結果である。どちらも現在のEdaxを含む構成とは別の実験である。
