@@ -117,7 +117,19 @@ testの交差エントロピーは、合法手マスク前の出力確率と記�
 BATの実行ログと最大メインメモリ使用量は `train_log` に保存します。GPUメモリ量は含みません。
 
 旧records1読み込み・再分割を行っていた学習コード、旧BAT、旧READMEは、ローカルの `legacy/prepared_split_migration` に退避しています。
-このフォルダはGitのignore対象です。
+現在の学習で使わない次のファイルは、`legacy/unused_training` へ移動しています。
+
+| 移動したもの | 内容 |
+| --- | --- |
+| `evaluate_policy_topn.py` | 旧records1向けの単独評価スクリプト |
+| `evaluate_model_size_experiment.py`, `test_evaluate_model_size_experiment.py` | 旧モデルサイズ比較とそのテスト |
+| `RESULTS.md`, `model_size_results.csv`, `model_size_results.json` | 旧モデル比較の記録 |
+| `policy_network.hpp`, `policy_network_sample.cpp` | 現在の処理から参照されないC++推論サンプル |
+| `trained/` 配下の過去36実行 | 対戦・評価処理から参照されていない過去の学習結果 |
+
+対戦・評価処理で使用中の3モデルと、今回のConv4動作確認結果は元の `trained` に残しています。
+移動先では元の相対パスを保ち、`archived_files.json` に記録したSHA-256で全597ファイルの内容が変わっていないことを確認しました。
+`legacy` はGitのignore対象です。今後の学習出力もignore対象とし、既存の対戦用 `wthor_final_arch_512x4_e50` のみ引き続きGitで管理します。
 
 ## モデルのアーキテクチャ
 
@@ -195,4 +207,4 @@ python -u run_with_resource_log.py `
 | 最大メインメモリ使用量 | 3742.89 MiB |
 
 さらに、Conv4のBATをtrain 512局面・val/test各256局面、1エポックで実行し、モデル保存とtest評価の完了を確認しました。
-学習側の自動テスト20件と、前処理側の自動テスト18件も成功しています。
+整理後の学習側の自動テスト15件と、前処理側の自動テスト18件も成功しています。旧モデルサイズ比較の5件は、対象コードとともに `legacy` へ移動しました。
