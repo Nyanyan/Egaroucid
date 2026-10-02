@@ -5,6 +5,8 @@
 このディレクトリでは、WTHOR棋譜から展開した局面を使い、人間の着手を予測する
 Othello/Reversi用のポリシーネットワークを学習します。
 
+棋譜の抽出・盤面データへの変換は、[00_data_processing](../00_data_processing/README.md) で行います。
+
 現行のREADMEとRESULTSは、WTHORを直接学習データにした固定条件の実験だけを対象にしています。
 以前の作業記録はローカルアーカイブ
 `src/tools/policy_network_human_like_ai/report/legacy` に移動済みで、現行の採用判断には使いません。
