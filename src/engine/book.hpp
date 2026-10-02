@@ -1922,30 +1922,48 @@ class Book {
         }
 
         /*
-            @brief get all registered moves with value
+            @brief board after a move, to be searched in book
 
-            @param b                    a board pointer to find
-            @return vector of moves
+            Same rule as get_moved_board_value():
+            if the game is over after the move, the board is searched first and the passed board next.
+            If the next player must pass, the passed board is searched.
+
+            @param board                representative board to search first
+            @param hash                 hash code of board
+            @param end_board            representative board to search next (game over only)
+            @param end_hash             hash code of end_board
+            @param policy               the move
+            @param passed               the next player has no legal move
+            @param is_end               game over
         */
-        inline std::vector<Book_value> get_all_moves_with_value(Board *b) {
-            // boards to search: same rule as get_moved_board_value()
-            struct Moved_board {
-                Board board;        // representative board to search first
-                uint64_t hash;
-                Board end_board;    // representative board to search next (game over only)
-                uint64_t end_hash;
-                int policy;
-                bool passed;
-                bool is_end;
-            };
-            Moved_board moved_boards[HW2];
+        struct Moved_board {
+            Board board;
+            uint64_t hash;
+            Board end_board;
+            uint64_t end_hash;
+            int policy;
+            bool passed;
+            bool is_end;
+        };
+
+        /*
+            @brief calculate the boards after all legal moves and load their memory into the cache
+
+            A big book is much larger than the cache. Searching the boards one by one waits for the memory each time,
+            so all boards are calculated and prefetched first.
+
+            @param b                    a board pointer (not modified)
+            @param moved_boards         array to store the result (HW2 elements)
+            @param unlocked             use functions without lock (only while no thread registers / deletes boards)
+            @return number of legal moves
+        */
+        inline int get_moved_boards(const Board *b, Moved_board moved_boards[], bool unlocked = false) {
             int n_moved_boards = 0;
             uint64_t legal = b->get_legal();
             Flip flip;
-            // 1st step: calculate boards to search and load the memory into the cache
             for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-                calc_flip(&flip, b, cell);
-                Board moved_board = b->move_copy(&flip);
+                flip.calc_flip(b->player, b->opponent, cell);
+                Board moved_board(b->opponent ^ flip.flip, b->player ^ flip.flip ^ (1ULL << cell));
                 Moved_board &elem = moved_boards[n_moved_boards++];
                 elem.policy = cell;
                 elem.passed = moved_board.get_legal() == 0;
@@ -1955,7 +1973,11 @@ class Book {
                     moved_board.pass();
                     elem.end_board = representative_board(moved_board);
                     elem.end_hash = book_hash_board(elem.end_board.player, elem.end_board.opponent);
-                    book.prefetch(elem.end_hash);
+                    if (unlocked) {
+                        book.prefetch_unlocked(elem.end_hash);
+                    } else {
+                        book.prefetch(elem.end_hash);
+                    }
                 } else {
                     if (elem.passed) {
                         moved_board.pass();
@@ -1963,9 +1985,37 @@ class Book {
                     elem.board = representative_board(moved_board);
                 }
                 elem.hash = book_hash_board(elem.board.player, elem.board.opponent);
-                book.prefetch(elem.hash);
+                if (unlocked) {
+                    book.prefetch_unlocked(elem.hash);
+                } else {
+                    book.prefetch(elem.hash);
+                }
             }
-            // 2nd step: search
+            for (int i = 0; i < n_moved_boards; ++i) {
+                if (unlocked) {
+                    book.prefetch_entry_unlocked(moved_boards[i].hash);
+                    if (moved_boards[i].is_end) {
+                        book.prefetch_entry_unlocked(moved_boards[i].end_hash);
+                    }
+                } else {
+                    book.prefetch_entry(moved_boards[i].hash);
+                    if (moved_boards[i].is_end) {
+                        book.prefetch_entry(moved_boards[i].end_hash);
+                    }
+                }
+            }
+            return n_moved_boards;
+        }
+
+        /*
+            @brief get all registered moves with value
+
+            @param b                    a board pointer to find
+            @return vector of moves
+        */
+        inline std::vector<Book_value> get_all_moves_with_value(Board *b) {
+            Moved_board moved_boards[HW2];
+            int n_moved_boards = get_moved_boards(b, moved_boards);
             std::vector<Book_value> policies;
             Book_elem book_elem;
             for (int i = 0; i < n_moved_boards; ++i) {
@@ -2337,109 +2387,185 @@ class Book {
             fix(false);
         }
 
-        Book_elem negamax_book_p(Board board, int64_t *n_seen, int64_t *n_fix, int *percent, bool edax_compliant, bool *stop) {
-            if (*stop) {
-                Book_elem stop_res;
-                stop_res.value = SCORE_UNDEFINED;
-                stop_res.n_lines = 0;
-                return stop_res;
-            }
-            if (board.get_legal() == 0) {
-                board.pass();
-                if (board.get_legal() == 0) { // game over
-                    if (contain(&board)) {
-                        return get(board);
-                    } else {
-                        board.pass();
-                        if (contain(&board)) {
-                            return get(board);
-                        } else {
-                            Book_elem stop_res;
-                            stop_res.value = SCORE_UNDEFINED;
-                            stop_res.n_lines = 0;
-                            return stop_res;
-                        }
+        /*
+            @brief call func(segment index) for all segments of the book, using the thread pool
+
+            func is called from several threads at the same time.
+        */
+        template<class F>
+        inline void parallel_for_segments(F &&func) {
+            std::atomic<int> next_segment_idx(0);
+            auto worker = [&next_segment_idx, &func]() {
+                for (;;) {
+                    int segment_idx = next_segment_idx.fetch_add(1);
+                    if (segment_idx >= Board_table<Book_elem>::N_SEGMENTS) {
+                        break;
                     }
-                } else { // just pass
-                    Book_elem res = negamax_book_p(board, n_seen, n_fix, percent, edax_compliant, stop);
-                    if (res.value != SCORE_UNDEFINED) {
-                        res.value *= -1;
-                    }
-                    return res;
+                    func(segment_idx);
+                }
+            };
+            std::vector<std::future<void>> tasks;
+            const int n_workers = thread_pool.size();
+            for (int i = 0; i < n_workers; ++i) {
+                bool pushed = false;
+                std::future<void> task = thread_pool.push(&pushed, worker);
+                if (pushed) {
+                    tasks.emplace_back(std::move(task));
                 }
             }
-            board = representative_board(&board);
-            Book_elem res;
-            bool already_seen = false;
-            bool registered = book.modify(board, [&res, &already_seen](Book_elem &elem) {
-                already_seen = elem.seen;
-                elem.seen = true;
-                res = elem;
-            });
-            if (already_seen) {
-                return res;
+            worker();
+            for (std::future<void> &task: tasks) {
+                task.get();
             }
-            if (!registered || res.value < -HW2 || HW2 < res.value) {
-                //std::cerr << "value error found " << (int)res.value << std::endl;
-                //board.print();
-                Book_elem stop_res;
-                stop_res.value = SCORE_UNDEFINED;
-                stop_res.n_lines = 0;
-                return stop_res;
-            }
-            ++(*n_seen);
-            int n_percent = (double)(*n_seen) / book.size() * 100;
-            if (n_percent > (*percent)) {
-                *percent = n_percent;
-                std::cerr << "negamaxing book... " << (*percent) << "%" << " fixed " << (*n_fix) << std::endl;
-            }
-            std::vector<Book_value> links = get_all_moves_with_value(&board);
-            uint64_t n_lines = 1;
-            Flip flip;
-            //int v = -INF, child_level = -INF;
-            int v = -INF;
-            if (edax_compliant && is_valid_score(res.leaf.value)) {
-                v = res.leaf.value;
-            }
-            //if (res.leaf.value != SCORE_UNDEFINED) {
-            //    v = -res.leaf.value;
-            //    child_level = res.leaf.level;
-            //}
-            Book_elem child_res;
-            for (Book_value &link: links) {
-                calc_flip(&flip, &board, link.policy);
-                board.move_board(&flip);
-                    child_res = negamax_book_p(board, n_seen, n_fix, percent, edax_compliant, stop);
-                    if (child_res.value != SCORE_UNDEFINED) {
-                        if (v < -child_res.value /*&& res.level <= child_res.level*/) { // update parent value
-                            v = -child_res.value;
-                            //child_level = child_res.level;
-                        }
-                        n_lines += child_res.n_lines;
-                    }
-                board.undo_board(&flip);
-            }
-            if (v != -INF /*&& child_level >= res.level*/) {
-                //res.level = child_level;
-                if (v != res.value) {
-                    res.value = v;
-                    ++(*n_fix);
-                }
-            }
-            res.n_lines = (uint32_t)std::min((uint64_t)MAX_N_LINES, n_lines);
-            book.set(board, res);
-            return res;
         }
 
+        /*
+            @brief call func(const Board&, Book_elem&) for all boards with the seen flag and the given number of discs
+
+            Boards must not be registered / deleted in func. func is called from several threads at the same time.
+        */
+        template<class F>
+        inline void parallel_for_each_seen_board(int n_discs, F &&func) {
+            parallel_for_segments([this, n_discs, &func](int segment_idx) {
+                book.for_each_in_segment(segment_idx, [n_discs, &func](const Board &board, Book_elem &book_elem) {
+                    if (board.n_discs() == n_discs && book_elem.seen) {
+                        func(board, book_elem);
+                    }
+                });
+            });
+        }
+
+        /*
+            @brief flag (seen) all boards which can be reached from the root board with registered moves
+
+            Boards with fewer discs are processed first, so that boards with the same number of discs can be processed in parallel.
+            Game-over boards are not flagged.
+            Boards must not be registered / deleted by other threads (functions without lock are used).
+
+            @param root_board           root board
+            @param expand_invalid       expand the boards whose value is out of range?
+            @param stop                 flag to stop
+            @return the largest number of discs in the flagged boards (-1: nothing flagged)
+        */
+        inline int flag_reachable_boards(Board root_board, bool expand_invalid, bool *stop) {
+            if (root_board.get_legal() == 0) {
+                root_board.pass();
+                if (root_board.get_legal() == 0) { // game over
+                    return -1;
+                }
+            }
+            bool registered = book.modify(representative_board(root_board), [](Book_elem &book_elem) {
+                book_elem.seen = true;
+            });
+            if (!registered) {
+                return -1;
+            }
+            int max_n_discs = root_board.n_discs();
+            for (int n_discs = root_board.n_discs(); n_discs < HW2 && !(*stop); ++n_discs) {
+                std::atomic<bool> flagged(false);
+                parallel_for_each_seen_board(n_discs, [this, expand_invalid, stop, &flagged](const Board &board, Book_elem &book_elem) {
+                    if (*stop || (!expand_invalid && (book_elem.value < -HW2 || HW2 < book_elem.value))) {
+                        return;
+                    }
+                    Moved_board moved_boards[HW2];
+                    int n_moved_boards = get_moved_boards(&board, moved_boards, true);
+                    bool flagged_local = false;
+                    for (int i = 0; i < n_moved_boards; ++i) {
+                        if (!moved_boards[i].is_end) {
+                            flagged_local |= book.modify_unlocked(moved_boards[i].board, moved_boards[i].hash, [](Book_elem &child_elem) {
+                                if (!child_elem.seen) { // several threads may flag the same board
+                                    child_elem.seen = true;
+                                }
+                            });
+                        }
+                    }
+                    if (flagged_local && !flagged.load(std::memory_order_relaxed)) {
+                        flagged.store(true, std::memory_order_relaxed);
+                    }
+                });
+                if (!flagged.load()) {
+                    break;
+                }
+                max_n_discs = n_discs + 1;
+            }
+            return max_n_discs;
+        }
+
+        /*
+            @brief negamax the values of the boards which can be reached from the initial board
+
+            The value of a board is the best value of the registered moves, and n_lines is recalculated.
+            Boards with more discs are processed first: when a board is processed, the boards after its moves are already fixed.
+            Boards with the same number of discs are processed in parallel.
+            If stopped, the boards not processed yet keep their values.
+
+            @param edax_compliant       use the leaf value as a candidate of the value
+            @param stop                 flag to stop
+        */
         void negamax_book(bool edax_compliant, bool *stop) {
             Board root_board;
             root_board.reset();
-            int64_t n_seen = 0, n_fix = 0;
-            int percent = -1;
+            std::atomic<int64_t> n_seen(0), n_fix(0);
             reset_seen();
-            negamax_book_p(root_board, &n_seen, &n_fix, &percent, edax_compliant, stop);
+            int max_n_discs = flag_reachable_boards(root_board, false, stop);
+            uint64_t n_boards = book.size();
+            for (int n_discs = max_n_discs; n_discs >= 4 && !(*stop); --n_discs) {
+                parallel_for_segments([this, n_discs, edax_compliant, stop, &n_seen, &n_fix](int segment_idx) {
+                  int64_t n_seen_local = 0, n_fix_local = 0;
+                  book.for_each_in_segment(segment_idx, [this, n_discs, edax_compliant, stop, &n_seen_local, &n_fix_local](const Board &board, Book_elem &book_elem) {
+                    if (board.n_discs() != n_discs || !book_elem.seen) {
+                        return;
+                    }
+                    if (*stop || book_elem.value < -HW2 || HW2 < book_elem.value) {
+                        return;
+                    }
+                    ++n_seen_local;
+                    Moved_board moved_boards[HW2];
+                    int n_moved_boards = get_moved_boards(&board, moved_boards, true);
+                    uint64_t n_lines = 1;
+                    int v = -INF;
+                    if (edax_compliant && is_valid_score(book_elem.leaf.value)) {
+                        v = book_elem.leaf.value;
+                    }
+                    Book_elem child_elem;
+                    for (int i = 0; i < n_moved_boards; ++i) {
+                        const Moved_board &moved_board = moved_boards[i];
+                        int child_value = SCORE_UNDEFINED; // value for the player of this board
+                        if (moved_board.is_end) { // game over
+                            if (book.get_unlocked(moved_board.board, moved_board.hash, &child_elem)) {
+                                if (child_elem.value != SCORE_UNDEFINED) {
+                                    child_value = -child_elem.value;
+                                }
+                            } else if (book.get_unlocked(moved_board.end_board, moved_board.end_hash, &child_elem)) {
+                                child_value = child_elem.value;
+                            }
+                        } else if (book.get_unlocked(moved_board.board, moved_board.hash, &child_elem)) {
+                            if (-HW2 <= child_elem.value && child_elem.value <= HW2) {
+                                child_value = moved_board.passed ? child_elem.value : -child_elem.value;
+                            }
+                        }
+                        if (child_value != SCORE_UNDEFINED) {
+                            if (v < child_value) { // update parent value
+                                v = child_value;
+                            }
+                            n_lines += child_elem.n_lines;
+                        }
+                    }
+                    // boards with this number of discs are not read by other threads now
+                    if (v != -INF && v != book_elem.value) {
+                        book_elem.value = v;
+                        ++n_fix_local;
+                    }
+                    book_elem.n_lines = (uint32_t)std::min((uint64_t)MAX_N_LINES, n_lines);
+                  });
+                  n_seen.fetch_add(n_seen_local, std::memory_order_relaxed);
+                  n_fix.fetch_add(n_fix_local, std::memory_order_relaxed);
+                });
+                int percent = n_boards ? (int)std::min<uint64_t>(100, (uint64_t)n_seen.load() * 100 / n_boards) : 100;
+                std::cerr << "negamaxing book... " << percent << "%" << " fixed " << n_fix.load() << std::endl;
+            }
             reset_seen();
-            std::cerr << "negamaxed book fixed " << n_fix << " boards seen " << n_seen << " boards size " << book.size() << std::endl;
+            std::cerr << "negamaxed book fixed " << n_fix.load() << " boards seen " << n_seen.load() << " boards size " << book.size() << std::endl;
         }
 
         // flag keeped boards
@@ -2775,42 +2901,37 @@ class Book {
             reset_seen();
         }
 
-        uint32_t recalculate_n_lines_rec(Board board, bool *stop) {
-            if (*stop) {
-                return 0;
+        /*
+            @brief recalculate n_lines of the boards which can be reached from the root board
+
+            n_lines of a board is 1 + sum of n_lines of the boards after registered moves (game over: 1).
+            Boards with more discs are processed first, boards with the same number of discs in parallel.
+        */
+        void recalculate_n_lines_reachable(Board root_board, bool *stop) {
+            int max_n_discs = flag_reachable_boards(root_board, true, stop);
+            for (int n_discs = max_n_discs; n_discs >= 4 && !(*stop); --n_discs) {
+                parallel_for_each_seen_board(n_discs, [this, stop](const Board &board, Book_elem &book_elem) {
+                    if (*stop) {
+                        return;
+                    }
+                    Moved_board moved_boards[HW2];
+                    int n_moved_boards = get_moved_boards(&board, moved_boards, true);
+                    uint64_t n_lines = 1;
+                    Book_elem child_elem;
+                    for (int i = 0; i < n_moved_boards; ++i) {
+                        const Moved_board &moved_board = moved_boards[i];
+                        if (moved_board.is_end) { // game over
+                            if (book.get_unlocked(moved_board.board, moved_board.hash, &child_elem) || book.get_unlocked(moved_board.end_board, moved_board.end_hash, &child_elem)) {
+                                ++n_lines;
+                            }
+                        } else if (book.get_unlocked(moved_board.board, moved_board.hash, &child_elem)) {
+                            n_lines += child_elem.n_lines;
+                        }
+                    }
+                    // boards with this number of discs are not read by other threads now
+                    book_elem.n_lines = (uint32_t)std::min((uint64_t)MAX_N_LINES, n_lines);
+                });
             }
-            if (board.get_legal() == 0) {
-                board.pass();
-                if (board.get_legal() == 0) {
-                    return 1;
-                }
-            }
-            board = representative_board(&board);
-            Book_elem book_elem;
-            bool already_seen = false;
-            book.modify(board, [&book_elem, &already_seen](Book_elem &elem) {
-                already_seen = elem.seen;
-                elem.seen = true;
-                book_elem = elem;
-            });
-            // already seen
-            if (already_seen) {
-                return book_elem.n_lines;
-            }
-            std::vector<Book_value> links = get_all_moves_with_value(&board);
-            uint64_t n_lines = 1;
-            Flip flip;
-            for (Book_value &link: links) {
-                calc_flip(&flip, &board, link.policy);
-                board.move_board(&flip);
-                    n_lines += recalculate_n_lines_rec(board, stop);
-                board.undo_board(&flip);
-            }
-            n_lines = (uint32_t)std::min((uint64_t)MAX_N_LINES, n_lines);
-            book.modify(board, [n_lines](Book_elem &elem) {
-                elem.n_lines = (uint32_t)n_lines;
-            });
-            return (uint32_t)n_lines;
         }
 
         uint64_t upgrade_better_leaves_rec(Board board, bool *stop) {
@@ -2876,7 +2997,7 @@ class Book {
         void recalculate_n_lines(Board root_board, bool *stop) {
             std::cerr << "recalculating n_lines..." << std::endl;
             reset_seen();
-            recalculate_n_lines_rec(root_board, stop);
+            recalculate_n_lines_reachable(root_board, stop);
             reset_seen();
             std::cerr << "n_lines recalculated" << std::endl;
         }
@@ -2894,8 +3015,10 @@ class Book {
         }
 
         void reset_seen() {
-            book.for_each([](const Board &board, Book_elem &book_elem) {
-                book_elem.seen = false;
+            parallel_for_segments([this](int segment_idx) {
+                book.for_each_in_segment(segment_idx, [](const Board &board, Book_elem &book_elem) {
+                    book_elem.seen = false;
+                });
             });
         }
 
@@ -2969,25 +3092,29 @@ class Book {
         }
 
         void check_add_leaf_all_undefined() {
-            Flip flip;
-            for_each_board_snapshot([&](Board &board) {
-                Book_elem book_elem;
-                if (!book.get(board, &book_elem)) {
-                    return true;
+            // each board is checked independently: process segments in parallel
+            parallel_for_segments([this](int segment_idx) {
+                Flip flip;
+                std::vector<Board> boards;
+                book.get_keys_in_segment(segment_idx, boards);
+                for (Board &board: boards) {
+                    Book_elem book_elem;
+                    if (!book.get(board, &book_elem)) {
+                        continue;
+                    }
+                    int leaf_move = book_elem.leaf.move;
+                    bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
+                    if (!need_to_rewrite_leaf && is_valid_policy(leaf_move)) {
+                        calc_flip(&flip, &board, leaf_move);
+                        board.move_board(&flip);
+                            need_to_rewrite_leaf = contain(&board);
+                        board.undo_board(&flip);
+                    }
+                    if (need_to_rewrite_leaf) {
+                        int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
+                        add_leaf(&board, new_leaf_value, new_leaf_move, LEVEL_UNDEFINED);
+                    }
                 }
-                int leaf_move = book_elem.leaf.move;
-                bool need_to_rewrite_leaf = leaf_move < 0 || MOVE_UNDEFINED <= leaf_move;
-                if (!need_to_rewrite_leaf && is_valid_policy(leaf_move)) {
-                    calc_flip(&flip, &board, leaf_move);
-                    board.move_board(&flip);
-                        need_to_rewrite_leaf = contain(&board);
-                    board.undo_board(&flip);
-                }
-                if (need_to_rewrite_leaf) {
-                    int8_t new_leaf_value = SCORE_UNDEFINED, new_leaf_move = MOVE_UNDEFINED;
-                    add_leaf(&board, new_leaf_value, new_leaf_move, LEVEL_UNDEFINED);
-                }
-                return true;
             });
         }
 

@@ -121,8 +121,14 @@ class Board_table {
         static constexpr uint32_t RESIZE_TARGET_NUMERATOR = 100;
         static constexpr uint32_t RESIZE_TARGET_DENOMINATOR = 65 * GROUP_SIZE;
 
+        // The lock is written at every access, and the others are only read in searching.
+        // They are placed on different cache lines, so that searching threads do not disturb each other.
+        struct alignas(64) Segment_lock {
+            Book_table_lock lock;
+        };
+
         struct alignas(64) Segment {
-            mutable Book_table_lock lock;
+            Book_table_lock *lock;
             uint32_t n_groups;      // capacity is n_groups * GROUP_SIZE
             uint32_t n_used;        // number of registered boards
             uint32_t n_deleted;     // number of deleted marks
@@ -131,20 +137,21 @@ class Board_table {
             uint8_t *ctrl;          // 0x00-0x7F: registered (tag), CTRL_EMPTY, CTRL_DELETED
 
             Segment()
-                : n_groups(0), n_used(0), n_deleted(0), keys(nullptr), values(nullptr), ctrl(nullptr) {}
+                : lock(nullptr), n_groups(0), n_used(0), n_deleted(0), keys(nullptr), values(nullptr), ctrl(nullptr) {}
         };
 
         Segment *segments;
+        Segment_lock *segment_locks;
         std::atomic<int64_t> n_elems;
 
         struct Segment_guard {
             const Segment &segment;
             Segment_guard(const Segment &segment_)
                 : segment(segment_) {
-                segment.lock.lock();
+                segment.lock->lock();
             }
             ~Segment_guard() {
-                segment.lock.unlock();
+                segment.lock->unlock();
             }
         };
 
@@ -334,6 +341,10 @@ class Board_table {
         Board_table()
             : n_elems(0) {
             segments = new Segment[N_SEGMENTS];
+            segment_locks = new Segment_lock[N_SEGMENTS];
+            for (int i = 0; i < N_SEGMENTS; ++i) {
+                segments[i].lock = &segment_locks[i].lock;
+            }
         }
 
         ~Board_table() {
@@ -341,6 +352,7 @@ class Board_table {
                 free(segments[i].keys);
             }
             delete[] segments;
+            delete[] segment_locks;
         }
 
         Board_table(const Board_table&) = delete;
@@ -381,6 +393,75 @@ class Board_table {
         }
 
         /*
+            @brief load the memory of the board itself into the cache
+
+            Call this after prefetch() and before get() / modify(), when several boards are searched.
+
+            @param hash                 book_hash_board() of the board
+        */
+        inline void prefetch_entry(uint64_t hash) const {
+            const Segment &segment = segments[segment_idx(hash)];
+            Segment_guard guard(segment);
+            if (segment.n_groups) {
+                uint32_t group = home_group(hash, segment.n_groups);
+                uint64_t match = match_tag(load_ctrl(segment.ctrl, group), tag_of(hash));
+                if (match) {
+                    uint32_t slot = group * GROUP_SIZE + first_match_idx(match);
+                    BOOK_TABLE_PREFETCH(segment.keys + slot);
+                    BOOK_TABLE_PREFETCH(segment.values + slot);
+                }
+            }
+        }
+
+        /*
+            @brief functions without lock
+
+            Faster when many threads search at the same time (a lock is a write to shared memory).
+            Use them only while no thread registers / deletes boards.
+            Different threads may modify different boards.
+        */
+        inline void prefetch_unlocked(uint64_t hash) const {
+            const Segment &segment = segments[segment_idx(hash)];
+            if (segment.n_groups) {
+                BOOK_TABLE_PREFETCH(segment.ctrl + (size_t)home_group(hash, segment.n_groups) * GROUP_SIZE);
+            }
+        }
+
+        inline void prefetch_entry_unlocked(uint64_t hash) const {
+            const Segment &segment = segments[segment_idx(hash)];
+            if (segment.n_groups) {
+                uint32_t group = home_group(hash, segment.n_groups);
+                uint64_t match = match_tag(load_ctrl(segment.ctrl, group), tag_of(hash));
+                if (match) {
+                    uint32_t slot = group * GROUP_SIZE + first_match_idx(match);
+                    BOOK_TABLE_PREFETCH(segment.keys + slot);
+                    BOOK_TABLE_PREFETCH(segment.values + slot);
+                }
+            }
+        }
+
+        inline bool get_unlocked(const Board &key, uint64_t hash, Value *res) const {
+            const Segment &segment = segments[segment_idx(hash)];
+            uint32_t slot = find_slot(segment, key, hash);
+            if (slot == NOT_FOUND) {
+                return false;
+            }
+            *res = segment.values[slot];
+            return true;
+        }
+
+        template<class F>
+        inline bool modify_unlocked(const Board &key, uint64_t hash, F &&func) {
+            Segment &segment = segments[segment_idx(hash)];
+            uint32_t slot = find_slot(segment, key, hash);
+            if (slot == NOT_FOUND) {
+                return false;
+            }
+            func(segment.values[slot]);
+            return true;
+        }
+
+        /*
             @brief get registered value with precalculated hash
 
             @param key                  board
@@ -418,7 +499,11 @@ class Board_table {
         */
         template<class F>
         inline bool modify(const Board &key, F &&func) {
-            const uint64_t hash = book_hash_board(key.player, key.opponent);
+            return modify(key, book_hash_board(key.player, key.opponent), func);
+        }
+
+        template<class F>
+        inline bool modify(const Board &key, uint64_t hash, F &&func) {
             Segment &segment = segments[segment_idx(hash)];
             Segment_guard guard(segment);
             uint32_t slot = find_slot(segment, key, hash);
