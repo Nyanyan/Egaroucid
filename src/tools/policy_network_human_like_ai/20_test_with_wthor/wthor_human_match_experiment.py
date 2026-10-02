@@ -148,11 +148,35 @@ def format_console_summary_line(row: dict) -> str:
     return text
 
 
+def write_metric_snapshot(path, named_metrics, requested_positions):
+    """Persist small aggregates on the owning collector thread, never hint rows."""
+    if path is None:
+        return
+    rows = []
+    for name, metric in named_metrics:
+        row = make_console_level_summary_row(0, metrics_to_result({0.0: metric}), 0.0)
+        for key in ("level", "elapsed_sec", "engine_seconds"):
+            row.pop(key, None)
+        positions = row["positions"]
+        if not positions:
+            row["top1_accuracy"] = None
+        row.update(name=name, status=("pending" if not positions else
+                   "complete" if positions == requested_positions else "partial"))
+        rows.append(row)
+    payload = {"updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+               "requested_positions": requested_positions, "rows": rows}
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
+    temporary.replace(path)
+
+
 class AgreementProgressReporter:
     """Add partial hint rows and print the corresponding agreement values."""
 
-    def __init__(self, metrics: IncrementalAgreementMetrics):
+    def __init__(self, metrics: IncrementalAgreementMetrics, progress_path=None, requested_positions=None):
         self.metrics = metrics
+        self.progress_path = progress_path
+        self.requested_positions = requested_positions
 
     def accept_rows(self, level: int, rows: Sequence[tuple]) -> None:
         for state_key, hint in rows:
@@ -160,6 +184,10 @@ class AgreementProgressReporter:
 
     def format_lines(self, progress: dict) -> list:
         blend_metrics, console_metrics, _, _ = self.metrics.snapshot()
+        write_metric_snapshot(self.progress_path,
+                              [(f"alpha_{alpha:.1f}", blend_metrics[alpha]) for alpha in BLEND_PARAMS]
+                              + [(f"egaroucid_l{level}", console_metrics[level]) for level in CONSOLE_RESULT_LEVELS],
+                              self.requested_positions)
         reported_by_level = progress.get("reported_hints_by_level", {})
         target_by_level = progress.get("target_hints_by_level", {})
 
@@ -199,8 +227,10 @@ class AgreementProgressReporter:
 
 
 class EdaxProgressReporter:
-    def __init__(self, metrics):
+    def __init__(self, metrics, progress_path=None, requested_positions=None):
         self.metrics = metrics
+        self.progress_path = progress_path
+        self.requested_positions = requested_positions
 
     def accept_rows(self, level, rows):
         for state_key, hint in rows:
@@ -208,6 +238,9 @@ class EdaxProgressReporter:
 
     def format_lines(self, progress):
         metrics = self.metrics.snapshot()
+        write_metric_snapshot(self.progress_path,
+                              [(f"edax_l{level}", metrics[level]) for level in EDAX_LEVELS],
+                              self.requested_positions)
         reported = progress.get("reported_hints_by_level", {})
         targets = progress.get("target_hints_by_level", {})
         lines = []
@@ -243,10 +276,12 @@ def write_csv(
     rows: Sequence[dict],
     fieldnames: Sequence[str],
 ) -> None:
-    with path.open("w", newline="", encoding="utf-8") as csv_file:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    with temporary.open("w", newline="", encoding="utf-8") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+    temporary.replace(path)
 
 
 def default_output_dir(
@@ -397,9 +432,9 @@ def make_argparser() -> argparse.ArgumentParser:
         "positions",
         metavar="N",
         nargs="?",
-        default=None,
+        default=100000,
         type=positive_int,
-        help="標本抽出する局面数。省略時は入力testデータ全件を評価",
+        help="標本抽出する局面数。省略時は対称変換前のtestから10万件を重複なしで無作為抽出",
     )
     parser.add_argument(
         "--data-split",
@@ -671,12 +706,15 @@ def main() -> None:
         engine_likelihood=args.engine_likelihood,
         prepared_groups=prepared_groups,
     )
-    progress_reporter = AgreementProgressReporter(live_metrics)
+    progress_reporter = AgreementProgressReporter(live_metrics, output_dir / "progress_egaroucid.json", args.positions)
     edax_live_metrics = IncrementalEngineAgreementMetrics(
         groups, EDAX_LEVELS, evaluation_top_n(args), args.engine_likelihood,
         args.score_temperature, prepared_groups=prepared_groups,
     )
-    edax_reporter = EdaxProgressReporter(edax_live_metrics)
+    edax_reporter = EdaxProgressReporter(edax_live_metrics, output_dir / "progress_edax.json", args.positions)
+    # Persist initial snapshots; all blend rows fill as level-21 hints arrive.
+    progress_reporter.format_lines({})
+    edax_reporter.format_lines({})
     edax_dir = (getattr(args, "hint_cache_dir", None) or output_dir) / "edax"
     edax_dir.mkdir(parents=True, exist_ok=True)
     ensure_experiment_identity(edax_dir, {

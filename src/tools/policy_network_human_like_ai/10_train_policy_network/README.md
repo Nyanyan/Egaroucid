@@ -65,11 +65,13 @@ valとtestは固定順序で評価します。
 ## 実行例
 
 以下は、このディレクトリで実行する例です。
+`train_policy_network.py` と `run_training_experiments.py` の既定値はConv8+BN、10エポック、バッチサイズ512です。
 
 ```powershell
-python train_policy_network.py --configs 512x4 --epochs 50
-python train_policy_network.py --dataset another_dataset --configs conv8_bn --epochs 50
-python train_policy_network.py --configs 512x4,conv8_bn --epochs 50
+python train_policy_network.py
+python train_policy_network.py --configs 512x4 --epochs 10
+python train_policy_network.py --dataset another_dataset --configs conv8_bn --epochs 10
+python train_policy_network.py --configs 512x4,conv8_bn --epochs 10
 ```
 
 件数上限の既定値はなく、train・val・testを全件使用します。
@@ -86,13 +88,14 @@ Windowsでは次のBATファイルでも学習できます。
 
 | BATファイル | モデル | 既定エポック数 | 既定バッチサイズ |
 | --- | --- | ---: | ---: |
-| `train_dense512.bat` | Dense 512×4、LeakyReLU 0.03 | 50 | 8192 |
-| `train_conv4.bat` | Conv4 | 50 | 256 |
-| `train_conv6.bat` | Conv6 | 50 | 256 |
-| `train_conv8.bat` | Conv8 | 50 | 256 |
-| `train_conv8_bn.bat` | Conv8＋BN | 50 | 256 |
+| `train_prepared.bat` | Conv8＋BN | 10 | 512 |
+| `train_dense512.bat` | Dense 512×4、LeakyReLU 0.03 | 10 | 8192 |
+| `train_conv4.bat` | Conv4 | 10 | 512 |
+| `train_conv6.bat` | Conv6 | 10 | 512 |
+| `train_conv8.bat` | Conv8 | 10 | 512 |
+| `train_conv8_bn.bat` | Conv8＋BN | 10 | 512 |
 
-BATは共通の `train_prepared.bat` を呼び、同じ環境変数とデータ分割を使います。
+モデル別のBATは共通の `train_prepared.bat` を呼び、同じ環境変数とデータ分割を使います。
 `EPOCHS`、`BATCH_SIZE`、`SEED` は環境変数で変更できます。
 `POLICY_PYTHON` でTensorFlowを導入したPythonを選択し、`POLICY_NO_PAUSE=1` で終了時のキー入力待ちを省略できます。
 `train_other_paper_models.bat` はConv4、Conv6、Conv8を順に実行し、失敗した場合は停止します。
@@ -165,7 +168,7 @@ BNの具体的な配置と数値設定は論文本文に指定がないため、
 論文のSGD＋momentum、学習率スケジュール、baggingは再現していません。
 CNNでも `--learning-rate` と `--l2` を指定できます。`--alpha` と `--dropout` は全結合モデルにだけ適用されます。
 
-CNNを含む実行では、学習・予測の既定バッチサイズはともに256です。明示した値がある場合はそちらを使います。
+CNNを含む実行では、学習・予測の既定バッチサイズはともに512です。明示した値がある場合はそちらを使います。
 全結合モデルだけの場合は、従来どおり学習4096・予測8192です。
 
 ## 一致率

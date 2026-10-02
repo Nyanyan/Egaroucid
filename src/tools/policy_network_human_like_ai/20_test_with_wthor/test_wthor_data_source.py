@@ -71,8 +71,7 @@ class DataSourceTest(unittest.TestCase):
             os.environ, {"POLICY_DATA_ROOT": directory}, clear=True,
         ):
             parser = make_argparser()
-            args = parser.parse_args([])
-            self.assertIsNone(args.positions)
+            args = parser.parse_args(["7"])
             resolve_board_data_args(args, parser)
             args.board_data_dir.mkdir(parents=True)
             path = args.board_data_dir / "0000000.dat"
@@ -81,7 +80,27 @@ class DataSourceTest(unittest.TestCase):
                 [path], 20, args.positions, args.data_split, args.split_seed, args.sample_seed,
             )
         self.assertEqual(20, available)
-        self.assertEqual(20, sum(group.sample_count for group in groups))
+        self.assertEqual(7, sum(group.sample_count for group in groups))
+
+    def test_default_random_sample_is_100000_unique_reproducible_test_rows(self):
+        from wthor_human_match_experiment import make_argparser
+        from evaluate_wthor_blend_human_match import choose_data_split_positions
+        args = make_argparser().parse_args([])
+        self.assertEqual(args.positions, 100000)
+        self.assertEqual(args.data_split, "all")
+        self.assertEqual(args.sample_seed, 613)
+        def sample(seed):
+            return choose_data_split_positions(401545, args.data_split, .8, .1, .1,
+                                               args.split_seed, args.positions, seed)
+        selected, available = sample(args.sample_seed)
+        self.assertEqual(available, 401545)
+        self.assertEqual(len(selected), 100000)
+        self.assertEqual(len(np.unique(selected)), 100000)
+        self.assertGreaterEqual(selected.min(), 0)
+        self.assertLess(selected.max(), available)
+        self.assertGreater(selected.max(), 100000)  # Not a prefix of the input.
+        np.testing.assert_array_equal(selected, sample(args.sample_seed)[0])
+        self.assertFalse(np.array_equal(selected, sample(args.sample_seed + 1)[0]))
 
     def test_explicit_position_count_still_samples(self):
         from wthor_human_match_experiment import make_argparser

@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 rem Shared launcher. Data paths are resolved by Python from environment variables.
-if not defined MODEL_CONFIG set "MODEL_CONFIG=512x4"
-if not defined MODEL_NAME set "MODEL_NAME=dense512"
-if not defined DEFAULT_BATCH_SIZE set "DEFAULT_BATCH_SIZE=8192"
-if not defined EPOCHS set "EPOCHS=50"
+if not defined MODEL_CONFIG set "MODEL_CONFIG=conv8_bn"
+if not defined MODEL_NAME set "MODEL_NAME=conv8_bn"
+if not defined DEFAULT_BATCH_SIZE set "DEFAULT_BATCH_SIZE=512"
+if not defined EPOCHS set "EPOCHS=10"
 if not defined BATCH_SIZE set "BATCH_SIZE=%DEFAULT_BATCH_SIZE%"
 if not defined SEED set "SEED=613"
 if not defined POLICY_DATASET set "POLICY_DATASET=WTHOR_1977_2024"

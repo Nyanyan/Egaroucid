@@ -27,8 +27,8 @@ def parse_configs(text: str) -> list[str]:
 
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run policy network training experiments with raw log capture.")
-    parser.add_argument("--configs", default="64x3,96x3,128x3,96x4")
-    parser.add_argument("--epochs", type=int, default=24)
+    parser.add_argument("--configs", default="conv8_bn")
+    parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=None, help="Default: use the trainer's automatic batch size for each architecture.")
     parser.add_argument("--seed", type=int, default=613)
     add_data_arguments(parser)

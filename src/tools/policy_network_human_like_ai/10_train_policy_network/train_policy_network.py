@@ -376,17 +376,17 @@ def default_output_dir() -> Path:
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Train compact Othello policy networks with tensorflow.keras for the human-like AI study.")
     add_data_arguments(parser)
-    parser.add_argument("--configs", default="64x3,96x3,128x3,96x4", help="Comma-separated MLP specs or paper CNN presets: conv4, conv6, conv8, conv8_bn (Conv8+BN).")
+    parser.add_argument("--configs", default="conv8_bn", help="Comma-separated MLP specs or paper CNN presets: conv4, conv6, conv8, conv8_bn (Conv8+BN).")
     parser.add_argument("--alpha", type=float, default=0.03)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--l2", type=float, default=0.0)
     parser.add_argument("--learning-rate", type=float, default=0.001)
-    parser.add_argument("--epochs", type=int, default=20)
-    parser.add_argument("--batch-size", type=int, default=None, help="Default: 256 when configs include a CNN, otherwise 4096.")
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--batch-size", type=int, default=None, help="Default: 512 when configs include a CNN, otherwise 4096.")
     parser.add_argument("--seed", type=int, default=613)
     parser.add_argument("--top-n", type=parse_top_n, default=parse_top_n("1,2,3,5,10"))
     parser.add_argument("--eval-batch-size", type=int, default=65536)
-    parser.add_argument("--predict-batch-size", type=int, default=None, help="Default: 256 when configs include a CNN, otherwise 8192.")
+    parser.add_argument("--predict-batch-size", type=int, default=None, help="Default: 512 when configs include a CNN, otherwise 8192.")
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--precision", choices=("float32", "mixed_float16"), default="float32")
     parser.add_argument("--steps-per-execution", type=int, default=1)
@@ -407,9 +407,9 @@ def main() -> None:
     specs = parse_model_specs(args.configs, args)
     has_cnn = any(spec.architecture != "mlp" for spec in specs)
     if args.batch_size is None:
-        args.batch_size = 256 if has_cnn else 4096
+        args.batch_size = 512 if has_cnn else 4096
     if args.predict_batch_size is None:
-        args.predict_batch_size = 256 if has_cnn else 8192
+        args.predict_batch_size = 512 if has_cnn else 8192
     if min(args.epochs, args.batch_size, args.eval_batch_size, args.predict_batch_size) <= 0:
         parser.error("epochs and batch sizes must be positive")
     if not args.top_n or any(n < 1 or n > POLICY_SIZE for n in args.top_n):

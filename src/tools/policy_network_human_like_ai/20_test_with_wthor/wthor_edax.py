@@ -21,7 +21,7 @@ EDAX_HASH_BITS = 22
 # Quiet native hint rows contain depth, score, elapsed time, node count,
 # optional speed, and a principal variation. Only its first move is a hint.
 HINT_ROW = re.compile(
-    r"^\s*\d+(?:@\d+%)?\s+([+-]\d+)\s+"
+    r"^\s*\d+(?:@\d+%)?\s+([<>?]?)([+-]\d+)\s+"
     r"\d+:\d+(?:\.\d+)?\s+\d+(?:\s+\d+)?\s+([a-h][1-8])\b",
     re.IGNORECASE,
 )
@@ -33,10 +33,12 @@ def parse_edax_hint_output(raw: str):
         match = HINT_ROW.match(line)
         if match is None:
             continue
-        policy = coord_to_policy(match[2])
+        policy = coord_to_policy(match[3])
         if policy in scores:
-            raise ValueError(f"duplicate Edax hint move: {match[2]}")
-        scores[policy] = float(match[1])
+            raise ValueError(f"duplicate Edax hint move: {match[3]}")
+        # Edax result_print emits a bound marker separately from result->score.
+        # Keep that numeric search score (e.g. <-63 is -63, not an inferred -64).
+        scores[policy] = float(match[2])
     if not scores:
         raise ValueError(f"Edax returned no hint moves: {raw[-500:]}")
     return scores
@@ -78,6 +80,7 @@ class EdaxHintRunner(EgaroucidHintRunner):
 
     def _read_until_prompt(self):
         chars = []
+        line_has_content = False
         deadline = time.monotonic() + self.timeout_sec
         while True:
             if self.cancel_event is not None and self.cancel_event.is_set():
@@ -96,8 +99,14 @@ class EdaxHintRunner(EgaroucidHintRunner):
             if ch == "":
                 raise RuntimeError(f"Edax process ended: {''.join(chars[-500:])}")
             chars.append(ch)
-            if ch == ">":
+            # A lower-bound score such as >+63 is part of a hint row.
+            # Native Edax's actual command prompt is at the start of a line.
+            if ch == ">" and not line_has_content:
                 return "".join(chars)
+            if ch in "\r\n":
+                line_has_content = False
+            elif not ch.isspace():
+                line_has_content = True
 
     def close(self):
         proc = self.proc
@@ -113,11 +122,15 @@ class EdaxHintRunner(EgaroucidHintRunner):
                         pipe.close()
 
     def hint_scores(self, state, side, hint_count=3):
-        scores = parse_edax_hint_output(self.raw_hint(state, side, hint_count))
+        raw = self.raw_hint(state, side, hint_count)
+        scores = parse_edax_hint_output(raw)
+        bounds = {coord_to_policy(match[3]): match[1]
+                  for line in raw.splitlines() if (match := HINT_ROW.match(line))}
         # Normalize to the cache's shared move-order format. Insertion order
         # preserves Edax's top-N order, including score ties.
         normalized = "\n".join(
             f"0 | 0 | 0 | {policy_to_coord(policy)} | {score}"
+            + (f" | Edax bound {bounds[policy]}" if bounds[policy] else "")
             for policy, score in scores.items()
         )
         return scores, normalized
