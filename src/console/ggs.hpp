@@ -2280,12 +2280,102 @@ void ggs_client(Options *options) {
     bool ggs_tt_clean = true;
 #endif
     int thread_sizes[2];
-    int thread_sizes_before[2];
     for (int i = 0; i < 2; ++i) {
         thread_sizes[i] = 0;
     }
     bool playing_synchro_game = false;
     bool playing_same_board = true;
+#if GGS_USE_PONDER
+    // Sets each slot's share of the helper threads for the running searches
+    // and ponders. starting_search_slot (-1 for none) counts a search that is
+    // about to be launched as running. Returns true when a size changed.
+    auto update_thread_sizes = [&](int starting_search_slot) -> bool {
+        const bool searchings[2] = {
+            ai_searchings[0] || starting_search_slot == 0,
+            ai_searchings[1] || starting_search_slot == 1
+        };
+        const int thread_sizes_before[2] = {thread_sizes[0], thread_sizes[1]};
+        if (playing_synchro_game) {
+            int full_threads = thread_pool.size();
+            int full_threads_enhanced = full_threads + std::max(1, full_threads / 4);
+            int reduced_threads = std::max(1, full_threads / 2);
+#if IS_GGS_TOURNAMENT
+            int non_prioritized_threads = full_threads >= GGS_NON_PRIORITIZED_MIN_FULL_THREADS ? GGS_NON_PRIORITIZED_THREADS : 0;
+#else
+            int non_prioritized_threads = full_threads >= GGS_NON_PRIORITIZED_MIN_FULL_THREADS ? GGS_NON_PRIORITIZED_THREADS : 0;
+#endif
+            non_prioritized_threads = std::clamp(non_prioritized_threads, 0, std::max(0, full_threads - 1));
+            int prioritized_threads = full_threads - non_prioritized_threads;
+            prioritized_threads = std::min(prioritized_threads, full_threads);
+            // int non_prioritized_threads = 1;
+            // int prioritized_threads = full_threads - 1;
+            // if (playing_same_board) {
+            //     if (ai_searchings[0]) { // 0 is searching
+            //         if (ai_searchings[1]) { // 1 is searching
+            //             // not occurs
+            //         } else if (ponder_searchings[1]) { // 1 is pondering
+            //             thread_sizes[0] = full_threads; // full threads for 0
+            //             thread_sizes[1] = 0; // off 1's ponder
+            //         } else { // 1 is waiting
+            //             thread_sizes[0] = full_threads; // full threads for 0
+            //             thread_sizes[1] = 0; // off 1
+            //         }
+            //     } else if (ponder_searchings[0]) { // 0 is pondering
+            //         if (ai_searchings[1]) { // 1 is searching
+            //             thread_sizes[0] = 0; // off 0's ponder
+            //             thread_sizes[1] = full_threads; // full threads for 1
+            //         } else if (ponder_searchings[1]) { // 1 is pondering
+            //             thread_sizes[0] = reduced_threads; // half & half
+            //             thread_sizes[1] = reduced_threads; // half & half
+            //         } else { // 1 is waiting
+            //             thread_sizes[0] = full_threads; // full threads for 0
+            //             thread_sizes[1] = 0; // off 1
+            //         }
+            //     } else { // 0 is waiting
+            //         thread_sizes[0] = 0; // off 0
+            //         thread_sizes[1] = full_threads; // full threads for 1
+            //     }
+            // } else {
+                if (searchings[0]) { // 0 is searching
+                    if (searchings[1]) { // 1 is searching
+                        // not occurs
+                    } else if (ponder_searchings[1]) { // 1 is pondering
+                        thread_sizes[0] = prioritized_threads;
+                        thread_sizes[1] = non_prioritized_threads;
+                    } else { // 1 is waiting
+                        thread_sizes[0] = full_threads;
+                        thread_sizes[1] = 0;
+                    }
+                } else if (ponder_searchings[0]) { // 0 is pondering
+                    if (searchings[1]) { // 1 is searching
+                        thread_sizes[0] = non_prioritized_threads;
+                        thread_sizes[1] = prioritized_threads;
+                    } else if (ponder_searchings[1]) { // 1 is pondering
+                        thread_sizes[0] = reduced_threads;
+                        thread_sizes[1] = reduced_threads;
+                    } else { // 1 is waiting
+                        thread_sizes[0] = full_threads;
+                        thread_sizes[1] = 0;
+                    }
+                } else { // 0 is waiting
+                    thread_sizes[0] = 0; // off 0
+                    thread_sizes[1] = full_threads; // full threads for 1
+                }
+            // }
+        } else {
+            thread_sizes[GGS_NON_SYNCHRO_ID] = thread_pool.size(); // full threads for non-synchro game
+        }
+        // update thread size
+        bool changed = false;
+        for (int i = 0; i < 2; ++i) {
+            if (thread_sizes[i] != thread_sizes_before[i]) {
+                thread_pool.set_max_thread_size(i, thread_sizes[i]);
+                changed = true;
+            }
+        }
+        return changed;
+    };
+#endif
     GGS_Match matches[2];
     for (int i = 0; i < 2; ++i) {
         matches[i].init();
@@ -2580,6 +2670,9 @@ void ggs_client(Options *options) {
                                         if (!ggs_board.board.is_end() && !ai_searchings[ggs_board.synchro_id]) {
 #if GGS_USE_PONDER
                                             const thread_id_t search_thread_id = ggs_board.synchro_id;
+                                            // ai_get_values reads the thread budget once when it starts, so
+                                            // set it for this search before the search thread starts.
+                                            update_thread_sizes(ggs_board.synchro_id);
 #else
                                             const thread_id_t search_thread_id = THREAD_ID_NONE;
 #endif
@@ -2679,86 +2772,8 @@ void ggs_client(Options *options) {
         }
 #if GGS_USE_PONDER
         // thread manager
-        thread_sizes_before[0] = thread_sizes[0];
-        thread_sizes_before[1] = thread_sizes[1];
-        if (playing_synchro_game) {
-            int full_threads = thread_pool.size();
-            int full_threads_enhanced = full_threads + std::max(1, full_threads / 4);
-            int reduced_threads = std::max(1, full_threads / 2);
-#if IS_GGS_TOURNAMENT
-            int non_prioritized_threads = full_threads >= GGS_NON_PRIORITIZED_MIN_FULL_THREADS ? GGS_NON_PRIORITIZED_THREADS : 0;
-#else
-            int non_prioritized_threads = full_threads >= GGS_NON_PRIORITIZED_MIN_FULL_THREADS ? GGS_NON_PRIORITIZED_THREADS : 0;
-#endif
-            non_prioritized_threads = std::clamp(non_prioritized_threads, 0, std::max(0, full_threads - 1));
-            int prioritized_threads = full_threads - non_prioritized_threads;
-            prioritized_threads = std::min(prioritized_threads, full_threads);
-            // int non_prioritized_threads = 1;
-            // int prioritized_threads = full_threads - 1;
-            // if (playing_same_board) {
-            //     if (ai_searchings[0]) { // 0 is searching
-            //         if (ai_searchings[1]) { // 1 is searching
-            //             // not occurs
-            //         } else if (ponder_searchings[1]) { // 1 is pondering
-            //             thread_sizes[0] = full_threads; // full threads for 0
-            //             thread_sizes[1] = 0; // off 1's ponder
-            //         } else { // 1 is waiting
-            //             thread_sizes[0] = full_threads; // full threads for 0
-            //             thread_sizes[1] = 0; // off 1
-            //         }
-            //     } else if (ponder_searchings[0]) { // 0 is pondering
-            //         if (ai_searchings[1]) { // 1 is searching
-            //             thread_sizes[0] = 0; // off 0's ponder
-            //             thread_sizes[1] = full_threads; // full threads for 1
-            //         } else if (ponder_searchings[1]) { // 1 is pondering
-            //             thread_sizes[0] = reduced_threads; // half & half
-            //             thread_sizes[1] = reduced_threads; // half & half
-            //         } else { // 1 is waiting
-            //             thread_sizes[0] = full_threads; // full threads for 0
-            //             thread_sizes[1] = 0; // off 1
-            //         }
-            //     } else { // 0 is waiting
-            //         thread_sizes[0] = 0; // off 0
-            //         thread_sizes[1] = full_threads; // full threads for 1
-            //     }
-            // } else {
-                if (ai_searchings[0]) { // 0 is searching
-                    if (ai_searchings[1]) { // 1 is searching
-                        // not occurs
-                    } else if (ponder_searchings[1]) { // 1 is pondering
-                        thread_sizes[0] = prioritized_threads;
-                        thread_sizes[1] = non_prioritized_threads;
-                    } else { // 1 is waiting
-                        thread_sizes[0] = full_threads;
-                        thread_sizes[1] = 0;
-                    }
-                } else if (ponder_searchings[0]) { // 0 is pondering
-                    if (ai_searchings[1]) { // 1 is searching
-                        thread_sizes[0] = non_prioritized_threads;
-                        thread_sizes[1] = prioritized_threads;
-                    } else if (ponder_searchings[1]) { // 1 is pondering
-                        thread_sizes[0] = reduced_threads;
-                        thread_sizes[1] = reduced_threads;
-                    } else { // 1 is waiting
-                        thread_sizes[0] = full_threads;
-                        thread_sizes[1] = 0;
-                    }
-                } else { // 0 is waiting
-                    thread_sizes[0] = 0; // off 0
-                    thread_sizes[1] = full_threads; // full threads for 1
-                }
-            // }
-        } else {
-            thread_sizes[GGS_NON_SYNCHRO_ID] = thread_pool.size(); // full threads for non-synchro game
-        }
-        // update thread size
-        if (thread_sizes[0] != thread_sizes_before[0]) {
-            thread_pool.set_max_thread_size(0, thread_sizes[0]);
-        }
-        if (thread_sizes[1] != thread_sizes_before[1]) {
-            thread_pool.set_max_thread_size(1, thread_sizes[1]);
-        }
-        if (new_calculation_start || thread_sizes[0] != thread_sizes_before[0] || thread_sizes[1] != thread_sizes_before[1]) {
+        const bool thread_sizes_changed = update_thread_sizes(-1);
+        if (new_calculation_start || thread_sizes_changed) {
             std::string msg = "thread info synchro " + std::to_string(playing_synchro_game) + " same " + std::to_string(playing_same_board) + " ai " + std::to_string(ai_searchings[0]) + " " + std::to_string(ai_searchings[1]) + " ponder " + std::to_string(ponder_searchings[0]) + " " + std::to_string(ponder_searchings[1]) + " thread size " + std::to_string(thread_sizes[0]) + " " + std::to_string(thread_sizes[1]);
             ggs_print_info(msg, options);
         }
