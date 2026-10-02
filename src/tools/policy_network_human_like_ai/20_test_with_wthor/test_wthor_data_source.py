@@ -32,8 +32,6 @@ class DataSourceTest(unittest.TestCase):
     def test_all_entry_points_resolve_selected_dataset_or_explicit_override(self):
         modules = [
             "wthor_human_match_experiment", "evaluate_wthor_human_match",
-            "evaluate_wthor_blend_human_match", "evaluate_wthor_policy_topn",
-            "run_wthor_blend_shards", "analyze_wthor_position_duplicates",
         ]
         for name in modules:
             with self.subTest(entry_point=name):

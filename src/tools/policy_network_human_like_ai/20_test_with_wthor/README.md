@@ -30,8 +30,8 @@ python run_random_wthor_blend_experiment.py 10000 `
 `--workers` is the total limit for Egaroucid and Edax combined, and must be
 at least 12 to start all engine/level combinations. For a 32-thread machine
 with one search thread per process, use `--workers 32`. The prepared `test` directory is sampled directly
-(`--data-split all`, sample seed 613); it is not split again. Other policy
-evaluators and shard tools use the same data source and `--dataset` option.
+(`--data-split all`, sample seed 613); it is not split again. The policy-only
+evaluator uses the same data source and `--dataset` option.
 `--board-data-dir` overrides the environment and dataset selection. Use an
 explicit `--data-split test` only when resplitting legacy unsplit input.
 Edax defaults to `bin/versions/edax_4_6/wEdax-x86-64.exe`, with `data/eval.dat`
@@ -105,8 +105,14 @@ zero, rather than writing nonstandard JSON infinities.
 
 The policy-only `evaluate_wthor_human_match.py` also reports likelihood in its
 JSON and its overall / ten-move-bucket CSVs, after conditioning probabilities on
-legal moves. The older shard-oriented blend scripts keep their existing output
-format; use `run_random_wthor_blend_experiment.py` for the comparison above.
+legal moves. Use `run_random_wthor_blend_experiment.py` for the comparison above.
+
+The old top-N evaluator, shard runner/merger, duplicate analyzer, blend CLI and
+legacy-only tests are archived locally in `legacy/`, which is ignored by Git.
+The current `evaluate_wthor_blend_human_match.py` retains only shared board
+readers, sampling and ranking helpers needed by active evaluations and launchers.
+Use `run_random_wthor_blend_experiment.py` or `evaluate_wthor_human_match.py`
+as the current command-line entry points.
 
 ```powershell
 python -m unittest discover -s . -p 'test_*.py'

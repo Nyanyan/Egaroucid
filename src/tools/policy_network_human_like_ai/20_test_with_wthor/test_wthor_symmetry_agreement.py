@@ -1,38 +1,26 @@
 #!/usr/bin/env python3
 
-import json
-from pathlib import Path
-import tempfile
 import unittest
-from unittest.mock import patch
 
 import numpy as np
 
 from evaluate_wthor_blend_human_match import (
     ALL_LEGAL_HINT_COUNT,
     BLACK,
-    BOARD_DTYPE,
-    BlendedPolicy,
     BoardState,
     POLICY_SIZE,
     equivalent_targets,
     hint_cache_key,
-    hint_scores_with_cache,
-    make_metrics,
-    make_worker_progress_event,
     rank_for_distribution,
-    require_complete_egaroucid_scores,
-    update_metrics_for_position_sample,
 )
-from merge_wthor_blend_results import merge_results
 from run_random_wthor_blend_experiment import (
     BLEND_PARAMS,
     make_blend_summary_rows,
     make_console_level_summary_row,
 )
-from run_wthor_blend_shards import shard_done
 from wthor_human_match_evaluation import wilson_interval
 from blend_policy_with_egaroucid import (
+    BlendedPolicy, require_complete_egaroucid_scores,
     hint_cache_key as blended_policy_hint_cache_key,
 )
 
@@ -80,48 +68,6 @@ class SymmetryAgreementTest(unittest.TestCase):
             ),
         )
 
-    def test_evaluator_requests_all_legal_moves_independent_of_top_n(self) -> None:
-        state = BoardState.initial()
-        player, opponent = state.player_opponent_bits(BLACK)
-        policy = state.legal_policies(BLACK)[0]
-        sample = np.zeros((), dtype=BOARD_DTYPE)
-        sample["player"] = player
-        sample["opponent"] = opponent
-        sample["color"] = BLACK
-        sample["policy"] = policy
-
-        class FakeBlender:
-            def policy_distribution(self, board, side, legal):
-                result = np.zeros(POLICY_SIZE, dtype=np.float32)
-                result[legal] = 1.0 / len(legal)
-                return result
-
-            def egaroucid_distribution(self, scores, legal):
-                result = np.zeros(POLICY_SIZE, dtype=np.float32)
-                result[legal] = 1.0 / len(legal)
-                return result
-
-        metrics = make_metrics([0.5], [1, 3], ["01_10"])
-        with patch(
-            "evaluate_wthor_blend_human_match.hint_scores_with_cache",
-            return_value=({}, ""),
-        ) as hint_scores:
-            update_metrics_for_position_sample(
-                sample,
-                FakeBlender(),
-                [0.5],
-                [1, 3],
-                metrics,
-                [],
-                0,
-                0,
-                None,
-            )
-
-        self.assertEqual(
-            ALL_LEGAL_HINT_COUNT,
-            hint_scores.call_args.args[3],
-        )
 
     def test_partial_egaroucid_policy_is_rejected(self) -> None:
         legal = BoardState.initial().legal_policies(BLACK)
@@ -139,82 +85,6 @@ class SymmetryAgreementTest(unittest.TestCase):
                 legal,
             )
 
-    def test_evaluator_rejects_partial_cached_hint_scores(self) -> None:
-        state = BoardState.initial()
-        legal = state.legal_policies(BLACK)
-
-        class FakeHintRunner:
-            level = 21
-
-        class FakeBlender:
-            hint_runner = FakeHintRunner()
-
-        class FakeHintCache:
-            def get(self, key):
-                return {legal[0]: 0.0}, "partial"
-
-        with self.assertRaisesRegex(ValueError, "does not cover exactly"):
-            hint_scores_with_cache(
-                FakeBlender(),
-                state,
-                BLACK,
-                ALL_LEGAL_HINT_COUNT,
-                FakeHintCache(),
-            )
-
-    def test_evaluator_does_not_cache_fresh_partial_hint_scores(self) -> None:
-        state = BoardState.initial()
-        legal = state.legal_policies(BLACK)
-
-        class FakeHintRunner:
-            level = 21
-
-            def hint_scores(self, board, side, hint_count):
-                return {legal[0]: 0.0}, "partial"
-
-        class FakeBlender:
-            hint_runner = FakeHintRunner()
-
-        class FakeHintCache:
-            put_called = False
-
-            def get(self, key):
-                return None
-
-            def put(self, key, scores, raw_hint):
-                self.put_called = True
-
-        hint_cache = FakeHintCache()
-        with self.assertRaisesRegex(ValueError, "does not cover exactly"):
-            hint_scores_with_cache(
-                FakeBlender(),
-                state,
-                BLACK,
-                ALL_LEGAL_HINT_COUNT,
-                hint_cache,
-            )
-        self.assertFalse(hint_cache.put_called)
-
-    def test_evaluator_rejects_partial_hint_request(self) -> None:
-        state = BoardState.initial()
-
-        class FakeHintRunner:
-            level = 21
-
-            def hint_scores(self, board, side, hint_count):
-                raise AssertionError("partial hint request must fail first")
-
-        class FakeBlender:
-            hint_runner = FakeHintRunner()
-
-        with self.assertRaisesRegex(ValueError, "expected hint 64"):
-            hint_scores_with_cache(
-                FakeBlender(),
-                state,
-                BLACK,
-                3,
-                None,
-            )
 
     def test_blended_policy_requests_all_legal_hint_scores(self) -> None:
         state = BoardState.initial()
@@ -258,57 +128,6 @@ class SymmetryAgreementTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not cover exactly"):
             blender.cached_hint_scores(state, BLACK)
 
-    def test_merge_rejects_legacy_partial_hint_results(self) -> None:
-        with self.assertRaisesRegex(ValueError, "all-legal-move"):
-            merge_results([{"console_hint_count": 3}])
-
-    def test_merge_requires_explicit_all_legal_policy_support(self) -> None:
-        with self.assertRaisesRegex(ValueError, "explicitly declare"):
-            merge_results(
-                [
-                    {
-                        "console_hint_count": ALL_LEGAL_HINT_COUNT,
-                    }
-                ]
-            )
-
-    def test_shard_done_rejects_legacy_partial_hint_result(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_dir = Path(temp_dir)
-            result_path = output_dir / "wthor_blend_human_match.json"
-            result_path.write_text(
-                json.dumps(
-                    {
-                        "topn": [{"top_n": 1}],
-                        "console_hint_count": 3,
-                    }
-                ),
-                encoding="utf-8",
-            )
-            self.assertFalse(shard_done(output_dir))
-
-            result_path.write_text(
-                json.dumps(
-                    {
-                        "topn": [{"top_n": 1}],
-                        "console_hint_count": ALL_LEGAL_HINT_COUNT,
-                    }
-                ),
-                encoding="utf-8",
-            )
-            self.assertFalse(shard_done(output_dir))
-
-            result_path.write_text(
-                json.dumps(
-                    {
-                        "topn": [{"top_n": 1}],
-                        "console_hint_count": ALL_LEGAL_HINT_COUNT,
-                        "egaroucid_policy_support": "all_legal_moves",
-                    }
-                ),
-                encoding="utf-8",
-            )
-            self.assertTrue(shard_done(output_dir))
 
     def test_reflected_human_move_is_an_equivalent_target(self) -> None:
         # This position is invariant only under the a-file/h-file reflection.
@@ -388,23 +207,6 @@ class SymmetryAgreementTest(unittest.TestCase):
         self.assertEqual(expected_upper, row["top1_ci95_upper"])
         self.assertEqual(expected_lower, row["top3_ci95_lower"])
         self.assertEqual(expected_upper, row["top3_ci95_upper"])
-
-    def test_progress_uses_symmetry_aware_counts(self) -> None:
-        event = make_worker_progress_event(
-            worker_id=0,
-            attempted_positions=3,
-            metrics={
-                0.5: {
-                    "positions": 3,
-                    "hits": {1: 2},
-                }
-            },
-            blend_params=[0.5],
-            n_values=[1],
-            start_time=0.0,
-        )
-
-        self.assertEqual(2, event["results"][0]["top1_hits"])
 
 
 if __name__ == "__main__":
