@@ -2,7 +2,7 @@
 
 関連issue: #613
 
-Egaroucid for Consoleの各levelと、Policy NetworkをEgaroucidの方策へ混合した各αを、XOT局面から総当たりで対戦させる。現在の実行コードにはランダムプレイヤーの実装もコマンドラインオプションもない。
+Egaroucid for Consoleの各levelと、Policy NetworkをEgaroucidの方策へ混合した各αを、XOT局面から総当たりで対戦させる。`--edax-levels`を指定すると、Edax 4.6の各levelも参加できる。現在の実行コードにはランダムプレイヤーの実装もコマンドラインオプションもない。
 
 ## 対戦セットと統計単位
 
@@ -27,6 +27,7 @@ Egaroucid for Consoleの各levelと、Policy NetworkをEgaroucidの方策へ混�
 | --- | ---: |
 | Egaroucid単体 | level 1、3、5、…、19（10参加者） |
 | ブレンド方策 | α=0.0、0.2、0.4、0.6、0.8、1.0（6参加者） |
+| Edax 4.6 | 既定では不参加。`--edax-levels`で追加 |
 | 参加者数 | 16 |
 | 組合せ数 | 120 |
 | 1組合せ | 500対戦セット、1,000実対局 |
@@ -69,6 +70,52 @@ Python環境には`numpy`、`psutil`、`tensorflow`が必要である。既定�
 
 ## 実行方法
 
+### Edax 4.6を追加する
+
+Edaxは次の配置を既定で参照する。評価データは絶対パスで渡すため、Edaxのフォルダへ移動して起動する必要はない。
+
+```text
+bin/versions/edax_4_6/wEdax-x86-64.exe
+bin/versions/edax_4_6/data/eval.dat
+```
+
+既存の16参加者へEdaxのlevel 1、3、5を追加する例を示す。以下のコマンドは`Egaroucid`リポジトリのルートから実行する。
+
+```powershell
+python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
+  --edax-levels 1,3,5 `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/xot_500sets_with_edax `
+  --dry-run
+```
+
+この例では19参加者、171組合せ、85,500対戦セットになる。確認後に`--dry-run`を外すと対戦を開始する。既存の16参加者の結果とは実験条件が異なるため、新しい出力先を指定する。
+
+Egaroucid level 1とEdax level 1だけで、先後2局を確認する場合は次のように指定する。Policy Networkを使わないため、この実行には学習済みモデルやTensorFlowは不要である。
+
+```powershell
+python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full.py `
+  --baseline-levels 1 --alphas= --edax-levels 1 `
+  --match-sets-per-pair 1 --parallel-match-sets 1 `
+  --output-dir src/tools/policy_network_human_like_ai/40_test_strength/output/edax_smoke
+```
+
+どちらの例もXOTファイルが必要である。既定の`bin/problem/xot/openingslarge.txt`がない場合は、`--openings`で手元のXOTファイルを指定する。ファイルは1行に1局面分の合法な棋譜を記載する形式で、指定セット数以上の異なる棋譜が必要になる。
+
+| オプション | 用途・既定値 |
+| --- | --- |
+| `--edax-levels` | 0〜60のlevelをカンマ区切りで指定。既定は空で、Edaxを追加しない |
+| `--edax-exe` | 実行exeを変更。既定は上記の`wEdax-x86-64.exe` |
+| `--edax-eval-file` | 評価データを変更。既定は指定exeと同じフォルダ内の`data/eval.dat` |
+| `--edax-processes-per-player` | 各Edax levelのprocess数。既定は2、2以上の偶数 |
+| `--engine-threads` | EgaroucidとEdax共通の探索並列数。既定は1 |
+| `--estimated-edax-memory-mib` | Edax 1 processのメモリ見積り。既定は256 MiB |
+
+Edaxは`edax_l1`などの名前で結果表・Elo集計に参加する。bookとponderは無効、hash tableは22 bitで固定し、`--engine-threads`をEdaxの`-n`へ渡す。これらの起動オプションは[Edax 4.6の公式実装](https://github.com/abulmo/edax-reversi/blob/v4.6/src/options.c)に合わせている。EdaxのlevelはEdax自身の探索設定であり、同じ数字のEgaroucid levelと同じ強さを保証するものではない。
+
+Edax同士で比較する場合は、`--baseline-levels= --alphas= --edax-levels 1,3`のように指定できる。参加者の合計は2以上必要である。再開には同じ引数と`--resume`を指定し、exeや評価データを変更した場合は新しい出力先を使う。
+
+### 既定の16参加者で実行する
+
 最初に、ファイル、実験数、並列数、メモリ見積りを確認する。engineやpolicy serverは起動しない。
 
 ```powershell
@@ -92,7 +139,7 @@ python src/tools/policy_network_human_like_ai/40_test_strength/run_strength_full
   --resume
 ```
 
-`strength_manifest.json`には参加者、対戦数、XOT列、seed、探索条件、Python・NumPy版、インストール済みのTensorFlow関連distribution版と、実行exe・モデル・重み・XOT・対戦処理に関係するPython source一式のSHA-256を保存する。`strength_runtime_manifest.json`には実際に起動したpolicy backend、実際にimportされたTensorFlow版、CPU/GPU、GPU modelとdriverを保存する。再開時に1項目でも異なれば停止する。identityを検証できない外部policy serverを使うオプションは設けていない。
+`strength_manifest.json`には参加者、対戦数、XOT列、seed、探索条件、Python・NumPy版、インストール済みのTensorFlow関連distribution版と、実行exe・モデル・重み・XOT・対戦処理に関係するPython source一式のSHA-256を保存する。Edaxが参加する場合は、その実行exeと評価データのSHA-256も保存する。`strength_runtime_manifest.json`には実際に起動したpolicy backend、実際にimportされたTensorFlow版、CPU/GPU、GPU modelとdriverを保存する。再開時に1項目でも異なれば停止する。identityを検証できない外部policy serverを使うオプションは設けていない。
 
 対戦が完了したらElo 95%信頼区間を生成する。既定では20,000反復、PCG64、seed 613を使う。元の棋譜、manifest、既存集計は変更せず、補助CSVとJSONだけを出力する。
 

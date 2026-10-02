@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast round-robin strength test for native and blended Egaroucid policies.
+"""Fast round-robin strength test for Egaroucid, blended policies, and Edax.
 
 One match set consists of two games from the same XOT opening with colors
 swapped. The sign of the two-game mean disc difference determines the set
@@ -35,6 +35,8 @@ HUMAN_LIKE_DIR = SCRIPT_DIR.parent
 REPO_ROOT = SCRIPT_DIR.parents[3]
 BIN_DIR = REPO_ROOT / "bin"
 BLEND_DIR = HUMAN_LIKE_DIR / "30_blend_with_egaroucid"
+DEFAULT_EDAX_EXE = BIN_DIR / "versions" / "edax_4_6" / "wEdax-x86-64.exe"
+EDAX_HASH_TABLE_BITS = 22
 sys.path.insert(0, str(BLEND_DIR))
 
 from blend_policy_with_egaroucid import (  # noqa: E402
@@ -258,12 +260,15 @@ def validate_scheduled_openings(
 
 def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
     baseline_levels = parse_int_list(args.baseline_levels)
+    edax_levels = parse_int_list(args.edax_levels)
     alphas = parse_float_list(args.alphas)
     if any(not 0 <= level <= 60 for level in baseline_levels):
         raise ValueError("baseline levels must be between 0 and 60")
+    if any(not 0 <= level <= 60 for level in edax_levels):
+        raise ValueError("Edax levels must be between 0 and 60")
     if any(not 0.0 <= alpha <= 1.0 for alpha in alphas):
         raise ValueError("all alpha values must be between 0 and 1")
-    if len(baseline_levels) + len(alphas) < 2:
+    if len(baseline_levels) + len(edax_levels) + len(alphas) < 2:
         raise ValueError("at least two total participants are required")
     if args.match_sets_per_pair < 1:
         raise ValueError("--match-sets-per-pair must be positive")
@@ -272,6 +277,7 @@ def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
     for option, value in (
         ("--baseline-processes-per-player", args.baseline_processes_per_player),
         ("--blend-processes-per-player", args.blend_processes_per_player),
+        ("--edax-processes-per-player", args.edax_processes_per_player),
     ):
         if value < 2 or value % 2:
             raise ValueError(f"{option} must be an even number >= 2")
@@ -311,6 +317,8 @@ def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
         raise ValueError("--minimum-available-memory-mib must be positive")
     if args.estimated_engine_memory_mib <= 0.0:
         raise ValueError("--estimated-engine-memory-mib must be positive")
+    if args.estimated_edax_memory_mib <= 0.0:
+        raise ValueError("--estimated-edax-memory-mib must be positive")
     if args.estimated_wrapper_memory_mib <= 0.0:
         raise ValueError("--estimated-wrapper-memory-mib must be positive")
     if args.estimated_policy_server_memory_mib <= 0.0:
@@ -326,11 +334,21 @@ def policy_model_path(args: argparse.Namespace) -> Path:
     return Path(args.weights).with_name("selected_model.h5")
 
 
+def edax_eval_path(args: argparse.Namespace) -> Path:
+    if args.edax_eval_file is not None:
+        return Path(args.edax_eval_file)
+    return Path(args.edax_exe).resolve().parent / "data" / "eval.dat"
+
+
 def validate_input_files(args: argparse.Namespace, alphas: Sequence[float]) -> None:
     required = {
-        "Egaroucid executable": Path(args.egaroucid_exe),
         "XOT openings": Path(args.openings),
     }
+    if parse_int_list(args.baseline_levels) or alphas:
+        required["Egaroucid executable"] = Path(args.egaroucid_exe)
+    if parse_int_list(args.edax_levels):
+        required["Edax executable"] = Path(args.edax_exe)
+        required["Edax evaluation data"] = edax_eval_path(args)
     if any(alpha > 0.0 for alpha in alphas):
         required["policy weights"] = Path(args.weights)
         if args.policy_backend == "tensorflow":
@@ -572,6 +590,32 @@ def build_player_specs(
                 alpha=alpha,
             )
         )
+    for level in parse_int_list(args.edax_levels):
+        specs.append(
+            PlayerSpec(
+                name=f"edax_l{level}",
+                command=(
+                    str(Path(args.edax_exe).resolve()),
+                    "-gtp",
+                    "-q",
+                    "-l",
+                    str(level),
+                    # Edax's -t is a time limit; -n sets search concurrency.
+                    "-n",
+                    str(args.engine_threads),
+                    "-h",
+                    str(EDAX_HASH_TABLE_BITS),
+                    "-book-usage",
+                    "off",
+                    "-ponder",
+                    "off",
+                    "-eval-file",
+                    str(edax_eval_path(args).resolve()),
+                ),
+                processes_per_player=args.edax_processes_per_player,
+                setboard_before_genmove=False,
+            )
+        )
     names = [spec.name for spec in specs]
     if len(names) != len(set(names)):
         raise ValueError("participant names must be unique")
@@ -668,9 +712,14 @@ def build_manifest_configuration(
     tasks: Sequence[MatchSetTask],
 ) -> dict:
     inputs: Dict[str, object] = {
-        "egaroucid_executable": file_identity(Path(args.egaroucid_exe)),
         "xot_openings": file_identity(Path(args.openings)),
     }
+    if baseline_levels or alphas:
+        inputs["egaroucid_executable"] = file_identity(Path(args.egaroucid_exe))
+    edax_levels = parse_int_list(args.edax_levels)
+    if edax_levels:
+        inputs["edax_executable"] = file_identity(Path(args.edax_exe))
+        inputs["edax_evaluation_data"] = file_identity(edax_eval_path(args))
     if any(alpha > 0.0 for alpha in alphas):
         inputs["policy_weights"] = file_identity(Path(args.weights))
         if args.policy_backend == "tensorflow":
@@ -684,6 +733,7 @@ def build_manifest_configuration(
         "participants": {
             "baseline_levels": list(baseline_levels),
             "alphas": list(alphas),
+            "edax_levels": edax_levels,
         },
         "schedule": {
             "match_sets_per_pair": args.match_sets_per_pair,
@@ -708,6 +758,15 @@ def build_manifest_configuration(
                 args.baseline_processes_per_player
             ),
             "blend_processes_per_player": args.blend_processes_per_player,
+            "edax": (
+                {
+                    "processes_per_player": args.edax_processes_per_player,
+                    "hash_table_bits": EDAX_HASH_TABLE_BITS,
+                    "book_usage": False,
+                    "ponder": False,
+                }
+                if edax_levels else None
+            ),
             "engine_threads": args.engine_threads,
             "blend_egaroucid_level": args.blend_egaroucid_level,
             "score_temperature": args.score_temperature,
@@ -774,6 +833,7 @@ def print_configuration(
     print("theoretical_concurrent_actual_games", effective_sets * 2)
     print("baseline_processes_per_player", args.baseline_processes_per_player)
     print("blend_processes_per_player", args.blend_processes_per_player)
+    print("edax_processes_per_player", args.edax_processes_per_player)
     print("engine_threads_per_process", args.engine_threads)
     print("xot_openings", repo_relative(Path(args.openings)))
     print("same_opening_sequence_for_every_pair", True)
@@ -805,6 +865,10 @@ def print_configuration(
     print(
         "estimated_heavy_egaroucid_processes",
         estimated_heavy_engine_processes,
+    )
+    print(
+        "estimated_edax_processes",
+        len(parse_int_list(args.edax_levels)) * args.edax_processes_per_player,
     )
     print(
         "estimated_max_tournament_memory_mib",
@@ -849,7 +913,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Run a timeout-safe, resumable XOT round robin for Egaroucid "
-            "levels and blended policies."
+            "levels, blended policies, and optional Edax 4.6 levels."
         )
     )
     parser.add_argument(
@@ -859,6 +923,29 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--alphas",
         default="0.0,0.2,0.4,0.6,0.8,1.0",
+    )
+    parser.add_argument(
+        "--edax-levels",
+        default="",
+        help="Comma-separated Edax levels (0..60); empty disables Edax.",
+    )
+    parser.add_argument(
+        "--edax-exe",
+        type=Path,
+        default=DEFAULT_EDAX_EXE,
+        help="Edax 4.6 executable (defaults to bin/versions/edax_4_6).",
+    )
+    parser.add_argument(
+        "--edax-eval-file",
+        type=Path,
+        default=None,
+        help="Edax evaluation data; defaults to data/eval.dat beside its exe.",
+    )
+    parser.add_argument(
+        "--edax-processes-per-player",
+        type=int,
+        default=2,
+        help="Edax process limit per level, an even number >= 2.",
     )
     parser.add_argument(
         "--match-sets-per-pair",
@@ -1000,6 +1087,12 @@ def make_argparser() -> argparse.ArgumentParser:
         help="Memory estimate per Python blended-policy GTP wrapper.",
     )
     parser.add_argument(
+        "--estimated-edax-memory-mib",
+        type=float,
+        default=256.0,
+        help="Memory estimate per Edax process with a 22-bit hash table.",
+    )
+    parser.add_argument(
         "--estimated-policy-server-memory-mib",
         type=float,
         default=2000.0,
@@ -1012,12 +1105,13 @@ def make_argparser() -> argparse.ArgumentParser:
 
 def run_tournament(args: argparse.Namespace) -> None:
     baseline_levels, alphas = validate_args(args)
+    edax_levels = parse_int_list(args.edax_levels)
     validate_input_files(args, alphas)
     args.output_dir = Path(args.output_dir)
 
     openings = read_openings(Path(args.openings), args.seed)
     validate_scheduled_openings(openings, args.match_sets_per_pair)
-    player_count = len(baseline_levels) + len(alphas)
+    player_count = len(baseline_levels) + len(alphas) + len(edax_levels)
     all_tasks = make_match_set_tasks(
         player_count,
         openings,
@@ -1055,9 +1149,11 @@ def run_tournament(args: argparse.Namespace) -> None:
         + f"_{os.getpid()}"
     )
 
+    estimated_edax_processes = len(edax_levels) * args.edax_processes_per_player
     estimated_max_player_processes = (
         len(baseline_levels) * args.baseline_processes_per_player
         + len(alphas) * args.blend_processes_per_player
+        + estimated_edax_processes
     )
     # alpha=1 uses the policy network only; its Python wrapper never starts
     # the lazily constructed Egaroucid hint subprocess.
@@ -1076,6 +1172,7 @@ def run_tournament(args: argparse.Namespace) -> None:
     estimated_memory_mib = (
         estimated_heavy_engine_processes
         * args.estimated_engine_memory_mib
+        + estimated_edax_processes * args.estimated_edax_memory_mib
         + estimated_wrapper_processes
         * args.estimated_wrapper_memory_mib
         + (
@@ -1090,7 +1187,8 @@ def run_tournament(args: argparse.Namespace) -> None:
     ):
         raise MemoryError(
             "memory capacity check failed: "
-            f"{estimated_heavy_engine_processes} Egaroucid processes and "
+            f"{estimated_heavy_engine_processes} Egaroucid processes, "
+            f"{estimated_edax_processes} Edax processes, and "
             f"{estimated_wrapper_processes} wrappers are estimated to use "
             f"{estimated_memory_mib:.0f} MiB, only "
             f"{startup_available_mib:.0f} MiB is currently available, and "
@@ -1161,6 +1259,7 @@ def run_tournament(args: argparse.Namespace) -> None:
                 "estimated_heavy_egaroucid_processes": (
                     estimated_heavy_engine_processes
                 ),
+                "estimated_edax_processes": estimated_edax_processes,
                 "estimated_max_tournament_memory_mib": (
                     estimated_memory_mib
                 ),

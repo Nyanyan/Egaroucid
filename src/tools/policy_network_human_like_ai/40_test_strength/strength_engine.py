@@ -653,11 +653,13 @@ class GameRunner:
             while True:
                 legal = state.legal_policies(state.side)
                 if not legal:
+                    # Edax rejects a pass after both players have no moves.
+                    # Detect game over before sending any further commands.
+                    if not state.legal_policies(state.side ^ 1):
+                        break
                     send_play_to_stateful(state.side, "pass")
                     state.side ^= 1
                     legal = state.legal_policies(state.side)
-                    if not legal:
-                        break
 
                 side = state.side
                 mover = black_idx if side == BLACK else white_idx
