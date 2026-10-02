@@ -54,18 +54,8 @@ bool operator==(const Book_deviate_todo_elem& a, const Book_deviate_todo_elem& b
 }
 
 struct Book_deviate_hash {
-    size_t operator()(Book_deviate_todo_elem elem) const{
-        const uint16_t *p = (uint16_t*)&elem.board.player;
-        const uint16_t *o = (uint16_t*)&elem.board.opponent;
-        return 
-            hash_rand_player_book[0][p[0]] ^ 
-            hash_rand_player_book[1][p[1]] ^ 
-            hash_rand_player_book[2][p[2]] ^ 
-            hash_rand_player_book[3][p[3]] ^ 
-            hash_rand_opponent_book[0][o[0]] ^ 
-            hash_rand_opponent_book[1][o[1]] ^ 
-            hash_rand_opponent_book[2][o[2]] ^ 
-            hash_rand_opponent_book[3][o[3]];
+    size_t operator()(const Book_deviate_todo_elem &elem) const{
+        return Book_hash()(elem.board);
     }
 };
 
