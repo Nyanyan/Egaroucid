@@ -2590,32 +2590,10 @@ private:
     
     // Check if folder is empty (no subfolders and no games)
     bool is_folder_empty(const String& folder_name) const {
-        std::string base_dir = get_root_dir();
-        std::string rel_path = explorer_state.subfolder;
-        if (!rel_path.empty()) {
-            rel_path += "/";
-        }
-        rel_path += folder_name.narrow();
-        
-        // Check for subfolders
-        std::vector<String> subfolders = explorer::enumerate_subfolders(base_dir, explorer::PathState{rel_path});
-        if (!subfolders.empty()) {
-            return false;
-        }
-        
-        // Check for games in summary.csv
-        String folder_dir = Unicode::Widen(base_dir);
-        if (!rel_path.empty()) {
-            folder_dir += U"/" + Unicode::Widen(rel_path);
-        }
-        String csv_path = folder_dir + U"/summary.csv";
-        if (FileSystem::Exists(csv_path)) {
-            CSV csv{ csv_path };
-            if (csv.rows() > 0) {
-                return false;
-            }
-        }
-        return true;
+        // The path was built from folder_name.narrow(): a name outside the ANSI code page became "??",
+        // the folder could not be read and counted as empty, and the delete button removed it with
+        // the games inside (see is_list_folder_empty() in util.hpp). Use the name as it is.
+        return is_list_folder_empty(get_base_dir() + folder_name);
     }
     
     // Delete folder (only if empty)

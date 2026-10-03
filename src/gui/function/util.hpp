@@ -258,6 +258,34 @@ inline std::vector<String> enumerate_subdirectories_generic(const std::string& b
     return result;
 }
 
+// True if a folder of the game library / forced openings has no subfolder and no row in its summary.csv.
+// The folder is given as a String. The scenes used to rebuild its path from narrow() (ANSI code page)
+// strings: a folder whose name has a character outside the code page (Korean on a Japanese Windows,
+// emoji, ...) became "??", could not be inspected and was always reported as empty, so the delete button
+// was shown for it and removed the folder together with the games / openings inside.
+inline bool is_list_folder_empty(const String& folder_dir) {
+    if (!FileSystem::IsDirectory(folder_dir)) {
+        return false; // cannot be inspected: do not offer to delete it
+    }
+    for (const FilePath& path : FileSystem::DirectoryContents(folder_dir, Recursive::No)) {
+        if (FileSystem::IsDirectory(path)) {
+            return false;
+        }
+    }
+    String csv_path = folder_dir;
+    if (!csv_path.ends_with(U"/") && !csv_path.ends_with(U"\\")) {
+        csv_path += U"/";
+    }
+    csv_path += U"summary.csv";
+    if (FileSystem::Exists(csv_path)) {
+        CSV csv{ csv_path };
+        if (csv.rows() > 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Create a new folder in the specified directory
 bool create_folder_in_directory(const String& base_dir, const String& folder_name) {
     if (folder_name.empty() || folder_name.contains(U"/") || folder_name.contains(U"\\")) {

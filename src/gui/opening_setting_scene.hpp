@@ -797,26 +797,12 @@ public:
         }
         
         // Check if folder is empty (no subfolders and no openings)
-        bool is_folder_empty(const std::string& relative_path) const {
-            std::string base_dir = getData().directories.document_dir + "/forced_openings";
-            // Check for subfolders
-            std::vector<String> subfolders = enumerate_subdirectories_generic(base_dir, relative_path);
-            if (!subfolders.empty()) {
-                return false;
-            }
-            // Check for openings in summary.csv
-            String folder_dir = Unicode::Widen(base_dir);
-            if (!relative_path.empty()) {
-                folder_dir += U"/" + Unicode::Widen(relative_path);
-            }
-            String csv_path = folder_dir + U"/summary.csv";
-            if (FileSystem::Exists(csv_path)) {
-                CSV csv{ csv_path };
-                if (csv.rows() > 0) {
-                    return false;
-                }
-            }
-            return true;
+        // folder_name: a folder in the current folder.
+        // This took the relative path as a narrow() string: a name outside the ANSI code page became "??",
+        // the folder could not be read and counted as empty, and the delete button removed it for good
+        // with the openings inside (see is_list_folder_empty() in util.hpp). Use the name as it is.
+        bool is_folder_empty(const String& folder_name) const {
+            return is_list_folder_empty(get_base_dir() + folder_name);
         }
         
         // Delete folder (only if empty)
@@ -824,7 +810,7 @@ public:
             if (idx < 0 || idx >= (int)folders_display.size()) return;
             
             const auto& folder = folders_display[idx];
-            if (!is_folder_empty(folder.relative_path)) {
+            if (!is_folder_empty(folder.name)) {
                 return;  // Don't delete non-empty folders
             }
             
@@ -1102,7 +1088,7 @@ public:
             bool is_renaming_this = renaming_folder && renaming_folder_index == idx;
             
             // Draw delete button only for empty folders
-            if (!is_renaming_this && !(editing_elem || renaming_folder) && is_folder_empty(entry.relative_path)) {
+            if (!is_renaming_this && !(editing_elem || renaming_folder) && is_folder_empty(entry.name)) {
                 folder_delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 folder_delete_buttons[idx].draw();
                 if (folder_delete_buttons[idx].clicked()) {
