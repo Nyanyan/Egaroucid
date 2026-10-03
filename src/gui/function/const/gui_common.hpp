@@ -625,10 +625,10 @@ struct Settings {
     bool play_ordering_transcript_format;
     int auto_save_ai_profile_mode;
     std::string ai_profile_file;
-    std::string ai_profile_name;
+    std::string ai_profile_name; // UTF-8 (see init_settings_import_str_utf8)
     int auto_save_display_profile_mode;
     std::string display_profile_file;
-    std::string display_profile_name;
+    std::string display_profile_name; // UTF-8
 };
 
 struct Fonts {

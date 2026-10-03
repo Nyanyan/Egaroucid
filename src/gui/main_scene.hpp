@@ -946,7 +946,7 @@ private:
         apply_ai_profile_values(values, &getData().menu_elements);
         apply_ai_profile_values(values, &getData().settings);
         getData().settings.ai_profile_file = profile_file.narrow();
-        getData().settings.ai_profile_name = profile_name.narrow();
+        getData().settings.ai_profile_name = profile_name.toUTF8();
         resume_calculating();
         return true;
     }
@@ -969,7 +969,7 @@ private:
         apply_display_profile_values(values, &getData().menu_elements);
         apply_display_profile_values(values, &getData().settings);
         getData().settings.display_profile_file = profile_file.narrow();
-        getData().settings.display_profile_name = profile_name.narrow();
+        getData().settings.display_profile_name = profile_name.toUTF8();
         resume_calculating();
         return true;
     }
