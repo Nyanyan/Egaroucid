@@ -1296,12 +1296,30 @@ private:
                 int n_discs_before = getData().history_elem.board.n_discs();
                 while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
                     ((getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) || (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() > 0))) {
+                    const int removed_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                     getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
                     History_elem n_history_elem = getData().history_elem;
                     if (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 0) {
+                        // The last move of the variation (inspection branch) was taken back: return to the
+                        // position of the main line where the variation started, and stop there.
+                        // This used to continue with the main-line node that has as many discs as the removed
+                        // node: its next_policy was cleared, and because the branch is now the main line and
+                        // all its later nodes have at least n_discs_before discs, the loop went on and removed
+                        // the whole rest of the main line (the game after the fork was lost).
+                        // It also indexed nodes[0][-1] when the main line has no node with that disc count.
                         getData().graph_resources.branch = GRAPH_MODE_NORMAL;
-                        getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
-                        n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
+                        const std::vector<History_elem>& main_line = getData().graph_resources.nodes[GRAPH_MODE_NORMAL];
+                        int fork_parent_idx = 0;
+                        for (int i = 0; i < (int)main_line.size(); ++i) {
+                            if (main_line[i].board.n_discs() < removed_n_discs) {
+                                fork_parent_idx = i;
+                            }
+                        }
+                        getData().history_elem = main_line[fork_parent_idx];
+                        getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
+                        stop_calculating();
+                        resume_calculating();
+                        break;
                     } else {
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().next_policy = -1;
                         n_history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
