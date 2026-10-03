@@ -1432,9 +1432,14 @@ public:
             const CSV csv{ csv_path };
             if (csv) {
                 for (size_t row = 0; row < csv.rows(); ++row) {
+                    // Same column checks as load_openings(): csv[row][1] / [2] were read without them
+                    // (out of range for a row with fewer columns, e.g. a hand-edited summary.csv)
+                    if (csv.columns(row) < 1) {
+                        continue;
+                    }
                     String transcript = csv[row][0];
-                    double opening_weight = ParseOr<double>(csv[row][1], 1.0);
-                    bool enabled = ParseOr<bool>(csv[row][2], true);
+                    double opening_weight = (csv.columns(row) >= 2) ? ParseOr<double>(csv[row][1], 1.0) : 1.0;
+                    bool enabled = (csv.columns(row) >= 3) ? ParseOr<bool>(csv[row][2], true) : true;
                     
                     if (enabled) {  // Only add enabled openings
                         // Multiply opening weight by cumulative folder weight

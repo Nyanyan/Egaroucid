@@ -1207,13 +1207,26 @@ struct Forced_openings {
             std::string opening_str = opening.first;
             // std::cerr << opening_str << std::endl;
             double weight = opening.second;
-            for (int i = 0; i < opening_str.size() - 1 && board.check_pass(); i += 2) {
+            // Transcripts from summary.csv were not checked: an illegal move was played with calc_flip,
+            // and with an empty transcript size() - 1 underflowed and the loop read out of the string.
+            if (!is_valid_transcript(opening_str)) {
+                continue;
+            }
+            for (int i = 0; i + 1 < (int)opening_str.size() && board.check_pass(); i += 2) {
                 int policy = get_coord_from_chars(opening_str[i], opening_str[i + 1]);
                 // std::cerr << idx_to_coord(policy) << std::endl;
                 // board.print();
                 int symmetry_idx1 = 0;
                 Board unique_board1 = representative_board(board, &symmetry_idx1);
-                selected_moves[unique_board1].emplace_back(std::make_pair(convert_coord_from_representative_board(policy, symmetry_idx1), weight));
+                // The move is stored in the coordinates of the representative board
+                // (convert_coord_to_representative_board, as the book does), and get_one() converts it back
+                // with convert_coord_from_representative_board. v7.8.3 used them the other way round,
+                // which differs for the 90-degree rotations (idx 3, 4): when the game was a symmetric image
+                // of the opening (e.g. started with d3 instead of f5), the AI played a wrong move, and in
+                // most of those cases an illegal one (move_processing() does not check it).
+                // test/forced_opening_test.cpp: 165,922 wrong of 842,548 positions (146,019 illegal) with
+                // v7.8.3, 0 with this.
+                selected_moves[unique_board1].emplace_back(std::make_pair(convert_coord_to_representative_board(policy, symmetry_idx1), weight));
                 calc_flip(&flip, &board, policy);
                 board.move_board(&flip);
                 Board unique_board2 = representative_board(board);
@@ -1272,7 +1285,7 @@ struct Forced_openings {
             for (std::pair<int, double> &elem: selected_moves[unique_board]) {
                 s += elem.second;
                 if (s >= rnd) {
-                    selected_policy = convert_coord_to_representative_board(elem.first, symmetry_idx);
+                    selected_policy = convert_coord_from_representative_board(elem.first, symmetry_idx); // see init()
                     break;
                 }
             }
