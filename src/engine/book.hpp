@@ -1196,7 +1196,7 @@ class Book {
 
             @param only_exported        true: only the boards with exported flag are regarded as registered
         */
-        void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards, bool additional_calculation = true, bool only_exported = false, bool *stop_saving = nullptr) {
+        void get_pass_boards(Board board, std::unordered_set<Board, Book_hash> &pass_boards, bool only_exported = false, bool *stop_saving = nullptr) {
             // The boards which can be reached from the root with the moves written to Edax book are flagged (seen),
             // and the boards before pass found on the way are collected.
             // Boards with fewer discs are processed first, boards with the same number of discs in parallel
@@ -1500,7 +1500,7 @@ class Book {
                     return;
                 }
                 std::vector<Board> boards;
-                book.get_keys_in_segment_if(segment_idx, boards, [](const Board &board, const Book_elem &book_elem) {
+                book.get_keys_in_segment_if(segment_idx, boards, [](const Board&, const Book_elem &book_elem) {
                     return book_elem.exported;
                 });
                 for (const Board &board: boards) {
@@ -1528,7 +1528,7 @@ class Book {
             @param only_exported        true: only the boards with exported flag
         */
         inline void get_edax_boards_to_write(int segment_idx, bool only_exported, std::vector<Board> &boards) {
-            book.get_keys_in_segment_if(segment_idx, boards, [only_exported](const Board &board, const Book_elem &book_elem) {
+            book.get_keys_in_segment_if(segment_idx, boards, [only_exported](const Board&, const Book_elem &book_elem) {
                 return !only_exported || book_elem.exported;
             });
             std::sort(boards.begin(), boards.end(), [](const Board &a, const Board &b) {
@@ -1777,11 +1777,13 @@ class Book {
             const bool only_exported = !additional_calculation;
             if (only_exported) {
                 parallel_for_segments([this, stop_saving](int segment_idx) {
-                    book.for_each_in_segment(segment_idx, [this, stop_saving](const Board &board, Book_elem &book_elem) {
+                    book.for_each_in_segment(segment_idx, [this, stop_saving](const Board &board, Book_elem&) {
                         if (stop_saving && *stop_saving) {
                             return;
                         }
                         bool exported = should_write_edax_position_without_additional_calculation(board);
+                        // written with the segment locked (not through the reference given to this function):
+                        // other threads read this board with book.get() at the same time
                         book.modify(board, [exported](Book_elem &registered) {
                             registered.exported = exported;
                         });
@@ -1800,7 +1802,7 @@ class Book {
             }
             std::cerr << "pass board calculating..." << std::endl;
             reset_seen();
-            get_pass_boards(root_board, pass_boards, additional_calculation, only_exported, stop_saving);
+            get_pass_boards(root_board, pass_boards, only_exported, stop_saving);
             reset_seen();
             if (stop_saving && *stop_saving) {
                 return;
@@ -1866,7 +1868,6 @@ class Book {
             uint32_t n_lines;
             short short_val, short_val_min = -HW2, short_val_max = HW2;
             char char_level = (char)edax_level;
-            Book_elem book_elem;
             char link_value, link_move;
             char leaf_val, leaf_move;
             char n_link;
@@ -2348,54 +2349,6 @@ class Book {
                     edax_links.emplace_back(book_value);
                 }
             }
-        }
-
-        /*
-            @brief get the moves written as links to Edax-formatted book
-
-            @param only_exported        true: moves to the boards with exported flag, false: moves to the boards which have a registered move
-        */
-        inline std::vector<Book_value> get_edax_links(Board *b, bool only_exported = false) {
-            std::vector<Book_value> all_links, policies;
-            if (only_exported) {
-                get_all_moves_and_edax_links(b, all_links, policies);
-                return policies;
-            }
-            uint64_t legal = b->get_legal();
-            Flip flip;
-            for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
-                calc_flip(&flip, b, cell);
-                b->move_board(&flip);
-                    Book_value book_value;
-                    book_value.policy = cell;
-                    int registered_value;
-                    bool found = false;
-                    bool passed = false;
-                    if (b->get_legal() == 0) {
-                        if (b->is_end() && get_value(*b, &registered_value)) { // game over
-                            book_value.value = -registered_value;
-                            found = true;
-                        } else { // pass
-                            b->pass();
-                            passed = true;
-                            if (get_value(*b, &registered_value)) {
-                                book_value.value = registered_value;
-                                found = true;
-                            }
-                        }
-                    } else if (get_value(*b, &registered_value)) { // normal move
-                        book_value.value = -registered_value;
-                        found = true;
-                    }
-                    if (found && get_all_moves_with_value(b).size() > 0) {
-                        policies.emplace_back(book_value);
-                    }
-                    if (passed) {
-                        b->pass();
-                    }
-                b->undo_board(&flip);
-            }
-            return policies;
         }
 
         inline Leaf get_edax_leaf(Board *b, std::vector<Book_value> &edax_links) {
@@ -3350,7 +3303,7 @@ class Book {
 
         void reset_seen() {
             parallel_for_segments([this](int segment_idx) {
-                book.for_each_in_segment(segment_idx, [](const Board &board, Book_elem &book_elem) {
+                book.for_each_in_segment(segment_idx, [](const Board&, Book_elem &book_elem) {
                     book_elem.seen = false;
                 });
             });

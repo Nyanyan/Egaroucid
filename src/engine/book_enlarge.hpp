@@ -227,21 +227,18 @@ void book_recalculate_leaves(int level, std::unordered_set<Book_deviate_todo_ele
 }
 
 inline void book_recalculate_leaf(Board root_board, int level, int book_depth, int max_error_per_move, int max_error_sum, Board *board_copy, int *player, bool *book_learning, bool only_illegal, uint64_t all_strt) {
-    uint64_t strt_tim = tim();
     int before_player = *player;
     Book_deviate_todo_elem root_elem;
     root_elem.board = root_board;
     root_elem.player = *player;
     root_elem.max_error_per_move = max_error_per_move;
     root_elem.remaining_error = max_error_sum;
-    int n_saved = 1;
     Book_elem book_elem = book.get(root_board);
     if (book_elem.value == SCORE_UNDEFINED) {
         std::cerr << "board not registered, searching..." << std::endl;
         book_elem.value = ai(root_board, level, true, 0, true, false).value;
     }
 
-    bool stop = false;
     book.reset_seen();
     std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_recalculate_leaf_todo;
     get_book_recalculate_leaf_todo(root_elem, book_depth, level, book_recalculate_leaf_todo, all_strt, book_learning, board_copy, player, only_illegal);
@@ -607,7 +604,6 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
 
 inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int book_depth, Board *board_copy, int *player, std::string book_file, std::string book_bak, bool *book_learning) {
     uint64_t all_strt = tim();
-    uint64_t s = all_strt;
     Board before_board = board_copy->copy();
     int before_player = *player;
     std::cerr << "book store started" << std::endl;

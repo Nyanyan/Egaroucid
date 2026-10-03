@@ -17,7 +17,6 @@
 #include <new>
 #include <thread>
 #include <vector>
-#include <algorithm>
 #include "board.hpp"
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -631,61 +630,19 @@ class Board_table {
         }
 
         /*
-            @brief release unused memory
-        */
-        inline void shrink_to_fit() {
-            for (int i = 0; i < N_SEGMENTS; ++i) {
-                Segment &segment = segments[i];
-                Segment_guard guard(segment);
-                uint32_t n_groups = (segment.n_used + MAX_USED_PER_GROUP - 1) / MAX_USED_PER_GROUP;
-                if (segment.n_used % MAX_USED_PER_GROUP == 0 && segment.n_used) {
-                    ++n_groups; // keep at least 1 empty slot
-                }
-                if (n_groups < segment.n_groups) {
-                    resize_segment(segment, n_groups); // out of memory: the segment is kept as it is
-                }
-            }
-        }
-
-        /*
-            @brief memory used by this table in bytes
-        */
-        inline size_t memory_usage() const {
-            size_t res = sizeof(Segment) * N_SEGMENTS;
-            for (int i = 0; i < N_SEGMENTS; ++i) {
-                res += (size_t)segments[i].n_groups * GROUP_SIZE * (sizeof(Board) + sizeof(Value) + 1);
-            }
-            return res;
-        }
-
-        /*
             @brief call func(const Board&, Value&) for all boards in a segment
 
             No lock is taken: boards must not be registered / deleted while iterating.
-            If func returns false, iteration stops.
-
-            @return false if stopped
         */
         template<class F>
-        inline bool for_each_in_segment_while(int segment_idx_, F &&func) {
+        inline void for_each_in_segment(int segment_idx_, F &&func) {
             Segment &segment = segments[segment_idx_];
             const uint32_t capacity = segment.n_groups * GROUP_SIZE;
             for (uint32_t slot = 0; slot < capacity; ++slot) {
                 if (segment.ctrl[slot] < CTRL_EMPTY) {
-                    if (!func((const Board&)segment.keys[slot], segment.values[slot])) {
-                        return false;
-                    }
+                    func((const Board&)segment.keys[slot], segment.values[slot]);
                 }
             }
-            return true;
-        }
-
-        template<class F>
-        inline void for_each_in_segment(int segment_idx_, F &&func) {
-            for_each_in_segment_while(segment_idx_, [&func](const Board &key, Value &value) {
-                func(key, value);
-                return true;
-            });
         }
 
         /*
@@ -698,21 +655,6 @@ class Board_table {
             for (int i = 0; i < N_SEGMENTS; ++i) {
                 for_each_in_segment(i, func);
             }
-        }
-
-        /*
-            @brief call func(const Board&, Value&) for all boards while func returns true
-
-            @return false if stopped
-        */
-        template<class F>
-        inline bool for_each_while(F &&func) {
-            for (int i = 0; i < N_SEGMENTS; ++i) {
-                if (!for_each_in_segment_while(i, func)) {
-                    return false;
-                }
-            }
-            return true;
         }
 
         /*
