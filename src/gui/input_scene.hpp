@@ -4090,6 +4090,9 @@ inline bool load_game_from_json(
         std::cerr << "Failed to load game JSON: " << json_path.narrow() << std::endl;
         return false;
     }
+    // restored when the file has no valid position (see "Load history")
+    const Game_information game_information_before = data.game_information;
+    const auto game_editor_info_before = data.game_editor_info;
     
     // Load game information
     if (game_json[GAME_BLACK_PLAYER].getType() == JSONValueType::String) {
@@ -4114,8 +4117,10 @@ inline bool load_game_from_json(
     data.game_editor_info.subfolder = subfolder;
     
     // Load history
-    data.graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
-    data.graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+    // The history is read into a local vector first. The nodes of the current game used to be cleared
+    // here: when the file had no valid position, this function returned false with an empty history,
+    // and going back to the main scene (which expects at least one node) froze or crashed.
+    std::vector<History_elem> loaded_nodes;
     for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
         String n_discs_str = Format(n_discs);
         History_elem history_elem;
@@ -4174,9 +4179,22 @@ inline bool load_game_from_json(
             history_elem.is_random_generated_position = false;
         }
         if (!error_found) {
-            data.graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
+            loaded_nodes.emplace_back(history_elem);
         }
     }
+    if (loaded_nodes.empty()) {
+        std::cerr << "Game JSON contains no valid history nodes: " << json_path.narrow() << std::endl;
+        // nothing of the current game is changed by a file that cannot be loaded
+        data.game_information = game_information_before;
+        data.game_editor_info = game_editor_info_before;
+        return false;
+    }
+    data.graph_resources.nodes[GRAPH_MODE_NORMAL] = loaded_nodes;
+    data.graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+    // The variation (inspection branch) of the previous game is gone: without this, loading a game
+    // while a variation was shown left branch == GRAPH_MODE_INSPECT with no node in it, and the main
+    // scene read nodes[GRAPH_MODE_INSPECT].back() of the empty vector.
+    data.graph_resources.branch = GRAPH_MODE_NORMAL;
     
     // Add opening names
     std::string opening_name, n_opening_name;
@@ -4189,11 +4207,6 @@ inline bool load_game_from_json(
         data.graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
     }
     
-    if (data.graph_resources.nodes[GRAPH_MODE_NORMAL].empty()) {
-        std::cerr << "Game JSON contains no valid history nodes: " << json_path.narrow() << std::endl;
-        return false;
-    }
-
     // Set up final state
     data.graph_resources.n_discs = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
     update_xot_start_n_discs(&data.graph_resources);
