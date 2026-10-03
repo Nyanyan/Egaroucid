@@ -2238,7 +2238,6 @@ private:
     }
 
     void draw_play_ordering() {
-        int history_elem_n_discs = getData().history_elem.board.n_discs();
         std::vector<int> put_order = get_put_order(getData().graph_resources, getData().history_elem);
         std::vector<int> put_player = get_put_player(getData().graph_resources.nodes[0][0].board, getData().graph_resources.nodes[0][0].player, put_order);
         for (int i = 0; i < put_order.size(); ++i) {
@@ -2664,8 +2663,6 @@ private:
                 for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
                     int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                     int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-                    int cx = sx + BOARD_CELL_SIZE / 2;
-                    int cy = sy + BOARD_CELL_SIZE / 2;
                     Color frame_color;
                     // if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
                     //     frame_color = getData().colors.blue;

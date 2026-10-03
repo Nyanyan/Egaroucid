@@ -53,7 +53,6 @@ void draw_empty_board(Fonts fonts, Colors colors, bool monochrome, bool show_coo
 
 void draw_board(Fonts fonts, Colors colors, History_elem history_elem, bool monochrome, bool show_coordinate = true) {
     draw_empty_board(fonts, colors, monochrome, show_coordinate);
-    Flip flip;
     int board_arr[HW2];
     history_elem.board.translate_to_arr(board_arr, history_elem.player);
     for (int cell = 0; cell < HW2; ++cell) {
