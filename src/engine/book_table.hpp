@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <new>
 #include <thread>
 #include <vector>
 #include <algorithm>
@@ -100,6 +101,8 @@ class Book_table_lock {
         - each segment grows by itself, so that neither a long pause nor a large temporary memory is needed
         - each segment has its own lock; get / set / modify / erase are thread safe
         - for_each functions take no lock: do not insert / erase from other threads while iterating
+        - if the memory for a new board can't be allocated, upsert / set / reserve throw std::bad_alloc
+          (as std::unordered_map does); the table is not changed and no lock is left locked
 
     Value must be trivially copyable.
 */
@@ -249,7 +252,8 @@ class Board_table {
         }
 
         // rebuild a segment with new capacity (deleted marks are removed)
-        static inline void resize_segment(Segment &segment, uint32_t new_n_groups) {
+        // returns false if the memory can't be allocated (the segment is not changed)
+        static inline bool resize_segment(Segment &segment, uint32_t new_n_groups) {
             if (new_n_groups == 0) {
                 free(segment.keys);
                 segment.keys = nullptr;
@@ -257,14 +261,13 @@ class Board_table {
                 segment.ctrl = nullptr;
                 segment.n_groups = 0;
                 segment.n_deleted = 0;
-                return;
+                return true;
             }
             Board *new_keys;
             Value *new_values;
             uint8_t *new_ctrl;
             if (!allocate_arrays(new_n_groups, &new_keys, &new_values, &new_ctrl)) {
-                std::cerr << "[ERROR] book memory allocation failed" << std::endl;
-                std::exit(1);
+                return false;
             }
             const uint32_t capacity = segment.n_groups * GROUP_SIZE;
             for (uint32_t slot = 0; slot < capacity; ++slot) {
@@ -279,6 +282,7 @@ class Board_table {
             segment.ctrl = new_ctrl;
             segment.n_groups = new_n_groups;
             segment.n_deleted = 0;
+            return true;
         }
 
         static inline uint32_t n_groups_for(uint32_t n_used) {
@@ -326,7 +330,12 @@ class Board_table {
                 return insert_slot;
             }
             if (segment.n_used + segment.n_deleted + 1 > segment.n_groups * MAX_USED_PER_GROUP) { // no room
-                resize_segment(segment, n_groups_for(segment.n_used + 1));
+                if (!resize_segment(segment, n_groups_for(segment.n_used + 1))) {
+                    // Out of memory: the segment is not changed, and the lock is released by the guard of the caller.
+                    // (std::exit() must not be called here. It runs the destructors of the global objects with this segment
+                    //  locked: the thread pool then waits for its threads, which wait for this lock, and the process never ends.)
+                    throw std::bad_alloc();
+                }
                 insert_slot = insert_new(segment.keys, segment.values, segment.ctrl, segment.n_groups, key, init_value, hash);
             } else {
                 segment.keys[insert_slot] = key;
@@ -579,7 +588,7 @@ class Board_table {
                 if (segment.n_used == 0) {
                     resize_segment(segment, 0);
                 } else if (segment.n_groups > 1 && segment.n_used * 5 < segment.n_groups * GROUP_SIZE) { // too sparse
-                    resize_segment(segment, n_groups_for(segment.n_used));
+                    resize_segment(segment, n_groups_for(segment.n_used)); // out of memory: the segment is kept as it is
                 }
             }
             n_elems.fetch_sub(1, std::memory_order_relaxed);
@@ -615,8 +624,8 @@ class Board_table {
             for (int i = 0; i < N_SEGMENTS; ++i) {
                 Segment &segment = segments[i];
                 Segment_guard guard(segment);
-                if (segment.n_groups < (uint32_t)n_groups) {
-                    resize_segment(segment, (uint32_t)n_groups);
+                if (segment.n_groups < (uint32_t)n_groups && !resize_segment(segment, (uint32_t)n_groups)) {
+                    throw std::bad_alloc(); // out of memory (the lock is released by the guard)
                 }
             }
         }
@@ -633,7 +642,7 @@ class Board_table {
                     ++n_groups; // keep at least 1 empty slot
                 }
                 if (n_groups < segment.n_groups) {
-                    resize_segment(segment, n_groups);
+                    resize_segment(segment, n_groups); // out of memory: the segment is kept as it is
                 }
             }
         }

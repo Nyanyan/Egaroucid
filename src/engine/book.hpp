@@ -23,6 +23,8 @@
 #include <future>
 #include <cstdio>
 #include <cstring>
+#include <exception>
+#include <new>
 #include "evaluate.hpp"
 #include "board.hpp"
 #include "search.hpp"
@@ -246,6 +248,26 @@ class Book_file_writer {
         }
 };
 
+/*
+    @brief close a file if an exception leaves the function
+
+    The import functions close their file on every path with fclose().
+    Registering a board throws std::bad_alloc if the book does not fit in the memory: this closes the file in that case.
+*/
+struct Book_file_closer_on_exception {
+    FILE *fp;
+    int n_exceptions;
+
+    explicit Book_file_closer_on_exception(FILE *fp_)
+        : fp(fp_), n_exceptions(std::uncaught_exceptions()) {}
+
+    ~Book_file_closer_on_exception() {
+        if (std::uncaught_exceptions() > n_exceptions) {
+            fclose(fp);
+        }
+    }
+};
+
 
 
 
@@ -273,16 +295,24 @@ class Book {
             // The format is determined with the header.
             // A broken egbk3 / egbk2 book must not be read as egbk format, which has no header (garbage would be imported).
             int book_version = get_egaroucid_book_version(file);
-            if (book_version == 3 || book_version == BOOK_VERSION_CANT_OPEN) {
-                return import_file_egbk3(file, show_log, stop_loading);
-            }
-            if (book_version == 2) {
-                std::cerr << "not egbk3 formatted book. trying egbk2 format." << std::endl;
-                return import_file_egbk2(file, show_log, stop_loading);
-            }
-            if (book_version == BOOK_VERSION_NO_HEADER) {
-                std::cerr << "not egbk3 / egbk2 formatted book. trying egbk format." << std::endl;
-                return import_file_egbk(file, 1, show_log, stop_loading);
+            // The book does not fit in the memory: the boards read so far are deleted (the memory is released)
+            // and the import fails, so that the program can go on without the book.
+            try {
+                if (book_version == 3 || book_version == BOOK_VERSION_CANT_OPEN) {
+                    return import_file_egbk3(file, show_log, stop_loading);
+                }
+                if (book_version == 2) {
+                    std::cerr << "not egbk3 formatted book. trying egbk2 format." << std::endl;
+                    return import_file_egbk2(file, show_log, stop_loading);
+                }
+                if (book_version == BOOK_VERSION_NO_HEADER) {
+                    std::cerr << "not egbk3 / egbk2 formatted book. trying egbk format." << std::endl;
+                    return import_file_egbk(file, 1, show_log, stop_loading);
+                }
+            } catch (const std::bad_alloc&) {
+                std::cerr << "[ERROR] book memory allocation failed" << std::endl;
+                delete_all();
+                return false;
             }
             std::cerr << "[ERROR] unknown Egaroucid book version " << book_version << std::endl;
             return false;
@@ -323,20 +353,28 @@ class Book {
                 lst.push_back(file.substr(offset, pos - offset));
                 offset = pos + 1;
             }
-            if (lst[lst.size() - 1] == "egbk3") {
-                std::cerr << "importing Egaroucid book (.egbk3)" << std::endl;
-                result = import_file_egbk3(file, true, stop);
-            } else if (lst[lst.size() - 1] == "egbk2") {
-                std::cerr << "importing Egaroucid legacy book (.egbk2)" << std::endl;
-                result = import_file_egbk2(file, true, stop);
-            } else if (lst[lst.size() - 1] == "egbk") {
-                std::cerr << "importing Egaroucid legacy book (.egbk)" << std::endl;
-                result = import_file_egbk(file, level, true, stop);
-            } else if (lst[lst.size() - 1] == "dat") {
-                std::cerr << "importing Edax book" << std::endl;
-                result = import_file_edax(file, true, stop);
-            } else {
-                std::cerr << "this is not a book" << std::endl;
+            // The book does not fit in the memory: all boards are deleted (the memory is released)
+            // and the import fails, so that the program can go on (the GUI then reads its book file again).
+            try {
+                if (lst[lst.size() - 1] == "egbk3") {
+                    std::cerr << "importing Egaroucid book (.egbk3)" << std::endl;
+                    result = import_file_egbk3(file, true, stop);
+                } else if (lst[lst.size() - 1] == "egbk2") {
+                    std::cerr << "importing Egaroucid legacy book (.egbk2)" << std::endl;
+                    result = import_file_egbk2(file, true, stop);
+                } else if (lst[lst.size() - 1] == "egbk") {
+                    std::cerr << "importing Egaroucid legacy book (.egbk)" << std::endl;
+                    result = import_file_egbk(file, level, true, stop);
+                } else if (lst[lst.size() - 1] == "dat") {
+                    std::cerr << "importing Edax book" << std::endl;
+                    result = import_file_edax(file, true, stop);
+                } else {
+                    std::cerr << "this is not a book" << std::endl;
+                }
+            } catch (const std::bad_alloc&) {
+                std::cerr << "[ERROR] book memory allocation failed" << std::endl;
+                delete_all();
+                result = false;
             }
             return result;
         }
@@ -372,6 +410,7 @@ class Book {
             @brief Parallel import of the boards in Egaroucid-formatted book (.egbk3)
 
             This thread reads the file and worker threads register boards.
+            If the book does not fit in the memory, std::bad_alloc is thrown after all worker threads finished.
         */
         inline bool import_egbk3_parallel(FILE* fp, uint32_t n_boards, bool show_log, bool *stop_loading) {
             constexpr uint32_t n_chunk = 65536;
@@ -403,6 +442,7 @@ class Book {
             for (int i = 0; i < n_buffers; ++i) {
                 buffer_busy[i].store(false);
             }
+            std::atomic<bool> alloc_failed(false); // out of memory in a worker thread or in this thread
 
             // register boards in a chunk
             auto process_chunk = [&](int buffer_idx, uint32_t n_boards_in_chunk) {
@@ -411,7 +451,7 @@ class Book {
                 Book_elem book_elem;
                 int64_t n_registered = 0;
                 for (uint32_t j = 0; j < n_boards_in_chunk; ++j) {
-                    if ((j & 1023) == 0 && *stop_loading) {
+                    if ((j & 1023) == 0 && (*stop_loading || alloc_failed.load(std::memory_order_relaxed))) {
                         break;
                     }
                     const char *datum = data + (size_t)j * n_bytes_per_board;
@@ -433,9 +473,16 @@ class Book {
                             if (idx != 0 && is_valid_policy(book_elem.leaf.move)) {
                                 book_elem.leaf.move = convert_coord_to_representative_board(book_elem.leaf.move, idx);
                             }
-                            n_registered += book.upsert(rep_board, book_elem, [&book_elem](Book_elem &registered) {
-                                merge_book_elem(registered, book_elem);
-                            }, false);
+                            // The exception must not leave this function: the buffer would stay busy,
+                            // and an exception in a task of the thread pool is only stored in its future.
+                            try {
+                                n_registered += book.upsert(rep_board, book_elem, [&book_elem](Book_elem &registered) {
+                                    merge_book_elem(registered, book_elem);
+                                }, false);
+                            } catch (const std::bad_alloc&) { // the book does not fit in the memory
+                                alloc_failed.store(true);
+                                break;
+                            }
 #if FORCE_BOOK_DEPTH
                         }
 #endif
@@ -449,7 +496,7 @@ class Book {
             bool error = false;
             uint64_t n_read = 0;
             int percent = -1;
-            while (n_read < n_boards && !(*stop_loading)) {
+            while (n_read < n_boards && !(*stop_loading) && !alloc_failed.load()) {
                 // Find a free buffer
                 int buffer_idx = -1;
                 for (int t = 0; t < n_buffers; ++t) {
@@ -474,7 +521,12 @@ class Book {
                 uint32_t n_boards_chunk = (uint32_t)std::min<uint64_t>(n_chunk, n_boards - n_read);
                 size_t n_data = (size_t)n_boards_chunk * n_bytes_per_board;
                 if (data_chunks[buffer_idx].empty()) {
-                    data_chunks[buffer_idx].resize((size_t)n_chunk * n_bytes_per_board);
+                    try {
+                        data_chunks[buffer_idx].resize((size_t)n_chunk * n_bytes_per_board);
+                    } catch (const std::bad_alloc&) { // the worker threads running now are waited for below
+                        alloc_failed.store(true);
+                        break;
+                    }
                 }
                 if (fread(data_chunks[buffer_idx].data(), 1, n_data, fp) < n_data) {
                     std::cerr << "[ERROR] book NOT FULLY imported " << book.size() << " boards" << std::endl;
@@ -504,6 +556,9 @@ class Book {
                 }
             }
 
+            if (alloc_failed.load()) {
+                throw std::bad_alloc(); // caught in init() / import_book_extension_determination()
+            }
             if (error) {
                 return false;
             }
@@ -526,6 +581,7 @@ class Book {
                 std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
                 return false;
             }
+            Book_file_closer_on_exception file_closer(fp);
             uint32_t n_boards;
             char egaroucid_str[10];
             char egaroucid_str_ans[] = "DICUORAGE";
@@ -598,6 +654,7 @@ class Book {
                 std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
                 return false;
             }
+            Book_file_closer_on_exception file_closer(fp);
             Board board;
             Book_elem book_elem;
             int n_boards;
@@ -752,6 +809,7 @@ class Book {
                 std::cerr << "[ERROR] can't open Egaroucid book " << file << std::endl;
                 return false;
             }
+            Book_file_closer_on_exception file_closer(fp);
             Board board;
             Book_elem book_elem;
             int n_boards;
@@ -865,6 +923,7 @@ class Book {
                 std::cerr << "[ERROR] can't open Edax book " << file << std::endl;
                 return false;
             }
+            Book_file_closer_on_exception file_closer(fp);
             char elem_char;
             int elem_int;
             int16_t elem_short;
