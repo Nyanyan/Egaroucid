@@ -458,6 +458,13 @@ std::vector<String> get_all_inputs(bool *down_found) {
     for (const auto& key : raw_keys) {
         String key_name = key.name();
 #if SIV3D_PLATFORM(WINDOWS)
+        // Keys which show the state of the IME (VK_KANA, VK_IME_ON, VK_JUNJA, VK_FINAL, VK_KANJI / VK_HANJA, VK_IME_OFF)
+        // are ignored. With a Japanese IME, VK_KANJI is reported as pressed all the time (GetAsyncKeyState(VK_KANJI) & 0x8000
+        // while the IME is used), so every key read in the shortcut key settings became "Kanji+..." and no shortcut could
+        // be assigned. The matcher (get_windows_shortcut_match_details) already ignores these keys.
+        if (key.deviceType() == InputDeviceType::Keyboard && 0x15 <= static_cast<int>(key.code()) && static_cast<int>(key.code()) <= 0x1A) {
+            continue;
+        }
         String windows_key_name;
         if (key.deviceType() == InputDeviceType::Keyboard &&
             windows_shortcut_vk_to_key_name(static_cast<int>(key.code()), &windows_key_name)) {
