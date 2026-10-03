@@ -1446,9 +1446,7 @@ class Book {
                         book.get_keys_in_segment_if(segment_idx, boards, [n_discs](const Board &board, const Book_elem &book_elem) {
                             return book_elem.exported && board.n_discs() == n_discs;
                         });
-                        std::sort(boards.begin(), boards.end(), [](const Board &a, const Board &b) {
-                            return a.player < b.player || (a.player == b.player && a.opponent < b.opponent);
-                        });
+                        std::sort(boards.begin(), boards.end(), Edax_board_less());
                         for (const Board &board: boards) {
                             if (stop_saving && *stop_saving) {
                                 return n_removed;
@@ -1531,9 +1529,50 @@ class Book {
             book.get_keys_in_segment_if(segment_idx, boards, [only_exported](const Board&, const Book_elem &book_elem) {
                 return !only_exported || book_elem.exported;
             });
-            std::sort(boards.begin(), boards.end(), [](const Board &a, const Board &b) {
+            std::sort(boards.begin(), boards.end(), Edax_board_less());
+        }
+
+        /*
+            @brief order of the boards in Edax-formatted book: bits of player, then bits of opponent
+        */
+        struct Edax_board_less {
+            inline bool operator()(const Board &a, const Board &b) const {
                 return a.player < b.player || (a.player == b.player && a.opponent < b.opponent);
-            });
+            }
+        };
+
+        /*
+            @brief level written to a record of Edax-formatted book (1 to 60)
+        */
+        static inline char edax_record_level(char level) {
+            return level < 1 ? 1 : (level > 60 ? 60 : level);
+        }
+
+        /*
+            @brief write the first part of a record of Edax-formatted book (before the links and the leaf)
+
+            @param fout                 object which has write(const void*, size_t)
+            @param board                board of the record
+            @param n_lines              number of lines
+            @param value                value of the board
+            @param n_link               number of links which follow
+            @param level                level (see edax_record_level())
+        */
+        template<class Writer>
+        static inline void write_edax_record_head(Writer &fout, const Board &board, uint32_t n_lines, short value, char n_link, char level) {
+            const int n_win = 0, n_draw = 0, n_lose = 0; // not counted in Egaroucid
+            const short value_min = -HW2, value_max = HW2; // bounds of the value: not narrowed
+            fout.write((char*)&board.player, 8);
+            fout.write((char*)&board.opponent, 8);
+            fout.write((char*)&n_win, 4);
+            fout.write((char*)&n_draw, 4);
+            fout.write((char*)&n_lose, 4);
+            fout.write((char*)&n_lines, 4);
+            fout.write((char*)&value, 2);
+            fout.write((char*)&value_min, 2);
+            fout.write((char*)&value_max, 2);
+            fout.write((char*)&n_link, 1);
+            fout.write((char*)&level, 1);
         }
 
         /*
@@ -1549,18 +1588,13 @@ class Book {
             if (!book.get(board_to_write, &book_elem)) {
                 return false;
             }
-            int n_win = 0, n_draw = 0, n_lose = 0;
             uint32_t n_lines;
-            short short_val, short_val_min = -HW2, short_val_max = HW2;
+            short short_val = book_elem.value;
             char char_level;
             char link_value, link_move;
             char leaf_val, leaf_move;
             char n_link;
-            Board b;
-            short_val = book_elem.value;
-            //short_val_min = book_elem.value;
-            //short_val_max = book_elem.value;
-            b = board_to_write;
+            Board b = board_to_write;
             uint64_t legal = b.get_legal();
             if (legal == 0ULL && !b.is_end()) {
                 Board passed_board = b.copy();
@@ -1579,12 +1613,6 @@ class Book {
                 } else {
                     char_level = (char)edax_level;
                 }
-                if (char_level < 1) {
-                    char_level = 1;
-                }
-                if (char_level > 60) {
-                    char_level = 60;
-                }
                 if (has_pass_child) {
                     n_link = 1;
                     link_value = (char)passed_elem.value;
@@ -1596,17 +1624,7 @@ class Book {
                     leaf_val = is_valid_score(short_val) ? (char)short_val : 0;
                     leaf_move = MOVE_PASS;
                 }
-                fout.write((char*)&board_to_write.player, 8);
-                fout.write((char*)&board_to_write.opponent, 8);
-                fout.write((char*)&n_win, 4);
-                fout.write((char*)&n_draw, 4);
-                fout.write((char*)&n_lose, 4);
-                fout.write((char*)&n_lines, 4);
-                fout.write((char*)&short_val, 2);
-                fout.write((char*)&short_val_min, 2);
-                fout.write((char*)&short_val_max, 2);
-                fout.write((char*)&n_link, 1);
-                fout.write((char*)&char_level, 1);
+                write_edax_record_head(fout, board_to_write, n_lines, short_val, n_link, edax_record_level(char_level));
                 if (has_pass_child) {
                     fout.write((char*)&link_value, 1);
                     fout.write((char*)&link_move, 1);
@@ -1622,64 +1640,27 @@ class Book {
             } else {
                 get_all_moves_and_edax_links(&b, all_links, links);
             }
-            auto has_policy = [](const std::vector<Book_value> &values, int policy) {
-                for (const Book_value &value: values) {
-                    if (value.policy == policy) {
-                        return true;
-                    }
-                }
-                return false;
-            };
-            auto choose_best_idx = [](const std::vector<Book_value> &values) {
-                int best_idx = 0;
-                for (int i = 1; i < (int)values.size(); ++i) {
-                    if (values[i].value > values[best_idx].value) {
-                        best_idx = i;
-                    }
-                }
-                return best_idx;
-            };
-            auto choose_worst_idx = [](const std::vector<Book_value> &values) {
-                int worst_idx = 0;
-                for (int i = 1; i < (int)values.size(); ++i) {
-                    if (values[i].value < values[worst_idx].value) {
-                        worst_idx = i;
-                    }
-                }
-                return worst_idx;
-            };
-            auto add_leaf_candidate = [](std::vector<Book_value> &leaf_candidates, Book_value candidate) {
-                for (Book_value &leaf_candidate: leaf_candidates) {
-                    if (leaf_candidate.policy == candidate.policy) {
-                        if (candidate.value > leaf_candidate.value) {
-                            leaf_candidate.value = candidate.value;
-                        }
-                        return;
-                    }
-                }
-                leaf_candidates.emplace_back(candidate);
-            };
             std::vector<Book_value> leaf_candidates;
             leaf_val = SCORE_UNDEFINED;
             leaf_move = MOVE_NOMOVE;
-            bool registered_leaf_ok = is_valid_score(book_elem.leaf.value) && is_valid_policy(book_elem.leaf.move) && ((legal & (1ULL << book_elem.leaf.move)) != 0ULL) && !has_policy(links, book_elem.leaf.move);
+            bool registered_leaf_ok = is_valid_score(book_elem.leaf.value) && is_valid_policy(book_elem.leaf.move) && ((legal & (1ULL << book_elem.leaf.move)) != 0ULL) && !has_book_value_policy(links, book_elem.leaf.move);
             if (registered_leaf_ok) {
                 Book_value leaf_candidate;
                 leaf_candidate.policy = book_elem.leaf.move;
                 leaf_candidate.value = book_elem.leaf.value;
-                add_leaf_candidate(leaf_candidates, leaf_candidate);
+                add_leaf_candidate_unique(leaf_candidates, leaf_candidate);
             }
             if (!additional_calculation) {
                 for (const Book_value &link: all_links) {
-                    if (!has_policy(links, link.policy)) {
-                        add_leaf_candidate(leaf_candidates, link);
+                    if (!has_book_value_policy(links, link.policy)) {
+                        add_leaf_candidate_unique(leaf_candidates, link);
                     }
                 }
             }
             int mobility = pop_count_ull(legal);
             if ((int)links.size() != mobility) {
                 if (!leaf_candidates.empty()) {
-                    int leaf_idx = choose_best_idx(leaf_candidates);
+                    int leaf_idx = choose_best_book_value_idx(leaf_candidates);
                     leaf_val = (char)leaf_candidates[leaf_idx].value;
                     leaf_move = (char)leaf_candidates[leaf_idx].policy;
                 } else if (additional_calculation) {
@@ -1702,14 +1683,14 @@ class Book {
                             }
                             leaf_move = (char)ai_result.policy;
                         } else if (!links.empty()) {
-                            int worst_link_idx = choose_worst_idx(links);
+                            int worst_link_idx = choose_worst_book_value_idx(links);
                             leaf_val = (char)links[worst_link_idx].value;
                             leaf_move = (char)links[worst_link_idx].policy;
                             links.erase(links.begin() + worst_link_idx);
                         }
                     }
                 } else if (!links.empty()) {
-                    int worst_link_idx = choose_worst_idx(links);
+                    int worst_link_idx = choose_worst_book_value_idx(links);
                     leaf_val = (char)links[worst_link_idx].value;
                     leaf_move = (char)links[worst_link_idx].policy;
                     links.erase(links.begin() + worst_link_idx);
@@ -1722,23 +1703,7 @@ class Book {
             } else {
                 char_level = (char)edax_level;
             }
-            if (char_level < 1) {
-                char_level = 1;
-            }
-            if (char_level > 60) {
-                char_level = 60;
-            }
-            fout.write((char*)&board_to_write.player, 8);
-            fout.write((char*)&board_to_write.opponent, 8);
-            fout.write((char*)&n_win, 4);
-            fout.write((char*)&n_draw, 4);
-            fout.write((char*)&n_lose, 4);
-            fout.write((char*)&n_lines, 4);
-            fout.write((char*)&short_val, 2);
-            fout.write((char*)&short_val_min, 2);
-            fout.write((char*)&short_val_max, 2);
-            fout.write((char*)&n_link, 1);
-            fout.write((char*)&char_level, 1);
+            write_edax_record_head(fout, board_to_write, n_lines, short_val, n_link, edax_record_level(char_level));
             for (Book_value &book_value: links) {
                 link_value = (char)book_value.value;
                 link_move = (char)book_value.policy;
@@ -1864,64 +1829,27 @@ class Book {
             fout.write((char*)&verb, 4);
             int n_position = (int)(n_boards_to_write + pass_boards.size());
             fout.write((char*)&n_position, 4);
-            int n_win = 0, n_draw = 0, n_lose = 0;
-            uint32_t n_lines;
-            short short_val, short_val_min = -HW2, short_val_max = HW2;
-            char char_level = (char)edax_level;
-            char link_value, link_move;
-            char leaf_val, leaf_move;
-            char n_link;
-            Board b;
             int percent = -1;
             uint64_t n_boards = n_boards_to_write;
             uint64_t t = 0;
             // written in a fixed order (the order in the set depends on the order of registration)
             std::vector<Board> sorted_pass_boards(pass_boards.begin(), pass_boards.end());
-            std::sort(sorted_pass_boards.begin(), sorted_pass_boards.end(), [](const Board &a, const Board &b) {
-                return a.player < b.player || (a.player == b.player && a.opponent < b.opponent);
-            });
+            std::sort(sorted_pass_boards.begin(), sorted_pass_boards.end(), Edax_board_less());
             for (Board pass_board: sorted_pass_boards) {
                 if (stop_saving && *stop_saving) {
                     break;
                 }
+                // the record has 1 link (pass) to the board after pass, and no leaf
                 Board passed_board = pass_board.copy();
                 passed_board.pass();
                 Book_elem passed_elem = get(passed_board);
-                n_lines = passed_elem.n_lines;
-                short_val = (short)passed_elem.value;
-                if (!additional_calculation && level == LEVEL_UNDEFINED) {
-                    b = pass_board.copy();
-                    b.pass();
-                    if (contain(b)) {
-                        char_level = get(b).level;
-                    } else {
-                        char_level = 1;
-                    }
-                } else {
-                    char_level = (char)edax_level;
-                }
-                if (char_level < 1) {
-                    char_level = 1;
-                }
-                if (char_level > 60) {
-                    char_level = 60;
-                }
-                n_link = 1;
-                link_value = (char)passed_elem.value;
-                link_move = MOVE_PASS;
-                leaf_val = SCORE_UNDEFINED;
-                leaf_move = MOVE_NOMOVE;
-                fout.write((char*)&pass_board.player, 8);
-                fout.write((char*)&pass_board.opponent, 8);
-                fout.write((char*)&n_win, 4);
-                fout.write((char*)&n_draw, 4);
-                fout.write((char*)&n_lose, 4);
-                fout.write((char*)&n_lines, 4);
-                fout.write((char*)&short_val, 2);
-                fout.write((char*)&short_val_min, 2);
-                fout.write((char*)&short_val_max, 2);
-                fout.write((char*)&n_link, 1);
-                fout.write((char*)&char_level, 1);
+                // level of the board after pass (LEVEL_UNDEFINED if it is not registered: written as 1)
+                char char_level = (!additional_calculation && level == LEVEL_UNDEFINED) ? (char)passed_elem.level : (char)edax_level;
+                char link_value = (char)passed_elem.value;
+                char link_move = MOVE_PASS;
+                char leaf_val = SCORE_UNDEFINED;
+                char leaf_move = MOVE_NOMOVE;
+                write_edax_record_head(fout, pass_board, passed_elem.n_lines, (short)passed_elem.value, 1, edax_record_level(char_level));
                 fout.write((char*)&link_value, 1);
                 fout.write((char*)&link_move, 1);
                 fout.write((char*)&leaf_val, 1);
@@ -2247,6 +2175,20 @@ class Book {
             @return number of legal moves
         */
         inline int get_moved_boards(const Board *b, Moved_board moved_boards[], bool unlocked = false) {
+            auto prefetch = [this, unlocked](uint64_t hash) {
+                if (unlocked) {
+                    book.prefetch_unlocked(hash);
+                } else {
+                    book.prefetch(hash);
+                }
+            };
+            auto prefetch_entry = [this, unlocked](uint64_t hash) {
+                if (unlocked) {
+                    book.prefetch_entry_unlocked(hash);
+                } else {
+                    book.prefetch_entry(hash);
+                }
+            };
             int n_moved_boards = 0;
             uint64_t legal = b->get_legal();
             Flip flip;
@@ -2262,11 +2204,7 @@ class Book {
                     moved_board.pass();
                     elem.end_board = representative_board(moved_board);
                     elem.end_hash = book_hash_board(elem.end_board.player, elem.end_board.opponent);
-                    if (unlocked) {
-                        book.prefetch_unlocked(elem.end_hash);
-                    } else {
-                        book.prefetch(elem.end_hash);
-                    }
+                    prefetch(elem.end_hash);
                 } else {
                     if (elem.passed) {
                         moved_board.pass();
@@ -2274,23 +2212,12 @@ class Book {
                     elem.board = representative_board(moved_board);
                 }
                 elem.hash = book_hash_board(elem.board.player, elem.board.opponent);
-                if (unlocked) {
-                    book.prefetch_unlocked(elem.hash);
-                } else {
-                    book.prefetch(elem.hash);
-                }
+                prefetch(elem.hash);
             }
             for (int i = 0; i < n_moved_boards; ++i) {
-                if (unlocked) {
-                    book.prefetch_entry_unlocked(moved_boards[i].hash);
-                    if (moved_boards[i].is_end) {
-                        book.prefetch_entry_unlocked(moved_boards[i].end_hash);
-                    }
-                } else {
-                    book.prefetch_entry(moved_boards[i].hash);
-                    if (moved_boards[i].is_end) {
-                        book.prefetch_entry(moved_boards[i].end_hash);
-                    }
+                prefetch_entry(moved_boards[i].hash);
+                if (moved_boards[i].is_end) {
+                    prefetch_entry(moved_boards[i].end_hash);
                 }
             }
             return n_moved_boards;
@@ -2518,6 +2445,20 @@ class Book {
         }
 
         /*
+            @brief register a board which has only a value (the leaf is undefined)
+
+            @param b                    a board to register
+            @param value                value of the board
+            @param level                level of the value
+        */
+        inline void register_value(Board b, int value, int level) {
+            Book_elem elem; // the leaf is undefined (constructor)
+            elem.value = value;
+            elem.level = level;
+            register_symmetric_book(b, elem);
+        }
+
+        /*
             @brief change or register a board
 
             @param b                    a board to change or register
@@ -2531,13 +2472,7 @@ class Book {
                         b.pass();
                         if (!change_registered_value(b, -value, level)) {
                             b.pass();
-                            Book_elem elem;
-                            elem.value = value;
-                            elem.level = level;
-                            elem.leaf.move = MOVE_UNDEFINED;
-                            elem.leaf.value = SCORE_UNDEFINED;
-                            elem.leaf.level = LEVEL_UNDEFINED;
-                            register_symmetric_book(b, elem);
+                            register_value(b, value, level);
                         }
                     }
                 } else {
@@ -2546,13 +2481,7 @@ class Book {
                         value *= -1;
                     }
                     if (!change_registered_value(b, value, level)) {
-                        Book_elem elem;
-                        elem.value = value;
-                        elem.level = level;
-                        elem.leaf.move = MOVE_UNDEFINED;
-                        elem.leaf.value = SCORE_UNDEFINED;
-                        elem.leaf.level = LEVEL_UNDEFINED;
-                        register_symmetric_book(b, elem);
+                        register_value(b, value, level);
                     }
                 }
             }
@@ -2577,13 +2506,7 @@ class Book {
                         b.pass();
                         if (!change_registered_value(b, -value, level)) {
                             b.pass();
-                            Book_elem elem;
-                            elem.value = value;
-                            elem.level = level;
-                            elem.leaf.move = MOVE_UNDEFINED;
-                            elem.leaf.value = SCORE_UNDEFINED;
-                            elem.leaf.level = LEVEL_UNDEFINED;
-                            register_symmetric_book(b, elem);
+                            register_value(b, value, level);
                         }
                     }
                 } else {

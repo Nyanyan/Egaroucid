@@ -393,11 +393,8 @@ class Board_table {
             @param hash                 book_hash_board() of the board
         */
         inline void prefetch(uint64_t hash) const {
-            const Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            if (segment.n_groups) {
-                BOOK_TABLE_PREFETCH(segment.ctrl + (size_t)home_group(hash, segment.n_groups) * GROUP_SIZE);
-            }
+            Segment_guard guard(segments[segment_idx(hash)]);
+            prefetch_unlocked(hash);
         }
 
         /*
@@ -408,17 +405,8 @@ class Board_table {
             @param hash                 book_hash_board() of the board
         */
         inline void prefetch_entry(uint64_t hash) const {
-            const Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            if (segment.n_groups) {
-                uint32_t group = home_group(hash, segment.n_groups);
-                uint64_t match = match_tag(load_ctrl(segment.ctrl, group), tag_of(hash));
-                if (match) {
-                    uint32_t slot = group * GROUP_SIZE + first_match_idx(match);
-                    BOOK_TABLE_PREFETCH(segment.keys + slot);
-                    BOOK_TABLE_PREFETCH(segment.values + slot);
-                }
-            }
+            Segment_guard guard(segments[segment_idx(hash)]);
+            prefetch_entry_unlocked(hash);
         }
 
         /*
@@ -427,6 +415,7 @@ class Board_table {
             Faster when many threads search at the same time (a lock is a write to shared memory).
             Use them only while no thread registers / deletes boards.
             Different threads may modify different boards.
+            (prefetch() / prefetch_entry() / get() / modify() lock the segment and call these.)
         */
         inline void prefetch_unlocked(uint64_t hash) const {
             const Segment &segment = segments[segment_idx(hash)];
@@ -478,14 +467,8 @@ class Board_table {
             @return registered?
         */
         inline bool get(const Board &key, uint64_t hash, Value *res) const {
-            const Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            uint32_t slot = find_slot(segment, key, hash);
-            if (slot == NOT_FOUND) {
-                return false;
-            }
-            *res = segment.values[slot];
-            return true;
+            Segment_guard guard(segments[segment_idx(hash)]);
+            return get_unlocked(key, hash, res);
         }
 
         /*
@@ -512,14 +495,8 @@ class Board_table {
 
         template<class F>
         inline bool modify(const Board &key, uint64_t hash, F &&func) {
-            Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            uint32_t slot = find_slot(segment, key, hash);
-            if (slot == NOT_FOUND) {
-                return false;
-            }
-            func(segment.values[slot]);
-            return true;
+            Segment_guard guard(segments[segment_idx(hash)]);
+            return modify_unlocked(key, hash, func);
         }
 
         /*
@@ -681,11 +658,6 @@ class Board_table {
         }
 
         /*
-            @brief copy all boards in a segment
-
-            Used for iterating safely while the table is modified.
-        */
-        /*
             @brief copy the boards in a segment which satisfy pred(const Board&, const Value&)
 
             pred must not access this table (the segment is locked).
@@ -703,6 +675,11 @@ class Board_table {
             }
         }
 
+        /*
+            @brief copy all boards in a segment
+
+            Used for iterating safely while the table is modified.
+        */
         inline void get_keys_in_segment(int segment_idx_, std::vector<Board> &res) const {
             res.clear();
             const Segment &segment = segments[segment_idx_];
