@@ -300,8 +300,9 @@ int get_localtime(tm* a, time_t* b) {
 #if _WIN64 || _WIN32
     return localtime_s(a, b);
 #else
-    a = localtime(b);
-    return 0;
+    // "a = localtime(b)" only changed the local pointer: the caller's tm stayed uninitialized,
+    // and calc_date() returned "1900_01_00_00_00_00" (or garbage) on Linux.
+    return localtime_r(b, a) != nullptr ? 0 : 1;
 #endif
 }
 
