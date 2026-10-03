@@ -234,27 +234,18 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
             }
         }
     #endif
+    // The options below take a string as it is: assigning a std::string does not throw std::invalid_argument / std::out_of_range,
+    // so the try / catch blocks around these assignments (some with the message of the hash option) were removed.
+    // The number of arguments is checked in get_commandline_options().
     res.book_file = binary_path + "resources/book.egbk3";
     if (find_commandline_option(commandline_options, ID_BOOK_FILE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_BOOK_FILE);
-        try {
-            res.book_file = arg[0];
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "[ERROR] hash argument invalid" << std::endl;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] hash argument out of range" << std::endl;
-        }
+        res.book_file = arg[0];
     }
     res.eval_file = binary_path + "resources/eval.egev2";
     if (find_commandline_option(commandline_options, ID_EVAL_FILE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_EVAL_FILE);
-        try {
-            res.eval_file = arg[0];
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "[ERROR] hash argument invalid" << std::endl;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] hash argument out of range" << std::endl;
-        }
+        res.eval_file = arg[0];
     }
     res.nobook = find_commandline_option(commandline_options, ID_NOBOOK);
     res.mode = MODE_HUMAN_HUMAN;
@@ -298,13 +289,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     if (find_commandline_option(commandline_options, ID_LOG_TO_FILE)) {
         res.log_to_file = true;
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_LOG_TO_FILE);
-        try {
-            res.log_file = arg[0];
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "[ERROR] invalid log file" << std::endl;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] log file out of range" << std::endl;
-        }
+        res.log_file = arg[0];
     }
     res.noautopass = find_commandline_option(commandline_options, ID_NOAUTOPASS);
     res.show_value = find_commandline_option(commandline_options, ID_SHOWVALUE);
@@ -324,13 +309,7 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         if (find_commandline_option(commandline_options, ID_LOGDIR)) {
             res.log_to_file = true;
             std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_LOGDIR);
-            try {
-                res.log_file = arg[0] + "/" + datetime + "_search.log";
-            } catch (const std::invalid_argument& e) {
-                std::cerr << "[ERROR] invalid log dir" << std::endl;
-            } catch (const std::out_of_range& e) {
-                std::cerr << "[ERROR] log dir out of range" << std::endl;
-            }
+            res.log_file = arg[0] + "/" + datetime + "_search.log";
         }
     }
 #ifdef INCLUDE_GGS
@@ -340,50 +319,26 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         res.ggs_password = "";
         if (find_commandline_option(commandline_options, ID_GGS)) {
             std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS);
-            try {
-                res.ggs_username = arg[0];
-                res.ggs_password = arg[1];
-            } catch (const std::invalid_argument& e) {
-                std::cerr << "[ERROR] invalid ggs argument" << std::endl;
-            } catch (const std::out_of_range& e) {
-                std::cerr << "[ERROR] ggs argument out of range" << std::endl;
-            }
+            res.ggs_username = arg[0];
+            res.ggs_password = arg[1];
         }
     }
     res.ggs_log_to_file = find_commandline_option(commandline_options, ID_GGS_LOGFILE);
     if (res.ggs_log_to_file) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_LOGFILE);
-        try {
-            res.ggs_log_file = arg[0];
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "[ERROR] invalid ggs log file" << std::endl;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] ggs log file out of range" << std::endl;
-        }
+        res.ggs_log_file = arg[0];
     }
     if (!res.ggs_log_to_file) {
         if (find_commandline_option(commandline_options, ID_GGS_LOGDIR)) {
             res.ggs_log_to_file = true;
             std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_LOGDIR);
-            try {
-                res.ggs_log_file = arg[0] + "/" + datetime + "_ggs.log";
-            } catch (const std::invalid_argument& e) {
-                std::cerr << "[ERROR] invalid ggs log dir" << std::endl;
-            } catch (const std::out_of_range& e) {
-                std::cerr << "[ERROR] ggs log dir out of range" << std::endl;
-            }
+            res.ggs_log_file = arg[0] + "/" + datetime + "_ggs.log";
         }
     }
     res.ggs_game_log_to_file = find_commandline_option(commandline_options, ID_GGS_GAMELOGDIR);
     if (res.ggs_game_log_to_file) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_GGS_GAMELOGDIR);
-        try {
-            res.ggs_game_log_dir = arg[0];
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "[ERROR] invalid ggs game log dir" << std::endl;
-        } catch (const std::out_of_range& e) {
-            std::cerr << "[ERROR] ggs game log dir out of range" << std::endl;
-        }
+        res.ggs_game_log_dir = arg[0];
     }
     res.ggs_accept_request = find_commandline_option(commandline_options, ID_GGS_ACCEPT_REQUEST);
     res.ggs_route_join_tournament = find_commandline_option(commandline_options, ID_GGS_ROUTE_JOIN_TOURNAMENT);

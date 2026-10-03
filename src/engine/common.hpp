@@ -272,9 +272,7 @@ inline uint64_t myrand_ull() {
     @return file opened?
 */
 inline bool file_open(FILE **fp, const char *file, const char *mode) {
-#ifdef _WIN64
-    return fopen_s(fp, file, mode) == 0;
-#elif _WIN32
+#ifdef _WIN32 // defined for both 32-bit and 64-bit Windows
     return fopen_s(fp, file, mode) == 0;
 #else
     *fp = fopen(file, mode);
