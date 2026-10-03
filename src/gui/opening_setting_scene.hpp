@@ -38,6 +38,9 @@ struct Folder_entry {
     bool enabled;
     bool effective_enabled;
     double weight;
+    // is_folder_empty() at the last enumerate_current_dir(). It reads the folder and its summary.csv and
+    // was called for every visible folder in every frame to decide whether to draw the delete button.
+    bool is_empty = false;
     
     Folder_entry() : name(U""), relative_path(""), enabled(true), effective_enabled(true), weight(1.0) {}
     Folder_entry(const String& n, const std::string& path, bool e = true, bool eff = true, double w = 1.0) : name(n), relative_path(path), enabled(e), effective_enabled(eff), weight(w) {}
@@ -848,6 +851,7 @@ public:
                 bool effective_enabled = is_folder_effectively_enabled(rel_path);
                 double weight = load_folder_weight(rel_path);
                 folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled, effective_enabled, weight });
+                folders_display.back().is_empty = is_folder_empty(folder);
                 
                 // Add delete button for each folder
                 ImageButton delete_btn;
@@ -1088,7 +1092,7 @@ public:
             bool is_renaming_this = renaming_folder && renaming_folder_index == idx;
             
             // Draw delete button only for empty folders
-            if (!is_renaming_this && !(editing_elem || renaming_folder) && is_folder_empty(entry.name)) {
+            if (!is_renaming_this && !(editing_elem || renaming_folder) && entry.is_empty) { // delete_folder() checks the folder itself again
                 folder_delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 folder_delete_buttons[idx].draw();
                 if (folder_delete_buttons[idx].clicked()) {

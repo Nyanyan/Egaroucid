@@ -267,19 +267,22 @@ inline bool is_list_folder_empty(const String& folder_dir) {
     if (!FileSystem::IsDirectory(folder_dir)) {
         return false; // cannot be inspected: do not offer to delete it
     }
-    for (const FilePath& path : FileSystem::DirectoryContents(folder_dir, Recursive::No)) {
-        if (FileSystem::IsDirectory(path)) {
-            return false;
-        }
-    }
+    // summary.csv first, and only its first line: one line is one row for the CSV loader, and a
+    // folder with thousands of games should not be parsed and listed completely for this check
     String csv_path = folder_dir;
     if (!csv_path.ends_with(U"/") && !csv_path.ends_with(U"\\")) {
         csv_path += U"/";
     }
     csv_path += U"summary.csv";
     if (FileSystem::Exists(csv_path)) {
-        CSV csv{ csv_path };
-        if (csv.rows() > 0) {
+        TextReader reader{ csv_path };
+        String line;
+        if (reader && reader.readLine(line)) {
+            return false;
+        }
+    }
+    for (const FilePath& path : FileSystem::DirectoryContents(folder_dir, Recursive::No)) {
+        if (FileSystem::IsDirectory(path)) {
             return false;
         }
     }

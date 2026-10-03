@@ -1959,6 +1959,11 @@ private:
     std::vector<ImageButton> delete_buttons;
     std::vector<ImageButton> edit_buttons;
     std::vector<ImageButton> folder_delete_buttons;
+    // is_folder_empty() of each entry of folders_display, filled in enumerate_current_dir().
+    // is_folder_empty() reads the folder and its summary.csv; it was called for every visible folder in
+    // every frame (delete button, state of the "delete" button), which used a whole CPU core and made
+    // the scene slow as soon as a folder with a few thousand games was visible.
+    std::vector<bool> folder_empty_flags;
     Scroll_manager scroll_manager;
     Button back_button;
     Button up_button;
@@ -2223,7 +2228,7 @@ public:
                 
                 for (int i = 0; i < (int)folders_display.size(); ++i) {
                     if (row_index >= strt_idx_int && row_index < strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW) {
-                        if (i < (int)folder_delete_buttons.size() && !is_protected_system_folder(folders_display[i]) && is_folder_empty(folders_display[i])) {
+                        if (i < (int)folder_delete_buttons.size() && !is_protected_system_folder(folders_display[i]) && is_folder_empty_cached(i)) {
                             int display_row = row_index - strt_idx_int;
                             int item_sy = sy + display_row * IMPORT_GAME_HEIGHT;
                             folder_delete_buttons[i].move(IMPORT_GAME_SX + 1, item_sy + 1);
@@ -2410,7 +2415,7 @@ private:
             if (idx < 0 || idx >= (int)folders_display.size()) {
                 return false;
             }
-            if (is_protected_system_folder(folders_display[idx]) || !is_folder_empty(folders_display[idx])) {
+            if (is_protected_system_folder(folders_display[idx]) || !is_folder_empty_cached(idx)) {
                 return false;
             }
         }
@@ -2596,6 +2601,13 @@ private:
         return is_list_folder_empty(get_base_dir() + folder_name);
     }
     
+    // Result of is_folder_empty() at the last enumerate_current_dir() (for drawing; see folder_empty_flags).
+    // Every operation of this scene that changes a folder calls enumerate_current_dir().
+    // The functions that delete check the folder itself again.
+    bool is_folder_empty_cached(int idx) const {
+        return 0 <= idx && idx < (int)folder_empty_flags.size() && folder_empty_flags[idx];
+    }
+
     // Delete folder (only if empty)
     void delete_folder(int idx) {
         if (idx < 0 || idx >= (int)folders_display.size()) return;
@@ -2751,6 +2763,7 @@ private:
     void enumerate_current_dir() {
         folders_display.clear();
         folder_delete_buttons.clear();
+        folder_empty_flags.clear();
         std::vector<String> folders = explorer::enumerate_subfolders(get_root_dir(), explorer_state);
         Texture cross_image = getData().resources.cross;
         for (auto& folder : folders) {
@@ -2758,6 +2771,7 @@ private:
                 continue;
             }
             folders_display.emplace_back(folder);
+            folder_empty_flags.emplace_back(is_folder_empty(folder));
             
             // Add delete button for each folder
             ImageButton delete_btn;
@@ -3448,6 +3462,9 @@ private:
             if (idx >= 0 && idx < (int)folders_display.size()) {
                 if (is_protected_system_folder(folders_display[idx])) {
                     continue;
+                }
+                if (!is_folder_empty(folders_display[idx])) {
+                    continue; // not the cached flag: look at the folder again before removing it
                 }
                 if (permanent) {
                     String folder_path = get_base_dir() + folders_display[idx];
