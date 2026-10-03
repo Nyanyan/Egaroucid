@@ -1353,11 +1353,20 @@ private:
                 stop_calculating();
                 if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
-                    int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
-                    for (int i = 0; i < fork_start_idx; ++i) {
-                        new_branch.emplace_back(getData().graph_resources.nodes[0][i]);
+                    // Keep the main-line nodes before the first node of the variation.
+                    // This used the index of the main-line node with the same number of discs as that node.
+                    // When the main line has no such node (a position made with "edit board" leaves a gap in
+                    // the disc counts), node_find() returned -1, new_branch stayed empty and
+                    // new_branch.back() crashed. Select the nodes by their number of discs instead.
+                    const int fork_n_discs = getData().graph_resources.nodes[1].front().board.n_discs();
+                    for (const History_elem& elem : getData().graph_resources.nodes[0]) {
+                        if (elem.board.n_discs() < fork_n_discs) {
+                            new_branch.emplace_back(elem);
+                        }
                     }
-                    new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+                    if (!new_branch.empty()) {
+                        new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+                    }
                     for (History_elem elem: getData().graph_resources.nodes[1]) {
                         new_branch.emplace_back(elem);
                     }
