@@ -2005,12 +2005,20 @@ public:
                     std::cerr << "ERR shortcut key name not found " << object.key.narrow() << std::endl;
                     continue;
                 }
+                // JSON::arrayView() and getString() throw for other types: an edited / broken file stopped the app at startup.
+                // Values of other types are ignored (the default key of this function is used), as in the other settings files.
+                if (not object.value.isArray()) {
+                    std::cerr << "ERR shortcut key value is not an array " << object.key.narrow() << std::endl;
+                    continue;
+                }
                 loaded_name_list.emplace(object.key);
                 for (int i = 0; i < (int)shortcut_keys.size(); ++i) {
                     if (shortcut_keys[i].name == object.key) {
                         shortcut_keys[i].keys.clear();
                         for (const auto &key_name: object.value.arrayView()) {
-                            shortcut_keys[i].keys.emplace_back(key_name.getString());
+                            if (key_name.isString()) {
+                                shortcut_keys[i].keys.emplace_back(key_name.getString());
+                            }
                         }
                     }
                 }
