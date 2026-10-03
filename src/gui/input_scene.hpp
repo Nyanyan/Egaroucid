@@ -510,7 +510,9 @@ private:
     }
 
     bool parse_game_list(JSON json) {
-        JSON game_array = json[U"games"];
+        // json_member(): json[U"games"] throws (and the application ends) when the answer is valid JSON
+        // but not an object, for example the top-level array that the next lines accept
+        JSON game_array = json_member(json, U"games");
         if (!game_array.isArray() && json.isArray()) {
             game_array = json;
         }
@@ -552,12 +554,18 @@ private:
             game.friend_match = both_ratings_unchanged(players[0], players[1]);
         }
 
-        std::string transcript = extract_start_pos(detail_json[U"position"][U"startPos"]);
+        // json_member(): operator[] with a key throws for a value that is not an object
+        // ("position": "abc", a move given as a string, ...), which ended the application
+        JSON position = json_member(detail_json, U"position");
+        std::string transcript = extract_start_pos(json_member(position, U"startPos"));
         String terminal_status;
-        JSON moves = detail_json[U"position"][U"moves"];
+        JSON moves = json_member(position, U"moves");
         if (moves.isArray()) {
             for (size_t i = 0; i < moves.size(); ++i) {
                 JSON move = moves[i];
+                if (!move.isObject()) {
+                    continue;
+                }
                 const String move_text = json_string(move[U"m"]);
                 if (is_coord(move_text)) {
                     transcript += normalized_coord(move_text);
@@ -1191,6 +1199,9 @@ private:
 
     static String json_history_signature(JSON json) {
         String signature;
+        if (!json.isObject()) { // json[key] throws for a file that is not a JSON object
+            return signature;
+        }
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
             const String key = Format(n_discs);
             if (!json[key].isObject()) {
@@ -1362,6 +1373,9 @@ private:
     }
 
     static void fill_player_summary(JSON player, String* name, String* rating, String* rank, String* id = nullptr) {
+        if (!player.isObject()) { // player[U"id"] throws for a value that is not an object
+            return;
+        }
         const String player_id = json_string(player[U"id"]);
         if (id != nullptr) {
             *id = player_id;
@@ -1390,7 +1404,7 @@ private:
     }
 
     static bool rating_delta(JSON player, double* delta) {
-        if (!player[U"oldR"].isNumber() || !player[U"newR"].isNumber()) {
+        if (!player.isObject() || !player[U"oldR"].isNumber() || !player[U"newR"].isNumber()) {
             return false;
         }
         *delta = player[U"newR"].get<double>() - player[U"oldR"].get<double>();
@@ -1557,6 +1571,17 @@ private:
             return json.getString();
         }
         return U"";
+    }
+
+    // json[key] if json is an object, a null value otherwise.
+    // JSON::operator[](key) throws an exception for an array, a string or a number, and nothing catches it.
+    // json is taken by reference: the result refers to the data of json (a copy made for a by-value
+    // parameter would be gone when this function returns).
+    static JSON json_member(JSON& json, const String& key) {
+        if (json.isObject()) {
+            return json[key];
+        }
+        return JSON();
     }
 
     static int json_int(JSON json) {
@@ -2644,7 +2669,7 @@ private:
     void edit_game(int idx) {
         const String json_path = get_base_dir() + games[idx].filename_date + U".json";
         JSON game_json = JSON::Load(json_path);
-        if (not game_json) {
+        if (not game_json || !game_json.isObject()) { // operator[] with a key throws if the file is not a JSON object
             std::cerr << "can't open game" << std::endl;
             failed = true;
             return;
@@ -3803,6 +3828,9 @@ private:
 
     static String json_game_library_history_signature(JSON json) {
         String signature;
+        if (!json.isObject()) { // json[key] throws for a file that is not a JSON object
+            return signature;
+        }
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
             const String key = Format(n_discs);
             if (!json[key].isObject()) {
@@ -4056,7 +4084,9 @@ inline bool load_game_from_json(
     const std::string& subfolder
 ) {
     JSON game_json = JSON::Load(json_path);
-    if (!game_json) {
+    // JSON::operator[](key) throws for an array, a string or a number, and nothing catches it:
+    // a game file that is valid JSON but not an object ended the application when it was opened
+    if (!game_json || !game_json.isObject()) {
         std::cerr << "Failed to load game JSON: " << json_path.narrow() << std::endl;
         return false;
     }
@@ -4090,6 +4120,9 @@ inline bool load_game_from_json(
         String n_discs_str = Format(n_discs);
         History_elem history_elem;
         bool error_found = false;
+        if (!game_json[n_discs_str].isObject()) { // no such position, or not an object (see above)
+            continue;
+        }
         if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
             history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
         } else {

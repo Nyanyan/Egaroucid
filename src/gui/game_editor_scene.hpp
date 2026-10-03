@@ -396,7 +396,7 @@ private:
         // Load existing game history from JSON
         const String json_path = base_dir + existing_game_date + U".json";
         JSON game_json = JSON::Load(json_path);
-        if (!game_json) {
+        if (!game_json || !game_json.isObject()) { // operator[] with a key throws if the file is not a JSON object
             std::cerr << "Failed to load game JSON: " << json_path.narrow() << std::endl;
             return;
         }
@@ -405,7 +405,7 @@ private:
         std::vector<History_elem> history;
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
             String n_discs_str = Format(n_discs);
-            if (game_json[n_discs_str]) {
+            if (game_json[n_discs_str].isObject()) { // was "if (json value)", which is true for any value
                 History_elem history_elem;
                 if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
                     history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
