@@ -120,9 +120,16 @@ class Board_table {
         static constexpr uint8_t CTRL_DELETED = 0xFE;
         static constexpr uint64_t CTRL_LSBS = 0x0101010101010101ULL;
         static constexpr uint64_t CTRL_MSBS = 0x8080808080808080ULL;
-        // load factor just after a segment is resized by itself is about 0.65
+        // load factor just after a segment is resized by itself:
+        // about 0.65 for a small segment (few rebuilds), about 0.80 for a large segment.
+        // A book is loaded at the maximum load factor, so every segment is resized soon after boards are added (book learning).
+        // With 0.65 the memory of the whole book grows by 1/3 at that time (112M boards + 2%: 3,352 MiB -> 4,468 MiB,
+        // with 0.80: 3,652 MiB). In a big book this memory matters more than the time of the rebuilds
+        // (3 times as many element copies per registered board) and of the search in a fuller table.
         static constexpr uint32_t RESIZE_TARGET_NUMERATOR = 100;
         static constexpr uint32_t RESIZE_TARGET_DENOMINATOR = 65 * GROUP_SIZE;
+        static constexpr uint32_t RESIZE_TARGET_DENOMINATOR_LARGE = 80 * GROUP_SIZE;
+        static constexpr uint32_t LARGE_SEGMENT_N_BOARDS = 32768; // 1 / 2048 of a book of 67M boards
 
         // The lock is written at every access, and the others are only read in searching.
         // They are placed on different cache lines, so that searching threads do not disturb each other.
@@ -286,7 +293,8 @@ class Board_table {
         }
 
         static inline uint32_t n_groups_for(uint32_t n_used) {
-            return (uint32_t)(((uint64_t)n_used * RESIZE_TARGET_NUMERATOR + RESIZE_TARGET_DENOMINATOR - 1) / RESIZE_TARGET_DENOMINATOR);
+            const uint32_t denominator = n_used < LARGE_SEGMENT_N_BOARDS ? RESIZE_TARGET_DENOMINATOR : RESIZE_TARGET_DENOMINATOR_LARGE;
+            return (uint32_t)(((uint64_t)n_used * RESIZE_TARGET_NUMERATOR + denominator - 1) / denominator);
         }
 
         // find the slot of the key, or register the key with init_value
