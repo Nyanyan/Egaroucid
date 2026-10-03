@@ -3330,7 +3330,7 @@ private:
             }
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
 
     String recycle_session_dir() const {
@@ -3695,7 +3695,7 @@ private:
             }
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
     
     void save_pending_games_here() {
@@ -3838,7 +3838,7 @@ private:
         new_csv.write(game.game_date);
         new_csv.newLine();
         
-        new_csv.save(target_csv);
+        save_csv_escaped(new_csv, target_csv); // escapes backslashes, see util.hpp
     }
 
     void persist_games_order_to_csv() {
@@ -3855,7 +3855,7 @@ private:
             new_csv.write(game.game_date);
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
 };
 

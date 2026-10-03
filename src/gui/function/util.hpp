@@ -286,6 +286,25 @@ inline bool is_list_folder_empty(const String& folder_dir) {
     return true;
 }
 
+// Saves a summary.csv that has free text (player names, memo).
+// CSV::save() of Siv3D writes a backslash as it is, but CSV loading uses the backslash as the escape
+// character ("\n" becomes a line break, "\\" one backslash). A player name such as "C:\new" was
+// therefore read back as "C:" + line break + "ew", and the next time the file was rewritten (reorder,
+// delete, move, edit of another game) the line break cut the row in two: the game disappeared from the
+// list and a row that belongs to no file appeared.
+// Write "\\" for a backslash, and never write a line break inside a cell.
+// Files written before are read as before.
+inline bool save_csv_escaped(const CSV& csv, const String& path) {
+    CSV escaped;
+    for (size_t row = 0; row < csv.rows(); ++row) {
+        for (const String& cell : csv[row]) {
+            escaped.write(cell.replaced(U"\\", U"\\\\").replaced(U"\r", U"").replaced(U"\n", U" "));
+        }
+        escaped.newLine();
+    }
+    return escaped.save(path);
+}
+
 // Create a new folder in the specified directory
 bool create_folder_in_directory(const String& base_dir, const String& folder_name) {
     if (folder_name.empty() || folder_name.contains(U"/") || folder_name.contains(U"\\")) {

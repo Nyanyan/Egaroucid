@@ -88,7 +88,7 @@ namespace game_save_helper {
         }
         String date_for_csv = game_date.isEmpty() ? filename_date.substr(0, 10).replaced(U"_", U"-") : game_date;
         csv.writeRow(filename_date, black_player_name, white_player_name, memo_summary, black_discs, white_discs, date_for_csv);
-        csv.save(csv_path);
+        save_csv_escaped(csv, csv_path); // escapes backslashes, see util.hpp
     }
 
     // Update existing game in CSV (for editing existing games)
@@ -142,7 +142,7 @@ namespace game_save_helper {
             }
         }
         
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
 }
 
