@@ -955,7 +955,10 @@ class Book {
                 fclose(fp);
                 return false;
             }
-            int n_boards = elem_int;
+            // The number of positions in the header is read as an unsigned 32-bit integer.
+            // As a signed int, a book with 2^31 (2,147,483,648) or more positions had a negative count:
+            // the loop below did not run, and the import "succeeded" with no position.
+            uint32_t n_boards = (uint32_t)elem_int;
             std::cerr << n_boards << " boards found" << std::endl;
             uint64_t player, opponent;
             int16_t value;
@@ -965,7 +968,7 @@ class Book {
             Flip flip;
             Book_elem book_elem;
             int percent = -1;
-            for (int i = 0; i < n_boards; ++i) {
+            for (uint32_t i = 0; i < n_boards; ++i) {
                 if (*stop) {
                     fclose(fp);
                     return false;
@@ -1831,6 +1834,14 @@ class Book {
                 }
             });
             std::cerr << "pass board calculated " << pass_boards.size() << std::endl;
+            // The number of positions in the header of an Edax book is a 32-bit field.
+            // It is written as an unsigned integer (2^31 or more positions were written with the same bits,
+            // but shown as a negative number in the log); more than 2^32 - 1 positions cannot be stored.
+            const uint64_t n_position_all = (uint64_t)n_boards_to_write + (uint64_t)pass_boards.size();
+            if (n_position_all > 0xFFFFFFFFULL) {
+                std::cerr << "[ERROR] too many positions for an Edax book: " << n_position_all << std::endl;
+                return;
+            }
             Book_file_writer fout;
             if (!fout.open(file)) {
                 std::cerr << "can't open " << file << std::endl;
@@ -1874,7 +1885,7 @@ class Book {
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-            int n_position = (int)(n_boards_to_write + pass_boards.size());
+            uint32_t n_position = (uint32_t)n_position_all;
             fout.write((char*)&n_position, 4);
             int n_win = 0, n_draw = 0, n_lose = 0;
             uint32_t n_lines;
