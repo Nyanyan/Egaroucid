@@ -105,6 +105,11 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
             if ((remaining_legal & (1ULL << book_elem.leaf.move)) == 0) {
                 illegal_leaf = true;
             }
+            // A value out of range is also an invalid leaf (the bundled v7.8.3 book has leaves with 65-73, 126 and 127,
+            // probably values of stopped searches). Such leaves were never recalculated here.
+            if (!is_valid_score(book_elem.leaf.value)) {
+                illegal_leaf = true;
+            }
         } else {
             illegal_leaf = true;
         }
@@ -367,8 +372,12 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
     Flip flip;
     calc_flip(&flip, &todo_elem.board, book_elem.leaf.move);
     todo_elem.move(&flip, 0);
+    int prev_value = book_elem.value;
     if (todo_elem.board.get_legal() == 0) { // check pass
         todo_elem.board.pass();
+        // The player to move is the same as the board of book_elem: change the sign as in the pass in the loop below.
+        // (Without this, the error of the first move was calculated with the wrong sign after a pass.)
+        prev_value *= -1;
         if (todo_elem.board.get_legal() == 0) {
             todo_elem.board.pass();
             book.change(todo_elem.board, todo_elem.board.score_player(), 60);
@@ -376,7 +385,6 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
         }
     }
     uint64_t n_add = 0;
-    int prev_value = book_elem.value;
     while (todo_elem.board.n_discs() <= book_depth + 4 && !book.contain(&todo_elem.board) && (*book_learning) && todo_elem.remaining_error >= 0) {
         Search_result search_result = ai(todo_elem.board, level, true, 0, use_multi_thread, false);
         if (-HW2 <= search_result.value && search_result.value <= HW2) {
