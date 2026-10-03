@@ -468,14 +468,24 @@ private:
         // Update CSV only (do not append)
         int black_discs = GAME_DISCS_UNDEFINED;
         int white_discs = GAME_DISCS_UNDEFINED;
-        Board last_board = history.back().board;
-        if (last_board.is_end()) {
-            if (history.back().player == BLACK) {
-                black_discs = last_board.count_player();
-                white_discs = last_board.count_opponent();
-            } else {
-                black_discs = last_board.count_opponent();
-                white_discs = last_board.count_player();
+        // The scores saved in the JSON are used (they are not changed by this edit).
+        // v7.8.3 always used history.back(): the history above starts at the key "4", so it was empty
+        // for a game that starts from another position (XOT, random board, ...) and editing such a game
+        // terminated the app (EXCEPTION_ACCESS_VIOLATION; the JSON was already saved, summary.csv not).
+        // Recomputing also lost scores given at save time (black_score_override, e.g. Othello Quest games).
+        if (game_json[GAME_BLACK_DISCS].getType() == JSONValueType::Number && game_json[GAME_WHITE_DISCS].getType() == JSONValueType::Number) {
+            black_discs = game_json[GAME_BLACK_DISCS].get<int>();
+            white_discs = game_json[GAME_WHITE_DISCS].get<int>();
+        } else if (!history.empty()) {
+            Board last_board = history.back().board;
+            if (last_board.is_end()) {
+                if (history.back().player == BLACK) {
+                    black_discs = last_board.count_player();
+                    white_discs = last_board.count_opponent();
+                } else {
+                    black_discs = last_board.count_opponent();
+                    white_discs = last_board.count_player();
+                }
             }
         }
         
