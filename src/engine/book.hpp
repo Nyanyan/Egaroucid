@@ -93,7 +93,19 @@ struct Leaf {
 /*
     @brief book element structure
 
-    The size of this structure determines the memory usage of book: keep it 12 bytes.
+    The size of this structure determines the memory usage of book: keep it 10 bytes.
+    The fields need 4 + 1 + 1 + 3 bytes and 2 flags. Without packing the structure was 12 bytes
+    (2 bool of 1 byte each and 1 byte of padding for the alignment of n_lines).
+    The 2 flags share 1 byte and the structure is packed, so that a slot of the book table is
+    16 (board) + 10 + 1 = 27 bytes instead of 29 (book memory -7%).
+    n_lines is then not aligned; it is always read and written as a member of a Book_elem or copied with memcpy
+    (no uint32_t pointer or reference to it is used), which the compilers handle for packed structures.
+
+    seen and exported share 1 byte, so a thread which writes one of them writes the byte of the other one too.
+    They are never written for the same board by 2 threads at the same time:
+    exported is written with the segment locked or by a single thread, and the parallel passes which set seen
+    without lock (flag_reachable_boards(), get_pass_boards(), reset_seen()) run while no thread writes exported.
+    A new parallel pass must keep this rule.
 
     @param n_lines              number of lines
     @param value                registered score
@@ -102,19 +114,21 @@ struct Leaf {
     @param seen                 used in various situation
     @param exported             used in Edax export (the board is written to the Edax book)
 */
+#pragma pack(push, 1)
 struct Book_elem {
     uint32_t n_lines;
     int8_t value;
     int8_t level;
     Leaf leaf;
-    bool seen; // used in various situation
-    bool exported; // used in Edax export
+    bool seen : 1; // used in various situation
+    bool exported : 1; // used in Edax export
 
     Book_elem()
         : n_lines(0), value(SCORE_UNDEFINED), level(LEVEL_UNDEFINED), seen(false), exported(false) {}
 };
+#pragma pack(pop)
 
-static_assert(sizeof(Book_elem) == 12, "Book_elem must be 12 bytes");
+static_assert(sizeof(Book_elem) == 10, "Book_elem must be 10 bytes");
 
 struct Book_info {
     uint64_t n_boards;
