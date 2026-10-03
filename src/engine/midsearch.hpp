@@ -537,7 +537,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     }
     bool is_all_legal = legal == search->board.get_legal();
     int best_move = MOVE_UNDEFINED;
-    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs) {
         if (legal & (1ULL << clog.pos)) {
             if (v < clog.val) {
@@ -552,7 +551,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     }
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && legal) {
-        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         // std::vector<Flip_value> move_list(canput);
         Flip_value move_list[MAX_N_BRANCHES];
@@ -666,7 +664,6 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
     res.alt_probability = 0;
     int g, first_alpha = alpha;
     uint64_t legal = search->board.get_legal();
-    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs) {
         if (clog.pos == played_move) {
             res.played_score = clog.val;
@@ -705,7 +702,6 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         legal ^= 1ULL << played_move;
     }
     if (alpha < beta && legal) {
-        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         // std::vector<Flip_value> move_list(canput);
         Flip_value move_list[MAX_N_BRANCHES];

@@ -109,7 +109,6 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
     uint64_t strt = tim();
     std::string line;
     std::vector<Board> board_list;
-    Flip flip;
     Board board_start;
     while (std::getline(ifs, line)) {
         /*
@@ -213,7 +212,6 @@ void execute_special_tasks(Options options) {
 
 bool execute_special_tasks_loop(Board_info *board, State *state, Options *options) {
     uint64_t start_time = tim();
-    int player_before = board->player;
     if (options->mode == MODE_HUMAN_AI && board->player == WHITE && !board->board.is_end()) {
         go(board, options, state, start_time);
         return true;
@@ -393,7 +391,6 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     uint64_t strt = tim();
     std::string line;
     Board board_start;
-    Flip flip;
     Search_result result;
     std::vector<std::pair<std::string, Board>> board_list;
     while (std::getline(ifs, line)) {
@@ -511,7 +508,6 @@ void self_play_board(std::vector<std::string> arg, Options *options, State *stat
     }
     uint64_t strt = tim();
     std::string line;
-    Flip flip;
     Search_result result;
     std::vector<std::pair<std::string, Board>> board_list;
     while (std::getline(ifs, line)) {
@@ -654,7 +650,6 @@ void self_play_board_lossless_lines(std::vector<std::string> arg, Options *optio
     }
     uint64_t strt = tim();
     std::string line;
-    Flip flip;
     Search_result result;
     std::vector<std::pair<std::string, Board>> board_list;
     while (std::getline(ifs, line)) {
