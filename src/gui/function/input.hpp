@@ -208,6 +208,55 @@ inline bool insert_textbox_space_at_cursor(TextEditState& text, const Optional<s
     return true;
 }
 
+// On Windows, Siv3D passes each UTF-16 unit of WM_CHAR to the text input as one char32
+// (Siv3D WindowProc.cpp), so a character outside the BMP (emoji etc.) entered without the IME
+// (e.g. SendInput / an input tool that sends WM_CHAR) becomes two lone surrogates in the String.
+// String::toUTF8() then makes invalid UTF-8 and JSON save throws
+// ("[json.exception.type_error.316] invalid UTF-8 byte"): v7.8.3 terminated when such a text
+// was saved (checked with an AI profile name; the profile file was left with only a BOM).
+// Text committed through the IME is converted correctly and is not changed here.
+// This combines surrogate pairs into one code point and removes lone surrogates.
+// Returns true if the text was changed; the cursor keeps its place in the text.
+inline bool combine_utf16_surrogates(String& text, size_t& cursor_pos) {
+    auto is_high = [](char32 c) { return 0xD800 <= c && c <= 0xDBFF; };
+    auto is_low = [](char32 c) { return 0xDC00 <= c && c <= 0xDFFF; };
+    bool has_surrogate = false;
+    for (const char32 c : text) {
+        if (is_high(c) || is_low(c)) {
+            has_surrogate = true;
+            break;
+        }
+    }
+    if (!has_surrogate) {
+        return false;
+    }
+    const size_t cursor = Min<size_t>(cursor_pos, text.size());
+    size_t new_cursor = 0;
+    String res;
+    res.reserve(text.size());
+    for (size_t i = 0; i < text.size(); ++i) {
+        if (i == cursor) {
+            new_cursor = res.size();
+        }
+        const char32 c = text[i];
+        if (is_high(c) && i + 1 < text.size() && is_low(text[i + 1])) {
+            res.push_back(static_cast<char32>(0x10000 + ((c - 0xD800) << 10) + (text[i + 1] - 0xDC00)));
+            ++i;
+            if (i == cursor) { // cursor between the two units: after the combined character
+                new_cursor = res.size();
+            }
+        } else if (!is_high(c) && !is_low(c)) {
+            res.push_back(c);
+        }
+    }
+    if (cursor >= text.size()) {
+        new_cursor = res.size();
+    }
+    text = res;
+    cursor_pos = new_cursor;
+    return true;
+}
+
 inline Vec2 fit_ime_candidate_window_pos(const Vec2& pos, const double editing_line_y) {
 #if SIV3D_PLATFORM(WINDOWS)
     constexpr double MARGIN = 2.0;
@@ -262,7 +311,11 @@ inline bool text_area_with_ime_candidate_window(
     size_t maxChars = SimpleGUI::PreferredTextAreaMaxChars,
     bool enabled = true
 ) {
-    const bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
+    bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
+    if (gui_textarea_ime::combine_utf16_surrogates(text.text, text.cursorPos)) {
+        text.rebuildGlyphs();
+        changed = true;
+    }
     if (enabled && text.active) {
         gui_textarea_ime::request_textarea_ime_candidate_window(text, pos, size);
     }
@@ -298,6 +351,10 @@ inline bool path_text_area_with_ime_candidate_window(
 ) {
     const bool was_active = text.active;
     bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
+    if (gui_textarea_ime::combine_utf16_surrogates(text.text, text.cursorPos)) {
+        text.rebuildGlyphs();
+        changed = true;
+    }
     changed = remove_path_textarea_line_breaks(text) || changed;
 
     if (enabled && was_active && KeyEnter.down()) {
@@ -324,6 +381,7 @@ inline bool text_box_with_ime_candidate_window(
 ) {
     const bool was_active = text.active;
     bool changed = SimpleGUI::TextBox(text, pos, width, maxChars, enabled);
+    changed = gui_textarea_ime::combine_utf16_surrogates(text.text, text.cursorPos) || changed;
     const bool line_break_replaced = gui_textarea_ime::sanitize_textbox_line_breaks(text);
     changed = changed || line_break_replaced;
 
