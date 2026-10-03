@@ -3609,12 +3609,12 @@ private:
         if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
             // Use system command for folder move (more reliable)
 #ifdef _WIN32
-            std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+            move_folder_without_shell(source_path, target_path); // see util.hpp
 #else
             std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
-#endif
             system(cmd.c_str());
-            
+#endif
+
             // Refresh current view
             enumerate_current_dir();
             load_games();
@@ -3659,11 +3659,11 @@ private:
         if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
             // Use system command for folder move (more reliable)
 #ifdef _WIN32
-            std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+            move_folder_without_shell(source_path, target_path); // see util.hpp
 #else
             std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
-#endif
             system(cmd.c_str());
+#endif
             
             // Refresh current view
             enumerate_current_dir();

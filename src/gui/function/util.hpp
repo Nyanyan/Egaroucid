@@ -13,6 +13,26 @@
 #include <vector>
 #include "const/gui_common.hpp"
 #include "button.hpp"
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#endif
+
+// Moves (renames) a folder on Windows without a shell command.
+// v7.8.3 used system("move \"src\" \"dst\""), which
+//   - expands environment variables in the paths (a folder named "%OS%" could not be moved,
+//     and the folder "Windows_NT" would have been moved instead if it existed),
+//   - converts the paths to the ANSI code page with narrow() ('?' for other characters,
+//     which is also a wildcard of move),
+//   - opens a console window for cmd.exe.
+// MoveFileExW without MOVEFILE_COPY_ALLOWED moves a folder only within a volume, as move did.
+#ifdef _WIN32
+inline bool move_folder_without_shell(const String& source, const String& target) {
+    return MoveFileExW(source.toWstr().c_str(), target.toWstr().c_str(), 0) != 0;
+}
+#endif
 
 std::string get_extension(std::string file) {
     std::string res;
@@ -307,14 +327,14 @@ bool move_folder(const String& source_path, const String& target_parent_path, co
         return false;
     }
     
-    // Use system command for folder move
+    // Use system command for folder move (Windows: no shell command, see move_folder_without_shell)
 #ifdef _WIN32
-    std::string cmd = "move \"" + full_source.narrow() + "\" \"" + full_target.narrow() + "\"";
+    int result = move_folder_without_shell(full_source, full_target) ? 0 : (int)GetLastError();
 #else
     std::string cmd = "mv \"" + full_source.narrow() + "\" \"" + full_target.narrow() + "\"";
-#endif
     int result = system(cmd.c_str());
-    
+#endif
+
     if (result == 0) {
         std::cerr << "Successfully moved folder" << std::endl;
         return true;
