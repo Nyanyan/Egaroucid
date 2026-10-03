@@ -2120,13 +2120,19 @@ Search_result ai_range(Board board, int level, int score_min, int score_max, boo
                 board.pass();
                 passed = true;
             }
-            int alpha = passed ? score_min : -score_max;
-            int beta = passed ? score_max : -score_min;
-            alpha = std::min(-SCORE_MAX, alpha - 1);
-            beta = std::max(SCORE_MAX, beta + 1);
+            // [score_min, score_max] is the range of the value of the board after the move, seen from the player to move there.
+            // After a pass, the searched board is seen from the other player: the range and the value are negated.
+            // (v7.8.3 negated the window in the opposite cases and compared the value without negation after a pass;
+            //  the window was always [-64, 64] because std::min / std::max were swapped, so only the comparison was wrong.)
+            int alpha = passed ? -score_max : score_min;
+            int beta = passed ? -score_min : score_max;
+            alpha = std::max(-SCORE_MAX, alpha - 1); // values just outside the range are also told apart
+            beta = std::min(SCORE_MAX, beta + 1);
             Search_result res = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, false, board.get_legal(), searching);
-            if (res.value >= score_min && res.value <= score_max) {
+            int value = passed ? -res.value : res.value;
+            if (*searching && res.value != SCORE_UNDEFINED && value >= score_min && value <= score_max) {
                 Search_result move_res = res;
+                move_res.value = value;
                 move_res.policy = cell;
                 moves_in_range.push_back(move_res);
             }
