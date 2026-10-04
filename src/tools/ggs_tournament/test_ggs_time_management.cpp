@@ -642,6 +642,56 @@ Board board_with_empties(int n_empties) {
     return board;
 }
 
+void test_3min_endgame_start_limits() {
+    const std::pair<uint_fast8_t, int> requirements[] = {
+        {MPC_74_LEVEL, 64}, {MPC_88_LEVEL, 64}, {MPC_93_LEVEL, 48},
+        {MPC_98_LEVEL, 44}, {MPC_99_LEVEL, 42}, {MPC_999_LEVEL, 40},
+        {MPC_100_LEVEL, 35},
+    };
+    for (const auto &[level, start_empties] : requirements) {
+        for (int empties = 1; empties <= 64; ++empties) {
+#if IS_GGS_3MIN
+            const bool expected = empties <= start_empties;
+#else
+            const bool expected = true;
+#endif
+            require(ai_endgame_mpc_level_allowed(empties, level) == expected,
+                    "endgame start gate at " + std::to_string(empties) +
+                    " empties, MPC level " + std::to_string(level));
+        }
+    }
+
+#if IS_GGS_3MIN
+    Board board = board_with_empties(37);
+    uint64_t legal = board.get_legal();
+    require(legal != 0ULL, "blocked auxiliary-search board has a legal move");
+    Ponder_elem elem;
+    calc_flip(&elem.flip, &board, first_bit(&legal));
+    elem.depth = 36;
+    elem.mpc_level = MPC_999_LEVEL;
+    elem.is_endgame_search = true;
+    elem.is_complete_search = false;
+    elem.count = 7;
+    elem.value = 4;
+    ai_get_value_until(board, &elem, tim() + 1000ULL, THREAD_ID_NONE);
+    require_equal(elem.count, 7, "candidate search must not start forbidden MPC100% at 36 empties");
+    require_equal(elem.mpc_level, MPC_999_LEVEL, "candidate keeps its permitted 99.9-percent result");
+
+    board = board_with_empties(36);
+    AI_Time_Limit_Match_Context context;
+    context.has_pair_result = true;
+    context.pair_value_is_proven = true;
+    context.pair_value = -4;
+    require(!ai_tl_ggs_pair_outcome_nws_gate(board, &context),
+            "pair context must not enable exact search at 36 empties");
+    bool searching = true;
+    const auto proof = ai_tl_ggs_pair_target_nws(board, 0, 1000ULL, false, THREAD_ID_NONE, &searching);
+    require(!proof.complete && proof.nodes == 0 && proof.elapsed == 0,
+            "direct pair-outcome search must not bypass the exact-search gate");
+    require(searching, "blocked pair-outcome search must preserve caller cancellation state");
+#endif
+}
+
 void test_ggs_plan_phases() {
     require(time_management_ggs_phase(50) == Time_management_ggs_phase::opening, "50 empties is opening");
     require(time_management_ggs_phase(47) == Time_management_ggs_phase::opening, "47 empties is opening");
@@ -805,6 +855,7 @@ int main() {
         test_verification_tt_bound_scope();
         test_early_endgame_schedule();
         test_ybwc_end_split_depth();
+        test_3min_endgame_start_limits();
         test_ggs_plan_phases();
         test_ggs_plan_shares();
         test_ggs_plan_keeps_late_reserve();

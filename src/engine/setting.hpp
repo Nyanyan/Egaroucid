@@ -21,6 +21,7 @@
 #include <string>
 
 // Separate the 3-minute profile from other GGS tournament time controls.
+// Endgame selectivity limits are defined in ai.hpp for this profile.
 #ifndef IS_GGS_3MIN
     #define IS_GGS_3MIN 0
 #endif

@@ -29,6 +29,24 @@ constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET = 8;
 constexpr int IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 8;
 constexpr int PONDER_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT = 4;
 
+// Root endgame selectivity limits for the 3-minute GGS profile only.
+constexpr uint_fast8_t ai_endgame_max_mpc_level(int n_empties) {
+#if IS_GGS_3MIN
+    if (n_empties <= 35) return MPC_100_LEVEL;
+    if (n_empties <= 40) return MPC_999_LEVEL;
+    if (n_empties <= 42) return MPC_99_LEVEL;
+    if (n_empties <= 44) return MPC_98_LEVEL;
+    if (n_empties <= 48) return MPC_93_LEVEL;
+    return MPC_88_LEVEL;
+#else
+    return MPC_100_LEVEL;
+#endif
+}
+
+constexpr bool ai_endgame_mpc_level_allowed(int n_empties, uint_fast8_t mpc_level) {
+    return mpc_level <= ai_endgame_max_mpc_level(n_empties);
+}
+
 // Start selective endgame search while enough of the move budget remains.
 // Keep this externally overridable for an otherwise identical A/B control.
 #ifndef EGAROUCID_EARLY_ENDGAME_SCHEDULE
@@ -226,6 +244,7 @@ inline bool ai_tl_ggs_pair_outcome_nws_gate(const Board &board, const AI_Time_Li
         context != nullptr &&
         context->has_pair_result &&
         context->pair_value_is_proven &&
+        ai_endgame_mpc_level_allowed(HW2 - board.n_discs(), MPC_100_LEVEL) &&
         HW2 - board.n_discs() >= AI_TL_GGS_PAIR_OUTCOME_NWS_MIN_N_EMPTY &&
         -SCORE_MAX <= ai_tl_ggs_pair_draw_target(context->pair_value) &&
         ai_tl_ggs_pair_draw_target(context->pair_value) <= SCORE_MAX;
@@ -845,6 +864,9 @@ inline Lazy_smp_worker_result lazy_smp_worker(
             worker_depth = max_depth;
         }
         uint_fast8_t worker_mpc_level = lazy_smp_worker_mpc((uint_fast8_t)main_mpc_level, worker_idx, worker_is_end_search, target_iteration);
+        if (worker_is_end_search && !ai_endgame_mpc_level_allowed(max_depth, worker_mpc_level)) {
+            break;
+        }
         bool worker_is_target = (worker_depth == depth) && (worker_mpc_level == mpc_level);
 
         Search main_search(&board, worker_mpc_level, use_tree_parallel, !worker_is_target);
@@ -1054,6 +1076,15 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             main_depth = max_depth;
         }
         bool main_is_complete_search = main_is_end_search && main_mpc_level == MPC_100_LEVEL;
+        if (main_is_end_search && !ai_endgame_mpc_level_allowed(max_depth, main_mpc_level)) {
+            if (show_log) {
+                std::cerr << "3min endgame limit n_empties " << max_depth
+                          << " blocked " << SELECTIVITY_PERCENTAGE[main_mpc_level] << "%"
+                          << " allowed " << SELECTIVITY_PERCENTAGE[ai_endgame_max_mpc_level(max_depth)] << "%"
+                          << std::endl;
+            }
+            break;
+        }
         if (show_log) {
             if (main_is_end_search) {
                 std::cerr << "end ";
@@ -1087,7 +1118,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 time_limit_this_search,
                 previous_iteration_time
             );
-        if (early_pair_exact_decision.start) {
+        if (early_pair_exact_decision.start && ai_endgame_mpc_level_allowed(max_depth, MPC_100_LEVEL)) {
             early_pair_exact_attempted = true;
             diagnostics->early_pair_exact_attempted = true;
             diagnostics->early_pair_exact_budget = early_pair_exact_decision.probe_budget;
@@ -1412,6 +1443,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 (use_legal & (1ULL << id_result.second))
             ) {
                 uint_fast8_t verify_mpc_level = get_ai_tl_policy_change_verify_mpc_level(main_depth, main_mpc_level);
+                if (main_is_end_search) {
+                    verify_mpc_level = std::min(verify_mpc_level, ai_endgame_max_mpc_level(max_depth));
+                }
                 int previous_policy = result->policy;
                 int new_policy = id_result.second;
                 int previous_value = SCORE_UNDEFINED;
@@ -1865,6 +1899,11 @@ inline Search_result tree_search_legal(Board board, int alpha, int beta, int dep
     Search_result res;
     depth = std::min(HW2 - board.n_discs(), depth);
     bool is_end_search = (HW2 - board.n_discs() == depth);
+#if IS_GGS_3MIN
+    if (is_end_search) {
+        mpc_level = std::min(mpc_level, ai_endgame_max_mpc_level(HW2 - board.n_discs()));
+    }
+#endif
     bool use_time_limit = (time_limit != TIME_LIMIT_INF);
     std::vector<Clog_result> clogs;
     uint64_t clog_nodes = 0;
@@ -2689,6 +2728,9 @@ inline Search_result ai_time_limit_presearch_raw_search_body(Board board, int al
     int max_depth = HW2 - board.n_discs();
     depth = std::min(depth, max_depth);
     bool is_end_search = (depth == max_depth);
+    if (is_end_search) {
+        mpc_level = std::min(mpc_level, ai_endgame_max_mpc_level(max_depth));
+    }
     Search search(&board, mpc_level, use_multi_thread, false);
     search.thread_id = thread_id;
     std::pair<int, int> raw_result = first_nega_scout_legal(&search, alpha, beta, depth, is_end_search, std::vector<Clog_result>(), use_legal, strt, searching);
@@ -3778,6 +3820,7 @@ inline AI_TL_GGS_Pair_Outcome_Proof ai_tl_ggs_pair_target_nws(
     const uint64_t legal = board.get_legal();
     if (
         budget == 0ULL ||
+        !ai_endgame_mpc_level_allowed(HW2 - board.n_discs(), MPC_100_LEVEL) ||
         searching == nullptr ||
         !*searching ||
         !global_searching ||
@@ -4558,7 +4601,9 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
     while (*searching) {
         bool all_complete = true;
         for (int i = 0; i < canput; ++i) {
-            all_complete &= move_list[i].is_complete_search;
+            all_complete &= move_list[i].is_complete_search ||
+                (move_list[i].is_endgame_search &&
+                 !ai_endgame_mpc_level_allowed(max_depth, move_list[i].mpc_level + 1));
         }
         if (all_complete) {
             if (show_log) {
@@ -4575,7 +4620,9 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 ucb = move_list[i].value;
             } else if (move_list[i].count == 0) { // this node is not searched
                 ucb = INF;
-            } else if (move_list[i].is_complete_search) { // fully searched
+            } else if (move_list[i].is_complete_search ||
+                       (move_list[i].is_endgame_search &&
+                        !ai_endgame_mpc_level_allowed(max_depth, move_list[i].mpc_level + 1))) { // reached the allowed endgame limit
                 ucb = -INF;
             } else {
                 //double depth_weight = (double)std::min(10, move_list[i].depth) / (double)std::min(10, max_depth);
@@ -4616,6 +4663,19 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
             move_list[selected_idx].level = level;
             bool is_mid_search;
             get_level(move_list[selected_idx].level, board.n_discs() - 4, &is_mid_search, &move_list[selected_idx].depth, &move_list[selected_idx].mpc_level);
+#if IS_GGS_3MIN
+            // tree_search_legal may cap a fixed-level endgame request.
+            if (search_result.is_end_search) {
+                move_list[selected_idx].depth = search_result.depth;
+                for (int i = 0; i < N_SELECTIVITY_LEVEL; ++i) {
+                    if (SELECTIVITY_PERCENTAGE[i] == search_result.probability) {
+                        move_list[selected_idx].mpc_level = i;
+                        break;
+                    }
+                }
+                is_mid_search = false;
+            }
+#endif
             move_list[selected_idx].is_endgame_search = !is_mid_search;
             move_list[selected_idx].is_complete_search = !is_mid_search && move_list[selected_idx].mpc_level == MPC_100_LEVEL;
             move_list[selected_idx].response_board_key = n_board.to_str();
@@ -4687,6 +4747,9 @@ void ai_get_value_until(Board board, Ponder_elem *elem, uint64_t deadline, threa
             new_depth = max_depth;
         }
         const bool new_is_end_search = new_depth == max_depth;
+        if (new_is_end_search && !ai_endgame_mpc_level_allowed(max_depth, new_mpc_level)) {
+            break;
+        }
         const bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
         search.thread_id = thread_id;
@@ -5009,6 +5072,9 @@ std::vector<Ponder_elem> ai_align_move_levels(Board board, bool show_log, std::v
             new_depth = max_depth;
         }
         bool new_is_end_search = (new_depth == max_depth);
+        if (new_is_end_search && !ai_endgame_mpc_level_allowed(max_depth, new_mpc_level)) {
+            break;
+        }
         bool new_is_complete_search = new_is_end_search && new_mpc_level == MPC_100_LEVEL;
         Search search(&n_board, new_mpc_level, true, false);
         search.thread_id = thread_id;
@@ -5208,6 +5274,9 @@ std::vector<Ponder_elem> ai_additional_selfplay(Board board, bool show_log, std:
                 uint_fast8_t mpc_level;
                 bool is_mid_search;
                 get_level(level, n_board.n_discs() - 4, &is_mid_search, &depth, &mpc_level);
+                if (depth >= HW2 - n_board.n_discs()) {
+                    mpc_level = std::min(mpc_level, ai_endgame_max_mpc_level(HW2 - n_board.n_discs()));
+                }
                 move_list[selected_idx].depth = depth;
                 move_list[selected_idx].mpc_level = mpc_level;
                 move_list[selected_idx].is_endgame_search = (HW2 - n_board.n_discs()) <= depth;
