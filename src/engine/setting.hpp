@@ -14,10 +14,19 @@
     -DHAS_ARM_PROCESSOR : ARM Processor
     -DHAS_AMD_PROCESSOR : Optimization for AMD CPU
     -DHAS_32_BIT_OS     : 32bit environment
+    -DIS_GGS_3MIN       : 3-minute GGS profile (requires IS_GGS_TOURNAMENT)
 */
 
 #pragma once
 #include <string>
+
+// Separate the 3-minute profile from other GGS tournament time controls.
+#ifndef IS_GGS_3MIN
+    #define IS_GGS_3MIN 0
+#endif
+#if IS_GGS_3MIN && !IS_GGS_TOURNAMENT
+    #error "IS_GGS_3MIN requires IS_GGS_TOURNAMENT"
+#endif
 
 /*
     @brief Option

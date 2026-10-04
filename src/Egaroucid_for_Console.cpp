@@ -75,6 +75,11 @@ int main(int argc, char* argv[]) {
         #else
             std::cerr << "ggs tournament build = false" << std::endl;
         #endif
+        #if IS_GGS_3MIN
+            std::cerr << "ggs 3min build = true" << std::endl;
+        #else
+            std::cerr << "ggs 3min build = false" << std::endl;
+        #endif
     }
     print_special_commandline_options(commandline_options);
     init_console(options, binary_path);
