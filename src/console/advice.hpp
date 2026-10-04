@@ -175,6 +175,9 @@ void print_advice(Board_info *board_info) {
         uint64_t legal_cpy = legal;
         while (legal_cpy) {
             Search_result search_result = ai_legal(board, ADVICE_VALUE_LEVEL, true, 0, true, false, legal_cpy);
+            if (!is_valid_policy(search_result.policy) || (legal_cpy & (1ULL << search_result.policy)) == 0ULL) { // no move found (search stopped etc.)
+                break;
+            }
             // if (search_result.value >= best_value - 2) {
                 Advice_Move move;
                 move.policy = search_result.policy;

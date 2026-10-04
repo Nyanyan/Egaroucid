@@ -28,7 +28,9 @@
 std::string get_command_line() {
     std::cerr << "> ";
     std::string cmd_line;
-    std::getline(std::cin, cmd_line);
+    if (!std::getline(std::cin, cmd_line)) { // end of input (pipe closed etc.): exit instead of looping forever
+        return "exit";
+    }
     return cmd_line;
 }
 
@@ -127,16 +129,19 @@ void play(Board_info *board, Options *options, std::string transcript) {
             *board = board_bak;
             return;
         }
-        calc_flip(&flip, &board->board, y * HW + x);
-        if (flip.flip == 0ULL) {
+        if ((board->board.get_legal() & (1ULL << (y * HW + x))) == 0ULL) { // occupied cells are also rejected
             std::cerr << "[ERROR] invalid move " << transcript[i] << transcript[i + 1] << std::endl;
             *board = board_bak;
             return;
         }
+        calc_flip(&flip, &board->board, y * HW + x);
         board->board.move_board(&flip);
         board->player ^= 1;
         if (board->board.is_end() && i < (int)transcript.length() - 2) {
             std::cerr << "[ERROR] game over found before checking all transcript. remaining codes ignored." << std::endl;
+            board->boards.emplace_back(board->board);
+            board->players.emplace_back(board->player);
+            ++board->ply_vec;
             return;
         }
         if (!options->noautopass) {
@@ -234,6 +239,10 @@ Search_result go_noprint(Board_info *board, Options *options, State *state) {
     double local_strategy[HW2];
     calc_local_strategy(board->board, 10, local_strategy, true);
     */
+    if (!is_valid_policy(result.policy) || (board->board.get_legal() & (1ULL << result.policy)) == 0ULL) { // search stopped etc.
+        std::cerr << "[ERROR] no move found" << std::endl;
+        return result;
+    }
     Flip flip;
     calc_flip(&flip, &board->board, result.policy);
     board->board.move_board(&flip);

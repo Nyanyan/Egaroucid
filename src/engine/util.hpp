@@ -256,13 +256,17 @@ inline int convert_coord_to_representative_board(int cell, int idx) {
 }
 
 bool is_valid_transcript(std::string transcript) {
-    if (transcript.size() % 2) {
+    if (transcript.empty() || transcript.size() % 2) { // an empty transcript is not accepted (same as before)
         return false;
     }
     Board board;
     Flip flip;
     board.reset();
-    for (int i = 0; i < transcript.size() - 1 && board.check_pass(); i += 2) {
+    // i + 1 < size: size() - 1 underflows with an empty transcript (size_t), and the loop read out of the string
+    for (size_t i = 0; i + 1 < transcript.size(); i += 2) {
+        if (!board.check_pass()) { // game over, but moves remain
+            return false;
+        }
         if (!is_coord_like_chars(transcript[i], transcript[i + 1])) {
             return false;
         }
@@ -278,7 +282,7 @@ bool is_valid_transcript(std::string transcript) {
 
 std::vector<uint_fast8_t> transcript_to_arr(std::string transcript) {
     std::vector<uint_fast8_t> res;
-    for (int i = 0; i < transcript.size() - 1; i += 2) {
+    for (size_t i = 0; i + 1 < transcript.size(); i += 2) { // see is_valid_transcript
         uint_fast8_t x = transcript[i] - 'a';
         res.emplace_back(get_coord_from_chars(transcript[i], transcript[i + 1]));
     }

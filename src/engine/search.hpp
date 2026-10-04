@@ -50,7 +50,13 @@ constexpr int MAX_N_BRANCHES = 35;
     @brief Stability cutoff threshold
     from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/search.c#L108 and modified
 */
-constexpr int stability_threshold_nws[HW2] = {
+// The tables are indexed with the number of discs (search->n_discs), which becomes 64 when the board is full:
+// nega_alpha_end_fast_nws() is also called for boards with 4 or less empty squares (from the null window search
+// of nega_scout() with 5 empty squares), and then it goes down to the full board with n_discs == 64.
+// With HW2 elements, element [64] was read out of the array, and the number of visited nodes depended on
+// the value which happened to be placed after the table (the search result was not affected).
+// The last element (99: no cutoff, same as 61-63 discs) is for the full board.
+constexpr int stability_threshold_nws[HW2 + 1] = {
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 64, 64, 64, 64, 64, 64, 64, 
@@ -58,10 +64,11 @@ constexpr int stability_threshold_nws[HW2] = {
     56, 54, 54, 52, 52, 50, 50, 48, 
     48, 46, 44, 42, 40, 38, 36, 34, 
     32, 30, 28, 26, 24, 22, 20, 16, 
-    14, 12, 10, 8, 6, 99, 99, 99
+    14, 12, 10, 8, 6, 99, 99, 99, 
+    99
 };
 
-constexpr int stability_threshold[HW2] = {
+constexpr int stability_threshold[HW2 + 1] = {
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 62, 62, 60, 60, 58, 58, 56, 
@@ -69,7 +76,8 @@ constexpr int stability_threshold[HW2] = {
     48, 46, 46, 44, 44, 42, 42, 40, 
     40, 38, 36, 34, 32, 30, 28, 26, 
     24, 22, 20, 18, 16, 14, 12, 8, 
-    6, 4, 2, 0, -2, 99, 99, 99
+    6, 4, 2, 0, -2, 99, 99, 99, 
+    99
 };
 
 /*
