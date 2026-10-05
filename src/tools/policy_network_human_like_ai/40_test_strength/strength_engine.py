@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 from pathlib import Path
 import queue
 import signal
@@ -899,6 +900,12 @@ class GameRunner:
                           f"pid={engine.process.pid} method=clearcache", flush=True)
                 if stateful:
                     held[player_idx] = engine
+                    if self.specs[player_idx].random_seed is not None:
+                        # Pair/set identity survives appended participants and task-ID remapping.
+                        identity = (self.specs[player_idx].random_seed, p0_idx, p1_idx,
+                                    task.set_index, p0_is_black)
+                        seed = int.from_bytes(hashlib.sha256(repr(identity).encode("ascii")).digest()[:8], "big")
+                        self._send(engine, f"set_game_seed {seed}")
                     self._send(engine, "clear_board")
 
             if len(task.opening) % 2:

@@ -33,6 +33,7 @@ class PlayerSpec:
     processes_per_player: int
     setboard_before_genmove: bool
     alpha: Optional[float] = None
+    random_seed: Optional[int] = None
 
     @property
     def concurrent_match_set_capacity(self) -> int:
