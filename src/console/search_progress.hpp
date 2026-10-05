@@ -18,7 +18,7 @@
 inline std::string search_progress_summary(const Search_progress &progress) {
     std::ostringstream summary;
     summary << "search depth " << progress.depth << " mpc " << progress.probability
-            << "% time " << progress.elapsed_msec << " ms " << progress.state;
+            << "% score " << progress.score << " time " << progress.elapsed_msec << " ms";
     return summary.str();
 }
 
