@@ -403,6 +403,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
 }
 
 inline int nega_scout(Search *search, int alpha, int beta, const int depth, const bool skipped, uint64_t legal, const bool is_end_search, bool *searching) {
+    search->configure_move_ordering(depth, is_end_search);
     search->configure_pv_extension(depth, is_end_search);
     return nega_scout_node(search, alpha, beta, depth, skipped, legal, is_end_search, SEARCH_NODE_PV, searching);
 }
@@ -598,6 +599,7 @@ inline int aspiration_search(Search *search, int alpha, int beta, int predicted_
     @return pair of value and best move
 */
 std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, uint64_t legal, uint64_t strt, bool *searching) {
+    search->configure_move_ordering(depth, is_end_search);
     search->configure_pv_extension(depth, is_end_search);
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
@@ -729,6 +731,7 @@ std::pair<int, int> first_nega_scout(Search *search, int alpha, int beta, const 
 }
 
 Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, const int depth, const bool is_end_search, const std::vector<Clog_result> clogs, int clog_depth, uint_fast8_t played_move, uint64_t strt, bool *searching) {
+    search->configure_move_ordering(depth, is_end_search);
     search->configure_pv_extension(depth, is_end_search);
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS

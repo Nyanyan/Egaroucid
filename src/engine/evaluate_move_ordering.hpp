@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <fstream>
 #include <vector>
+#include "move_ordering_policy.hpp"
 
 inline int eval_move_ordering_mid_shallow_max_depth = 0;
 inline bool eval_move_ordering_mid_shallow_share_tt = false;
@@ -133,6 +134,8 @@ inline bool load_eval_move_ordering_model_file(const char *file, bool show_log, 
 }
 
 inline bool load_eval_move_ordering_mid_file(const char *file, bool show_log) {
+    // Explicit model selection keeps the experimental/manual CLI semantics.
+    eval_move_ordering_auto_enabled = false;
     return load_eval_move_ordering_model_file(file, show_log, false);
 }
 
@@ -188,10 +191,23 @@ inline bool load_eval_move_ordering_aux_file(const char *, bool) {
 }
 #endif
 
+inline Move_ordering_model search_static_ordering_model(const Search *search) {
+#if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
+    if (search->move_ordering_policy.automatic) return search->move_ordering_policy.static_model;
+    if (!eval_move_ordering_auto_enabled && eval_move_ordering_mid_enabled) return Move_ordering_model::primary;
+#endif
+    return Move_ordering_model::ordinary;
+}
+
+inline bool search_uses_separate_ordering_evaluation(const Search *search) {
+    return search_static_ordering_model(search) != Move_ordering_model::ordinary;
+}
+
 inline int mid_evaluate_for_ordering(Search *search) {
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
-    if (eval_move_ordering_mid_enabled) {
-        return mid_evaluate_separate_move_ordering(search);
+    const auto model = search_static_ordering_model(search);
+    if (model != Move_ordering_model::ordinary) {
+        return mid_evaluate_separate_move_ordering(search, model == Move_ordering_model::secondary);
     }
 #endif
 #if USE_DIM0_ONLY_EVALUATION
@@ -210,19 +226,28 @@ class Move_ordering_eval_scope {
     const bool saved_evaluation;
     const bool saved_tt;
     const bool saved_parallel;
+    const Move_ordering_model saved_model;
 #endif
 public:
     Move_ordering_eval_scope(Search &s, int depth, bool is_end_search = false)
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
         : search(s), saved_evaluation(s.use_separate_shallow_evaluation),
-          saved_tt(s.share_separate_shallow_eval_tt), saved_parallel(s.use_multi_thread)
+          saved_tt(s.share_separate_shallow_eval_tt), saved_parallel(s.use_multi_thread),
+          saved_model(s.separate_shallow_model)
 #endif
     {
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
-        const bool permitted_context = !eval_move_ordering_mid_shallow_end_only || is_end_search || saved_evaluation;
-        if (eval_move_ordering_mid_enabled && permitted_context && depth > 0 && depth <= eval_move_ordering_mid_shallow_max_depth) {
+        const auto &policy = search.move_ordering_policy;
+        const int max_depth = policy.automatic ? policy.auxiliary_max_depth : eval_move_ordering_mid_shallow_max_depth;
+        const bool end_only = policy.automatic || eval_move_ordering_mid_shallow_end_only;
+        const bool permitted_context = !end_only || is_end_search || saved_evaluation;
+        const auto model = policy.automatic ? policy.auxiliary_model
+            : (eval_move_ordering_aux_enabled ? Move_ordering_model::secondary : Move_ordering_model::primary);
+        if (search_uses_separate_ordering_evaluation(&search) && model != Move_ordering_model::ordinary &&
+            permitted_context && depth > 0 && depth <= max_depth) {
             search.use_separate_shallow_evaluation = true;
-            search.share_separate_shallow_eval_tt = eval_move_ordering_mid_shallow_share_tt;
+            search.separate_shallow_model = model;
+            search.share_separate_shallow_eval_tt = policy.automatic ? policy.share_tt : eval_move_ordering_mid_shallow_share_tt;
             search.use_multi_thread = false;
         }
 #else
@@ -238,6 +263,7 @@ public:
         search.use_separate_shallow_evaluation = saved_evaluation;
         search.share_separate_shallow_eval_tt = saved_tt;
         search.use_multi_thread = saved_parallel;
+        search.separate_shallow_model = saved_model;
 #endif
     }
 };
@@ -254,7 +280,7 @@ inline bool search_uses_separate_shallow_evaluation(const Search *search) {
 inline int mid_evaluate_for_search(Search *search) {
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
     if (search->use_separate_shallow_evaluation) {
-        return mid_evaluate_separate_move_ordering(search, true);
+        return mid_evaluate_separate_move_ordering(search, search->separate_shallow_model == Move_ordering_model::secondary);
     }
 #endif
 #if !USE_DIM0_ONLY_EVALUATION
@@ -263,4 +289,11 @@ inline int mid_evaluate_for_search(Search *search) {
     }
 #endif
     return mid_evaluate_diff(search);
+}
+
+inline int move_ordering_leaf_hint(Search *search, int static_value) {
+#if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
+    if (search->separate_shallow_model == search_static_ordering_model(search)) return static_value;
+#endif
+    return mid_evaluate_for_search(search);
 }

@@ -176,11 +176,11 @@ inline int move_ordering_mid_evaluate(
     const bool cache_static_eval
 ) {
     const int static_eval = mid_evaluate_for_ordering(search);
-    if (eval_move_ordering_mid_enabled) {
+    if (search_uses_separate_ordering_evaluation(search)) {
         // Only a search already using the separate leaf model can reuse its
         // static hint. Main-search MPC gates retain the main evaluator.
         flip_value->static_eval = cache_static_eval && search_uses_separate_shallow_evaluation(search)
-            ? (eval_move_ordering_aux_enabled ? mid_evaluate_for_search(search) : static_eval) : SCORE_UNDEFINED;
+            ? move_ordering_leaf_hint(search, static_eval) : SCORE_UNDEFINED;
     }
 #if USE_DIM0_ONLY_EVALUATION
     else if (cache_static_eval) {

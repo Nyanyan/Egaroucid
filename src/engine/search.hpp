@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cassert>
 #include "setting.hpp"
+#include "move_ordering_policy.hpp"
 #include "common.hpp"
 #include "board.hpp"
 #include "thread_pool.hpp"
@@ -396,9 +397,11 @@ class Search {
 #endif
         bool is_presearch;
         bool use_dim0_mpc_eval = false;
+        Move_ordering_policy move_ordering_policy;
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION
         bool use_separate_shallow_evaluation = false;
         bool share_separate_shallow_eval_tt = false;
+        Move_ordering_model separate_shallow_model = Move_ordering_model::ordinary;
 #endif
         int lazy_smp_worker_idx = 0;
         int mid_split_task_limit = ybwc_mid_split_task_limit;
@@ -415,6 +418,14 @@ class Search {
             return !use_separate_shallow_evaluation || share_separate_shallow_eval_tt;
 #else
             return true;
+#endif
+        }
+
+        inline void configure_move_ordering(const int depth, const bool is_end_search) {
+#if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
+            move_ordering_policy = eval_move_ordering_auto_enabled
+                ? select_move_ordering_policy(depth, is_end_search, mpc_level)
+                : Move_ordering_policy{};
 #endif
         }
 
