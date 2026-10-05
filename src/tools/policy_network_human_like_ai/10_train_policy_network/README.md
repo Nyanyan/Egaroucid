@@ -38,6 +38,21 @@ $env:POLICY_DATASET = 'WTHOR_1977_2024'
 別のデータセットへ切り替えるときは、`POLICY_DATASET` または `--dataset` を変更してください。
 水増し前のstage 03を使う場合は、`--board-split-dir` に `$env:POLICY_DATA_ROOT/board_split/<データセット名>` を渡します。
 
+石損で重みを付けたデータは、前処理の `03_generate_weighted_board_data.py` で生成します。
+各 `.dat` に対応する `.weights` の値を自動的に読み、Kerasへ `sample_weight` として渡します。
+各局面を1件ずつ使い、石損0・2・4・6に対する重みは1・2・4・8です。奇数の石損にも `2 ** (石損 / 2)` を適用します。
+
+ファイルには元の重みを保存します。学習時は全train局面の平均重みでtrain・val・testの重みを割り、比率を保ったままlossの桁を抑えます。
+val・testの情報は、この正規化係数に使いません。係数は `prepared_dataset.json` に記録します。
+シャッフルや件数上限を指定した抽出でも、局面と重みの対応を保ちます。重みの欠損、件数不一致、非正値・非有限値は開始時に検出します。
+Kerasのtrain/val lossには重みが反映されます。一方、モデル選択と最終評価に使う既存のtop-N一致率・cross entropyは、各局面を等しく数える指標です。
+
+```powershell
+python train_policy_network.py --board-split-dir "$env:POLICY_DATA_ROOT/board_split/WTHOR_1977_2024_LOSS_WEIGHTED"
+```
+
+04で8倍化した重み付きデータを使う場合は、`--dataset WTHOR_1977_2024_LOSS_WEIGHTED` を指定します。
+
 ## 学習と最終評価
 
 分割は前処理で確定したものを使います。学習時に棋譜や8倍化済み局面を再分割しません。
