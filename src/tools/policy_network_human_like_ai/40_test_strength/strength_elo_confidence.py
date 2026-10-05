@@ -118,7 +118,11 @@ def load_clustered_elo_data(output_dir: Path) -> ClusteredEloData:
     completed_match_sets = int(aggregate.get("completed_match_sets", -1))
     total_match_sets = int(aggregate.get("total_match_sets", -1))
     if completed_match_sets != total_match_sets or total_match_sets < 1:
-        raise ValueError("Elo intervals require a completed tournament")
+        raise ValueError(
+            "Elo intervals require a completed tournament: "
+            f"{completed_match_sets}/{total_match_sets} match sets completed. "
+            "Resume the remaining matches before running reanalyze_strength_elo.py."
+        )
     if int(aggregate.get("completed_actual_games", -1)) != 2 * total_match_sets:
         raise ValueError("completed actual-game count is inconsistent")
     if int(aggregate.get("total_actual_games", -1)) != 2 * total_match_sets:
