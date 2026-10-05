@@ -306,6 +306,8 @@ def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
         raise ValueError("--max-engine-threads must be at least --engine-threads")
     if args.engine_thread_budget < 4 * args.engine_threads:
         raise ValueError("--engine-thread-budget must be at least four times --engine-threads")
+    if args.sequential_tail_match_sets < 0:
+        raise ValueError("--sequential-tail-match-sets must be non-negative")
     if not math.isfinite(args.estimated_search_thread_memory_mib) or args.estimated_search_thread_memory_mib <= 0:
         raise ValueError("--estimated-search-thread-memory-mib must be finite and positive")
     if not 0 <= args.blend_egaroucid_level <= 60:
@@ -804,6 +806,13 @@ def build_manifest_configuration(
                 if edax_levels else None
             ),
             "engine_threads": args.engine_threads,
+            "sequential_tail": {
+                "remaining_match_sets": args.sequential_tail_match_sets,
+                "engine_threads": 32,
+                "parallel_games": 1,
+                "tt_reset": "clear_between_games_reuse_supported_processes",
+                "transition": "cancel_and_requeue_uncommitted_match_sets",
+            },
             "adaptive_search_threads": {
                 "enabled": args.adaptive_engine_threads,
                 "allocation": "fixed_total_between_games",
@@ -1050,6 +1059,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--adaptive-engine-threads", action=argparse.BooleanOptionalAction, default=False,
                         help="Share a fixed search-thread budget among admitted games; change only between games.")
     parser.add_argument("--engine-thread-budget", type=int, default=70)
+    parser.add_argument("--sequential-tail-match-sets", type=int, default=0,
+                        help="At this global remaining-set count, restart unfinished sets and run one game at a time with 32 search threads (0 disables)")
     parser.add_argument("--max-engine-threads", type=int, default=64)
     parser.add_argument("--estimated-search-thread-memory-mib", type=float, default=64.0)
     parser.add_argument(
@@ -1419,6 +1430,8 @@ def run_tournament(args: argparse.Namespace) -> None:
             print("cleared_abandoned_hint_claims", cleared_claims)
 
     manager = ProcessManager(args.minimum_available_memory_mib)
+    # Policy servers survive the tail transition; only playing engines stop.
+    game_manager = ProcessManager(args.minimum_available_memory_mib)
     monitor: Optional[PerformanceMonitor] = None
     start_time = time.time()
     stop_reason = "finished"
@@ -1486,7 +1499,7 @@ def run_tournament(args: argparse.Namespace) -> None:
 
         game_runner = GameRunner(
             specs,
-            manager,
+            game_manager,
             args.gtp_command_timeout_sec,
             game_boundary_threads=args.adaptive_engine_threads,
         )
@@ -1532,6 +1545,8 @@ def run_tournament(args: argparse.Namespace) -> None:
         retry_counts: Dict[int, int] = {}
         deferred_retries: List[MatchSetTask] = []
         retry_phase = False
+        sequential_tail = False
+        last_tail_status = 0.0
         active_sets: Dict[int, InFlightMatchSet] = {}
         future_to_task: Dict[Future, int] = {}
         executor = ThreadPoolExecutor(
@@ -1545,14 +1560,78 @@ def run_tournament(args: argparse.Namespace) -> None:
         )
 
         def start_color(in_flight, color):
-            kwargs = ({"search_threads": thread_budget.for_game(in_flight.task, color)}
-                      if thread_budget is not None else {})
+            if sequential_tail:
+                kwargs = {"search_threads": {i: 32 for i in (in_flight.task.p0_idx, in_flight.task.p1_idx)
+                                              if specs[i].alpha != 1.0}}
+                print(f"sequential_game_start match_set={in_flight.task.task_id} "
+                      f"color_game={1 if color else 2}/2 engine_threads=32 tt=clear_before_play", flush=True)
+            else:
+                kwargs = ({"search_threads": thread_budget.for_game(in_flight.task, color)}
+                          if thread_budget is not None else {})
             future = executor.submit(game_runner.play_single_game, in_flight.task, color, **kwargs)
             in_flight.futures[future] = color
             future_to_task[future] = in_flight.task.task_id
 
+        def enter_sequential_tail():
+            nonlocal sequential_tail, game_manager, game_runner, executor, resources, thread_budget, capacities
+            remaining = len(tasks) - completed_match_sets
+            if (sequential_tail or not launch_new_tasks or not args.sequential_tail_match_sets
+                    or not 0 < remaining <= args.sequential_tail_match_sets):
+                return
+            print(f"sequential_tail_start remaining_match_sets={remaining} "
+                  f"cancelled_match_sets={len(active_sets)} engine_threads=32 parallel_games=1", flush=True)
+            # Stop spawning first, kill all playing process trees, then join the
+            # workers before replacing their pools. Intentional cancellation is
+            # not a failed attempt, and committed results stay in the store.
+            game_manager.close_all()
+            executor.shutdown(wait=True, cancel_futures=True)
+            for in_flight in active_sets.values():
+                pending.push_front(in_flight.task)
+            active_sets.clear()
+            future_to_task.clear()
+            active_counts[:] = [0] * len(specs)
+            game_manager = ProcessManager(args.minimum_available_memory_mib)
+            game_runner = GameRunner(specs, game_manager, args.gtp_command_timeout_sec,
+                                     game_boundary_threads=True, sequential_fresh_tt=True)
+            executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="strength-tail")
+            resources = None
+            thread_budget = None
+            capacities = [1] * len(specs)
+            sequential_tail = True
+
+        def write_tail_status():
+            nonlocal last_tail_status
+            if time.monotonic() - last_tail_status < 5:
+                return
+            playing = {i for item in active_sets.values() for i in (item.task.p0_idx, item.task.p1_idx)}
+            search = {i for i in playing if specs[i].alpha != 1.0}
+            atomic_write_json(args.output_dir / "engine_allocation_live.json", {
+                "sampled_at_unix_sec": time.time(),
+                "allocation_policy": "sequential_tail", "parallel_games": 1,
+                "engine_threads": 32, "thread_budget": args.engine_thread_budget,
+                "remaining_match_sets": len(tasks) - completed_match_sets,
+                "allocated_search_threads": 32 * len(search),
+                "allocated_policy_processes": len(playing - search),
+                "allocated_player_processes": len(playing),
+                "allocated_compute_slots": 32 * len(search) + len(playing - search),
+                "tt_reset": "clear_between_games_reuse_supported_processes",
+                "active_games": [{"task_id": item.task.task_id, "p0_is_black": color}
+                                 for item in active_sets.values() for color in item.futures.values()],
+                "players": [{"name": spec.name, "active_sets": active_counts[i],
+                             "pending_sets": pending.remaining_for_player(i) + sum(
+                                 i in (t.p0_idx, t.p1_idx) for t in deferred_retries),
+                             "completed_sets": sum(stats.n_played[i]), "target_sets": sum(target_matrix[i]),
+                             "created_processes": game_runner.pools[i].created_processes,
+                             "allocated_game_threads": [32] if i in search else [],
+                             "retired": not active_counts[i] and not pending.remaining_for_player(i)
+                                        and not any(i in (t.p0_idx, t.p1_idx) for t in deferred_retries)}
+                            for i, spec in enumerate(specs)],
+            })
+            last_tail_status = time.monotonic()
+
         def admit_tasks() -> None:
             nonlocal pending, deferred_retries, retry_phase
+            enter_sequential_tail()
             if thread_budget is not None:
                 thread_budget.begin_admission()
             if not pending and not active_sets and deferred_retries:
@@ -1580,7 +1659,7 @@ def run_tournament(args: argparse.Namespace) -> None:
             blocked_pairs = set()
             while (
                 launch_new_tasks
-                and len(active_sets) < (1 if retry_phase else args.parallel_match_sets)
+                and len(active_sets) < (1 if retry_phase or sequential_tail else args.parallel_match_sets)
                 and pending
             ):
                 task = pending.pop_schedulable(
@@ -1617,8 +1696,14 @@ def run_tournament(args: argparse.Namespace) -> None:
                 thread_budget.distribute(admitted)
             for task in admitted:
                 in_flight = active_sets[task.task_id]
-                for p0_is_black in (True, False):
+                for p0_is_black in ((True,) if sequential_tail else (True, False)):
                     start_color(in_flight, p0_is_black)
+            if sequential_tail:
+                for i, pool in enumerate(game_runner.pools):
+                    if (not active_counts[i] and not pending.remaining_for_player(i)
+                            and not any(i in (t.p0_idx, t.p1_idx) for t in deferred_retries)):
+                        pool.close_idle()
+                write_tail_status()
 
         admit_tasks()
         while active_sets or ((pending or deferred_retries) and launch_new_tasks):
@@ -1634,7 +1719,7 @@ def run_tournament(args: argparse.Namespace) -> None:
                     "Time limit reached; draining already admitted games.",
                     flush=True,
                 )
-            if launch_new_tasks and manager.low_memory_event.is_set():
+            if launch_new_tasks and (manager.low_memory_event.is_set() or game_manager.low_memory_event.is_set()):
                 launch_new_tasks = False
                 stop_reason = "low_available_memory"
                 print(
@@ -1655,7 +1740,7 @@ def run_tournament(args: argparse.Namespace) -> None:
             )
             if not done:
                 # Admit new games and refresh Edax targets for the next move boundary.
-                if args.adaptive_engine_threads:
+                if args.adaptive_engine_threads or sequential_tail:
                     admit_tasks()
                 continue
             finalized_ids: set[int] = set()
@@ -1669,6 +1754,12 @@ def run_tournament(args: argparse.Namespace) -> None:
                     in_flight.results[p0_is_black] = future.result()
                 except BaseException as error:
                     in_flight.errors.append(error)
+                if sequential_tail:
+                    last_tail_status = 0.0
+                    print(f"sequential_game_finished match_set={task_id} "
+                          f"color_game={1 if p0_is_black else 2}/2 success={not in_flight.errors}", flush=True)
+                    if p0_is_black and not in_flight.errors:
+                        start_color(in_flight, False)
                 if not in_flight.futures:
                     finalized_ids.add(task_id)
 
@@ -1774,10 +1865,12 @@ def run_tournament(args: argparse.Namespace) -> None:
             stop_reason = "interrupted"
     except KeyboardInterrupt:
         stop_reason = "keyboard_interrupt"
+        game_manager.close_all()
         manager.close_all()
     finally:
         # Closing the process trees first also releases workers promptly when
         # an unexpected coordinator exception occurs.
+        game_manager.close_all()
         manager.close_all()
         if executor is not None:
             executor.shutdown(wait=True, cancel_futures=True)

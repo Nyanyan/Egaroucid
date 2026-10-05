@@ -62,6 +62,20 @@ class BlendGtpEngine:
         self.last_move_stone_loss = None
         return ""
 
+    def clear_cache(self) -> str:
+        """Clear the native TT between games without restarting the process."""
+        runner = getattr(self.blender, "hint_runner", None)
+        if runner is None:
+            return ""  # Pure policy/random opponents have no search TT.
+        proc = runner.proc
+        if proc is not None and proc.poll() is None:
+            proc.stdin.write("clearcache\n")
+            proc.stdin.flush()
+            response = runner._read_until_prompt()
+            if "unknown" in response.lower() or "not found" in response.lower():
+                raise RuntimeError(f"Egaroucid rejected clearcache: {response}")
+        return ""
+
     def play(self, color: str, move: str) -> str:
         self.last_move_stone_loss = None
         side = parse_color(color)
@@ -121,6 +135,7 @@ class BlendGtpEngine:
                     "list_commands",
                     "boardsize",
                     "clear_board",
+                    "clear_cache",
                     "komi",
                     "time_settings",
                     "time_left",
@@ -139,6 +154,8 @@ class BlendGtpEngine:
             return True, ""
         if command == "clear_board":
             return True, self.clear_board()
+        if command == "clear_cache":
+            return True, self.clear_cache()
         if command == "play":
             if len(args) != 2:
                 raise ValueError("play requires '<color> <move>'")

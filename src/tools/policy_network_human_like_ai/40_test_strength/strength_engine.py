@@ -795,9 +795,11 @@ class GameRunner:
         command_timeout_sec: float,
         *,
         game_boundary_threads: bool = False,
+        sequential_fresh_tt: bool = False,
     ):
         self.specs = list(specs)
         self.game_boundary_threads = game_boundary_threads
+        self.sequential_fresh_tt = sequential_fresh_tt
         self.thread_budget = None
         self.pools = [
             PlayerProcessPool(spec, manager, command_timeout_sec,
@@ -857,6 +859,10 @@ class GameRunner:
             p0_idx: 0 if p0_is_black else 1,
             p1_idx: 1 if p0_is_black else 0,
         }
+        if self.sequential_fresh_tt:
+            # Only one game can lease these pools. Reuse the same process even
+            # when its color changes, after the acknowledged TT reset below.
+            color_pools = {p0_idx: 0, p1_idx: 0}
         held: Dict[int, GtpProcess] = {}
         leased: Dict[int, GtpProcess] = {}
         state = BoardState.initial()
@@ -874,6 +880,12 @@ class GameRunner:
                 stateful = not self.specs[player_idx].setboard_before_genmove
                 if not stateful and not self.game_boundary_threads:
                     continue
+                if (self.sequential_fresh_tt and stateful and self.specs[player_idx].alpha != 1.0
+                        and not self.pools[player_idx].live_edax_threads):
+                    # The native Egaroucid GTP interface has no TT-reset command
+                    # (clear_board only changes the board). Only this interface
+                    # needs a fresh process; hint wrappers expose clearcache.
+                    self.pools[player_idx].close_idle()
                 engine = self.pools[player_idx].acquire(
                     color_pools[player_idx],
                     search_threads=(search_threads or {}).get(player_idx),
@@ -881,6 +893,10 @@ class GameRunner:
                 # Pin blend wrappers as well when adapting threads. Returning
                 # them after each move would reset their nested engine/TT midgame.
                 leased[player_idx] = engine
+                if self.sequential_fresh_tt and not stateful and self.specs[player_idx].alpha != 1.0:
+                    self._send(engine, "clear_cache")
+                    print(f"game_tt_reset player={self.specs[player_idx].name} "
+                          f"pid={engine.process.pid} method=clearcache", flush=True)
                 if stateful:
                     held[player_idx] = engine
                     self._send(engine, "clear_board")
