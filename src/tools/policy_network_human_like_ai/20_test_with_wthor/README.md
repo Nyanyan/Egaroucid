@@ -73,6 +73,25 @@ python evaluate_wthor_blend_from_cache.py `
 出力先には空のディレクトリを指定してください。新モデルの一致率と尤度は `cached_wthor_blend_summary.csv` と `.json` に保存します。
 重み付きデータで学習したモデルも、評価には前回と同じ標本を使い、各局面を同じ重みで集計します。
 
+## 通常モデルと重み付きモデルのβ混合を評価する
+
+`evaluate_wthor_model_blend.py` は、`model_blend_beta_0.2`・`0.4`・`0.6`・`0.8` の着手一致率をまとめて評価します。対戦用と同じ `P_normal^(1-beta) * P_weighted^beta` を合法手で正規化し、既存の対称性を考慮した一致率で集計します。β=0は通常モデル、β=1は重み付きモデルです。
+
+このディレクトリから、現在の2モデルを次のコマンドで評価できます。
+
+```powershell
+python evaluate_wthor_model_blend.py `
+  --reference-dir ../../../../../experiment_bat/20261002/results/human `
+  --normal-model ../../../../../experiment_bat/20261002/results/train/selected_model.h5 `
+  --weighted-model ../10_train_policy_network/trained/prepared_conv8_bn_e10_20261003_221904_955/selected_model.h5 `
+  --betas 0.2,0.4,0.6,0.8 `
+  --output-dir output/model_blend_beta_0.2_0.8
+```
+
+前回のsummaryと実験設定から同じ10万局面を復元し、標本のSHA-256を照合します。探索エンジンと探索キャッシュは不要です。既定ではTop-1のみ、`--top3` を追加するとTop-3も出力します。`--dry-run` ではモデルファイルと標本を確認し、推論・結果保存は行いません。
+
+結果は指定先の `wthor_model_blend_summary.csv` と `.json` に保存します。出力先は空のディレクトリを指定してください。JSONには2モデルのパス・SHA-256と標本の情報も記録します。
+
 ## 一致率と尤度
 
 Top-1と、任意で有効にするTop-3の一致率には、従来どおり盤面の対称性を考慮した定義を使用します。両プレイヤーの石の配置を保つ対称変換によって、人間が実際に選んだ手を予測手に対応させられる場合、一致とみなします。比較用のエンジン単体の評価では、各エンジンの `hint 1`（`--top3` 指定時は `hint 3`）の出力順序をそのまま使用します。Egaroucidのレベル21は、混合方策に必要な全合法手のヒントを計算します。
