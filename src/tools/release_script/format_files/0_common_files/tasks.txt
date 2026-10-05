@@ -1,6 +1,8 @@
 console book.egbk3 resources
 console empty_book.egbk3 resources
 console eval.egev2 resources
+console offset0_16.egev2 resources
+console decay_half16.egev2 resources
 console eval_move_ordering_end.egev resources
 console hash resources/hash
 installer img resources/img
@@ -8,6 +10,8 @@ installer languages resources/languages
 installer book.egbk3 Documents/Egaroucid
 installer empty_book.egbk3 Documents/Egaroucid
 installer eval.egev2 resources
+installer offset0_16.egev2 resources
+installer decay_half16.egev2 resources
 installer eval_move_ordering_end.egev resources
 installer version.txt AppData/Egaroucid
 installer hash resources/hash
@@ -17,6 +21,8 @@ portable languages resources/languages
 portable book.egbk3 document
 portable empty_book.egbk3 document
 portable eval.egev2 resources
+portable offset0_16.egev2 resources
+portable decay_half16.egev2 resources
 portable eval_move_ordering_end.egev resources
 portable version.txt appdata
 portable hash resources/hash
