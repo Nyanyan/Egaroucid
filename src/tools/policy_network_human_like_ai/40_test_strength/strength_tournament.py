@@ -640,12 +640,14 @@ class ResultStore:
     def load(
         self,
         tasks_by_id: Mapping[int, MatchSetTask],
+        *,
+        read_only: bool = False,
     ) -> Tuple[set[int], List[MatchSetResult]]:
         if not self.results_path.exists():
             return set(), []
         completed: set[int] = set()
         results: List[MatchSetResult] = []
-        with self.results_path.open("rb+") as source:
+        with self.results_path.open("rb" if read_only else "rb+") as source:
             line_start = 0
             line_number = 0
             while True:
@@ -664,6 +666,8 @@ class ResultStore:
                         next_offset == self.results_path.stat().st_size
                         and not raw.endswith(b"\n")
                     ):
+                        if read_only:
+                            raise ValueError("reference result log has an incomplete final row")
                         source.truncate(line_start)
                         break
                     raise ValueError(
@@ -730,6 +734,7 @@ class ResultStore:
                 if (
                     next_offset == self.results_path.stat().st_size
                     and not raw.endswith(b"\n")
+                    and not read_only
                 ):
                     # A crash can occur after the JSON object reaches disk but
                     # before its delimiter. Without repairing it, the next

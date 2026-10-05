@@ -265,7 +265,7 @@ def game_worker_count(args: argparse.Namespace) -> int:
     return args.parallel_games if args.parallel_games is not None else args.parallel_match_sets * 2
 
 
-def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
+def validate_args(args: argparse.Namespace, additional_alphas=()) -> Tuple[List[int], List[float]]:
     baseline_levels = parse_int_list(args.baseline_levels)
     edax_levels = parse_int_list(args.edax_levels)
     alphas = parse_float_list(args.alphas)
@@ -275,7 +275,7 @@ def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
         raise ValueError("Edax levels must be between 0 and 60")
     if any(not 0.0 <= alpha <= 1.0 for alpha in alphas):
         raise ValueError("all alpha values must be between 0 and 1")
-    if len(baseline_levels) + len(edax_levels) + len(alphas) < 2:
+    if len(baseline_levels) + len(edax_levels) + len(alphas) + len(additional_alphas) < 2:
         raise ValueError("at least two total participants are required")
     if args.match_sets_per_pair < 1:
         raise ValueError("--match-sets-per-pair must be positive")
@@ -295,7 +295,7 @@ def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
             raise ValueError(f"{option} must be an even number >= 2")
     if args.parallel_games is not None and not args.adaptive_engine_threads:
         capacities = ([args.baseline_processes_per_player // 2] * len(baseline_levels)
-                      + [args.blend_processes_per_player // 2] * len(alphas)
+                      + [args.blend_processes_per_player // 2] * (len(alphas) + len(additional_alphas))
                       + [args.edax_processes_per_player // 2] * len(edax_levels))
         max_sets = min(sum(capacities) // 2, sum(capacities) - max(capacities))
         if args.parallel_games > max_sets * 2:
@@ -1189,15 +1189,20 @@ def make_argparser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_tournament(args: argparse.Namespace) -> None:
-    baseline_levels, alphas = validate_args(args)
+def run_tournament(args: argparse.Namespace, *, extension=None) -> None:
+    additional_alphas = extension.resource_alphas if extension is not None else ()
+    baseline_levels, alphas = validate_args(args, additional_alphas)
+    all_alphas = [*alphas, *additional_alphas]
+    policy_server_count = int(any(a > 0 for a in alphas)) + int(bool(additional_alphas))
     edax_levels = parse_int_list(args.edax_levels)
     validate_input_files(args, alphas)
+    if extension is not None and not extension.model.is_file():
+        raise FileNotFoundError(f"Training must finish first: {extension.model}")
     args.output_dir = Path(args.output_dir)
 
     openings = read_openings(Path(args.openings), args.seed)
     validate_scheduled_openings(openings, args.match_sets_per_pair)
-    player_count = len(baseline_levels) + len(alphas) + len(edax_levels)
+    player_count = len(baseline_levels) + len(all_alphas) + len(edax_levels)
     all_tasks = make_match_set_tasks(
         player_count,
         openings,
@@ -1221,6 +1226,8 @@ def run_tournament(args: argparse.Namespace) -> None:
         openings,
         tasks,
     )
+    if extension is not None:
+        extension.update_configuration(configuration)
     manifest = make_manifest(configuration)
     manifest_path = args.output_dir / "strength_manifest.json"
     ensure_manifest(
@@ -1238,18 +1245,18 @@ def run_tournament(args: argparse.Namespace) -> None:
     estimated_edax_processes = len(edax_levels) * args.edax_processes_per_player
     estimated_max_player_processes = (
         len(baseline_levels) * args.baseline_processes_per_player
-        + len(alphas) * args.blend_processes_per_player
+        + len(all_alphas) * args.blend_processes_per_player
         + estimated_edax_processes
     )
     # alpha=1 uses the policy network only; its Python wrapper never starts
     # the lazily constructed Egaroucid hint subprocess.
-    egaroucid_alpha_count = sum(alpha != 1.0 for alpha in alphas)
+    egaroucid_alpha_count = sum(alpha != 1.0 for alpha in all_alphas)
     estimated_heavy_engine_processes = (
         len(baseline_levels) * args.baseline_processes_per_player
         + egaroucid_alpha_count * args.blend_processes_per_player
     )
     estimated_wrapper_processes = (
-        sum(alpha > 0.0 for alpha in alphas)
+        sum(alpha > 0.0 for alpha in all_alphas)
         * args.blend_processes_per_player
     )
     startup_available_mib = available_memory_mib()
@@ -1261,18 +1268,14 @@ def run_tournament(args: argparse.Namespace) -> None:
         + estimated_edax_processes * args.estimated_edax_memory_mib
         + estimated_wrapper_processes
         * args.estimated_wrapper_memory_mib
-        + (
-            args.estimated_policy_server_memory_mib
-            if any(alpha > 0.0 for alpha in alphas)
-            else 0.0
-        )
+        + args.estimated_policy_server_memory_mib * policy_server_count
     )
     if args.adaptive_engine_threads:
         # Start lazily, reserving memory for each admitted pair of color games.
         # Check that one set fits here; unused per-player slots consume no RAM.
         largest_process_mib = max(args.estimated_engine_memory_mib + args.estimated_wrapper_memory_mib,
                                   args.estimated_edax_memory_mib)
-        estimated_memory_mib = (args.estimated_policy_server_memory_mib * int(any(a > 0 for a in alphas))
+        estimated_memory_mib = (args.estimated_policy_server_memory_mib * policy_server_count
                                 + 4 * largest_process_mib
                                 + args.engine_thread_budget * args.estimated_search_thread_memory_mib)
     if (
@@ -1294,6 +1297,12 @@ def run_tournament(args: argparse.Namespace) -> None:
     loaded_results = []
     if args.resume:
         completed_task_ids, loaded_results = store.load(tasks_by_id)
+    local_results_exist = bool(loaded_results)
+    imported_results = []
+    if extension is not None:
+        imported_results = extension.missing_imports(tasks, loaded_results)
+        loaded_results.extend(imported_results)
+        completed_task_ids.update(result.task_id for result in imported_results)
     stats = TournamentStats(player_count)
     for result in loaded_results:
         stats.record(result)
@@ -1309,6 +1318,8 @@ def run_tournament(args: argparse.Namespace) -> None:
         alphas,
         policy_server_port=0,
     )
+    if extension is not None:
+        placeholder_specs = extension.add_specs(args, placeholder_specs, 0)
     if args.dry_run:
         print_configuration(
             args,
@@ -1448,6 +1459,9 @@ def run_tournament(args: argparse.Namespace) -> None:
                 "not-needed",
                 "not-applicable",
             )
+        additional_server = extension.start_server(args, manager, run_id) if extension is not None else None
+        if extension is not None:
+            extension.validate_runtime(policy_server, additional_server)
         runtime_manifest = make_manifest(
             {
                 "kind": "strength-tournament-runtime",
@@ -1467,22 +1481,34 @@ def run_tournament(args: argparse.Namespace) -> None:
                 ),
             }
         )
+        if additional_server is not None:
+            runtime_configuration = runtime_manifest["configuration"]
+            runtime_configuration["additional_policy_server"] = {
+                "backend": additional_server.backend,
+                "backend_version": additional_server.backend_version,
+                "device": additional_server.device,
+            }
+            runtime_manifest = make_manifest(runtime_configuration)
         ensure_manifest(
             args.output_dir / "strength_runtime_manifest.json",
             runtime_manifest,
             resume=args.resume,
-            results_exist=bool(loaded_results),
+            results_exist=local_results_exist,
         )
         # --resume is also used on the first run. Bind the runtime before
         # creating the append log, and require its prior identity only when
         # validated match results were actually loaded (not for an empty log).
         store.open()
+        for imported in imported_results:
+            store.append_result(tasks_by_id[imported.task_id], imported)
         specs = build_player_specs(
             args,
             baseline_levels,
             alphas,
             policy_server.port,
         )
+        if extension is not None:
+            specs = extension.add_specs(args, specs, additional_server.port, policy_server.port)
         print_configuration(
             args,
             specs,
@@ -1530,7 +1556,7 @@ def run_tournament(args: argparse.Namespace) -> None:
                 extra_memory_mib=args.extra_engine_memory_mib,
                 startup_available_mib=startup_available_mib,
                 minimum_available_mib=args.minimum_available_memory_mib,
-                fixed_memory_mib=args.estimated_policy_server_memory_mib * int(any(a > 0 for a in alphas)),
+                fixed_memory_mib=args.estimated_policy_server_memory_mib * policy_server_count,
                 max_match_sets=args.parallel_match_sets,
                 output_path=args.output_dir / "engine_allocation_live.json",
                 adaptive_threads=args.adaptive_engine_threads,
@@ -1889,6 +1915,8 @@ def run_tournament(args: argparse.Namespace) -> None:
             else 0
         ),
     )
+    if extension is not None:
+        final_specs = extension.add_specs(args, final_specs, 0)
     if last_reported_match_sets != completed_match_sets:
         print_status(
             final_specs,
