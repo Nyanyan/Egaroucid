@@ -850,6 +850,7 @@ inline bool mpc_end_recalibrated_shallow(
     }
 
     Mpc_probe_scope probe(*search, false, true);
+    Move_ordering_eval_scope evaluation_scope(*search, shallow_depth, true);
     if (
         high_gate && high_threshold <= SCORE_MAX &&
         nega_alpha_ordering_nws(
@@ -989,13 +990,13 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         if (node_hint.has_static_eval()) {
             d0value = node_hint.get_static_eval();
 #if defined(EGAROUCID_VALIDATE_NWS_STATIC_EVAL_REUSE)
-            assert(d0value == mid_evaluate_diff(search));
+            assert(d0value == mid_evaluate_for_search(search));
 #endif
         } else {
-            d0value = mid_evaluate_diff(search);
+            d0value = mid_evaluate_for_search(search);
         }
     } else {
-        d0value = mid_evaluate_diff(search);
+        d0value = mid_evaluate_for_search(search);
     }
 #else
     const bool use_dim0_mpc_eval = eval_fm_enabled && eval_fm_use_dim0_mpc_search && !IsEndSearch;
@@ -1004,13 +1005,14 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         if (!use_dim0_mpc_eval && node_hint.has_static_eval()) {
             d0value = node_hint.get_static_eval();
 #if defined(EGAROUCID_VALIDATE_NWS_STATIC_EVAL_REUSE)
-            assert(d0value == mid_evaluate_diff(search));
+            assert(d0value == mid_evaluate_for_search(search));
 #endif
         } else {
-            d0value = use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
+            d0value = search_uses_separate_shallow_evaluation(search) ? mid_evaluate_for_search(search)
+                : (use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
         }
     } else {
-        d0value = mid_evaluate_diff(search);
+        d0value = mid_evaluate_for_search(search);
     }
 #endif
     /*
@@ -1129,6 +1131,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 #endif
             , IsEndSearch
         );
+        Move_ordering_eval_scope evaluation_scope(*search, search_depth, IsEndSearch);
 #if USE_MPC_TT_PROBE_CUT
         // A stored result at least as deep and as selective as the probe
         // decides it, as the probe's own transposition cutoff would, even
@@ -1238,14 +1241,16 @@ inline bool predict_all_node(Search* search, int alpha, int depth, uint64_t lega
     }
 #endif
 #if USE_DIM0_ONLY_EVALUATION
-    int d0value = mid_evaluate_diff(search);
+    int d0value = mid_evaluate_for_search(search);
 #else
     const bool use_dim0_mpc_eval = eval_fm_enabled && eval_fm_use_dim0_mpc_search && !is_end_search;
-    int d0value = use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
+    int d0value = search_uses_separate_shallow_evaluation(search) ? mid_evaluate_for_search(search)
+        : (use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
 #endif
     if (d0value <= alpha - (error_search + error_0) / 2) {
         int pc_alpha = alpha - error_search;
         if (pc_alpha > -SCORE_MAX) {
+            Move_ordering_eval_scope evaluation_scope(*search, search_depth, is_end_search);
 #if !USE_DIM0_ONLY_EVALUATION
             const bool saved_use_dim0_mpc_eval = search->use_dim0_mpc_eval;
             search->use_dim0_mpc_eval = use_dim0_mpc_eval;

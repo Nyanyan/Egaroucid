@@ -621,6 +621,8 @@ class Transposition_table {
             @param cost                 search cost (log2(nodes))
         */
         inline void reg(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
+            if (!search->can_use_tt_eval_bounds()) { return; }
+
             // This option is fixed before searches start.  When disabled, the
             // registration count is not used and must not remain a shared
             // atomic hot spot between search threads.
@@ -696,6 +698,8 @@ class Transposition_table {
 
 
         inline void reg_overwrite(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
+            if (!search->can_use_tt_eval_bounds()) { return; }
+
             const bool track_registrations = transposition_table_auto_reset_importance;
             Hash_node *node = get_node(hash);
             //const uint32_t level = get_level_common(depth, search->mpc_level);
@@ -739,6 +743,11 @@ class Transposition_table {
             @param moves                best moves to store
         */
         inline void get(const Search *search, const uint32_t hash, const int depth, int *lower, int *upper, uint_fast8_t moves[]) {
+            if (!search->can_use_tt_eval_bounds()) {
+                get_moves_any_level(&search->board, hash, moves);
+                return;
+            }
+
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
@@ -772,6 +781,8 @@ class Transposition_table {
             @param upper                upper bound to store
         */
         inline bool get_bounds(const Search *search, uint32_t hash, int depth, int *lower, int *upper) {
+            if (!search->can_use_tt_eval_bounds()) { return false; }
+
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
@@ -808,6 +819,8 @@ class Transposition_table {
             @param upper                upper bound to store
         */
         inline bool get_bounds_any_level(const Search *search, uint32_t hash, int *lower, int *upper) {
+            if (!search->can_use_tt_eval_bounds()) { return false; }
+
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
@@ -919,6 +932,8 @@ class Transposition_table {
         }
 
         inline bool has_node(const Search *search, uint32_t hash, int depth) {
+            if (!search->can_use_tt_eval_bounds()) { return false; }
+
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {
@@ -954,6 +969,8 @@ class Transposition_table {
         }
 
         inline int has_node_any_level_cutoff(const Search *search, uint32_t hash, int depth, int alpha, int beta) {
+            if (!search->can_use_tt_eval_bounds()) { return TRANSPOSITION_TABLE_NOT_HAS_NODE; }
+
             Hash_node *node = get_node(hash);
             int res = TRANSPOSITION_TABLE_NOT_HAS_NODE;
             int l, u;
@@ -987,6 +1004,8 @@ class Transposition_table {
         }
 
         inline bool has_node_any_level_get_bounds(const Search *search, uint32_t hash, int depth, int* l, int* u) {
+            if (!search->can_use_tt_eval_bounds()) { return false; }
+
             Hash_node *node = get_node(hash);
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 if (node->board.player == search->board.player && node->board.opponent == search->board.opponent) {

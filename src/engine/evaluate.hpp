@@ -17,3 +17,5 @@
 #else
 #include "evaluate_generic.hpp"
 #endif
+
+#include "evaluate_move_ordering.hpp"

@@ -94,11 +94,7 @@ inline int nega_alpha_eval1(Search *search, int alpha, int beta, const bool skip
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
-#if USE_DIM0_ONLY_EVALUATION
-                g = -mid_evaluate_diff(search);
-#else
-                g = -(search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
-#endif
+                g = -mid_evaluate_for_search(search);
             search->undo(&flip);
             if (v < g) {
                 if (alpha < g) {
@@ -232,11 +228,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
         }
         if (depth == 0) {
             ++search->n_nodes;
-#if USE_DIM0_ONLY_EVALUATION
-            return mid_evaluate_diff(search);
-#else
-            return search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
-#endif
+            return mid_evaluate_for_search(search);
         }
     }
     ++search->n_nodes;

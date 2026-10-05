@@ -68,6 +68,7 @@ class Transposition_table {
     }
     void store(const Search *search, uint32_t hash, int depth, int alpha,
                int beta, int value, int policy, bool overwrite_only) {
+        if (!search->can_use_tt_eval_bounds()) return;
         auto &b = bucket(hash);
         std::lock_guard lock(b.lanes[0].lock);
         const uint16_t now = generation.load(std::memory_order_relaxed);
@@ -158,12 +159,16 @@ public:
         if (!possible_hit(b, s->board)) return;
         std::lock_guard lock(b.lanes[0].lock);
         if (auto *data = find(b, s->board, 0, 0, true)) data->get_moves(moves);
-        if (auto *data = find(b, s->board, d, s->mpc_level, s->can_use_tt_nonexact_bounds())) data->get_bounds(l, u);
+        if (s->can_use_tt_eval_bounds()) {
+            if (auto *data = find(b, s->board, d, s->mpc_level, s->can_use_tt_nonexact_bounds())) data->get_bounds(l, u);
+        }
     }
     bool get_bounds(const Search *s, uint32_t h, int d, int *l, int *u) {
+        if (!s->can_use_tt_eval_bounds()) return false;
         return bounds(s->board, h, d, s->mpc_level, s->can_use_tt_nonexact_bounds(), l, u);
     }
     bool get_bounds_any_level(const Search *s, uint32_t h, int *l, int *u) {
+        if (!s->can_use_tt_eval_bounds()) return false;
         return bounds(s->board, h, 0, 0, s->can_use_tt_nonexact_bounds(), l, u);
     }
     bool get_bounds_any_level(const Board *b, uint32_t h, int *l, int *u) { return bounds(*b, h, 0, 0, true, l, u); }
@@ -202,6 +207,7 @@ public:
         return TRANSPOSITION_TABLE_HAS_NODE;
     }
     bool has_node_any_level_get_bounds(const Search *s, uint32_t h, int d, int *l, int *u) {
+        if (!s->can_use_tt_eval_bounds()) return false;
         auto &b = bucket(h);
         if (!possible_hit(b, s->board)) return false;
         std::lock_guard lock(b.lanes[0].lock);

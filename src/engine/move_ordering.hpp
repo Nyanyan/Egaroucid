@@ -175,10 +175,18 @@ inline int move_ordering_mid_evaluate(
     Flip_value *flip_value,
     const bool cache_static_eval
 ) {
-    const int static_eval = mid_evaluate_diff(search);
-    if (cache_static_eval) {
+    const int static_eval = mid_evaluate_for_ordering(search);
+    if (eval_move_ordering_mid_enabled) {
+        // Only a search already using the separate leaf model can reuse its
+        // static hint. Main-search MPC gates retain the main evaluator.
+        flip_value->static_eval = cache_static_eval && search_uses_separate_shallow_evaluation(search)
+            ? (eval_move_ordering_aux_enabled ? mid_evaluate_for_search(search) : static_eval) : SCORE_UNDEFINED;
+    }
+#if USE_DIM0_ONLY_EVALUATION
+    else if (cache_static_eval) {
         flip_value->static_eval = static_eval;
     }
+#endif
     return static_eval;
 }
 
@@ -292,22 +300,14 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
         const bool has_tt_value = depth >= MOVE_ORDERING_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
-#if USE_DIM0_ONLY_EVALUATION
                 flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, use_dynamic_ordering)) * W_VALUE;
-#else
-                flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_VALUE;
-#endif
                 break;
             case 1:
                 if (has_tt_value) {
                     flip_value->value += W_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
                 } else {
-#if USE_DIM0_ONLY_EVALUATION
                     flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, use_dynamic_ordering)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
-#else
-                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_VALUE + W_VALUE_DEEP_ADDITIONAL);
-#endif
                 }
                 break;
             default:
@@ -315,11 +315,7 @@ inline void move_evaluate(Search *search, Flip_value *flip_value, int alpha, int
                     flip_value->value += W_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
                 } else {
-#if USE_DIM0_ONLY_EVALUATION
                     flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, use_dynamic_ordering)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-#else
-                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_VALUE + depth * W_VALUE_DEEP_ADDITIONAL);
-#endif
                 }
                 break;
         }
@@ -354,22 +350,14 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
         const bool has_tt_value = depth >= MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
-#if USE_DIM0_ONLY_EVALUATION
                 flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * W_NWS_VALUE;
-#else
-                flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_NWS_VALUE;
-#endif
                 break;
             case 1:
                 if (has_tt_value) {
                     flip_value->value += W_NWS_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
-#if USE_DIM0_ONLY_EVALUATION
                     flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-#else
-                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-#endif
                 }
                 break;
             default:
@@ -377,11 +365,7 @@ inline void move_evaluate_nws(Search *search, Flip_value *flip_value, int alpha,
                     flip_value->value += W_NWS_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
-#if USE_DIM0_ONLY_EVALUATION
                     flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-#else
-                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-#endif
                 }
                 break;
         }
@@ -421,22 +405,14 @@ inline void move_evaluate_nws_from_sibling_base(
         const bool has_tt_value = depth >= MOVE_ORDERING_NWS_TT_REUSE_MIN_DEPTH && get_move_ordering_tt_value(search, search->board.hash(), depth, alpha, beta, &child_value);
         switch (depth) {
             case 0:
-#if USE_DIM0_ONLY_EVALUATION
                 flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * W_NWS_VALUE;
-#else
-                flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * W_NWS_VALUE;
-#endif
                 break;
             case 1:
                 if (has_tt_value) {
                     flip_value->value += W_NWS_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
-#if USE_DIM0_ONLY_EVALUATION
                     flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-#else
-                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + W_NWS_VALUE_DEEP_ADDITIONAL);
-#endif
                 }
                 break;
             default:
@@ -444,11 +420,7 @@ inline void move_evaluate_nws_from_sibling_base(
                     flip_value->value += W_NWS_TT_BONUS;
                     flip_value->value += (SCORE_MAX - child_value) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
                 } else {
-#if USE_DIM0_ONLY_EVALUATION
                     flip_value->value += (SCORE_MAX - move_ordering_mid_evaluate(search, flip_value, cache_static_eval)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-#else
-                    flip_value->value += (SCORE_MAX - mid_evaluate_move_ordering_dim0(search)) * (W_NWS_VALUE + depth * W_NWS_VALUE_DEEP_ADDITIONAL);
-#endif
                 }
                 break;
         }

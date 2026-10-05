@@ -42,6 +42,11 @@ struct Options {
 #endif
     std::string book_file;
     std::string eval_file;
+    std::string eval_move_ordering_mid_file;
+    std::string eval_move_ordering_aux_file;
+    int eval_move_ordering_shallow_max_depth = 0;
+    bool eval_move_ordering_shallow_share_tt = false;
+    bool eval_move_ordering_shallow_end_only = false;
     bool nobook;
     int mode;
     bool gtp;
@@ -268,6 +273,46 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         } catch (const std::out_of_range& e) {
             std::cerr << "[ERROR] hash argument out of range" << std::endl;
         }
+    }
+    if (find_commandline_option(commandline_options, ID_EVAL_MOVE_ORDERING_MID_FILE)) {
+        const auto arg = get_commandline_option_arg(commandline_options, ID_EVAL_MOVE_ORDERING_MID_FILE);
+        if (arg.size() != 1 || arg[0].empty() || arg[0][0] == '-') {
+            std::cerr << "[ERROR] -evalmo requires an evaluation file" << std::endl;
+            std::exit(1);
+        }
+        res.eval_move_ordering_mid_file = arg[0];
+    }
+    if (find_commandline_option(commandline_options, ID_EVAL_MOVE_ORDERING_SHALLOW_DEPTH)) {
+        const auto arg = get_commandline_option_arg(commandline_options, ID_EVAL_MOVE_ORDERING_SHALLOW_DEPTH);
+        try {
+            size_t consumed = 0;
+            const int depth = arg.empty() ? -1 : std::stoi(arg[0], &consumed);
+            if (arg.size() != 1 || consumed != arg[0].size() || depth < 1 || depth > 5 || res.eval_move_ordering_mid_file.empty()) {
+                throw std::invalid_argument("depth must be 1..5 and -evalmo is required");
+            }
+            res.eval_move_ordering_shallow_max_depth = depth;
+        } catch (const std::exception &error) {
+            std::cerr << "[ERROR] invalid -evalmo-shallow-depth: " << error.what() << std::endl;
+            std::exit(1);
+        }
+    }
+    res.eval_move_ordering_shallow_share_tt = find_commandline_option(commandline_options, ID_EVAL_MOVE_ORDERING_SHALLOW_TT);
+    res.eval_move_ordering_shallow_end_only = find_commandline_option(commandline_options, ID_EVAL_MOVE_ORDERING_SHALLOW_END_ONLY);
+    if (find_commandline_option(commandline_options, ID_EVAL_MOVE_ORDERING_AUX_FILE)) {
+        const auto arg = get_commandline_option_arg(commandline_options, ID_EVAL_MOVE_ORDERING_AUX_FILE);
+        if (arg.size() != 1 || arg[0].empty() || arg[0][0] == '-' || res.eval_move_ordering_shallow_max_depth == 0) {
+            std::cerr << "[ERROR] -evalmo-aux requires an evaluation file and -evalmo-shallow-depth" << std::endl;
+            std::exit(1);
+        }
+        res.eval_move_ordering_aux_file = arg[0];
+    }
+    if (res.eval_move_ordering_shallow_end_only && res.eval_move_ordering_shallow_max_depth == 0) {
+        std::cerr << "[ERROR] -evalmo-shallow-end-only requires -evalmo-shallow-depth" << std::endl;
+        std::exit(1);
+    }
+    if (res.eval_move_ordering_shallow_share_tt && res.eval_move_ordering_shallow_max_depth == 0) {
+        std::cerr << "[ERROR] -evalmo-shallow-tt requires -evalmo-shallow-depth" << std::endl;
+        std::exit(1);
     }
     res.nobook = find_commandline_option(commandline_options, ID_NOBOOK);
     res.random_seed_specified = false;

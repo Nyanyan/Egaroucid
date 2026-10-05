@@ -35,9 +35,20 @@ void init_console(Options options, std::string binary_path) {
     #endif
     stability_init();
     std::string mo_end_file = binary_path + "resources/eval_move_ordering_end.egev"; // filename fixed
-    //std::string mo_mid_file = binary_path + "resources/eval_move_ordering_mid.egev"; // filename fixed
     if (!evaluate_init(options.eval_file, mo_end_file, options.show_log))
         std::exit(0);
+    if (!options.eval_move_ordering_mid_file.empty() &&
+        !load_eval_move_ordering_mid_file(options.eval_move_ordering_mid_file.c_str(), options.show_log)) {
+        std::exit(1);
+    }
+    eval_move_ordering_mid_shallow_max_depth = options.eval_move_ordering_shallow_max_depth;
+    eval_move_ordering_mid_shallow_share_tt = options.eval_move_ordering_shallow_share_tt;
+    eval_move_ordering_mid_shallow_end_only = options.eval_move_ordering_shallow_end_only;
+    if (!options.eval_move_ordering_aux_file.empty() &&
+        options.eval_move_ordering_aux_file != options.eval_move_ordering_mid_file &&
+        !load_eval_move_ordering_aux_file(options.eval_move_ordering_aux_file.c_str(), options.show_log)) {
+        std::exit(1);
+    }
 #if !USE_DIM0_ONLY_EVALUATION
     eval_fm_use_dim0_mpc_search = options.fm_mpc_dim0;
 #endif

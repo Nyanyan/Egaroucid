@@ -396,6 +396,10 @@ class Search {
 #endif
         bool is_presearch;
         bool use_dim0_mpc_eval = false;
+#if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION
+        bool use_separate_shallow_evaluation = false;
+        bool share_separate_shallow_eval_tt = false;
+#endif
         int lazy_smp_worker_idx = 0;
         int mid_split_task_limit = ybwc_mid_split_task_limit;
         int tt_nonexact_bound_min_ply = 0;
@@ -404,6 +408,14 @@ class Search {
 
         inline bool can_use_tt_nonexact_bounds() const {
             return n_discs - root_n_discs >= tt_nonexact_bound_min_ply;
+        }
+
+        inline bool can_use_tt_eval_bounds() const {
+#if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION
+            return !use_separate_shallow_evaluation || share_separate_shallow_eval_tt;
+#else
+            return true;
+#endif
         }
 
         inline void configure_pv_extension(const int depth, const bool is_end_search) {

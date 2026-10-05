@@ -80,11 +80,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const Nws_node_hint n
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
-#if USE_DIM0_ONLY_EVALUATION
-                g = -mid_evaluate_diff(search);
-#else
-                g = -(search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search));
-#endif
+                g = -mid_evaluate_for_search(search);
             search->undo(&flip);
             if (v < g) {
                 if (alpha < g) {
@@ -228,11 +224,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
     }
     if (depth == 0) {
         ++search->n_nodes;
-#if USE_DIM0_ONLY_EVALUATION
-        return mid_evaluate_diff(search);
-#else
-        return search->use_dim0_mpc_eval ? mid_evaluate_dim0(search) : mid_evaluate_diff(search);
-#endif
+        return mid_evaluate_for_search(search);
     }
     ++search->n_nodes;
 #if USE_SEARCH_STATISTICS
@@ -401,6 +393,7 @@ inline void move_list_evaluate_end_nws_search(Search *search, Flip_value move_li
     const int sort_alpha = std::max(-SCORE_MAX, alpha - END_NWS_SEARCH_ORDERING_ALPHA_OFFSET);
     const uint_fast8_t saved_mpc_level = search->mpc_level;
     search->mpc_level = MPC_100_LEVEL;
+    Move_ordering_eval_scope evaluation_scope(*search, sort_depth, true);
     for (int i = 0; i < canput; ++i) {
         Flip_value *flip_value = &move_list[i];
         if (!flip_value->flip.flip) {
