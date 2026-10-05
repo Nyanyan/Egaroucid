@@ -379,10 +379,12 @@ class IncrementalAgreementMetrics:
         engine_likelihood: bool = False,
         *,
         prepared_groups: PreparedAgreementGroups | None = None,
+        blend_params: Sequence[float] = BLEND_PARAMS,
     ) -> None:
         if not math.isfinite(score_temperature) or score_temperature <= 0.0:
             raise ValueError("score_temperature must be finite and positive")
         self._top_n_values = tuple(top_n_values)
+        self._blend_params = tuple(blend_params)
         self._engine_likelihood = engine_likelihood
         self._policy_logits = policy_logits
         self._score_temperature = score_temperature
@@ -394,7 +396,7 @@ class IncrementalAgreementMetrics:
 
         self._blend_metrics = {
             alpha: empty_metric(with_likelihood=True, top_n_values=self._top_n_values)
-            for alpha in BLEND_PARAMS
+            for alpha in self._blend_params
         }
         self._console_metrics = {
             level: empty_metric(with_likelihood=engine_likelihood, top_n_values=self._top_n_values)
@@ -426,7 +428,7 @@ class IncrementalAgreementMetrics:
         if level == CONSOLE_REFERENCE_LEVEL:
             additions = {
                 alpha: empty_metric(with_likelihood=True, top_n_values=self._top_n_values)
-                for alpha in BLEND_PARAMS
+                for alpha in self._blend_params
             }
             network_scores = self._policy_logits[state_key]
             for prepared in prepared_groups:
@@ -440,7 +442,7 @@ class IncrementalAgreementMetrics:
                 legal_indices = np.asarray(legal, dtype=np.int64)
                 blend_scores = {}
                 blend_log_probabilities = {}
-                for alpha in BLEND_PARAMS:
+                for alpha in self._blend_params:
                     scores = np.full(
                         POLICY_SIZE,
                         -np.inf,
@@ -469,7 +471,7 @@ class IncrementalAgreementMetrics:
                         log_probability = float(blend_log_probabilities[alpha][policy])
                         additions[alpha]["likelihood_sum"] += count * math.exp(log_probability)
                         additions[alpha]["log_likelihood_sum"] += count * log_probability
-            for alpha in BLEND_PARAMS:
+            for alpha in self._blend_params:
                 _merge_metric(
                     self._blend_metrics[alpha],
                     additions[alpha],
@@ -528,16 +530,15 @@ class IncrementalAgreementMetrics:
         """Return a deep copy, including zero metrics for pending levels."""
         blend_metrics = {
             alpha: _copy_metric(self._blend_metrics[alpha])
-            for alpha in BLEND_PARAMS
+            for alpha in self._blend_params
         }
         console_metrics = {
             level: _copy_metric(self._console_metrics[level])
             for level in CONSOLE_LEVELS
             if level != CONSOLE_REFERENCE_LEVEL
         }
-        console_metrics[CONSOLE_REFERENCE_LEVEL] = _copy_metric(
-            blend_metrics[0.0]
-        )
+        if 0.0 in blend_metrics:
+            console_metrics[CONSOLE_REFERENCE_LEVEL] = _copy_metric(blend_metrics[0.0])
         return (
             blend_metrics,
             console_metrics,
@@ -702,7 +703,7 @@ def _accuracy_summary(topn: Mapping[int, dict]) -> dict:
     return result
 
 
-def make_blend_summary_rows(result: dict) -> List[dict]:
+def make_blend_summary_rows(result: dict, blend_params=BLEND_PARAMS) -> List[dict]:
     likelihood = {
         round(float(row["blend_param"]), 10): {
             key: value for key, value in row.items() if key != "blend_param"
@@ -718,7 +719,7 @@ def make_blend_summary_rows(result: dict) -> List[dict]:
                 if round(float(row["blend_param"]), 10) == round(alpha, 10)
             }),
         }
-        for alpha in BLEND_PARAMS
+        for alpha in blend_params
     ]
 
 
