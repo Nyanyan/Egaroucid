@@ -24,6 +24,7 @@
 #include "print.hpp"
 #include "command_definition.hpp"
 #include "advice.hpp"
+#include "search_progress.hpp"
 
 #define ANALYZE_MISTAKE_THRESHOLD 4
 
@@ -221,6 +222,7 @@ void redo(Board_info *board, int remain) {
 }
 
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
+    Search_progress_scope progress_scope(console_search_progress_callback(!options->quiet && !options->gtp));
     if (board->board.get_legal() == 0) {
         if (board->board.is_end()) { // game over
             std::cerr << "[ERROR] game over" << std::endl;

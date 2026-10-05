@@ -22,6 +22,7 @@
 #include "util.hpp"
 #include "clogsearch.hpp"
 #include "time_management.hpp"
+#include "search_progress.hpp"
 
 constexpr int AI_TYPE_BOOK = 1000;
 
@@ -872,7 +873,9 @@ inline Lazy_smp_worker_result lazy_smp_worker(
         Search main_search(&board, worker_mpc_level, use_tree_parallel, !worker_is_target);
         main_search.thread_id = thread_id;
         main_search.lazy_smp_worker_idx = use_tree_parallel ? ((worker_idx == 0 && preserve_main_presearch_importance) ? -1 : worker_idx) : 0;
+        report_search_progress(worker_depth, SELECTIVITY_PERCENTAGE[worker_mpc_level], "started");
         std::pair<int, int> id_result = first_nega_scout_legal(&main_search, alpha, beta, worker_depth, worker_is_end_search, clogs, use_legal, strt, searching);
+        report_search_progress(worker_depth, SELECTIVITY_PERCENTAGE[worker_mpc_level], *searching && global_searching && id_result.first != SCORE_UNDEFINED ? "completed" : "stopped");
         result->nodes += main_search.n_nodes;
 
         if (*searching) {
@@ -1326,8 +1329,9 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
         }
 #endif
+        report_search_progress(main_depth, SELECTIVITY_PERCENTAGE[main_mpc_level], "started");
         std::future<std::pair<int, int>> f = std::async(std::launch::async, first_nega_scout_legal, &main_search, alpha, beta, main_depth, main_is_end_search, clogs, use_legal, strt, &main_searching);
-        if (f.wait_for(std::chrono::milliseconds(time_limit_this_search)) == std::future_status::ready) {
+        if (wait_for_search_with_progress(f, time_limit_this_search, main_depth, SELECTIVITY_PERCENTAGE[main_mpc_level]) == std::future_status::ready) {
             id_result = f.get();
             search_success = true;
         } else {
@@ -1340,6 +1344,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
             }
         }
+        report_search_progress(main_depth, SELECTIVITY_PERCENTAGE[main_mpc_level], search_success && global_searching && *searching && id_result.first != SCORE_UNDEFINED ? "completed" : "stopped");
         result->nodes += main_search.n_nodes;
         result->time = tim() - strt;
         result->nps = calc_nps(result->nodes, result->time);
@@ -1499,8 +1504,10 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         strt,
                         &verify_searching
                     );
-                    if (verify_f.wait_for(std::chrono::milliseconds(time_limit_verify)) == std::future_status::ready) {
+                    report_search_progress(main_depth, SELECTIVITY_PERCENTAGE[verify_mpc_level], "started");
+                    if (wait_for_search_with_progress(verify_f, time_limit_verify, main_depth, SELECTIVITY_PERCENTAGE[verify_mpc_level]) == std::future_status::ready) {
                         *value = verify_f.get().first;
+                        report_search_progress(main_depth, SELECTIVITY_PERCENTAGE[verify_mpc_level], verify_searching && global_searching && *value != SCORE_UNDEFINED ? "completed" : "stopped");
                         policy_verify_nodes += candidate_verify_search.n_nodes;
                         return true;
                     }
@@ -1509,6 +1516,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                         verify_f.get();
                     } catch (const std::exception &e) {
                     }
+                    report_search_progress(main_depth, SELECTIVITY_PERCENTAGE[verify_mpc_level], "stopped");
                     policy_verify_nodes += candidate_verify_search.n_nodes;
                     return false;
                 };
@@ -1698,7 +1706,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                     int nws_value = SCORE_INF;
                     int nws_move = MOVE_NOMOVE;
                     bool nws_success = false;
-                    if (nws_f.wait_for(std::chrono::milliseconds(time_limit_nws)) == std::future_status::ready) {
+                    report_search_progress(main_depth, SELECTIVITY_PERCENTAGE[early_break_mpc_level], "started");
+                    if (wait_for_search_with_progress(nws_f, time_limit_nws, main_depth, SELECTIVITY_PERCENTAGE[early_break_mpc_level]) == std::future_status::ready) {
                         std::pair<int, int> nws_result = nws_f.get();
                         nws_value = nws_result.first;
                         nws_move = nws_result.second;
@@ -1713,6 +1722,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                             std::cerr << "terminate early cut nws by time limit " << tim() - strt << " ms" << std::endl;
                         }
                     }
+                    report_search_progress(main_depth, SELECTIVITY_PERCENTAGE[early_break_mpc_level], nws_success && nws_searching && global_searching && nws_value != SCORE_UNDEFINED ? "completed" : "stopped");
                     result->nodes += nws_search.n_nodes;
                     result->time = tim() - strt;
                     result->nps = calc_nps(result->nodes, result->time);
@@ -3668,7 +3678,8 @@ inline bool ai_tl_ggs_run_bounded_root_search(
         &local_searching
     );
     bool complete = false;
-    if (future.wait_for(std::chrono::milliseconds(time_limit)) == std::future_status::ready) {
+    report_search_progress(depth, SELECTIVITY_PERCENTAGE[mpc_level], "started");
+    if (wait_for_search_with_progress(future, time_limit, depth, SELECTIVITY_PERCENTAGE[mpc_level]) == std::future_status::ready) {
         const std::pair<int, int> raw = future.get();
         if (local_searching && global_searching && is_valid_policy(raw.second) && (legal & (1ULL << raw.second))) {
             *value = raw.first;
@@ -3684,6 +3695,7 @@ inline bool ai_tl_ggs_run_bounded_root_search(
         }
     }
     *nodes += search.n_nodes;
+    report_search_progress(depth, SELECTIVITY_PERCENTAGE[mpc_level], complete ? "completed" : "stopped");
     return complete;
 }
 
@@ -3855,7 +3867,8 @@ inline AI_TL_GGS_Pair_Outcome_Proof ai_tl_ggs_pair_target_nws(
         start,
         &local_searching
     );
-    if (future.wait_for(std::chrono::milliseconds(budget)) == std::future_status::ready) {
+    report_search_progress(HW2 - board.n_discs(), 100, "started");
+    if (wait_for_search_with_progress(future, budget, HW2 - board.n_discs(), 100) == std::future_status::ready) {
         const std::pair<int, int> raw = future.get();
         proof.complete =
             local_searching &&
@@ -3878,6 +3891,7 @@ inline AI_TL_GGS_Pair_Outcome_Proof ai_tl_ggs_pair_target_nws(
     }
     proof.nodes = search.n_nodes;
     proof.elapsed = tim() - start;
+    report_search_progress(HW2 - board.n_discs(), 100, proof.complete ? "completed" : "stopped");
     return proof;
 }
 #endif

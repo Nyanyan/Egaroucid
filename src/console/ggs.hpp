@@ -18,6 +18,7 @@
 #include "./../engine/contest_book.hpp"
 #include "option.hpp"
 #include "util.hpp"
+#include "search_progress.hpp"
 #pragma comment(lib, "ws2_32.lib")
 
 #define GGS_URL "skatgame.net"
@@ -1765,6 +1766,9 @@ Search_result ggs_search(
 ) {
     Search_result search_result;
     if (ggs_board.board.get_legal()) {
+        Search_progress_scope progress_scope([&](const Search_progress &progress) {
+            ggs_print_info("game " + ggs_board.game_id + " " + search_progress_summary(progress), options);
+        });
         if (contest_book != nullptr) {
             Search_result contest_book_result;
             if (contest_book->get_search_result(ggs_board.board, &contest_book_result)) {
