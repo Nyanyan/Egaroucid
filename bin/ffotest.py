@@ -30,14 +30,21 @@ args = {
     #'exe': 'versions/Egaroucid_for_Console_beta/Egaroucid_for_Console.exe',
     'exe': 'Egaroucid_for_Console.exe',
     'eval_file': '',
+    'eval_mo_file': '',
+    'eval_mo_shallow_depth': 0,
+    'eval_mo_shallow_tt': 0,
+    'seed': '',
+    'problem_file': '',
+    'eval_mo_aux_file': '',
+    'eval_mo_shallow_end_only': 0,
 }
 try:
-    parse_args(args, ['start', 'end', 'n_threads', 'hash_level', 'exe', 'eval_file'])
+    parse_args(args, ['start', 'end', 'n_threads', 'hash_level', 'exe', 'eval_file', 'eval_mo_file', 'problem_file', 'eval_mo_shallow_depth', 'eval_mo_shallow_tt', 'seed', 'eval_mo_aux_file', 'eval_mo_shallow_end_only'])
 except Exception as e:
     print(e)
-    print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe] [eval_file=]')
+    print('usage: python ffotest.py [start=40] [end=59] [n_threads=42] [hash_level=25] [exe=Egaroucid_for_Console.exe] [eval_file=] [eval_mo_file=] [problem_file=] [eval_mo_shallow_depth=0] [eval_mo_shallow_tt=0] [eval_mo_aux_file=] [eval_mo_shallow_end_only=0]')
     print('arguments can be given in this order or as name=value (e.g. exe=Egaroucid_for_Console_clang.exe)')
-    exit()
+    sys.exit(2)
 start = args['start']
 end = args['end']
 n_threads = args['n_threads']
@@ -49,9 +56,9 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 if not os.path.isabs(exe):
     exe = os.path.join(script_dir, exe)
 
-cmd_version = exe + ' -v'
+cmd_version = [exe, '-v']
 # print(cmd_version)
-version = subprocess.run((cmd_version).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE).stdout.decode()
+version = subprocess.run(cmd_version, stdin=subprocess.PIPE, stdout=subprocess.PIPE, check=True).stdout.decode()
 
 def strip_newlines(s):
     while s.endswith('\n') or s.endswith('\r'):
@@ -62,13 +69,28 @@ version = strip_newlines(version)
 print(version)
 
 
-cmd = exe + ' -l 60 -hash ' + str(hash_level) + ' -nobook'
+cmd = [exe, '-l', '60', '-hash', str(hash_level), '-nobook', '-thread', str(n_threads)]
+if args['seed']:
+    cmd += ['-seed', args['seed']]
 if eval_file != '':
-    cmd += ' -eval ' + eval_file
-cmd += ' -solve ' + os.path.join(script_dir, 'problem/ffo' + str(start) + '-' + str(end) + '.txt -thread ' + str(n_threads))
+    cmd += ['-eval', eval_file]
+if args['eval_mo_file']:
+    cmd += ['-evalmo', args['eval_mo_file']]
+if args['eval_mo_shallow_depth']:
+    cmd += ['-evalmo-shallow-depth', str(args['eval_mo_shallow_depth'])]
+if args['eval_mo_shallow_tt']:
+    cmd += ['-evalmo-shallow-tt']
+if args['eval_mo_aux_file']:
+    cmd += ['-evalmo-aux', args['eval_mo_aux_file']]
+if args['eval_mo_shallow_end_only']:
+    cmd += ['-evalmo-shallow-end-only']
+problem_file = args['problem_file'] or os.path.join(script_dir, 'problem/ffo' + str(start) + '-' + str(end) + '.txt')
+if not os.path.isabs(problem_file):
+    problem_file = os.path.join(script_dir, problem_file)
+cmd += ['-solve', problem_file]
 
-print(cmd.replace(script_dir, 'script_dir'))
-egaroucid = subprocess.Popen((cmd).split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+print(subprocess.list2cmdline(cmd).replace(script_dir, 'script_dir'), flush=True)
+egaroucid = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 answers = [ # best score, [best move, best move...]
     [], 
@@ -153,22 +175,31 @@ answers = [ # best score, [best move, best move...]
     [64, ['d7']], #79
 ]
 
-res = ''
-line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
-print('#   ' + line, flush=True)
-for i in range(start, end + 1):
+try:
+    res = ''
     line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
-    policy = line.split()[3][:-1]
-    correct_policies = answers[i][1]
-    if not (policy in correct_policies):
-        line += ' WRONG POLICY'
-    score = line.split()[4][:-1]
-    correct_score = answers[i][0]
-    if int(score) != int(correct_score):
-        line += ' WRONG SCORE'
-    line = '#' + str(i) + ' ' + line
+    print('#   ' + line, flush=True)
+    for i in range(start, end + 1):
+        line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
+        policy = line.split()[3][:-1]
+        correct_policies = answers[i][1]
+        if not (policy in correct_policies):
+            line += ' WRONG POLICY'
+        score = line.split()[4][:-1]
+        correct_score = answers[i][0]
+        if int(score) != int(correct_score):
+            line += ' WRONG SCORE'
+        line = '#' + str(i) + ' ' + line
+        print(line, flush=True)
+        res += line + '\n'
+        if 'WRONG POLICY' in line or 'WRONG SCORE' in line:
+            egaroucid.kill()
+            egaroucid.wait()
+            sys.exit(1)
+    line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
     print(line, flush=True)
-    res += line + '\n'
-line = egaroucid.stdout.readline().decode().replace('\n', '').replace('\r', '')
-print(line, flush=True)
-egaroucid.kill()
+    if not line.startswith('total '):
+        raise RuntimeError('missing engine total; benchmark incomplete')
+finally:
+    egaroucid.kill()
+    egaroucid.wait()
