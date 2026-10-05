@@ -191,6 +191,33 @@ inline bool load_eval_move_ordering_aux_file(const char *, bool) {
 }
 #endif
 
+inline bool initialize_auto_move_ordering_models(const char *main_eval_file, bool show_log) {
+    eval_move_ordering_auto_enabled = false;
+#if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
+    eval_move_ordering_mid_enabled = false;
+    eval_move_ordering_aux_enabled = false;
+    if (!eval_move_ordering_auto_requested) return true;
+    const std::string main_path(main_eval_file);
+    const auto separator = main_path.find_last_of("/\\");
+    const std::string directory = separator == std::string::npos ? "" : main_path.substr(0, separator + 1);
+    const std::string offset_file = directory + "offset0_16.egev2";
+    const std::string decay_file = directory + "decay_half16.egev2";
+    if (!load_eval_move_ordering_model_file(offset_file.c_str(), show_log, false) ||
+        !load_eval_move_ordering_model_file(decay_file.c_str(), show_log, true)) {
+        eval_move_ordering_mid_enabled = false;
+        eval_move_ordering_aux_enabled = false;
+        std::cerr << "[ERROR] [FATAL] automatic move ordering models not loaded" << std::endl;
+        return false;
+    }
+    eval_move_ordering_auto_enabled = true;
+    if (show_log) std::cerr << "automatic move ordering policy initialized (midgame >=27, endgame >74%)" << std::endl;
+#else
+    (void)main_eval_file;
+    (void)show_log;
+#endif
+    return true;
+}
+
 inline Move_ordering_model search_static_ordering_model(const Search *search) {
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
     if (search->move_ordering_policy.automatic) return search->move_ordering_policy.static_model;

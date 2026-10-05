@@ -519,6 +519,7 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
+    if (!initialize_auto_move_ordering_models(file, show_log)) return false;
     if (show_log) {
         std::cerr << "evaluation function initialized" << std::endl;
     }

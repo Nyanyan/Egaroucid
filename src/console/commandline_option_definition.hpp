@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#define N_COMMANDLINE_OPTIONS_BASE 44
+#define N_COMMANDLINE_OPTIONS_BASE 45
 
 #ifdef INCLUDE_GGS
     #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
@@ -67,6 +67,7 @@
 #define ID_EVAL_MOVE_ORDERING_SHALLOW_TT 41
 #define ID_EVAL_MOVE_ORDERING_AUX_FILE 42
 #define ID_EVAL_MOVE_ORDERING_SHALLOW_END_ONLY 43
+#define ID_EVAL_MOVE_ORDERING_AUTO_OFF 44
 
 #ifdef INCLUDE_GGS
     #define ID_GGS N_COMMANDLINE_OPTIONS_BASE
@@ -100,6 +101,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_BOOK_FILE,          {"-b", "-book"},                                    1, "<book_file>",      "Import <book_file> as Egaroucid's book"},
     {ID_EVAL_FILE,          {"-eval", "-evaluation"},                           1, "<eval_file>",      "Import <eval_file> as Egaroucid's evaluation function"},
     {ID_EVAL_MOVE_ORDERING_MID_FILE, {"-evalmo"},                               1, "<eval_file>",      "Use a separate .egev2 evaluation for static midgame move ordering"},
+    {ID_EVAL_MOVE_ORDERING_AUTO_OFF, {"-evalmo-auto-off"},                    0, "", "Disable automatic Offset/Decay model selection (ordinary evaluation unless -evalmo is given)"},
     {ID_EVAL_MOVE_ORDERING_SHALLOW_DEPTH, {"-evalmo-shallow-depth"},           1, "<1..5>", "Use -evalmo leaves in auxiliary ordering/MPC searches up to this depth"},
     {ID_EVAL_MOVE_ORDERING_SHALLOW_TT, {"-evalmo-shallow-tt"},                 0, "", "Allow those separate shallow searches to read/write shared TT bounds"},
     {ID_EVAL_MOVE_ORDERING_AUX_FILE, {"-evalmo-aux"},                          1, "<eval_file>", "Use this .egev2 model for auxiliary leaves instead of the static ordering model"},

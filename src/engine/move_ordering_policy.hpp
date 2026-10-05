@@ -17,6 +17,10 @@ struct Move_ordering_policy {
 
 // Set only while initializing models, before any search threads start.
 inline bool eval_move_ordering_auto_enabled = false;
+inline bool eval_move_ordering_auto_requested = true;
+
+// Defined after the ordinary evaluator in evaluate_move_ordering.hpp.
+inline bool initialize_auto_move_ordering_models(const char *main_eval_file, bool show_log);
 
 // In automatic mode the primary bank is Offset, the secondary bank is Decay.
 // Classify the root of each iteration, never its decreasing remaining depth.

@@ -527,6 +527,7 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         return false;
     }
     pre_calculate_eval_constant();
+    if (!initialize_auto_move_ordering_models(file, show_log)) return false;
     if (show_log) {
         std::cerr << "evaluation function initialized" << std::endl;
     }

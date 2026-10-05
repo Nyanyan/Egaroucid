@@ -173,8 +173,8 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 // use only Dim0 evaluation
 #define USE_DIM0_ONLY_EVALUATION true
 
-// Optional separate pattern evaluation for static midgame move ordering.
-// Loading it is opt-in (-evalmo); false builds the comparison baseline.
+// Separate pattern models for automatic static ordering and shallow probes.
+// false builds an ordinary-evaluation baseline without additional models.
 #ifndef USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION
 #define USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION true
 #endif

@@ -39,7 +39,9 @@ int main(int argc, char **argv) {
             Flip flip; calc_flip(&flip, &board, first_bit(&legal)); board.move_board(&flip);
         }
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
+        require(eval_move_ordering_auto_enabled && eval_move_ordering_mid_enabled && eval_move_ordering_aux_enabled, "automatic models initialized by default");
         require(load_eval_move_ordering_mid_file((resources + "/offset0_16.egev2").c_str(), false), "Offset bank");
+        require(!eval_move_ordering_auto_enabled, "explicit model disables automatic selection");
         require(load_eval_move_ordering_aux_file((resources + "/decay_half16.egev2").c_str(), false), "Decay bank");
         Search reference(&board, MPC_100_LEVEL, false, false);
         const int ordinary = mid_evaluate_diff(&reference);

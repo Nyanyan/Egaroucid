@@ -35,8 +35,9 @@ void init_console(Options options, std::string binary_path) {
     #endif
     stability_init();
     std::string mo_end_file = binary_path + "resources/eval_move_ordering_end.egev"; // filename fixed
+    eval_move_ordering_auto_requested = !options.eval_move_ordering_auto_off && options.eval_move_ordering_mid_file.empty();
     if (!evaluate_init(options.eval_file, mo_end_file, options.show_log))
-        std::exit(0);
+        std::exit(1);
     if (!options.eval_move_ordering_mid_file.empty() &&
         !load_eval_move_ordering_mid_file(options.eval_move_ordering_mid_file.c_str(), options.show_log)) {
         std::exit(1);

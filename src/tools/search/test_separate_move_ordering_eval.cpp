@@ -39,6 +39,8 @@ int main(int argc, char **argv) {
         move_ordering_init();
         mpc_init();
         require(hash_resize(DEFAULT_HASH_LEVEL, 16, resources + "/../", false), "hash initialization");
+        // Exercise the explicit model mode independently of automatic policy.
+        eval_move_ordering_auto_requested = false;
         require(evaluate_init(resources + "/eval.egev2", resources + "/eval_move_ordering_end.egev", false), "main evaluation initialization");
         Board initial;
         initial.reset();
