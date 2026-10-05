@@ -2,12 +2,14 @@
 """Increase every existing board split eightfold using rotations/reflections."""
 
 import argparse
+from contextlib import nullcontext
 
 import numpy as np
 
 from board_symmetry import TRANSFORM_NAMES, augment_positions
 from pipeline_common import (BOARD_DTYPE, BoardWriter, SPLIT_NAMES, add_dataset_arguments,
-    dataset_directory, load_manifest, output_directory, source_info, write_manifest)
+    dataset_directory, load_manifest, output_directory, source_info, write_manifest,
+    WEIGHT_DTYPE, has_sample_weights, validate_weight_file)
 
 
 def make_argparser():
@@ -24,10 +26,11 @@ def run(args):
     source = dataset_directory(args.data_root, "board_split", args.dataset)
     destination = dataset_directory(args.data_root, "board_split_increased", args.dataset)
     original = load_manifest(source, "board_split")
+    weighted = has_sample_weights(original)
     counts, previous_games = {}, set()
     with output_directory(destination, args.replace) as output:
         for name in SPLIT_NAMES:
-            writer = BoardWriter(output / name, args.positions_per_file)
+            writer = BoardWriter(output / name, args.positions_per_file, weighted=weighted)
             source_count, split_games = 0, set()
             try:
                 for path in sorted((source / name).glob("*.dat")):
@@ -35,7 +38,13 @@ def run(args):
                     ids_path = path.with_suffix(".game_ids")
                     if size % BOARD_DTYPE.itemsize or ids_path.stat().st_size != size // BOARD_DTYPE.itemsize * 8:
                         raise ValueError(f"incomplete board data or game IDs in {path}")
-                    with path.open("rb") as boards, ids_path.open("rb") as ids_file:
+                    weights_path = path.with_suffix(".weights")
+                    if weighted:
+                        validate_weight_file(weights_path, size // BOARD_DTYPE.itemsize)
+                    elif weights_path.exists():
+                        raise ValueError("sample weights present without manifest metadata")
+                    with (path.open("rb") as boards, ids_path.open("rb") as ids_file,
+                          weights_path.open("rb") if weighted else nullcontext() as weights_file):
                         while True:
                             samples = np.fromfile(boards, dtype=BOARD_DTYPE, count=args.positions_per_batch)
                             if not len(samples):
@@ -43,7 +52,8 @@ def run(args):
                             game_ids = np.fromfile(ids_file, dtype="<u8", count=len(samples))
                             split_games.update(np.unique(game_ids).tolist())
                             augmented, expanded_ids = augment_positions(samples, game_ids)
-                            writer.write(augmented, expanded_ids)
+                            weights = np.fromfile(weights_file, dtype=WEIGHT_DTYPE, count=len(samples)) if weighted else None
+                            writer.write(augmented, expanded_ids, None if weights is None else np.repeat(weights, 8))
                             source_count += len(samples)
                     print(f"{name}: {source_count:,} source positions -> {writer.positions:,}", flush=True)
             finally:
@@ -62,7 +72,8 @@ def run(args):
             record_format=original["record_format"], record_bytes=19,
             game_ids_format=original["game_ids_format"], score_convention=original["score_convention"],
             augmentation_factor=8, transforms=TRANSFORM_NAMES,
-            ordering="original position, then transform; symmetric duplicates are retained", splits=counts)
+            ordering="original position, then transform; symmetric duplicates are retained", splits=counts,
+            **({"sample_weights": original["sample_weights"]} if weighted else {}))
     return result
 
 

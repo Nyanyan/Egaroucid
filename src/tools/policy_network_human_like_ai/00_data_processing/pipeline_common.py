@@ -143,17 +143,55 @@ def iter_transcripts(directory: Path):
             raise ValueError(f"transcript/game-ID count mismatch in {path}")
 
 
+WEIGHT_DTYPE = np.dtype("<f8")
+WEIGHT_FORMAT = "float64 little-endian; one positive sample weight per position"
+
+
+def has_sample_weights(manifest: dict) -> bool:
+    spec = manifest.get("sample_weights")
+    if spec is None:
+        return False
+    if spec.get("format") != WEIGHT_FORMAT or spec.get("suffix") != ".weights":
+        raise ValueError("unsupported sample weight format")
+    return True
+
+
+def validate_weight_file(path: Path, positions: int) -> float:
+    """Check alignment and finite positive weights, returning their float64 sum."""
+    if path.stat().st_size != positions * WEIGHT_DTYPE.itemsize:
+        raise ValueError(f"incomplete sample weights in {path}")
+    total = 0.0
+    with path.open("rb") as source:
+        while True:
+            weights = np.fromfile(source, dtype=WEIGHT_DTYPE, count=65536)
+            if not len(weights):
+                break
+            if np.any(~np.isfinite(weights)) or np.any(weights <= 0):
+                raise ValueError(f"sample weights must be finite and positive: {path}")
+            total += float(weights.sum(dtype=np.float64))
+    if not np.isfinite(total):
+        raise ValueError(f"sample weight sum overflow: {path}")
+    return total
+
+
 class BoardWriter:
-    def __init__(self, directory: Path, positions_per_file: int):
+    def __init__(self, directory: Path, positions_per_file: int, *, weighted: bool = False):
         if positions_per_file <= 0:
             raise ValueError("positions_per_file must be positive")
         self.directory, self.limit, self.positions = directory, positions_per_file, 0
-        self.board = self.ids = None
+        self.board = self.ids = self.weights = None
+        self.weighted = weighted
         directory.mkdir(parents=True, exist_ok=True)
 
-    def write(self, samples: np.ndarray, game_ids: np.ndarray):
+    def write(self, samples: np.ndarray, game_ids: np.ndarray, weights=None):
         if samples.dtype != BOARD_DTYPE or len(samples) != len(game_ids):
             raise ValueError("board samples and game IDs must match")
+        if self.weighted != (weights is not None):
+            raise ValueError("weighted writer requires weights for every position")
+        if weights is not None:
+            weights = np.asarray(weights, dtype=WEIGHT_DTYPE)
+            if weights.shape != (len(samples),) or np.any(~np.isfinite(weights)) or np.any(weights <= 0):
+                raise ValueError("sample weights must match positions and be finite and positive")
         offset = 0
         while offset < len(samples):
             if self.positions % self.limit == 0:
@@ -161,9 +199,13 @@ class BoardWriter:
                 path = self.directory / f"{self.positions // self.limit:07d}.dat"
                 self.board = path.open("wb")
                 self.ids = path.with_suffix(".game_ids").open("wb")
+                if self.weighted:
+                    self.weights = path.with_suffix(".weights").open("wb")
             count = min(len(samples) - offset, self.limit - self.positions % self.limit)
             samples[offset:offset + count].tofile(self.board)
             game_ids[offset:offset + count].astype("<u8", copy=False).tofile(self.ids)
+            if self.weighted:
+                weights[offset:offset + count].tofile(self.weights)
             self.positions += count
             offset += count
 
@@ -171,4 +213,6 @@ class BoardWriter:
         if self.board is not None:
             self.board.close()
             self.ids.close()
-            self.board = self.ids = None
+            if self.weights is not None:
+                self.weights.close()
+            self.board = self.ids = self.weights = None
