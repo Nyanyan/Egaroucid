@@ -423,6 +423,84 @@ class GtpProcess:
         self._reader.join(timeout=1.0)
 
 
+class EdaxXBoardProcess(GtpProcess):
+    """GTP-facing adapter for Edax's TT-preserving XBoard `cores` command."""
+
+    def __init__(self, manager, command, timeout_sec):
+        command = list(command)
+        command[command.index("-gtp")] = "-xboard"
+        self.level = int(command[command.index("-l") + 1])
+        self._ping_id = 0
+        super().__init__(manager, command, timeout_sec)
+        try:
+            self._exchange(["force", "easy", "nopost", f"sd {self.level}"])
+        except BaseException:
+            self.close()
+            raise
+
+    def _exchange(self, commands):
+        # Ping is processed after the preceding commands, including a search.
+        # Keep all lines through pong so terminal results cannot leak into the
+        # next request. Never send a stop/force command while search is running.
+        with self._request_lock:
+            if not self.usable:
+                raise GtpProcessError("Edax subprocess is not running")
+            self._ping_id += 1
+            marker = f"pong {self._ping_id}"
+            try:
+                self.process.stdin.write("\n".join([*commands, f"ping {self._ping_id}", ""]))
+                self.process.stdin.flush()
+                deadline = time.monotonic() + self.timeout_sec
+                lines = []
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise queue.Empty
+                    response = self._output.get(timeout=remaining)
+                    if response is _EOF or isinstance(response, BaseException):
+                        raise GtpProcessError("Edax subprocess ended during XBoard command")
+                    line = str(response).strip()
+                    if line == marker:
+                        return lines
+                    if line.startswith(("Illegal move", "Error")):
+                        raise GtpProcessError(line)
+                    if line:
+                        lines.append(line)
+            except queue.Empty as error:
+                self._fail()
+                raise TimeoutError(f"Edax XBoard command timed out: {commands!r}") from error
+            except BaseException:
+                self._fail()
+                raise
+
+    def set_search_threads(self, threads):
+        if not 1 <= threads <= 64:
+            raise ValueError("Edax runtime threads must be between 1 and 64")
+        # Edax 4.6 search_set_task_number resizes worker tasks, not hash tables.
+        # No new/setboard/memory command is sent here.
+        self._exchange([f"cores {threads}"])
+
+    def request(self, command):
+        if command == "clear_board":
+            # XBoard 'new' resets the level to 60; restore the tournament level.
+            self._exchange(["new", "force", "easy", "nopost", f"sd {self.level}"])
+            return "="
+        action, color, *moves = command.split()
+        if action == "play":
+            move = "@@@@" if moves[0] == "pass" else "P@" + moves[0]
+            self._exchange([f"usermove {move}"])
+            return "="
+        if action == "genmove":
+            lines = self._exchange(["go"])
+            self._exchange(["force"])
+            moves = [line.split()[1] for line in lines if line.startswith("move ")]
+            if len(moves) != 1:
+                self._fail()
+                raise GtpProcessError(f"Expected one Edax move, received {lines!r}")
+            return "= " + ("pass" if moves[0] == "@@@@" else moves[0].removeprefix("P@").lower())
+        raise GtpProcessError(f"Unsupported Edax adapter command: {command}")
+
+
 class PlayerProcessPool:
     """Lazy process pool with separate black and white leases."""
 
@@ -431,6 +509,8 @@ class PlayerProcessPool:
         spec: PlayerSpec,
         manager: ProcessManager,
         command_timeout_sec: float,
+        *,
+        live_edax_threads: bool = False,
     ):
         self.spec = spec
         self.manager = manager
@@ -439,9 +519,154 @@ class PlayerProcessPool:
         self._available = [queue.Queue(), queue.Queue()]
         self._created = [0, 0]
         self._lock = threading.Lock()
+        self._retired = False
+        self.live_edax_threads = live_edax_threads and spec.name.startswith("edax_")
+        self._command = spec.command
+        self._revision = 0
+        self._live_threads: Dict[GtpProcess, int] = {}
+        self._leased_engines: set[GtpProcess] = set()
+        self._thread_option = (
+            None if spec.alpha == 1.0 else
+            "--egaroucid-threads" if spec.setboard_before_genmove else
+            "-n" if spec.name.startswith("edax_") else "-t"
+        )
+        if self._thread_option not in self._command:
+            self._thread_option = None
+        self.search_threads = (
+            int(self._command[self._command.index(self._thread_option) + 1])
+            if self._thread_option is not None else 1
+        )
 
-    def acquire(self, color_pool: int) -> GtpProcess:
+    @property
+    def reserved_search_threads(self) -> int:
+        with self._lock:
+            return max([self.search_threads, *self._live_threads.values()])
+
+    @property
+    def pending_thread_change(self) -> bool:
+        with self._lock:
+            return any(self._live_threads[engine] != self.search_threads
+                       and getattr(engine, "game_thread_override", False) is not True
+                       for engine in self._leased_engines)
+
+    def search_thread_status(self):
+        with self._lock:
+            counts = {}
+            for threads in self._live_threads.values():
+                if self.spec.alpha != 1.0:
+                    counts[str(threads)] = counts.get(str(threads), 0) + 1
+            pending = [self._live_threads[engine] for engine in self._leased_engines
+                       if self._live_threads[engine] != self.search_threads
+                       and getattr(engine, "game_thread_override", False) is not True]
+            return {"actual_search_threads": counts,
+                    "active_search_threads": (sum(self._live_threads[e] for e in self._leased_engines)
+                                              if self.spec.alpha != 1.0 else 0),
+                    "idle_extra_search_threads": sum(max(0, threads - self.search_threads)
+                        for engine, threads in self._live_threads.items() if engine not in self._leased_engines),
+                    "pending_thread_processes": len(pending),
+                    "pending_extra_search_threads": sum(max(0, self.search_threads - threads)
+                                                        for threads in pending)}
+
+    def set_search_threads(self, threads: int) -> bool:
+        """Request new search concurrency for engines leased by the next game."""
+        if threads < 1:
+            raise ValueError("search threads must be positive")
+        with self._lock:
+            if self._retired or self._thread_option is None or threads == self.search_threads:
+                return False
+            command = list(self._command)
+            command[command.index(self._thread_option) + 1] = str(threads)
+            self._command = tuple(command)
+            self.search_threads = threads
+            self._revision += 1
+            return True
+
+    def _is_current(self, engine: GtpProcess) -> bool:
+        return engine.usable and engine.pool_revision == self._revision
+
+    def resize_leased_engine(self, engine, threads):
+        """Called by the owning game worker, only between completed moves."""
+        with self._lock:
+            if not self.live_edax_threads or engine not in self._leased_engines:
+                raise RuntimeError("engine does not support a live thread change")
+        engine.set_search_threads(threads)
+        with self._lock:
+            self._live_threads[engine] = threads
+
+    def _lease(self, engine: GtpProcess) -> GtpProcess:
+        with self._lock:
+            self._leased_engines.add(engine)
+        return engine
+
+    def _discard(self, color_pool: int, engine: GtpProcess) -> None:
+        engine.close()
+        with self._lock:
+            self._live_threads.pop(engine, None)
+            self._leased_engines.discard(engine)
+            self._created[color_pool] = max(0, self._created[color_pool] - 1)
+
+    @property
+    def created_processes(self) -> int:
+        with self._lock:
+            return sum(self._created)
+
+    def process_reservation(self, games_by_color):
+        """Count retained engines and admitted color games not yet started."""
+        with self._lock:
+            return (sum(max(count, games) for count, games in zip(self._created, games_by_color)),
+                    sum(max(0, games - count) for count, games in zip(self._created, games_by_color)))
+
+    def close_idle(self) -> int:
+        """Reclaim only queued engines; never touch a game's leased engines."""
+        closed = 0
+        for color, items in enumerate(self._available):
+            while True:
+                try:
+                    engine = items.get_nowait()
+                except queue.Empty:
+                    break
+                self._discard(color, engine)
+                closed += 1
+        return closed
+
+    def grow(self, set_capacity: int) -> None:
+        with self._lock:
+            if self._retired or set_capacity < self._limit_per_color:
+                raise ValueError("cannot grow a retired pool or reduce its capacity")
+            self._limit_per_color = set_capacity
+
+    def retire(self) -> int:
+        """Close an idle participant's engines, including wrapper children."""
+        with self._lock:
+            if self._retired:
+                return 0
+            if sum(self._created) != sum(items.qsize() for items in self._available):
+                raise RuntimeError("cannot retire a player with leased engines")
+            self._retired = True
+            self._limit_per_color = 0
+            engines = []
+            for items in self._available:
+                while not items.empty():
+                    engines.append(items.get_nowait())
+            self._created = [0, 0]
+            self._live_threads.clear()
+            self._leased_engines.clear()
+        for engine in engines:
+            engine.close()
+        return len(engines)
+
+    def acquire(self, color_pool: int, search_threads: Optional[int] = None) -> GtpProcess:
+        if search_threads is not None and (search_threads < 1 or self._thread_option is None):
+            raise ValueError("invalid search thread allocation")
+
+        def matches(engine):
+            if search_threads is None:
+                return self._is_current(engine)
+            return engine.usable and self._live_threads[engine] == search_threads
+
         while True:
+            if self._retired:
+                raise RuntimeError("player process pool is retired")
             if self.manager.stop_event.is_set():
                 raise RuntimeError("process shutdown is in progress")
             try:
@@ -449,11 +674,10 @@ class PlayerProcessPool:
             except queue.Empty:
                 engine = None
             if engine is not None:
-                if engine.usable:
-                    return engine
-                engine.close()
-                with self._lock:
-                    self._created[color_pool] -= 1
+                if matches(engine):
+                    engine.game_thread_override = search_threads is not None
+                    return self._lease(engine)
+                self._discard(color_pool, engine)
                 continue
 
             create_new = False
@@ -461,13 +685,24 @@ class PlayerProcessPool:
                 if self._created[color_pool] < self._limit_per_color:
                     self._created[color_pool] += 1
                     create_new = True
+                    command, revision, threads = self._command, self._revision, self.search_threads
+                    if search_threads is not None:
+                        command = list(command)
+                        command[command.index(self._thread_option) + 1] = str(search_threads)
+                        command, threads = tuple(command), search_threads
             if create_new:
                 try:
-                    return GtpProcess(
+                    process_type = EdaxXBoardProcess if self.live_edax_threads else GtpProcess
+                    engine = process_type(
                         self.manager,
-                        self.spec.command,
+                        command,
                         self.command_timeout_sec,
                     )
+                    engine.pool_revision = revision
+                    engine.game_thread_override = search_threads is not None
+                    with self._lock:
+                        self._live_threads[engine] = threads
+                    return self._lease(engine)
                 except BaseException:
                     with self._lock:
                         self._created[color_pool] -= 1
@@ -478,22 +713,18 @@ class PlayerProcessPool:
                 )
             except queue.Empty:
                 continue
-            if engine.usable:
-                return engine
-            engine.close()
-            with self._lock:
-                self._created[color_pool] -= 1
+            if matches(engine):
+                engine.game_thread_override = search_threads is not None
+                return self._lease(engine)
+            self._discard(color_pool, engine)
 
     def release(self, color_pool: int, engine: GtpProcess) -> None:
-        if engine.usable and not self.manager.stop_event.is_set():
+        with self._lock:
+            self._leased_engines.discard(engine)
+        if self._is_current(engine) and not self.manager.stop_event.is_set():
             self._available[color_pool].put(engine)
             return
-        engine.close()
-        with self._lock:
-            self._created[color_pool] = max(
-                0,
-                self._created[color_pool] - 1,
-            )
+        self._discard(color_pool, engine)
 
 
 def parse_gtp_response(line: str) -> str:
@@ -557,10 +788,15 @@ class GameRunner:
         specs: Sequence[PlayerSpec],
         manager: ProcessManager,
         command_timeout_sec: float,
+        *,
+        game_boundary_threads: bool = False,
     ):
         self.specs = list(specs)
+        self.game_boundary_threads = game_boundary_threads
+        self.thread_budget = None
         self.pools = [
-            PlayerProcessPool(spec, manager, command_timeout_sec)
+            PlayerProcessPool(spec, manager, command_timeout_sec,
+                              live_edax_threads=game_boundary_threads)
             for spec in specs
         ]
 
@@ -584,7 +820,7 @@ class GameRunner:
                 held_engine.request(f"genmove {side_to_gtp_color(side)}")
             )
 
-        engine = self.pools[player_idx].acquire(color_pool)
+        engine = held_engine if held_engine is not None else self.pools[player_idx].acquire(color_pool)
         try:
             self._send(
                 engine,
@@ -594,12 +830,14 @@ class GameRunner:
                 engine.request(f"genmove {side_to_gtp_color(side)}")
             )
         finally:
-            self.pools[player_idx].release(color_pool, engine)
+            if held_engine is None:
+                self.pools[player_idx].release(color_pool, engine)
 
     def play_single_game(
         self,
         task: MatchSetTask,
         p0_is_black: bool,
+        search_threads: Optional[Dict[int, int]] = None,
     ) -> GameResult:
         p0_idx = task.p0_idx
         p1_idx = task.p1_idx
@@ -610,6 +848,7 @@ class GameRunner:
             p1_idx: 1 if p0_is_black else 0,
         }
         held: Dict[int, GtpProcess] = {}
+        leased: Dict[int, GtpProcess] = {}
         state = BoardState.initial()
         transcript = ""
 
@@ -622,13 +861,19 @@ class GameRunner:
             # A global participant-index order prevents resource cycles when
             # several stateful games begin at the same time.
             for player_idx in sorted((p0_idx, p1_idx)):
-                if self.specs[player_idx].setboard_before_genmove:
+                stateful = not self.specs[player_idx].setboard_before_genmove
+                if not stateful and not self.game_boundary_threads:
                     continue
                 engine = self.pools[player_idx].acquire(
-                    color_pools[player_idx]
+                    color_pools[player_idx],
+                    search_threads=(search_threads or {}).get(player_idx),
                 )
-                held[player_idx] = engine
-                self._send(engine, "clear_board")
+                # Pin blend wrappers as well when adapting threads. Returning
+                # them after each move would reset their nested engine/TT midgame.
+                leased[player_idx] = engine
+                if stateful:
+                    held[player_idx] = engine
+                    self._send(engine, "clear_board")
 
             if len(task.opening) % 2:
                 raise ValueError(f"odd-length XOT opening: {task.opening!r}")
@@ -651,6 +896,13 @@ class GameRunner:
                 transcript += move
 
             while True:
+                if self.thread_budget is not None:
+                    for player, engine in leased.items():
+                        if self.pools[player].live_edax_threads:
+                            self.thread_budget.resize_at_move_boundary(
+                                task, p0_is_black, player,
+                                lambda threads, p=player, e=engine:
+                                    self.pools[p].resize_leased_engine(e, threads))
                 legal = state.legal_policies(state.side)
                 if not legal:
                     # Edax rejects a pass after both players have no moves.
@@ -666,7 +918,7 @@ class GameRunner:
                 watcher = white_idx if side == BLACK else black_idx
                 move = self._generate_move(
                     mover,
-                    held.get(mover),
+                    leased.get(mover),
                     color_pools[mover],
                     state,
                     side,
@@ -712,7 +964,7 @@ class GameRunner:
                 transcript=transcript,
             )
         finally:
-            for player_idx, engine in held.items():
+            for player_idx, engine in leased.items():
                 self.pools[player_idx].release(
                     color_pools[player_idx],
                     engine,

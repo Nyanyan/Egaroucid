@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import time
 import unittest
 from unittest.mock import Mock, patch
 
@@ -14,7 +15,7 @@ import battle_blend_strength as battle
 from blend_policy_with_egaroucid import (
     BoardState, coord_to_policy, policy_to_coord, side_to_gtp_color,
 )
-from strength_engine import GameRunner, ProcessManager
+from strength_engine import EdaxXBoardProcess, GameRunner, ProcessManager
 from strength_tournament import (
     MatchSetTask, PlayerSpec, ensure_manifest, make_manifest,
 )
@@ -181,6 +182,73 @@ class StrictPassEngine:
 
 
 class EdaxGameTest(unittest.TestCase):
+    def test_xboard_adapter_changes_only_cores_and_restores_level_after_new(self):
+        engine = object.__new__(EdaxXBoardProcess)
+        engine.level = 13
+        engine._exchange = Mock(return_value=[])
+        engine.set_search_threads(4)
+        engine._exchange.assert_called_once_with(["cores 4"])
+        engine.request("clear_board")
+        self.assertEqual(["new", "force", "easy", "nopost", "sd 13"], engine._exchange.call_args.args[0])
+        engine._exchange.side_effect = [["move P@c4", "1-0 {White wins 34-30}"], []]
+        self.assertEqual("= c4", engine.request("genmove b"))
+        self.assertEqual(["force"], engine._exchange.call_args.args[0])
+
+    @unittest.skipUnless(
+        os.name == "nt" and battle.DEFAULT_EDAX_EXE.is_file()
+        and battle.default_egaroucid_exe().is_file(), "local Windows engines required")
+    def test_installed_edax_resizes_during_games_without_restart_or_board_reset(self):
+        import psutil
+        args = battle.make_argparser().parse_args([
+            "--baseline-levels", "1", "--alphas", "", "--edax-levels", "1"])
+        specs = battle.build_player_specs(args, [1], [], 0)
+        manager = ProcessManager(8192)
+        runner = GameRunner(specs, manager, 15, game_boundary_threads=True)
+        changes, calls = [], [0]
+        def at_boundary(task, color, player, change):
+            calls[0] += 1
+            if calls[0] not in (1, 8, 16):
+                return
+            engine = next(iter(runner.pools[player]._leased_engines))
+            pid = engine.process.pid
+            board_before = engine._exchange(["debug"])
+            threads = 4 if calls[0] == 8 else 1
+            change(threads)
+            self.assertEqual(board_before, engine._exchange(["debug"]))
+            self.assertEqual(pid, engine.process.pid)
+            self.assertEqual({str(threads): 1}, runner.pools[player].search_thread_status()["actual_search_threads"])
+            # Windows process snapshots can still include exiting workers
+            # immediately after the protocol ACK. Require convergence, with
+            # a bounded wait; a leaked or unchanged worker fails this check.
+            process = psutil.Process(pid)
+            deadline = time.monotonic() + 2
+            expected = 3 if threads == 1 else 6
+            observed = process.num_threads()
+            while observed != expected and time.monotonic() < deadline:
+                time.sleep(.01)
+                observed = process.num_threads()
+            self.assertEqual(expected, observed)
+            changes.append((threads, observed))
+        runner.thread_budget = Mock(resize_at_move_boundary=at_boundary)
+        try:
+            for color in (True, False):
+                calls[0] = 0
+                # The other color's prior idle pool remains, so use active status below.
+                if not color:
+                    runner.pools[1].close_idle()
+                result = runner.play_single_game(MatchSetTask(0, 0, 1, 0, OPENING), color,
+                                                 search_threads={0: 1, 1: 1})
+                final = BoardState.from_transcript(result.transcript)
+                self.assertFalse(final.legal_policies(0))
+                self.assertFalse(final.legal_policies(1))
+                self.assertTrue(result.transcript.startswith(OPENING))
+            self.assertEqual([1, 4, 1] * 2, [threads for threads, _ in changes])
+            for start in (0, 3):
+                self.assertEqual(3, changes[start + 1][1] - changes[start][1])
+                self.assertEqual(changes[start][1], changes[start + 2][1])
+        finally:
+            manager.close_all()
+
     def test_required_passes_are_sent_and_terminal_passes_are_not(self):
         specs = [PlayerSpec(f"p{i}", (), 2, False) for i in range(2)]
         engines = [StrictPassEngine(), StrictPassEngine()]
