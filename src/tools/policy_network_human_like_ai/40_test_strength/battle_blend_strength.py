@@ -1530,6 +1530,8 @@ def run_tournament(args: argparse.Namespace) -> None:
         duration_weights = [1.0 for _ in specs]
         duration_observations = [0 for _ in specs]
         retry_counts: Dict[int, int] = {}
+        deferred_retries: List[MatchSetTask] = []
+        retry_phase = False
         active_sets: Dict[int, InFlightMatchSet] = {}
         future_to_task: Dict[Future, int] = {}
         executor = ThreadPoolExecutor(
@@ -1550,8 +1552,14 @@ def run_tournament(args: argparse.Namespace) -> None:
             future_to_task[future] = in_flight.task.task_id
 
         def admit_tasks() -> None:
+            nonlocal pending, deferred_retries, retry_phase
             if thread_budget is not None:
                 thread_budget.begin_admission()
+            if not pending and not active_sets and deferred_retries:
+                pending = PendingTaskQueue(deferred_retries, player_count=len(specs))
+                deferred_retries = []
+                retry_phase = True
+                print("Retrying failed sets one at a time (two color games).", flush=True)
             schedule_duration_weights = normalized_duration_weights(
                 duration_weights,
                 duration_observations,
@@ -1559,14 +1567,20 @@ def run_tournament(args: argparse.Namespace) -> None:
             completed_counts = [sum(row) for row in stats.n_played]
             target_counts = [sum(row) for row in target_matrix]
             if resources is not None:
-                resources.rebalance(pending, active_counts, schedule_duration_weights,
-                                    allow_growth=launch_new_tasks,
+                # Deferred work must still keep its players' pools alive.
+                class RemainingWork:
+                    def remaining_for_player(self, index):
+                        return pending.remaining_for_player(index) + sum(
+                            index in (task.p0_idx, task.p1_idx) for task in deferred_retries
+                        )
+                resources.rebalance(RemainingWork(), active_counts, schedule_duration_weights,
+                                    allow_growth=launch_new_tasks and not retry_phase,
                                     completed_counts=completed_counts, target_counts=target_counts)
             admitted = []
             blocked_pairs = set()
             while (
                 launch_new_tasks
-                and len(active_sets) < args.parallel_match_sets
+                and len(active_sets) < (1 if retry_phase else args.parallel_match_sets)
                 and pending
             ):
                 task = pending.pop_schedulable(
@@ -1607,7 +1621,7 @@ def run_tournament(args: argparse.Namespace) -> None:
                     start_color(in_flight, p0_is_black)
 
         admit_tasks()
-        while active_sets or (pending and launch_new_tasks):
+        while active_sets or ((pending or deferred_retries) and launch_new_tasks):
             elapsed = time.time() - start_time
             if (
                 launch_new_tasks
@@ -1701,16 +1715,16 @@ def run_tournament(args: argparse.Namespace) -> None:
                         stop_reason = "low_available_memory"
                     elif attempt <= args.task_retries:
                         retry_counts[task.task_id] = attempt
-                        pending.push_front(task)
+                        deferred_retries.append(task)
                         print(
-                            f"retry_match_set {task.task_id} "
+                            f"deferred_retry_match_set {task.task_id} "
                             f"{attempt}/{args.task_retries}",
                             flush=True,
                         )
                     else:
-                        launch_new_tasks = False
                         stop_reason = "task_failed"
                         fatal_error = error
+                        print(f"match_set {task.task_id} exhausted retries; continuing other sets", flush=True)
                     continue
 
                 result = combine_color_games(

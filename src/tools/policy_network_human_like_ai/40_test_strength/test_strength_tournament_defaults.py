@@ -815,7 +815,53 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             process.close()
             manager.close_all()
 
+    def test_gtp_error_retires_a_still_running_wrapper(self) -> None:
+        manager = ProcessManager(minimum_available_memory_mib=1.0)
+        process = GtpProcess(manager, [sys.executable, "-u", "-c",
+            "import sys\nfor line in sys.stdin:\n print('? Egaroucid prompt timeout', flush=True)\n"], 5.0)
+        try:
+            self.assertTrue(process.request("genmove black").startswith("?"))
+            self.assertFalse(process.usable)
+        finally:
+            process.close()
+            manager.close_all()
 
+    def test_failed_sets_retry_after_other_work_and_do_not_abort_it(self) -> None:
+        calls = []
+        def play(task, black):
+            calls.append(task.set_index)
+            if task.set_index == 0:
+                raise TimeoutError("slow hint")
+            return replace(game_result(black, 2), transcript=task.opening)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            engine = root / "engine.exe"
+            engine.write_bytes(b"mock engine")
+            openings = root / "openings.txt"
+            openings.write_text(OPENING + "\n")
+            args = battle_blend_strength.make_argparser().parse_args([
+                "--egaroucid-exe", str(engine), "--openings", str(openings),
+                "--output-dir", str(root / "results"), "--baseline-levels", "1,2",
+                "--alphas=", "--edax-levels=", "--match-sets-per-pair", "3",
+                "--parallel-match-sets", "1", "--parallel-games", "2", "--no-performance-monitor",
+                "--finish-low-levels-first",
+            ])
+            with patch.object(battle_blend_strength, "GameRunner") as runner, \
+                 patch.object(battle_blend_strength, "available_memory_mib", return_value=1e9), \
+                 patch.object(battle_blend_strength, "validate_scheduled_openings"), \
+                 redirect_stdout(io.StringIO()), self.assertRaisesRegex(RuntimeError, "exhausted"):
+                runner.return_value.play_single_game.side_effect = play
+                runner.return_value.pools = [Mock(created_processes=0), Mock(created_processes=0)]
+                for pool in runner.return_value.pools:
+                    pool.retire.return_value = 0
+                battle_blend_strength.run_tournament(args)
+            self.assertEqual([0, 0, 1, 1, 2, 2, 0, 0, 0, 0], calls)
+            tasks = make_match_set_tasks(2, [OPENING], 3, args.seed)
+            _, results = ResultStore(args.output_dir).load({t.task_id: t for t in tasks})
+            self.assertEqual([1, 2], [r.set_index for r in results])
+            progress = json.loads((args.output_dir / "strength_progress.json").read_text())
+            self.assertEqual(1, progress["remaining_match_sets"])
+            self.assertEqual("task_failed", progress["stop_reason"])
 
     def test_process_manager_closes_descendant_process_tree(self) -> None:
         try:

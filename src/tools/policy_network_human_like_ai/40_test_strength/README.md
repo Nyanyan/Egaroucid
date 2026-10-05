@@ -255,6 +255,7 @@ Eloの95%信頼区間の長さは、セット数だけでは決まらず、相�
 
 - すべてのGTPコマンドに外側の応答期限を設ける。ネイティブEgaroucidの`genmove`も無期限待機しない。
 - processが停止またはtimeoutした場合、途中盤面へコマンドを再送しない。同じXOT局面から先後2局をセット単位で再試行する。
+- wrapperが`?`でエラーを返した場合も、そのprocessと子engineを破棄する。再試行は通常の対戦を回収した後に1セットずつ（先後2局）行い、CPU競合を抑える。再試行上限に達しても他のセットは続け、失敗したセットを勝敗として集計しない。
 - Windowsでは各top-level engineをkill-on-close Job Objectへ入れ、wrapperが異常終了しても子Egaroucidを残さない。
 - 結果は`strength_games.jsonl`へ追記・flushしてから、親threadの集計へ反映する。
 - JSONL末尾だけが異常終了で途切れた場合は、安全な最終行まで戻して再開する。途中行の破損、重複task ID、task内容の不一致は拒否する。

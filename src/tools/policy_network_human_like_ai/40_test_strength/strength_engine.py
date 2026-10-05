@@ -412,6 +412,11 @@ class GtpProcess:
                     ) from response
                 line = str(response).strip()
                 if line:
+                    # A live wrapper can report that its nested search timed
+                    # out. Retire that entire process tree before returning
+                    # the error, so the next lease cannot reuse broken state.
+                    if line.startswith("?"):
+                        self._fail()
                     return line
 
     def close(self) -> None:
@@ -829,6 +834,11 @@ class GameRunner:
             return parse_gtp_move(
                 engine.request(f"genmove {side_to_gtp_color(side)}")
             )
+        except Exception as error:
+            raise GtpProcessError(
+                f"{spec.name} failed on board "
+                f"{state.to_egaroucid_board(side)!r}: {error}"
+            ) from error
         finally:
             if held_engine is None:
                 self.pools[player_idx].release(color_pool, engine)
