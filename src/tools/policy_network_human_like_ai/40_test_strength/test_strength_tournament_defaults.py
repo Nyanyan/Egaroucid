@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import Mock, patch
@@ -104,6 +105,67 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         args = run_strength_full.make_argparser().parse_args([])
         self.assertEqual(500, args.match_sets_per_pair)
         self.assertEqual("xot_500sets_17players_edax", args.output_dir.name)
+
+    def test_explicit_game_limit_rejects_unreachable_counts(self) -> None:
+        parser = battle_blend_strength.make_argparser()
+        for options in (["--parallel-games", "0"],
+                        ["--parallel-games", "45"],
+                        ["--parallel-match-sets", "23", "--parallel-games", "45"]):
+            with self.subTest(options=options), self.assertRaisesRegex(ValueError, "--parallel-games"):
+                battle_blend_strength.validate_args(parser.parse_args(options))
+        args = parser.parse_args(["--parallel-match-sets", "23", "--parallel-games", "45",
+                                  "--blend-processes-per-player", "12"])
+        battle_blend_strength.validate_args(args)
+        self.assertEqual(45, battle_blend_strength.game_worker_count(args))
+        self.assertEqual(40, battle_blend_strength.game_worker_count(parser.parse_args([])))
+
+    def test_45_games_execute_concurrently_and_all_color_pairs_are_saved(self) -> None:
+        lock = threading.Lock()
+        reached_limit = threading.Event()
+        active = 0
+        peak = 0
+
+        def play(task, p0_is_black):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+                if active == 45:
+                    reached_limit.set()
+            try:
+                if not reached_limit.wait(timeout=5):
+                    raise RuntimeError("45 games did not start concurrently")
+                return replace(game_result(p0_is_black, 2), transcript=task.opening)
+            finally:
+                with lock:
+                    active -= 1
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            engine = root / "engine.exe"
+            engine.write_bytes(b"mocked engine")
+            openings = root / "openings.txt"
+            openings.write_text(OPENING + "\n", encoding="utf-8")
+            args = battle_blend_strength.make_argparser().parse_args([
+                "--egaroucid-exe", str(engine), "--openings", str(openings),
+                "--output-dir", str(root / "results"), "--baseline-levels", "1,2",
+                "--alphas=", "--edax-levels=", "--match-sets-per-pair", "23",
+                "--baseline-processes-per-player", "46", "--parallel-match-sets", "23",
+                "--parallel-games", "45", "--no-performance-monitor",
+            ])
+            # Mock search and its inputs; exercise the real executor, scheduler,
+            # color-game combination, and durable result writer.
+            with patch.object(battle_blend_strength, "GameRunner") as game_runner, \
+                 patch.object(battle_blend_strength, "available_memory_mib", return_value=1e9), \
+                 patch.object(battle_blend_strength, "validate_scheduled_openings"), \
+                 redirect_stdout(io.StringIO()):
+                game_runner.return_value.play_single_game.side_effect = play
+                battle_blend_strength.run_tournament(args)
+            tasks = make_match_set_tasks(2, [OPENING], 23, args.seed)
+            completed, results = ResultStore(args.output_dir).load({task.task_id: task for task in tasks})
+            self.assertEqual(45, peak)
+            self.assertEqual(23, len(completed))
+            self.assertEqual(46, sum(len(result.color_games) for result in results))
 
     def test_alpha_is_not_silently_rounded(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args(
@@ -324,7 +386,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
                 len({(task.p0_idx, task.p1_idx) for task in wave}),
             )
 
-    def test_pair_queue_can_use_the_next_wave_when_older_work_is_blocked(
+    def test_pair_queue_keeps_idle_players_busy_while_older_work_is_blocked(
         self,
     ) -> None:
         tasks = make_match_set_tasks(
@@ -354,11 +416,32 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             (first.p0_idx, first.p1_idx, 1),
             (next_task.p0_idx, next_task.p1_idx, next_task.set_index),
         )
-        self.assertIsNone(
-            pending.pop_schedulable(
-                active_counts=active,
-                capacities=[1, 1, 1, 1],
-            )
+        # The other two players are still searching the first opening. The
+        # available pair must be allowed past the former one-opening barrier.
+        third = pending.pop_schedulable(active, [1, 1, 1, 1])
+        self.assertIsNotNone(third)
+        assert third is not None
+        self.assertEqual(
+            (first.p0_idx, first.p1_idx, 2),
+            (third.p0_idx, third.p1_idx, third.set_index),
+        )
+        self.assertIsNone(pending.pop_schedulable(active, [1, 1, 1, 1]))
+
+        # Once the slow players finish, all remaining work is still present;
+        # advancing the fast pair must not skip or duplicate any observation.
+        popped = [first, next_task, third]
+        while pending:
+            task = pending.pop_schedulable([0, 0, 0, 0], [1, 1, 1, 1])
+            self.assertIsNotNone(task)
+            popped.append(task)
+        self.assertEqual(len(tasks), len(popped))
+        self.assertEqual(
+            {task.task_id for task in tasks},
+            {task.task_id for task in popped},
+        )
+        self.assertEqual(
+            {task.task_id: task.identity() for task in tasks},
+            {task.task_id: task.identity() for task in popped},
         )
 
     def test_duration_weights_do_not_compare_warmup_with_one_second(self) -> None:
@@ -731,6 +814,8 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         finally:
             process.close()
             manager.close_all()
+
+
 
     def test_process_manager_closes_descendant_process_tree(self) -> None:
         try:

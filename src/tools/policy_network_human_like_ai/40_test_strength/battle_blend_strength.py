@@ -17,6 +17,7 @@ import hashlib
 import importlib.metadata
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import queue
@@ -58,6 +59,7 @@ from strength_reporting import (  # noqa: E402
     format_elapsed,
     write_outputs,
 )
+from strength_resources import AdaptiveEnginePools, GameThreadBudget, finish_priorities, process_memory_costs
 from strength_tournament import (  # noqa: E402
     GameResult,
     MatchSetTask,
@@ -259,6 +261,10 @@ def validate_scheduled_openings(
             ) from error
 
 
+def game_worker_count(args: argparse.Namespace) -> int:
+    return args.parallel_games if args.parallel_games is not None else args.parallel_match_sets * 2
+
+
 def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
     baseline_levels = parse_int_list(args.baseline_levels)
     edax_levels = parse_int_list(args.edax_levels)
@@ -275,6 +281,11 @@ def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
         raise ValueError("--match-sets-per-pair must be positive")
     if args.parallel_match_sets < 1:
         raise ValueError("--parallel-match-sets must be positive")
+    if not math.isfinite(args.extra_engine_memory_mib) or args.extra_engine_memory_mib < 0:
+        raise ValueError("--extra-engine-memory-mib must be finite and non-negative")
+    if args.parallel_games is not None:
+        if not 1 <= args.parallel_games <= args.parallel_match_sets * 2:
+            raise ValueError("--parallel-games must be positive and no greater than twice --parallel-match-sets")
     for option, value in (
         ("--baseline-processes-per-player", args.baseline_processes_per_player),
         ("--blend-processes-per-player", args.blend_processes_per_player),
@@ -282,8 +293,21 @@ def validate_args(args: argparse.Namespace) -> Tuple[List[int], List[float]]:
     ):
         if value < 2 or value % 2:
             raise ValueError(f"{option} must be an even number >= 2")
+    if args.parallel_games is not None and not args.adaptive_engine_threads:
+        capacities = ([args.baseline_processes_per_player // 2] * len(baseline_levels)
+                      + [args.blend_processes_per_player // 2] * len(alphas)
+                      + [args.edax_processes_per_player // 2] * len(edax_levels))
+        max_sets = min(sum(capacities) // 2, sum(capacities) - max(capacities))
+        if args.parallel_games > max_sets * 2:
+            raise ValueError("--parallel-games exceeds the configured player process capacity")
     if args.engine_threads < 1:
         raise ValueError("--engine-threads must be positive")
+    if args.max_engine_threads < 1 or (args.adaptive_engine_threads and args.max_engine_threads < args.engine_threads):
+        raise ValueError("--max-engine-threads must be at least --engine-threads")
+    if args.engine_thread_budget < 4 * args.engine_threads:
+        raise ValueError("--engine-thread-budget must be at least four times --engine-threads")
+    if not math.isfinite(args.estimated_search_thread_memory_mib) or args.estimated_search_thread_memory_mib <= 0:
+        raise ValueError("--estimated-search-thread-memory-mib must be finite and positive")
     if not 0 <= args.blend_egaroucid_level <= 60:
         raise ValueError("--blend-egaroucid-level must be between 0 and 60")
     if args.score_temperature <= 0.0:
@@ -657,6 +681,7 @@ def implementation_file_identities() -> Dict[str, dict]:
         "engine_runner": SCRIPT_DIR / "strength_engine.py",
         "reporting": SCRIPT_DIR / "strength_reporting.py",
         "tournament_model": SCRIPT_DIR / "strength_tournament.py",
+        "engine_resources": SCRIPT_DIR / "strength_resources.py",
         "blend_gtp_engine": BLEND_DIR / "blend_gtp_engine.py",
         "blend_policy": BLEND_DIR / "blend_policy_with_egaroucid.py",
         "policy_batch_server": BLEND_DIR / "policy_batch_server.py",
@@ -761,6 +786,10 @@ def build_manifest_configuration(
         },
         "engine": {
             "parallel_match_sets": args.parallel_match_sets,
+            "parallel_games": game_worker_count(args),
+            "extra_engine_memory_mib": args.extra_engine_memory_mib,
+            "finish_low_levels_first": args.finish_low_levels_first,
+            "minimum_available_memory_mib": args.minimum_available_memory_mib,
             "baseline_processes_per_player": (
                 args.baseline_processes_per_player
             ),
@@ -775,6 +804,18 @@ def build_manifest_configuration(
                 if edax_levels else None
             ),
             "engine_threads": args.engine_threads,
+            "adaptive_search_threads": {
+                "enabled": args.adaptive_engine_threads,
+                "allocation": "fixed_total_between_games",
+                "process_allocation": "admitted_games_first",
+                "admission_priority": "least_projected_completion_first",
+                "total_threads": args.engine_thread_budget,
+                "budget_scope": "all_players_minimum_one_slot",
+                "maximum_per_process": args.max_engine_threads,
+                "estimated_extra_thread_memory_mib": args.estimated_search_thread_memory_mib,
+                "apply_at": "next_game",
+                "edax_apply_at": "between_moves_xboard_cores_preserve_tt",
+            },
             "blend_egaroucid_level": args.blend_egaroucid_level,
             "score_temperature": args.score_temperature,
             "logit_blend": args.logit_blend,
@@ -825,7 +866,7 @@ def print_configuration(
     capacities = [
         spec.concurrent_match_set_capacity for spec in specs
     ]
-    capacity_limited_sets = sum(capacities) // 2
+    capacity_limited_sets = args.parallel_match_sets if args.adaptive_engine_threads else sum(capacities) // 2
     effective_sets = min(args.parallel_match_sets, capacity_limited_sets)
     print("players")
     for spec in specs:
@@ -837,12 +878,18 @@ def print_configuration(
     print("requested_parallel_match_sets", args.parallel_match_sets)
     print("capacity_limited_parallel_match_sets", capacity_limited_sets)
     print("effective_parallel_match_sets", effective_sets)
-    print("actual_game_worker_threads", args.parallel_match_sets * 2)
-    print("theoretical_concurrent_actual_games", effective_sets * 2)
+    print("actual_game_worker_threads", game_worker_count(args))
+    print("theoretical_concurrent_actual_games", min(effective_sets * 2, game_worker_count(args)))
     print("baseline_processes_per_player", args.baseline_processes_per_player)
     print("blend_processes_per_player", args.blend_processes_per_player)
+    print("extra_engine_memory_mib", args.extra_engine_memory_mib)
+    print("finish_low_levels_first", args.finish_low_levels_first)
     print("edax_processes_per_player", args.edax_processes_per_player)
     print("engine_threads_per_process", args.engine_threads)
+    print("adaptive_engine_threads", args.adaptive_engine_threads)
+    if args.adaptive_engine_threads:
+        print("max_engine_threads_per_process", args.max_engine_threads)
+        print("engine_thread_budget", args.engine_thread_budget)
     print("xot_openings", repo_relative(Path(args.openings)))
     print("same_opening_sequence_for_every_pair", True)
     print(
@@ -867,19 +914,19 @@ def print_configuration(
     print("startup_available_memory_mib", f"{startup_available_mib:.0f}")
     print("minimum_available_memory_mib", args.minimum_available_memory_mib)
     print(
-        "estimated_max_player_processes",
+        "initial_player_process_slots" if args.adaptive_engine_threads else "estimated_max_player_processes",
         estimated_max_player_processes,
     )
     print(
-        "estimated_heavy_egaroucid_processes",
+        "initial_egaroucid_process_slots" if args.adaptive_engine_threads else "estimated_heavy_egaroucid_processes",
         estimated_heavy_engine_processes,
     )
     print(
-        "estimated_edax_processes",
+        "initial_edax_process_slots" if args.adaptive_engine_threads else "estimated_edax_processes",
         len(parse_int_list(args.edax_levels)) * args.edax_processes_per_player,
     )
     print(
-        "estimated_max_tournament_memory_mib",
+        "minimum_startup_tournament_memory_mib" if args.adaptive_engine_threads else "estimated_max_tournament_memory_mib",
         estimated_max_memory_mib,
     )
     print("total_match_sets", total_match_sets)
@@ -980,6 +1027,16 @@ def make_argparser() -> argparse.ArgumentParser:
         help="Maximum admitted color-swapped sets.",
     )
     parser.add_argument(
+        "--parallel-games",
+        type=int,
+        default=None,
+        help="Maximum simultaneous actual games, including odd counts; defaults to twice --parallel-match-sets.",
+    )
+    parser.add_argument("--extra-engine-memory-mib", type=float, default=0.0,
+                        help="Additional process-memory ceiling; retired players' memory is also reused, subject to free RAM.")
+    parser.add_argument("--finish-low-levels-first", action="store_true",
+                        help="Prioritize standalone levels 1..9, retire finished players, then grow heavier players' pools.")
+    parser.add_argument(
         "--baseline-processes-per-player",
         type=int,
         default=2,
@@ -990,6 +1047,11 @@ def make_argparser() -> argparse.ArgumentParser:
         default=10,
     )
     parser.add_argument("--engine-threads", type=int, default=1)
+    parser.add_argument("--adaptive-engine-threads", action=argparse.BooleanOptionalAction, default=False,
+                        help="Share a fixed search-thread budget among admitted games; change only between games.")
+    parser.add_argument("--engine-thread-budget", type=int, default=70)
+    parser.add_argument("--max-engine-threads", type=int, default=64)
+    parser.add_argument("--estimated-search-thread-memory-mib", type=float, default=64.0)
     parser.add_argument(
         "--status-every-match-sets",
         type=int,
@@ -1194,6 +1256,14 @@ def run_tournament(args: argparse.Namespace) -> None:
             else 0.0
         )
     )
+    if args.adaptive_engine_threads:
+        # Start lazily, reserving memory for each admitted pair of color games.
+        # Check that one set fits here; unused per-player slots consume no RAM.
+        largest_process_mib = max(args.estimated_engine_memory_mib + args.estimated_wrapper_memory_mib,
+                                  args.estimated_edax_memory_mib)
+        estimated_memory_mib = (args.estimated_policy_server_memory_mib * int(any(a > 0 for a in alphas))
+                                + 4 * largest_process_mib
+                                + args.engine_thread_budget * args.estimated_search_thread_memory_mib)
     if (
         estimated_memory_mib + args.minimum_available_memory_mib
         > startup_available_mib
@@ -1259,6 +1329,7 @@ def run_tournament(args: argparse.Namespace) -> None:
                 "total_match_sets": len(tasks),
                 "total_actual_games": len(tasks) * 2,
                 "parallel_match_sets": args.parallel_match_sets,
+                "parallel_games": game_worker_count(args),
                 "capacity_limited_parallel_match_sets": (
                     sum(
                         spec.concurrent_match_set_capacity
@@ -1417,6 +1488,7 @@ def run_tournament(args: argparse.Namespace) -> None:
             specs,
             manager,
             args.gtp_command_timeout_sec,
+            game_boundary_threads=args.adaptive_engine_threads,
         )
         if not args.no_performance_monitor:
             monitor = PerformanceMonitor(
@@ -1434,6 +1506,26 @@ def run_tournament(args: argparse.Namespace) -> None:
             remaining_tasks,
             player_count=len(specs),
         )
+        priorities = finish_priorities(specs, args.finish_low_levels_first)
+        resources = None
+        thread_budget = (GameThreadBudget(specs, args.engine_thread_budget, args.engine_threads,
+                                         args.max_engine_threads) if args.adaptive_engine_threads else None)
+        game_runner.thread_budget = thread_budget
+        if args.finish_low_levels_first or args.extra_engine_memory_mib > 0 or args.adaptive_engine_threads:
+            resources = AdaptiveEnginePools(
+                specs, game_runner.pools, process_memory_costs(specs, args), priorities,
+                extra_memory_mib=args.extra_engine_memory_mib,
+                startup_available_mib=startup_available_mib,
+                minimum_available_mib=args.minimum_available_memory_mib,
+                fixed_memory_mib=args.estimated_policy_server_memory_mib * int(any(a > 0 for a in alphas)),
+                max_match_sets=args.parallel_match_sets,
+                output_path=args.output_dir / "engine_allocation_live.json",
+                adaptive_threads=args.adaptive_engine_threads,
+                base_threads=args.engine_threads,
+                thread_budget=thread_budget,
+                thread_memory_mib=args.estimated_search_thread_memory_mib,
+            )
+            capacities = resources.capacities
         active_counts = [0 for _ in specs]
         duration_weights = [1.0 for _ in specs]
         duration_observations = [0 for _ in specs]
@@ -1441,7 +1533,7 @@ def run_tournament(args: argparse.Namespace) -> None:
         active_sets: Dict[int, InFlightMatchSet] = {}
         future_to_task: Dict[Future, int] = {}
         executor = ThreadPoolExecutor(
-            max_workers=args.parallel_match_sets * 2,
+            max_workers=game_worker_count(args),
             thread_name_prefix="strength-game",
         )
         launch_new_tasks = True
@@ -1450,11 +1542,28 @@ def run_tournament(args: argparse.Namespace) -> None:
             * args.status_every_match_sets
         )
 
+        def start_color(in_flight, color):
+            kwargs = ({"search_threads": thread_budget.for_game(in_flight.task, color)}
+                      if thread_budget is not None else {})
+            future = executor.submit(game_runner.play_single_game, in_flight.task, color, **kwargs)
+            in_flight.futures[future] = color
+            future_to_task[future] = in_flight.task.task_id
+
         def admit_tasks() -> None:
+            if thread_budget is not None:
+                thread_budget.begin_admission()
             schedule_duration_weights = normalized_duration_weights(
                 duration_weights,
                 duration_observations,
             )
+            completed_counts = [sum(row) for row in stats.n_played]
+            target_counts = [sum(row) for row in target_matrix]
+            if resources is not None:
+                resources.rebalance(pending, active_counts, schedule_duration_weights,
+                                    allow_growth=launch_new_tasks,
+                                    completed_counts=completed_counts, target_counts=target_counts)
+            admitted = []
+            blocked_pairs = set()
             while (
                 launch_new_tasks
                 and len(active_sets) < args.parallel_match_sets
@@ -1464,24 +1573,38 @@ def run_tournament(args: argparse.Namespace) -> None:
                     active_counts,
                     capacities,
                     schedule_duration_weights,
+                    priorities,
+                    excluded_pairs=blocked_pairs,
+                    completed_counts=completed_counts if args.adaptive_engine_threads else None,
+                    target_counts=target_counts if args.adaptive_engine_threads else None,
                 )
                 if task is None:
-                    return
+                    break
+                if thread_budget is not None and not thread_budget.reserve_set(task):
+                    pending.push_front(task)
+                    blocked_pairs.add((task.p0_idx, task.p1_idx))
+                    continue
+                if resources is not None and not resources.can_admit():
+                    if thread_budget is not None:
+                        for color in (True, False):
+                            thread_budget.release_game(task, color)
+                    pending.push_front(task)
+                    blocked_pairs.add((task.p0_idx, task.p1_idx))
+                    continue
                 active_counts[task.p0_idx] += 1
                 active_counts[task.p1_idx] += 1
                 in_flight = InFlightMatchSet(
                     task=task,
                     started_at=time.monotonic(),
                 )
-                for p0_is_black in (True, False):
-                    future = executor.submit(
-                        game_runner.play_single_game,
-                        task,
-                        p0_is_black,
-                    )
-                    in_flight.futures[future] = p0_is_black
-                    future_to_task[future] = task.task_id
                 active_sets[task.task_id] = in_flight
+                admitted.append(task)
+            if thread_budget is not None:
+                thread_budget.distribute(admitted)
+            for task in admitted:
+                in_flight = active_sets[task.task_id]
+                for p0_is_black in (True, False):
+                    start_color(in_flight, p0_is_black)
 
         admit_tasks()
         while active_sets or (pending and launch_new_tasks):
@@ -1517,12 +1640,17 @@ def run_tournament(args: argparse.Namespace) -> None:
                 return_when=FIRST_COMPLETED,
             )
             if not done:
+                # Admit new games and refresh Edax targets for the next move boundary.
+                if args.adaptive_engine_threads:
+                    admit_tasks()
                 continue
             finalized_ids: set[int] = set()
             for future in done:
                 task_id = future_to_task.pop(future)
                 in_flight = active_sets[task_id]
                 p0_is_black = in_flight.futures.pop(future)
+                if thread_budget is not None:
+                    thread_budget.release_game(in_flight.task, p0_is_black)
                 try:
                     in_flight.results[p0_is_black] = future.result()
                 except BaseException as error:

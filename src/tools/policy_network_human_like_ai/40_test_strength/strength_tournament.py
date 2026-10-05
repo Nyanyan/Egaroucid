@@ -229,7 +229,8 @@ class PendingTaskQueue:
     at most the 120 pairs in the default 16-player tournament.
     """
 
-    MAX_SET_INDEX_LOOKAHEAD = 1
+    # No cross-pair barrier: idle players can advance while other pairs search.
+    MAX_SET_INDEX_LOOKAHEAD = None
 
     def __init__(
         self,
@@ -283,27 +284,27 @@ class PendingTaskQueue:
         active_counts: Sequence[int],
         capacities: Sequence[int],
         duration_weights: Optional[Sequence[float]] = None,
+        player_priorities: Optional[Sequence[int]] = None,
+        excluded_pairs=None,
+        completed_counts: Optional[Sequence[int]] = None,
+        target_counts: Optional[Sequence[int]] = None,
     ) -> Optional[MatchSetTask]:
+        if (completed_counts is None) != (target_counts is None):
+            raise ValueError("completed and target counts must be provided together")
         if not self._remaining or not self._pairs:
             return None
         if duration_weights is None:
             duration_weights = [1.0 for _ in capacities]
-        oldest_pending_set_index = min(
-            pair_tasks[0].set_index
-            for pair_tasks in self._by_pair.values()
-            if pair_tasks
-        )
-        best: Optional[Tuple[int, float, int, int]] = None
+        if player_priorities is None:
+            player_priorities = [0 for _ in capacities]
+        best = None
         for offset in range(len(self._pairs)):
             pair_index = (self._cursor + offset) % len(self._pairs)
             p0_idx, p1_idx = self._pairs[pair_index]
+            if excluded_pairs and (p0_idx, p1_idx) in excluded_pairs:
+                continue
             pair_tasks = self._by_pair[(p0_idx, p1_idx)]
             if not pair_tasks:
-                continue
-            if (
-                pair_tasks[0].set_index
-                > oldest_pending_set_index + self.MAX_SET_INDEX_LOOKAHEAD
-            ):
                 continue
             if (
                 active_counts[p0_idx] >= capacities[p0_idx]
@@ -320,27 +321,40 @@ class PendingTaskQueue:
                 * max(0.001, float(duration_weights[p1_idx]))
                 / capacities[p1_idx]
             )
-            # Longest remaining participant workload first. The smaller sum
-            # term breaks ties in favor of a pair that advances two loaded
-            # participants at once. Set index is the primary key so every
-            # schedulable pair receives the current shared XOT opening before
-            # a pair advances far into later openings. At most one opening of
-            # lookahead is allowed when all older tasks are capacity-blocked;
-            # this keeps workers useful without letting one fast pair consume
-            # its whole schedule. ``-offset`` preserves rotating fairness
-            # within the same opening wave.
+            # Remaining workload breaks ties between equally advanced pairs.
+            # Each pair's queue preserves its own opening sequence, and blocked
+            # players never prevent other eligible pairs from advancing.
             score = max(p0_work, p1_work) + 0.01 * (p0_work + p1_work)
+            priority = max(player_priorities[p0_idx], player_priorities[p1_idx])
+            # Finish the requested low-level participants first. When one is
+            # busy, other schedulable pairs continue without a global barrier.
+            remaining_to_finish = min(
+                self._remaining_by_player[index]
+                for index in (p0_idx, p1_idx)
+                if player_priorities[index] == priority
+            ) if priority else 0
             candidate = (
+                priority,
+                -remaining_to_finish,
                 -pair_tasks[0].set_index,
                 score,
                 -offset,
                 pair_index,
             )
+            if completed_counts is not None:
+                # Give new process leases to the least advanced participant.
+                # Count admitted sets as progress so a catch-up batch stops
+                # taking extra slots once it has covered the completion gap.
+                # Targets include imported results and may differ in limited
+                # schedules. Prefer advancing two lagging players together.
+                progress = [(completed_counts[i] + active_counts[i]) / max(1, target_counts[i])
+                            for i in (p0_idx, p1_idx)]
+                candidate = (-min(progress), -max(progress), *candidate)
             if best is None or candidate > best:
                 best = candidate
         if best is None:
             return None
-        pair_index = best[3]
+        pair_index = best[-1]
         p0_idx, p1_idx = self._pairs[pair_index]
         self._cursor = (pair_index + 1) % len(self._pairs)
         self._remaining -= 1
