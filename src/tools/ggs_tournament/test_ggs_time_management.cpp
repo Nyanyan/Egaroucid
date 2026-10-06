@@ -779,6 +779,27 @@ void test_ggs_plan_time_limits() {
     );
 }
 
+void test_time_limit_grows_with_remaining_time() {
+    // The remaining-time offset used to be subtracted in full just above its
+    // threshold, so a 28-empty move got 0.27 s with 4 s left but 0.012 s with
+    // 5 s left. The opening is skipped: its limits only dip at about 4.6 s
+    // left, where the first plan share appears.
+    for (int n_empties = 1; n_empties <= 46; ++n_empties) {
+        const Board board = board_with_empties(n_empties);
+        uint64_t previous = 0ULL;
+        for (uint64_t remaining = 100ULL; remaining <= 60000ULL; remaining += 50ULL) {
+            const uint64_t time_limit = calc_time_limit_ply(board, remaining, false);
+            require(
+                time_limit + 1ULL >= previous,
+                "time limit must not shrink with more time left (" + std::to_string(n_empties) +
+                    " empties, " + std::to_string(remaining) + " ms left, " +
+                    std::to_string(previous) + " -> " + std::to_string(time_limit) + " ms)"
+            );
+            previous = time_limit;
+        }
+    }
+}
+
 void test_ybwc_end_split_depth() {
     require_equal(
         ybwc_end_split_min_depth(MPC_100_LEVEL),
@@ -861,6 +882,7 @@ int main() {
         test_ggs_plan_keeps_late_reserve();
         test_ggs_plan_application();
         test_ggs_plan_time_limits();
+        test_time_limit_grows_with_remaining_time();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

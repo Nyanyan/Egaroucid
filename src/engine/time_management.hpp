@@ -363,6 +363,17 @@ uint64_t calc_time_limit_ply(const Board board, uint64_t remaining_time_msec, bo
     uint64_t remaining_time_msec_margin = remaining_time_msec;
     if (remaining_time_msec > TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE) {
         remaining_time_msec_margin -= TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE;
+#if IS_GGS_TOURNAMENT
+        // At or below the offset the whole clock is the margin, so subtracting
+        // the full offset just above it made the margin collapse: at 28 empties
+        // 4 s left gave a 0.27 s search but 5 s left gave 0.012 s. Keep the
+        // margin at the offset until the subtraction catches up, so the limit
+        // never shrinks when more time is left.
+        remaining_time_msec_margin = std::max<uint64_t>(
+            remaining_time_msec_margin,
+            (uint64_t)(TIME_MANAGEMENT_REMAINING_TIME_OFFSET * remaining_moves + TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE)
+        );
+#endif
     } else {
         if (show_log) {
             std::cerr << "don't have enough time! remaining " << remaining_time_msec_margin << std::endl;
