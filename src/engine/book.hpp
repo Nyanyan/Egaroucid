@@ -3239,6 +3239,29 @@ class Book {
         }
 
         /*
+            @brief flag (seen) a registered board which is not flagged yet, and get its element
+
+            The test and the flag are done while the segment of the board is locked:
+            when several threads call this function for the same board, only one of them gets true.
+            (Used by the walks of book learning, which visit each board once with several threads.)
+
+            @param representative       a board, which must be the representative board
+            @param res                  the element (as it was before the flag) is copied here if true is returned
+            @return true if the board is registered and was not flagged
+        */
+        inline bool flag_if_not_seen(const Board &representative, Book_elem *res) {
+            bool flagged = false;
+            book.modify(representative, [&flagged, res](Book_elem &book_elem) {
+                if (!book_elem.seen) {
+                    *res = book_elem;
+                    book_elem.seen = true;
+                    flagged = true;
+                }
+            });
+            return flagged;
+        }
+
+        /*
             @brief call func(Board) for all registered boards
 
             Boards are copied segment by segment, so that func can modify the book.

@@ -62,6 +62,134 @@ struct Book_deviate_hash {
 
 
 
+/*
+    Walk of the book for book learning, with all threads
+
+    The walks of book learning (positions to expand, leaves to recalculate) start at a root board and
+    follow the registered moves while the error of each move and the sum of the errors are within the limits.
+    They were recursive functions on one thread: with a book of 650M boards, one walk for the positions
+    to expand visited 170M boards and took 6 minutes in every loop of book_deviate(), whatever the number of threads.
+
+    Here the boards are walked in order of the sum of the errors (0 first), and the boards with the same sum are
+    walked round by round: the boards of a round are processed by all threads, and the boards after their
+    moves without error make the next round. The boards after a move with an error wait for their sum.
+
+    A board is walked once (flag "seen" of the book), by the first walk which reaches it:
+    - a board which can be reached with several sums of errors is walked with the smallest one
+      (the recursive function walked it with the sum of the path which reached it first, which depended
+      on the order of the moves: with a larger sum than necessary, fewer moves were followed from it),
+    - in a round, the boards with BLACK to move are processed before the boards with WHITE to move
+      (the same board can be reached with both only by lines with a different number of passes),
+    so the result does not depend on the threads.
+*/
+
+// number of boards given to a thread at once
+constexpr size_t BOOK_WALK_CHUNK_SIZE = 256;
+
+/*
+    @brief what a thread found in the boards of a chunk
+
+    same:   boards after a move without error (by player to move): walked in the next round
+    later:  boards after a move with an error of 1 or more (by player to move and error): walked later
+    found:  elements for the caller (positions to expand, leaves to recalculate)
+*/
+template<class Found>
+struct Book_walk_output {
+    std::vector<Board> same[2];
+    std::vector<std::vector<Board>> later[2];
+    std::vector<Found> found;
+
+    /*
+        @brief add the board after a move
+
+        @param board                board after the move (not passed, not representative: the visitor does that when the board is walked)
+        @param player               player to move
+        @param error                error of the move (0 or less: no error)
+    */
+    void add_child(const Board &board, int player, int error) {
+        if (error <= 0) {
+            same[player].emplace_back(board);
+        } else {
+            if ((int)later[player].size() <= error) {
+                later[player].resize(error + 1);
+            }
+            later[player][error].emplace_back(board);
+        }
+    }
+};
+
+/*
+    @brief walk the book from a board in order of the sum of the errors, with all threads
+
+    Boards must not be registered / deleted during the walk. The flag "seen" must be reset before.
+
+    @param root_board           board to start from
+    @param root_player          player to move of root_board
+    @param max_error_sum        maximum of the sum of the errors
+    @param book_learning        the walk stops if this becomes false
+    @param board_copy           board pointer for screen drawing
+    @param player               player information for screen drawing
+    @param visit                visit(const Board &board, int player, int remaining_error, Book_walk_output<Found> &output) is called for each board
+                                reached (from several threads at the same time). It checks and flags the board with book.flag_if_not_seen(),
+                                and gives the boards after the moves to follow to output.add_child(), what it found to output.found
+    @param collect              collect(int error_sum, std::vector<Found> &found) is called on the calling thread for the output of each chunk
+*/
+template<class Found, class Visit, class Collect>
+void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bool *book_learning, Board *board_copy, int *player, Visit &&visit, Collect &&collect) {
+    const int n_error_sums = std::max(0, max_error_sum) + 1;
+    std::vector<std::vector<Board>> waiting[2]; // [player][sum of errors]
+    waiting[BLACK].resize(n_error_sums);
+    waiting[WHITE].resize(n_error_sums);
+    waiting[root_player][0].emplace_back(root_board);
+    for (int error_sum = 0; error_sum < n_error_sums; ++error_sum) {
+        const int remaining_error = max_error_sum - error_sum;
+        std::vector<Board> round[2] = {std::move(waiting[BLACK][error_sum]), std::move(waiting[WHITE][error_sum])};
+        while (!round[BLACK].empty() || !round[WHITE].empty()) {
+            std::vector<Board> next_round[2];
+            for (int round_player = BLACK; round_player <= WHITE; ++round_player) {
+                if (!global_searching || !(*book_learning)) {
+                    return;
+                }
+                const std::vector<Board> &boards = round[round_player];
+                const size_t n_boards = boards.size();
+                if (n_boards == 0) {
+                    continue;
+                }
+                *board_copy = boards[0];
+                *player = round_player;
+                const int n_chunks = (int)((n_boards + BOOK_WALK_CHUNK_SIZE - 1) / BOOK_WALK_CHUNK_SIZE);
+                std::vector<Book_walk_output<Found>> outputs(n_chunks);
+                auto walk_chunk = [&boards, &outputs, &visit, n_boards, round_player, remaining_error, book_learning](int chunk_idx) {
+                    const size_t chunk_end = std::min(n_boards, (size_t)(chunk_idx + 1) * BOOK_WALK_CHUNK_SIZE);
+                    for (size_t i = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE; i < chunk_end && global_searching && *book_learning; ++i) {
+                        visit(boards[i], round_player, remaining_error, outputs[chunk_idx]);
+                    }
+                };
+                if (n_chunks == 1) { // a few boards: no task
+                    walk_chunk(0);
+                } else {
+                    book.parallel_for(n_chunks, walk_chunk);
+                }
+                // the outputs are joined in the order of the chunks: the order of the result does not depend on the threads
+                for (Book_walk_output<Found> &output: outputs) {
+                    for (int child_player = BLACK; child_player <= WHITE; ++child_player) {
+                        next_round[child_player].insert(next_round[child_player].end(), output.same[child_player].begin(), output.same[child_player].end());
+                        for (int error = 1; error < (int)output.later[child_player].size(); ++error) {
+                            if (error_sum + error < n_error_sums) { // (always true for the moves which the visitors follow)
+                                std::vector<Board> &dst = waiting[child_player][error_sum + error];
+                                dst.insert(dst.end(), output.later[child_player][error].begin(), output.later[child_player][error].end());
+                            }
+                        }
+                    }
+                    collect(error_sum, output.found);
+                }
+            }
+            round[BLACK] = std::move(next_round[BLACK]);
+            round[WHITE] = std::move(next_round[WHITE]);
+        }
+    }
+}
+
 void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_depth, int level, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, bool only_illegal) {
     if (!global_searching || !(*book_learning)) {
         return;
@@ -246,49 +374,71 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
 
 
 
-void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int best_move_only_player, int book_depth, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, int n_loop) {
-    if (!global_searching || !(*book_learning)) {
-        return;
-    }
-    // pass?
-    if (todo_elem.board.get_legal() == 0) {
-        todo_elem.pass();
+/*
+    @brief find the positions to expand in book learning (one walk; book_deviate() does two of them)
+
+    The player best_move_only_player follows only the best moves, the other player the moves within the errors.
+    The tests of each board are the ones of the former recursive function. Differences:
+    - the walk is done by book_walk_by_error() (all threads; a board is walked with its smallest sum of errors),
+    - the former first test "already searched?" looked for the board in the list of positions to expand before
+      the board was made representative, so it matched only when the board was reached in its representative
+      orientation (and then the moves of a position found by the first walk were not followed by the second walk).
+      Whether it matched depended on the path which reached the board first. It is not done any more: with the
+      bundled book, 2,145 positions instead of 2,142 were found without it (v7.8.3, level 7, depth 18).
+
+    @param root_elem            board to start from, player and limits of the errors
+    @param best_move_only_player    the player who follows only the best moves
+    @param book_depth           depth of the book
+    @param todo_by_error        the positions to expand are added here: todo_by_error[sum of the errors]
+    @param all_strt             start time of book learning (for the log)
+    @param book_learning        the walk stops if this becomes false
+    @param board_copy           board pointer for screen drawing
+    @param player               player information for screen drawing
+    @param n_loop               loop of book_deviate() (for the log)
+*/
+void get_book_deviate_todo(Book_deviate_todo_elem root_elem, int best_move_only_player, int book_depth, std::vector<std::vector<Book_deviate_todo_elem>> &todo_by_error, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, int n_loop) {
+    const int max_error_per_move = root_elem.max_error_per_move;
+    const int max_leaf_error = root_elem.max_leaf_error;
+    auto visit = [best_move_only_player, book_depth, max_error_per_move, max_leaf_error](const Board &reached_board, int reached_player, int remaining_error, Book_walk_output<Book_deviate_todo_elem> &output) {
+        Book_deviate_todo_elem todo_elem;
+        todo_elem.board = reached_board;
+        todo_elem.player = reached_player;
+        todo_elem.max_error_per_move = max_error_per_move;
+        todo_elem.remaining_error = remaining_error;
+        todo_elem.max_leaf_error = max_leaf_error;
+        // pass?
         if (todo_elem.board.get_legal() == 0) {
-            return; // game over
+            todo_elem.pass();
+            if (todo_elem.board.get_legal() == 0) {
+                return; // game over
+            }
         }
-    }
-    // check depth
-    if (todo_elem.board.n_discs() >= book_depth + 4) {
-        return;
-    }
-    // already searched?
-    if (book_deviate_todo.find(todo_elem) != book_deviate_todo.end()) {
-        return;
-    }
-    todo_elem.board = representative_board(todo_elem.board);
-    *board_copy = todo_elem.board;
-    *player = todo_elem.player;
-    Book_elem book_elem = book.get(todo_elem.board);
-    // not registered?
-    if (book_elem.value == SCORE_UNDEFINED) {
-        return;
-    }
-    // already seen
-    if (book_elem.seen) {
-        return;
-    }
-    book.flag_book_elem(todo_elem.board);
-    if (todo_elem.player == best_move_only_player) {
+        // check depth
+        if (todo_elem.board.n_discs() >= book_depth + 4) {
+            return;
+        }
+        todo_elem.board = representative_board(todo_elem.board);
+        // not registered, or already seen?
+        Book_elem book_elem;
+        if (!book.flag_if_not_seen(todo_elem.board, &book_elem)) {
+            return;
+        }
+        if (book_elem.value == SCORE_UNDEFINED) {
+            return;
+        }
         std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
+        const bool best_move_only = (todo_elem.player == best_move_only_player);
         int best_score = -SCORE_MAX;
-        for (Book_value &link: links) {
-            best_score = std::max(best_score, link.value);
+        if (best_move_only) {
+            for (Book_value &link: links) {
+                best_score = std::max(best_score, link.value);
+            }
+            if (-SCORE_MAX <= book_elem.leaf.value && book_elem.leaf.value <= SCORE_MAX && is_valid_policy(book_elem.leaf.move)) {
+                best_score = std::max(best_score, (int)book_elem.leaf.value);
+            }
         }
-        if (-SCORE_MAX <= book_elem.leaf.value && book_elem.leaf.value <= SCORE_MAX && is_valid_policy(book_elem.leaf.move)) {
-            best_score = std::max(best_score, (int)book_elem.leaf.value);
-        }
-        // check leaf
-        if (book_elem.leaf.value >= best_score) {
+        // check leaf (best_move_only: only if the leaf is the best move)
+        if (!best_move_only || book_elem.leaf.value >= best_score) {
             int leaf_error = book_elem.value - book_elem.leaf.value;
             if (leaf_error <= todo_elem.max_leaf_error && is_valid_policy(book_elem.leaf.move)) {
                 if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)) { // is leaf legal?
@@ -297,61 +447,80 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int best_move_only_
                         leaf_in_link |= link.policy == book_elem.leaf.move;
                     }
                     if (!leaf_in_link) {
-                        book_deviate_todo.emplace(todo_elem);
-                        if (book_deviate_todo.size() % 100 == 0) {
-                            std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
-                        }
+                        output.found.emplace_back(todo_elem);
                     }
                 }
             }
         }
-        // expand links
+        // expand links (best_move_only: only the best moves)
         if (todo_elem.board.n_discs() + 1 < book_depth + 4) {
             Flip flip;
             for (Book_value &link: links) {
-                if (link.value == best_score) {
+                if (!best_move_only || link.value == best_score) {
                     int link_error = book_elem.value - link.value;
                     if (link_error <= todo_elem.max_error_per_move && link_error <= todo_elem.remaining_error) {
                         calc_flip(&flip, &todo_elem.board, link.policy);
-                        todo_elem.move(&flip, link_error);
-                            get_book_deviate_todo(todo_elem, best_move_only_player, book_depth, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
-                        todo_elem.undo(&flip, link_error);
+                        Board moved_board = todo_elem.board;
+                        moved_board.move_board(&flip);
+                        output.add_child(moved_board, todo_elem.player ^ 1, link_error);
                     }
                 }
             }
         }
-    } else{
-        // check leaf
-        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
-        int leaf_error = book_elem.value - book_elem.leaf.value;
-        if (leaf_error <= todo_elem.max_leaf_error && is_valid_policy(book_elem.leaf.move)) {
-            if (todo_elem.board.get_legal() & (1ULL << book_elem.leaf.move)) { // is leaf legal?
-                bool leaf_in_link = false;
-                for (Book_value &link: links) {
-                    leaf_in_link |= link.policy == book_elem.leaf.move;
-                }
-                if (!leaf_in_link) {
-                    book_deviate_todo.emplace(todo_elem);
-                    if (book_deviate_todo.size() % 100 == 0) {
-                        std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculating... time " << ms_to_time_short(tim() - all_strt) << std::endl;
-                    }
-                }
+    };
+    uint64_t n_todo = 0;
+    auto collect = [&todo_by_error, &n_todo](int error_sum, std::vector<Book_deviate_todo_elem> &found) {
+        todo_by_error[error_sum].insert(todo_by_error[error_sum].end(), found.begin(), found.end());
+        n_todo += found.size();
+    };
+    book_walk_by_error<Book_deviate_todo_elem>(root_elem.board, root_elem.player, root_elem.remaining_error, book_learning, board_copy, player, visit, collect);
+    std::cerr << "loop " << n_loop << " book deviate todo " << n_todo << " found (" << (best_move_only_player == BLACK ? "black" : "white") << " follows the best moves) time " << ms_to_time_short(tim() - all_strt) << std::endl;
+}
+
+/*
+    @brief make the list of the positions to expand from the results of the two walks of book_deviate()
+
+    A position found by both walks is kept once (the one of the first walk, as before).
+    The positions are in order of the sum of the errors (the lines without error first), first walk before second walk.
+    (Formerly: the order of the std::unordered_set which held them.)
+    The flag "seen" must be reset before, and is used: reset it afterwards.
+
+    @param first                result of the first walk
+    @param second               result of the second walk
+    @return the positions to expand
+*/
+std::vector<Book_deviate_todo_elem> merge_book_deviate_todo(const std::vector<std::vector<Book_deviate_todo_elem>> &first, const std::vector<std::vector<Book_deviate_todo_elem>> &second) {
+    // flag the positions of the first walk
+    for (const std::vector<Book_deviate_todo_elem> &elems: first) {
+        const int n_chunks = (int)((elems.size() + BOOK_WALK_CHUNK_SIZE - 1) / BOOK_WALK_CHUNK_SIZE);
+        book.parallel_for(n_chunks, [&elems](int chunk_idx) {
+            const size_t chunk_end = std::min(elems.size(), (size_t)(chunk_idx + 1) * BOOK_WALK_CHUNK_SIZE);
+            for (size_t i = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE; i < chunk_end; ++i) {
+                book.flag_book_elem(elems[i].board);
             }
-        }
-        // expand links
-        if (todo_elem.board.n_discs() + 1 < book_depth + 4) {
-            Flip flip;
-            for (Book_value &link: links) {
-                int link_error = book_elem.value - link.value;
-                if (link_error <= todo_elem.max_error_per_move && link_error <= todo_elem.remaining_error) {
-                    calc_flip(&flip, &todo_elem.board, link.policy);
-                    todo_elem.move(&flip, link_error);
-                        get_book_deviate_todo(todo_elem, best_move_only_player, book_depth, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
-                    todo_elem.undo(&flip, link_error);
-                }
+        });
+    }
+    std::vector<Book_deviate_todo_elem> res;
+    std::vector<char> is_new;
+    for (size_t error_sum = 0; error_sum < first.size(); ++error_sum) {
+        res.insert(res.end(), first[error_sum].begin(), first[error_sum].end());
+        // positions of the second walk which the first walk did not find
+        const std::vector<Book_deviate_todo_elem> &elems = second[error_sum];
+        is_new.assign(elems.size(), 0);
+        const int n_chunks = (int)((elems.size() + BOOK_WALK_CHUNK_SIZE - 1) / BOOK_WALK_CHUNK_SIZE);
+        book.parallel_for(n_chunks, [&elems, &is_new](int chunk_idx) {
+            const size_t chunk_end = std::min(elems.size(), (size_t)(chunk_idx + 1) * BOOK_WALK_CHUNK_SIZE);
+            for (size_t i = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE; i < chunk_end; ++i) {
+                is_new[i] = !book.get(elems[i].board).seen;
+            }
+        });
+        for (size_t i = 0; i < elems.size(); ++i) {
+            if (is_new[i]) {
+                res.emplace_back(elems[i]);
             }
         }
     }
+    return res;
 }
 
 /*
@@ -440,7 +609,7 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
     return n_add;
 }
 
-uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop, std::string file, std::string bak_file) {
+uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::vector<Book_deviate_todo_elem> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop, std::string file, std::string bak_file) {
     int n_all = book_deviate_todo.size();
     if (n_all == 0) {
         return 0;
@@ -459,7 +628,7 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::u
         std::string eta_short = ms_to_time_short(eta);
         std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " registered " << n_add << " time " << time_short << " ETA " << eta_short << std::endl;
     };
-    for (Book_deviate_todo_elem elem: book_deviate_todo) {
+    for (const Book_deviate_todo_elem &elem: book_deviate_todo) {
         if (tim() - s >= AUTO_BOOK_SAVE_TIME) {
             book.save_egbk3(file, bak_file);
             s = tim();
@@ -556,12 +725,18 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         }
         bool book_recalculating = true;
         book_recalculate_leaf(root_board, std::min(20 + (level & 1), std::max(1, level - 2)), std::max(1, book_depth - 1), max_error_per_move, max_error_sum, board_copy, player, &book_recalculating, true, all_strt);
-        std::unordered_set<Book_deviate_todo_elem, Book_deviate_hash> book_deviate_todo;
+        // positions to expand: two walks (black, then white follows only the best moves), by sum of the errors
+        const int n_error_sums = std::max(0, max_error_sum) + 1;
+        std::vector<std::vector<Book_deviate_todo_elem>> todo_black_best(n_error_sums), todo_white_best(n_error_sums);
         book.reset_seen();
-        get_book_deviate_todo(root_elem, BLACK, book_depth, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
+        get_book_deviate_todo(root_elem, BLACK, book_depth, todo_black_best, all_strt, book_learning, board_copy, player, n_loop);
         book.reset_seen();
-        get_book_deviate_todo(root_elem, WHITE, book_depth, book_deviate_todo, all_strt, book_learning, board_copy, player, n_loop);
+        get_book_deviate_todo(root_elem, WHITE, book_depth, todo_white_best, all_strt, book_learning, board_copy, player, n_loop);
         book.reset_seen();
+        std::vector<Book_deviate_todo_elem> book_deviate_todo = merge_book_deviate_todo(todo_black_best, todo_white_best);
+        book.reset_seen();
+        todo_black_best = std::vector<std::vector<Book_deviate_todo_elem>>(); // (release the memory)
+        todo_white_best = std::vector<std::vector<Book_deviate_todo_elem>>();
         std::cerr << "loop " << n_loop << " book deviate todo " << book_deviate_todo.size() << " calculated time " << ms_to_time_short(tim() - all_strt) << std::endl;
         uint64_t strt = tim();
         uint64_t n_add = expand_leaves(book_depth, level, max_error_per_move, book_deviate_todo, all_strt, strt, book_learning, board_copy, player, n_loop, book_file, book_bak);
