@@ -705,22 +705,12 @@ void test_ggs_plan_phases() {
 }
 
 void test_ggs_plan_shares() {
-#if IS_GGS_3MIN
-    // The 3:00 profile gives 36/35 the midgame weight.
-    require_equal((uint64_t)TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT, 4000ULL, "3:00 early endgame weight");
-    // 50, 48, ..., 30: 11 planned own moves, weights 6600 + 4400 + 5 * 4000 + 4000 + 3 * 2500.
-    require_equal(time_management_ggs_make_plan(50, 56500ULL).share_msec, 8059ULL, "first move share of a fresh 1:00 clock");
-    // 40, 38 midgame, 36 early endgame, 34, 32, 30 pre-complete.
-    require_equal(time_management_ggs_make_plan(40, 33000ULL).share_msec, 5928ULL, "midgame share");
-    require_equal(time_management_ggs_make_plan(36, 18400ULL).share_msec, 5043ULL, "early endgame share");
-#else
-    require_equal((uint64_t)TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT, 7000ULL, "tournament early endgame weight");
+    require_equal((uint64_t)TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT, 7000ULL, "early endgame weight");
     // 50, 48, ..., 30: 11 planned own moves, weights 6600 + 4400 + 5 * 4000 + 7000 + 3 * 2500.
     require_equal(time_management_ggs_make_plan(50, 56500ULL).share_msec, 7528ULL, "first move share of a fresh 1:00 clock");
     // 40, 38 midgame, 36 early endgame, 34, 32, 30 pre-complete.
     require_equal(time_management_ggs_make_plan(40, 33000ULL).share_msec, 5137ULL, "midgame share");
     require_equal(time_management_ggs_make_plan(36, 18400ULL).share_msec, 7000ULL, "early endgame share");
-#endif
     require_equal(time_management_ggs_make_plan(33, 10100ULL).share_msec, 2100ULL, "pre-complete share");
     require_equal(time_management_ggs_make_plan(28, 30000ULL).share_msec, 0ULL, "late moves are not planned");
     require_equal(time_management_ggs_make_plan(33, 3700ULL).share_msec, 0ULL, "no share below the planned reserves");
