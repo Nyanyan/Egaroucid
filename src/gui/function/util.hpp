@@ -13,6 +13,26 @@
 #include <vector>
 #include "const/gui_common.hpp"
 #include "button.hpp"
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#endif
+
+// Moves (renames) a folder on Windows without a shell command.
+// v7.8.3 used system("move \"src\" \"dst\""), which
+//   - expands environment variables in the paths (a folder named "%OS%" could not be moved,
+//     and the folder "Windows_NT" would have been moved instead if it existed),
+//   - converts the paths to the ANSI code page with narrow() ('?' for other characters,
+//     which is also a wildcard of move),
+//   - opens a console window for cmd.exe.
+// MoveFileExW without MOVEFILE_COPY_ALLOWED moves a folder only within a volume, as move did.
+#ifdef _WIN32
+inline bool move_folder_without_shell(const String& source, const String& target) {
+    return MoveFileExW(source.toWstr().c_str(), target.toWstr().c_str(), 0) != 0;
+}
+#endif
 
 std::string get_extension(std::string file) {
     std::string res;
@@ -238,6 +258,56 @@ inline std::vector<String> enumerate_subdirectories_generic(const std::string& b
     return result;
 }
 
+// True if a folder of the game library / forced openings has no subfolder and no row in its summary.csv.
+// The folder is given as a String. The scenes used to rebuild its path from narrow() (ANSI code page)
+// strings: a folder whose name has a character outside the code page (Korean on a Japanese Windows,
+// emoji, ...) became "??", could not be inspected and was always reported as empty, so the delete button
+// was shown for it and removed the folder together with the games / openings inside.
+inline bool is_list_folder_empty(const String& folder_dir) {
+    if (!FileSystem::IsDirectory(folder_dir)) {
+        return false; // cannot be inspected: do not offer to delete it
+    }
+    // summary.csv first, and only its first line: one line is one row for the CSV loader, and a
+    // folder with thousands of games should not be parsed and listed completely for this check
+    String csv_path = folder_dir;
+    if (!csv_path.ends_with(U"/") && !csv_path.ends_with(U"\\")) {
+        csv_path += U"/";
+    }
+    csv_path += U"summary.csv";
+    if (FileSystem::Exists(csv_path)) {
+        TextReader reader{ csv_path };
+        String line;
+        if (reader && reader.readLine(line)) {
+            return false;
+        }
+    }
+    for (const FilePath& path : FileSystem::DirectoryContents(folder_dir, Recursive::No)) {
+        if (FileSystem::IsDirectory(path)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Saves a summary.csv that has free text (player names, memo).
+// CSV::save() of Siv3D writes a backslash as it is, but CSV loading uses the backslash as the escape
+// character ("\n" becomes a line break, "\\" one backslash). A player name such as "C:\new" was
+// therefore read back as "C:" + line break + "ew", and the next time the file was rewritten (reorder,
+// delete, move, edit of another game) the line break cut the row in two: the game disappeared from the
+// list and a row that belongs to no file appeared.
+// Write "\\" for a backslash, and never write a line break inside a cell.
+// Files written before are read as before.
+inline bool save_csv_escaped(const CSV& csv, const String& path) {
+    CSV escaped;
+    for (size_t row = 0; row < csv.rows(); ++row) {
+        for (const String& cell : csv[row]) {
+            escaped.write(cell.replaced(U"\\", U"\\\\").replaced(U"\r", U"").replaced(U"\n", U" "));
+        }
+        escaped.newLine();
+    }
+    return escaped.save(path);
+}
+
 // Create a new folder in the specified directory
 bool create_folder_in_directory(const String& base_dir, const String& folder_name) {
     if (folder_name.empty() || folder_name.contains(U"/") || folder_name.contains(U"\\")) {
@@ -307,14 +377,14 @@ bool move_folder(const String& source_path, const String& target_parent_path, co
         return false;
     }
     
-    // Use system command for folder move
+    // Use system command for folder move (Windows: no shell command, see move_folder_without_shell)
 #ifdef _WIN32
-    std::string cmd = "move \"" + full_source.narrow() + "\" \"" + full_target.narrow() + "\"";
+    int result = move_folder_without_shell(full_source, full_target) ? 0 : (int)GetLastError();
 #else
     std::string cmd = "mv \"" + full_source.narrow() + "\" \"" + full_target.narrow() + "\"";
-#endif
     int result = system(cmd.c_str());
-    
+#endif
+
     if (result == 0) {
         std::cerr << "Successfully moved folder" << std::endl;
         return true;

@@ -150,6 +150,9 @@ public:
         default_button.draw();
         if (default_button.clicked()) {
             set_path_textarea_text(text_area, Unicode::Widen(getData().directories.document_dir + "screenshots/"));
+            // is_valid_dir was updated only when the text was typed: after an invalid path,
+            // the OK button stayed disabled for the default folder
+            is_valid_dir = FileSystem::Exists(Unicode::Widen(getData().directories.document_dir + "screenshots/"));
         }
         go_button.draw();
         if (go_button.clicked() || (is_valid_dir && return_pressed)) {

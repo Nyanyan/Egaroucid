@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+#include <new>
 #include <unordered_set>
 #include "evaluate.hpp"
 #include "board.hpp"
@@ -54,18 +55,8 @@ bool operator==(const Book_deviate_todo_elem& a, const Book_deviate_todo_elem& b
 }
 
 struct Book_deviate_hash {
-    size_t operator()(Book_deviate_todo_elem elem) const{
-        const uint16_t *p = (uint16_t*)&elem.board.player;
-        const uint16_t *o = (uint16_t*)&elem.board.opponent;
-        return 
-            hash_rand_player_book[0][p[0]] ^ 
-            hash_rand_player_book[1][p[1]] ^ 
-            hash_rand_player_book[2][p[2]] ^ 
-            hash_rand_player_book[3][p[3]] ^ 
-            hash_rand_opponent_book[0][o[0]] ^ 
-            hash_rand_opponent_book[1][o[1]] ^ 
-            hash_rand_opponent_book[2][o[2]] ^ 
-            hash_rand_opponent_book[3][o[3]];
+    size_t operator()(const Book_deviate_todo_elem &elem) const{
+        return Book_hash()(elem.board);
     }
 };
 
@@ -113,6 +104,11 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem todo_elem, int book_d
     if (remaining_legal) {
         if (is_valid_policy(book_elem.leaf.move)) {
             if ((remaining_legal & (1ULL << book_elem.leaf.move)) == 0) {
+                illegal_leaf = true;
+            }
+            // A value out of range is also an invalid leaf (the bundled v7.8.3 book has leaves with 65-73, 126 and 127,
+            // probably values of stopped searches). Such leaves were never recalculated here.
+            if (!is_valid_score(book_elem.leaf.value)) {
                 illegal_leaf = true;
             }
         } else {
@@ -372,25 +368,56 @@ void get_book_deviate_todo(Book_deviate_todo_elem todo_elem, int best_move_only_
     }
 }
 
+/*
+    @brief register a board in book learning
+
+    If the memory for the board can't be allocated (std::bad_alloc from the book), book learning is stopped
+    and the boards registered so far are kept, so that the book can be saved.
+    Otherwise the exception of a task of the thread pool is only stored in its future: the thread of book learning
+    ends with the exception while the other tasks go on, and the caller never sees the end of the learning.
+
+    @param board                board to register
+    @param value                value of the board
+    @param level                level of the value
+    @param book_learning        set to false if the board can't be registered
+    @return registered?
+*/
+inline bool book_learning_change(Board board, int value, int level, bool *book_learning) {
+    try {
+        book.change(board, value, level);
+    } catch (const std::bad_alloc&) {
+        if (*book_learning) {
+            std::cerr << "[ERROR] book memory allocation failed. book learning stopped" << std::endl;
+        }
+        *book_learning = false;
+        return false;
+    }
+    return true;
+}
+
 uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level, bool use_multi_thread, bool *book_learning) {
     Book_elem book_elem = book.get(todo_elem.board);
     Flip flip;
     calc_flip(&flip, &todo_elem.board, book_elem.leaf.move);
     todo_elem.move(&flip, 0);
+    int prev_value = book_elem.value;
     if (todo_elem.board.get_legal() == 0) { // check pass
         todo_elem.board.pass();
+        // The player to move is the same as the board of book_elem: change the sign as in the pass in the loop below.
+        // (Without this, the error of the first move was calculated with the wrong sign after a pass.)
+        prev_value *= -1;
         if (todo_elem.board.get_legal() == 0) {
             todo_elem.board.pass();
-            book.change(todo_elem.board, todo_elem.board.score_player(), 60);
-            return 1;
+            return book_learning_change(todo_elem.board, todo_elem.board.score_player(), 60, book_learning) ? 1 : 0;
         }
     }
     uint64_t n_add = 0;
-    int prev_value = book_elem.value;
     while (todo_elem.board.n_discs() <= book_depth + 4 && !book.contain(&todo_elem.board) && (*book_learning) && todo_elem.remaining_error >= 0) {
         Search_result search_result = ai(todo_elem.board, level, true, 0, use_multi_thread, false);
         if (-HW2 <= search_result.value && search_result.value <= HW2) {
-            book.change(todo_elem.board, search_result.value, level);
+            if (!book_learning_change(todo_elem.board, search_result.value, level, book_learning)) {
+                break;
+            }
             ++n_add;
             if (is_valid_policy(search_result.policy) && (todo_elem.board.get_legal() & (1ULL << search_result.policy))) {
                 int error = 0;
@@ -410,8 +437,9 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
                         prev_value *= -1;
                         if (todo_elem.board.get_legal() == 0) { // game over
                             todo_elem.board.pass();
-                            book.change(todo_elem.board, todo_elem.board.score_player(), 60);
-                            ++n_add;
+                            if (book_learning_change(todo_elem.board, todo_elem.board.score_player(), 60, book_learning)) {
+                                ++n_add;
+                            }
                             break;
                         }
                     }
@@ -547,7 +575,9 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         if (book_elem.value == SCORE_UNDEFINED) {
             std::cerr << "board not registered, searching..." << std::endl;
             book_elem.value = ai(root_board, level, true, 0, true, false).value;
-            book.change(&root_board, book_elem.value, level);
+            if (!book_learning_change(root_board, book_elem.value, level, book_learning)) {
+                break;
+            }
         }
         bool book_recalculating = true;
         book_recalculate_leaf(root_board, std::min(20 + (level & 1), std::max(1, level - 2)), std::max(1, book_depth - 1), max_error_per_move, max_error_sum, board_copy, player, &book_recalculating, true, all_strt);
@@ -599,7 +629,9 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
             std::cerr << idx_to_coord(search_result.policy) << " " << search_result.value << std::endl;
             board.print();
             std::cerr << std::endl;
-            book.change(board, search_result.value, level);
+            if (!book_learning_change(board, search_result.value, level, book_learning)) {
+                break;
+            }
             calc_flip(&flip, &board, search_result.policy);
             board.move_board(&flip);
                 bool passed = board.get_legal() == 0;
@@ -610,7 +642,7 @@ inline void book_store(std::vector<std::pair<Board, int>> tasks, int level, int 
                 std::cerr << "child " << child_search_result.value << std::endl;
                 board.print();
                 std::cerr << std::endl;
-                book.change(board, child_search_result.value, level);
+                book_learning_change(board, child_search_result.value, level, book_learning); // the loop ends if this fails
                 if (passed) {
                     board.pass();
                 }

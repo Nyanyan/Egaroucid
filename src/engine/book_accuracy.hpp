@@ -85,7 +85,10 @@ class Book_accuracy {
             std::vector<Book_value> links = book.get_all_moves_with_value(&board);
             if (links.size() == 0) {
                 int complete_depth = 60, endgame_depth = 60;
-                if (book_elem.level < N_LEVEL) {
+                if (book_elem.level < 0) { // level undefined (do not use it as an index)
+                    complete_depth = 0;
+                    endgame_depth = 0;
+                } else if (book_elem.level < N_LEVEL) {
                     complete_depth = get_level_complete_depth(book_elem.level);
                     endgame_depth = get_level_endsearch_depth(book_elem.level);
                 }
@@ -125,7 +128,10 @@ class Book_accuracy {
             }
             if (book_elem.leaf.value >= best_score - accept_loss) {
                 int complete_depth = 60, endgame_depth = 60;
-                if (book_elem.leaf.level < N_LEVEL) {
+                if (book_elem.leaf.level < 0) { // level undefined (do not use it as an index)
+                    complete_depth = 0;
+                    endgame_depth = 0;
+                } else if (book_elem.leaf.level < N_LEVEL) {
                     complete_depth = get_level_complete_depth(book_elem.leaf.level);
                     endgame_depth = get_level_endsearch_depth(book_elem.leaf.level);
                 }

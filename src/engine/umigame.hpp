@@ -279,35 +279,8 @@ class Umigame {
         inline bool get_registered_move_value(Board *b, int policy, int *value) {
             Flip flip;
             calc_flip(&flip, b, policy);
-            b->move_board(&flip);
-
-            bool found = false;
-            if (b->is_end()) {
-                if (book.contain(b)) {
-                    *value = -book.get(b).value;
-                    found = true;
-                } else {
-                    b->pass();
-                    if (book.contain(b)) {
-                        *value = book.get(b).value;
-                        found = true;
-                    }
-                    b->pass();
-                }
-            } else if (b->get_legal() == 0ULL) {
-                b->pass();
-                if (book.contain(b)) {
-                    *value = book.get(b).value;
-                    found = true;
-                }
-                b->pass();
-            } else if (book.contain(b)) {
-                *value = -book.get(b).value;
-                found = true;
-            }
-
-            b->undo_board(&flip);
-            return found;
+            Board moved_board = b->move_copy(&flip);
+            return book.get_moved_board_value(&moved_board, value);
         }
 
         inline std::vector<Book_value> get_registered_moves_with_value(Board *b) {
@@ -345,8 +318,9 @@ class Umigame {
             res.b = UMIGAME_UNDEFINED;
             res.w = UMIGAME_UNDEFINED;
             Umigame_cache_key key{b, remaining_error};
-            if (umigame.find(key) != umigame.end()) {
-                res = umigame[key];
+            auto itr = umigame.find(key);
+            if (itr != umigame.end()) {
+                res = itr->second;
             }
             return res;
         }

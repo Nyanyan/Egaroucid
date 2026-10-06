@@ -30,7 +30,10 @@ Board input_board_po() {
     board.player = 0;
     board.opponent = 0;
     std::string s;
-    std::cin >> s;
+    // End of input or a short line: s[i] was read out of the string, and the main loop never ended after the end of input.
+    if (!(std::cin >> s) || s.size() < HW2) {
+        std::exit(0);
+    }
     for (int i = 0; i < HW2; ++i) {
         if (s[i] == 'P')
             board.player |= 1ULL << (HW2_M1 - i);

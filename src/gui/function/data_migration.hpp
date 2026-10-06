@@ -67,6 +67,26 @@ inline bool data_migration_copy_directory_as_is(const String& source, const Stri
     return FileSystem::Copy(source, target);
 }
 
+// Import copies the backup into the existing folder instead of
+// data_migration_copy_directory_as_is(), which first removes the whole target folder
+// (permanently, AllowUndo::No):
+//   - files that exist only in the current folder (for example games or books saved
+//     after the backup was made) were deleted, although the scene says
+//     "Document data is copied as is";
+//   - when the copy failed after the removal (disk full, a locked file, ...), the
+//     current data was already gone.
+// Files in the backup overwrite files with the same name; other files are kept.
+// (std::filesystem::copy with recursive | overwrite_existing merges into an existing folder.)
+inline bool data_migration_copy_directory_into(const String& source, const String& target) {
+    if (!FileSystem::IsDirectory(source)) {
+        return false;
+    }
+    if (FileSystem::Exists(target) && !FileSystem::IsDirectory(target)) {
+        return false;
+    }
+    return FileSystem::Copy(source, target, CopyOption::OverwriteExisting);
+}
+
 inline bool data_migration_save_manifest(const String& root, const Directories& directories) {
     JSON manifest;
     manifest[U"format"] = U"Egaroucid_Settings_Folder";
@@ -213,13 +233,13 @@ inline Data_migration_result import_egaroucid_settings_data(
         return result;
     }
 
-    if (!data_migration_copy_directory_as_is(source_appdata, target_appdata)) {
+    if (!data_migration_copy_directory_into(source_appdata, target_appdata)) {
         result.error = Data_migration_error::copy_failed;
         return result;
     }
     data_migration_rewrite_imported_setting_paths(backup_root, directories);
 
-    if (!data_migration_copy_directory_as_is(source_document, target_document)) {
+    if (!data_migration_copy_directory_into(source_document, target_document)) {
         result.error = Data_migration_error::copy_failed;
         return result;
     }

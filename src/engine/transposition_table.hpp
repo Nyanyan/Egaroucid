@@ -165,7 +165,10 @@ class Hash_data {
             } else {
                 lower = -SCORE_MAX;
             }
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy) {
+            // This entry had another board: moves[0] is the move of that board and must not be compared.
+            // (With "moves[0] != policy", the best move was dropped when it happened to be the same cell
+            // as the best move of the replaced board.)
+            if ((alpha < value || value == -SCORE_MAX) && is_valid_policy(policy)) {
                 moves[0] = policy;
             } else {
                 moves[0] = MOVE_UNDEFINED;

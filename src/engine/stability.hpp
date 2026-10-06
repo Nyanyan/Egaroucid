@@ -11,6 +11,7 @@
 
 #pragma once
 #include <iostream>
+#include <vector>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -63,20 +64,31 @@ inline void probably_move_line(int p, int o, int place, int *np, int *no) {
     @param b                    player 1/2
     @param w                    player 2/2
 */
-int calc_stability_line(int b, int w) {
+int calc_stability_line(int b, int w, std::vector<int16_t> &memo) {
+    // the same lines appear many times in the recursion: calculate each line only once
+    int16_t &memo_elem = memo[b * N_8BIT + w];
+    if (memo_elem >= 0) {
+        return memo_elem;
+    }
     int i, nb, nw, res = b | w;
     int empties = ~(b | w);
     for (i = 0; i < HW; ++i) {
         if (1 & (empties >> i)) {
             probably_move_line(b, w, i, &nb, &nw);
             res &= b | nw;
-            res &= calc_stability_line(nb, nw);
+            res &= calc_stability_line(nb, nw, memo);
             probably_move_line(w, b, i, &nw, &nb);
             res &= w | nb;
-            res &= calc_stability_line(nb, nw);
+            res &= calc_stability_line(nb, nw, memo);
         }
     }
+    memo_elem = res;
     return res;
+}
+
+int calc_stability_line(int b, int w) {
+    std::vector<int16_t> memo(N_8BIT * N_8BIT, -1);
+    return calc_stability_line(b, w, memo);
 }
 
 /*
@@ -84,6 +96,7 @@ int calc_stability_line(int b, int w) {
 */
 inline void stability_init() {
     int place, b, w, stab;
+    std::vector<int16_t> memo(N_8BIT * N_8BIT, -1);
     for (b = 0; b < N_8BIT; ++b) {
         for (w = b; w < N_8BIT; ++w) {
             if (b & w) {
@@ -92,7 +105,7 @@ inline void stability_init() {
                 stability_edge_arr[w][b][0] = 0;
                 stability_edge_arr[w][b][1] = 0;
             } else{
-                stab = calc_stability_line(b, w);
+                stab = calc_stability_line(b, w, memo);
                 stability_edge_arr[b][w][0] = 0;
                 stability_edge_arr[b][w][1] = 0;
                 for (place = 0; place < HW; ++place) {

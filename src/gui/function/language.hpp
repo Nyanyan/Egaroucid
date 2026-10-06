@@ -78,7 +78,12 @@ public:
         }
         std::vector<String> arr;
         for (const auto& elem : lang[v0s][v1s].arrayView()) {
-            arr.emplace_back(elem.getString());
+            if (elem.isString()) { // getString() throws for other types
+                arr.emplace_back(elem.getString());
+            }
+        }
+        if (arr.empty()) { // arr[0] was read for an empty array
+            return U"?";
         }
         int idx = myrandrange(0, (int)arr.size());
         return arr[idx];

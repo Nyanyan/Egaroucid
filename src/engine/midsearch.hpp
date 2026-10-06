@@ -218,7 +218,12 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
     Flip_value move_list[MAX_N_BRANCHES];
     int idx = 0;
     int tt_moves_idx0 = -1;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+    // The loop uses a copy of legal: next_bit() clears the bits, so legal was 0 after this loop,
+    // and mpc() below was called with legal == 0. nega_alpha_ordering_nws() takes legal == 0 as "no legal move":
+    // the shallow search of Multi-ProbCut (depth >= 2) passed and searched the board with the opponent to move,
+    // instead of this board. (nega_alpha_ordering_nws() calls mpc() before its loop, with the right legal.)
+    uint64_t legal_copy = legal;
+    for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
@@ -655,8 +660,15 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
 #endif
     Analyze_result res;
     res.played_move = played_move;
+    // All members are initialized here: played_score / played_depth / played_probability were read uninitialized
+    // when the played move was not searched (see below), and *_probability was not set for values taken from the book.
+    res.played_score = SCORE_UNDEFINED;
+    res.played_depth = -1;
+    res.played_probability = 0;
     res.alt_score = -SCORE_INF;
     res.alt_move = MOVE_UNDEFINED;
+    res.alt_depth = -1;
+    res.alt_probability = 0;
     int g, first_alpha = alpha;
     uint64_t legal = search->board.get_legal();
     const int canput_all = pop_count_ull(legal);
@@ -677,12 +689,17 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         legal &= ~(1ULL << clog.pos);
     }
     uint32_t hash_code = search->board.hash();
-    if (alpha < beta && (legal & (1ULL << played_move))) {
+    // The played move is always searched (it is searched with the full window, so alpha / beta do not matter).
+    // With the condition "alpha < beta", it was skipped when the clog search found another move which wins by 64
+    // (alpha == beta == 64), and the result of the played move was left uninitialized.
+    // A played move which is not a valid cell is not shifted (undefined behavior).
+    if (is_valid_policy(played_move) && (legal & (1ULL << played_move))) {
         Flip flip;
         calc_flip(&flip, &search->board, played_move);
         search->move(&flip);
             if (book.contain(&search->board)) {
                 res.played_depth = SEARCH_BOOK;
+                res.played_probability = 100;
                 res.played_score = -book.get(search->board).value;
             } else{
                 res.played_depth = depth;
