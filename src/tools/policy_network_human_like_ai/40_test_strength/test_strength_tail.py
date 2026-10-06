@@ -11,20 +11,46 @@ from unittest.mock import Mock, patch
 
 import battle_blend_strength as battle
 from blend_gtp_engine import BlendGtpEngine
-from blend_policy_with_egaroucid import BoardState, EgaroucidHintRunner, default_egaroucid_exe
+from blend_policy_with_egaroucid import (
+    BoardState, EgaroucidHintRunner, SharedHintCache, default_egaroucid_exe,
+)
 from strength_engine import GameRunner, ProcessManager
 from strength_tournament import MatchSetTask, PlayerSpec
 from test_strength_tournament_defaults import OPENING, game_result
 
 
 class TailSchedulingTest(unittest.TestCase):
-    def run_schedule(self, count, threshold):
+    def run_schedule(self, count, threshold, *, abandoned_at_start=False):
         calls, cancellations, runners = [], [], []
         blocked_started = threading.Event()
         lock = threading.Lock()
         old_waiters = 0
         live = 0
         maximum = 0
+        cached_scores = ({19: 4.0, 26: -2.0}, "completed search")
+
+        def leave_claim(color):
+            cache = SharedHintCache(root / "results/egaroucid_hint_cache_v2.sqlite3")
+            try:
+                # Use a fresh claim with the production 12-hour expiry. An
+                # expired dummy claim would hide the original long wait.
+                if not cache.try_claim(f"cancelled-{color}", 43200.0):
+                    raise AssertionError("Test claim already held")
+                cache.put("completed-position", *cached_scores)
+            finally:
+                cache.close()
+
+        def verify_tail_cache():
+            cache = SharedHintCache(root / "results/egaroucid_hint_cache_v2.sqlite3")
+            try:
+                if cache.get("completed-position") != cached_scores:
+                    raise AssertionError("Cleanup discarded a completed search")
+                for color in (True, False):
+                    if not cache.try_claim(f"cancelled-{color}", 43200.0):
+                        raise AssertionError("Tail cannot reclaim a cancelled search")
+                    cache.release_claim(f"cancelled-{color}")
+            finally:
+                cache.close()
 
         class FakeRunner:
             def __init__(self, specs, manager, timeout, **kwargs):
@@ -38,6 +64,9 @@ class TailSchedulingTest(unittest.TestCase):
                 if not self.tail:
                     if task.set_index == 1:
                         with lock:
+                            # Simulate a killed search that leaves its claim
+                            # behind. Tail games must not wait on this worker.
+                            leave_claim(black)
                             old_waiters += 1
                             if old_waiters == 2:
                                 blocked_started.set()
@@ -47,6 +76,8 @@ class TailSchedulingTest(unittest.TestCase):
                         raise InterruptedError("intentional tail cancellation")
                     if not blocked_started.wait(10):
                         raise TimeoutError("both colors of second set were not started")
+                if self.tail and (old_waiters or abandoned_at_start):
+                    verify_tail_cache()
                 with lock:
                     live += 1
                     maximum = max(maximum, live) if self.tail else maximum
@@ -61,6 +92,9 @@ class TailSchedulingTest(unittest.TestCase):
             engine, openings = root / "engine.exe", root / "openings.txt"
             engine.write_bytes(b"fake")
             openings.write_text(OPENING + "\n")
+            if abandoned_at_start:
+                for color in (True, False):
+                    leave_claim(color)
             args = battle.make_argparser().parse_args([
                 "--egaroucid-exe", str(engine), "--openings", str(openings),
                 "--output-dir", str(root / "results"), "--baseline-levels", "1,2",
@@ -96,7 +130,7 @@ class TailSchedulingTest(unittest.TestCase):
         self.assertEqual(2, sum(not call[2] for call in calls))
 
     def test_resume_below_threshold_starts_directly_in_single_game_mode(self):
-        calls, cancellations = self.run_schedule(2, 35)
+        calls, cancellations = self.run_schedule(2, 35, abandoned_at_start=True)
         self.assertFalse(cancellations)
         self.assertTrue(all(call[2] for call in calls))
 

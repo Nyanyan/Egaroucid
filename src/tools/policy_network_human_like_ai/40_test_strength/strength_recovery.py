@@ -20,7 +20,9 @@ LEGACY_ORCHESTRATION = {
                             "f16a590ded5024daea59f07566deb5550c839faac673961fd0fe60a6f0942e74",
                             "5e8380a2b822efccd99a56130794c26a043af0e03baf8686a3ad81ce7fee54b9",
                             "b0017ffe7746b4d31de5b6d29090f3ce547383512f869db5b7c248e918cefe2e",
-                            "b2657d6db2777a32b05f855b8d65c1ca4a6e1d39d83d89082c681db9ca5719c2"),
+                            "b2657d6db2777a32b05f855b8d65c1ca4a6e1d39d83d89082c681db9ca5719c2",
+                            # Tail recovery only releases claims of stopped workers.
+                            "335026da1e5246f048ae3631acb2d7392fd148f6d0a9a124dd4690cccfa3b880"),
     "extension_runner": ("019a39668b28e5eb2d6c3d98d821eba4f84d417d09afa214c73ccc521f1e8671",
                          "5bd95e8c26b38720cef5062cac2e37930b39b7511706b102f3500aadf7827665",
                          "2cbc33a7d3ea9f211e249b801b80f77f2d6a2446343dfeab66529161729ee34f",

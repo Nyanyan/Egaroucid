@@ -1611,6 +1611,15 @@ def run_tournament(args: argparse.Namespace, *, extension=None) -> None:
             # not a failed attempt, and committed results stay in the store.
             game_manager.close_all()
             executor.shutdown(wait=True, cancel_futures=True)
+            # Killed hint workers cannot release their SQLite claims. All
+            # playing workers are now stopped, so no live claim can be erased.
+            # Keep computed scores and let the tail retry unfinished searches.
+            if not args.no_hint_cache:
+                cleared_claims = clear_abandoned_hint_claims(
+                    args.output_dir / "egaroucid_hint_cache_v2.sqlite3"
+                )
+                if cleared_claims:
+                    print("sequential_tail_cleared_abandoned_hint_claims", cleared_claims, flush=True)
             for in_flight in active_sets.values():
                 pending.push_front(in_flight.task)
             active_sets.clear()
