@@ -48,10 +48,19 @@ public:
             if (!is_valid_function(function_name)) {
                 continue;
             }
-            if (find_assigned_button(function_name) != -1) {
+            functions[i] = function_name;
+        }
+        // A function is assigned to one button: the first button keeps it.
+        // v7.8.3 checked each value against the defaults of the buttons not read yet, so a saved
+        // swap (X1 = forward, X2 = backward) was not loaded and became X1 = backward, X2 = forward.
+        for (int i = 0; i < MOUSE_ADDITIONAL_BUTTON_COUNT; ++i) {
+            if (functions[i] == U"") {
                 continue;
             }
-            functions[i] = function_name;
+            const int assigned = find_assigned_button(functions[i], i);
+            if (assigned != -1 && assigned < i) {
+                functions[i].clear();
+            }
         }
     }
 

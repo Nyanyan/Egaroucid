@@ -38,6 +38,9 @@ struct Folder_entry {
     bool enabled;
     bool effective_enabled;
     double weight;
+    // is_folder_empty() at the last enumerate_current_dir(). It reads the folder and its summary.csv and
+    // was called for every visible folder in every frame to decide whether to draw the delete button.
+    bool is_empty = false;
     
     Folder_entry() : name(U""), relative_path(""), enabled(true), effective_enabled(true), weight(1.0) {}
     Folder_entry(const String& n, const std::string& path, bool e = true, bool eff = true, double w = 1.0) : name(n), relative_path(path), enabled(e), effective_enabled(eff), weight(w) {}
@@ -797,26 +800,12 @@ public:
         }
         
         // Check if folder is empty (no subfolders and no openings)
-        bool is_folder_empty(const std::string& relative_path) const {
-            std::string base_dir = getData().directories.document_dir + "/forced_openings";
-            // Check for subfolders
-            std::vector<String> subfolders = enumerate_subdirectories_generic(base_dir, relative_path);
-            if (!subfolders.empty()) {
-                return false;
-            }
-            // Check for openings in summary.csv
-            String folder_dir = Unicode::Widen(base_dir);
-            if (!relative_path.empty()) {
-                folder_dir += U"/" + Unicode::Widen(relative_path);
-            }
-            String csv_path = folder_dir + U"/summary.csv";
-            if (FileSystem::Exists(csv_path)) {
-                CSV csv{ csv_path };
-                if (csv.rows() > 0) {
-                    return false;
-                }
-            }
-            return true;
+        // folder_name: a folder in the current folder.
+        // This took the relative path as a narrow() string: a name outside the ANSI code page became "??",
+        // the folder could not be read and counted as empty, and the delete button removed it for good
+        // with the openings inside (see is_list_folder_empty() in util.hpp). Use the name as it is.
+        bool is_folder_empty(const String& folder_name) const {
+            return is_list_folder_empty(get_base_dir() + folder_name);
         }
         
         // Delete folder (only if empty)
@@ -824,7 +813,7 @@ public:
             if (idx < 0 || idx >= (int)folders_display.size()) return;
             
             const auto& folder = folders_display[idx];
-            if (!is_folder_empty(folder.relative_path)) {
+            if (!is_folder_empty(folder.name)) {
                 return;  // Don't delete non-empty folders
             }
             
@@ -862,6 +851,7 @@ public:
                 bool effective_enabled = is_folder_effectively_enabled(rel_path);
                 double weight = load_folder_weight(rel_path);
                 folders_display.emplace_back(Folder_entry{ folder, rel_path, is_enabled, effective_enabled, weight });
+                folders_display.back().is_empty = is_folder_empty(folder);
                 
                 // Add delete button for each folder
                 ImageButton delete_btn;
@@ -1102,7 +1092,7 @@ public:
             bool is_renaming_this = renaming_folder && renaming_folder_index == idx;
             
             // Draw delete button only for empty folders
-            if (!is_renaming_this && !(editing_elem || renaming_folder) && is_folder_empty(entry.relative_path)) {
+            if (!is_renaming_this && !(editing_elem || renaming_folder) && entry.is_empty) { // delete_folder() checks the folder itself again
                 folder_delete_buttons[idx].move(OPENING_SETTING_SX + 1, sy + 1);
                 folder_delete_buttons[idx].draw();
                 if (folder_delete_buttons[idx].clicked()) {
@@ -1432,9 +1422,14 @@ public:
             const CSV csv{ csv_path };
             if (csv) {
                 for (size_t row = 0; row < csv.rows(); ++row) {
+                    // Same column checks as load_openings(): csv[row][1] / [2] were read without them
+                    // (out of range for a row with fewer columns, e.g. a hand-edited summary.csv)
+                    if (csv.columns(row) < 1) {
+                        continue;
+                    }
                     String transcript = csv[row][0];
-                    double opening_weight = ParseOr<double>(csv[row][1], 1.0);
-                    bool enabled = ParseOr<bool>(csv[row][2], true);
+                    double opening_weight = (csv.columns(row) >= 2) ? ParseOr<double>(csv[row][1], 1.0) : 1.0;
+                    bool enabled = (csv.columns(row) >= 3) ? ParseOr<bool>(csv[row][2], true) : true;
                     
                     if (enabled) {  // Only add enabled openings
                         // Multiply opening weight by cumulative folder weight
@@ -1521,7 +1516,9 @@ public:
             }
         }
 
-        void move_selected_items_to_absolute_folder(const std::string& target_folder) {
+        // target_folder: path from the forced_openings root (narrow), used for moving folders
+        // target_base: the same folder as a directory String, used for moving openings
+        void move_selected_items_to_absolute_folder(const std::string& target_folder, const String& target_base) {
             std::vector<std::string> folder_names;
             folder_names.reserve(selected_folder_indices.size());
             for (int folder_index : selected_folder_indices) {
@@ -1534,7 +1531,7 @@ public:
             std::sort(opening_indices.rbegin(), opening_indices.rend());
             for (int opening_index : opening_indices) {
                 if (opening_index >= 0 && opening_index < (int)openings.size()) {
-                    move_opening_to_absolute_folder(opening_index, target_folder);
+                    move_opening_to_absolute_folder(opening_index, target_base);
                 }
             }
 
@@ -1582,10 +1579,11 @@ public:
                         Rect parent_rect(OPENING_SETTING_SX, item_sy, OPENING_SETTING_WIDTH, OPENING_SETTING_HEIGHT);
                         if (parent_rect.contains(drag_state.current_mouse_pos)) {
                             const std::string target_folder = parent_subfolder();
+                            const String target_base = get_dir_of_subfolder(target_folder);
                             if (dragged_item_is_selected()) {
-                                move_selected_items_to_absolute_folder(target_folder);
+                                move_selected_items_to_absolute_folder(target_folder, target_base);
                             } else if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
-                                move_opening_to_absolute_folder(drag_state.dragged_opening_index, target_folder);
+                                move_opening_to_absolute_folder(drag_state.dragged_opening_index, target_base);
                             } else if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.isEmpty()) {
                                 move_folder_to_absolute_folder(drag_state.dragged_folder_name.narrow(), target_folder);
                             }
@@ -1607,10 +1605,12 @@ public:
                                     continue;
                                 }
                                 const std::string target_relative_folder = build_child_relative_path(target_folder.narrow());
+                                // directory of the folder under the cursor, with its name as it is (not narrow())
+                                const String target_base = get_base_dir() + target_folder + U"/";
                                 if (dragged_item_is_selected()) {
-                                    move_selected_items_to_absolute_folder(target_relative_folder);
+                                    move_selected_items_to_absolute_folder(target_relative_folder, target_base);
                                 } else if (drag_state.is_dragging_opening && drag_state.dragged_opening_index >= 0) {
-                                    move_opening_to_absolute_folder(drag_state.dragged_opening_index, target_relative_folder);
+                                    move_opening_to_absolute_folder(drag_state.dragged_opening_index, target_base);
                                 } else if (drag_state.is_dragging_folder && !drag_state.dragged_folder_name.isEmpty()) {
                                     move_folder_to_absolute_folder(drag_state.dragged_folder_name.narrow(), target_relative_folder);
                                 }
@@ -1674,7 +1674,7 @@ public:
         void move_opening_to_folder(int opening_index, const std::string& target_folder) {
             if (opening_index < 0 || opening_index >= (int)openings.size()) return;
             
-            const Opening_abstract& opening = openings[opening_index];
+            const Opening_abstract opening = openings[opening_index];
             
             // Build target path
             String target_base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
@@ -1685,32 +1685,10 @@ public:
                 target_base += Unicode::Widen(target_folder) + U"/";
             }
             
-            // Ensure target directory exists
-            if (!FileSystem::Exists(target_base)) {
-                FileSystem::CreateDirectories(target_base);
+            // Save in the target folder (same function as move_opening_to_absolute_folder(), see there)
+            if (!append_opening_to_folder(target_base, opening)) {
+                return;
             }
-            
-            // Load target CSV
-            String target_csv_path = target_base + U"summary.csv";
-            CSV target_csv{ target_csv_path };
-            CSV new_target_csv;
-            
-            // Copy existing entries
-            for (int i = 0; i < (int)target_csv.rows(); ++i) {
-                if (target_csv[i].size() >= 3) {
-                    for (int j = 0; j < 3; ++j) {
-                        new_target_csv.write(target_csv[i][j]);
-                    }
-                    new_target_csv.newLine();
-                }
-            }
-            
-            // Add moved opening
-            new_target_csv.write(opening.transcript);
-            new_target_csv.write(Format(opening.weight));
-            new_target_csv.write(opening.enabled ? U"true" : U"false");
-            new_target_csv.newLine();
-            new_target_csv.save(target_csv_path);
             
             // Remove from current folder
             delete_opening(opening_index);
@@ -1730,53 +1708,68 @@ public:
             if (pos == std::string::npos) parent_folder.clear();
             else parent_folder = parent_folder.substr(0, pos);
             
-            move_opening_to_absolute_folder(opening_index, parent_folder);
+            move_opening_to_absolute_folder(opening_index, get_dir_of_subfolder(parent_folder));
         }
         
-        // Move opening to absolute folder path (from root)
-        void move_opening_to_absolute_folder(int opening_index, const std::string& target_folder) {
-            if (opening_index < 0 || opening_index >= (int)openings.size()) return;
-            
-            const Opening_abstract& opening = openings[opening_index];
-            
-            // Build target path
-            String target_base = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
-            if (!target_folder.empty()) {
-                target_base += Unicode::Widen(target_folder) + U"/";
+        // Directory of a folder given by its path from the forced_openings root (with a trailing '/')
+        String get_dir_of_subfolder(const std::string& folder) const {
+            String dir = Unicode::Widen(getData().directories.document_dir) + U"/forced_openings/";
+            if (!folder.empty()) {
+                dir += Unicode::Widen(folder) + U"/";
             }
+            return dir;
+        }
             
-            // Ensure target directory exists
-            if (!FileSystem::Exists(target_base)) {
-                FileSystem::CreateDirectories(target_base);
+        // Appends an opening to the summary.csv of the folder target_base.
+        // Returns false if the folder or the file could not be written.
+        bool append_opening_to_folder(const String& target_base, const Opening_abstract& opening) {
+            if (!FileSystem::IsDirectory(target_base) && !FileSystem::CreateDirectories(target_base)) {
+                return false;
             }
-            
-            // Load target CSV
             String target_csv_path = target_base + U"summary.csv";
             CSV target_csv{ target_csv_path };
             CSV new_target_csv;
-            
-            // Copy existing entries
+            // Copy existing entries.
+            // Only rows with 3 or more columns were copied, so the openings of the target folder written
+            // as "transcript" or "transcript,weight" were lost when an opening was moved into the folder,
+            // although load_openings() and the forced opening loader accept such rows (weight 1, enabled).
+            // Keep them, with the same defaults.
             for (int i = 0; i < (int)target_csv.rows(); ++i) {
-                if (target_csv[i].size() >= 3) {
-                    for (int j = 0; j < 3; ++j) {
-                        new_target_csv.write(target_csv[i][j]);
-                    }
+                const int n_columns = (int)target_csv[i].size();
+                if (n_columns >= 1) {
+                    new_target_csv.write(target_csv[i][0]);
+                    new_target_csv.write(n_columns >= 2 ? target_csv[i][1] : String(U"1"));
+                    new_target_csv.write(n_columns >= 3 ? target_csv[i][2] : String(U"true"));
                     new_target_csv.newLine();
                 }
             }
-            
             // Add moved opening
             new_target_csv.write(opening.transcript);
             new_target_csv.write(Format(opening.weight));
             new_target_csv.write(opening.enabled ? U"true" : U"false");
             new_target_csv.newLine();
-            new_target_csv.save(target_csv_path);
+            return new_target_csv.save(target_csv_path);
+        }
+
+        // Move opening to the folder target_base (directory with a trailing '/').
+        // The target used to be a narrow() (ANSI code page) path from the root: for a folder whose name has
+        // a character outside the code page the path became "??", nothing could be written there, and the
+        // opening was still deleted from the current folder. Now the caller passes the directory as a
+        // String, and the opening is removed from the current folder only after it was saved in the target.
+        void move_opening_to_absolute_folder(int opening_index, const String& target_base) {
+            if (opening_index < 0 || opening_index >= (int)openings.size()) return;
+
+            const Opening_abstract opening = openings[opening_index];
+            if (!append_opening_to_folder(target_base, opening)) {
+                std::cerr << "Failed to move opening to " << target_base.narrow() << std::endl;
+                return;
+            }
             
             // Remove from current folder
             delete_opening(opening_index);
             refresh_directory_views();
             
-            std::cerr << "Moved opening to " << target_folder << std::endl;
+            std::cerr << "Moved opening to " << target_base.narrow() << std::endl;
         }
         
         // Move folder to target folder (relative to current subfolder)

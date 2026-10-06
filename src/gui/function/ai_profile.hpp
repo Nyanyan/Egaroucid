@@ -389,7 +389,7 @@ inline bool load_ai_profile_into_settings(const Directories& directories, Settin
     if (load_ai_profile_values(profile_path, &values, &profile_name)) {
         apply_ai_profile_values(values, settings);
         settings->ai_profile_file = profile_file.narrow();
-        settings->ai_profile_name = profile_name.narrow();
+        settings->ai_profile_name = profile_name.toUTF8();
         return true;
     }
 
@@ -398,7 +398,7 @@ inline bool load_ai_profile_into_settings(const Directories& directories, Settin
     if (load_ai_profile_values(profile_path, &values, &profile_name)) {
         apply_ai_profile_values(values, settings);
         settings->ai_profile_file = profile_file.narrow();
-        settings->ai_profile_name = profile_name.narrow();
+        settings->ai_profile_name = profile_name.toUTF8();
         return true;
     }
 

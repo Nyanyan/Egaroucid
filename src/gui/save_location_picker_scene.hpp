@@ -561,7 +561,7 @@ private:
             }
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
     
     void add_picker_game_to_target_csv(const Game_abstract& game, const String& target_base) {
@@ -594,7 +594,7 @@ private:
         new_csv.write(game.game_date);
         new_csv.newLine();
         
-        new_csv.save(target_csv);
+        save_csv_escaped(new_csv, target_csv); // escapes backslashes, see util.hpp
     }
 
     void persist_picker_games_order_to_csv() {
@@ -611,7 +611,7 @@ private:
             new_csv.write(game.game_date);
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
 
     String get_picker_base_dir() const {

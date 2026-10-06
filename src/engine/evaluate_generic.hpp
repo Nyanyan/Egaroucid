@@ -343,6 +343,15 @@ inline bool load_eval_file(const char* file, bool show_log) {
     if (failed) {
         return false;
     }
+    size_t n_params_expected = 0;
+    for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {
+        n_params_expected += pow3[pattern_sizes[pattern_idx]];
+    }
+    n_params_expected = (n_params_expected + MAX_STONE_NUM) * N_PHASES;
+    if (unzipped_params.size() < n_params_expected) { // do not read out of the data
+        std::cerr << "[ERROR] [FATAL] evaluation file broken. " << unzipped_params.size() << " elems found, " << n_params_expected << " elems expected" << std::endl;
+        return false;
+    }
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         for (int pattern_idx = 0; pattern_idx < N_PATTERNS; ++pattern_idx) {

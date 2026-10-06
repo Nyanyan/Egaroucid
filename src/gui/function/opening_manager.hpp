@@ -56,9 +56,7 @@ public:
     }
 
     inline std::string get(Board b, int p) {
-        int i, j;
-        bool flag;
-        for (i = 0; i < (int)arr.size(); ++i) {
+        for (int i = 0; i < (int)arr.size(); ++i) {
             if (p == BLACK && arr[i].first.player == b.opponent && arr[i].first.opponent == b.player) {
                 return arr[i].second;
             }

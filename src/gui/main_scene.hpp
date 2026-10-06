@@ -946,7 +946,7 @@ private:
         apply_ai_profile_values(values, &getData().menu_elements);
         apply_ai_profile_values(values, &getData().settings);
         getData().settings.ai_profile_file = profile_file.narrow();
-        getData().settings.ai_profile_name = profile_name.narrow();
+        getData().settings.ai_profile_name = profile_name.toUTF8();
         resume_calculating();
         return true;
     }
@@ -969,75 +969,76 @@ private:
         apply_display_profile_values(values, &getData().menu_elements);
         apply_display_profile_values(values, &getData().settings);
         getData().settings.display_profile_file = profile_file.narrow();
-        getData().settings.display_profile_name = profile_name.narrow();
+        getData().settings.display_profile_name = profile_name.toUTF8();
         resume_calculating();
         return true;
     }
 
+    // Leaves the main scene for another scene (stops the running calculations first).
+    // These four lines were repeated for every menu item that opens a scene.
+    void change_scene_from_main(const String& scene_name) {
+        changing_scene = true;
+        stop_calculating();
+        resume_calculating();
+        changeScene(scene_name, SCENE_FADE_TIME);
+    }
+
+    // Starts a new game from the initial position.
+    // The four "new game" menu items had the same 15 lines and differed only in the side(s) played by the AI.
+    void start_new_game(bool ai_put_black, bool ai_put_white) {
+        stop_calculating();
+        getData().history_elem.reset();
+        getData().graph_resources.init();
+        getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
+        getData().game_information.init();
+        forced_opening_finished_latched = false;
+        turn_timer_paused = true;
+        turn_timer_started = false;
+        reset_turn_timer_anchor();
+        getData().menu_elements.ai_put_black = ai_put_black;
+        getData().menu_elements.ai_put_white = ai_put_white;
+        resume_calculating();
+        need_start_game_button_calculation();
+        pausing_in_pass = false;
+    }
+
+    // Rotates / mirrors the current position and every position of the history.
+    // convert_board: the Board member function to apply
+    // convert_cell: where a move (policy, 0..63) goes
+    // The seven conversions of the menu had the same 30 lines and differed only in these two.
+    template <class Convert_cell>
+    void convert_all_positions(void (Board::*convert_board)(), Convert_cell convert_cell) {
+        auto convert_elem = [&](History_elem& elem) {
+            (elem.board.*convert_board)();
+            if (0 <= elem.policy && elem.policy < HW2) {
+                elem.policy = convert_cell(elem.policy);
+            }
+            if (0 <= elem.next_policy && elem.next_policy < HW2) {
+                elem.next_policy = convert_cell(elem.next_policy);
+            }
+        };
+        stop_calculating();
+        convert_elem(getData().history_elem);
+        for (int i = 0; i < 2; ++i) {
+            for (History_elem& node : getData().graph_resources.nodes[i]) {
+                convert_elem(node);
+            }
+        }
+        resume_calculating();
+    }
+
     void menu_game() {
         if (getData().menu_elements.start_game || shortcut_key == U"new_game") {
-            stop_calculating();
-            getData().history_elem.reset();
-            getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
-            getData().game_information.init();
-            forced_opening_finished_latched = false;
-            turn_timer_paused = true;
-            turn_timer_started = false;
-            reset_turn_timer_anchor();
-            getData().menu_elements.ai_put_black = false;
-            getData().menu_elements.ai_put_white = false;
-            resume_calculating();
-            need_start_game_button_calculation();
-            pausing_in_pass = false;
+            start_new_game(false, false);
         }
         if (getData().menu_elements.start_game_human_black || shortcut_key == U"new_game_human_black") {
-            stop_calculating();
-            getData().history_elem.reset();
-            getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
-            getData().game_information.init();
-            forced_opening_finished_latched = false;
-            turn_timer_paused = true;
-            turn_timer_started = false;
-            reset_turn_timer_anchor();
-            getData().menu_elements.ai_put_black = false;
-            getData().menu_elements.ai_put_white = true;
-            resume_calculating();
-            need_start_game_button_calculation();
-            pausing_in_pass = false;
+            start_new_game(false, true);
         }
         if (getData().menu_elements.start_game_human_white || shortcut_key == U"new_game_human_white") {
-            stop_calculating();
-            getData().history_elem.reset();
-            getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
-            getData().game_information.init();
-            forced_opening_finished_latched = false;
-            turn_timer_paused = true;
-            turn_timer_started = false;
-            reset_turn_timer_anchor();
-            getData().menu_elements.ai_put_black = true;
-            getData().menu_elements.ai_put_white = false;
-            resume_calculating();
-            need_start_game_button_calculation();
-            pausing_in_pass = false;
+            start_new_game(true, false);
         }
         if (getData().menu_elements.start_selfplay || shortcut_key == U"new_selfplay") {
-            stop_calculating();
-            getData().history_elem.reset();
-            getData().graph_resources.init();
-            getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
-            getData().game_information.init();
-            forced_opening_finished_latched = false;
-            turn_timer_paused = true;
-            turn_timer_started = false;
-            reset_turn_timer_anchor();
-            getData().menu_elements.ai_put_black = true;
-            getData().menu_elements.ai_put_white = true;
-            resume_calculating();
-            need_start_game_button_calculation();
-            pausing_in_pass = false;
+            start_new_game(true, true);
         }
         if ((getData().menu_elements.analyze || shortcut_key == U"analyze") && !ai_status.ai_thinking && !ai_status.analyzing) {
             stop_calculating();
@@ -1045,10 +1046,7 @@ private:
             init_analyze();
         }
         if (getData().menu_elements.game_information || shortcut_key == U"game_information") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Game_information_scene", SCENE_FADE_TIME);
+            change_scene_from_main(U"Game_information_scene");
             return;
         }
     }
@@ -1076,45 +1074,27 @@ private:
             getData().menu_elements.force_specified_openings = !getData().menu_elements.force_specified_openings;
         }
         if (getData().menu_elements.opening_setting || shortcut_key == U"opening_setting") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Opening_setting", SCENE_FADE_TIME);
+            change_scene_from_main(U"Opening_setting");
             return;
         }
         if (getData().menu_elements.ai_loss_graph_setting) {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"AI_loss_graph_setting", SCENE_FADE_TIME);
+            change_scene_from_main(U"AI_loss_graph_setting");
             return;
         }
         if (getData().menu_elements.ai_profile_load || shortcut_key == U"ai_profile_load") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"AI_profile_load", SCENE_FADE_TIME);
+            change_scene_from_main(U"AI_profile_load");
             return;
         }
         if (getData().menu_elements.shortcut_key_setting || shortcut_key == U"shortcut_key_setting") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Shortcut_key_setting", SCENE_FADE_TIME);
+            change_scene_from_main(U"Shortcut_key_setting");
             return;
         }
         if (getData().menu_elements.shortcut_button_setting || shortcut_key == U"shortcut_button_setting") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Shortcut_button_setting", SCENE_FADE_TIME);
+            change_scene_from_main(U"Shortcut_button_setting");
             return;
         }
         if (getData().menu_elements.mouse_additional_button_setting || shortcut_key == U"mouse_additional_button_setting") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Mouse_additional_button_setting", SCENE_FADE_TIME);
+            change_scene_from_main(U"Mouse_additional_button_setting");
             return;
         }
     }
@@ -1169,10 +1149,7 @@ private:
             return;
         }
         if (getData().menu_elements.display_profile_load || shortcut_key == U"display_profile_load") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Display_profile_load", SCENE_FADE_TIME);
+            change_scene_from_main(U"Display_profile_load");
             return;
         }
         // on cells
@@ -1296,12 +1273,30 @@ private:
                 int n_discs_before = getData().history_elem.board.n_discs();
                 while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
                     ((getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) || (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() > 0))) {
+                    const int removed_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                     getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
                     History_elem n_history_elem = getData().history_elem;
                     if (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 0) {
+                        // The last move of the variation (inspection branch) was taken back: return to the
+                        // position of the main line where the variation started, and stop there.
+                        // This used to continue with the main-line node that has as many discs as the removed
+                        // node: its next_policy was cleared, and because the branch is now the main line and
+                        // all its later nodes have at least n_discs_before discs, the loop went on and removed
+                        // the whole rest of the main line (the game after the fork was lost).
+                        // It also indexed nodes[0][-1] when the main line has no node with that disc count.
                         getData().graph_resources.branch = GRAPH_MODE_NORMAL;
-                        getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
-                        n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
+                        const std::vector<History_elem>& main_line = getData().graph_resources.nodes[GRAPH_MODE_NORMAL];
+                        int fork_parent_idx = 0;
+                        for (int i = 0; i < (int)main_line.size(); ++i) {
+                            if (main_line[i].board.n_discs() < removed_n_discs) {
+                                fork_parent_idx = i;
+                            }
+                        }
+                        getData().history_elem = main_line[fork_parent_idx];
+                        getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
+                        stop_calculating();
+                        resume_calculating();
+                        break;
                     } else {
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().next_policy = -1;
                         n_history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
@@ -1335,11 +1330,20 @@ private:
                 stop_calculating();
                 if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
-                    int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
-                    for (int i = 0; i < fork_start_idx; ++i) {
-                        new_branch.emplace_back(getData().graph_resources.nodes[0][i]);
+                    // Keep the main-line nodes before the first node of the variation.
+                    // This used the index of the main-line node with the same number of discs as that node.
+                    // When the main line has no such node (a position made with "edit board" leaves a gap in
+                    // the disc counts), node_find() returned -1, new_branch stayed empty and
+                    // new_branch.back() crashed. Select the nodes by their number of discs instead.
+                    const int fork_n_discs = getData().graph_resources.nodes[1].front().board.n_discs();
+                    for (const History_elem& elem : getData().graph_resources.nodes[0]) {
+                        if (elem.board.n_discs() < fork_n_discs) {
+                            new_branch.emplace_back(elem);
+                        }
                     }
-                    new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+                    if (!new_branch.empty()) {
+                        new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+                    }
                     for (History_elem elem: getData().graph_resources.nodes[1]) {
                         new_branch.emplace_back(elem);
                     }
@@ -1385,207 +1389,27 @@ private:
                 ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range_min, getData().menu_elements.generate_random_board_score_range_max, getData().menu_elements.generate_random_board_moves, light_level, mid_level, adjustment_level, &ai_status.random_board_generator_calculating);
             }
         }
+        // policy = y * HW + x (see convert_all_positions())
         if (getData().menu_elements.convert_180 || shortcut_key == U"convert_180") {
-            stop_calculating();
-            getData().history_elem.board.board_rotate_180();
-            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
-                getData().history_elem.policy = HW2_M1 - getData().history_elem.policy;
-            }
-            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
-                getData().history_elem.next_policy = HW2_M1 - getData().history_elem.next_policy;
-            }
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
-                    getData().graph_resources.nodes[i][j].board.board_rotate_180();
-                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
-                        getData().graph_resources.nodes[i][j].policy = HW2_M1 - getData().graph_resources.nodes[i][j].policy;
-                    }
-                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
-                        getData().graph_resources.nodes[i][j].next_policy = HW2_M1 - getData().graph_resources.nodes[i][j].next_policy;
-                    }
-                }
-            }
-            resume_calculating();
+            convert_all_positions(&Board::board_rotate_180, [](int policy) { return HW2_M1 - policy; });
         }
         if (getData().menu_elements.convert_90_clock || shortcut_key == U"convert_90_clock") {
-            stop_calculating();
-            getData().history_elem.board.board_rotate_270();
-            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
-                int y0 = getData().history_elem.policy / HW;
-                int x0 = getData().history_elem.policy % HW;
-                getData().history_elem.policy = x0 * HW + (HW_M1 - y0);
-            }
-            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
-                int y0 = getData().history_elem.next_policy / HW;
-                int x0 = getData().history_elem.next_policy % HW;
-                getData().history_elem.next_policy = x0 * HW + (HW_M1 - y0);
-            }
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
-                    getData().graph_resources.nodes[i][j].board.board_rotate_270();
-                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
-                        int y0 = getData().graph_resources.nodes[i][j].policy / HW;
-                        int x0 = getData().graph_resources.nodes[i][j].policy % HW;
-                        getData().graph_resources.nodes[i][j].policy = x0 * HW + (HW_M1 - y0);
-                    }
-                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
-                        int y0 = getData().graph_resources.nodes[i][j].next_policy / HW;
-                        int x0 = getData().graph_resources.nodes[i][j].next_policy % HW;
-                        getData().graph_resources.nodes[i][j].next_policy = x0 * HW + (HW_M1 - y0);
-                    }
-                }
-            }
-            resume_calculating();
+            convert_all_positions(&Board::board_rotate_270, [](int policy) { int x = policy % HW, y = policy / HW; return x * HW + (HW_M1 - y); });
         }
         if (getData().menu_elements.convert_90_anti_clock || shortcut_key == U"convert_90_anti_clock") {
-            stop_calculating();
-            getData().history_elem.board.board_rotate_90();
-            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
-                int y0 = getData().history_elem.policy / HW;
-                int x0 = getData().history_elem.policy % HW;
-                getData().history_elem.policy = (HW_M1 - x0) * HW + y0;
-            }
-            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
-                int y0 = getData().history_elem.next_policy / HW;
-                int x0 = getData().history_elem.next_policy % HW;
-                getData().history_elem.next_policy = (HW_M1 - x0) * HW + y0;
-            }
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
-                    getData().graph_resources.nodes[i][j].board.board_rotate_90();
-                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
-                        int y0 = getData().graph_resources.nodes[i][j].policy / HW;
-                        int x0 = getData().graph_resources.nodes[i][j].policy % HW;
-                        getData().graph_resources.nodes[i][j].policy = (HW_M1 - x0) * HW + y0;
-                    }
-                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
-                        int y0 = getData().graph_resources.nodes[i][j].next_policy / HW;
-                        int x0 = getData().graph_resources.nodes[i][j].next_policy % HW;
-                        getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - x0) * HW + y0;
-                    }
-                }
-            }
-            resume_calculating();
+            convert_all_positions(&Board::board_rotate_90, [](int policy) { int x = policy % HW, y = policy / HW; return (HW_M1 - x) * HW + y; });
         }
         if (getData().menu_elements.convert_blackline || shortcut_key == U"convert_blackline") {
-            stop_calculating();
-            getData().history_elem.board.board_black_line_mirror();
-            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
-                int x = getData().history_elem.policy % HW;
-                int y = getData().history_elem.policy / HW;
-                getData().history_elem.policy = (HW_M1 - x) * HW + (HW_M1 - y);
-            }
-            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
-                int x = getData().history_elem.next_policy % HW;
-                int y = getData().history_elem.next_policy / HW;
-                getData().history_elem.next_policy = (HW_M1 - x) * HW + (HW_M1 - y);
-            }
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
-                    getData().graph_resources.nodes[i][j].board.board_black_line_mirror();
-                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].policy / HW;
-                        getData().graph_resources.nodes[i][j].policy = (HW_M1 - x) * HW + (HW_M1 - y);
-                    }
-                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
-                        getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - x) * HW + (HW_M1 - y);
-                    }
-                }
-            }
-            resume_calculating();
+            convert_all_positions(&Board::board_black_line_mirror, [](int policy) { int x = policy % HW, y = policy / HW; return (HW_M1 - x) * HW + (HW_M1 - y); });
         }
         if (getData().menu_elements.convert_whiteline || shortcut_key == U"convert_whiteline") {
-            stop_calculating();
-            getData().history_elem.board.board_white_line_mirror();
-            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
-                int x = getData().history_elem.policy % HW;
-                int y = getData().history_elem.policy / HW;
-                getData().history_elem.policy = x * HW + y;
-            }
-            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
-                int x = getData().history_elem.next_policy % HW;
-                int y = getData().history_elem.next_policy / HW;
-                getData().history_elem.next_policy = x * HW + y;
-            }
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
-                    getData().graph_resources.nodes[i][j].board.board_white_line_mirror();
-                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].policy / HW;
-                        getData().graph_resources.nodes[i][j].policy = x * HW + y;
-                    }
-                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
-                        getData().graph_resources.nodes[i][j].next_policy = x * HW + y;
-                    }
-                }
-            }
-            resume_calculating();
+            convert_all_positions(&Board::board_white_line_mirror, [](int policy) { int x = policy % HW, y = policy / HW; return x * HW + y; });
         }
         if (getData().menu_elements.convert_horizontal || shortcut_key == U"convert_horizontal") {
-            stop_calculating();
-            getData().history_elem.board.board_horizontal_mirror();
-            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
-                int x = getData().history_elem.policy % HW;
-                int y = getData().history_elem.policy / HW;
-                getData().history_elem.policy = y * HW + (HW_M1 - x);
-            }
-            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
-                int x = getData().history_elem.next_policy % HW;
-                int y = getData().history_elem.next_policy / HW;
-                getData().history_elem.next_policy = y * HW + (HW_M1 - x);
-            }
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
-                    getData().graph_resources.nodes[i][j].board.board_horizontal_mirror();
-                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].policy / HW;
-                        getData().graph_resources.nodes[i][j].policy = y * HW + (HW_M1 - x);
-                    }
-                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
-                        getData().graph_resources.nodes[i][j].next_policy = y * HW + (HW_M1 - x);
-                    }
-                }
-            }
-            resume_calculating();
+            convert_all_positions(&Board::board_horizontal_mirror, [](int policy) { int x = policy % HW, y = policy / HW; return y * HW + (HW_M1 - x); });
         }
         if (getData().menu_elements.convert_vertical || shortcut_key == U"convert_vertical") {
-            stop_calculating();
-            getData().history_elem.board.board_vertical_mirror();
-            if (0 <= getData().history_elem.policy && getData().history_elem.policy < HW2) {
-                int x = getData().history_elem.policy % HW;
-                int y = getData().history_elem.policy / HW;
-                getData().history_elem.policy = (HW_M1 - y) * HW + x;
-            }
-            if (0 <= getData().history_elem.next_policy && getData().history_elem.next_policy < HW2) {
-                int x = getData().history_elem.next_policy % HW;
-                int y = getData().history_elem.next_policy / HW;
-                getData().history_elem.next_policy = (HW_M1 - y) * HW + x;
-            }
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < (int)getData().graph_resources.nodes[i].size(); ++j) {
-                    getData().graph_resources.nodes[i][j].board.board_vertical_mirror();
-                    if (0 <= getData().graph_resources.nodes[i][j].policy && getData().graph_resources.nodes[i][j].policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].policy / HW;
-                        getData().graph_resources.nodes[i][j].policy = (HW_M1 - y) * HW + x;
-                    }
-                    if (0 <= getData().graph_resources.nodes[i][j].next_policy && getData().graph_resources.nodes[i][j].next_policy < HW2) {
-                        int x = getData().graph_resources.nodes[i][j].next_policy % HW;
-                        int y = getData().graph_resources.nodes[i][j].next_policy / HW;
-                        getData().graph_resources.nodes[i][j].next_policy = (HW_M1 - y) * HW + x;
-                    }
-                }
-            }
-            resume_calculating();
+            convert_all_positions(&Board::board_vertical_mirror, [](int policy) { int x = policy % HW, y = policy / HW; return (HW_M1 - y) * HW + x; });
         }
         if (getData().menu_elements.cache_clear || shortcut_key == U"cache_clear") {
             stop_calculating();
@@ -1603,38 +1427,23 @@ private:
             return;
         }
         if (getData().menu_elements.input_text || shortcut_key == U"input_text") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_text", SCENE_FADE_TIME);
+            change_scene_from_main(U"Import_text");
             return;
         }
         if (getData().menu_elements.input_othello_quest || shortcut_key == U"input_othello_quest") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_othello_quest", SCENE_FADE_TIME);
+            change_scene_from_main(U"Import_othello_quest");
             return;
         }
         if (getData().menu_elements.edit_board || shortcut_key == U"edit_board") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Edit_board", SCENE_FADE_TIME);
+            change_scene_from_main(U"Edit_board");
             return;
         }
         if (getData().menu_elements.game_library || shortcut_key == U"game_library") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Game_library", SCENE_FADE_TIME);
+            change_scene_from_main(U"Game_library");
             return;
         }
         if (getData().menu_elements.input_bitboard || shortcut_key == U"input_bitboard") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_bitboard", SCENE_FADE_TIME);
+            change_scene_from_main(U"Import_bitboard");
             return;
         }
         if (getData().menu_elements.copy_transcript || shortcut_key == U"output_transcript") {
@@ -1648,24 +1457,15 @@ private:
             getData().menu_elements.screen_shot = false; // because skip drawing menu in next frame
         }
         if (getData().menu_elements.change_screenshot_saving_dir || shortcut_key == U"change_screenshot_saving_dir") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Change_screenshot_saving_dir", SCENE_FADE_TIME);
+            change_scene_from_main(U"Change_screenshot_saving_dir");
             return;
         }
         if (getData().menu_elements.board_image || shortcut_key == U"board_image") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Board_image", SCENE_FADE_TIME);
+            change_scene_from_main(U"Board_image");
             return;
         }
         if (getData().menu_elements.save_game || shortcut_key == U"save_game") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Export_game", SCENE_FADE_TIME);
+            change_scene_from_main(U"Export_game");
             return;
         }
         if (getData().menu_elements.output_bitboard_player_opponent || shortcut_key == U"output_bitboard_player_opponent") {
@@ -1684,59 +1484,35 @@ private:
             getData().menu_elements.change_book_by_right_click = !getData().menu_elements.change_book_by_right_click;
         }
         if (getData().menu_elements.book_start_deviate || shortcut_key == U"book_start_deviate") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Enhance_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Enhance_book");
             return;
         }
         if (getData().menu_elements.book_start_deviate_with_transcript || shortcut_key == U"book_start_deviate_with_transcript") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Deviate_book_transcript", SCENE_FADE_TIME);
+            change_scene_from_main(U"Deviate_book_transcript");
             return;
         }
         if (getData().menu_elements.book_start_store || shortcut_key == U"book_start_store") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Store_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Store_book");
             return;
         }
         if (getData().menu_elements.book_start_fix || shortcut_key == U"book_start_fix") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Fix_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Fix_book");
             return;
         }
         if (getData().menu_elements.book_start_fix_edax || shortcut_key == U"book_start_fix_edax") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Fix_book_edax", SCENE_FADE_TIME);
+            change_scene_from_main(U"Fix_book_edax");
             return;
         }
         if (getData().menu_elements.book_start_reducing || shortcut_key == U"book_start_reducing") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Reduce_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Reduce_book");
             return;
         }
         if (getData().menu_elements.book_start_recalculate_leaf || shortcut_key == U"book_start_recalculate_leaf") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Leaf_recalculate_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Leaf_recalculate_book");
             return;
         }
         if (getData().menu_elements.book_start_recalculate_n_lines || shortcut_key == U"book_start_recalculate_n_lines") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"N_lines_recalculate_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"N_lines_recalculate_book");
             return;
         }
         //if (getData().menu_elements.book_start_upgrade_better_leaves || shortcut_key == U"book_start_upgrade_better_leaves") {
@@ -1748,38 +1524,23 @@ private:
         //}
         // file operation
         if (getData().menu_elements.import_book || shortcut_key == U"import_book") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Import_book");
             return;
         }
         if (getData().menu_elements.export_book || shortcut_key == U"export_book") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Export_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Export_book");
             return;
         }
         if (getData().menu_elements.book_merge || shortcut_key == U"book_merge") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Merge_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Merge_book");
             return;
         }
         if (getData().menu_elements.book_reference || shortcut_key == U"book_reference") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Refer_book", SCENE_FADE_TIME);
+            change_scene_from_main(U"Refer_book");
             return;
         }
         if (getData().menu_elements.show_book_info || shortcut_key == U"show_book_info") {
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Show_book_info", SCENE_FADE_TIME);
+            change_scene_from_main(U"Show_book_info");
             return;
         }
     }
@@ -1807,10 +1568,7 @@ private:
         }
         if (getData().menu_elements.update_check || shortcut_key == U"update_check") {
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Update_check", SCENE_FADE_TIME);
+            change_scene_from_main(U"Update_check");
         }
         if (shortcut_key == U"auto_update_check") {
             getData().menu_elements.auto_update_check = !getData().menu_elements.auto_update_check;
@@ -1821,18 +1579,12 @@ private:
         }
         if (getData().menu_elements.export_settings_data || shortcut_key == U"export_settings_data") {
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Export_settings_data", SCENE_FADE_TIME);
+            change_scene_from_main(U"Export_settings_data");
             return;
         }
         if (getData().menu_elements.import_settings_data || shortcut_key == U"import_settings_data") {
             shortcut_key = SHORTCUT_KEY_UNDEFINED;
-            changing_scene = true;
-            stop_calculating();
-            resume_calculating();
-            changeScene(U"Import_settings_data", SCENE_FADE_TIME);
+            change_scene_from_main(U"Import_settings_data");
             return;
         }
     }
@@ -2065,7 +1817,8 @@ private:
                         ai_calculation_interrupted = false;
                         return;
                     }
-                    if (1 & (legal >> search_result.policy)) {
+                    // policy is MOVE_UNDEFINED (125) when the search was stopped: shifting by 64 or more is undefined
+                    if (is_valid_policy(search_result.policy) && (1 & (legal >> search_result.policy))) {
                         int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == BLACK ? 1 : -1;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;
@@ -2210,7 +1963,6 @@ private:
     }
 
     void draw_play_ordering() {
-        int history_elem_n_discs = getData().history_elem.board.n_discs();
         std::vector<int> put_order = get_put_order(getData().graph_resources, getData().history_elem);
         std::vector<int> put_player = get_put_player(getData().graph_resources.nodes[0][0].board, getData().graph_resources.nodes[0][0].player, put_order);
         for (int i = 0; i < put_order.size(); ++i) {
@@ -2636,8 +2388,6 @@ private:
                 for (uint_fast8_t cell = 0; cell < HW2; ++cell) {
                     int sx = BOARD_SX + ((HW2_M1 - cell) % HW) * BOARD_CELL_SIZE;
                     int sy = BOARD_SY + ((HW2_M1 - cell) / HW) * BOARD_CELL_SIZE;
-                    int cx = sx + BOARD_CELL_SIZE / 2;
-                    int cy = sy + BOARD_CELL_SIZE / 2;
                     Color frame_color;
                     // if (ai_status.local_strategy_policy[policy][cell] == LOCAL_STRATEGY_POLICY_CHANGED_GOOD_MOVE_DISC) {
                     //     frame_color = getData().colors.blue;

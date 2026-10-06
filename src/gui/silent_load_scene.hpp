@@ -157,6 +157,18 @@ int init_settings_import_str(JSON &json, String key, std::string* res) {
     return ERR_OK;
 }
 
+// For texts that are only displayed / saved again (profile names): kept in UTF-8.
+// narrow() converts to the ANSI code page, which changes characters outside it (e.g. Korean or
+// emoji on Japanese Windows) to '?', and the changed name was written back to the profile file
+// when the modified profile was saved on exit (close_scene.hpp).
+int init_settings_import_str_utf8(JSON &json, String key, std::string* res) {
+    if (json[key].getType() != JSONValueType::String) {
+        return ERR_IMPORT_SETTINGS;
+    }
+    *res = json[key].getString().toUTF8();
+    return ERR_OK;
+}
+
 int init_settings_import_double(JSON &json, String key, double* res) {
     if (json[key].getType() != JSONValueType::Number) {
         return ERR_IMPORT_SETTINGS;
@@ -562,12 +574,12 @@ void init_settings(const Directories* directories, const Resources* resources, S
             settings->ai_profile_file = "default.json";
         }
         init_settings_import_int(setting_json, U"auto_save_ai_profile_mode", &settings->auto_save_ai_profile_mode);
-        init_settings_import_str(setting_json, U"ai_profile_name", &settings->ai_profile_name);
+        init_settings_import_str_utf8(setting_json, U"ai_profile_name", &settings->ai_profile_name);
         if (init_settings_import_str(setting_json, U"display_profile_file", &settings->display_profile_file) != ERR_OK) {
             settings->display_profile_file = "default.json";
         }
         init_settings_import_int(setting_json, U"auto_save_display_profile_mode", &settings->auto_save_display_profile_mode);
-        init_settings_import_str(setting_json, U"display_profile_name", &settings->display_profile_name);
+        init_settings_import_str_utf8(setting_json, U"display_profile_name", &settings->display_profile_name);
         init_settings_import_str(setting_json, U"input_game_last_subfolder", &settings->input_game_last_subfolder);
         init_settings_import_str(setting_json, U"opening_setting_last_subfolder", &settings->opening_setting_last_subfolder);
         init_settings_import_str(setting_json, U"othello_quest_username", &settings->othello_quest_username);

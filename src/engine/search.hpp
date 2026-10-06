@@ -50,7 +50,13 @@ constexpr int MAX_N_BRANCHES = 35;
     @brief Stability cutoff threshold
     from https://github.com/abulmo/edax-reversi/blob/1ae7c9fe5322ac01975f1b3196e788b0d25c1e10/src/search.c#L108 and modified
 */
-constexpr int stability_threshold_nws[HW2] = {
+// The tables are indexed with the number of discs (search->n_discs), which becomes 64 when the board is full:
+// nega_alpha_end_fast_nws() is also called for boards with 4 or less empty squares (from the null window search
+// of nega_scout() with 5 empty squares), and then it goes down to the full board with n_discs == 64.
+// With HW2 elements, element [64] was read out of the array, and the number of visited nodes depended on
+// the value which happened to be placed after the table (the search result was not affected).
+// The last element (99: no cutoff, same as 61-63 discs) is for the full board.
+constexpr int stability_threshold_nws[HW2 + 1] = {
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 64, 64, 64, 64, 64, 64, 64, 
@@ -58,10 +64,11 @@ constexpr int stability_threshold_nws[HW2] = {
     56, 54, 54, 52, 52, 50, 50, 48, 
     48, 46, 44, 42, 40, 38, 36, 34, 
     32, 30, 28, 26, 24, 22, 20, 16, 
-    14, 12, 10, 8, 6, 99, 99, 99
+    14, 12, 10, 8, 6, 99, 99, 99, 
+    99
 };
 
-constexpr int stability_threshold[HW2] = {
+constexpr int stability_threshold[HW2 + 1] = {
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 99, 99, 99, 99, 99, 99, 99, 
     99, 62, 62, 60, 60, 58, 58, 56, 
@@ -69,7 +76,8 @@ constexpr int stability_threshold[HW2] = {
     48, 46, 46, 44, 44, 42, 42, 40, 
     40, 38, 36, 34, 32, 30, 28, 26, 
     24, 22, 20, 18, 16, 14, 12, 8, 
-    6, 4, 2, 0, -2, 99, 99, 99
+    6, 4, 2, 0, -2, 99, 99, 99, 
+    99
 };
 
 /*
@@ -264,17 +272,28 @@ class Search {
         int move_history[MAX_PLY];  // move_history[ply] = move_position
 #endif
 
+    private:
+        /*
+            @brief parity of the number of empty squares in each quadrant (bit 0-3, same order as cell_div4)
+
+            Used by the constructors (the same 5 lines were written in 3 of them).
+        */
+        inline uint_fast8_t calc_parity() const {
+            uint64_t empty = ~(board.player | board.opponent);
+            uint_fast8_t res = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
+            res |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
+            res |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
+            res |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            return res;
+        }
+
     public:
 
         Search() {};
 
         Search(const Board *board_, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
             : board(board_->copy()), n_discs(board_->n_discs()), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
-            uint64_t empty = ~(board.player | board.opponent);
-            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
-            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
-            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
-            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            parity = calc_parity();
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
@@ -283,11 +302,7 @@ class Search {
 
         Search(uint64_t board_player, uint64_t board_opponent, uint_fast8_t mpc_level_, bool use_multi_thread_, bool is_presearch_)
             : board(Board{board_player, board_opponent}), n_discs(pop_count_ull(board_player | board_opponent)), mpc_level(mpc_level_), use_multi_thread(use_multi_thread_), n_nodes(0), is_presearch(is_presearch_), thread_id(THREAD_ID_NONE) {
-            uint64_t empty = ~(board.player | board.opponent);
-            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
-            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
-            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
-            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            parity = calc_parity();
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();
@@ -315,11 +330,7 @@ class Search {
         */
         Search(const Board *board_)
             : board(board_->copy()), n_discs(board_->n_discs()), thread_id(THREAD_ID_NONE) {
-            uint64_t empty = ~(board.player | board.opponent);
-            parity = 1 & pop_count_ull(empty & 0x000000000F0F0F0FULL);
-            parity |= (1 & pop_count_ull(empty & 0x00000000F0F0F0F0ULL)) << 1;
-            parity |= (1 & pop_count_ull(empty & 0x0F0F0F0F00000000ULL)) << 2;
-            parity |= (1 & pop_count_ull(empty & 0xF0F0F0F000000000ULL)) << 3;
+            parity = calc_parity();
             calc_eval_features(&board, &eval);
 #if USE_KILLER_MOVE_MO
             clear_killers();

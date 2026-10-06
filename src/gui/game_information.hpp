@@ -50,7 +50,6 @@ public:
             // date
             getData().fonts.font(language.get("in_out", "date") + U": " + getData().game_information.date).draw(15, Arg::bottomRight(X_CENTER + 300, 45), getData().colors.white);
         }
-        int sy = 78;
         getData().fonts.font(language.get("in_out", "player_name")).draw(15, Arg::topCenter(X_CENTER, 57), getData().colors.white);
         Circle(X_CENTER - 300 - 15 - 20, 80 + 15, 15).draw(getData().colors.black);
         Circle(X_CENTER + 300 + 15 + 20, 80 + 15, 15).draw(getData().colors.white);
