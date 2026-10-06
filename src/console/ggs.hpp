@@ -2206,6 +2206,10 @@ inline bool ggs_search_start_terminates_all_ponders(int n_discs) {
 // the other game. Until then the opponent is thinking in the other game, and
 // our next search will be there. When that search will stop every ponder
 // anyway, ponder the other game instead of the one we just moved in.
+// While the two games are still identical, the opponent faces the position we
+// just moved from, and if it plays our move, our next position equals the one
+// in the game we moved in. Pondering that game then searches our next position
+// directly, so keep it.
 inline int ggs_synchro_ponder_slot(
     const GGS_Board &ggs_board,
     const GGS_Board ggs_boards[][HW2 + 1],
@@ -2233,6 +2237,18 @@ inline int ggs_synchro_ponder_slot(
         (other_board.player_white == username && other_board.player_to_move == WHITE);
     if (our_turn_in_other || !ggs_search_start_terminates_all_ponders(other_board.board.n_discs() + 1)) {
         return slot;
+    }
+    const int n_discs = ggs_board.board.n_discs();
+    if (n_discs >= 1) {
+        const GGS_Board &previous = ggs_boards[slot][n_discs - 1];
+        if (
+            previous.is_valid() &&
+            previous.game_id == ggs_board.game_id &&
+            previous.player_to_move == other_board.player_to_move &&
+            previous.board == other_board.board
+        ) {
+            return slot;
+        }
     }
     return other;
 }

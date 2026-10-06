@@ -115,6 +115,43 @@ void test_other_game_not_usable() {
     }
 }
 
+// The position after our first legal move from board_text, with white (the
+// opponent) to move in a game where we play black.
+GGS_Board make_game_after_our_move(const std::string &game_id, int synchro_id, const std::string &board_text) {
+    GGS_Board ggs_board = make_game(game_id, synchro_id, board_text, true);
+    uint64_t legal = ggs_board.board.get_legal();
+    require(legal != 0ULL, "test board must have a legal move: " + board_text);
+    Flip flip;
+    calc_flip(&flip, &ggs_board.board, first_bit(&legal));
+    ggs_board.board.move_board(&flip);
+    ggs_board.player_to_move = WHITE;
+    return ggs_board;
+}
+
+void test_identical_games_keep_updated_game() {
+    // We moved from START_BOARD in .68.0, and the opponent faces the same
+    // position in .68.1. If it plays our move, our next position equals the
+    // one we just reached in .68.0, so keep pondering .68.0.
+    Slots slots;
+    slots.store(make_game(".68.0", 0, START_BOARD, true));
+    const GGS_Board update = make_game_after_our_move(".68.0", 0, START_BOARD);
+    slots.store(update);
+    slots.store(make_game(".68.1", 1, START_BOARD, false));
+    require(slots.choose(update) == 0, "identical games keep pondering the game we just moved in");
+}
+
+void test_diverged_games_redirect() {
+    // The opponent faces a different position in .68.1 than the one we moved
+    // from in .68.0, so our next position is only reachable through .68.1.
+    const std::string other_board = "------------------XXOO----OXO-----OXXO----OOO------------------- X";
+    Slots slots;
+    slots.store(make_game(".68.0", 0, START_BOARD, true));
+    const GGS_Board update = make_game_after_our_move(".68.0", 0, START_BOARD);
+    slots.store(update);
+    slots.store(make_game(".68.1", 1, other_board, false));
+    require(slots.choose(update) == 1, "diverged games ponder the game where the opponent is thinking");
+}
+
 void test_late_endgame_keeps_updated_game() {
     Slots slots;
     const GGS_Board update = make_game(".68.0", 0, LATE_BOARD, false);
@@ -148,6 +185,8 @@ int main() {
         test_opponent_thinking_in_other_game();
         test_our_turn_in_other_game();
         test_other_game_not_usable();
+        test_identical_games_keep_updated_game();
+        test_diverged_games_redirect();
         test_late_endgame_keeps_updated_game();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
