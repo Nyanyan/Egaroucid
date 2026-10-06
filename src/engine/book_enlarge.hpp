@@ -96,7 +96,7 @@ struct Book_walk_output {
     /*
         @brief add the board after a move
 
-        @param board                board after the move (not passed, not representative: the visitor does that when the board is walked)
+        @param board                board after the move (as it is: the walk passes if needed and makes it representative when the board is walked)
         @param player               player to move
         @param error                error of the move (0 or less: no error)
     */
@@ -124,7 +124,9 @@ struct Book_walk_output {
     @param board_copy           board pointer for screen drawing
     @param player               player information for screen drawing
     @param visit                visit(const Board &board, int player, int remaining_error, Book_walk_output<Found> &output) is called for each board
-                                reached (from several threads at the same time). It checks and flags the board with book.flag_if_not_seen(),
+                                reached (from several threads at the same time). board is the representative board, after a pass if the
+                                player had no move (game-over boards are not visited), player is the player to move.
+                                It checks and flags the board with book.flag_if_not_seen(),
                                 and gives the boards after the moves to follow to output.add_child(), what it found to output.found
     @param collect              collect(int error_sum, std::vector<Found> &found) is called on the calling thread for the output of each chunk
 */
@@ -154,9 +156,38 @@ void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bo
                 const int n_chunks = (int)((n_boards + BOOK_WALK_CHUNK_SIZE - 1) / BOOK_WALK_CHUNK_SIZE);
                 std::vector<Book_walk_output<Found>> outputs(n_chunks);
                 auto walk_chunk = [&boards, &outputs, &visit, n_boards, round_player, remaining_error, book_learning](int chunk_idx) {
-                    const size_t chunk_end = std::min(n_boards, (size_t)(chunk_idx + 1) * BOOK_WALK_CHUNK_SIZE);
-                    for (size_t i = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE; i < chunk_end && global_searching && *book_learning; ++i) {
-                        visit(boards[i], round_player, remaining_error, outputs[chunk_idx]);
+                    const size_t chunk_start = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE;
+                    const size_t chunk_end = std::min(n_boards, chunk_start + BOOK_WALK_CHUNK_SIZE);
+                    // pass if needed and representative board, for all boards of the chunk first: the memory of the book
+                    // which the visits read is asked in advance (the table is much larger than the cache, and the
+                    // visits of a chunk would wait for the memory one after the other)
+                    Board chunk_boards[BOOK_WALK_CHUNK_SIZE];
+                    int chunk_players[BOOK_WALK_CHUNK_SIZE]; // -1: game over (not visited)
+                    for (size_t i = chunk_start; i < chunk_end; ++i) {
+                        Board board = boards[i];
+                        int board_player = round_player;
+                        if (board.get_legal() == 0) { // pass?
+                            board.pass();
+                            board_player ^= 1;
+                            if (board.get_legal() == 0) { // game over
+                                chunk_players[i - chunk_start] = -1;
+                                continue;
+                            }
+                        }
+                        board = representative_board(board);
+                        chunk_boards[i - chunk_start] = board;
+                        chunk_players[i - chunk_start] = board_player;
+                        book.prefetch_unlocked(board);
+                    }
+                    for (size_t i = chunk_start; i < chunk_end; ++i) {
+                        if (chunk_players[i - chunk_start] != -1) {
+                            book.prefetch_entry_unlocked(chunk_boards[i - chunk_start]);
+                        }
+                    }
+                    for (size_t i = chunk_start; i < chunk_end && global_searching && *book_learning; ++i) {
+                        if (chunk_players[i - chunk_start] != -1) {
+                            visit(chunk_boards[i - chunk_start], chunk_players[i - chunk_start], remaining_error, outputs[chunk_idx]);
+                        }
                     }
                 };
                 if (n_chunks == 1) { // a few boards: no task
@@ -212,18 +243,12 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem root_elem, int book_d
         todo_elem.max_error_per_move = max_error_per_move;
         todo_elem.remaining_error = remaining_error;
         todo_elem.max_leaf_error = max_leaf_error;
-        // pass?
-        if (todo_elem.board.get_legal() == 0) {
-            todo_elem.pass();
-            if (todo_elem.board.get_legal() == 0) {
-                return; // game over
-            }
-        }
+        // (pass and game over: done by book_walk_by_error())
         // check depth
         if (todo_elem.board.n_discs() > book_depth + 4) {
             return;
         }
-        todo_elem.board = representative_board(todo_elem.board);
+        // (the board is already the representative board)
         // not registered, or already seen?
         Book_elem book_elem;
         if (!book.flag_if_not_seen(todo_elem.board, &book_elem)) {
@@ -233,7 +258,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem root_elem, int book_d
             return;
         }
         // check leaf recalculation necessity
-        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
+        std::vector<Book_value> links = book.get_all_moves_with_value_unlocked(&todo_elem.board);
         uint64_t remaining_legal = todo_elem.board.get_legal();
         for (Book_value &link: links) {
             remaining_legal &= ~(1ULL << link.policy);
@@ -266,9 +291,9 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem root_elem, int book_d
             int link_value = link.value;
             Board moved_board = todo_elem.board;
             moved_board.move_board(&flip);
-            Book_elem link_elem = book.get(moved_board);
-            if (link_elem.value != SCORE_UNDEFINED && link_value < -link_elem.value) {
-                link_value = link_elem.value;
+            int link_elem_value = book.get_value_unlocked(moved_board);
+            if (link_elem_value != SCORE_UNDEFINED && link_value < -link_elem_value) {
+                link_value = link_elem_value;
             }
             int link_error = book_elem.value - link_value;
             if (link_error <= todo_elem.max_error_per_move && link_error <= todo_elem.remaining_error) {
@@ -446,18 +471,12 @@ void get_book_deviate_todo(Book_deviate_todo_elem root_elem, int best_move_only_
         todo_elem.max_error_per_move = max_error_per_move;
         todo_elem.remaining_error = remaining_error;
         todo_elem.max_leaf_error = max_leaf_error;
-        // pass?
-        if (todo_elem.board.get_legal() == 0) {
-            todo_elem.pass();
-            if (todo_elem.board.get_legal() == 0) {
-                return; // game over
-            }
-        }
+        // (pass and game over: done by book_walk_by_error())
         // check depth
         if (todo_elem.board.n_discs() >= book_depth + 4) {
             return;
         }
-        todo_elem.board = representative_board(todo_elem.board);
+        // (the board is already the representative board)
         // not registered, or already seen?
         Book_elem book_elem;
         if (!book.flag_if_not_seen(todo_elem.board, &book_elem)) {
@@ -466,7 +485,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem root_elem, int best_move_only_
         if (book_elem.value == SCORE_UNDEFINED) {
             return;
         }
-        std::vector<Book_value> links = book.get_all_moves_with_value(&todo_elem.board);
+        std::vector<Book_value> links = book.get_all_moves_with_value_unlocked(&todo_elem.board);
         const bool best_move_only = (todo_elem.player == best_move_only_player);
         int best_score = -SCORE_MAX;
         if (best_move_only) {
