@@ -2189,6 +2189,54 @@ bool ggs_any_ai_searching(const bool ai_searchings[]) {
     return ai_searchings[0] || ai_searchings[1];
 }
 
+// Whether launching our search at this disc count stops the ponders of both
+// synchro games, not only the ponder of the searched game.
+inline bool ggs_search_start_terminates_all_ponders(int n_discs) {
+#if IS_GGS_TOURNAMENT
+    return n_discs <= GGS_TERMINATE_ALL_PONDERS_MAX_DISCS;
+#else
+    (void)n_discs;
+    return true;
+#endif
+}
+
+// Chooses the synchro game to ponder when an update says the opponent is to
+// move in ggs_board's game. That update arrives when GGS accepts our move, but
+// GGS forwards our move to the opponent only after the opponent has moved in
+// the other game. Until then the opponent is thinking in the other game, and
+// our next search will be there. When that search will stop every ponder
+// anyway, ponder the other game instead of the one we just moved in.
+inline int ggs_synchro_ponder_slot(
+    const GGS_Board &ggs_board,
+    const GGS_Board ggs_boards[][HW2 + 1],
+    const int ggs_boards_n_discs[],
+    const bool ai_searchings[],
+    const std::string &username
+) {
+    const int slot = ggs_board.synchro_id;
+    if (!ggs_board.is_synchro || slot < 0 || slot >= 2) {
+        return slot;
+    }
+    const int other = slot ^ 1;
+    const GGS_Board &other_board = ggs_boards[other][ggs_boards_n_discs[other]];
+    Board other_position = other_board.board; // Board::is_end is not const
+    if (
+        !other_board.is_valid() ||
+        ggs_synchro_match_id(other_board.game_id) != ggs_synchro_match_id(ggs_board.game_id) ||
+        other_position.is_end() ||
+        ai_searchings[other]
+    ) {
+        return slot;
+    }
+    const bool our_turn_in_other =
+        (other_board.player_black == username && other_board.player_to_move == BLACK) ||
+        (other_board.player_white == username && other_board.player_to_move == WHITE);
+    if (our_turn_in_other || !ggs_search_start_terminates_all_ponders(other_board.board.n_discs() + 1)) {
+        return slot;
+    }
+    return other;
+}
+
 void ggs_client(Options *options) {
     WSADATA wsaData;
     SOCKET sock = INVALID_SOCKET;
@@ -2669,15 +2717,11 @@ void ggs_client(Options *options) {
                                         playing_same_board = false;
                                     }
                                     if (need_to_move) { // Egaroucid should move
-#if IS_GGS_TOURNAMENT
-                                        if (ggs_board.board.n_discs() <= GGS_TERMINATE_ALL_PONDERS_MAX_DISCS) {
+                                        if (ggs_search_start_terminates_all_ponders(ggs_board.board.n_discs())) {
                                             ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
                                         } else {
                                             ggs_terminate_ponder_if_active(ponder_futures, ponder_searchings, ggs_board.synchro_id, &ponder_results, options);
                                         }
-#else
-                                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
-#endif
                                         if (!ggs_board.board.is_end() && !ai_searchings[ggs_board.synchro_id]) {
 #if GGS_USE_PONDER
                                             const thread_id_t search_thread_id = ggs_board.synchro_id;
@@ -2695,12 +2739,20 @@ void ggs_client(Options *options) {
                                         }
                                     } else { // Opponent's move
 #if GGS_USE_PONDER
-                                        if (!ggs_any_ai_searching(ai_searchings) && !ggs_board.board.is_end()) {
-                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings, &ponder_results, options);
-                                            // ponder_futures[ggs_board.synchro_id] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, ggs_board.synchro_id, &ponder_searchings[ggs_board.synchro_id]); // set ponder
-                                            new_calculation_start = true;
-                                            std::string msg = "Egaroucid pondering... " + ggs_board.game_id + " " + ggs_board.board.to_str(ggs_board.player_to_move);
-                                            ggs_print_info(msg, options);
+                                        if (!ggs_any_ai_searching(ai_searchings)) {
+                                            const int ponder_slot = ggs_synchro_ponder_slot(ggs_board, ggs_boards, ggs_boards_n_discs, ai_searchings, options->ggs_username);
+                                            const bool redirected = ponder_slot != ggs_board.synchro_id;
+                                            const GGS_Board ponder_board = redirected ? ggs_boards[ponder_slot][ggs_boards_n_discs[ponder_slot]] : ggs_board;
+                                            Board ponder_position = ponder_board.board;
+                                            if (!ponder_position.is_end() && !(redirected && ponder_searchings[ponder_slot])) {
+                                                ggs_start_ponder(ponder_futures, ponder_board.board, options->show_log, ponder_slot, ponder_searchings, &ponder_results, options);
+                                                new_calculation_start = true;
+                                                if (redirected) {
+                                                    ggs_print_info("ponder redirected from " + ggs_board.game_id + " to " + ponder_board.game_id + " where the opponent is thinking", options);
+                                                }
+                                                std::string msg = "Egaroucid pondering... " + ponder_board.game_id + " " + ponder_board.board.to_str(ponder_board.player_to_move);
+                                                ggs_print_info(msg, options);
+                                            }
                                         }
 #endif
                                     }
