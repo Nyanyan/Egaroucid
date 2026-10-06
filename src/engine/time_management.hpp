@@ -163,6 +163,9 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT
         #define TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT 2500.0
     #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_32_TO_29_WEIGHT
+        #define TIME_MANAGEMENT_GGS_PLAN_32_TO_29_WEIGHT TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT
+    #endif
 #else
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET_BASE 2000 // ms
@@ -243,7 +246,8 @@ inline double time_management_ggs_plan_weight(int n_empties) {
         case Time_management_ggs_phase::early_endgame:
             return TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT;
         case Time_management_ggs_phase::pre_complete:
-            return TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT;
+            return n_empties <= 32 ? TIME_MANAGEMENT_GGS_PLAN_32_TO_29_WEIGHT :
+                TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT;
         case Time_management_ggs_phase::late:
             break;
     }
