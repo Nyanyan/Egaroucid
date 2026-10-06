@@ -11,6 +11,11 @@
 #pragma once
 #include <iostream>
 #include <new>
+#include <atomic>
+#include <future>
+#include <mutex>
+#include <thread>
+#include <vector>
 #include "evaluate.hpp"
 #include "board.hpp"
 #include "ai.hpp"
@@ -281,70 +286,100 @@ void book_search_leaf(Board board, int level, bool use_multi_thread) {
     book.search_leaf(board, level, use_multi_thread);
 }
 
+/*
+    @brief run func(idx, use_multi_thread) for idx = 0, 1, ..., n - 1 in book learning, with all threads
+
+    Used for the expansions and for the recalculation of the leaves: many independent searches.
+    Every thread (the threads of the pool and the calling thread) takes the next idx and runs func with a
+    one-thread search (use_multi_thread = false), until the last elements; the last elements
+    (thread_pool.size() * 2 - 1 of them, as before) are run one after the other by the calling thread with a
+    multi-thread search, which uses the threads as they finish.
+
+    Before, the calling thread pushed one task for each element to the pool, and when no thread was idle it
+    ran the element itself with a multi-thread search. That search got almost no thread, and until it ended
+    no task was pushed: the threads which finished in the meantime waited. With 32 threads (book of 650M
+    boards, level 18) the calling thread spent 98% of the time in such searches and 20% of the CPU was idle.
+
+    func is called from several threads at the same time.
+
+    @param n                    number of elements
+    @param func                 func(int idx, bool use_multi_thread)
+*/
+template<class F>
+void book_learning_for_each(int n, F &&func) {
+    const int n_pool_threads = thread_pool.size();
+    if (n_pool_threads == 0) { // one thread: as before (the push to the empty pool failed, and the element was run with use_multi_thread = true)
+        for (int idx = 0; idx < n; ++idx) {
+            func(idx, true);
+        }
+        return;
+    }
+    const int n_single = std::clamp(n - n_pool_threads * 2 + 1, 0, n); // elements run with a one-thread search
+    std::atomic<int> next_idx(0);
+    auto worker = [&next_idx, &func, n_single]() {
+        for (;;) {
+            int idx = next_idx.fetch_add(1);
+            if (idx >= n_single) {
+                break;
+            }
+            func(idx, false);
+        }
+    };
+    std::vector<std::future<void>> tasks;
+    for (;;) {
+        // a worker on each thread of the pool (a thread which was not idle yet gets its worker at a later turn)
+        while ((int)tasks.size() < n_pool_threads && next_idx.load() < n_single) {
+            bool pushed = false;
+            std::future<void> task = thread_pool.push(&pushed, worker);
+            if (!pushed) {
+                break;
+            }
+            tasks.emplace_back(std::move(task));
+        }
+        // the calling thread works too
+        int idx = next_idx.fetch_add(1);
+        if (idx >= n_single) {
+            break;
+        }
+        func(idx, false);
+    }
+    for (int idx = n_single; idx < n; ++idx) {
+        func(idx, true);
+    }
+    for (std::future<void> &task: tasks) {
+        task.get();
+    }
+}
+
 void book_recalculate_leaves(int level, std::vector<Book_deviate_todo_elem> &todo_list, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player) {
-    int n_all = todo_list.size();
+    const int n_all = todo_list.size();
     if (n_all == 0) {
         return;
     }
-    int n_done = 0, n_doing = 0;
-    std::vector<std::future<void>> tasks;
-    // count a finished search, print the progress every 10 searches
-    auto count_done = [&n_done, n_all, strt, all_strt]() {
+    int n_done = 0;
+    std::mutex progress_mtx; // n_done and the log
+    const std::thread::id calling_thread = std::this_thread::get_id();
+    book_learning_for_each(n_all, [&](int idx, bool use_multi_thread) {
+        if (!global_searching || !(*book_learning)) {
+            return;
+        }
+        const Book_deviate_todo_elem &elem = todo_list[idx];
+        if (std::this_thread::get_id() == calling_thread) { // (screen drawing: the boards of one thread)
+            *board_copy = elem.board;
+            *player = elem.player;
+        }
+        book_search_leaf(elem.board, level, use_multi_thread);
+        // count a finished search, print the progress every 10 searches
+        std::lock_guard<std::mutex> lock(progress_mtx);
         ++n_done;
         if (n_done % 10 == 0) {
             int percent = 100ULL * n_done / n_all;
             uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
             std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
         }
-    };
-    for (const Book_deviate_todo_elem &elem: todo_list) {
-        if (!global_searching || !(*book_learning)) {
-            break;
-        }
-        *board_copy = elem.board;
-        *player = elem.player;
-        bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2;
-        bool pushed;
-        ++n_doing;
-        if (use_multi_thread) {
-            book_search_leaf(elem.board, level, true);
-            count_done();
-        } else{
-            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&book_search_leaf, elem.board, level, use_multi_thread)));
-            if (!pushed) {
-                tasks.pop_back();
-                book_search_leaf(elem.board, level, true);
-                count_done();
-            }
-        }
-        int tasks_size = tasks.size();
-        for (int i = 0; i < tasks_size; ++i) {
-            if (tasks[i].valid()) {
-                if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    tasks[i].get();
-                    count_done();
-                }
-            }
-        }
-        for (int i = 0; i < tasks_size; ++i) {
-            if (i >= tasks.size()) {
-                break;
-            }
-            if (!tasks[i].valid()) {
-                tasks.erase(tasks.begin() + i);
-                --i;
-            }
-        }
-    }
-    int tasks_size = tasks.size();
-    for (int i = 0; i < tasks_size; ++i) {
-        if (tasks[i].valid()) {
-            tasks[i].get();
-            count_done();
-        }
-    }
+    });
     int percent = 100ULL * n_done / n_all;
-    uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
+    uint64_t eta = n_done ? (uint64_t)((tim() - strt) * ((double)n_all / n_done - 1.0)) : 0;
     std::cerr << "book recalculating leaves finished " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
 }
 
@@ -615,74 +650,44 @@ uint64_t expand_leaf(Book_deviate_todo_elem todo_elem, int book_depth, int level
 }
 
 uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::vector<Book_deviate_todo_elem> &book_deviate_todo, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player, int n_loop, std::string file, std::string bak_file) {
-    int n_all = book_deviate_todo.size();
+    const int n_all = book_deviate_todo.size();
     if (n_all == 0) {
         return 0;
     }
     int n_done = 0;
-    int n_doing = 0;
-    std::vector<std::future<uint64_t>> tasks;
-    uint64_t s = tim();
     uint64_t n_add = 0;
-    // count a finished expansion and print the progress
-    auto count_done = [&n_done, &n_add, n_all, strt, all_strt, n_loop]() {
+    std::mutex progress_mtx; // n_done, n_add and the log
+    std::atomic<uint64_t> last_save(tim());
+    std::mutex save_mtx; // one thread saves the book
+    const std::thread::id calling_thread = std::this_thread::get_id();
+    book_learning_for_each(n_all, [&](int idx, bool use_multi_thread) {
+        // automatic save: by the thread which sees that it is time; the other threads go on (as the tasks did before)
+        if (tim() - last_save.load() >= AUTO_BOOK_SAVE_TIME && save_mtx.try_lock()) {
+            if (tim() - last_save.load() >= AUTO_BOOK_SAVE_TIME) {
+                book.save_egbk3(file, bak_file);
+                last_save.store(tim());
+            }
+            save_mtx.unlock();
+        }
+        if (!global_searching || !(*book_learning)) {
+            return;
+        }
+        const Book_deviate_todo_elem &elem = book_deviate_todo[idx];
+        if (std::this_thread::get_id() == calling_thread) { // (screen drawing: the boards of one thread)
+            *board_copy = elem.board;
+            *player = elem.player;
+        }
+        uint64_t n_add_elem = expand_leaf(elem, book_depth, level, use_multi_thread, book_learning);
+        // count a finished expansion and print the progress
+        std::lock_guard<std::mutex> lock(progress_mtx);
+        n_add += n_add_elem;
         ++n_done;
         int percent = 100ULL * n_done / n_all;
         uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
         std::string time_short = ms_to_time_short(tim() - all_strt);
         std::string eta_short = ms_to_time_short(eta);
         std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " registered " << n_add << " time " << time_short << " ETA " << eta_short << std::endl;
-    };
-    for (const Book_deviate_todo_elem &elem: book_deviate_todo) {
-        if (tim() - s >= AUTO_BOOK_SAVE_TIME) {
-            book.save_egbk3(file, bak_file);
-            s = tim();
-        }
-        if (!global_searching || !(*book_learning)) {
-            break;
-        }
-        *board_copy = elem.board;
-        *player = elem.player;
-        bool use_multi_thread = (n_all - n_doing) < thread_pool.size() * 2;
-        bool pushed;
-        ++n_doing;
-        if (use_multi_thread) { // multi thread, 1 problem
-            n_add += expand_leaf(elem, book_depth, level, true, book_learning);
-            count_done();
-        } else{ // single thread, multi problems
-            tasks.emplace_back(thread_pool.push(&pushed, std::bind(&expand_leaf, elem, book_depth, level, false, book_learning)));
-            if (!pushed) {
-                tasks.pop_back();
-                n_add += expand_leaf(elem, book_depth, level, true, book_learning);
-                count_done();
-            }
-        }
-        int tasks_size = tasks.size();
-        for (int i = 0; i < tasks_size; ++i) {
-            if (tasks[i].valid()) {
-                if (tasks[i].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    n_add += tasks[i].get();
-                    count_done();
-                }
-            }
-        }
-        for (int i = 0; i < tasks_size; ++i) {
-            if (i >= tasks.size()) {
-                break;
-            }
-            if (!tasks[i].valid()) {
-                tasks.erase(tasks.begin() + i);
-                --i;
-            }
-        }
-    }
-    int tasks_size = tasks.size();
-    for (int i = 0; i < tasks_size; ++i) {
-        if (tasks[i].valid()) {
-            n_add += tasks[i].get();
-            count_done();
-        }
-    }
+    });
     return n_add;
 }
 
