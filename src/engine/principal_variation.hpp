@@ -29,6 +29,9 @@ void get_principal_variation_str(Board board, int depth, int max_level, std::str
             Search_result search_result = ai_specified(board_cpy, level, true, 0, true, false);
             if (global_searching) {
                 int best_move = search_result.policy;
+                if (!is_valid_policy(best_move) || (board_cpy.get_legal() & (1ULL << best_move)) == 0ULL) { // no move found (search stopped etc.)
+                    break;
+                }
                 pv += idx_to_coord(best_move);
                 calc_flip(&flip, &board_cpy, best_move);
                 board_cpy.move_board(&flip);
@@ -59,9 +62,9 @@ std::string get_principal_variation_str_tt(Board board, int depth) {
             int depth;
             uint_fast8_t mpc_level;
             transposition_table.get_info(board_cpy, &lower, &upper, moves, &depth, &mpc_level);
-            if (moves[0] != MOVE_UNDEFINED) {
+            if (is_valid_policy(moves[0]) && (board_cpy.get_legal() & (1ULL << moves[0]))) {
                 pv += idx_to_coord(moves[0]);
-                calc_flip(&flip, &board_cpy, book_result.policy);
+                calc_flip(&flip, &board_cpy, moves[0]); // the move from the transposition table (book_result.policy is invalid here)
                 board_cpy.move_board(&flip);
             } else {
                 break;

@@ -14,6 +14,8 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <cctype>
 #include "./../engine/engine_all.hpp"
 #include "command.hpp"
 
@@ -61,6 +63,38 @@ void solve_problems(std::vector<std::string> arg, Options *options, State *state
     std::cout << "total " << total.nodes << " nodes in " << ((double)total.time / 1000) << "s NPS " << calc_nps(total.nodes, total.time) << std::endl;
 }
 
+/*
+    @brief play a transcript (f5d6c3... / F5D6C3...) written in a file
+
+    Spaces and line feed codes in the transcript are removed.
+
+    @param board                board to play on
+    @param transcript           transcript
+    @return false if the transcript has an invalid move
+*/
+bool play_transcript_line(Board *board, std::string *transcript) {
+    transcript->erase(std::remove_if(transcript->begin(), transcript->end(), ::isspace), transcript->end());
+    if (transcript->size() % 2) {
+        return false;
+    }
+    Flip flip;
+    for (int i = 0; i < (int)transcript->size(); i += 2) {
+        if (!is_coord_like_chars((*transcript)[i], (*transcript)[i + 1])) {
+            return false;
+        }
+        int coord = get_coord_from_chars((*transcript)[i], (*transcript)[i + 1]);
+        if ((board->get_legal() & (1ULL << coord)) == 0) {
+            return false;
+        }
+        calc_flip(&flip, board, coord);
+        board->move_board(&flip);
+        if (board->get_legal() == 0) {
+            board->pass();
+        }
+    }
+    return true;
+}
+
 void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *options, State *state) {
     if (arg.size() < 1) {
         std::cerr << "[ERROR] [FATAL] please input problem file" << std::endl;
@@ -87,15 +121,9 @@ void solve_problems_transcript_parallel(std::vector<std::string> arg, Options *o
         board_list.emplace_back(board_player.first);
         */
         board_start.reset();
-        for (int i = 0; i < (int)line.size() - 1; i += 2) {
-            int x = line[i] - 'a';
-            int y = line[i + 1] - '1';
-            int coord = HW2_M1 - (y * HW + x);
-            calc_flip(&flip, &board_start, coord);
-            board_start.move_board(&flip);
-            if (board_start.get_legal() == 0) {
-                board_start.pass();
-            }
+        if (!play_transcript_line(&board_start, &line)) {
+            std::cerr << "[ERROR] invalid transcript " << line << std::endl;
+            std::exit(1);
         }
         board_list.emplace_back(board_start);
     }
@@ -370,16 +398,11 @@ void self_play_line(std::vector<std::string> arg, Options *options, State *state
     std::vector<std::pair<std::string, Board>> board_list;
     while (std::getline(ifs, line)) {
         board_start.reset();
-        for (int i = 0; i < (int)line.size() - 1; i += 2) {
-            int x = line[i] - 'a';
-            int y = line[i + 1] - '1';
-            int coord = HW2_M1 - (y * HW + x);
-            calc_flip(&flip, &board_start, coord);
-            board_start.move_board(&flip);
-            if (board_start.get_legal() == 0) {
-                board_start.pass();
-            }
+        if (!play_transcript_line(&board_start, &line)) {
+            std::cerr << "[ERROR] invalid transcript " << line << std::endl;
+            std::exit(1);
         }
+        std::transform(line.begin(), line.end(), line.begin(), ::tolower); // moves are appended in lower case
         board_list.emplace_back(std::make_pair(line, board_start));
     }
     if (thread_pool.size() == 0) {

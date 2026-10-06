@@ -94,6 +94,7 @@ std::string get_parent_path(wchar_t raw_path[]) {
             std::cerr << "[ERROR] can't get binary path. You can ignore this error." << std::endl;
             return "";
         }
+        raw_path[e] = '\0'; // readlink() does not append a terminating null byte
         std::string res = get_parent_path(raw_path);
         return res;
     }

@@ -510,7 +510,9 @@ private:
     }
 
     bool parse_game_list(JSON json) {
-        JSON game_array = json[U"games"];
+        // json_member(): json[U"games"] throws (and the application ends) when the answer is valid JSON
+        // but not an object, for example the top-level array that the next lines accept
+        JSON game_array = json_member(json, U"games");
         if (!game_array.isArray() && json.isArray()) {
             game_array = json;
         }
@@ -552,12 +554,18 @@ private:
             game.friend_match = both_ratings_unchanged(players[0], players[1]);
         }
 
-        std::string transcript = extract_start_pos(detail_json[U"position"][U"startPos"]);
+        // json_member(): operator[] with a key throws for a value that is not an object
+        // ("position": "abc", a move given as a string, ...), which ended the application
+        JSON position = json_member(detail_json, U"position");
+        std::string transcript = extract_start_pos(json_member(position, U"startPos"));
         String terminal_status;
-        JSON moves = detail_json[U"position"][U"moves"];
+        JSON moves = json_member(position, U"moves");
         if (moves.isArray()) {
             for (size_t i = 0; i < moves.size(); ++i) {
                 JSON move = moves[i];
+                if (!move.isObject()) {
+                    continue;
+                }
                 const String move_text = json_string(move[U"m"]);
                 if (is_coord(move_text)) {
                     transcript += normalized_coord(move_text);
@@ -1191,6 +1199,9 @@ private:
 
     static String json_history_signature(JSON json) {
         String signature;
+        if (!json.isObject()) { // json[key] throws for a file that is not a JSON object
+            return signature;
+        }
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
             const String key = Format(n_discs);
             if (!json[key].isObject()) {
@@ -1362,6 +1373,9 @@ private:
     }
 
     static void fill_player_summary(JSON player, String* name, String* rating, String* rank, String* id = nullptr) {
+        if (!player.isObject()) { // player[U"id"] throws for a value that is not an object
+            return;
+        }
         const String player_id = json_string(player[U"id"]);
         if (id != nullptr) {
             *id = player_id;
@@ -1390,7 +1404,7 @@ private:
     }
 
     static bool rating_delta(JSON player, double* delta) {
-        if (!player[U"oldR"].isNumber() || !player[U"newR"].isNumber()) {
+        if (!player.isObject() || !player[U"oldR"].isNumber() || !player[U"newR"].isNumber()) {
             return false;
         }
         *delta = player[U"newR"].get<double>() - player[U"oldR"].get<double>();
@@ -1557,6 +1571,17 @@ private:
             return json.getString();
         }
         return U"";
+    }
+
+    // json[key] if json is an object, a null value otherwise.
+    // JSON::operator[](key) throws an exception for an array, a string or a number, and nothing catches it.
+    // json is taken by reference: the result refers to the data of json (a copy made for a by-value
+    // parameter would be gone when this function returns).
+    static JSON json_member(JSON& json, const String& key) {
+        if (json.isObject()) {
+            return json[key];
+        }
+        return JSON();
     }
 
     static int json_int(JSON json) {
@@ -1959,6 +1984,11 @@ private:
     std::vector<ImageButton> delete_buttons;
     std::vector<ImageButton> edit_buttons;
     std::vector<ImageButton> folder_delete_buttons;
+    // is_folder_empty() of each entry of folders_display, filled in enumerate_current_dir().
+    // is_folder_empty() reads the folder and its summary.csv; it was called for every visible folder in
+    // every frame (delete button, state of the "delete" button), which used a whole CPU core and made
+    // the scene slow as soon as a folder with a few thousand games was visible.
+    std::vector<bool> folder_empty_flags;
     Scroll_manager scroll_manager;
     Button back_button;
     Button up_button;
@@ -2223,7 +2253,7 @@ public:
                 
                 for (int i = 0; i < (int)folders_display.size(); ++i) {
                     if (row_index >= strt_idx_int && row_index < strt_idx_int + IMPORT_GAME_N_GAMES_ON_WINDOW) {
-                        if (i < (int)folder_delete_buttons.size() && !is_protected_system_folder(folders_display[i]) && is_folder_empty(folders_display[i])) {
+                        if (i < (int)folder_delete_buttons.size() && !is_protected_system_folder(folders_display[i]) && is_folder_empty_cached(i)) {
                             int display_row = row_index - strt_idx_int;
                             int item_sy = sy + display_row * IMPORT_GAME_HEIGHT;
                             folder_delete_buttons[i].move(IMPORT_GAME_SX + 1, item_sy + 1);
@@ -2410,7 +2440,7 @@ private:
             if (idx < 0 || idx >= (int)folders_display.size()) {
                 return false;
             }
-            if (is_protected_system_folder(folders_display[idx]) || !is_folder_empty(folders_display[idx])) {
+            if (is_protected_system_folder(folders_display[idx]) || !is_folder_empty_cached(idx)) {
                 return false;
             }
         }
@@ -2590,34 +2620,19 @@ private:
     
     // Check if folder is empty (no subfolders and no games)
     bool is_folder_empty(const String& folder_name) const {
-        std::string base_dir = get_root_dir();
-        std::string rel_path = explorer_state.subfolder;
-        if (!rel_path.empty()) {
-            rel_path += "/";
-        }
-        rel_path += folder_name.narrow();
-        
-        // Check for subfolders
-        std::vector<String> subfolders = explorer::enumerate_subfolders(base_dir, explorer::PathState{rel_path});
-        if (!subfolders.empty()) {
-            return false;
-        }
-        
-        // Check for games in summary.csv
-        String folder_dir = Unicode::Widen(base_dir);
-        if (!rel_path.empty()) {
-            folder_dir += U"/" + Unicode::Widen(rel_path);
-        }
-        String csv_path = folder_dir + U"/summary.csv";
-        if (FileSystem::Exists(csv_path)) {
-            CSV csv{ csv_path };
-            if (csv.rows() > 0) {
-                return false;
-            }
-        }
-        return true;
+        // The path was built from folder_name.narrow(): a name outside the ANSI code page became "??",
+        // the folder could not be read and counted as empty, and the delete button removed it with
+        // the games inside (see is_list_folder_empty() in util.hpp). Use the name as it is.
+        return is_list_folder_empty(get_base_dir() + folder_name);
     }
     
+    // Result of is_folder_empty() at the last enumerate_current_dir() (for drawing; see folder_empty_flags).
+    // Every operation of this scene that changes a folder calls enumerate_current_dir().
+    // The functions that delete check the folder itself again.
+    bool is_folder_empty_cached(int idx) const {
+        return 0 <= idx && idx < (int)folder_empty_flags.size() && folder_empty_flags[idx];
+    }
+
     // Delete folder (only if empty)
     void delete_folder(int idx) {
         if (idx < 0 || idx >= (int)folders_display.size()) return;
@@ -2654,7 +2669,7 @@ private:
     void edit_game(int idx) {
         const String json_path = get_base_dir() + games[idx].filename_date + U".json";
         JSON game_json = JSON::Load(json_path);
-        if (not game_json) {
+        if (not game_json || !game_json.isObject()) { // operator[] with a key throws if the file is not a JSON object
             std::cerr << "can't open game" << std::endl;
             failed = true;
             return;
@@ -2773,6 +2788,7 @@ private:
     void enumerate_current_dir() {
         folders_display.clear();
         folder_delete_buttons.clear();
+        folder_empty_flags.clear();
         std::vector<String> folders = explorer::enumerate_subfolders(get_root_dir(), explorer_state);
         Texture cross_image = getData().resources.cross;
         for (auto& folder : folders) {
@@ -2780,6 +2796,7 @@ private:
                 continue;
             }
             folders_display.emplace_back(folder);
+            folder_empty_flags.emplace_back(is_folder_empty(folder));
             
             // Add delete button for each folder
             ImageButton delete_btn;
@@ -3352,7 +3369,7 @@ private:
             }
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
 
     String recycle_session_dir() const {
@@ -3470,6 +3487,9 @@ private:
             if (idx >= 0 && idx < (int)folders_display.size()) {
                 if (is_protected_system_folder(folders_display[idx])) {
                     continue;
+                }
+                if (!is_folder_empty(folders_display[idx])) {
+                    continue; // not the cached flag: look at the folder again before removing it
                 }
                 if (permanent) {
                     String folder_path = get_base_dir() + folders_display[idx];
@@ -3609,12 +3629,12 @@ private:
         if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
             // Use system command for folder move (more reliable)
 #ifdef _WIN32
-            std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+            move_folder_without_shell(source_path, target_path); // see util.hpp
 #else
             std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
-#endif
             system(cmd.c_str());
-            
+#endif
+
             // Refresh current view
             enumerate_current_dir();
             load_games();
@@ -3659,11 +3679,11 @@ private:
         if (FileSystem::Exists(source_path) && !FileSystem::Exists(target_path)) {
             // Use system command for folder move (more reliable)
 #ifdef _WIN32
-            std::string cmd = "move \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
+            move_folder_without_shell(source_path, target_path); // see util.hpp
 #else
             std::string cmd = "mv \"" + source_path.narrow() + "\" \"" + target_path.narrow() + "\"";
-#endif
             system(cmd.c_str());
+#endif
             
             // Refresh current view
             enumerate_current_dir();
@@ -3717,7 +3737,7 @@ private:
             }
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
     
     void save_pending_games_here() {
@@ -3808,6 +3828,9 @@ private:
 
     static String json_game_library_history_signature(JSON json) {
         String signature;
+        if (!json.isObject()) { // json[key] throws for a file that is not a JSON object
+            return signature;
+        }
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
             const String key = Format(n_discs);
             if (!json[key].isObject()) {
@@ -3860,7 +3883,7 @@ private:
         new_csv.write(game.game_date);
         new_csv.newLine();
         
-        new_csv.save(target_csv);
+        save_csv_escaped(new_csv, target_csv); // escapes backslashes, see util.hpp
     }
 
     void persist_games_order_to_csv() {
@@ -3877,7 +3900,7 @@ private:
             new_csv.write(game.game_date);
             new_csv.newLine();
         }
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
 };
 
@@ -4061,10 +4084,15 @@ inline bool load_game_from_json(
     const std::string& subfolder
 ) {
     JSON game_json = JSON::Load(json_path);
-    if (!game_json) {
+    // JSON::operator[](key) throws for an array, a string or a number, and nothing catches it:
+    // a game file that is valid JSON but not an object ended the application when it was opened
+    if (!game_json || !game_json.isObject()) {
         std::cerr << "Failed to load game JSON: " << json_path.narrow() << std::endl;
         return false;
     }
+    // restored when the file has no valid position (see "Load history")
+    const Game_information game_information_before = data.game_information;
+    const auto game_editor_info_before = data.game_editor_info;
     
     // Load game information
     if (game_json[GAME_BLACK_PLAYER].getType() == JSONValueType::String) {
@@ -4089,12 +4117,17 @@ inline bool load_game_from_json(
     data.game_editor_info.subfolder = subfolder;
     
     // Load history
-    data.graph_resources.nodes[GRAPH_MODE_NORMAL].clear();
-    data.graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+    // The history is read into a local vector first. The nodes of the current game used to be cleared
+    // here: when the file had no valid position, this function returned false with an empty history,
+    // and going back to the main scene (which expects at least one node) froze or crashed.
+    std::vector<History_elem> loaded_nodes;
     for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
         String n_discs_str = Format(n_discs);
         History_elem history_elem;
         bool error_found = false;
+        if (!game_json[n_discs_str].isObject()) { // no such position, or not an object (see above)
+            continue;
+        }
         if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
             history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
         } else {
@@ -4146,9 +4179,22 @@ inline bool load_game_from_json(
             history_elem.is_random_generated_position = false;
         }
         if (!error_found) {
-            data.graph_resources.nodes[GRAPH_MODE_NORMAL].emplace_back(history_elem);
+            loaded_nodes.emplace_back(history_elem);
         }
     }
+    if (loaded_nodes.empty()) {
+        std::cerr << "Game JSON contains no valid history nodes: " << json_path.narrow() << std::endl;
+        // nothing of the current game is changed by a file that cannot be loaded
+        data.game_information = game_information_before;
+        data.game_editor_info = game_editor_info_before;
+        return false;
+    }
+    data.graph_resources.nodes[GRAPH_MODE_NORMAL] = loaded_nodes;
+    data.graph_resources.nodes[GRAPH_MODE_INSPECT].clear();
+    // The variation (inspection branch) of the previous game is gone: without this, loading a game
+    // while a variation was shown left branch == GRAPH_MODE_INSPECT with no node in it, and the main
+    // scene read nodes[GRAPH_MODE_INSPECT].back() of the empty vector.
+    data.graph_resources.branch = GRAPH_MODE_NORMAL;
     
     // Add opening names
     std::string opening_name, n_opening_name;
@@ -4161,11 +4207,6 @@ inline bool load_game_from_json(
         data.graph_resources.nodes[GRAPH_MODE_NORMAL][i].opening_name = opening_name;
     }
     
-    if (data.graph_resources.nodes[GRAPH_MODE_NORMAL].empty()) {
-        std::cerr << "Game JSON contains no valid history nodes: " << json_path.narrow() << std::endl;
-        return false;
-    }
-
     // Set up final state
     data.graph_resources.n_discs = data.graph_resources.nodes[GRAPH_MODE_NORMAL].back().board.n_discs();
     update_xot_start_n_discs(&data.graph_resources);

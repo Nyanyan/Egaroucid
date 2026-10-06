@@ -501,7 +501,7 @@ inline bool load_display_profile_into_settings(const Directories& directories, S
     if (load_display_profile_values(profile_path, &values, &profile_name)) {
         apply_display_profile_values(values, settings);
         settings->display_profile_file = profile_file.narrow();
-        settings->display_profile_name = profile_name.narrow();
+        settings->display_profile_name = profile_name.toUTF8();
         return true;
     }
 
@@ -510,7 +510,7 @@ inline bool load_display_profile_into_settings(const Directories& directories, S
     if (load_display_profile_values(profile_path, &values, &profile_name)) {
         apply_display_profile_values(values, settings);
         settings->display_profile_file = profile_file.narrow();
-        settings->display_profile_name = profile_name.narrow();
+        settings->display_profile_name = profile_name.toUTF8();
         return true;
     }
 

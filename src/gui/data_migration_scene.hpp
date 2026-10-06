@@ -13,6 +13,7 @@
 #include <iostream>
 #include "./../engine/engine_all.hpp"
 #include "close_scene.hpp"
+#include "book_scene.hpp"
 #include "function/function_all.hpp"
 #if SIV3D_PLATFORM(WINDOWS)
 #include <Windows.h>
@@ -237,8 +238,11 @@ private:
     Button import_button;
     TextAreaEditState text_area;
     std::future<Data_migration_result> import_future;
+    std::future<bool> book_reload_future;
     Data_migration_result result;
     bool importing{ false };
+    bool book_reloading{ false };
+    bool book_reload_failed{ false };
     bool finished{ false };
 
     void init_buttons() {
@@ -268,14 +272,38 @@ public:
             getData().fonts.font(language.get("data_migration", "importing")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (import_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 result = import_future.get();
+                importing = false;
                 if (result.succeeded) {
                     reload_egaroucid_settings_after_data_import(&getData());
                     init_buttons();
+                    // The book in memory is replaced with the imported book file (settings.book_file was reloaded above).
+                    // In v7.8.3 the old book stayed in memory until restart; when it was changed before the restart
+                    // (book learning, adding a position, ...), closing the app saved the old book with the change
+                    // to settings.book_file, i.e. over the imported book (it was left only in the .bak file).
+                    // Same procedure as Refer_book (book_scene.hpp).
+                    const std::string book_file = getData().settings.book_file;
+                    book_reload_future = std::async(std::launch::async, [book_file]() {
+                        delete_book();
+                        return import_book(book_file);
+                    });
+                    book_reloading = true;
+                } else {
+                    finished = true;
                 }
-                importing = false;
+            }
+        } else if (book_reloading) {
+            getData().fonts.font(language.get("data_migration", "importing")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
+            if (book_reload_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                book_reload_failed = !book_reload_future.get();
+                getData().book_information.changed = false;
+                getData().graph_resources.need_init = false;
+                book_reloading = false;
                 finished = true;
             }
         } else if (finished) {
+            if (book_reload_failed) {
+                getData().fonts.font(language.get("book", "import_failed")).draw(15, Arg::topCenter(X_CENTER, sy + 70), getData().colors.white);
+            }
             getData().fonts.font(data_migration_message_from_result(result)).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (result.succeeded) {
                 getData().fonts.font(language.get("data_migration", "restart_recommended")).draw(15, Arg::topCenter(X_CENTER, sy + 45), getData().colors.white);
