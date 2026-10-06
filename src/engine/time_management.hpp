@@ -158,7 +158,16 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
         #define TIME_MANAGEMENT_GGS_PLAN_MIDGAME_WEIGHT 4000.0
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT
-        #define TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT 7000.0
+        #if IS_GGS_3MIN
+            // In the 2026-10-05 3:00 games the 36/35 moves searched about 26 s,
+            // mostly on cut-off MPC 100% iterations, while raising MPC at
+            // 36-33 empties changed the move 3 times in 2,640 iterations. The
+            // midgame weight moves about 7 s per game to 46-37 and keeps the
+            // 34-29 shares, which hard endgames spend in full.
+            #define TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT 4000.0
+        #else
+            #define TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT 7000.0
+        #endif
     #endif
     #ifndef TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT
         #define TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT 2500.0
