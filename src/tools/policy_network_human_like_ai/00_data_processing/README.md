@@ -16,6 +16,8 @@ raw_dataから学習用データを作る処理を、次の4段階に分けて�
 PythonとNumPyが必要です。各スクリプトは独立して実行でき、02以降は入力形式やデータセット名に依存しません。
 03aのグラフ作成にはMatplotlibも必要です。
 
+ミスした着手だけを評価する場合は、`prepare_mistake_test_data.py` を使います。元の `board_split/<dataset>/test` と棋譜を照合し、レベル10の解析キャッシュから石損が1・2・4・6石以上のtestデータをまとめて作成します。出力先は `--output-dir` で指定し、件数は `dataset_counts.csv` と `.json` に保存します。詳しい実行例と27モデルの評価方法は [評価用README](../20_test_with_wthor/README.md#ミスした着手に絞って27モデルを評価する) を参照してください。
+
 ## 実行手順
 
 以下は、リポジトリルートの `Egaroucid` ディレクトリで実行するPowerShellの例です。
