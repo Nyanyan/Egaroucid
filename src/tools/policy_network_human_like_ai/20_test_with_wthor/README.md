@@ -1,12 +1,89 @@
 # WTHORの人間の着手との一致度評価
 
+## ミスした着手に絞って27モデルを評価する
+
+`evaluate_mistake_test_models.py` は、石損が **1・2・4・6石以上**のtestデータ全件について、27モデルのTop-1着手一致率を測定します。各閾値は独立した区間ではなく、6石以上の局面が4石以上・2石以上・1石以上にも含まれる累積条件です。追加の標本抽出や対称変換による水増しは行いません。
+
+石損の基準には、既存のEgaroucidレベル10の棋譜解析を使います。値は `max(実着手の評価値, 最善の別着手の評価値) − 実着手の評価値` です。これは同レベルの探索評価値による石損であり、全局面を終局まで完全探索した真の石損とは区別してください。
+
+対象は通常NNとレベル21のα混合6種、Egaroucidレベル1・5・9・13・17、Edaxレベル1・5・9・13・17・21、石損重み付きNNのα混合5種、通常NNと石損重み付きNNのβ混合4種、ランダム方策の計27モデルです。αとβの定義は下の既存評価と共通です。
+
+このディレクトリから、まず前処理、続いて評価を実行してください。以下のモデルパスと参照キャッシュは、2026年10月5日の27モデル実験に合わせています。
+
+```powershell
+python ../00_data_processing/prepare_mistake_test_data.py `
+  --output-dir output/mistake_test_20261005/datasets
+
+python evaluate_mistake_test_models.py `
+  --datasets-dir output/mistake_test_20261005/datasets `
+  --reference-dir ../../../../../experiment_bat/20261002/results/human `
+  --normal-model ../../../../../experiment_bat/20261002/results/train/selected_model.h5 `
+  --weighted-model ../10_train_policy_network/trained/prepared_conv8_bn_e10_20261003_221904_955/selected_model.h5 `
+  --workers 32 --policy-batch-size 512 `
+  --output-dir output/mistake_test_20261005/evaluation
+```
+
+前処理は元のtestを棋譜から再生し、盤面・着手・棋譜IDを全件照合してから、解析キャッシュの石損で抽出します。解析済みのtestがキャッシュに揃っていることが必要です。学習・検証データの解析は追加実行しません。入力は `POLICY_DATA_ROOT`、または `EGAROUCID_DATA/20261002_policy_network_human_like_data` から読み込みます。
+
+2026年10月5日に作成した `WTHOR_1977_2024` の件数は次のとおりです。元のtestは401,545局面・6,706棋譜です。
+
+| 石損の条件 | test局面数 | 該当する棋譜数 | 元のtestに占める割合 |
+| --- | ---: | ---: | ---: |
+| 1石以上 | 114,946 | 6,706 | 28.6259% |
+| 2石以上 | 94,189 | 6,706 | 23.4566% |
+| 4石以上 | 52,751 | 6,277 | 13.1370% |
+| 6石以上 | 32,990 | 5,819 | 8.2158% |
+
+各データセットは `datasets/WTHOR_1977_2024_MISS_<閾値>/test/` に保存します。通常の `.dat` と `.game_ids` に加え、元test内の位置を示す `.source_indices` と石損を示す `.losses` が対応します。件数と抽出元の情報は `datasets/dataset_counts.csv` と `.json` に保存します。
+
+評価では、4種類のデータに含まれる同じ盤面の推論と探索を共有します。一方、集計では元の局面レコードの出現回数をそのまま数えます。過去の探索キャッシュを読み取り専用で複製し、設定を照合したうえで不足する局面だけを追加探索します。エンジン内の探索表は各プロセスで再利用するため、過去と今回では探索履歴が異なる場合があります。そのため、使用した評価ファイルとモデルのSHA-256、キャッシュの参照先、再利用方針を結果JSONに記録します。
+
+主な出力は次のとおりです。
+
+| ファイル | 内容 |
+| --- | --- |
+| `evaluation/mistake_test_accuracy_matrix.csv` | 27モデル×4条件の一覧。百分率、一致数、評価件数 |
+| `evaluation/mistake_test_summary.csv` | 108条件の詳細。一致率、完全一致率、95% Wilson区間 |
+| `evaluation/mistake_test_summary.json` | 全結果、モデルとデータの識別情報、実行条件 |
+| `evaluation/progress.json` / `.csv` | 実行中の集計。完了・途中・未計算を区別 |
+| `evaluation/predictions.npz` | 元testのインデックス、石損、正解着手、27モデルの予測着手 |
+
+`top1_accuracy` は、盤面を保つ対称変換で等価な着手も一致とする既存の定義です。`exact_top1_accuracy` は元の着手位置との完全一致率です。ランダム方策はseed 57で元testの順序に従って各レコードの合法手から1回ずつ抽選し、その着手を4条件で共有します。その期待一致率も `expected_random_accuracy` に保存します。
+
+評価が中断した場合は、同じコマンドと出力先で再開できます。保存済みの探索結果を再利用し、残りを計算します。評価コマンドに `--dry-run` を付けると、データとモデルの識別情報を確認して終了します。前処理を作り直す場合の `--replace` は、以前のデータセットをバックアップしてから置き換えます。
+
+完了後は次のコマンドで、予測手の合法性・対称性、12種類のエンジン設定とキャッシュの一致、全108条件の一致数を独立に検算できます。
+
+```powershell
+python verify_mistake_test_results.py `
+  --datasets-dir output/mistake_test_20261005/datasets `
+  --output-dir output/mistake_test_20261005/evaluation
+```
+
+成功すると `evaluation/verification.json` を保存します。検算に失敗した場合はエラーで停止します。
+
+前処理から検算まで続けて実行する場合は、次のコマンドを使えます。既存のデータセットがあれば照合して再利用し、最後に `evaluation/RESULTS.md` へ27モデルの結果表を保存します。
+
+```powershell
+python run_mistake_test_experiment.py `
+  --output-dir output/mistake_test_20261005 `
+  --reference-dir ../../../../../experiment_bat/20261002/results/human `
+  --normal-model ../../../../../experiment_bat/20261002/results/train/selected_model.h5 `
+  --weighted-model ../10_train_policy_network/trained/prepared_conv8_bn_e10_20261003_221904_955/selected_model.h5 `
+  --workers 32
+```
+
+処理全体の状態は `run_status.json` の `state` に記録します。`complete` は評価と独立検算の両方が完了した状態で、`failed` の場合は `error` に原因が残ります。同じ出力先に対して複数の評価プロセスを同時に起動しないでください。
+
+## 通常のtestから標本を抽出して評価する
+
 `run_random_wthor_blend_experiment.py` を実行すると、回転・反転などの対称変換で増やす前のtestデータから、ランダムに100,000局面を選んで次の設定で評価します。局面数 `N` を指定すると、抽出件数を変更できます。
 
 - alpha = 0, 0.2, 0.4, 0.6, 0.8, 1 の混合方策。
 - レベル **1, 5, 9, 13, 17** のEgaroucid for Console。レベル21の結果はalpha = 0で確認できます。
 - レベル **1, 5, 9, 13, 17, 21** のEdax。
 
-人間の着手データには、環境変数 `POLICY_DATA_ROOT` 配下の水増し前のデータ `board_split/<データセット名>/test` を使用します。データセット名は `--dataset` で選択でき、既定値は `WTHOR_1977_2024` です。`EGAROUCID_DATA=E:\egaroucid_data` の環境では、既定の参照先は `E:\egaroucid_data\20261002_policy_network_human_like_data\board_split\WTHOR_1977_2024\test` です。
+人間の着手データには、環境変数 `POLICY_DATA_ROOT` 配下の水増し前のデータ `board_split/<データセット名>/test` を使用します。データセット名は `--dataset` で選択でき、既定値は `WTHOR_1977_2024` です。`EGAROUCID_DATA` を使う場合、既定の参照先はその配下の `20261002_policy_network_human_like_data/board_split/WTHOR_1977_2024/test` です。
 
 `POLICY_DATA_ROOT` を省略した場合は、`EGAROUCID_DATA` 配下の `20261002_policy_network_human_like_data` をデータルートにします。データ加工側と参照先をそろえる場合は、次のように設定できます。
 

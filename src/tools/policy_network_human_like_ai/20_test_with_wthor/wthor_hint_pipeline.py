@@ -712,6 +712,7 @@ def collect_hints(
     shared_slots=None,
     print_progress: bool = True,
     standalone_hint_count: int = CONSOLE_ONLY_HINT_COUNT,
+    reuse_partial_cache: bool = False,
 ) -> Tuple[
     Dict[int, Dict[StateKey, HintData]],
     Dict[int, dict],
@@ -782,13 +783,13 @@ def collect_hints(
                 "rows": None,
             }
 
-        # If a level cache is incomplete, replay the complete ordered state
-        # stream.  This avoids mixing a previous interrupted process history
-        # with a resumed elastic run.  Multiple same-level actors claim from
-        # one atomic cursor, so every state is still computed exactly once.
+        # By default an incomplete level replays the complete ordered stream.
+        # The mistake-subset evaluator explicitly opts into reusing previous
+        # warm-search results and records that policy in its experiment identity.
+        # Its new searches and resumed runs only claim missing states.
         work_states_by_level = {
             level: (
-                tuple(state_keys)
+                tuple(missing_by_level[level] if reuse_partial_cache else state_keys)
                 if missing_by_level[level]
                 else ()
             )
