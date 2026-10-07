@@ -89,6 +89,22 @@ constexpr bool PONDER_USE_MAIN_SCHEDULE = false;
 #endif
 constexpr int PONDER_MAIN_SCHEDULE_MIN_N_EMPTY = 36;
 
+#ifndef EGAROUCID_PONDER_FOCUS
+    #define EGAROUCID_PONDER_FOCUS 0
+#endif
+#ifndef EGAROUCID_PONDER_FOCUS_MARGIN
+    #define EGAROUCID_PONDER_FOCUS_MARGIN 2
+#endif
+#ifndef EGAROUCID_PONDER_VISIT_LOG
+    #define EGAROUCID_PONDER_VISIT_LOG 0
+#endif
+static_assert(EGAROUCID_PONDER_FOCUS == 0 || EGAROUCID_PONDER_FOCUS == 1);
+static_assert(EGAROUCID_PONDER_FOCUS_MARGIN >= 0);
+static_assert(EGAROUCID_PONDER_VISIT_LOG == 0 || EGAROUCID_PONDER_VISIT_LOG == 1);
+#if EGAROUCID_PONDER_FOCUS
+#include "ponder_focus.hpp"
+#endif
+
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 #if IS_GGS_TOURNAMENT
 constexpr bool AI_TL_USE_EARLY_BREAK = false;
@@ -4720,6 +4736,28 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         ai_ponder_main_schedule(max_depth) : std::vector<AI_Ponder_Iteration>();
     std::vector<std::vector<Clog_result>> main_schedule_clogs(canput);
     std::vector<bool> main_schedule_clogs_ready(canput, false);
+#if EGAROUCID_PONDER_FOCUS
+    const bool use_focus = PONDER_USE_MAIN_SCHEDULE && !main_schedule.empty();
+    std::vector<Ponder_Focus::Child> focus_children;
+    if (use_focus) {
+        for (const auto &move : move_list) {
+            Board child = board.copy();
+            Flip flip = move.flip;
+            child.move_board(&flip);
+            focus_children.push_back({static_cast<int>(move.flip.pos), ai_ponder_uses_main_schedule(child)});
+        }
+    }
+    Ponder_Focus focus(std::move(focus_children), EGAROUCID_PONDER_FOCUS_MARGIN);
+#endif
+#if EGAROUCID_PONDER_VISIT_LOG
+    struct Visit {
+        int policy, stage, depth, mpc_level, member;
+        bool end, cancelled;
+        double value;
+        uint64_t elapsed;
+    };
+    std::vector<Visit> visits;
+#endif
     int n_searched_all = 0;
     while (*searching) {
         bool all_complete = true;
@@ -4736,6 +4774,11 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         }
 
         int selected_idx = -1;
+#if EGAROUCID_PONDER_FOCUS
+        if (use_focus) {
+            selected_idx = focus.next();
+        } else {
+#endif
         double max_ucb = -INF - 1;
         for (int i = 0; i < canput; ++i) {
             double ucb = -INF;
@@ -4756,6 +4799,9 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 max_ucb = ucb;
             }
         }
+#if EGAROUCID_PONDER_FOCUS
+        }
+#endif
         //std::cerr << std::endl;
         if (selected_idx == -1) {
             if (show_log) {
@@ -4771,6 +4817,14 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         const bool use_main_schedule =
             ai_ponder_uses_main_schedule(n_board) &&
             move_list[selected_idx].count < (int)main_schedule.size();
+#if EGAROUCID_PONDER_VISIT_LOG
+        const uint64_t visit_start = tim();
+        const int visit_stage = move_list[selected_idx].count + 1;
+        int visit_member = -1;
+#if EGAROUCID_PONDER_FOCUS
+        if (use_focus) visit_member = focus.child(selected_idx).member;
+#endif
+#endif
         Search_result search_result;
         if (use_main_schedule) {
             if (!main_schedule_clogs_ready[selected_idx]) {
@@ -4831,8 +4885,44 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
                 move_list[selected_idx].value = (0.9 * move_list[selected_idx].value + 1.1 * v) / 2.0;
             }
             ++n_searched_all;
+#if EGAROUCID_PONDER_FOCUS
+            if (use_focus) {
+                const auto &move = move_list[selected_idx];
+                const bool complete = move.is_complete_search ||
+                    (move.is_endgame_search && !ai_endgame_mpc_level_allowed(max_depth, move.mpc_level + 1));
+                focus.record(selected_idx, v, complete);
+            }
+#endif
+        }
+#if EGAROUCID_PONDER_VISIT_LOG
+        const int visit_mpc = use_main_schedule ? main_schedule[visit_stage - 1].mpc_level :
+            static_cast<int>(std::find(SELECTIVITY_PERCENTAGE, SELECTIVITY_PERCENTAGE + N_SELECTIVITY_LEVEL,
+                search_result.probability) - SELECTIVITY_PERCENTAGE);
+        visits.push_back({static_cast<int>(move_list[selected_idx].flip.pos), visit_stage,
+            search_result.depth, visit_mpc, visit_member, search_result.is_end_search,
+            !*searching, v, tim() - visit_start});
+#endif
+    }
+#if EGAROUCID_PONDER_VISIT_LOG
+    // Flush after cancellation/join, outside the timed Ponder visits.
+    for (const auto &visit : visits) {
+        std::cerr << "ponder visit move " << idx_to_coord(visit.policy)
+            << " stage " << visit.stage << " kind " << (visit.end ? "end" : "mid")
+            << " depth " << visit.depth << " mpc " << visit.mpc_level
+            << " value " << visit.value << " time " << visit.elapsed
+            << " member " << visit.member << " cancelled " << visit.cancelled << '\n';
+    }
+#if EGAROUCID_PONDER_FOCUS
+    if (use_focus) {
+        for (int i = 0; i < canput; ++i) {
+            const auto &child = focus.child(i);
+            std::cerr << "ponder focus final move " << idx_to_coord(child.policy)
+                << " stage " << child.count << " member " << child.member
+                << " frontier " << focus.frontier() << '\n';
         }
     }
+#endif
+#endif
     std::sort(move_list.begin(), move_list.end(), comp_ponder_elem);
     // if (show_log && n_searched_all) {
     //     std::cerr << "ponder loop " << n_searched_all << " in " << tim() - strt << " ms" << std::endl;
