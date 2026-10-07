@@ -2,6 +2,20 @@
 
 関連issue: #613
 
+## （石損数＋1）の2乗モデルと通常NNのブレンド4種類を追加する
+
+`run_loss_plus_one_squared_blends_strength.bat` は、通常NNと「（石損＋1）²」NNを混ぜたα=0.2・0.4・0.6・0.8の4参加者を追加します。合法手の確率を `P(a) ∝ P通常NN(a)^(1−α) × P石損NN(a)^α` で混ぜ、最大確率の手を選びます。α=0は通常NN、α=1は石損NNです。このコマンドの `--alphas` はNN同士の混合率で、内部ではモデル間ブレンドのβとして渡します。
+
+プロジェクトルートから、PowerShellで次を実行してください。
+
+```powershell
+& ".\Egaroucid\src\tools\policy_network_human_like_ai\40_test_strength\run_loss_plus_one_squared_blends_strength.bat" --alphas 0.2,0.4,0.6,0.8 --match-sets-per-pair 50
+```
+
+既存19参加者に4参加者を加えた、23参加者の総当たりです。既存19参加者の8,550マッチを引き継ぎ、追加4参加者対既存19参加者の76組と、追加参加者同士の6組を各50マッチ行います。追加分は4,100マッチ・8,200局です。1マッチは同じXOT局面で先後を入れ替えた2局で、全組にseed 57の先頭50局面を使います。
+
+結果は `output/conv8_bn_loss_plus_one_squared_blends_20261007` に保存します。中断後は同じコマンドで再開できます。末尾に `--dry-run` を加えると、既存結果・モデル・日程・再開条件の確認だけを行います。
+
 ## （石損数＋1）の2乗モデル単体を追加する
 
 `run_loss_plus_one_squared_strength.bat` は `conv8_bn_loss_plus_one_squared_e10_20261006` の学習成功と重みの式 `(disc_loss + 1) ** 2` を確認してから対戦を始めます。Egaroucid・Edax各level 1・5・9・13・17・21、通常NNとEgaroucid L21のα=0.2・0.4・0.6・0.8、通常NN単体、ランダムの18相手に、各50セット・100局を追加します（L21単体の内部名は `alpha_0.0`）。結果の保存先は `output/conv8_bn_loss_plus_one_squared_single_20261006` です。
