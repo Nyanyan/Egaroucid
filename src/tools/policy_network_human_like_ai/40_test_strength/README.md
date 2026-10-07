@@ -2,6 +2,10 @@
 
 関連issue: #613
 
+## （石損数＋1）の2乗モデル単体を追加する
+
+`run_loss_plus_one_squared_strength.bat` は `conv8_bn_loss_plus_one_squared_e10_20261006` の学習成功と重みの式 `(disc_loss + 1) ** 2` を確認してから対戦を始めます。Egaroucid・Edax各level 1・5・9・13・17・21、通常NNとEgaroucid L21のα=0.2・0.4・0.6・0.8、通常NN単体、ランダムの18相手に、各50セット・100局を追加します（L21単体の内部名は `alpha_0.0`）。結果の保存先は `output/conv8_bn_loss_plus_one_squared_single_20261006` です。
+
 ## 石損数＋1モデル単体を追加する
 
 `run_loss_plus_one_strength.bat` を実行すると、今回のモデル単体を18種類の既存相手と対戦させます。
