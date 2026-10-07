@@ -145,19 +145,20 @@ def iter_transcripts(directory: Path):
 
 WEIGHT_DTYPE = np.dtype("<f8")
 WEIGHT_FORMAT = "float64 little-endian; one positive sample weight per position"
+NONNEGATIVE_WEIGHT_FORMAT = "float64 little-endian; one nonnegative sample weight per position"
 
 
 def has_sample_weights(manifest: dict) -> bool:
     spec = manifest.get("sample_weights")
     if spec is None:
         return False
-    if spec.get("format") != WEIGHT_FORMAT or spec.get("suffix") != ".weights":
+    if spec.get("format") not in (WEIGHT_FORMAT, NONNEGATIVE_WEIGHT_FORMAT) or spec.get("suffix") != ".weights":
         raise ValueError("unsupported sample weight format")
     return True
 
 
-def validate_weight_file(path: Path, positions: int) -> float:
-    """Check alignment and finite positive weights, returning their float64 sum."""
+def validate_weight_file(path: Path, positions: int, *, allow_zero: bool = False) -> float:
+    """Check alignment and finite weights, returning their float64 sum."""
     if path.stat().st_size != positions * WEIGHT_DTYPE.itemsize:
         raise ValueError(f"incomplete sample weights in {path}")
     total = 0.0
@@ -166,8 +167,9 @@ def validate_weight_file(path: Path, positions: int) -> float:
             weights = np.fromfile(source, dtype=WEIGHT_DTYPE, count=65536)
             if not len(weights):
                 break
-            if np.any(~np.isfinite(weights)) or np.any(weights <= 0):
-                raise ValueError(f"sample weights must be finite and positive: {path}")
+            if np.any(~np.isfinite(weights)) or np.any(weights < 0 if allow_zero else weights <= 0):
+                requirement = "nonnegative" if allow_zero else "positive"
+                raise ValueError(f"sample weights must be finite and {requirement}: {path}")
             total += float(weights.sum(dtype=np.float64))
     if not np.isfinite(total):
         raise ValueError(f"sample weight sum overflow: {path}")

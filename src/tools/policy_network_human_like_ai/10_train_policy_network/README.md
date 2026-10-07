@@ -53,6 +53,14 @@ python train_policy_network.py --board-split-dir "$env:POLICY_DATA_ROOT/board_sp
 
 04で8倍化した重み付きデータを使う場合は、`--dataset WTHOR_1977_2024_LOSS_WEIGHTED` を指定します。
 
+「石損数＋1」の重みで学習する場合は `train_conv8_bn_loss_plus_one.bat` を実行します。
+0・1・2・4・6石損の重みは1・2・3・5・7倍です。
+`train_loss_plus_one.py` が既存の指数重みから整数の石損を復元・検証し、別のデータセットを作ります。
+局面と棋譜IDはそのままコピーし、SHA-256で一致を確認します。全trainの平均による正規化は従来と同じです。
+既定条件はConv8＋BN、10エポック、バッチ512、seed 613、float32、全件使用です。
+`--run-dir` で保存先を指定でき、その下の `logs/train.log` に進捗、`train/selected_model.h5` に最終モデルを保存します。
+再開時は同じ引数に `--resume-training` を追加します。各エポック終了時のチェックポイントから再開します。
+
 ## 学習と最終評価
 
 分割は前処理で確定したものを使います。学習時に棋譜や8倍化済み局面を再分割しません。

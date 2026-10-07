@@ -13,7 +13,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "00_data_processing"))
 from pipeline_common import (SPLIT_NAMES, dataset_directory, load_manifest, WEIGHT_DTYPE,
-                             has_sample_weights, validate_weight_file)
+                             NONNEGATIVE_WEIGHT_FORMAT, has_sample_weights, validate_weight_file)
 from policy_data import BOARD_DTYPE, BOARD_SAMPLE_SIZE, position_samples_to_targets
 from wthor_dataset import file_sha256
 
@@ -137,6 +137,7 @@ def load_prepared_splits(directory: Path, caps: dict, seed: int, output_dir: Pat
     print("Checking prepared dataset checksums and game partitions...", flush=True)
     manifest = load_manifest(directory, stage)
     weighted = has_sample_weights(manifest)
+    allow_zero = weighted and manifest["sample_weights"]["format"] == NONNEGATIVE_WEIGHT_FORMAT
     listed = {entry["path"] for entry in manifest["files"]}
     splits, previous_games, used = {}, set(), {}
     try:
@@ -155,7 +156,7 @@ def load_prepared_splits(directory: Path, caps: dict, seed: int, output_dir: Pat
                 positions += size // BOARD_SAMPLE_SIZE
                 weights_path = path.with_suffix(".weights")
                 if weighted:
-                    weight_sum += validate_weight_file(weights_path, size // BOARD_SAMPLE_SIZE)
+                    weight_sum += validate_weight_file(weights_path, size // BOARD_SAMPLE_SIZE, allow_zero=allow_zero)
                 elif weights_path.exists():
                     raise ValueError("sample weights present without manifest metadata")
                 ids = np.memmap(ids_path, dtype="<u8", mode="r")
@@ -181,6 +182,8 @@ def load_prepared_splits(directory: Path, caps: dict, seed: int, output_dir: Pat
             # Keep every ratio intact while avoiding an enormous loss scale.
             # Only train determines the scale; val/test do not affect training.
             scale = used["train"]["raw_weight_sum"] / used["train"]["available_positions"]
+            if not np.isfinite(scale) or scale <= 0:
+                raise ValueError("training sample weights must have a finite positive mean")
             for split in splits.values():
                 split.weight_scale = scale
     except BaseException:
