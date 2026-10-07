@@ -1,100 +1,124 @@
-# 学習済みモデルの混合率と、着手一致率・棋力の測定
+# 対戦レートと人間の着手一致率の描画
 
-今回学習したDense512×4とConv8＋BNを、それぞれEgaroucidレベル21と混合して評価します。BATを実行すると、着手一致率の測定、棋力の測定、信頼区間の計算、比較グラフの作成が順番に進みます。
+`plot_rating_vs_human_match.py`は、集計済みの`report_data.json`を読み込み、20261007_2のまとめレポートと同じ6種類の図をPNG・SVGで出力します。描画だけを行うため、学習・推論・対戦を再実行する必要はありません。
 
-## 実行するBAT
+## 実行
 
-| BAT | 対象 |
+このフォルダの`run_rating_vs_human_match.bat`を実行してください。既定ではワークスペースの`experiment_bat/20261007_2/report_data.json`を読み込み、[output/20261007_2](output/20261007_2)へ保存します。実行時のカレントディレクトリには依存しません。
+
+Pythonから実行する場合は、次のコマンドをこのフォルダで使います。
+
+```powershell
+python .\plot_rating_vs_human_match.py
+```
+
+必要なライブラリは`numpy`と`matplotlib`です。BATでは`POLICY_PYTHON`にPython実行ファイルを指定できます。自動実行で終了時のキー入力待ちを省く場合は、`POLICY_NO_PAUSE=1`を設定してください。
+
+別の実験の集計JSONを描画するときは、入力と出力先を指定します。
+
+```powershell
+python .\plot_rating_vs_human_match.py `
+  --input ".\input\report_data.json" `
+  --output-dir ".\output\my_experiment"
+```
+
+レートと一致率の図だけを出力することもできます。以下のオプションはBATにも渡せます。
+
+```powershell
+.\run_rating_vs_human_match.bat `
+  --figures elo_vs_agreement mistake_elo_vs_agreement `
+  --formats png svg
+```
+
+## 配色とブレンド係数
+
+| 系列 | 色 | 図中の記号 |
+| --- | --- | --- |
+| Egaroucid | 緑 `#249972` | E：レベル |
+| Edax | 青 `#2468B4` | D：レベル |
+| 通常NN＋Egaroucid L21 | 赤 `#D62728` | N：通常NN側のα |
+| 通常NN＋石損NN | オレンジ `#D55E00` | B：石損NN側のα |
+| ランダム | 灰 `#747C85` | R |
+
+石損NNは、学習時に`（石損＋1）²`の重みを用いたモデルです。通常NNとの融合は`P(a) ∝ P通常NN(a)^(1−α) × P石損NN(a)^α`で、B0.0は通常NN単体、B1.0は石損NN単体です。石損NN単体も、融合のαが1である同じ系列として接続します。
+
+通常NN＋Egaroucid L21の系列は、`P(a) ∝ P通常NN(a)^α × P_L21(a)^(1−α)`です。この系列のαは通常NN側の係数です。N1.0とB0.0は同じ通常NNを指し、赤とオレンジの線が共有する端点になります。全モデルを並べる図では、この端点をN1.0として一度だけ表示します。石損NN系列だけの閾値別パネルでは、オレンジのB0.0として表示します。
+
+## 95%信頼区間
+
+各折れ線に、線と同じ色で一致率の95% Wilson区間を帯として表示します。帯の濃さの既定値は10%（不透明度`alpha=0.10`、透過率90%）です。点の横線はEloの95%区間、縦線は一致率の95%区間です。十字の誤差バーとその端の線は、常に不透明（`alpha=1.0`）で表示します。
+
+帯の濃さは次のオプションで変更できます。`0`は完全に透明、`1`は不透明です。十字の表示には影響しません。
+
+```powershell
+python .\plot_rating_vs_human_match.py --ci-alpha 0.10
+```
+
+以前の`--ci-transparency`も使えます。こちらは透過率なので、`--ci-transparency 0.90`で上の指定と同じ薄さになります。
+
+区間の値は入力JSONの保存値を使用します。20261007_2のElo区間はXOT局面単位の20,000回BCaブートストラップ、一致率の区間は局面単位のWilson区間です。一致率の区間には棋譜内相関の補正がありません。
+
+帯は各点の下限・上限を、レベルまたはαの順に直線で接続したものです。点ごとの95%区間を可視化しており、曲線全体を95%の確率で覆う同時信頼帯や、2モデルの差に対する信頼区間ではありません。Eloの区間は横線で個別に示し、帯へ合成していません。
+
+## 出力
+
+| ファイル名（PNG・SVG） | 内容 |
 | --- | --- |
-| `run_blend_experiment_all.bat` | Dense512×4、Conv8＋BNの両方 |
-| `run_blend_experiment_dense512.bat` | Dense512×4のみ |
-| `run_blend_experiment_conv8_bn.bat` | Conv8＋BNのみ |
+| `model_overview` | モデル別のEloと全体の一致率 |
+| `elo_vs_agreement` | Eloと一致率の関係：全体10万局面と2石以上の石損条件 |
+| `mistake_model_comparison` | 石損条件ごとの全モデル比較 |
+| `threshold_trends` | 系列別・ブレンド係数別の閾値による変化 |
+| `agreement_heatmap` | 全体・石損条件別の一致率一覧 |
+| `mistake_elo_vs_agreement` | すべての石損条件でのEloと一致率の関係 |
 
-通常は `run_blend_experiment_all.bat` をダブルクリックしてください。先に両モデルの着手一致率を測定し、その後、各モデルの棋力を順番に測定します。進捗はコンソールとログファイルの両方に出力します。
+`plot_manifest.json`には、その実行で使った入力パス・SHA-256・系列・配色・区間の濃さ・ラベル位置・出力一覧を保存します。出力画像の解像度は既定200 dpiで、`--dpi`で変更できます。
 
-実験を始めずにファイルと設定を確認する場合は、このディレクトリで次を実行します。
+## タイトル・ラベルなどの文字と位置の変更
 
-```powershell
-.\run_blend_experiment_all.bat --dry-run
-```
+`adjust_rating_vs_human_match_labels.bat`を実行すると、6種類すべての図を順に編集できます。レート対一致率の2種類から表示し、一つのウィンドウを閉じると次の図へ進みます。全体10万局面の右隣は、2石以上の石損条件です。レート対一致率の各パネルには全モデルのラベルを表示し、どの点ラベルも個別に動かせます。共有端点は同じモデルなので、各パネルに一つ表示します。
 
-Pythonは学習時と同じTensorFlow入りの環境を使います。PATH上の `python` が別の環境なら、`POLICY_PYTHON` に実行ファイルのパスを指定してください。スクリプトから呼ぶときは `POLICY_NO_PAUSE=1` を設定すると、終了時のキー入力待ちを省略できます。
+保存済みの位置がないラベルは、点やほかのラベルと重なりにくい位置へ自動配置します。保存済みの位置は優先し、自動配置では動かしません。
 
-## 評価条件
+1. ラベルをマウスの左ボタンでドラッグして移動します。
+2. 文字をダブルクリックすると、表示内容を自由に変更できます。図全体のタイトル、各パネルのタイトル、軸名、凡例、目盛り名、モデル名、数値ラベル、注記が対象です。クリックで選んでから`E`キーを押しても編集できます。
+3. `S`または`Ctrl+S`で、文字と点ラベルの位置をJSONへ保存し、PNG・SVGも更新します。
+4. `R`で、そのウィンドウを開いたときの文字・位置へ戻します。保存したい場合は再度`S`を押してください。
 
-| 項目 | 既定値 |
-| --- | --- |
-| 混合率α | 0、0.2、0.4、0.6、0.8、1 |
-| 混合する探索方策 | Egaroucid for Console 7.8.1 SIMD、レベル21、定石なし |
-| 混合式 | `p(NN)^α × softmax(Egaroucid評価値 / 1.0)^(1−α)` |
-| 着手一致率 | 保存済みtest集合から30,000局面を抽出、seed=613、top-1とtop-3 |
-| データ分割 | 学習時に保存した棋譜単位90% / 5% / 5%の分割を再利用 |
-| 棋力の対戦相手 | Egaroucidレベル1、3、5、…、19と、上記6種類の混合方策 |
-| 対局数 | 16参加者の総当たり。各組合せ500組、1組につき同じXOT定石で先後交換の2対局 |
-| 組の勝敗 | 先後交換した2対局の平均石差の符号で判定 |
-| XOTの順序 | seed=57、全組合せで同じ定石順 |
-| Eloの再解析 | XOT定石単位のクラスターブートストラップ20,000回、seed=613 |
+保存せずウィンドウを閉じた場合は、既存の位置ファイルと画像を変更しません。点から離したラベルには、対応する点への引き出し線が付きます。ツールバーの拡大・移動モード中はラベルをドラッグできないので、調整前にそのモードを解除してください。
 
-α=0はEgaroucidのみ、α=1は学習済みモデルのみです。中間のαは、NNのsoftmax前出力とEgaroucidの評価値を重み付きで加えてから正規化します。これにより、小さい確率が浮動小数点の丸めで0になっても、混合後に有力になる手を失いません。着手一致率と棋力測定で、この計算をそろえています。
-
-着手一致率では両モデルに同じ局面とEgaroucidの探索結果を使います。レベル21は全合法手の評価値を取得し、レベル1〜19の単体比較は以前と同じ `hint 3` を使います。盤面を変えない回転・鏡映で移り合う着手を同値とする一致率の定義も引き継いでいます。
-
-既定の規模では、**1モデルあたり12万対局、両モデルで24万対局**です。以前と同様、数日単位の実行を想定しています。まず設定だけを見る場合は `--dry-run` を使ってください。
-
-## 使用するファイル
-
-再開時にモデルが自動で切り替わらないよう、次の完了済み学習結果を固定しています。
-
-- Dense512×4: `../10_train_policy_network/trained/wthor_game_split_512x4_e50_20261001_165329_704`
-- Conv8＋BN: `../10_train_policy_network/trained/wthor_game_split_conv8_bn_e50_20261001_170120_867`
-
-各ディレクトリの `selected_model.h5` と `dataset_split.json` を使います。Conv8＋BNではDense専用のバイナリ重みは不要です。別の学習結果を使う場合は、`--dense512-run` または `--conv8-bn-run` と、新しい `--output-root` を指定してください。
-
-盤面データの既定の場所は `%EGAROUCID_DATA%/train_data/board_data/records1` です。棋譜データと分割ファイルのチェックサムを照合してから評価します。
-
-エンジンとXOT定石集は、まずこのリポジトリの `bin` を参照します。存在しない場合は、隣の `Egaroucid` リポジトリを参照します。各リポジトリのルートからの相対パスは次のとおりです。
-
-- `bin/versions/Egaroucid_for_Console_7_8_1_Windows_SIMD/Egaroucid_for_Console_7_8_1_SIMD.exe`
-- `bin/problem/xot/openingslarge.txt`
-
-別の場所にある場合は `--egaroucid-exe` と `--openings` で指定できます。
-
-## 出力と再開
-
-既定の出力先は `output/game_split_dense_conv8_bn_l21` です。`dense512` と `conv8_bn` の各ディレクトリに、`human`、`strength`、工程別ログを保存します。共通の探索結果は `shared_human_hints` に保存します。
-
-全工程が終わると、出力先直下に次の比較結果ができます。
-
-- `rating_vs_human_match_dense512_conv8_bn.csv`: モデル・混合率ごとのElo、top-1・top-3一致率と信頼区間
-- `rating_vs_human_match_dense512_conv8_bn.png` / `.svg`: 横軸Elo、縦軸top-1一致率のグラフ
-- `rating_vs_human_match_dense512_conv8_bn.json`: グラフの集計条件
-
-モデル単独のBATでは、ファイル名にそのモデル名だけが入ります。両モデルの個別実行が終わった後に比較グラフを作るには、次を実行してください。
+通常のBATに`--adjust-labels`を付けても同じ画面を開けます。1種類だけを編集する例です。
 
 ```powershell
-.\run_blend_experiment_all.bat --stage report
+.\run_rating_vs_human_match.bat --adjust-labels --figures elo_vs_agreement
 ```
 
-途中で中断した場合は、**同じBATを同じ引数で再実行**してください。完了済みの工程を確認し、棋力測定では保存済みの対局から再開します。着手一致率の探索は完了済みレベルのキャッシュを再利用し、未完了レベルはそのレベルの探索をやり直します。モデル、データ、実験設定、実行コードが変わった場合は再開を拒否するため、その場合は別の出力先を指定します。同じ出力先への同時実行も防いでいます。
+設定は既定で`output/20261007_2/label_positions.json`へ保存します。点ラベルは`figures`、タイトル・軸名などは`texts`に記録します。図名やパネルの識別子ごとに保存するため、同じ名前の文字でも設定が混ざりません。文字を変更しても、対応するモデルや元データ、目盛りの数値座標は変わりません。次回の通常描画でも、このファイルを自動的に読み込みます。以前の位置ファイルも引き続き読み込めます。
 
-`--stage human` で着手一致率だけ、`--stage strength` で棋力だけを実行することもできます。`--stage report` は両方の測定が完了してから使います。
+`--label-positions`で別の位置ファイルを指定できます。`--reset-labels`を付けると保存済み位置を無視して既定位置から開きます。編集画面で`S`を押すまでは保存済みファイルを変更しません。新しい位置ファイルはversion 2形式で、`legacy`の旧図専用ファイルとは別です。
 
-## グラフの読み方
+編集画面にはQtまたはTkが使えるPythonが必要です。Qtを優先し、使えない場合はTkで起動します。この環境のWindows Python 3.9とQtで動作を確認しています。通常の画像生成にはGUIを使いません。
 
-DenseとConv8＋BNでは別々の総当たりを行うため、参加者全体の平均を1500にしたEloをそのまま重ねると基準がずれます。比較グラフでは、共通のEgaroucidレベル1、3、…、19の平均が1500になるように、それぞれのEloを平行移動します。信頼区間もブートストラップの各反復に同じ処理を行い、2.5%点と97.5%点から計算します。元の総当たり内のEloとBCa信頼区間も、各 `strength` ディレクトリに残します。
+## 入力JSONの形式
 
-この比較は共通の対戦相手を基準にした記述的な比較です。両モデルを同じ総当たりで直接対戦させた結果や、有意差の検定ではありません。着手一致率の区間は以前と同じ局面単位のWilson区間であり、同じ棋譜内の局面間の相関は補正していません。
+20261007_2の`report_data.json`と共通の形式を使います。描画に必要なのは以下の項目です。
 
-旧実験の保存済みCSVは、今回の集計には混ぜません。今回は棋譜単位のtest分割と再学習したモデルを使用し、混合計算の数値誤差への対処も加わっているためです。
+- `models`：`model_id`、表示名`model`、短縮名`short`、`group`、`elo`、`elo_low`、`elo_high`、`results`。
+- 各モデルの`results`：`dataset`、`positions`、`top1_accuracy`、`top1_ci95_lower`、`top1_ci95_upper`。一致率とその区間は0〜1の値です。
+- `dataset_counts`：`dataset`、`label`、`positions`、`minimum_loss`。先頭は全体データで`minimum_loss=null`、以降は石損条件です。
+- `series_paths`：系列名からモデルIDの配列への対応。配列の順序を線の接続順として使います。共有する端点は複数の系列に含められます。
 
-## 実行規模の変更
+系列名は`Egaroucid`、`Edax`、`normal`、`squared_blend`、`random`です。モデル数や石損条件の数は固定していません。各モデルの結果は配列の位置ではなく`dataset`で対応づけ、件数の不一致・欠損・不正な区間を検出したら描画を中止します。`elo_vs_agreement`の右パネルは`minimum_loss=2`のデータを選びます。この条件がない入力はエラーにして、別の石損条件を表示することを防ぎます。元のレート・一致率を再推定したり、異なる実験の測定値を混ぜたりする処理はありません。
 
-既定の棋力測定は、エンジン1プロセスにつき1スレッド、単体参加者につき2プロセス、混合参加者につき8プロセスです。同時対局は最大17組・34対局となります。起動時のメモリ見積もりは79,200 MiBで、別に16,384 MiBの空きを確保します。共有のGPU推論サーバーにはTensorFlowを使用します。
+## 既存の実験と過去の図
 
-規模を小さくする場合は、例えば次のように、別の出力先を指定します。
+古い実験用のMarkdownと`run_blend_experiment_*.bat`は`legacy`へ移しました。操作手順は[legacy/MODEL_BLEND_EXPERIMENT.md](legacy/MODEL_BLEND_EXPERIMENT.md)にあります。旧BATの呼び出し先を更新し、既存実験の実行・再開に必要なPython処理と出力先はそのまま使えるようにしています。今回の6種類の図を描く入口は`run_rating_vs_human_match.bat`です。
+
+7月の固定CSVを描画していたスクリプト・テスト・CSV・ラベル位置・画像・結果説明は[legacy](legacy/README.md)に保存しています。新しいグラフのラベル編集は、このフォルダの`adjust_rating_vs_human_match_labels.bat`から行えます。
+
+## 確認用コマンド
 
 ```powershell
-.\run_blend_experiment_all.bat --positions 3000 --match-sets-per-pair 50 --parallel-match-sets 8 --blend-processes-per-player 4 --bootstrap-replicates 2000 --output-root output\small_comparison
+python -m unittest test_plot_rating_vs_human_match test_label_editor -v
 ```
 
-同じ結果に異なる条件が混ざらないよう、再開するときも同じ引数を指定してください。
+入力データの対応づけ、共有端点と接続順、色、95%区間の上下限と濃さ、PNG・SVGの生成、ラベルのドラッグ・保存・再読込・リセットを確認します。

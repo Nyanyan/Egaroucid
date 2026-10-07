@@ -29,7 +29,7 @@
 | 対戦セット総数 | 6,000 |
 | 実対局総数 | 12,000 |
 
-Eloは各対戦済み組へ0.5勝・0.5敗を加えて有限化し、16参加者の平均が1500となるように推定した。95%信頼区間は、50個のset index、すなわちXOT局面をクラスタとして20,000回復元抽出するBCaクラスターブートストラップで求めた。各反復では同じ抽出列を全120組へ適用し、同じXOTを使った組間の相関を維持した。乱数生成器はNumPyのPCG64、seedは613である。詳細は[`../40_test_strength/RESULTS.md`](../40_test_strength/RESULTS.md)に記録している。
+Eloは各対戦済み組へ0.5勝・0.5敗を加えて有限化し、16参加者の平均が1500となるように推定した。95%信頼区間は、50個のset index、すなわちXOT局面をクラスタとして20,000回復元抽出するBCaクラスターブートストラップで求めた。各反復では同じ抽出列を全120組へ適用し、同じXOTを使った組間の相関を維持した。乱数生成器はNumPyのPCG64、seedは613である。詳細は[`../../40_test_strength/RESULTS.md`](../../40_test_strength/RESULTS.md)に記録している。
 
 ## Elo推定結果
 
@@ -65,7 +65,7 @@ Eloとその区間、および1位着手一致率とその区間は、各実験�
 ## 再生成
 
 ```powershell
-python src/tools/policy_network_human_like_ai/50_rating_vs_human_match/plot_rating_vs_human_match.py
+python src/tools/policy_network_human_like_ai/50_rating_vs_human_match/legacy/plot_rating_vs_human_match.py
 ```
 
 このコマンドは[`label_positions.json`](label_positions.json)のラベル位置を読み込み、同じフォルダにPNG画像を出力する。
@@ -75,7 +75,7 @@ python src/tools/policy_network_human_like_ai/50_rating_vs_human_match/plot_rati
 次のコマンドでラベル位置調整画面を開く。
 
 ```powershell
-python src/tools/policy_network_human_like_ai/50_rating_vs_human_match/plot_rating_vs_human_match.py `
+python src/tools/policy_network_human_like_ai/50_rating_vs_human_match/legacy/plot_rating_vs_human_match.py `
   --adjust-labels
 ```
 

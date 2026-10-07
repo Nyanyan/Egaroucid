@@ -1,709 +1,510 @@
 #!/usr/bin/env python3
-"""推定Eloと人間との1位着手一致率の関係を作図する。"""
-
+"""Render rating/agreement figures from saved report_data.json, without inference."""
 from __future__ import annotations
 
 import argparse
-import csv
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import asdict
+import hashlib
 import json
 import math
 from pathlib import Path
-import sys
 
-import matplotlib.font_manager as font_manager
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.colors import to_rgba
-from matplotlib.text import Annotation, Text
-from matplotlib.transforms import Bbox
+from matplotlib import font_manager
+from matplotlib.lines import Line2D
 import numpy as np
+
+from label_editor import (
+    LABEL_PREFIX, LabelEditor, annotation_position, apply_label_positions,
+    apply_text_overrides, load_label_positions, load_text_overrides, update_leader_line,
+)
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_INPUT = SCRIPT_DIR / "rating_vs_human_top1_data.csv"
-DEFAULT_OUTPUT = SCRIPT_DIR / "rating_vs_human_top1"
-DEFAULT_LABEL_POSITIONS = SCRIPT_DIR / "label_positions.json"
-BASE_FONT_SIZE = 30
-TITLE_FONT_SIZE = 48
-AXIS_LABEL_FONT_SIZE = 38
-LABEL_FONT_SIZE = 30
-MARKER_DIAMETER_POINTS = 16.0
-LEADER_LINE_THRESHOLD_POINTS = 18.0
-ERROR_BAR_LINE_WIDTH = 2.2
-ERROR_BAR_CAP_SIZE = 7.0
-ERROR_BAR_ALPHA = 0.65
-
-
-@dataclass(frozen=True)
-class Result:
-    series: str
-    label: str
-    rating: float
-    rating_ci_lower: float
-    rating_ci_upper: float
-    top1: float
-    top1_ci_lower: float
-    top1_ci_upper: float
-
-
-@dataclass(frozen=True)
-class LabelPosition:
-    dx: float
-    dy: float
-    horizontal_alignment: str
-    vertical_alignment: str
-
-
-SERIES_STYLES = {
-    "console": {
-        "legend": "Egaroucid for Console",
-        "marker": "o",
-        "color": "#005AFF",
-    },
-    "blend": {
-        "legend": "ブレンド方策",
-        "marker": "s",
-        "color": "#FF4B00",
-    },
+DEFAULT_INPUT = SCRIPT_DIR.parents[4] / "experiment_bat/20261007_2/report_data.json"
+DEFAULT_CI_ALPHA = 0.10
+STYLES = {
+    "Egaroucid": {"label": "Egaroucid", "color": "#249972", "marker": "o"},
+    "Edax": {"label": "Edax", "color": "#2468B4", "marker": "s"},
+    "normal": {"label": "通常NN＋Egaroucid L21", "color": "#D62728", "marker": "^"},
+    "squared_blend": {"label": "通常NN＋石損NN", "color": "#D55E00", "marker": "D"},
+    "random": {"label": "ランダム（参考）", "color": "#747C85", "marker": "X"},
 }
+FIGURES = (
+    "model_overview", "elo_vs_agreement", "mistake_model_comparison",
+    "threshold_trends", "agreement_heatmap", "mistake_elo_vs_agreement",
+)
+EDITABLE_FIGURES = ("elo_vs_agreement", "mistake_elo_vs_agreement", "model_overview",
+                    "mistake_model_comparison", "threshold_trends", "agreement_heatmap")
+LINE_STYLES = ("-", "--", "-.", ":", (0, (5, 1, 1, 1)), (0, (3, 1, 1, 1, 1, 1)))
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="推定Eloと人間との1位着手一致率を作図します。"
-    )
-    parser.add_argument(
-        "--input",
-        type=Path,
-        default=DEFAULT_INPUT,
-        help=f"入力CSV (既定値: {DEFAULT_INPUT})",
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=DEFAULT_OUTPUT,
-        help=f"拡張子を除いたPNG出力パス (既定値: {DEFAULT_OUTPUT})",
-    )
-    parser.add_argument(
-        "--label-positions",
-        type=Path,
-        default=DEFAULT_LABEL_POSITIONS,
-        help=f"ラベル位置JSON (既定値: {DEFAULT_LABEL_POSITIONS})",
-    )
-    parser.add_argument(
-        "--adjust-labels",
-        action="store_true",
-        help="図を開き、ラベルをドラッグして位置を調整します。",
-    )
-    parser.add_argument(
-        "--reset-labels",
-        action="store_true",
-        help="保存済み位置を無視し、自動配置を調整開始位置にします。",
-    )
-    return parser.parse_args()
+def validate_report(document):
+    """Join measurements by dataset ID, so input row order cannot mix cohorts."""
+    data = deepcopy(document)
+    models = data["models"]
+    datasets = data["dataset_counts"]
+    if not models or not datasets:
+        raise ValueError("models and dataset_counts must not be empty")
+    dataset_ids = [row["dataset"] for row in datasets]
+    model_ids = [model["model_id"] for model in models]
+    if len(set(dataset_ids)) != len(dataset_ids) or len(set(model_ids)) != len(model_ids):
+        raise ValueError("Duplicate model or dataset ID")
+    if any(row["positions"] <= 0 for row in datasets):
+        raise ValueError("Dataset positions must be positive")
+    if datasets[0].get("minimum_loss") is not None:
+        raise ValueError("The first dataset must be the overall agreement sample")
+    if any(row.get("minimum_loss") is None for row in datasets[1:]):
+        raise ValueError("Subsequent datasets must specify minimum_loss")
+    for model in models:
+        if model["group"] not in STYLES:
+            raise ValueError(f"Unknown model group: {model['group']}")
+        check_interval(model["elo"], model["elo_low"], model["elo_high"], model["model_id"])
+        rows = {row["dataset"]: row for row in model["results"]}
+        if len(rows) != len(model["results"]) or set(rows) != set(dataset_ids):
+            raise ValueError(f"Dataset mismatch: {model['model_id']}")
+        model["results"] = [rows[key] for key in dataset_ids]
+        model["color"] = STYLES[model["group"]]["color"]
+        for row, dataset in zip(model["results"], datasets):
+            if row["positions"] != dataset["positions"]:
+                raise ValueError(f"Position count mismatch: {model['model_id']}/{row['dataset']}")
+            if row.get("model_id", model["model_id"]) != model["model_id"]:
+                raise ValueError(f"Model ID mismatch: {model['model_id']}")
+            check_interval(row["top1_accuracy"], row["top1_ci95_lower"], row["top1_ci95_upper"],
+                           f"{model['model_id']}/{row['dataset']}", probability=True)
+    covered = set()
+    if not data["series_paths"]:
+        raise ValueError("series_paths must not be empty")
+    for family, ids in data["series_paths"].items():
+        if family not in STYLES or not ids or len(set(ids)) != len(ids):
+            raise ValueError(f"Invalid series: {family}")
+        if not set(ids).issubset(model_ids):
+            raise ValueError(f"Unknown model in series: {family}")
+        covered.update(ids)
+    if covered != set(model_ids):
+        raise ValueError("Every model must belong to a series path")
+    data["groups"] = {key: deepcopy(STYLES[key]) for key in data["series_paths"]}
+    return data
 
 
-def select_japanese_font() -> str:
+def check_interval(point, low, high, label, probability=False):
+    if not all(math.isfinite(value) for value in (point, low, high)):
+        raise ValueError(f"Non-finite estimate or confidence interval: {label}")
+    if not low <= point <= high:
+        raise ValueError(f"Estimate outside 95% confidence interval: {label}")
+    if probability and not 0 <= low <= high <= 1:
+        raise ValueError(f"Agreement must be a probability, not a percentage: {label}")
+
+
+def read_report(path):
+    return validate_report(json.loads(Path(path).read_text(encoding="utf-8-sig")))
+
+
+def configure_plotting():
     installed = {font.name for font in font_manager.fontManager.ttflist}
-    for candidate in ("Yu Gothic", "Meiryo", "Noto Sans CJK JP", "IPAexGothic"):
-        if candidate in installed:
-            return candidate
-    return "sans-serif"
+    family = next((name for name in ("Meiryo", "Yu Gothic", "Noto Sans CJK JP", "IPAexGothic")
+                   if name in installed), "sans-serif")
+    plt.rcParams.update({
+        "font.family": family, "font.size": 10, "axes.spines.top": False,
+        "axes.spines.right": False, "axes.unicode_minus": False, "svg.fonttype": "none",
+        "figure.facecolor": "white", "savefig.facecolor": "white", "axes.titlepad": 12,
+    })
 
 
-def read_results(path: Path) -> list[Result]:
-    results: list[Result] = []
-    with path.open(encoding="utf-8-sig", newline="") as csv_file:
-        for row in csv.DictReader(csv_file):
-            result = Result(
-                series=row["系列"],
-                label=row["ラベル"],
-                rating=float(row["推定Elo"]),
-                rating_ci_lower=float(row["推定Eloの95%信頼区間下限"]),
-                rating_ci_upper=float(row["推定Eloの95%信頼区間上限"]),
-                top1=float(row["1位着手一致率"]),
-                top1_ci_lower=float(
-                    row["1位着手一致率の95%信頼区間下限"]
-                ),
-                top1_ci_upper=float(
-                    row["1位着手一致率の95%信頼区間上限"]
-                ),
-            )
-            if result.series not in SERIES_STYLES:
-                raise ValueError(f"未知の系列です: {result.series}")
-            if not result.rating_ci_lower <= result.rating <= result.rating_ci_upper:
-                raise ValueError(
-                    f"{result.label}のElo推定値が信頼区間外です"
-                )
-            if not result.top1_ci_lower <= result.top1 <= result.top1_ci_upper:
-                raise ValueError(
-                    f"{result.label}の着手一致率が信頼区間外です"
-                )
-            results.append(result)
-    if not results:
-        raise ValueError(f"入力データが空です: {path}")
-    return results
+def draw_ci_line(axis, x, y, low, high, *, color, ci_alpha=DEFAULT_CI_ALPHA, **kwargs):
+    """Connect pointwise y intervals in the supplied level/alpha order.
+
+    The shading is a visual interpolation, not a simultaneous confidence band
+    or a fitted regression. Elo uncertainty is drawn separately as x error bars.
+    """
+    if not 0 <= ci_alpha <= 1:
+        raise ValueError("CI alpha must be between 0 and 1")
+    band = axis.fill_between(x, low, high, color=color, alpha=ci_alpha,
+                             linewidth=0, zorder=1)
+    line, = axis.plot(x, y, color=color, zorder=3, **kwargs)
+    return line, band
 
 
-def load_label_positions(
-    path: Path,
-    valid_labels: set[str],
-) -> dict[str, LabelPosition]:
-    if not path.exists():
-        return {}
-    with path.open(encoding="utf-8") as json_file:
-        document = json.load(json_file)
-    if document.get("version") != 1:
-        raise ValueError(f"未対応のラベル位置ファイルです: {path}")
+class ReportPlots:
+    def __init__(self, data, ci_alpha=DEFAULT_CI_ALPHA):
+        if not 0 <= ci_alpha <= 1:
+            raise ValueError("CI alpha must be between 0 and 1")
+        self.data = validate_report(data)
+        self.models = self.data["models"]
+        self.index = {model["model_id"]: model for model in self.models}
+        self.datasets = self.data["dataset_counts"]
+        self.paths = self.data["series_paths"]
+        self.ci_alpha = ci_alpha
+        self.ci_note = (f"帯：一致率の95% Wilson区間（不透明度{ci_alpha:.0%}）。"
+                        "横線：Eloの95%区間。帯は各点の区間を接続したものです。")
 
-    positions: dict[str, LabelPosition] = {}
-    allowed_horizontal = {"left", "center", "right"}
-    allowed_vertical = {"top", "center", "bottom"}
-    for label, raw_position in document.get("positions", {}).items():
-        if label not in valid_labels:
-            raise ValueError(f"入力データに存在しないラベルです: {label}")
-        position = LabelPosition(
-            dx=float(raw_position["dx"]),
-            dy=float(raw_position["dy"]),
-            horizontal_alignment=str(raw_position["horizontal_alignment"]),
-            vertical_alignment=str(raw_position["vertical_alignment"]),
-        )
-        if not math.isfinite(position.dx) or not math.isfinite(position.dy):
-            raise ValueError(f"{label}のラベル位置が有限値ではありません")
-        if position.horizontal_alignment not in allowed_horizontal:
-            raise ValueError(f"{label}の水平方向の文字揃えが不正です")
-        if position.vertical_alignment not in allowed_vertical:
-            raise ValueError(f"{label}の垂直方向の文字揃えが不正です")
-        positions[label] = position
-    return positions
+    def legend(self):
+        return [Line2D([], [], color=STYLES[key]["color"], marker=STYLES[key]["marker"],
+                       label=STYLES[key]["label"], lw=1.5, ms=6) for key in self.paths]
 
+    @staticmethod
+    def grid(axis):
+        axis.grid(color="#E5EAF0", lw=.7)
+        axis.set_axisbelow(True)
 
-def save_label_positions(
-    path: Path,
-    positions: dict[str, LabelPosition],
-) -> None:
-    document = {
-        "version": 1,
-        "positions": {
-            label: {
-                "dx": round(position.dx, 3),
-                "dy": round(position.dy, 3),
-                "horizontal_alignment": position.horizontal_alignment,
-                "vertical_alignment": position.vertical_alignment,
-            }
-            for label, position in sorted(positions.items())
-        },
-    }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path = path.with_suffix(path.suffix + ".tmp")
-    with temporary_path.open("w", encoding="utf-8", newline="\n") as json_file:
-        json.dump(document, json_file, ensure_ascii=False, indent=2)
-        json_file.write("\n")
-    temporary_path.replace(path)
+    def row_labels(self, axis):
+        axis.set_yticks(range(len(self.models)))
+        axis.set_yticklabels([model["model"] for model in self.models])
+        axis.set_ylim(len(self.models) - .4, -.7)
+        for tick, model in zip(axis.get_yticklabels(), self.models):
+            tick.set_color(model["color"])
 
+    def row_guides(self, axis, heatmap=False):
+        for i, model in enumerate(self.models):
+            if i and model["group"] != self.models[i - 1]["group"]:
+                axis.axhline(i - .5, color="white" if heatmap else "#DCE2EA", lw=2 if heatmap else .7)
+            if model["group"] == "squared_blend" and not heatmap:
+                axis.axhspan(i - .5, i + .5, color="#FFF3E7", zorder=-2)
 
-def label_candidates() -> list[tuple[float, float]]:
-    candidates = [
-        (15.0, 0.0),
-        (-15.0, 0.0),
-        (0.0, 15.0),
-        (0.0, -15.0),
-        (12.0, 12.0),
-        (-12.0, 12.0),
-        (12.0, -12.0),
-        (-12.0, -12.0),
-    ]
-    for distance in (20.0, 28.0, 38.0, 52.0, 70.0, 90.0, 115.0, 140.0):
-        candidates.extend(
-            [
-                (distance, 0.0),
-                (-distance, 0.0),
-                (0.0, distance),
-                (0.0, -distance),
-                (distance, distance),
-                (-distance, distance),
-                (distance, -distance),
-                (-distance, -distance),
-            ]
-        )
-    return candidates
+    def elo_limits(self):
+        low = min(model["elo_low"] for model in self.models)
+        high = max(model["elo_high"] for model in self.models)
+        return min(0, math.floor((low - 60) / 100) * 100), math.ceil((high + 180) / 100) * 100
 
+    def agreement_limit(self, indices, padding=3):
+        high = max(model["results"][k]["top1_ci95_upper"] * 100
+                   for model in self.models for k in indices)
+        return min(100, math.ceil(high + padding))
 
-def padded_bbox(bbox: Bbox, x_padding: float, y_padding: float) -> Bbox:
-    return Bbox.from_extents(
-        bbox.x0 - x_padding,
-        bbox.y0 - y_padding,
-        bbox.x1 + x_padding,
-        bbox.y1 + y_padding,
-    )
+    def interval_point(self, axis, x, y, low, high, style, yerr=None, size=5.5):
+        axis.errorbar(x, y, xerr=[[x - low], [high - x]], yerr=yerr,
+                      fmt=style["marker"], color=style["color"],
+                      ecolor=style["color"], alpha=1.0,
+                      ms=size, lw=1, capsize=2.5, zorder=4)
 
+    def model_overview(self):
+        figure, axes = plt.subplots(1, 2, figsize=(17, max(8, len(self.models) * .51)), sharey=True)
+        for i, model in enumerate(self.models):
+            result = model["results"][0]
+            values = [(model["elo"], model["elo_low"], model["elo_high"]),
+                      tuple(result[key] * 100 for key in ("top1_accuracy", "top1_ci95_lower", "top1_ci95_upper"))]
+            for j, (point, low, high) in enumerate(values):
+                self.interval_point(axes[j], point, i, low, high, STYLES[model["group"]])
+                axes[j].text(high + (30 if j == 0 else .7), i,
+                             f"{point:.1f}" if j == 0 else f"{point:.3f}%",
+                             va="center", color=model["color"])
+        self.row_labels(axes[0])
+        for axis in axes:
+            self.row_guides(axis)
+            axis.grid(axis="x", color="#E5EAF0")
+            axis.set_axisbelow(True)
+        axes[0].set(title=f"相対Elo（{len(self.models)}モデル）", xlabel="Elo", xlim=self.elo_limits())
+        axes[1].set(title=f"人間との着手一致率（{self.datasets[0]['positions']:,}局面）",
+                    xlabel="Top-1一致率（%）", xlim=(0, self.agreement_limit([0], 8)))
+        figure.suptitle("対戦の強さと、人間の着手の再現", fontsize=18, y=.99)
+        figure.legend(handles=self.legend(), loc="upper center", bbox_to_anchor=(.59, .955), ncol=3, frameon=False)
+        figure.subplots_adjust(left=.235, right=.985, top=.86, bottom=.09, wspace=.15)
+        figure.text(.235, .025, "横線：入力データに保存された95%信頼区間。EloはXOT局面単位のブートストラップ、\n"
+                    "一致率はWilson区間（棋譜内相関の補正なし）。", fontsize=9, color="#596575")
+        return figure
 
-def build_point_obstacles(axis: plt.Axes, results: list[Result]) -> list[Bbox]:
-    transform = axis.transData
-    marker_radius = (
-        MARKER_DIAMETER_POINTS / 2.0 + 2.0
-    ) * axis.figure.dpi / 72.0
-    point_boxes: list[Bbox] = []
-    for result in results:
-        point = transform.transform((result.rating, result.top1))
-        point_boxes.append(
-            Bbox.from_bounds(
-                point[0] - marker_radius,
-                point[1] - marker_radius,
-                marker_radius * 2.0,
-                marker_radius * 2.0,
-            )
-        )
-    return point_boxes
+    def mistake_model_comparison(self):
+        count = len(self.datasets) - 1
+        figure, axes = self.panels(count, 3, (20, max(9, math.ceil(count / 3) * len(self.models) * .39)), sharey=True)
+        for k, axis in enumerate(axes[:count], 1):
+            for i, model in enumerate(self.models):
+                row = model["results"][k]
+                point, low, high = (row[key] * 100 for key in ("top1_accuracy", "top1_ci95_lower", "top1_ci95_upper"))
+                self.interval_point(axis, point, i, low, high, STYLES[model["group"]])
+                axis.text(high + .7, i, f"{point:.2f}", va="center", fontsize=9, color=model["color"])
+            axis.set(xlim=(0, self.agreement_limit(range(1, len(self.datasets)), 6)), xlabel="着手一致率（%）")
+            axis.set_title(self.dataset_title(k), fontsize=12)
+            self.row_guides(axis)
+            axis.grid(axis="x", color="#E5EAF0")
+            axis.set_axisbelow(True)
+            if (k - 1) % 3 == 0:
+                self.row_labels(axis)
+                axis.tick_params(labelleft=True)
+        figure.suptitle(f"石損した人間の着手との一致率 — 全{len(self.models)}モデル", fontsize=18, y=.994)
+        figure.legend(handles=self.legend(), loc="upper center", bbox_to_anchor=(.58, .969), ncol=3, frameon=False)
+        figure.subplots_adjust(left=.205, right=.985, top=.90, bottom=.066, wspace=.18, hspace=.22)
+        figure.text(.205, .02, "各石損条件に該当する局面を使用。条件間の局面は重複しています。\n"
+                    "横線は95% Wilson区間（棋譜内相関の補正なし）。", fontsize=9, color="#596575")
+        return figure
 
+    @staticmethod
+    def panels(count, columns, size, sharey=False):
+        if count < 1:
+            raise ValueError("This figure requires at least one loss-conditioned dataset or series")
+        figure, axes = plt.subplots(math.ceil(count / columns), columns, figsize=size, sharey=sharey, squeeze=False)
+        axes = list(axes.flat)
+        for axis in axes[count:]:
+            axis.set_visible(False)
+        return figure, axes
 
-def position_for_offset(dx: float, dy: float) -> LabelPosition:
-    return LabelPosition(
-        dx=dx,
-        dy=dy,
-        horizontal_alignment="left" if dx > 0 else "right" if dx < 0 else "center",
-        vertical_alignment="bottom" if dy > 0 else "top" if dy < 0 else "center",
-    )
+    def dataset_title(self, index):
+        dataset = self.datasets[index]
+        return f"{dataset['label']}（n={dataset['positions']:,}）"
 
+    def threshold_trends(self):
+        if len(self.datasets) < 2:
+            raise ValueError("threshold_trends requires loss-conditioned datasets")
+        paths = [(family, ids) for family, ids in self.paths.items() if family != "random"]
+        figure, axes = self.panels(len(paths), 2, (15.5, 5.3 * math.ceil(len(paths) / 2)), sharey=True)
+        x = np.arange(len(self.datasets) - 1)
+        for axis, (family, ids) in zip(axes, paths):
+            style = STYLES[family]
+            for i, model_id in enumerate(ids):
+                model = self.index[model_id]
+                rows = model["results"][1:]
+                label = "B0.0" if family == "squared_blend" and model_id == "alpha_1.0" else model["short"]
+                draw_ci_line(axis, x, [row["top1_accuracy"] * 100 for row in rows],
+                             [row["top1_ci95_lower"] * 100 for row in rows],
+                             [row["top1_ci95_upper"] * 100 for row in rows], color=style["color"],
+                             ci_alpha=self.ci_alpha, marker=style["marker"],
+                             linestyle=LINE_STYLES[i % len(LINE_STYLES)], ms=5, lw=1.5, label=label)
+            axis.set_title(style["label"], fontsize=13)
+            axis.set_xticks(x)
+            axis.set_xticklabels([dataset["label"] for dataset in self.datasets[1:]])
+            axis.set_ylim(0, self.agreement_limit(range(1, len(self.datasets))))
+            self.grid(axis)
+            axis.legend(loc="upper right", ncol=3, fontsize=9)
+        for axis in axes[::2]:
+            axis.set_ylabel("着手一致率（%）")
+        figure.suptitle("石損の閾値による一致率の変化", fontsize=18, y=.992)
+        figure.subplots_adjust(left=.065, right=.99, top=.92, bottom=.11, hspace=.28, wspace=.14)
+        figure.text(.065, .022, "Nは通常NN＋L21の通常NN側のα、Bは石損NN側のα（B0.0は通常NN、B1.0は石損NN単体）。\n"
+                    f"横軸は累積条件を等間隔で表示。帯は95% Wilson区間（不透明度{self.ci_alpha:.0%}、同時信頼帯ではありません）。",
+                    fontsize=9, color="#596575")
+        return figure
 
-def add_label_annotation(
-    axis: plt.Axes,
-    result: Result,
-    position: LabelPosition,
-) -> Annotation:
-    style = SERIES_STYLES[result.series]
-    annotation = axis.annotate(
-        result.label.replace("alpha", "α"),
-        (result.rating, result.top1),
-        xytext=(position.dx, position.dy),
-        textcoords="offset points",
-        ha=position.horizontal_alignment,
-        va=position.vertical_alignment,
-        fontsize=LABEL_FONT_SIZE,
-        color=style["color"],
-        weight="bold",
-        bbox={
-            "boxstyle": "square,pad=0.12",
-            "facecolor": "#FFFFFF",
-            "edgecolor": "none",
-            "alpha": 1.0,
-        },
-        arrowprops={
-            "arrowstyle": "-",
-            "color": style["color"],
-            "linewidth": 2.0,
-            "alpha": 0.8,
-            "shrinkA": 4.0,
-            "shrinkB": MARKER_DIAMETER_POINTS / 2.0,
-            "zorder": 2.5,
-        },
-        zorder=5,
-    )
-    update_leader_line(annotation)
-    return annotation
+    def agreement_heatmap(self):
+        matrix = np.asarray([[row["top1_accuracy"] * 100 for row in model["results"]] for model in self.models])
+        figure, axis = plt.subplots(figsize=(max(12, len(self.datasets) * 2.28), max(8, len(self.models) * .56)))
+        maximum = max(70, self.agreement_limit(range(len(self.datasets)), 0))
+        plot = axis.imshow(matrix, cmap="YlGnBu", vmin=0, vmax=maximum, aspect="auto")
+        axis.set_xticks(range(len(self.datasets)))
+        axis.set_xticklabels([dataset["label"] + f"\nn={dataset['positions']:,}" for dataset in self.datasets], fontsize=10)
+        axis.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False, length=0, pad=10)
+        self.row_labels(axis)
+        for i in range(len(self.models)):
+            for j in range(len(self.datasets)):
+                axis.text(j, i, f"{matrix[i, j]:.2f}", ha="center", va="center", fontsize=10,
+                          color="white" if matrix[i, j] >= maximum * .61 else "#172C42")
+        self.row_guides(axis, heatmap=True)
+        axis.axvline(.5, color="white", lw=3)
+        for spine in axis.spines.values():
+            spine.set_visible(False)
+        figure.colorbar(plot, ax=axis, fraction=.034, pad=.035).set_label("着手一致率（%）")
+        figure.suptitle("全体と石損条件別の着手一致率", fontsize=18, x=.60, y=.986)
+        figure.subplots_adjust(left=.245, right=.96, top=.86, bottom=.06)
+        figure.text(.245, .016, "各セルは点推定値。95%信頼区間は比較図・折れ線図で確認できます。", fontsize=9, color="#596575")
+        return figure
 
-
-def update_leader_line(annotation: Annotation) -> None:
-    if annotation.arrow_patch is None:
-        return
-    dx, dy = annotation.xyann
-    distance = math.hypot(float(dx), float(dy))
-    annotation.arrow_patch.set_visible(distance > LEADER_LINE_THRESHOLD_POINTS)
-
-
-def label_bbox(annotation: Annotation, renderer: object) -> Bbox:
-    return Text.get_window_extent(annotation, renderer)
-
-
-def annotation_position(annotation: Annotation) -> LabelPosition:
-    dx, dy = annotation.xyann
-    return LabelPosition(
-        dx=float(dx),
-        dy=float(dy),
-        horizontal_alignment=annotation.get_ha(),
-        vertical_alignment=annotation.get_va(),
-    )
-
-
-def place_labels_without_overlap(
-    figure: plt.Figure,
-    axis: plt.Axes,
-    results: list[Result],
-    reserved_boxes: list[Bbox],
-    preferred_positions: dict[str, LabelPosition] | None = None,
-) -> dict[str, Annotation]:
-    figure.canvas.draw()
-    renderer = figure.canvas.get_renderer()
-    axes_box = padded_bbox(axis.get_window_extent(renderer), -4.0, -4.0)
-    blocked_boxes = [
-        padded_bbox(box, 3.0, 3.0)
-        for box in build_point_obstacles(axis, results)
-    ]
-    blocked_boxes.extend(
-        padded_bbox(box, 5.0, 5.0)
-        for box in reserved_boxes
-    )
-    annotations: dict[str, Annotation] = {}
-    preferred_positions = preferred_positions or {}
-
-    for result in results:
-        position = preferred_positions.get(result.label)
-        if position is None:
-            continue
-        annotation = add_label_annotation(axis, result, position)
-        annotation.update_positions(renderer)
-        blocked_boxes.append(
-            padded_bbox(label_bbox(annotation, renderer), 3.0, 2.0)
-        )
-        annotations[result.label] = annotation
-
-    display_points = {
-        result.label: axis.transData.transform((result.rating, result.top1))
-        for result in results
-    }
-
-    def local_density(result: Result) -> float:
-        point = display_points[result.label]
-        return sum(
-            np.exp(-np.linalg.norm(point - other_point) / 110.0)
-            for label, other_point in display_points.items()
-            if label != result.label
-        )
-
-    remaining_results = [
-        result for result in results if result.label not in annotations
-    ]
-    for result in sorted(remaining_results, key=local_density, reverse=True):
-        placed = False
-        for dx, dy in label_candidates():
-            annotation = add_label_annotation(
-                axis,
-                result,
-                position_for_offset(dx, dy),
-            )
-            annotation.update_positions(renderer)
-            label_box = padded_bbox(
-                label_bbox(annotation, renderer), 3.0, 2.0
-            )
-            inside_axes = (
-                axes_box.x0 <= label_box.x0
-                and label_box.x1 <= axes_box.x1
-                and axes_box.y0 <= label_box.y0
-                and label_box.y1 <= axes_box.y1
-            )
-            overlaps_box = any(
-                label_box.overlaps(blocked_box)
-                for blocked_box in blocked_boxes
-            )
-            if inside_axes and not overlaps_box:
-                blocked_boxes.append(label_box)
-                annotations[result.label] = annotation
-                placed = True
-                break
-            annotation.remove()
-        if not placed:
-            raise RuntimeError(
-                f"{result.label}のラベルを他の要素と重ならない位置へ配置できません"
-            )
-    return annotations
-
-
-def create_plot(
-    results: list[Result],
-    label_positions: dict[str, LabelPosition] | None = None,
-) -> tuple[plt.Figure, dict[str, Annotation]]:
-    plt.rcParams.update(
-        {
-            "font.family": select_japanese_font(),
-            "font.size": BASE_FONT_SIZE,
-            "font.weight": "bold",
-            "axes.unicode_minus": False,
-            "axes.edgecolor": "#4C566A",
-            "axes.facecolor": "#FFFFFF",
-            "axes.linewidth": 1.0,
-            "axes.labelweight": "bold",
-            "axes.titleweight": "bold",
-            "figure.facecolor": "#FFFFFF",
-            "savefig.facecolor": "#FFFFFF",
-            "xtick.color": "#344054",
-            "ytick.color": "#344054",
-            "text.color": "#20242A",
-        }
-    )
-
-    figure, axis = plt.subplots(figsize=(16.0, 10.0), constrained_layout=True)
-    figure.patch.set_facecolor("#FFFFFF")
-    axis.set_facecolor("#FFFFFF")
-
-    for series, style in SERIES_STYLES.items():
-        group = [result for result in results if result.series == series]
-        ratings = np.array([result.rating for result in group], dtype=float)
-        top1_values = np.array([result.top1 for result in group], dtype=float)
-        axis.errorbar(
-            ratings,
-            top1_values,
-            xerr=np.array(
-                [
-                    [
-                        result.rating - result.rating_ci_lower
-                        for result in group
-                    ],
-                    [
-                        result.rating_ci_upper - result.rating
-                        for result in group
-                    ],
-                ],
-                dtype=float,
-            ),
-            yerr=np.array(
-                [
-                    [
-                        result.top1 - result.top1_ci_lower
-                        for result in group
-                    ],
-                    [
-                        result.top1_ci_upper - result.top1
-                        for result in group
-                    ],
-                ],
-                dtype=float,
-            ),
-            fmt="none",
-            ecolor=to_rgba(style["color"], ERROR_BAR_ALPHA),
-            elinewidth=ERROR_BAR_LINE_WIDTH,
-            capsize=ERROR_BAR_CAP_SIZE,
-            capthick=ERROR_BAR_LINE_WIDTH,
-            zorder=2.5,
-        )
-        axis.scatter(
-            ratings,
-            top1_values,
-            s=MARKER_DIAMETER_POINTS**2,
-            marker=style["marker"],
-            facecolor=style["color"],
-            edgecolor="white",
-            linewidth=1.4,
-            alpha=0.95,
-            label=style["legend"],
-            zorder=3,
-        )
-
-    axis.set_title(
-        "推定Eloレーティングと人間との1位着手一致率",
-        fontsize=TITLE_FONT_SIZE,
-        pad=18,
-        weight="bold",
-    )
-    axis.set_xlabel(
-        "推定Eloレーティング",
-        fontsize=AXIS_LABEL_FONT_SIZE,
-        labelpad=12,
-        weight="bold",
-    )
-    axis.set_ylabel(
-        "人間の着手とのtop-1一致率(%)",
-        fontsize=AXIS_LABEL_FONT_SIZE,
-        labelpad=12,
-        weight="bold",
-    )
-
-    rating_lower = min(result.rating_ci_lower for result in results)
-    rating_upper = max(result.rating_ci_upper for result in results)
-    rating_padding = max(100.0, (rating_upper - rating_lower) * 0.03)
-    x_min = np.floor((rating_lower - rating_padding) / 250.0) * 250.0
-    x_max = np.ceil((rating_upper + rating_padding) / 250.0) * 250.0
-    axis.set_xlim(x_min, x_max)
-    axis.set_ylim(49.5, 67.0)
-    tick_min = np.ceil(x_min / 500.0) * 500.0
-    tick_max = np.floor(x_max / 500.0) * 500.0
-    axis.set_xticks(np.arange(tick_min, tick_max + 1.0, 500.0))
-    axis.set_yticks(np.arange(50, 67, 2))
-    axis.tick_params(axis="both", labelsize=BASE_FONT_SIZE)
-    for tick_label in [*axis.get_xticklabels(), *axis.get_yticklabels()]:
-        tick_label.set_fontweight("bold")
-    axis.grid(which="major", color="#D7DCE3", linewidth=0.8, alpha=0.68)
-    axis.set_axisbelow(True)
-
-    legend = axis.legend(
-        loc="lower right",
-        prop={"size": BASE_FONT_SIZE, "weight": "bold"},
-        markerscale=1.15,
-        frameon=True,
-        facecolor="white",
-        edgecolor="#C8CDD5",
-        framealpha=0.97,
-        borderpad=0.7,
-    )
-
-    figure.canvas.draw()
-    renderer = figure.canvas.get_renderer()
-    annotations = place_labels_without_overlap(
-        figure,
-        axis,
-        results,
-        [legend.get_window_extent(renderer)],
-        label_positions,
-    )
-    return figure, annotations
-
-
-def save_plot(figure: plt.Figure, output_stem: Path) -> Path:
-    output_stem.parent.mkdir(parents=True, exist_ok=True)
-    png_path = output_stem.with_suffix(".png")
-    figure.savefig(
-        png_path,
-        dpi=180,
-        facecolor="#FFFFFF",
-        transparent=False,
-    )
-    return png_path
-
-
-def plot_results(
-    results: list[Result],
-    output_stem: Path,
-    label_positions: dict[str, LabelPosition] | None = None,
-) -> None:
-    figure, _ = create_plot(results, label_positions)
-    png_path = save_plot(figure, output_stem)
-    plt.close(figure)
-    print(f"wrote {png_path}")
-
-
-class LabelEditor:
-    def __init__(
-        self,
-        figure: plt.Figure,
-        annotations: dict[str, Annotation],
-        output_stem: Path,
-        positions_path: Path,
-    ) -> None:
-        self.figure = figure
-        self.annotations = annotations
-        self.output_stem = output_stem
-        self.positions_path = positions_path
-        self.initial_positions = {
-            label: annotation_position(annotation)
-            for label, annotation in annotations.items()
-        }
-        self.drag_state: tuple[Annotation, float, float, float, float] | None = None
-        self.connections = [
-            figure.canvas.mpl_connect("button_press_event", self.on_press),
-            figure.canvas.mpl_connect("motion_notify_event", self.on_motion),
-            figure.canvas.mpl_connect("button_release_event", self.on_release),
-            figure.canvas.mpl_connect("key_press_event", self.on_key_press),
-        ]
-
-    def on_press(self, event: object) -> None:
-        if getattr(event, "button", None) != 1:
-            return
-        event_x = getattr(event, "x", None)
-        event_y = getattr(event, "y", None)
-        if event_x is None or event_y is None:
-            return
-        for annotation in reversed(list(self.annotations.values())):
-            contains, _ = annotation.contains(event)
-            if not contains:
+    def scatter_panel(self, axis, k):
+        axis.set_gid(f"dataset:{self.datasets[k]['dataset']}")
+        for family, ids in self.paths.items():
+            if len(ids) < 2:
                 continue
-            dx, dy = annotation.xyann
-            self.drag_state = (
-                annotation,
-                float(event_x),
-                float(event_y),
-                float(dx),
-                float(dy),
-            )
-            return
-
-    def on_motion(self, event: object) -> None:
-        if self.drag_state is None:
-            return
-        event_x = getattr(event, "x", None)
-        event_y = getattr(event, "y", None)
-        if event_x is None or event_y is None:
-            return
-        annotation, start_x, start_y, start_dx, start_dy = self.drag_state
-        pixels_to_points = 72.0 / self.figure.dpi
-        annotation.xyann = (
-            start_dx + (float(event_x) - start_x) * pixels_to_points,
-            start_dy + (float(event_y) - start_y) * pixels_to_points,
-        )
-        update_leader_line(annotation)
-        self.figure.canvas.draw_idle()
-
-    def on_release(self, _event: object) -> None:
-        self.drag_state = None
-
-    def current_positions(self) -> dict[str, LabelPosition]:
-        return {
-            label: annotation_position(annotation)
-            for label, annotation in self.annotations.items()
-        }
-
-    def save(self) -> None:
-        save_label_positions(self.positions_path, self.current_positions())
-        png_path = save_plot(self.figure, self.output_stem)
-        print(f"saved label positions to {self.positions_path}", file=sys.stderr)
-        print(f"saved plot to {png_path}", file=sys.stderr)
-
-    def reset(self) -> None:
-        for label, position in self.initial_positions.items():
-            annotation = self.annotations[label]
-            annotation.xyann = (position.dx, position.dy)
-            annotation.set_ha(position.horizontal_alignment)
-            annotation.set_va(position.vertical_alignment)
+            models = [self.index[key] for key in ids]
+            draw_ci_line(axis, [model["elo"] for model in models],
+                         [model["results"][k]["top1_accuracy"] * 100 for model in models],
+                         [model["results"][k]["top1_ci95_lower"] * 100 for model in models],
+                         [model["results"][k]["top1_ci95_upper"] * 100 for model in models],
+                         color=STYLES[family]["color"], ci_alpha=self.ci_alpha, lw=1.4)
+        for model in self.models:
+            row = model["results"][k]
+            y = row["top1_accuracy"] * 100
+            self.interval_point(axis, model["elo"], y, model["elo_low"], model["elo_high"], STYLES[model["group"]],
+                                yerr=[[y - row["top1_ci95_lower"] * 100], [row["top1_ci95_upper"] * 100 - y]])
+        blend_ids = [key for key in self.paths.get("squared_blend", []) if key != "alpha_1.0"]
+        for model in self.models:
+            model_id = model["model_id"]
+            offset = (6, 9)
+            if model_id in blend_ids[:-1]:
+                i = blend_ids.index(model_id)
+                choices = ([(17, -3), (14, -12), (-15, -16), (-15, -16)] if k == 0 else
+                           [(10, -2), (10, 6), (-12, 10), (-22, 10)] if k == 1 else
+                           [(10, -2), (10, 2), (-15, -16), (-15, -16)])
+                offset = choices[i % len(choices)]
+            elif model_id == "alpha_1.0" and k:
+                offset = (10, -16)
+            elif model_id == "alpha_0.0":
+                offset = (-24, -16) if k < 3 else (8, 8)
+            elif model_id == "edax_l21":
+                offset = (-18, 9) if k < 3 else (-24, 22)
+            annotation = axis.annotate(
+                model["short"], (model["elo"], model["results"][k]["top1_accuracy"] * 100),
+                xytext=offset, textcoords="offset points", fontsize=10, color=model["color"], weight="bold",
+                arrowprops={"arrowstyle": "-", "color": model["color"], "lw": .8, "shrinkA": 3, "shrinkB": 5},
+                zorder=5)
+            annotation.set_gid(f"{LABEL_PREFIX}{self.datasets[k]['dataset']}/{model_id}")
             update_leader_line(annotation)
-        self.figure.canvas.draw_idle()
-        print("restored label positions used at startup", file=sys.stderr)
+        upper = self.agreement_limit([0] if k == 0 else range(1, len(self.datasets)), 7 if k == 0 else 3)
+        axis.set(title=self.dataset_title(k), xlim=self.elo_limits(), ylim=(0, upper),
+                 xlabel=f"相対Elo（{len(self.models)}モデル）", ylabel="着手一致率（%）")
+        self.grid(axis)
 
-    def on_key_press(self, event: object) -> None:
-        key = str(getattr(event, "key", "")).lower()
-        if key in {"s", "ctrl+s"}:
-            self.save()
-        elif key == "r":
-            self.reset()
+    def elo_vs_agreement(self):
+        indices = [0]
+        if len(self.datasets) > 1:
+            loss_two = next((k for k, dataset in enumerate(self.datasets)
+                             if dataset.get("minimum_loss") == 2), None)
+            if loss_two is None:
+                raise ValueError("elo_vs_agreement requires a dataset with minimum_loss=2")
+            indices.append(loss_two)
+        count = len(indices)
+        figure, axes = self.panels(count, count, (16 if count == 2 else 9, 7.5))
+        for k, axis in zip(indices, axes):
+            self.scatter_panel(axis, k)
+        figure.suptitle("対戦レートと人間の着手一致率", fontsize=18, y=.99)
+        figure.legend(handles=self.legend(), loc="upper center", bbox_to_anchor=(.52, .945), ncol=3, frameon=False)
+        figure.subplots_adjust(left=.065, right=.985, top=.79, bottom=.17, wspace=.19)
+        figure.text(.065, .025, "Bは石損NN側のα（B1.0は石損NN単体）、N1.0は通常NN単体、E21はEgaroucid L21、D21はEdax L21、Rはランダム。\n"
+                    + self.ci_note + "\n各区間は点ごとの区間で、同時信頼帯やモデル間の差の検定ではありません。左右は縦軸の範囲が異なります。",
+                    fontsize=9, color="#596575")
+        return figure
+
+    def mistake_elo_vs_agreement(self):
+        count = len(self.datasets) - 1
+        figure, axes = self.panels(count, 2, (16, 5.33 * math.ceil(count / 2)))
+        for k, axis in enumerate(axes[:count], 1):
+            self.scatter_panel(axis, k)
+        figure.suptitle("対戦レートと、石損した着手との一致率", fontsize=18, y=.992)
+        figure.legend(handles=self.legend(), loc="upper center", bbox_to_anchor=(.53, .969), ncol=3, frameon=False)
+        figure.subplots_adjust(left=.07, right=.985, top=.90, bottom=.08, hspace=.35, wspace=.20)
+        figure.text(.07, .015, self.ci_note + "\n線はレベル・αの順に接続。区間は点ごとの95%区間で、同時信頼帯ではありません。\n"
+                    "石損条件は累積しており、同じ局面が複数条件に含まれます。一致率の区間は棋譜内相関の補正なし。",
+                    fontsize=9, color="#596575")
+        return figure
 
 
-def adjust_labels(
-    results: list[Result],
-    output_stem: Path,
-    positions_path: Path,
-    label_positions: dict[str, LabelPosition] | None = None,
-) -> None:
-    figure, annotations = create_plot(results, label_positions)
-    editor = LabelEditor(figure, annotations, output_stem, positions_path)
-    figure._label_editor = editor  # type: ignore[attr-defined]
-    manager = figure.canvas.manager
-    if manager is not None:
-        manager.set_window_title(
-            "ラベル位置調整: ドラッグで移動、Sで保存、Rで起動時位置へ戻す"
-        )
-    print(
-        "Drag labels with the left mouse button. "
-        "Press S to save JSON and PNG, R to restore startup positions.",
-        file=sys.stderr,
-    )
-    plt.show()
+def save_figure(figure, output_dir, name, formats, dpi):
+    generated = []
+    for extension in formats:
+        destination = output_dir / f"{name}.{extension}"
+        temporary = destination.with_name(f".{name}.rendering.{extension}")
+        figure.savefig(temporary, format=extension, dpi=dpi, bbox_inches="tight", pad_inches=.18)
+        temporary.replace(destination)
+        generated.append(destination.name)
+    return generated
 
 
-def main() -> None:
-    args = parse_args()
-    results = read_results(args.input)
-    valid_labels = {result.label for result in results}
-    label_positions = (
-        {}
-        if args.reset_labels
-        else load_label_positions(args.label_positions, valid_labels)
-    )
-    if args.adjust_labels:
-        adjust_labels(
-            results,
-            args.output,
-            args.label_positions,
-            label_positions,
-        )
-    else:
-        plot_results(results, args.output, label_positions)
+def enable_interactive_backend():
+    failures = []
+    for backend in ("QtAgg", "TkAgg"):
+        try:
+            plt.switch_backend(backend)
+            # Backend imports can succeed even when the GUI runtime is broken.
+            with plt.ioff():
+                probe = plt.figure(figsize=(1, 1))
+                plt.close(probe)
+            return
+        except Exception as error:
+            failures.append(f"{backend}: {error}")
+    raise ValueError("ラベル編集にはQtまたはTkを使えるPythonが必要です。POLICY_PYTHONを確認してください。\n"
+                     + "\n".join(failures))
+
+
+def render_report(input_path, output_dir, figures=FIGURES, formats=("png", "svg"),
+                  ci_alpha=DEFAULT_CI_ALPHA, dpi=200, label_positions_path=None,
+                  adjust_labels=False, reset_labels=False):
+    input_path, output_dir = Path(input_path).resolve(), Path(output_dir).resolve()
+    positions_path = Path(label_positions_path or output_dir / "label_positions.json").resolve()
+    if any(name not in FIGURES for name in figures):
+        raise ValueError("Unknown figure name")
+    if adjust_labels:
+        # Batch rendering uses Agg; only the editor needs a desktop window.
+        enable_interactive_backend()
+    # Hash and parse the same bytes, even if an aggregator replaces the input.
+    source = input_path.read_bytes()
+    plots = ReportPlots(json.loads(source.decode("utf-8-sig")), ci_alpha)
+    saved_positions = {} if reset_labels else load_label_positions(positions_path)
+    saved_texts = {} if reset_labels else load_text_overrides(positions_path)
+    configure_plotting()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    generated = []
+    labels_used = {}
+    texts_used = {}
+    manifest = {
+        "input": str(input_path), "input_sha256": hashlib.sha256(source).hexdigest(),
+        "models": len(plots.models), "datasets": plots.datasets, "series_paths": plots.paths,
+        "styles": plots.data["groups"], "ci_transparency": 1 - ci_alpha, "ci_alpha": ci_alpha,
+        "ci_errorbar_alpha": 1.0,
+        "confidence_intervals": "Saved pointwise 95% intervals; y = Wilson, x = XOT-cluster bootstrap. "
+                                "Connecting y bounds is visual interpolation, not a simultaneous confidence band.",
+        "label_positions_path": str(positions_path), "label_positions": labels_used,
+        "text_overrides": texts_used, "outputs": generated,
+    }
+    for name in figures:
+        if name not in FIGURES:
+            raise ValueError(f"Unknown figure: {name}")
+        figure = getattr(plots, name)()
+        annotations = apply_label_positions(figure, saved_positions.get(name, {}))
+        text_targets = apply_text_overrides(figure, saved_texts.get(name, {}))
+
+        def save_current_figure():
+            for filename in save_figure(figure, output_dir, name, formats, dpi):
+                if filename not in generated:
+                    generated.append(filename)
+            labels_used[name] = {key: asdict(annotation_position(label)) for key, label in annotations.items()}
+            texts_used[name] = {key: target.artist.get_text() for key, target in text_targets.items()}
+            (output_dir / "plot_manifest.json").write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        try:
+            if adjust_labels:
+                editor = LabelEditor(figure, annotations, name, positions_path, save_current_figure, text_targets)
+                figure._label_editor = editor  # Keep callbacks alive for the entire window lifetime.
+                figure.canvas.manager.set_window_title(
+                    f"{name} — 点ラベルをドラッグ / 全文字をダブルクリックで変更 / Sで保存 / Rで元に戻す")
+                print(f"Editing {name}: drag to move; double-click to rename; S saves JSON and images; R resets. "
+                      "Close the window to continue.", flush=True)
+                # Matplotlib's default S shortcut opens a file dialog; use our save instead.
+                with plt.rc_context({"keymap.save": [], "keymap.home": [
+                    key for key in plt.rcParams["keymap.home"] if key.lower() != "r"
+                ]}):
+                    plt.show(block=True)
+            else:
+                save_current_figure()
+                print(f"Created {name}", flush=True)
+        finally:
+            plt.close(figure)
+    return generated
+
+
+def make_argparser():
+    parser = argparse.ArgumentParser(description="保存済みreport_data.jsonからレートと着手一致率の図を描画します。")
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="集計JSON（既定：experiment_bat/20261007_2/report_data.json）")
+    parser.add_argument("--output-dir", type=Path, help="出力先（既定：このフォルダ/output/入力JSONの親フォルダ名）")
+    parser.add_argument("--figures", nargs="+", choices=FIGURES,
+                        help="描画・編集する図（既定：全6種類）")
+    parser.add_argument("--formats", nargs="+", choices=("png", "svg"), default=["png", "svg"])
+    ci_options = parser.add_mutually_exclusive_group()
+    ci_options.add_argument("--ci-alpha", type=float, default=DEFAULT_CI_ALPHA,
+                            help="95%%信頼区間の帯の不透明度。0=透明、1=不透明、既定0.10。十字は常に不透明")
+    ci_options.add_argument("--ci-transparency", type=float,
+                            help="従来オプション：帯の透過率（1−alpha）。0.90で--ci-alpha 0.10と同じ")
+    parser.add_argument("--adjust-labels", action="store_true", help="タイトル・軸名・凡例など全文字と点ラベルの位置を編集しSキーで保存")
+    parser.add_argument("--label-positions", type=Path, help="位置JSON（既定：出力先/label_positions.json）")
+    parser.add_argument("--reset-labels", action="store_true", help="保存済み位置を読み込まず、既定の位置から開始")
+    parser.add_argument("--dpi", type=int, default=200)
+    return parser
+
+
+def main(argv=None):
+    parser = make_argparser()
+    args = parser.parse_args(argv)
+    ci_alpha = args.ci_alpha if args.ci_transparency is None else 1 - args.ci_transparency
+    if not 0 <= ci_alpha <= 1 or args.dpi < 1:
+        parser.error("--ci-alpha / --ci-transparency must be in [0, 1]; --dpi must be positive")
+    output = args.output_dir or SCRIPT_DIR / "output" / args.input.resolve().parent.name
+    figures = args.figures or (EDITABLE_FIGURES if args.adjust_labels else FIGURES)
+    try:
+        generated = render_report(args.input, output, figures, args.formats, ci_alpha, args.dpi,
+                                  args.label_positions, args.adjust_labels, args.reset_labels)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        parser.error(str(error))
+    print(f"Saved {len(generated)} figures: {output.resolve()}")
 
 
 if __name__ == "__main__":

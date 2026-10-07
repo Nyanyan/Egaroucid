@@ -1,0 +1,3 @@
+# Keep the archived, previously tracked plotting files in version control.
+# The repository-wide ignore rule otherwise excludes every legacy directory.
+!legacy/
