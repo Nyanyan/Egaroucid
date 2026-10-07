@@ -70,6 +70,24 @@ constexpr bool PONDER_USE_SELFPLAY = false;
 #else
 constexpr bool PONDER_USE_SELFPLAY = true;
 #endif
+// Ponder children with at least PONDER_MAIN_SCHEDULE_MIN_N_EMPTY empties one
+// main-search iteration per visit (ai_ponder_main_schedule) instead of by
+// level, so the main search can reuse the TT bounds at the MPC it needs.
+// Tournament builds only; on by default for the 3-minute profile, where it was
+// measured (reports/20261007_1_ggs_ponder_schedule_replay.md).
+#ifndef EGAROUCID_PONDER_MAIN_SCHEDULE
+    #define EGAROUCID_PONDER_MAIN_SCHEDULE IS_GGS_3MIN
+#endif
+static_assert(
+    EGAROUCID_PONDER_MAIN_SCHEDULE == 0 ||
+    EGAROUCID_PONDER_MAIN_SCHEDULE == 1
+);
+#if EGAROUCID_PONDER_MAIN_SCHEDULE && IS_GGS_TOURNAMENT
+constexpr bool PONDER_USE_MAIN_SCHEDULE = true;
+#else
+constexpr bool PONDER_USE_MAIN_SCHEDULE = false;
+#endif
+constexpr int PONDER_MAIN_SCHEDULE_MIN_N_EMPTY = 36;
 
 constexpr int AI_TL_EARLY_BREAK_THRESHOLD = 5;
 #if IS_GGS_TOURNAMENT
@@ -4584,6 +4602,86 @@ bool comp_ponder_elem(Ponder_elem &a, Ponder_elem &b) {
     return a.count > b.count;
 }
 
+struct AI_Ponder_Iteration {
+    int depth;
+    uint_fast8_t mpc_level;
+    bool is_end_search;
+};
+
+// The iterations ai_time_limit runs on a position with n_empties empties, in
+// order, leaving out what depends on time: the dynamic-budget switch to the
+// endgame search and stops at the time limit. Follows the depth and MPC
+// steps of ai_time_limit's iteration loop and the fixed early-endgame
+// switches of ai_tl_early_endgame_decision; the result matched every main
+// search at 36-50 empties in the 2026-10-05/06 GGS search logs.
+std::vector<AI_Ponder_Iteration> ai_ponder_main_schedule(int n_empties) {
+    std::vector<AI_Ponder_Iteration> schedule;
+    int depth = 1;
+    uint_fast8_t mpc_level = MPC_100_LEVEL;
+    bool is_end_search = false;
+    while (true) {
+        schedule.push_back(AI_Ponder_Iteration{depth, mpc_level, is_end_search});
+        if (is_end_search) {
+            if (mpc_level >= ai_endgame_max_mpc_level(n_empties)) {
+                break;
+            }
+            ++mpc_level;
+            continue;
+        }
+        // Zero elapsed time and time limit disable only the dynamic-budget branch.
+        const AI_TL_Early_Endgame_Decision early_endgame = ai_tl_early_endgame_decision(
+            n_empties, depth, mpc_level, false, true, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL, 0ULL
+        );
+        if (depth >= n_empties - IDSEARCH_ENDSEARCH_PRESEARCH_OFFSET_TIMELIMIT || early_endgame.start) {
+            depth = n_empties;
+            mpc_level = AI_TL_ENDGAME_INITIAL_MPC_LEVEL;
+            is_end_search = true;
+        } else if (depth <= 15 && depth < n_empties - 3) {
+            depth += 3;
+            if (depth > 13 && mpc_level == MPC_100_LEVEL) {
+                mpc_level = MPC_74_LEVEL;
+            }
+        } else if (depth + 1 < 23) {
+            ++depth;
+            if (depth > 13 && mpc_level == MPC_100_LEVEL) {
+                mpc_level = MPC_74_LEVEL;
+            }
+        } else if (mpc_level < get_ai_tl_mid_verify_mpc_level(depth)) {
+            ++mpc_level;
+        } else {
+            ++depth;
+            mpc_level = MPC_74_LEVEL;
+        }
+    }
+    return schedule;
+}
+
+inline bool ai_ponder_uses_main_schedule(Board board) {
+    return
+        PONDER_USE_MAIN_SCHEDULE &&
+        HW2 - board.n_discs() >= PONDER_MAIN_SCHEDULE_MIN_N_EMPTY &&
+        board.get_legal() != 0ULL;
+}
+
+// One root search at the iteration's depth and MPC, called the way
+// ai_time_limit runs each iteration (no iterative deepening inside).
+Search_result ai_ponder_main_schedule_search(Board board, const AI_Ponder_Iteration &iteration, const std::vector<Clog_result> &clogs, thread_id_t thread_id, bool *searching) {
+    Search search(&board, iteration.mpc_level, true, false);
+    search.thread_id = thread_id;
+    const uint64_t strt = tim();
+    std::pair<int, int> id_result = first_nega_scout_legal(&search, -SCORE_MAX, SCORE_MAX, iteration.depth, iteration.is_end_search, clogs, board.get_legal(), strt, searching);
+    Search_result result;
+    result.policy = id_result.second;
+    result.value = id_result.first;
+    result.depth = iteration.depth;
+    result.probability = SELECTIVITY_PERCENTAGE[iteration.mpc_level];
+    result.is_end_search = iteration.is_end_search;
+    result.nodes = search.n_nodes;
+    result.time = tim() - strt;
+    result.nps = calc_nps(result.nodes, result.time);
+    return result;
+}
+
 std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t thread_id, bool *searching) {
     uint64_t strt = tim();
     uint64_t legal = board.get_legal();
@@ -4616,6 +4714,12 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         ++idx;
     }
     const int max_depth = HW2 - board.n_discs() - 1;
+    // Every child has max_depth empties, so they share one schedule.
+    const std::vector<AI_Ponder_Iteration> main_schedule =
+        PONDER_USE_MAIN_SCHEDULE && max_depth >= PONDER_MAIN_SCHEDULE_MIN_N_EMPTY ?
+        ai_ponder_main_schedule(max_depth) : std::vector<AI_Ponder_Iteration>();
+    std::vector<std::vector<Clog_result>> main_schedule_clogs(canput);
+    std::vector<bool> main_schedule_clogs_ready(canput, false);
     int n_searched_all = 0;
     while (*searching) {
         bool all_complete = true;
@@ -4663,7 +4767,21 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         n_board.move_board(&move_list[selected_idx].flip);
         int max_depth = HW2 - n_board.n_discs();
         int level = move_list[selected_idx].level + 1;
-        Search_result search_result = ai_searching_thread_id(n_board, level, false, 0, true, false, thread_id, searching);
+        // A child on the main schedule has run count iterations of it.
+        const bool use_main_schedule =
+            ai_ponder_uses_main_schedule(n_board) &&
+            move_list[selected_idx].count < (int)main_schedule.size();
+        Search_result search_result;
+        if (use_main_schedule) {
+            if (!main_schedule_clogs_ready[selected_idx]) {
+                uint64_t clog_nodes = 0;
+                main_schedule_clogs[selected_idx] = first_clog_search(n_board, &clog_nodes, CLOG_SEARCH_MAX_DEPTH, n_board.get_legal(), searching);
+                main_schedule_clogs_ready[selected_idx] = true;
+            }
+            search_result = ai_ponder_main_schedule_search(n_board, main_schedule[move_list[selected_idx].count], main_schedule_clogs[selected_idx], thread_id, searching);
+        } else {
+            search_result = ai_searching_thread_id(n_board, level, false, 0, true, false, thread_id, searching);
+        }
         double v = -search_result.value;
         if (PONDER_USE_SELFPLAY && move_list[selected_idx].depth >= PONDER_START_SELFPLAY_DEPTH && !move_list[selected_idx].is_endgame_search) { // selfplay
             double max_value = -INF;
@@ -4681,7 +4799,14 @@ std::vector<Ponder_elem> ai_ponder(Board board, bool show_log, thread_id_t threa
         if (*searching) {
             move_list[selected_idx].level = level;
             bool is_mid_search;
-            get_level(move_list[selected_idx].level, board.n_discs() - 4, &is_mid_search, &move_list[selected_idx].depth, &move_list[selected_idx].mpc_level);
+            if (use_main_schedule) {
+                const AI_Ponder_Iteration &iteration = main_schedule[move_list[selected_idx].count];
+                is_mid_search = !iteration.is_end_search;
+                move_list[selected_idx].depth = iteration.depth;
+                move_list[selected_idx].mpc_level = iteration.mpc_level;
+            } else {
+                get_level(move_list[selected_idx].level, board.n_discs() - 4, &is_mid_search, &move_list[selected_idx].depth, &move_list[selected_idx].mpc_level);
+            }
 #if IS_GGS_3MIN
             // tree_search_legal may cap a fixed-level endgame request.
             if (search_result.is_end_search) {
