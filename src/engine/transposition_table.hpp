@@ -165,7 +165,10 @@ class Hash_data {
             } else {
                 lower = -SCORE_MAX;
             }
-            if ((alpha < value || value == -SCORE_MAX) && moves[0] != policy) {
+            // This entry had another board: moves[0] is the move of that board and must not be compared.
+            // (With "moves[0] != policy", the best move was dropped when it happened to be the same cell
+            // as the best move of the replaced board.)
+            if ((alpha < value || value == -SCORE_MAX) && is_valid_policy(policy)) {
                 moves[0] = policy;
             } else {
                 moves[0] = MOVE_UNDEFINED;
@@ -612,7 +615,6 @@ class Transposition_table {
         inline void reg_overwrite(const Search *search, uint32_t hash, const int depth, int alpha, int beta, int value, int policy) {
             Hash_node *node = get_node(hash);
             //const uint32_t level = get_level_common(depth, search->mpc_level);
-            uint32_t node_level;
 #if TT_REGISTER_MIN_LEVEL
             Hash_node *min_level_node = nullptr;
             uint32_t min_level = 0x4fffffff;
@@ -802,7 +804,6 @@ class Transposition_table {
 
         inline void del(const Board *board, uint32_t hash) {
             Hash_node *node = get_node(hash);
-            uint32_t node_level;
             for (uint_fast8_t i = 0; i < TRANSPOSITION_TABLE_N_LOOP; ++i) {
                 node->lock.lock();
                     if (node->board.player == board->player && node->board.opponent == board->opponent) {

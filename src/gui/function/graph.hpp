@@ -157,7 +157,6 @@ public:
         bool is_mid_search;
         int depth;
         uint_fast8_t mpc_level;
-        double mpct;
         int first_endsearch_n_moves = -1;
         for (int x = 0; x < 60; ++x) {
             int x_coord1 = sx + dx * x;

@@ -537,7 +537,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     }
     bool is_all_legal = legal == search->board.get_legal();
     int best_move = MOVE_UNDEFINED;
-    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs) {
         if (legal & (1ULL << clog.pos)) {
             if (v < clog.val) {
@@ -552,7 +551,6 @@ std::pair<int, int> first_nega_scout_legal(Search *search, int alpha, int beta, 
     }
     uint32_t hash_code = search->board.hash();
     if (alpha < beta && legal) {
-        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         // std::vector<Flip_value> move_list(canput);
         Flip_value move_list[MAX_N_BRANCHES];
@@ -655,11 +653,17 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
 #endif
     Analyze_result res;
     res.played_move = played_move;
+    // All members are initialized here: played_score / played_depth / played_probability were read uninitialized
+    // when the played move was not searched (see below), and *_probability was not set for values taken from the book.
+    res.played_score = SCORE_UNDEFINED;
+    res.played_depth = -1;
+    res.played_probability = 0;
     res.alt_score = -SCORE_INF;
     res.alt_move = MOVE_UNDEFINED;
+    res.alt_depth = -1;
+    res.alt_probability = 0;
     int g, first_alpha = alpha;
     uint64_t legal = search->board.get_legal();
-    const int canput_all = pop_count_ull(legal);
     for (const Clog_result clog: clogs) {
         if (clog.pos == played_move) {
             res.played_score = clog.val;
@@ -677,12 +681,17 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         legal &= ~(1ULL << clog.pos);
     }
     uint32_t hash_code = search->board.hash();
-    if (alpha < beta && (legal & (1ULL << played_move))) {
+    // The played move is always searched (it is searched with the full window, so alpha / beta do not matter).
+    // With the condition "alpha < beta", it was skipped when the clog search found another move which wins by 64
+    // (alpha == beta == 64), and the result of the played move was left uninitialized.
+    // A played move which is not a valid cell is not shifted (undefined behavior).
+    if (is_valid_policy(played_move) && (legal & (1ULL << played_move))) {
         Flip flip;
         calc_flip(&flip, &search->board, played_move);
         search->move(&flip);
             if (book.contain(&search->board)) {
                 res.played_depth = SEARCH_BOOK;
+                res.played_probability = 100;
                 res.played_score = -book.get(search->board).value;
             } else{
                 res.played_depth = depth;
@@ -693,7 +702,6 @@ Analyze_result first_nega_scout_analyze(Search *search, int alpha, int beta, con
         legal ^= 1ULL << played_move;
     }
     if (alpha < beta && legal) {
-        int pv_idx = 1;
         const int canput = pop_count_ull(legal);
         // std::vector<Flip_value> move_list(canput);
         Flip_value move_list[MAX_N_BRANCHES];

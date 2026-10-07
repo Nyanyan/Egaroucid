@@ -413,7 +413,6 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
         // thread_pool.finish_idling();
     }
     if (research_idxes.size() && next_alpha < *beta && *searching) {
-        int prev_alpha = *alpha;
         *alpha = next_alpha;
         for (const int &research_idx: research_idxes) {
             search->move(&move_list[research_idx].flip);
@@ -515,7 +514,6 @@ void ybwc_search_young_brothers(Search *search, int *alpha, int *beta, int *v, i
         // thread_pool.finish_idling();
     }
     if (research_idxes.size() && next_alpha < *beta && *searching) {
-        int prev_alpha = *alpha;
         *alpha = next_alpha;
         for (const int &research_idx: research_idxes) {
             search->move(&move_list[research_idx].flip);

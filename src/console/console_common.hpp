@@ -54,19 +54,7 @@ std::string get_parent_path(wchar_t raw_path[]) {
     return res;
 }
 
-#ifdef _WIN64 // Windows
-    std::string get_binary_path() {
-        std::string res;
-        #ifdef UNICODE
-            wchar_t raw_path[MAX_PATH + 1];
-        #else
-            char raw_path[MAX_PATH + 1];
-        #endif
-        if (GetModuleFileName(NULL, raw_path, MAX_PATH))
-            res = get_parent_path(raw_path);
-        return res;
-    }
-#elif _WIN32
+#ifdef _WIN32 // Windows (defined for both 32-bit and 64-bit)
     std::string get_binary_path() {
         std::string res;
         #ifdef UNICODE
@@ -94,6 +82,7 @@ std::string get_parent_path(wchar_t raw_path[]) {
             std::cerr << "[ERROR] can't get binary path. You can ignore this error." << std::endl;
             return "";
         }
+        raw_path[e] = '\0'; // readlink() does not append a terminating null byte
         std::string res = get_parent_path(raw_path);
         return res;
     }

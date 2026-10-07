@@ -33,7 +33,9 @@
 
 std::string gtp_get_command_line() {
     std::string cmd_line;
-    std::getline(std::cin, cmd_line);
+    if (!std::getline(std::cin, cmd_line)) { // end of input (controller closed the pipe): quit instead of looping forever
+        return "quit";
+    }
     return cmd_line;
 }
 
@@ -130,8 +132,7 @@ void gtp_boardsize(int id) {
 }
 
 void gtp_clear_board(int id, Board_info *board) {
-    board->player = BLACK;
-    board->board.reset();
+    board->reset(); // the history used by undo is also cleared
     std::cout << gtp_head(id) << GTP_ENDL;
 }
 
@@ -177,11 +178,11 @@ void gtp_play(int id, std::string arg, Board_info *board) {
         board->player ^= 1;
     } else{
         Flip flip;
-        calc_flip(&flip, &board->board, policy);
-        if (flip.flip == 0ULL) {
+        if ((board->board.get_legal() & (1ULL << policy)) == 0ULL) { // occupied cells are also rejected
             std::cout << gtp_error_head(id) << " " << "illegal move" << GTP_ENDL;
             return;
         }
+        calc_flip(&flip, &board->board, policy);
         board->board.move_board(&flip);
         board->player ^= 1;
         board->boards.emplace_back(board->board.copy());
@@ -216,6 +217,10 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
         return;
     }
     int policy = ai_with_settings(board->board, options, true, options->show_log).policy;
+    if (!is_valid_policy(policy) || (board->board.get_legal() & (1ULL << policy)) == 0ULL) { // search stopped etc.
+        std::cout << gtp_error_head(id) << " " << "no move found" << GTP_ENDL;
+        return;
+    }
     Flip flip;
     calc_flip(&flip, &board->board, policy);
     board->board.move_board(&flip);
@@ -236,10 +241,10 @@ void gtp_rules_game_id(int id) {
 void gtp_print_board_reversed(Board_info *board) {
     std::cout << " ";
     for (int i = 0; i < HW; ++i)
-        std::cerr << " " << (char)('A' + i);
-    std::cerr << '\n';
+        std::cout << " " << (char)('A' + i);
+    std::cout << '\n';
     for (int i = 0; i < HW; ++i) {
-        std::cerr << (char)('8' - i) << " ";
+        std::cout << (char)('8' - i) << " ";
         for (int j = 0; j < HW; ++j) {
             int coord = i * HW + (HW_M1 - j);
             char disc = '.';
@@ -344,6 +349,10 @@ void gtp_showboard(int id, Board_info *board) {
 }
 
 void gtp_undo(int id, Board_info *board) {
+    if (board->boards.size() <= 1) { // nothing to undo
+        std::cout << gtp_error_head(id) << " cannot undo" << GTP_ENDL;
+        return;
+    }
     board->boards.pop_back();
     board->players.pop_back();
     board->board = board->boards.back().copy();
@@ -383,10 +392,12 @@ void gtp_list_games(int id) {
 void gtp_final_score(int id, Board_info *board) {
     int black_score = board->board.count_player();
     int white_score = board->board.count_opponent();
+    if (board->player == WHITE)
+        std::swap(black_score, white_score);
     if (black_score > white_score)
-        std::cout << gtp_head(id) << " B" << black_score - white_score << GTP_ENDL;
+        std::cout << gtp_head(id) << " B+" << black_score - white_score << GTP_ENDL;
     else if (black_score < white_score)
-        std::cout << gtp_head(id) << " W" << black_score - white_score << GTP_ENDL;
+        std::cout << gtp_head(id) << " W+" << white_score - black_score << GTP_ENDL;
     else
         std::cout << gtp_head(id) << " 0" << GTP_ENDL;
 }

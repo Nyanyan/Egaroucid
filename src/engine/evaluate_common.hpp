@@ -250,7 +250,7 @@ inline std::vector<int16_t> load_unzip_egev2(const char* file, bool show_log, bo
         return res;
     }
     int n_unzipped_params = -1;
-    if (fread(&n_unzipped_params, 4, 1, fp) < 1) {
+    if (fread(&n_unzipped_params, 4, 1, fp) < 1 || n_unzipped_params < 0) {
         std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
         fclose(fp);
         *failed = true;
@@ -259,21 +259,31 @@ inline std::vector<int16_t> load_unzip_egev2(const char* file, bool show_log, bo
     if (show_log) {
         std::cerr << n_unzipped_params << " elems found in " << file << std::endl;
     }
-    short *unzipped_params = (short*)malloc(sizeof(short) * n_unzipped_params);
-    if (fread(unzipped_params, 2, n_unzipped_params, fp) < n_unzipped_params) {
+    short *unzipped_params = (short*)malloc(sizeof(short) * std::max(1, n_unzipped_params));
+    if (unzipped_params == nullptr || fread(unzipped_params, 2, n_unzipped_params, fp) < (size_t)n_unzipped_params) {
         std::cerr << "[ERROR] [FATAL] evaluation file broken" << std::endl;
         fclose(fp);
         free(unzipped_params);
         *failed = true;
         return res;
     }
+    fclose(fp);
+    // calculate the size first, to allocate memory only once
+    size_t n_params = 0;
     for (int i = 0; i < n_unzipped_params; ++i) {
         if (unzipped_params[i] >= N_ZEROS_PLUS) {
-            for (int j = 0; j < unzipped_params[i] - N_ZEROS_PLUS; ++j) {
-                res.emplace_back(0);
-            }
-        } else{
-            res.emplace_back(unzipped_params[i]);
+            n_params += unzipped_params[i] - N_ZEROS_PLUS;
+        } else {
+            ++n_params;
+        }
+    }
+    res.resize(n_params); // filled with 0
+    size_t idx = 0;
+    for (int i = 0; i < n_unzipped_params; ++i) {
+        if (unzipped_params[i] >= N_ZEROS_PLUS) {
+            idx += unzipped_params[i] - N_ZEROS_PLUS;
+        } else {
+            res[idx++] = unzipped_params[i];
         }
     }
     if (show_log) {

@@ -115,7 +115,7 @@ inline bool transposition_cutoff_nws_bestmove(Search *search, const uint32_t has
 */
 inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, int *alpha, int *beta, int *v, int *n_etc_done) {
     *n_etc_done = 0;
-    int l, u, n_beta = *alpha;
+    int l, u;
     for (Flip_value &flip_value: move_list) {
         l = -SCORE_MAX;
         u = SCORE_MAX;
@@ -154,7 +154,7 @@ inline bool etc(Search *search, std::vector<Flip_value> &move_list, int depth, i
 */
 inline bool etc(Search *search, Flip_value move_list[], int canput, int depth, int *alpha, int *beta, int *v, int *n_etc_done) {
     *n_etc_done = 0;
-    int l, u, n_beta = *alpha;
+    int l, u;
     for (int i = 0; i < canput; ++i) {
         l = -SCORE_MAX;
         u = SCORE_MAX;
