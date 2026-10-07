@@ -2,6 +2,12 @@
 
 関連issue: #613
 
+## （石損数＋1）の2乗モデル（2026年10月6日訂正）
+
+`train_conv8_bn_loss_plus_one_squared.bat --run-dir trained/conv8_bn_loss_plus_one_squared_e10_20261006` で、重みを `(disc_loss + 1) ** 2` にしたConv8+BNを学習します。石損0・1・2・4・6の重みは1・4・9・25・49です。既定は全データ・10エポック・batch 512・seed 613です。全trainの平均重みで正規化しても、この重みの比率は保持されます。先の「石損数×2」と「（石損数＋1）×2」はユーザーが停止し、新しい保存先で初めから学習し直します。
+
+進捗は実行ウィンドウと保存先の `logs/train.log`、`train/conv8_bn/training_progress.json` で確認できます。完了後は `40_test_strength/run_loss_plus_one_squared_strength.bat` で18相手との対戦を開始します。
+
 `train_policy_network.py` は、前処理済みのtrainで学習し、valでモデルを選択した後、testで最終評価します。
 データ作成の手順は [00_data_processing](../00_data_processing/README.md) を参照してください。
 
