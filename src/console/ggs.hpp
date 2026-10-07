@@ -2085,32 +2085,229 @@ int ggs_record_ponder_results(GGS_Ponder_Result_Table *ponder_results, const std
     return n_recorded;
 }
 
+// What one finished Ponder read, for the "ponder summary" line written when it
+// ends and the "ponder check" line written when our next search starts.
+struct GGS_Ponder_Child_Log {
+    std::string board_key; // child board.to_str(player to move)
+    int policy;
+    int count;
+    int depth;
+    uint_fast8_t mpc_level;
+    char kind; // m: midgame, e: selective endgame, c: complete
+    double value;
+};
+
+struct GGS_Ponder_Summary {
+    bool valid = false;
+    uint64_t sequence = 0; // larger is newer
+    std::string game_id;
+    int slot = -1;
+    uint64_t elapsed = 0;
+    int visits = 0;
+    std::string root_key; // root board.to_str(player to move)
+    std::vector<GGS_Ponder_Child_Log> children; // ai_ponder's order: most visited first
+};
+
+struct GGS_Ponder_Target {
+    bool active = false;
+    std::string game_id;
+    Board board;
+    int player_to_move = -1;
+    uint64_t start_time = 0;
+};
+
+struct GGS_Ponder_Log {
+    GGS_Ponder_Target targets[2];
+    GGS_Ponder_Summary summaries[2];
+    uint64_t sequence = 0;
+};
+
+inline char ggs_ponder_elem_kind(const Ponder_elem &elem) {
+    if (elem.is_complete_search) {
+        return 'c';
+    }
+    return elem.is_endgame_search ? 'e' : 'm';
+}
+
+inline std::string ggs_ponder_depth_text(int count, int depth, uint_fast8_t mpc_level) {
+    if (count == 0) {
+        return "0@0%";
+    }
+    return std::to_string(depth) + "@" + probability_to_str(SELECTIVITY_PERCENTAGE[mpc_level]) + "%";
+}
+
+GGS_Ponder_Summary ggs_make_ponder_summary(
+    const std::string &game_id,
+    int slot,
+    Board root,
+    int player_to_move,
+    uint64_t elapsed,
+    const std::vector<Ponder_elem> &results
+) {
+    GGS_Ponder_Summary summary;
+    summary.valid = true;
+    summary.game_id = game_id;
+    summary.slot = slot;
+    summary.elapsed = elapsed;
+    summary.root_key = root.to_str(player_to_move);
+    if (root.get_legal() == 0ULL) { // ai_ponder passes and ponders the other side's moves
+        root.pass();
+        player_to_move ^= 1;
+    }
+    for (const Ponder_elem &elem: results) {
+        Board child = root.copy();
+        Flip flip = elem.flip;
+        child.move_board(&flip);
+        GGS_Ponder_Child_Log child_log;
+        child_log.board_key = child.to_str(player_to_move ^ 1);
+        child_log.policy = elem.flip.pos;
+        child_log.count = elem.count;
+        child_log.depth = elem.depth;
+        child_log.mpc_level = elem.mpc_level;
+        child_log.kind = ggs_ponder_elem_kind(elem);
+        child_log.value = elem.value;
+        summary.visits += elem.count;
+        summary.children.emplace_back(child_log);
+    }
+    return summary;
+}
+
+std::string ggs_ponder_summary_text(const GGS_Ponder_Summary &summary) {
+    std::string text =
+        "ponder summary game " + summary.game_id +
+        " slot " + std::to_string(summary.slot) +
+        " elapsed " + std::to_string(summary.elapsed) +
+        " visits " + std::to_string(summary.visits) +
+        " moves " + std::to_string(summary.children.size()) +
+        " root " + summary.root_key +
+        " top";
+    const size_t n_top = std::min<size_t>(5, summary.children.size());
+    for (size_t i = 0; i < n_top; ++i) {
+        const GGS_Ponder_Child_Log &child = summary.children[i];
+        text +=
+            " " + idx_to_coord(child.policy) +
+            ":" + std::to_string(child.count) +
+            ":" + ggs_ponder_depth_text(child.count, child.depth, child.mpc_level) +
+            ":" + std::string(1, child.kind) +
+            ":" + (child.count ? to_fixed2_str(child.value) : std::string("nan"));
+    }
+    return text;
+}
+
+// Relates the position of our next search to the newest finished Ponder that
+// read it: a child of the Ponder root (the opponent played that move), the
+// root itself (identical synchro games), or none. Boards, not game ids, are
+// compared because before the games diverge the root lies in the other game.
+std::string ggs_ponder_check_text(const GGS_Board &ggs_board, const GGS_Ponder_Summary summaries[], int n_summaries) {
+    const std::string key = ggs_board.board.to_str(ggs_board.player_to_move);
+    std::string text =
+        "ponder check game " + ggs_board.game_id +
+        " discs " + std::to_string(ggs_board.board.n_discs()) +
+        " relation ";
+    std::vector<const GGS_Ponder_Summary*> newest_first;
+    for (int i = 0; i < n_summaries; ++i) {
+        if (summaries[i].valid) {
+            newest_first.emplace_back(&summaries[i]);
+        }
+    }
+    std::sort(newest_first.begin(), newest_first.end(), [](const GGS_Ponder_Summary *a, const GGS_Ponder_Summary *b) {
+        return a->sequence > b->sequence;
+    });
+    for (const GGS_Ponder_Summary *summary: newest_first) {
+        for (size_t i = 0; i < summary->children.size(); ++i) {
+            const GGS_Ponder_Child_Log &child = summary->children[i];
+            if (child.board_key == key) {
+                return text +
+                    "child rank " + std::to_string(i + 1) + "/" + std::to_string(summary->children.size()) +
+                    " visits " + std::to_string(child.count) +
+                    " depth " + ggs_ponder_depth_text(child.count, child.depth, child.mpc_level) +
+                    " kind " + std::string(1, child.kind) +
+                    " elapsed " + std::to_string(summary->elapsed) +
+                    " ponder_game " + summary->game_id;
+            }
+        }
+        if (summary->root_key == key) {
+            return text +
+                "root visits " + std::to_string(summary->visits) +
+                " top " + (summary->children.empty() ? std::string("pa") : idx_to_coord(summary->children.front().policy)) +
+                " elapsed " + std::to_string(summary->elapsed) +
+                " ponder_game " + summary->game_id;
+        }
+    }
+    return text + "none";
+}
+
+void ggs_begin_ponder_log(GGS_Ponder_Log *ponder_log, int slot, const GGS_Board &ponder_board) {
+    if (ponder_log == nullptr || slot < 0 || slot >= 2) {
+        return;
+    }
+    GGS_Ponder_Target &target = ponder_log->targets[slot];
+    target.active = true;
+    target.game_id = ponder_board.game_id;
+    target.board = ponder_board.board;
+    target.player_to_move = ponder_board.player_to_move;
+    target.start_time = tim();
+}
+
+// Writes the "ponder summary" line for the Ponder that just ended in slot.
+void ggs_finish_ponder_log(GGS_Ponder_Log *ponder_log, int slot, const std::vector<std::vector<Ponder_elem>> &results, Options *options) {
+    if (ponder_log == nullptr || slot < 0 || slot >= 2) {
+        return;
+    }
+    GGS_Ponder_Target &target = ponder_log->targets[slot];
+    if (!target.active || results.empty()) {
+        target.active = false;
+        return;
+    }
+    // GGS_N_PONDER_PARALLEL is 1; with more runs, report the one with the most visits.
+    const std::vector<Ponder_elem> *best = &results.front();
+    int best_visits = -1;
+    for (const std::vector<Ponder_elem> &result: results) {
+        int visits = 0;
+        for (const Ponder_elem &elem: result) {
+            visits += elem.count;
+        }
+        if (visits > best_visits) {
+            best_visits = visits;
+            best = &result;
+        }
+    }
+    GGS_Ponder_Summary summary = ggs_make_ponder_summary(target.game_id, slot, target.board, target.player_to_move, tim() - target.start_time, *best);
+    summary.sequence = ++ponder_log->sequence;
+    ponder_log->summaries[slot] = summary;
+    target.active = false;
+    ggs_print_info(ggs_ponder_summary_text(summary), options);
+}
+
 void ggs_terminate_ponder(
     std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
     bool ponder_searchings[],
     int synchro_id,
     GGS_Ponder_Result_Table *ponder_results,
+    GGS_Ponder_Log *ponder_log,
     Options *options
 );
 
 void ggs_start_ponder(
     std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
-    Board board,
+    const GGS_Board &ponder_board,
     bool show_log,
     int synchro_id,
     bool ponder_searchings[],
     GGS_Ponder_Result_Table *ponder_results,
+    GGS_Ponder_Log *ponder_log,
     Options *options
 ) {
     if (synchro_id < 0) {
         synchro_id = GGS_NON_SYNCHRO_ID;
     }
     if (ponder_searchings[synchro_id]) {
-        ggs_terminate_ponder(ponder_futures, ponder_searchings, synchro_id, ponder_results, options);
+        ggs_terminate_ponder(ponder_futures, ponder_searchings, synchro_id, ponder_results, ponder_log, options);
     }
+    ggs_begin_ponder_log(ponder_log, synchro_id, ponder_board);
     ponder_searchings[synchro_id] = true;
     for (int ponder_i = 0; ponder_i < GGS_N_PONDER_PARALLEL; ++ponder_i) {
-        ponder_futures[synchro_id][ponder_i] = std::async(std::launch::async, ai_ponder, board, show_log, synchro_id, &ponder_searchings[synchro_id]); // set ponder
+        ponder_futures[synchro_id][ponder_i] = std::async(std::launch::async, ai_ponder, ponder_board.board, show_log, synchro_id, &ponder_searchings[synchro_id]); // set ponder
     }
 }
 
@@ -2119,6 +2316,7 @@ void ggs_terminate_ponder(
     bool ponder_searchings[],
     int synchro_id,
     GGS_Ponder_Result_Table *ponder_results,
+    GGS_Ponder_Log *ponder_log,
     Options *options
 ) {
     if (synchro_id < 0) {
@@ -2133,6 +2331,7 @@ void ggs_terminate_ponder(
             n_recorded += ggs_record_ponder_results(ponder_results, results.back());
         }
     }
+    ggs_finish_ponder_log(ponder_log, synchro_id, results, options);
     #if !IS_GGS_TOURNAMENT
     if (n_recorded > 0 && options->show_log) {
         ggs_print_info("stored exact ponder results " + std::to_string(n_recorded), options);
@@ -2161,11 +2360,12 @@ void ggs_terminate_all_ponders(
     std::future<std::vector<Ponder_elem>> ponder_futures[][GGS_N_PONDER_PARALLEL],
     bool ponder_searchings[],
     GGS_Ponder_Result_Table *ponder_results,
+    GGS_Ponder_Log *ponder_log,
     Options *options
 ) {
     for (int i = 0; i < 2; ++i) {
         if (ponder_searchings[i] || ggs_has_valid_ponder_future(ponder_futures, i)) {
-            ggs_terminate_ponder(ponder_futures, ponder_searchings, i, ponder_results, options);
+            ggs_terminate_ponder(ponder_futures, ponder_searchings, i, ponder_results, ponder_log, options);
         }
     }
 }
@@ -2175,13 +2375,14 @@ void ggs_terminate_ponder_if_active(
     bool ponder_searchings[],
     int synchro_id,
     GGS_Ponder_Result_Table *ponder_results,
+    GGS_Ponder_Log *ponder_log,
     Options *options
 ) {
     if (synchro_id < 0 || synchro_id >= 2) {
         return;
     }
     if (ponder_searchings[synchro_id] || ggs_has_valid_ponder_future(ponder_futures, synchro_id)) {
-        ggs_terminate_ponder(ponder_futures, ponder_searchings, synchro_id, ponder_results, options);
+        ggs_terminate_ponder(ponder_futures, ponder_searchings, synchro_id, ponder_results, ponder_log, options);
     }
 }
 
@@ -2327,6 +2528,7 @@ void ggs_client(Options *options) {
     GGS_Move_Hint_Table move_hints;
     GGS_Move_Hint_Table seeded_move_hints;
     GGS_Ponder_Result_Table ponder_results;
+    GGS_Ponder_Log ponder_log;
     Contest_book contest_books[2];
     Contest_root_table contest_root_table;
     if (options->contest_book) {
@@ -2522,7 +2724,8 @@ void ggs_client(Options *options) {
                                 ggs_boards[i][n_discs] = GGS_Board();
                             }
                         }
-                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, &ponder_log, options);
+                        ponder_log = GGS_Ponder_Log(); // a new match never reuses the last match's Ponder
 #if IS_GGS_TOURNAMENT
                         if (!ggs_tt_clean) {
                             transposition_table.init();
@@ -2630,7 +2833,7 @@ void ggs_client(Options *options) {
                             ai_searchings[i] = false;
                             synchro_search_records[i].clear();
                         }
-                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, &ponder_log, options);
                         if (options->ggs_game_log_to_file) {
                             for (int i = 0; i < 2; ++i) {
                                 if (!matches[i].is_initialized()) {
@@ -2734,9 +2937,9 @@ void ggs_client(Options *options) {
                                     }
                                     if (need_to_move) { // Egaroucid should move
                                         if (ggs_search_start_terminates_all_ponders(ggs_board.board.n_discs())) {
-                                            ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+                                            ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, &ponder_log, options);
                                         } else {
-                                            ggs_terminate_ponder_if_active(ponder_futures, ponder_searchings, ggs_board.synchro_id, &ponder_results, options);
+                                            ggs_terminate_ponder_if_active(ponder_futures, ponder_searchings, ggs_board.synchro_id, &ponder_results, &ponder_log, options);
                                         }
                                         if (!ggs_board.board.is_end() && !ai_searchings[ggs_board.synchro_id]) {
 #if GGS_USE_PONDER
@@ -2747,6 +2950,7 @@ void ggs_client(Options *options) {
 #else
                                             const thread_id_t search_thread_id = THREAD_ID_NONE;
 #endif
+                                            ggs_print_info(ggs_ponder_check_text(ggs_board, ponder_log.summaries, 2), options);
                                             ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, ggs_board.synchro_id, search_thread_id, move_hints, ponder_results, synchro_search_records, &contest_books[ggs_board.synchro_id], &contest_root_table, options);
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
                                             new_calculation_start = true;
@@ -2761,7 +2965,7 @@ void ggs_client(Options *options) {
                                             const GGS_Board ponder_board = redirected ? ggs_boards[ponder_slot][ggs_boards_n_discs[ponder_slot]] : ggs_board;
                                             Board ponder_position = ponder_board.board;
                                             if (!ponder_position.is_end() && !(redirected && ponder_searchings[ponder_slot])) {
-                                                ggs_start_ponder(ponder_futures, ponder_board.board, options->show_log, ponder_slot, ponder_searchings, &ponder_results, options);
+                                                ggs_start_ponder(ponder_futures, ponder_board, options->show_log, ponder_slot, ponder_searchings, &ponder_results, &ponder_log, options);
                                                 new_calculation_start = true;
                                                 if (redirected) {
                                                     ggs_print_info("ponder redirected from " + ggs_board.game_id + " to " + ponder_board.game_id + " where the opponent is thinking", options);
@@ -2775,15 +2979,16 @@ void ggs_client(Options *options) {
                                 } else { // non-synchro game
                                     playing_synchro_game = false;
                                     if (need_to_move) { // Egaroucid should move
-                                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, options);
+                                        ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, &ponder_log, options);
                                         if (!ggs_board.board.is_end()) {
+                                            ggs_print_info(ggs_ponder_check_text(ggs_board, ponder_log.summaries, 2), options);
                                             ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, GGS_NON_SYNCHRO_ID, THREAD_ID_NONE, move_hints, ponder_results, synchro_search_records, &contest_books[GGS_NON_SYNCHRO_ID], &contest_root_table, options);
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, GGS_NON_SYNCHRO_ID, ponder_searchings);
                                         }
                                     } else { // Opponent's move
 #if GGS_USE_PONDER
                                         if (!ggs_any_ai_searching(ai_searchings) && !ggs_board.board.is_end()) {
-                                            ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings, &ponder_results, options);
+                                            ggs_start_ponder(ponder_futures, ggs_board, options->show_log, ggs_board.synchro_id, ponder_searchings, &ponder_results, &ponder_log, options);
                                             // ponder_futures[GGS_NON_SYNCHRO_ID] = std::async(std::launch::async, ai_ponder, ggs_board.board, options->show_log, THREAD_ID_NONE, &ponder_searchings[GGS_NON_SYNCHRO_ID]); // set ponder
                                         }
 #endif
@@ -2837,6 +3042,7 @@ void ggs_client(Options *options) {
                                 std::vector<Ponder_elem> ponder_result = ponder_futures[i][ponder_i].get();
                                 int n_recorded = ggs_record_ponder_results(&ponder_results, ponder_result);
                                 ponder_searchings[i] = false;
+                                ggs_finish_ponder_log(&ponder_log, i, {ponder_result}, options);
                                 #if !IS_GGS_TOURNAMENT
                                 ggs_print_info("ponder end " + std::to_string(i), options);
                                 if (n_recorded > 0) {
