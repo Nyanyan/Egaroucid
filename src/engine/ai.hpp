@@ -89,11 +89,17 @@ constexpr bool PONDER_USE_MAIN_SCHEDULE = false;
 #endif
 constexpr int PONDER_MAIN_SCHEDULE_MIN_N_EMPTY = 36;
 
+// Choose main-schedule Ponder children by the contender rules of
+// ponder_focus.hpp instead of UCB: near-best moves (within the margin in
+// discs at the same stage) advance together, others wait. On by default for
+// the 3-minute profile with a 1-disc margin, the setting measured as ahead of
+// UCB (reports/20261007_4_ggs_focused_ponder_replay.md). The 1-minute main
+// search switches to the endgame earlier than the schedule, so it stays off.
 #ifndef EGAROUCID_PONDER_FOCUS
-    #define EGAROUCID_PONDER_FOCUS 0
+    #define EGAROUCID_PONDER_FOCUS IS_GGS_3MIN
 #endif
 #ifndef EGAROUCID_PONDER_FOCUS_MARGIN
-    #define EGAROUCID_PONDER_FOCUS_MARGIN 2
+    #define EGAROUCID_PONDER_FOCUS_MARGIN 1
 #endif
 #ifndef EGAROUCID_PONDER_VISIT_LOG
     #define EGAROUCID_PONDER_VISIT_LOG 0
