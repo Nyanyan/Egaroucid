@@ -169,6 +169,24 @@ constexpr bool should_extend_pv_to_end(
         n_empties <= pv_extension_empties;
 }
 
+// PV extensions per thread_id. Lazy SMP workers, YBWC tasks and shared split
+// workers search on their own Search copies, whose n_pv_extensions never reach
+// the root search, but they all carry the root's thread_id.
+inline std::atomic<uint64_t> pv_extension_counts[THREAD_ID_SIZE];
+
+inline void count_pv_extension(const thread_id_t thread_id) {
+    if (0 <= thread_id && thread_id < THREAD_ID_SIZE) {
+        pv_extension_counts[thread_id].fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
+inline uint64_t get_pv_extension_count(const thread_id_t thread_id) {
+    if (0 <= thread_id && thread_id < THREAD_ID_SIZE) {
+        return pv_extension_counts[thread_id].load(std::memory_order_relaxed);
+    }
+    return 0;
+}
+
 inline Search_node_type search_child_node_type(const Search_node_type parent_node_type) {
     return is_pv_node(parent_node_type) ? SEARCH_NODE_PV : SEARCH_NODE_NONPV;
 }

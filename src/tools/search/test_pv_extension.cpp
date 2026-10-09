@@ -100,6 +100,9 @@ void test_real_search_enters_extension() {
     global_searching = true;
     bool searching = true;
     Search search(&board, MPC_100_LEVEL, false, false);
+    search.thread_id = 3;
+    const uint64_t thread_count_before = get_pv_extension_count(3);
+    const uint64_t other_count_before = get_pv_extension_count(THREAD_ID_NONE);
     const auto result = first_nega_scout_legal(
         &search,
         -SCORE_MAX,
@@ -114,6 +117,14 @@ void test_real_search_enters_extension() {
     require(searching && global_searching, "regression search completes");
     require(result.second != MOVE_UNDEFINED, "regression search returns a move");
     require(search.n_pv_extensions > 0, "regression search enters PV extension");
+    require(
+        get_pv_extension_count(3) - thread_count_before == search.n_pv_extensions,
+        "the thread_id total counts every extension of a single-thread search"
+    );
+    require(
+        get_pv_extension_count(THREAD_ID_NONE) == other_count_before,
+        "another thread_id's total is unchanged"
+    );
 
     transposition_table.init();
     searching = true;

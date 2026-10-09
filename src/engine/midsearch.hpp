@@ -211,6 +211,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
             node_type
         )) {
             ++search->n_pv_extensions;
+            count_pv_extension(search->thread_id);
             return nega_scout_node(
                 search,
                 alpha,

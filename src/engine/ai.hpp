@@ -1114,6 +1114,7 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             }
         }
         const uint64_t iteration_start = tim();
+        const uint64_t pv_extensions_before = get_pv_extension_count(thread_id);
         bool main_is_end_search = false;
         if (main_depth >= max_depth) {
             main_is_end_search = true;
@@ -1381,7 +1382,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
             } catch (const std::exception &e) {
             }
             if (show_log) {
-                std::cerr << "terminated " << tim() - strt << " ms" << std::endl;
+                std::cerr << "terminated " << tim() - strt << " ms"
+                          << " pv_ext " << get_pv_extension_count(thread_id) - pv_extensions_before << std::endl;
             }
         }
         result->nodes += main_search.n_nodes;
@@ -1714,7 +1716,8 @@ void iterative_deepening_search_time_limit(Board board, int alpha, int beta, boo
                 report_search_progress(result->depth, result->probability, result->value);
             }
             if (show_log) {
-                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(result->policy) << verify_log << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps << std::endl;
+                std::cerr << "value " << result->value << " (raw " << id_result.first << ") policy " << idx_to_coord(result->policy) << verify_log << " n_nodes " << result->nodes << " time " << result->time << " NPS " << result->nps
+                          << " pv_ext " << get_pv_extension_count(thread_id) - pv_extensions_before << std::endl;
             }
 #if USE_YBWC_SPLIT_STATISTICS
             if (show_log && main_is_end_search) {
