@@ -3393,9 +3393,12 @@ inline const Ponder_elem* ai_time_limit_ggs_late_ambiguity_fallback(
 // Plays the close root candidates out before the main search. It compares the
 // candidates with each other only: in a synchro match one game's value says
 // little about the match, so neither the gate, the time nor the override
-// depends on it. Build with -DEGAROUCID_GGS_SELFPLAY_RESOLVE=0 to turn it off.
+// depends on it. Disabled by default: in a warm-TT replay of 40 3-minute pairs
+// its TT records did not speed up or change the main search, while giving its
+// time to the main search at 50/49 empties completed 3.4 more iterations.
+// Build with -DEGAROUCID_GGS_SELFPLAY_RESOLVE=1 to turn it on.
 #ifndef EGAROUCID_GGS_SELFPLAY_RESOLVE
-    #define EGAROUCID_GGS_SELFPLAY_RESOLVE 1
+    #define EGAROUCID_GGS_SELFPLAY_RESOLVE 0
 #endif
 constexpr bool AI_TL_GGS_SELFPLAY_RESOLVE_ENABLED = EGAROUCID_GGS_SELFPLAY_RESOLVE != 0;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY = 36;
