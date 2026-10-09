@@ -888,6 +888,19 @@ void ggs_print_info(std::string str, Options *options) { // yellow
     ggs_print_colored_lines(GGS_INFO_HEADER, str, options, "\033[33m");
 }
 
+// Search diagnostics go to the search log (std::cerr) next to the searches
+// they describe, not to the GGS log and console. The search progress lines
+// stay on the GGS side on purpose. One write per line keeps a line whole.
+std::mutex ggs_search_log_mutex;
+
+void ggs_print_search_log(const std::string &str, Options *options) {
+    if (!ggs_engine_show_log(options)) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(ggs_search_log_mutex);
+    std::cerr << (str + "\n") << std::flush;
+}
+
 void ggs_report_error(std::string str, Options *options) {
     std::cout << "[ERROR] " << str << std::endl;
     ggs_write_log_lines(GGS_INFO_HEADER, "[ERROR] " + str, options);
@@ -2200,6 +2213,9 @@ std::string ggs_ponder_summary_text(const GGS_Ponder_Summary &summary) {
 // compared because before the games diverge the root lies in the other game.
 std::string ggs_ponder_check_text(const GGS_Board &ggs_board, const GGS_Ponder_Summary summaries[], int n_summaries) {
     const std::string key = ggs_board.board.to_str(ggs_board.player_to_move);
+    // The board makes the line self-contained in the search log, where no GGS
+    // board updates are written.
+    const std::string board_text = " board " + key;
     std::string text =
         "ponder check game " + ggs_board.game_id +
         " discs " + std::to_string(ggs_board.board.n_discs()) +
@@ -2223,7 +2239,8 @@ std::string ggs_ponder_check_text(const GGS_Board &ggs_board, const GGS_Ponder_S
                     " depth " + ggs_ponder_depth_text(child.count, child.depth, child.mpc_level) +
                     " kind " + std::string(1, child.kind) +
                     " elapsed " + std::to_string(summary->elapsed) +
-                    " ponder_game " + summary->game_id;
+                    " ponder_game " + summary->game_id +
+                    board_text;
             }
         }
         if (summary->root_key == key) {
@@ -2231,10 +2248,11 @@ std::string ggs_ponder_check_text(const GGS_Board &ggs_board, const GGS_Ponder_S
                 "root visits " + std::to_string(summary->visits) +
                 " top " + (summary->children.empty() ? std::string("pa") : idx_to_coord(summary->children.front().policy)) +
                 " elapsed " + std::to_string(summary->elapsed) +
-                " ponder_game " + summary->game_id;
+                " ponder_game " + summary->game_id +
+                board_text;
         }
     }
-    return text + "none";
+    return text + "none" + board_text;
 }
 
 void ggs_begin_ponder_log(GGS_Ponder_Log *ponder_log, int slot, const GGS_Board &ponder_board) {
@@ -2276,7 +2294,7 @@ void ggs_finish_ponder_log(GGS_Ponder_Log *ponder_log, int slot, const std::vect
     summary.sequence = ++ponder_log->sequence;
     ponder_log->summaries[slot] = summary;
     target.active = false;
-    ggs_print_info(ggs_ponder_summary_text(summary), options);
+    ggs_print_search_log(ggs_ponder_summary_text(summary), options);
 }
 
 void ggs_terminate_ponder(
@@ -2950,7 +2968,7 @@ void ggs_client(Options *options) {
 #else
                                             const thread_id_t search_thread_id = THREAD_ID_NONE;
 #endif
-                                            ggs_print_info(ggs_ponder_check_text(ggs_board, ponder_log.summaries, 2), options);
+                                            ggs_print_search_log(ggs_ponder_check_text(ggs_board, ponder_log.summaries, 2), options);
                                             ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, ggs_board.synchro_id, search_thread_id, move_hints, ponder_results, synchro_search_records, &contest_books[ggs_board.synchro_id], &contest_root_table, options);
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, ggs_board.synchro_id, ponder_searchings);
                                             new_calculation_start = true;
@@ -2981,7 +2999,7 @@ void ggs_client(Options *options) {
                                     if (need_to_move) { // Egaroucid should move
                                         ggs_terminate_all_ponders(ponder_futures, ponder_searchings, &ponder_results, &ponder_log, options);
                                         if (!ggs_board.board.is_end()) {
-                                            ggs_print_info(ggs_ponder_check_text(ggs_board, ponder_log.summaries, 2), options);
+                                            ggs_print_search_log(ggs_ponder_check_text(ggs_board, ponder_log.summaries, 2), options);
                                             ggs_launch_ai_search(ai_futures, ai_searchings, ggs_boards_searching, ggs_board, GGS_NON_SYNCHRO_ID, THREAD_ID_NONE, move_hints, ponder_results, synchro_search_records, &contest_books[GGS_NON_SYNCHRO_ID], &contest_root_table, options);
                                             // ggs_start_ponder(ponder_futures, ggs_board.board, options->show_log, GGS_NON_SYNCHRO_ID, ponder_searchings);
                                         }

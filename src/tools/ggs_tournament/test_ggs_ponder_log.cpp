@@ -1,7 +1,8 @@
 /*
     Egaroucid Project
 
-    Regression tests for the "ponder summary" and "ponder check" GGS log lines.
+    Regression tests for the "ponder summary" and "ponder check" lines, which
+    the GGS client writes to the search log.
 
     Example:
         clang++ -O2 -mtune=native -march=native -pthread -std=c++20 \
@@ -109,6 +110,10 @@ void test_summary_text() {
     require_equal(ggs_ponder_summary_text(summary), expected, "summary line");
 }
 
+std::string board_key(const GGS_Board &ggs_board) {
+    return ggs_board.board.to_str(ggs_board.player_to_move);
+}
+
 void test_check_relations() {
     const Board root = convert_board_from_str(START_BOARD).first;
     const std::vector<Ponder_elem> results = make_results(root);
@@ -121,7 +126,7 @@ void test_check_relations() {
     require_equal(
         ggs_ponder_check_text(child, summaries, 2),
         "ponder check game .68.1 discs 15 relation child rank 2/" + std::to_string(results.size()) +
-            " visits 3 depth 40@93% kind e elapsed 1234 ponder_game .68.1",
+            " visits 3 depth 40@93% kind e elapsed 1234 ponder_game .68.1 board " + board_key(child),
         "child relation"
     );
 
@@ -130,7 +135,7 @@ void test_check_relations() {
     require_equal(
         ggs_ponder_check_text(unvisited, summaries, 2),
         "ponder check game .68.1 discs 15 relation child rank 4/" + std::to_string(results.size()) +
-            " visits 0 depth 0@0% kind m elapsed 1234 ponder_game .68.1",
+            " visits 0 depth 0@0% kind m elapsed 1234 ponder_game .68.1 board " + board_key(unvisited),
         "unvisited child relation"
     );
 
@@ -139,16 +144,16 @@ void test_check_relations() {
     require_equal(
         ggs_ponder_check_text(same, summaries, 2),
         "ponder check game .68.0 discs 14 relation root visits 10 top " + idx_to_coord(results[0].flip.pos) +
-            " elapsed 1234 ponder_game .68.1",
+            " elapsed 1234 ponder_game .68.1 board " + START_BOARD,
         "root relation"
     );
 
     // The same discs with the other side to move are a different position.
     const GGS_Board other_side = make_ggs_board(".68.0", root, WHITE);
-    require_equal(ggs_ponder_check_text(other_side, summaries, 2), "ponder check game .68.0 discs 14 relation none", "side to move matters");
+    require_equal(ggs_ponder_check_text(other_side, summaries, 2), "ponder check game .68.0 discs 14 relation none board " + board_key(other_side), "side to move matters");
 
     GGS_Ponder_Summary empty[2];
-    require_equal(ggs_ponder_check_text(child, empty, 2), "ponder check game .68.1 discs 15 relation none", "no finished Ponder");
+    require_equal(ggs_ponder_check_text(child, empty, 2), "ponder check game .68.1 discs 15 relation none board " + board_key(child), "no finished Ponder");
 }
 
 void test_newest_summary_wins() {
