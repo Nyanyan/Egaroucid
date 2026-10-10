@@ -300,14 +300,16 @@ def normalized_board(board_str: str) -> str:
 def find_client_logs(log_paths: list[Path], extra: list[Path], recursive: bool) -> list[Path]:
     """Client logs (*_ggs.log) next to the game logs: in the given directories and their parents."""
     found: set[Path] = set()
+    if extra:
+        for path in extra:
+            found.update(path.glob("**/*_ggs.log") if path.is_dir() else [path])
+        return sorted(path.resolve() for path in found if path.is_file())
     for path in log_paths:
         directory = path if path.is_dir() else path.parent
         if path.is_dir():
             found.update(directory.glob("**/*_ggs.log" if recursive else "*_ggs.log"))
         found.update(directory.glob("*_ggs.log"))
         found.update(directory.parent.glob("*_ggs.log"))
-    for path in extra:
-        found.update(path.glob("**/*_ggs.log") if path.is_dir() else [path])
     return sorted(path.resolve() for path in found if path.is_file())
 
 

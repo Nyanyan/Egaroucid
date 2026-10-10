@@ -102,6 +102,14 @@ class StoneLossTests(unittest.TestCase):
             self.assertEqual(rows[0]['my_loss_moves'], '')
             self.assertEqual(rows[0]['my_loss_total'], '')
 
+    def test_explicit_client_log_restricts_lookup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            chosen, other = root / 'chosen_ggs.log', root / 'other_ggs.log'
+            chosen.touch()
+            other.touch()
+            self.assertEqual(ggs.find_client_logs([root], [chosen], recursive=True), [chosen.resolve()])
+
     def test_both_values_must_be_exact(self):
         move = self.move(self.game('0', 'X', 0), -2, 0, '60@100%')
         self.assertEqual(ggs.loss_certainty(move), '完全読みで確認')
