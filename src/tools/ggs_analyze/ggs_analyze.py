@@ -540,6 +540,7 @@ class Schedule:
     end_empties: int
     exact_empties: int
     end_probs: list[str]
+    end_sizes: list[int] | None = None
     phases: list[Phase] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -549,13 +550,22 @@ class Schedule:
         n_end = self.end_empties - self.exact_empties
         n_probs = len(self.end_probs)
         if n_end > 0 and n_probs > 0:
-            base, remainder = divmod(n_end, n_probs)
-            sizes = [base + (1 if i >= n_probs - remainder else 0) for i in range(n_probs)]
+            if self.end_sizes is not None:
+                if (len(self.end_sizes) != n_probs or sum(self.end_sizes) != n_end
+                        or any(size <= 0 for size in self.end_sizes)):
+                    raise ValueError("終盤区間の幅が空きマス数・確率の指定と一致しません")
+                sizes = self.end_sizes
+            else:
+                base, remainder = divmod(n_end, n_probs)
+                sizes = [base + (1 if i >= n_probs - remainder else 0) for i in range(n_probs)]
             empties_hi = self.end_empties
             for prob, size in zip(self.end_probs, sizes):
                 if size == 0:
                     continue
-                phases.append(Phase("end", empties_hi, empties_hi - size + 1, 60, prob))
+                if phases and phases[-1].kind == "end" and phases[-1].prob == prob:
+                    phases[-1].empties_lo = empties_hi - size + 1
+                else:
+                    phases.append(Phase("end", empties_hi, empties_hi - size + 1, 60, prob))
                 empties_hi -= size
         if self.exact_empties >= 1:
             phases.append(Phase("exact", self.exact_empties, 1, 60, "100"))
@@ -567,6 +577,37 @@ class Schedule:
             move_start, move_end = phase.move_range
             args += ["-dpr", str(move_start), str(move_end), str(phase.depth), phase.prob]
         return args
+
+
+@dataclass(frozen=True)
+class SearchProfile:
+    label: str
+    mid_depth: int
+    mid_prob: str
+    end_empties: int
+    exact_empties: int
+    end_probs: tuple[str, ...]
+    end_sizes: tuple[int, ...]
+
+    def schedule(self) -> Schedule:
+        return Schedule(self.mid_depth, self.mid_prob, self.end_empties, self.exact_empties,
+                        list(self.end_probs), list(self.end_sizes))
+
+
+SEARCH_PROFILES = {
+    "original": SearchProfile("最初の設定・30マス空きまで完全読み", 35, "74", 43, 30,
+                              ("88", "93", "98", "99"), (3, 3, 3, 4)),
+    "exact32": SearchProfile("32マス空きまで完全読み", 35, "88", 46, 32,
+                             ("74", "88", "93", "98", "99"), (6, 2, 2, 2, 2)),
+    "exact36": SearchProfile("36マス空きまで完全読み", 39, "88", 55, 36,
+                             ("74", "88", "93", "98", "99"), (4, 4, 4, 4, 3)),
+}
+DEFAULT_SEARCH_PROFILE = "exact36"
+
+
+def schedule_from_args(args: argparse.Namespace) -> Schedule:
+    return Schedule(args.mid_depth, args.mid_prob, args.end_empties, args.exact_empties,
+                    args.end_probs, args.end_sizes)
 
 
 # ---------------------------------------------------------------------------
@@ -1306,18 +1347,23 @@ def parse_args() -> argparse.Namespace:
     select.add_argument("--max-games", type=int, help="解析する対局数の上限 (新しい順ではなく古い順)")
     select.add_argument("--list", action="store_true", help="抽出結果を表示するだけで解析しない")
     search = parser.add_argument_group("解析設定")
+    search.add_argument("--profile", choices=tuple(SEARCH_PROFILES), default=DEFAULT_SEARCH_PROFILE,
+                        help=f"探索設定のプロファイル (既定: {DEFAULT_SEARCH_PROFILE})")
     search.add_argument("--engine", type=Path, default=DEFAULT_ENGINE, help=f"Egaroucid for Console の実行ファイル (既定: {DEFAULT_ENGINE})")
     search.add_argument("--threads", type=int, help="1エンジンあたりのスレッド数 (既定: 論理コア数 / --jobs)")
     search.add_argument("--jobs", type=int, default=1, help="同時に動かすエンジンの数 (既定: 1)")
     search.add_argument("--hash", type=int, default=DEFAULT_HASH_LEVEL,
                         help=f"置換表のハッシュレベル (-hash, 既定: {DEFAULT_HASH_LEVEL})")
     search.add_argument("--book", action="store_true", help="book を使う (既定では使わず全局面を探索)")
-    search.add_argument("--mid-depth", type=int, default=35, help="中盤探索の深さ (既定: 35)")
-    search.add_argument("--mid-prob", default="74", choices=VALID_PROBS, help="中盤探索の MPC 確率 (既定: 74)")
-    search.add_argument("--end-empties", type=int, default=43, help="終盤読み切りを始める空きマス数 (既定: 43)")
-    search.add_argument("--exact-empties", type=int, default=30, help="完全読みを始める空きマス数 (既定: 30)")
-    search.add_argument("--end-probs", default="88,93,98,99",
-                        help="終盤読み切り区間を前から順に分割して使う MPC 確率 (既定: 88,93,98,99)")
+    search.add_argument("--mid-depth", type=int, help="中盤探索の深さ (省略時はプロファイルの値)")
+    search.add_argument("--mid-prob", choices=VALID_PROBS, help="中盤探索の MPC 確率 (省略時はプロファイルの値)")
+    search.add_argument("--end-empties", type=int, help="終盤読み切りを始める空きマス数 (省略時はプロファイルの値)")
+    search.add_argument("--exact-empties", type=int, help="完全読みを始める空きマス数 (省略時はプロファイルの値)")
+    search.add_argument("--end-probs",
+                        help="終盤読み切り区間を前から順に分割して使う MPC 確率。繰り返しで区間を広げられます "
+                             "(省略時はプロファイルの値)")
+    search.add_argument("--end-sizes", help="確率ごとの区間幅を空きマス数の多い側からカンマ区切りで指定 "
+                        "(例: 4,4,4,4,3)")
     search.add_argument("--engine-arg", action="append", default=[], help="エンジンに追加で渡す引数 (例: --engine-arg=-seed --engine-arg=1)")
     output = parser.add_argument_group("出力")
     output.add_argument("--out", type=Path, default=DEFAULT_OUT_DIR, help=f"出力ディレクトリ (既定: {DEFAULT_OUT_DIR})")
@@ -1331,6 +1377,12 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     args.me = args.me or list(DEFAULT_ME)
+    profile = SEARCH_PROFILES[args.profile]
+    for name in ("mid_depth", "mid_prob", "end_empties", "exact_empties"):
+        if getattr(args, name) is None:
+            setattr(args, name, getattr(profile, name))
+    if args.end_probs is None:
+        args.end_probs = ",".join(profile.end_probs)
     args.end_probs = [prob.strip() for prob in args.end_probs.split(",") if prob.strip()]
     for prob in args.end_probs:
         if prob not in VALID_PROBS:
@@ -1339,6 +1391,20 @@ def parse_args() -> argparse.Namespace:
         parser.error("--mid-depth は 1〜60 にしてください")
     if not 0 <= args.exact_empties <= args.end_empties <= 60:
         parser.error("0 <= --exact-empties <= --end-empties <= 60 にしてください")
+    if args.end_empties > args.exact_empties and not args.end_probs:
+        parser.error("終盤読み切り区間を使う場合は --end-probs に確率を指定してください")
+    if args.end_sizes is not None:
+        try:
+            args.end_sizes = [int(size.strip()) for size in args.end_sizes.split(",")]
+        except ValueError:
+            parser.error("--end-sizes は正の整数をカンマ区切りで指定してください")
+        if (len(args.end_sizes) != len(args.end_probs) or any(size <= 0 for size in args.end_sizes)
+                or sum(args.end_sizes) != args.end_empties - args.exact_empties):
+            parser.error("--end-sizes は確率の数と同じ個数にし、合計を読み切り開始と完全読み開始の空きマス数の差にしてください")
+    elif (args.end_empties, args.exact_empties, tuple(args.end_probs)) == (
+            profile.end_empties, profile.exact_empties, profile.end_probs):
+        args.end_sizes = list(profile.end_sizes)
+    args.profile_modified = schedule_from_args(args).dpr_args() != profile.schedule().dpr_args()
     if args.jobs < 1:
         parser.error("--jobs は 1 以上にしてください")
     if args.threads is None:
@@ -1355,7 +1421,11 @@ def main() -> int:
         except AttributeError:
             pass
     args = parse_args()
-    schedule = Schedule(args.mid_depth, args.mid_prob, args.end_empties, args.exact_empties, args.end_probs)
+    schedule = schedule_from_args(args)
+    profile_text = f"{args.profile}（{SEARCH_PROFILES[args.profile].label}）"
+    if args.profile_modified:
+        profile_text += "・個別指定で変更あり"
+    log(f"探索プロファイル: {profile_text}")
 
     stats = SelectionStats()
     files = collect_log_files(args.logs, recursive=not args.no_recursive)
@@ -1486,6 +1556,7 @@ def main() -> int:
         engine_lines = [f"エンジン: `{engine_path}` ({engine_desc})",
                         f"スレッド数: {args.threads} × 並列 {args.jobs} / book: {'使用' if args.book else '不使用'} / "
                         f"hash level {args.hash}"]
+    engine_lines.append(f"探索プロファイル: {profile_text}")
 
     engines: list[Engine] = []
     engines_lock = threading.Lock()
@@ -1535,7 +1606,8 @@ def main() -> int:
         seconds = sum(move["seconds"] for move in moves if not move.get("reused_from"))  # includes interrupted runs
         path.write_text(json.dumps({"game_id": record.game_id, "label": game_label(record), "source": str(record.source),
                                     "settings_key": settings_key, "seconds": seconds, "engine": engine_desc,
-                                    "command": cmd, "moves": moves},
+                                    "command": cmd, "profile": args.profile,
+                                    "profile_modified": args.profile_modified, "moves": moves},
                                    ensure_ascii=False, indent=1), encoding="utf-8")
         analyses[no] = GameAnalysis(no, game, moves, game_replay.final_cells, game_replay.terminal, seconds)
         n_reused = sum(1 for move in moves if move.get("reused_from"))

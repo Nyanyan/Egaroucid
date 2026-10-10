@@ -1,6 +1,7 @@
 import argparse
 import csv
 import queue
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -143,6 +144,77 @@ class StoneLossTests(unittest.TestCase):
             self.assertEqual([m['loss'] for m in moves], ['2', '2'])
             self.assertNotIn('result_worsened', moves[0])
             self.assertFalse((out / 'games.csv').exists())
+
+
+class ScheduleTests(unittest.TestCase):
+    def parsed(self, *options):
+        with patch.object(sys, 'argv', ['ggs_analyze.py', 'fixture.txt', *options]):
+            return ggs.parse_args()
+
+    def test_all_three_profiles_cover_every_empty_count_as_requested(self):
+        expected = {
+            'original': [(1, 30, 'exact', 60, '100'), (31, 34, 'end', 60, '99'),
+                         (35, 37, 'end', 60, '98'), (38, 40, 'end', 60, '93'),
+                         (41, 43, 'end', 60, '88'), (44, 60, 'mid', 35, '74')],
+            'exact32': [(1, 32, 'exact', 60, '100'), (33, 34, 'end', 60, '99'),
+                        (35, 36, 'end', 60, '98'), (37, 38, 'end', 60, '93'),
+                        (39, 40, 'end', 60, '88'), (41, 46, 'end', 60, '74'),
+                        (47, 60, 'mid', 35, '88')],
+            'exact36': [(1, 36, 'exact', 60, '100'), (37, 39, 'end', 60, '99'),
+                        (40, 43, 'end', 60, '98'), (44, 47, 'end', 60, '93'),
+                        (48, 51, 'end', 60, '88'), (52, 55, 'end', 60, '74'),
+                        (56, 60, 'mid', 39, '88')],
+        }
+        for name, ranges in expected.items():
+            with self.subTest(profile=name):
+                args = self.parsed('--profile', name)
+                self.assertFalse(args.profile_modified)
+                schedule = ggs.schedule_from_args(args)
+                for empties in range(1, 61):
+                    phases = [phase for phase in schedule.phases if phase.empties_lo <= empties <= phase.empties_hi]
+                    self.assertEqual(len(phases), 1, (name, empties))
+                    phase = phases[0]
+                    setting = next((kind, depth, prob) for lo, hi, kind, depth, prob in ranges if lo <= empties <= hi)
+                    self.assertEqual((phase.kind, phase.depth, phase.prob), setting, (name, empties))
+
+    def test_default_profile_is_exact36_and_console_ranges_are_correct(self):
+        args = self.parsed()
+        self.assertEqual(args.profile, 'exact36')
+        schedule = ggs.schedule_from_args(args)
+        self.assertEqual(schedule.dpr_args(), [
+            '-dpr', '1', '5', '39', '88', '-dpr', '6', '9', '60', '74',
+            '-dpr', '10', '13', '60', '88', '-dpr', '14', '17', '60', '93',
+            '-dpr', '18', '21', '60', '98', '-dpr', '22', '24', '60', '99',
+            '-dpr', '25', '60', '60', '100'])
+
+    def test_profiles_preserve_existing_cache_keys_and_are_isolated(self):
+        legacy = {'original': ggs.Schedule(35, '74', 43, 30, ['88', '93', '98', '99']),
+                  'exact32': ggs.Schedule(35, '88', 46, 32, ['74', '74', '74', '88', '93', '98', '99'])}
+        game = StoneLossTests().game('0', 'X', 0)
+        for name, previous in legacy.items():
+            named = ggs.schedule_from_args(self.parsed('--profile', name))
+            self.assertEqual(ggs.schedule_cache_key(previous, False), ggs.schedule_cache_key(named, False))
+            self.assertEqual(ggs.game_cache_key(game, previous, False), ggs.game_cache_key(game, named, False))
+        keys = {ggs.schedule_cache_key(ggs.schedule_from_args(self.parsed('--profile', name)), False)
+                for name in ggs.SEARCH_PROFILES}
+        self.assertEqual(len(keys), 3)
+
+    def test_midgame_override_keeps_profile_endgame_ranges(self):
+        args = self.parsed('--profile', 'exact36', '--mid-depth', '21')
+        self.assertTrue(args.profile_modified)
+        actual = ggs.schedule_from_args(args)
+        self.assertEqual(actual.phases[0].depth, 21)
+        self.assertEqual(actual.phases[1:], ggs.SEARCH_PROFILES['exact36'].schedule().phases[1:])
+
+    def test_old_manual_options_still_reproduce_exact32(self):
+        args = self.parsed('--mid-depth', '35', '--mid-prob', '88', '--end-empties', '46',
+                           '--exact-empties', '32', '--end-probs', '74,74,74,88,93,98,99')
+        self.assertEqual(ggs.schedule_from_args(args).dpr_args(), ggs.SEARCH_PROFILES['exact32'].schedule().dpr_args())
+
+    def test_invalid_range_widths_are_rejected(self):
+        with patch.object(sys, 'stderr'), self.assertRaises(SystemExit) as error:
+            self.parsed('--profile', 'exact36', '--end-sizes', '4,4,4,4,4')
+        self.assertEqual(error.exception.code, 2)
 
 
 class ETATests(unittest.TestCase):
