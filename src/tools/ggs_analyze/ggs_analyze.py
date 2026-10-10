@@ -742,10 +742,6 @@ def signed(value: int | None) -> str:
     return f"+{value}" if value > 0 else str(value)
 
 
-def sign(value: int) -> int:
-    return (value > 0) - (value < 0)
-
-
 def schedule_cache_key(schedule: Schedule, use_book: bool) -> str:
     payload = {"version": CACHE_VERSION, "dpr": schedule.dpr_args(), "book": use_book}
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
@@ -923,62 +919,12 @@ class GameAnalysis:
     terminal: bool
     seconds: float
 
-    def my_eval(self, move: dict) -> int:
-        """Evaluation of the position before ``move`` from my point of view."""
-        return move["best_score"] if move["is_me"] else -move["best_score"]
-
-    @property
-    def start_eval(self) -> int | None:
-        return self.my_eval(self.moves[0]) if self.moves else None
-
-    @property
-    def final_eval(self) -> int | None:
-        """Evaluation after the last move from my point of view (the final score if the game reached the end)."""
-        if not self.moves:
-            return None
-        last = self.moves[-1]
-        return last["played_score"] if last["is_me"] else -last["played_score"]
-
-    @property
-    def lost_off_board(self) -> bool:
-        """The game ended early (time out, resignation, ...) with a result worse than the board evaluation."""
-        return not self.terminal and self.final_eval is not None and sign(self.final_eval) > sign(self.game.my_score)
-
     def side_moves(self, is_me: bool) -> list[dict]:
         return [move for move in self.moves if move["is_me"] == is_me]
 
-    def worsened(self, move: dict) -> bool:
-        return move["loss"] > 0 and sign(move["best_score"]) > sign(move["played_score"])
-
-    @property
-    def decisive(self) -> dict | None:
-        candidates = [move for move in self.side_moves(True) if self.worsened(move)]
-        return candidates[-1] if candidates else None
-
-    @property
-    def max_loss_move(self) -> dict | None:
-        mine = [move for move in self.side_moves(True) if move["loss"] > 0]
-        return max(mine, key=lambda move: (move["loss"], -move["index"])) if mine else None
-
-
-def side_stats(moves: list[dict], threshold: int) -> dict[str, float]:
-    losses = [move["loss"] for move in moves]
-    return {
-        "moves": len(moves),
-        "mistakes": sum(1 for loss in losses if loss >= threshold),
-        "inaccuracies": sum(1 for loss in losses if 0 < loss < threshold),
-        "loss_total": sum(losses),
-        "loss_avg": sum(losses) / len(losses) if losses else 0.0,
-    }
-
-
-def result_text(game: SelectedGame) -> str:
-    if game.my_score < 0:
-        return f"負け ({game.my_score})"
-    if game.my_score == 0:
-        return "引き分け (0)"
-    return f"勝ち (+{game.my_score})"
-
+    def loss_moves(self, is_me: bool = True) -> list[dict]:
+        """Every move that loses stones, regardless of the game's predicted result."""
+        return [move for move in self.side_moves(is_me) if move["loss"] > 0]
 
 def match_text(game: SelectedGame) -> str:
     if game.match_size > 1:
@@ -990,13 +936,8 @@ def count_matches(games, reason: str | None = None) -> int:
     return len({game.match_no for game in games if reason is None or game.reason == reason})
 
 
-def discs_before(move: dict) -> int:
-    """Number of discs on the board before the move."""
-    return 64 - move["empties"]
-
-
 def move_label(move: dict) -> str:
-    return f"{move['index'] + 1}手目 (石数{discs_before(move)}・{move['empties']}空き) {color_name(move['side'])} {move['played']}"
+    return f"{move['index'] + 1}手目（{move['empties']}マス空き）{color_name(move['side'])} {move['played']}"
 
 
 def game_search_text(move: dict) -> str:
@@ -1019,65 +960,13 @@ def game_time_text(move: dict) -> str:
     return f"{info['time_ms'] / 1000:.1f}秒" if info else "-"
 
 
-GAME_DEPTH_EDGES = (0, 20, 25, 30, 35, 61)
-
-
-def game_search_category(move: dict) -> tuple[tuple, str]:
-    """(sort key, label) of the kind of in-game search that chose the move."""
-    info = move.get("game")
-    if not info:
-        return (9, 0.0), "不明 (クライアントログなし)"
-    if info["depth"].startswith("-"):
-        return (8, 0.0), game_search_text(move)
-    match = re.fullmatch(r"(\d+)@([\d.]+)%", info["depth"])
-    if match is None:
-        return (9, 1.0), info["depth"]
-    depth, prob = int(match.group(1)), float(match.group(2))
-    if depth >= move["empties"]:
-        if prob >= 100:
-            return (7, 0.0), "完全読み"
-        return (6, prob), f"終盤読み切り (MPC {match.group(2)}%)"
-    for lo, hi in zip(GAME_DEPTH_EDGES, GAME_DEPTH_EDGES[1:]):
-        if lo <= depth < hi:
-            span = f"〜{hi - 1}" if lo == 0 else (f"{lo}〜" if hi == 61 else f"{lo}〜{hi - 1}")
-            return (5, float(lo)), f"中盤探索 深さ{span}"
-    return (9, 2.0), info["depth"]
-
-
-def disc_category(move: dict) -> tuple[tuple, str]:
-    lo = discs_before(move) // 10 * 10
-    return (lo,), f"{lo}〜{min(lo + 9, 63)}"
-
-
-def grouped_loss_rows(moves: list[dict], category, threshold: int) -> list[str]:
-    groups: dict[tuple, tuple[str, list[dict]]] = {}
-    for move in moves:
-        key, label = category(move)
-        groups.setdefault(key, (label, []))[1].append(move)
-    rows = []
-    for key in sorted(groups):
-        label, grouped = groups[key]
-        s = side_stats(grouped, threshold)
-        rows.append(f"| {label} | {s['moves']} | {s['mistakes'] + s['inaccuracies']} | {s['mistakes']} | "
-                    f"{s['loss_total']} | {s['loss_avg']:.3f} |")
-    return rows
-
-
-def judge_text(move: dict, threshold: int) -> str:
-    if move["loss"] >= threshold:
-        return "悪手"
-    if move["loss"] > 0:
-        return "疑問手"
-    return ""
-
-
 def md_escape(text: str) -> str:
     return text.replace("|", "\\|")
 
 
 def write_position(out: list[str], title: str, move: dict) -> None:
     out.append(f"**{title}**: {move_label(move)} 評価 {signed(move['played_score'])} → 最善 {move['best_move']} "
-               f"評価 {signed(move['best_score'])} (損失 {move['loss']}, 解析の読み {move['played_depth']})")
+               f"評価 {signed(move['best_score'])} (石損 {move['loss']}石、着手の解析深さ {move['played_depth']}、最善手の解析深さ {move['alt_depth']})")
     out.append("")
     if move.get("game"):
         out.append(f"対局時: 読み {game_search_text(move)} / 評価 {game_value_text(move)} / 思考時間 {game_time_text(move)}")
@@ -1092,310 +981,181 @@ def write_position(out: list[str], title: str, move: dict) -> None:
     out.append("")
 
 
-def write_timing_section(out: list[str], analyses: list[GameAnalysis], threshold: int, n_client_logs: int) -> None:
-    all_mine = [move for a in analyses for move in a.side_moves(True)]
-    n_known = sum(1 for move in all_mine if move.get("game"))
-    out.append("## 石損したタイミング (自分の手)")
-    out.append("")
-    out.append("石数はその手を打つ前の盤上の石の数です。「対局時の読み」は GGS でその手を選んだときの探索 (深さ@MPC確率) で、"
-               "GGS クライアントのログ (`*_ggs.log`) から取っています。深さが空きマス数以上なら終盤の読み切りです。")
-    out.append("")
-    out.append(f"対局時の読みが分かった自分の手: {n_known} / {len(all_mine)} (クライアントログ {n_client_logs} ファイルを検索)")
-    out.append("")
-    header = ["| {} | 着手数 | 損失あり | 悪手 | 損失合計 | 1手あたり |", "|---|---:|---:|---:|---:|---:|"]
-    out.append("### 石数別")
-    out.append("")
-    out.append(header[0].format("打つ前の石数"))
-    out.append(header[1])
-    out.extend(grouped_loss_rows(all_mine, disc_category, threshold))
-    out.append("")
-    out.append("### 対局時の読み別")
-    out.append("")
-    out.append(header[0].format("対局時の読み"))
-    out.append(header[1])
-    out.extend(grouped_loss_rows(all_mine, game_search_category, threshold))
-    out.append("")
+def loss_certainty(move: dict) -> str:
+    """A loss is exact only when both compared move values were solved exactly."""
+    for field in ("played_depth", "alt_depth"):
+        depth = re.fullmatch(r"(\d+)@([\d.]+)%", move[field])
+        if depth is None or int(depth[1]) < move["empties"] or float(depth[2]) != 100:
+            return "近似解析による推定"
+    return "完全読みで確認"
 
-    lost = sorted(((a, move) for a in analyses for move in a.side_moves(True) if move["loss"] > 0),
-                  key=lambda item: (-item[1]["loss"], item[0].no, item[1]["index"]))
-    out.append("### 石損した手の一覧 (損失の大きい順)")
-    out.append("")
-    if not lost:
-        out.append("なし")
-        out.append("")
-        return
-    out.append("| 損失 | 対局 | 手 | 石数 | 空き | 着手 | 最善 | 対局時の読み | 対局時の評価 | 思考時間 | 解析の評価 (着手 / 最善) | 解析の読み |")
-    out.append("|---:|---|---:|---:|---:|---|---|---|---:|---:|---|---|")
-    for a, move in lost:
-        out.append(f"| {move['loss']} | [{a.no}. {a.game.record.game_id}](#game-{a.no}) | {move['index'] + 1} | {discs_before(move)} | "
-                   f"{move['empties']} | {move['played']} | {move['best_move']} | {game_search_text(move)} | "
-                   f"{game_value_text(move)} | {game_time_text(move)} | "
-                   f"{signed(move['played_score'])} / {signed(move['best_score'])} | {move['played_depth']} |")
+
+def best_depth(move: dict) -> str:
+    return move["alt_depth"] if move["loss"] > 0 else move["played_depth"]
+
+
+def grouped_analyses(analyses: list[GameAnalysis]) -> list[list[GameAnalysis]]:
+    groups: dict[int, list[GameAnalysis]] = {}
+    for analysis in analyses:
+        groups.setdefault(analysis.game.match_no, []).append(analysis)
+    return [groups[key] for key in sorted(groups)]
+
+
+def write_loss_table(out: list[str], analyses: list[GameAnalysis], is_me: bool) -> None:
+    losses = [(a, move) for a in analyses for move in a.loss_moves(is_me)]
+    out.extend([
+        "| 対局ID | 手数 | 空きマス数 | 着手 | 最善手 | 着手の評価値（石） | 最善手の評価値（石） | 石損 | 着手の解析深さ | 最善手の解析深さ | 判定 | 対局時の探索深さ | 対局時の探索時間 |",
+        "|---|---:|---:|---|---|---:|---:|---:|---|---|---|---|---|",
+    ])
+    for a, move in losses:
+        out.append(
+            f"| `{a.game.record.game_id}` | {move['index'] + 1} | {move['empties']} | {move['played']} | "
+            f"{move['best_move']} | {signed(move['played_score'])} | {signed(move['best_score'])} | "
+            f"{move['loss']} | {move['played_depth']} | {move['alt_depth']} | {loss_certainty(move)} | "
+            f"{game_search_text(move)} | {game_time_text(move)} |"
+        )
+    if not losses:
+        out.append("| 該当する手はない | | | | | | | | | | | | |")
     out.append("")
 
 
 def write_report(path: Path, analyses: list[GameAnalysis], failures: list[tuple[SelectedGame, str]],
                  unanalyzed: list[SelectedGame], args: argparse.Namespace, schedule: Schedule, engine_lines: list[str],
                  stats: SelectionStats, n_client_logs: int) -> None:
-    threshold = args.mistake_threshold
-    out: list[str] = []
-    out.append("# GGS 対局解析レポート")
-    out.append("")
-    out.append(f"- 作成日時: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    out.extend(f"- {line}" for line in engine_lines)
-    out.append("- 解析設定:")
-    for phase in schedule.phases:
-        out.append(f"  - {phase.describe()}")
-    conditions = [f"自分 = {raw_names(args.me)}", "負け" + (f" (相手: {raw_names(args.vs)})" if args.vs_only else " (全相手)")]
-    if args.draws and not args.vs_only:
-        conditions.append("引き分け (全相手)")
-    elif args.vs:
-        conditions.append(f"引き分け (相手: {raw_names(args.vs)})")
-    if args.exclude:
-        conditions.append(f"除外: {raw_names(args.exclude)}")
-    if args.since or args.until:
-        conditions.append(f"期間: {args.since or ''} 〜 {args.until or ''}")
-    conditions.append("シンクロ対局は2局の合計で勝敗を判定" if args.unit == "match" else "1局ごとに勝敗を判定")
-    out.append(f"- 抽出条件: {' / '.join(conditions)}")
-    games = [a.game for a in analyses]
-    out.append(f"- 解析した対局: {len(analyses)}局 / {count_matches(games)}マッチ "
-               f"(負け {count_matches(games, '負け')}, 引き分け {count_matches(games, '引き分け')})"
-               + (f" / 解析失敗 {len(failures)}局" if failures else "")
-               + (f" / 未解析 {len(unanalyzed)}局" if unanalyzed else ""))
-    out.append(f"- 読み込んだログ: {stats.files}ファイル, {stats.records}対局 (重複 {stats.duplicates}, 結果不明 {stats.unknown_result})")
-    n_reused = sum(1 for a in analyses for move in a.moves if move.get("reused_from"))
-    if n_reused:
-        out.append(f"- 解析済みの対局と同じ局面 (シンクロ対局の共通の序盤など) は結果を流用: {n_reused}局面")
-    out.append(f"- 損失 = その局面での最善手の評価値 − 実際に打った手の評価値 (手番側から見た石差)。"
-               f"損失{threshold}以上を「悪手」、1〜{threshold - 1}を「疑問手」と呼びます。")
-    out.append("")
-
-    if analyses:
-        out.append("## まとめ")
-        out.append("")
-        all_mine = [move for a in analyses for move in a.side_moves(True)]
-        all_opp = [move for a in analyses for move in a.side_moves(False)]
-        mine, opp = side_stats(all_mine, threshold), side_stats(all_opp, threshold)
-        out.append("| | 自分 | 相手 |")
-        out.append("|---|---:|---:|")
-        out.append(f"| 着手数 | {mine['moves']} | {opp['moves']} |")
-        out.append(f"| 悪手 (損失{threshold}以上) | {mine['mistakes']} | {opp['mistakes']} |")
-        out.append(f"| 疑問手 (損失1〜{threshold - 1}) | {mine['inaccuracies']} | {opp['inaccuracies']} |")
-        out.append(f"| 損失合計 | {mine['loss_total']} | {opp['loss_total']} |")
-        out.append(f"| 1手あたり平均損失 | {mine['loss_avg']:.3f} | {opp['loss_avg']:.3f} |")
-        out.append("")
-
-        out.append("### 相手別")
-        out.append("")
-        out.append("| 相手 | 局数 | 負けマッチ | 引き分けマッチ | 自分の損失合計 | 相手の損失合計 |")
-        out.append("|---|---:|---:|---:|---:|---:|")
-        opponents = sorted({a.game.opponent for a in analyses}, key=str.casefold)
-        for opponent in opponents:
-            games_vs = [a for a in analyses if a.game.opponent == opponent]
-            my_loss = sum(move["loss"] for a in games_vs for move in a.side_moves(True))
-            opp_loss = sum(move["loss"] for a in games_vs for move in a.side_moves(False))
-            selected_vs = [a.game for a in games_vs]
-            out.append(f"| {md_escape(opponent)} | {len(games_vs)} | {count_matches(selected_vs, '負け')} | "
-                       f"{count_matches(selected_vs, '引き分け')} | {my_loss} | {opp_loss} |")
-        out.append("")
-
-        write_timing_section(out, analyses, threshold, n_client_logs)
-
-        if args.unit == "match":
-            out.append("## マッチ一覧")
-            out.append("")
-            out.append("シンクロ対局では同じ開始局面を黒白入れ替えて打つので、2局の損失合計を比べると差がどこで付いたか分かります。")
-            out.append("")
-            out.append("| マッチ | 終局日時 | 相手 | 各局の結果 (自分) | 合計 | 判定 | 自分の損失合計 | 相手の損失合計 |")
-            out.append("|---|---|---|---|---:|---|---:|---:|")
-            for match_no in sorted({a.game.match_no for a in analyses}):
-                in_match = [a for a in analyses if a.game.match_no == match_no]
-                first = in_match[0].game
-                results = " / ".join(f"[{a.game.record.game_id}](#game-{a.no}) {color_name(a.game.my_color)} {signed(a.game.my_score)}"
-                                     for a in in_match)
-                my_loss = sum(move["loss"] for a in in_match for move in a.side_moves(True))
-                opp_loss = sum(move["loss"] for a in in_match for move in a.side_moves(False))
-                out.append(f"| `{first.match_id}` | {first.record.finished_at.strftime('%Y-%m-%d %H:%M')} | {md_escape(first.opponent)} | "
-                           f"{results} | {signed(first.match_score)} | {first.reason} | {my_loss} | {opp_loss} |")
-            out.append("")
-
-        out.append("## 対局一覧")
-        out.append("")
-        out.append("| # | 終局日時 | ID | 黒 | 白 | 結果 (自分) | マッチ | 開始局面評価 (自分) | 自分の悪手/疑問手 | 自分の損失計 | 敗着候補 |")
-        out.append("|---:|---|---|---|---|---|---|---:|---:|---:|---|")
-        for a in analyses:
+    groups = grouped_analyses(analyses)
+    complete = [group for group in groups if len(group) == group[0].game.match_size]
+    all_mine = [move for group in complete for a in group for move in a.side_moves(True)]
+    all_opp = [move for group in complete for a in group for move in a.side_moves(False)]
+    mine_losses = [move for move in all_mine if move["loss"] > 0]
+    n_exact = sum(loss_certainty(move) == "完全読みで確認" for move in mine_losses)
+    out = ["# 要約", "",
+           f"Egaroucid for Consoleで{len(complete)}組の解析を完了した。各着手で、最善手の評価値と実際に打った手の評価値を比べ、1石以上損した手をすべて抽出した。",
+           f"Egaroucidの{len(all_mine)}着手のうち、石損があったのは{len(mine_losses)}手、石損の合計は{sum(move['loss'] for move in mine_losses)}石だった。"
+           f"そのうち{n_exact}手は完全読みで確認し、{len(mine_losses) - n_exact}手は近似解析による推定である。", "",
+           "# 用語の定義", "",
+           "| 用語 | 定義 | 要するに |", "|---|---|---|",
+           "| 組 | 同じ開始局面で黒白を入れ替えて打つ2局。対象を選ぶときは、2局の最終石差をEgaroucid視点にそろえて足す。 | 2局をまとめた1対戦。 |",
+           "| 石損 | 同じ局面・同じ探索設定で求めた最善手の評価値から、実際に打った手の評価値を引いた値。 | 別の手を選べば増やせたと解析された石差。 |",
+           "| 近似解析による推定 | 石損を比べた二つの評価値の少なくとも一方が、中盤探索またはMPC確率100%未満の探索で求められた結果。 | 解析の誤差で石損の大きさや有無が変わりうる。 |",
+           "| 完全読みで確認 | 石損を比べた二つの評価値が、ともに終局までMPC確率100%で探索された結果。 | 厳密な石差の比較で確認した。 |",
+           "| 探索深さの表記 | `35@74%`は探索深さ35、MPC確率74%を表す。深さが空きマス数以上なら終局までの探索である。 | 何手先まで、どのMPC確率で調べたか。 |", "",
+           "# 詳細", "", "## 1. 対象と解析方法", "",
+           f"- 作成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+           *[f"- {line}" for line in engine_lines],
+           f"- 自分のアカウント: `{raw_names(args.me)}`",
+           "- 対象の抽出単位: " + ("組。2局の最終石差の合計で負け・引き分けを判定。" if args.unit == "match" else "利用者が指定した局単位。"),
+           f"- 解析完了: {len(complete)}組。片方だけ解析済みの組: {len(groups) - len(complete)}組。解析失敗: {len(failures)}局。未解析: {len(unanalyzed)}局。",
+           f"- 読み込んだ棋譜: {stats.files}ファイル。重複を除外した件数: {stats.duplicates}件。結果不明で除外した件数: {stats.unknown_result}件。", "",
+           "同じ解析設定の保存済みの結果を再利用した。新たに探索する局面はConsoleの`analyzefast`で末尾から逆順に解析する。"
+           "同じ組の2局には同じConsoleプロセスを使い、対局や局面の切り替えでは置換表を消さない。まず最善手を探索し、実際の着手と同じなら石損0石とする。"
+           "異なる場合だけ、実際の着手を同じ局面・同じ探索設定で探索し直し、最初に求めた最善手との差を計算する。石損が1石以上の手をすべて拾った。"
+           "勝ち・引き分け・負けの予測が変わったかどうかで手を絞らず、2局の途中の評価値も足していない。", "",
+           "解析値は、その着手を打つ側から見た最終石差である。相手の手を掲載する表では相手側の評価値になる。"
+           "最善手の評価値と着手の評価値は、同じ局面の同じ探索設定で比べた。", "",
+           "| 空きマス数 | 解析設定 |", "|---|---|",
+           *[f"| {phase.empties_hi}～{phase.empties_lo} | "
+             + (f"探索深さ{phase.depth}、MPC確率{phase.prob}%" if phase.kind == "mid" else
+                f"終局まで探索、MPC確率{phase.prob}%" if phase.kind == "end" else "完全読み（MPC確率100%）")
+             + " |" for phase in schedule.phases], "",
+           "MPC確率100%未満の評価値には誤差がある。特に1～2石の推定石損は、探索設定を強くすると消える場合がある。"
+           "石損の合計は各着手で推定された差の合計であり、最終結果の石差とは一致するとは限らない。", "",
+           "## 2. 組ごとの集計", "",
+           "集計は2局とも解析が終わった組について行った。石損の判定は各着手ごとに行った。", "",
+           "| 解析組番号 | 終局日時 | 組ID | 相手 | 最終石差の合計 | Egaroucidの解析着手数 | Egaroucidの石損した手数 | Egaroucidの石損合計 | 相手の石損した手数 | 相手の石損合計 |",
+           "|---:|---|---|---|---:|---:|---:|---:|---:|---:|"]
+    for group in complete:
+        first = group[0].game
+        mine = [move for a in group for move in a.side_moves(True)]
+        opp = [move for a in group for move in a.side_moves(False)]
+        stamp = max(a.game.record.finished_at for a in group).strftime('%Y-%m-%d %H:%M:%S')
+        out.append(f"| [{first.match_no}](#match-{first.match_no}) | {stamp} | `{first.match_id}` | {md_escape(first.opponent)} | "
+                   f"{signed(first.match_score)} | {len(mine)} | {sum(move['loss'] > 0 for move in mine)} | {sum(move['loss'] for move in mine)} | "
+                   f"{sum(move['loss'] > 0 for move in opp)} | {sum(move['loss'] for move in opp)} |")
+    out.extend(["", "## 3. 空きマス数ごとの石損", "",
+                "| 空きマス数 | Egaroucidの解析着手数 | 石損した手数 | 石損合計 | 完全読みで確認した手数 |",
+                "|---:|---:|---:|---:|---:|"])
+    for empties in sorted({move["empties"] for move in all_mine}, reverse=True):
+        moves = [move for move in all_mine if move["empties"] == empties]
+        losses = [move for move in moves if move["loss"] > 0]
+        out.append(f"| {empties} | {len(moves)} | {len(losses)} | {sum(move['loss'] for move in losses)} | "
+                   f"{sum(loss_certainty(move) == '完全読みで確認' for move in losses)} |")
+    n_matched = sum(bool(move.get("game")) for move in all_mine)
+    n_reused = sum(bool(move.get("reused_from")) for a in analyses for move in a.moves)
+    out.extend(["", f"対局時の探索記録は{n_client_logs}ファイルを調べ、Egaroucidの{len(all_mine)}着手中{n_matched}着手に対応付けた。"
+                f"同じ局面・同じ着手で解析済みの結果を再利用したのは{n_reused}着手である。", "",
+                "## 4. 組ごとの石損した手", ""])
+    for group in groups:
+        first = group[0].game
+        out.extend([f'<a id="match-{first.match_no}"></a>', "",
+                    f"### 解析組{first.match_no}: `{first.match_id}`、{first.opponent}", "",
+                    "Egaroucidが石損したと解析された手は次のとおり。", ""])
+        write_loss_table(out, group, True)
+        out.extend(["相手が石損したと解析された手は次のとおり。", ""])
+        write_loss_table(out, group, False)
+        for a in group:
             record = a.game.record
-            s = side_stats(a.side_moves(True), threshold)
-            decisive = a.decisive
-            decisive_text = f"{move_label(decisive)} (損失{decisive['loss']})" if decisive else "-"
-            if a.lost_off_board:
-                decisive_text += " / 時間切れ等?"
-            black = f"**{md_escape(record.black)}**" if a.game.my_color == "X" else md_escape(record.black)
-            white = f"**{md_escape(record.white)}**" if a.game.my_color == "O" else md_escape(record.white)
-            out.append(
-                f"| [{a.no}](#game-{a.no}) | {record.finished_at.strftime('%Y-%m-%d %H:%M')} | `{record.game_id}` | {black} | {white} | "
-                f"{result_text(a.game)} | {match_text(a.game)} | {signed(a.start_eval)} | {s['mistakes']} / {s['inaccuracies']} | "
-                f"{s['loss_total']} | {decisive_text} |"
-            )
-        out.append("")
-
-    if failures:
-        out.append("## 解析できなかった対局")
-        out.append("")
+            out.extend([f"#### 対局 `{record.game_id}`", "",
+                        f"- Egaroucidの色: {color_name(a.game.my_color)}",
+                        f"- 元の棋譜: `{record.source}`",
+                        f"- 初期局面: `{record.initial_cells} {record.initial_side}`",
+                        f"- 棋譜: `{''.join(record.moves)}`", ""])
+            for move in a.loss_moves():
+                write_position(out, f"石損した手（{loss_certainty(move)}）", move)
+            out.extend(["<details>", "<summary>全着手の解析結果</summary>", "",
+                        "| 手数 | 空きマス数 | 手番 | 着手 | 着手の評価値（石） | 最善手 | 最善手の評価値（石） | 石損 | 着手の解析深さ | 最善手の解析深さ |",
+                        "|---:|---:|---|---|---:|---|---:|---:|---|---|"])
+            for move in a.moves:
+                who = "Egaroucid" if move["is_me"] else "相手"
+                out.append(f"| {move['index'] + 1} | {move['empties']} | {who} | {move['played']} | "
+                           f"{signed(move['played_score'])} | {move['best_move']} | {signed(move['best_score'])} | "
+                           f"{move['loss']} | {move['played_depth']} | {best_depth(move)} |")
+            out.extend(["", "</details>", ""])
+    if failures or unanalyzed:
+        out.extend(["## 5. 解析が終わっていない棋譜", ""])
         for game, message in failures:
-            out.append(f"- `{game.record.game_id}` {game.record.black} vs {game.record.white} ({game.record.source}): {message}")
-        out.append("")
-
-    if unanalyzed:
-        out.append("## まだ解析していない対局")
-        out.append("")
+            out.append(f"- `{game.record.source}`: {message}")
         for game in unanalyzed:
-            out.append(f"- `{game.record.game_id}` {game.record.black} vs {game.record.white} ({game.record.source})")
-        out.append("")
-
-    if analyses:
-        out.append("## 対局詳細")
-        out.append("")
-    for a in analyses:
-        record = a.game.record
-        out.append(f'<a id="game-{a.no}"></a>')
-        out.append("")
-        out.append(f"### {a.no}. `{record.game_id}` {record.black} (黒) vs {record.white} (白) : {result_text(a.game)}")
-        out.append("")
-        out.append(f"- 自分: {a.game.me} ({color_name(a.game.my_color)}) / 相手: {a.game.opponent} / {match_text(a.game)}")
-        out.append(f"- 終局日時: {record.finished_at.strftime('%Y-%m-%d %H:%M:%S')} / ログ: `{record.source}`")
-        out.append(f"- 開始局面: `{record.initial_cells} {record.initial_side}`")
-        out.append(f"- 棋譜: `{''.join(record.moves)}`" + ("" if a.terminal else " (終局前に対局終了: 時間切れ・投了など)"))
-        out.append(f"- 評価 (自分視点): 開始局面 {signed(a.start_eval)} → 最終局面 {signed(a.final_eval)}"
-                   + ("" if a.terminal else " (盤上の評価)") + f" / 解析時間: {a.seconds:.0f}秒")
-        for is_me, who in ((True, "自分"), (False, "相手")):
-            s = side_stats(a.side_moves(is_me), threshold)
-            out.append(f"- {who}: 悪手 {s['mistakes']} / 疑問手 {s['inaccuracies']} / 損失合計 {s['loss_total']} / "
-                       f"平均損失 {s['loss_avg']:.3f} ({s['moves']}手)")
-        out.append("")
-
-        decisive, max_loss = a.decisive, a.max_loss_move
-        if a.lost_off_board:
-            out.append(f"**注意**: 終局前に対局が終わっており、最終局面の評価 (自分視点 {signed(a.final_eval)}) より結果 "
-                       f"({signed(a.game.my_score)}) が悪いです。時間切れ・投了・切断などで負けた可能性があります。")
-            out.append("")
-        if a.game.my_score <= 0:
-            title = "敗着候補" if a.game.my_score < 0 else "勝ちを逃した手の候補"
-            if decisive:
-                write_position(out, f"{title} (自分の手で最後に勝敗の区分を悪化させた手)", decisive)
-            elif not a.terminal:
-                out.append(f"**{title}**: 盤上の手で勝敗の区分を悪化させた自分の手はありません。")
-                out.append("")
-            else:
-                out.append(f"**{title}**: 自分の手で勝敗の区分 (勝ち/引き分け/負け) を悪化させた手はありません。"
-                           "開始局面の時点で評価が負け (または引き分け) だった可能性があります。")
-                out.append("")
-        if max_loss and max_loss is not decisive:
-            write_position(out, "損失が最大の手", max_loss)
-
-        mine = [move for move in a.side_moves(True) if move["loss"] > 0]
-        out.append("#### 自分の損失がある手")
-        out.append("")
-        if mine:
-            out.append("| 手 | 石数 | 空き | 着手 | 評価 | 最善 | 最善評価 | 損失 | 対局時の読み | 対局時の評価 | 思考時間 | 解析の読み | 判定 | 区分悪化 |")
-            out.append("|---:|---:|---:|---|---:|---|---:|---:|---|---:|---:|---|---|---|")
-            for move in mine:
-                out.append(f"| {move['index'] + 1} | {discs_before(move)} | {move['empties']} | {move['played']} | "
-                           f"{signed(move['played_score'])} | {move['best_move']} | {signed(move['best_score'])} | {move['loss']} | "
-                           f"{game_search_text(move)} | {game_value_text(move)} | {game_time_text(move)} | {move['played_depth']} | "
-                           f"{judge_text(move, threshold)} | {'○' if a.worsened(move) else ''} |")
-        else:
-            out.append("なし")
-        out.append("")
-
-        opp_mistakes = [move for move in a.side_moves(False) if move["loss"] >= threshold]
-        out.append(f"#### 相手の悪手 (損失{threshold}以上)")
-        out.append("")
-        if opp_mistakes:
-            out.append("| 手 | 石数 | 空き | 着手 | 評価 | 最善 | 最善評価 | 損失 | 解析の読み |")
-            out.append("|---:|---:|---:|---|---:|---|---:|---:|---|")
-            for move in opp_mistakes:
-                out.append(f"| {move['index'] + 1} | {discs_before(move)} | {move['empties']} | {move['played']} | "
-                           f"{signed(move['played_score'])} | {move['best_move']} | {signed(move['best_score'])} | {move['loss']} | "
-                           f"{move['played_depth']} |")
-        else:
-            out.append("なし")
-        out.append("")
-
-        out.append("<details><summary>全着手の解析</summary>")
-        out.append("")
-        out.append("評価は手番側から見た石差。「自分視点」はその手を打つ前の局面を自分から見た評価値。"
-                   "解析時間が「流用」の手は、解析済みの対局の同じ局面の結果を使っています。")
-        out.append("")
-        out.append("| 手 | 石数 | 空き | 手番 | 着手 | 評価 | 解析の読み | 他の最善 | 評価 | 損失 | 自分視点 | 対局時の読み | 思考時間 | 解析時間(秒) |")
-        out.append("|---:|---:|---:|---|---|---:|---|---|---:|---:|---:|---|---:|---:|")
-        for move in a.moves:
-            who = "自分" if move["is_me"] else "相手"
-            out.append(f"| {move['index'] + 1} | {discs_before(move)} | {move['empties']} | {color_name(move['side'])}({who}) | "
-                       f"{move['played']} | {signed(move['played_score'])} | {move['played_depth']} | {move['alt_move'] or '-'} | "
-                       f"{signed(move['alt_score'])} | {move['loss'] or ''} | {signed(a.my_eval(move))} | "
-                       f"{game_search_text(move)} | {game_time_text(move)} | "
-                       f"{'流用' if move.get('reused_from') else format(move['seconds'], '.1f')} |")
-        out.append("")
-        out.append("</details>")
-        out.append("")
-
+            out.append(f"- `{game.record.source}`: 未解析。")
     path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
 def write_csvs(out_dir: Path, analyses: list[GameAnalysis], threshold: int) -> None:
-    with open(out_dir / "games.csv", "w", encoding="utf-8-sig", newline="") as f:
+    with open(out_dir / "matches.csv", "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            "no", "game_id", "finished_at", "source", "black", "white", "me", "my_color", "opponent", "my_score",
-            "match_id", "match_score", "reason", "start_eval_me", "my_moves", "my_mistakes", "my_inaccuracies", "my_loss_total",
-            "opp_mistakes", "opp_inaccuracies", "opp_loss_total",
-            "decisive_move_no", "decisive_discs", "decisive_empties", "decisive_played", "decisive_best", "decisive_loss",
-            "decisive_game_depth", "max_loss_move_no", "max_loss_discs", "max_loss_played", "max_loss_best", "max_loss",
-            "max_loss_game_depth", "terminal", "analysis_seconds",
-        ])
-        for a in analyses:
-            record = a.game.record
-            mine, opp = side_stats(a.side_moves(True), threshold), side_stats(a.side_moves(False), threshold)
-            decisive, max_loss = a.decisive, a.max_loss_move
-            writer.writerow([
-                a.no, record.game_id, record.finished_at.isoformat(sep=" "), str(record.source), record.black, record.white,
-                a.game.me, a.game.my_color, a.game.opponent, a.game.my_score,
-                a.game.match_id, a.game.match_score, {"負け": "loss", "引き分け": "draw"}[a.game.reason], a.start_eval,
-                mine["moves"], mine["mistakes"], mine["inaccuracies"], mine["loss_total"],
-                opp["mistakes"], opp["inaccuracies"], opp["loss_total"],
-                decisive["index"] + 1 if decisive else "", discs_before(decisive) if decisive else "",
-                decisive["empties"] if decisive else "", decisive["played"] if decisive else "",
-                decisive["best_move"] if decisive else "", decisive["loss"] if decisive else "",
-                game_search_text(decisive) if decisive else "",
-                max_loss["index"] + 1 if max_loss else "", discs_before(max_loss) if max_loss else "",
-                max_loss["played"] if max_loss else "", max_loss["best_move"] if max_loss else "",
-                max_loss["loss"] if max_loss else "", game_search_text(max_loss) if max_loss else "",
-                int(a.terminal), round(a.seconds, 1),
-            ])
+        writer.writerow(["match_no", "match_id", "finished_at", "opponent", "match_score", "reason", "analysis_complete",
+                         "games_analyzed", "game_ids", "my_moves", "my_loss_moves", "my_loss_total", "my_exact_loss_moves",
+                         "opp_moves", "opp_loss_moves", "opp_loss_total", "analysis_seconds"])
+        for group in grouped_analyses(analyses):
+            first = group[0].game
+            complete = len(group) == first.match_size
+            mine = [move for a in group for move in a.side_moves(True)]
+            opp = [move for a in group for move in a.side_moves(False)]
+            losses = [move for move in mine if move["loss"] > 0]
+            writer.writerow([first.match_no, first.match_id, max(a.game.record.finished_at for a in group).isoformat(sep=" "),
+                             first.opponent, first.match_score, first.reason, int(complete), len(group),
+                             " ".join(a.game.record.game_id for a in group),
+                             len(mine) if complete else "", len(losses) if complete else "",
+                             sum(move["loss"] for move in mine) if complete else "",
+                             sum(loss_certainty(move) == "完全読みで確認" for move in losses) if complete else "",
+                             len(opp) if complete else "", sum(move["loss"] > 0 for move in opp) if complete else "",
+                             sum(move["loss"] for move in opp) if complete else "", round(sum(a.seconds for a in group), 3)])
     with open(out_dir / "moves.csv", "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            "no", "game_id", "move_no", "discs", "empties", "color", "player", "is_me", "played", "played_score",
-            "played_depth", "alt_move", "alt_score", "alt_depth", "best_move", "best_score", "loss", "judge",
-            "result_worsened", "eval_me_before", "board", "seconds", "reused_from",
-            "game_depth", "game_value", "game_time_ms", "game_search",
-        ])
+        writer.writerow(["match_no", "match_id", "game_id", "source", "move_no", "empties", "color", "player", "is_me",
+                         "played", "played_score", "played_depth", "alt_move", "alt_score", "alt_depth", "best_move", "best_score", "best_depth",
+                         "loss", "loss_certainty", "board", "seconds", "reused_from", "game_depth", "game_value", "game_time_ms"])
         for a in analyses:
             record = a.game.record
             for move in a.moves:
-                player = record.black if move["side"] == "X" else record.white
                 game = move.get("game")
-                writer.writerow([
-                    a.no, record.game_id, move["index"] + 1, discs_before(move), move["empties"],
-                    "black" if move["side"] == "X" else "white", player, int(move["is_me"]), move["played"],
-                    move["played_score"], move["played_depth"], move["alt_move"] or "", "" if move["alt_score"] is None else move["alt_score"],
-                    move["alt_depth"], move["best_move"], move["best_score"], move["loss"],
-                    {"悪手": "mistake", "疑問手": "inaccuracy"}.get(judge_text(move, threshold), ""),
-                    int(a.worsened(move)), a.my_eval(move), move["board"], move["seconds"], move.get("reused_from") or "",
-                    game["depth"] if game else "", game["value"] if game else "", game["time_ms"] if game else "",
-                    game_search_category(move)[1] if game else "",
-                ])
+                writer.writerow([a.game.match_no, a.game.match_id, record.game_id, str(record.source), move["index"] + 1,
+                                 move["empties"], "black" if move["side"] == "X" else "white",
+                                 record.black if move["side"] == "X" else record.white, int(move["is_me"]),
+                                 move["played"], move["played_score"], move["played_depth"], move["alt_move"] or "",
+                                 "" if move["alt_score"] is None else move["alt_score"], move["alt_depth"],
+                                 move["best_move"], move["best_score"], best_depth(move), move["loss"], loss_certainty(move) if move["loss"] else "",
+                                 move["board"], move["seconds"], move.get("reused_from") or "",
+                                 game["depth"] if game else "", game["value"] if game else "", game["time_ms"] if game else ""])
 
 
 # ---------------------------------------------------------------------------
@@ -1678,7 +1438,7 @@ def main() -> int:
     write_csvs(out_dir, ordered, args.mistake_threshold)
     log("")
     log(f"レポート: {out_dir / 'report.md'}")
-    log(f"CSV: {out_dir / 'games.csv'}, {out_dir / 'moves.csv'}")
+    log(f"CSV: {out_dir / 'matches.csv'}, {out_dir / 'moves.csv'}")
     return 1 if failures else 0
 
 
