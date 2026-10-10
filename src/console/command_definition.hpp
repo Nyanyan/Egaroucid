@@ -13,7 +13,7 @@
 #include <vector>
 #include "console_common.hpp"
 
-#define N_COMMANDS 21
+#define N_COMMANDS 22
 
 #define CMD_ID_NONE -1
 #define CMD_ID_HELP 0
@@ -37,6 +37,7 @@
 #define CMD_ID_SETTIME 18
 #define CMD_ID_ADVISE 19
 #define CMD_ID_SETTIMEMS 20
+#define CMD_ID_ANALYZE_FAST 21
 
 #define COMMAND_NOT_FOUND -1
 
@@ -63,6 +64,7 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_MODE,       {"mode"},                                           "<mode>",                   "Set mode to <mode> (0: You vs Egaroucid, 1: Egaroucid vs You, 2: Egaroucid vs Egaroucid, 3: You vs You)"},
     {CMD_ID_HINT,       {"hint"},                                           "<moves>",                  "Print best <moves> moves. if <moves> is empty, print best move."},
     {CMD_ID_ANALYZE,    {"analyze", "analyse"},                             "",                         "Analyze last game."},
+    {CMD_ID_ANALYZE_FAST, {"analyzefast"},                                  "",                         "Analyze last game: search best first, evaluate played move only when different."},
     {CMD_ID_CLEARCACHE, {"clearcache"},                                     "",                         "Clear cache."},
     {CMD_ID_GENPROBLEM, {"genproblem"},                                     "<n_empties> <n_problems>", "Generate <n_problems> problems with <n_empties> empty squares and calculate the score and bestmove with specified level"},
     {CMD_ID_TRANSCRIPT, {"transcript"},                                     "",                         "Show transcript of the game"},

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Extract lost / drawn games from Egaroucid GGS game logs and analyze them
-with the ``analyze`` command of Egaroucid for Console.
+with the ``analyzefast`` command of Egaroucid for Console.
 
 See README.md in this directory for usage (in Japanese).
 """
@@ -24,7 +24,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_ENGINE = REPO_ROOT / "bin" / "Egaroucid_for_Console_clang.exe"
+DEFAULT_ENGINE = REPO_ROOT / "bin" / "Egaroucid_for_Console_ggs_analyze.exe"
 DEFAULT_ME = ["egrcd"]
 DEFAULT_HASH_LEVEL = 29
 DEFAULT_OUT_DIR = REPO_ROOT / "bin" / "ggs" / "log" / "analyze"
@@ -636,10 +636,9 @@ class Engine:
         return PROMPT_RE.sub("", line.rstrip("\r\n"))
 
     def analyze(self, board_str: str, moves: str, on_row) -> list[AnalyzeRow]:
-        self.send("clearcache")
         self.send("setboard " + board_str)
         self.send("play " + moves)
-        self.send("analyze")
+        self.send("analyzefast")
         rows: list[AnalyzeRow] = []
         last_time = time.perf_counter()
         in_summary = False
@@ -693,10 +692,10 @@ def engine_version(engine: Path) -> str:
 
 
 def check_engine_supports_analyze_dpr(engine: Path) -> None:
-    """Make sure the engine's analyze command follows -dpr (older builds silently ignore it)."""
-    cmd = [str(engine), "-quiet", "-nobook", "-nocontestbook", "-t", "1", "-dpr", "1", "60", "3", "88"]
+    """Verify best-first analysis and the requested depth/probability."""
+    cmd = [str(engine), "-quiet", "-nobook", "-nocontestbook", "-t", "1", "-hash", "18", "-dpr", "1", "60", "3", "88"]
     try:
-        result = subprocess.run(cmd, cwd=engine.parent, input=f"setboard {START_BOARD}\nplay f5\nanalyze\nexit\n",
+        result = subprocess.run(cmd, cwd=engine.parent, input=f"setboard {START_BOARD}\nplay f5\nanalyzefast\nexit\n",
                                 capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
     except (OSError, subprocess.TimeoutExpired) as e:
         raise SystemExit(f"[ERROR] エンジンを起動できません: {engine} ({e})")
@@ -704,7 +703,7 @@ def check_engine_supports_analyze_dpr(engine: Path) -> None:
     rows = [row for row in rows if row is not None]
     if not rows or rows[0].played_depth != "3@88%":
         raise SystemExit(
-            f"[ERROR] {engine} の analyze コマンドが -dpr (深さ・確率指定) に対応していません。\n"
+            f"[ERROR] {engine} は analyzefast と -dpr (深さ・確率指定) に対応していません。\n"
             "        最新のソースから Egaroucid for Console をビルドし直してください (README.md 参照)。"
         )
 
@@ -871,9 +870,10 @@ def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, kno
             mark = f"  <== {who}の悪手 (損失{loss})"
         elif loss > 0 and is_me:
             mark = f"  <- 自分の疑問手 (損失{loss})"
-        alt = f"{row.alt_move} {signed(row.alt_score)}" if row.alt_move else "なし"
-        log(f"  {label} {position.index + 1:>2}手目 {position.empties:>2}空き {color_name(position.side)}({who}) "
-            f"{row.played} {signed(row.played_score):>3} [{row.played_depth}] | 他の最善 {alt} | {row.seconds:.1f}秒{mark}")
+        alt = f"{row.alt_move} {signed(row.alt_score)} [{row.alt_depth}]" if row.alt_move else "着手と一致"
+        log(f"  {label} {position.index + 1:>2}手目 {position.empties:>2}マス空き {color_name(position.side)}({who}) "
+            f"{row.played} {signed(row.played_score):>3} [{row.played_depth}] | 最善手 {alt} | "
+            f"石損{loss}石 | 解析時間{row.seconds:.1f}秒{mark}")
 
     # analyze each run of consecutive missing moves, the last run first as analyze itself goes backward
     runs: list[list[Position]] = []

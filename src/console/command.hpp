@@ -530,7 +530,27 @@ void hint(Board_info *board, Options *options, State *state, std::string arg) {
     }
 }
 
-inline void analyze(Board_info *board, Options *options, State *state) {
+inline Analyze_result analyze_best_first(const Board &board, Options *options, uint_fast8_t played_move) {
+    Analyze_result result{};
+    result.played_move = played_move;
+    result.alt_move = -1;
+    result.alt_score = -SCORE_INF;
+    Search_result best = ai_with_settings(board, options, true, false);
+    Search_result played = best;
+    if (best.policy != played_move) {
+        played = ai_legal_with_settings(board, options, true, false, 1ULL << played_move);
+        result.alt_move = best.policy;
+        result.alt_score = best.value;
+        result.alt_depth = best.depth;
+        result.alt_probability = best.probability;
+    }
+    result.played_score = played.value;
+    result.played_depth = played.depth;
+    result.played_probability = played.probability;
+    return result;
+}
+
+inline void analyze(Board_info *board, Options *options, State *state, bool best_first = false) {
     print_analyze_head();
     Analyze_summary summary[2];
     for (int i = (int)board->boards.size() - 2; i >= 0; --i) {
@@ -547,6 +567,8 @@ inline void analyze(Board_info *board, Options *options, State *state) {
                               << " " << n_board.to_str()
                               << std::endl;
                 }
+            } else if (best_first) {
+                result = analyze_best_first(n_board, options, played_move);
             } else {
                 Depth_prob_range_setting setting;
                 if (get_depth_prob_range_setting(options, n_board, &setting)) {
@@ -736,6 +758,9 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_ANALYZE:
             analyze(board, options, state);
+            break;
+        case CMD_ID_ANALYZE_FAST:
+            analyze(board, options, state, true);
             break;
         case CMD_ID_CLEARCACHE:
             transposition_table.init();
