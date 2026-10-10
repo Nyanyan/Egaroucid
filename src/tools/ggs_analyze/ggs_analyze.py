@@ -12,14 +12,16 @@ import concurrent.futures
 import csv
 import hashlib
 import json
+import math
 import os
+import queue
 import re
 import subprocess
 import sys
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -45,6 +47,7 @@ ANALYZE_ROW_RE = re.compile(
 )
 
 PRINT_LOCK = threading.Lock()
+ENGINE_WAIT_SECONDS = 30
 
 
 def log(message: str = "") -> None:
@@ -610,6 +613,7 @@ class Engine:
     def __init__(self, cmd: list[str], cwd: Path) -> None:
         self.cmd = cmd
         self.errors: list[str] = []
+        self.progress = lambda: ""
         self.proc = subprocess.Popen(
             cmd,
             cwd=cwd,
@@ -621,6 +625,17 @@ class Engine:
             errors="replace",
             bufsize=1,
         )
+        self.output: queue.Queue[str | None] = queue.Queue()
+        self.reader = threading.Thread(target=self._read_output, daemon=True)
+        self.reader.start()
+
+    def _read_output(self) -> None:
+        assert self.proc.stdout is not None
+        try:
+            for line in self.proc.stdout:
+                self.output.put(line)
+        finally:
+            self.output.put(None)
 
     def send(self, line: str) -> None:
         if self.proc.stdin is None or self.proc.poll() is not None:
@@ -628,14 +643,19 @@ class Engine:
         self.proc.stdin.write(line + "\n")
         self.proc.stdin.flush()
 
-    def readline(self) -> str:
-        assert self.proc.stdout is not None
-        line = self.proc.stdout.readline()
-        if line == "":
+    def readline(self, on_wait=None) -> str:
+        while True:
+            try:
+                line = self.output.get(timeout=ENGINE_WAIT_SECONDS)
+                break
+            except queue.Empty:
+                if on_wait is not None:
+                    on_wait()
+        if line is None:
             raise EngineError("Egaroucid for Console が予期せず終了しました")
         return PROMPT_RE.sub("", line.rstrip("\r\n"))
 
-    def analyze(self, board_str: str, moves: str, on_row) -> list[AnalyzeRow]:
+    def analyze(self, board_str: str, moves: str, on_row, label: str = "") -> list[AnalyzeRow]:
         self.send("setboard " + board_str)
         self.send("play " + moves)
         self.send("analyzefast")
@@ -643,8 +663,14 @@ class Engine:
         last_time = time.perf_counter()
         in_summary = False
         self.errors = []
+        next_empties = board_str.count('-') - len(moves) // 2 + 1
+
+        def on_wait():
+            if not in_summary:
+                log(f"  {label} 解析中: {next_empties}マス空き、経過{time.perf_counter() - last_time:.0f}秒 {self.progress()}")
+
         while True:
-            line = self.readline()
+            line = self.readline(on_wait)
             if "[ERROR]" in line:
                 # a failed setboard / play shows up as missing or mismatched rows, checked by the caller
                 if not BENIGN_ENGINE_ERROR_RE.search(line):
@@ -663,6 +689,7 @@ class Engine:
                 now = time.perf_counter()
                 row.seconds = now - last_time
                 last_time = now
+                next_empties = 62 - row.ply
                 rows.append(row)
                 on_row(row)
 
@@ -785,6 +812,10 @@ class PositionTable:
         with self._lock:
             return self._data.get((board, played))
 
+    def entries(self) -> list[dict]:
+        with self._lock:
+            return list(self._data.values())
+
     def add(self, board: str, played: str, analysis: dict, seconds: float, source: str) -> None:
         entry = {"board": board, "played": played, **{field: analysis[field] for field in ANALYSIS_FIELDS},
                  "seconds": round(seconds, 3), "source": source}
@@ -802,6 +833,92 @@ class PositionTable:
                 entry.update(board=move["board"], played=move["played"], seconds=move.get("seconds", 0.0),
                              source=move.get("reused_from") or source)
                 self._data.setdefault((move["board"], move["played"]), entry)
+
+
+class AnalysisETA:
+    """Estimate remaining work by empties, excluding cached/shared positions."""
+
+    def __init__(self, schedule: Schedule, jobs: int, history: list[dict]) -> None:
+        self.jobs = jobs
+        self._lock = threading.Lock()
+        self._remaining: dict[tuple[str, str], tuple[int, int]] = {}
+        self._active: dict[tuple[str, str], float] = {}
+        self._history: dict[int, list[float]] = {}
+        self._current: dict[int, list[float]] = {}
+        self.failed = False
+        self._phase = {empties: index for index, phase in enumerate(schedule.phases)
+                       for empties in range(phase.empties_lo, phase.empties_hi + 1)}
+        for entry in history:
+            seconds = entry.get("seconds", 0.0)
+            if isinstance(seconds, (int, float)) and math.isfinite(seconds) and seconds >= 0:
+                self._history.setdefault(entry["board"].count("-"), []).append(seconds)
+
+    def add_game(self, game: SelectedGame, positions: list[Position], known: PositionTable) -> None:
+        for position in positions:
+            key = position.board_str, index_to_coord(position.move)
+            if known.get(*key) is None:
+                self._remaining.setdefault(key, (position.empties, game.match_no))
+
+    def start(self, position: Position) -> None:
+        key = position.board_str, index_to_coord(position.move)
+        with self._lock:
+            if key in self._remaining:
+                self._active[key] = time.perf_counter()
+
+    def finish(self, position: Position, seconds: float) -> None:
+        key = position.board_str, index_to_coord(position.move)
+        with self._lock:
+            if self._remaining.pop(key, None) is not None:
+                self._current.setdefault(position.empties, []).append(seconds)
+            self._active.pop(key, None)
+
+    def _prediction(self, empties: int) -> float | None:
+        # New measurements take precedence over older runs (e.g. before best-first analysis).
+        samples = self._current.get(empties) or self._history.get(empties)
+        if not samples:
+            phase = self._phase.get(empties)
+            for source in (self._current, self._history):
+                samples = [seconds for n_empty, values in source.items()
+                           if phase is not None and self._phase.get(n_empty) == phase for seconds in values]
+                if samples:
+                    break
+        return sum(samples) / len(samples) if samples else None
+
+    def remaining_seconds(self) -> float | None:
+        with self._lock:
+            if self.failed:
+                return None
+            now = time.perf_counter()
+            by_match: dict[int, float] = {}
+            for key, (empties, match_no) in self._remaining.items():
+                seconds = self._prediction(empties)
+                if seconds is None:
+                    return None
+                if key in self._active:
+                    seconds = max(1.0, seconds - (now - self._active[key]))
+                by_match[match_no] = by_match.get(match_no, 0.0) + seconds
+            # --jobs assigns whole matches to workers. A final single match uses one worker.
+            workers = [0.0] * self.jobs
+            for match_no in sorted(by_match):
+                worker = min(range(self.jobs), key=workers.__getitem__)
+                workers[worker] += by_match[match_no]
+            return max(workers)
+
+    def text(self) -> str:
+        seconds = self.remaining_seconds()
+        if seconds is None:
+            return "ETA: 算出不可（解析失敗あり）" if self.failed else "ETA: 算出待ち（解析時間を収集中）"
+        if seconds == 0:
+            with self._lock:
+                if not self._remaining:
+                    return "ETA: 残り0分（解析完了）"
+        if seconds < 60:
+            duration = "1分未満"
+        else:
+            hours, minutes = divmod(math.ceil(seconds / 60), 60)
+            duration = "約" + (f"{hours}時間" if hours else "") + (f"{minutes}分" if minutes else "")
+        finish = (datetime.now() + timedelta(seconds=seconds)).strftime("%m/%d %H:%M")
+        return f"ETA: 残り{duration}（完了見込み {finish}）"
 
 
 def game_label(record: GameRecord) -> str:
@@ -832,7 +949,8 @@ def move_result(position: Position, game: SelectedGame, played: str, analysis: d
     }
 
 
-def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, known: PositionTable) -> list[dict]:
+def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, known: PositionTable,
+                 eta: AnalysisETA | None = None) -> list[dict]:
     record = game.record
     source = game_label(record)
     positions = replay(record).positions
@@ -858,6 +976,11 @@ def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, kno
             return
         analysis = {field: getattr(row, field) for field in ANALYSIS_FIELDS}
         known.add(position.board_str, row.played, analysis, row.seconds, source)
+        if eta is not None:
+            eta.finish(position, row.seconds)
+            next_position = by_ply.get(row.ply - 1)
+            if next_position is not None and first <= next_position.index <= last:
+                eta.start(next_position)
         is_me = position.side == game.my_color
         loss = max(0, row.alt_score - row.played_score) if row.alt_score is not None else 0
         who = "自分" if is_me else "相手"
@@ -869,7 +992,7 @@ def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, kno
         alt = f"{row.alt_move} {signed(row.alt_score)} [{row.alt_depth}]" if row.alt_move else "着手と一致"
         log(f"  {label} {position.index + 1:>2}手目 {position.empties:>2}マス空き {color_name(position.side)}({who}) "
             f"{row.played} {signed(row.played_score):>3} [{row.played_depth}] | 最善手 {alt} | "
-            f"石損{loss}石 | 解析時間{row.seconds:.1f}秒{mark}")
+            f"石損{loss}石 | 解析時間{row.seconds:.1f}秒{mark}" + (f" | {eta.text()}" if eta is not None else ""))
 
     # analyze each run of consecutive missing moves, the last run first as analyze itself goes backward
     runs: list[list[Position]] = []
@@ -881,7 +1004,9 @@ def analyze_game(get_engine, game: SelectedGame, label: str, threshold: int, kno
     for run in reversed(runs):
         engine = get_engine()
         first, last = run[0].index, run[-1].index
-        engine.analyze(run[0].board_str, "".join(record.moves[first:last + 1]), on_row)
+        if eta is not None:
+            eta.start(run[-1])
+        engine.analyze(run[0].board_str, "".join(record.moves[first:last + 1]), on_row, label)
         engine_errors = f" (Egaroucid: {' / '.join(engine.errors)})" if engine.errors else ""
         if mismatches:
             raise EngineError(mismatches[0] + engine_errors)
@@ -1324,6 +1449,32 @@ def main() -> int:
             continue
         pending.append((no, game, path))
 
+    progress_lock = threading.Lock()
+    completed_numbers = set(analyses)
+    eta = AnalysisETA(schedule, args.jobs, known_positions.entries())
+    for _, game, _ in pending:
+        try:
+            eta.add_game(game, replay(game.record).positions, known_positions)
+        except ValueError:
+            eta.failed = True  # run() will report the invalid transcript.
+
+    def progress_text() -> str:
+        with progress_lock:
+            completed_pairs = sum(
+                all(number in completed_numbers for number, member in enumerate(games, 1) if member.match_no == match_no)
+                for match_no in {member.match_no for member in games}
+            )
+            counts = f"解析完了 {len(completed_numbers)}/{len(games)}局（{completed_pairs}/{count_matches(games)}組）"
+        return counts + (f" | {eta.text()}" if not args.report_only else "")
+
+    def show_progress(no: int | None = None) -> None:
+        if no is not None:
+            with progress_lock:
+                completed_numbers.add(no)
+        log(progress_text())
+
+    show_progress()
+
     if args.report_only:
         # describe the engine and settings used when the cached games were analyzed
         cached_cmd = cached_run[1].get("command") or []
@@ -1345,6 +1496,8 @@ def main() -> int:
         engine = getattr(local, "engine", None)
         if engine is None or engine.proc.poll() is not None:
             engine = Engine(cmd, engine_path.parent)
+            engine.progress = progress_text
+            log(f"Console起動: PID {engine.proc.pid}、{args.threads}スレッド、hash {args.hash}。対局間で置換表を保持します。")
             local.engine = engine
             with engines_lock:
                 engines.append(engine)
@@ -1360,7 +1513,7 @@ def main() -> int:
         start = time.perf_counter()
         try:
             game_replay = replay(record)
-            moves = analyze_game(get_engine, game, label, args.mistake_threshold, known_positions)
+            moves = analyze_game(get_engine, game, label, args.mistake_threshold, known_positions, eta)
         except (ValueError, EngineError) as e:
             engine = getattr(local, "engine", None)
             if isinstance(e, EngineError) and engine is not None:
@@ -1372,6 +1525,7 @@ def main() -> int:
             if stopping.is_set():
                 return
             log(f"{label} [ERROR] 解析失敗: {e}")
+            eta.failed = True
             failures.append((game, str(e)))
             if isinstance(e, EngineError):
                 local.engine.kill()
@@ -1386,6 +1540,7 @@ def main() -> int:
         analyses[no] = GameAnalysis(no, game, moves, game_replay.final_cells, game_replay.terminal, seconds)
         n_reused = sum(1 for move in moves if move.get("reused_from"))
         log(f"{label} 解析完了 (今回 {elapsed:.0f}秒, 合計 {seconds:.0f}秒" + (f", {n_reused}局面は流用" if n_reused else "") + ")")
+        show_progress(no)
 
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) if args.jobs > 1 else None
     try:

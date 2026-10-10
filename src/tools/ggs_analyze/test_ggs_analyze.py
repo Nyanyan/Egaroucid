@@ -1,7 +1,10 @@
 import argparse
 import csv
+import queue
 import tempfile
 import unittest
+from unittest.mock import patch
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
@@ -9,23 +12,55 @@ import ggs_analyze as ggs
 
 
 class StoneLossTests(unittest.TestCase):
+    def test_progress_callback_during_silent_search(self):
+        engine = ggs.Engine.__new__(ggs.Engine)
+        engine.output = queue.Queue()
+        calls = []
+
+        def on_wait():
+            calls.append(True)
+            engine.output.put('> result\n')
+
+        with patch.object(ggs, 'ENGINE_WAIT_SECONDS', 0.001):
+            self.assertEqual(engine.readline(on_wait), 'result')
+        self.assertEqual(calls, [True])
+
     def test_repeated_analysis_retains_engine_and_does_not_clear_table(self):
         engine = ggs.Engine.__new__(ggs.Engine)
         sent = []
         engine.send = sent.append
+        engine.progress = lambda: '解析完了 1/2局（0/1組）'
         output = iter([
             '| 60| Black| h8| 60@100%| -4| -| -| -| |',
             'Mistake Rate', '| White |',
             '| 60| Black| h8| 60@100%| -6| a1| 60@100%| -4| |',
             'Mistake Rate', '| White |',
         ])
-        engine.readline = lambda: next(output)
+        engine.readline = lambda on_wait: next(output)
         first = engine.analyze('first X', 'h8', lambda row: None)
         second = engine.analyze('second X', 'h8', lambda row: None)
         self.assertEqual(sent, ['setboard first X', 'play h8', 'analyzefast',
                                 'setboard second X', 'play h8', 'analyzefast'])
         self.assertIsNone(first[0].alt_move)
         self.assertEqual(second[0].alt_score - second[0].played_score, 2)
+
+    def test_wait_message_includes_completed_games(self):
+        engine = ggs.Engine.__new__(ggs.Engine)
+        engine.send = lambda line: None
+        engine.progress = lambda: '解析完了 5/18局（2/9組） | ETA: 残り約1時間20分（完了見込み 10/04 00:30）'
+        output = iter(['Mistake Rate', '| White |'])
+
+        def readline(on_wait):
+            on_wait()
+            return next(output)
+
+        engine.readline = readline
+        with patch.object(ggs, 'log') as logged:
+            engine.analyze(ggs.START_BOARD, 'f5', lambda row: None, '[6/18 .44.1]')
+        messages = [call.args[0] for call in logged.call_args_list]
+        self.assertEqual(len(messages), 1)
+        self.assertIn('解析完了 5/18局（2/9組）', messages[0])
+        self.assertIn('ETA: 残り約1時間20分', messages[0])
 
     def game(self, suffix, color, score):
         record = ggs.GameRecord(Path('fixture.txt'), '.1.' + suffix,
@@ -108,6 +143,80 @@ class StoneLossTests(unittest.TestCase):
             self.assertEqual([m['loss'] for m in moves], ['2', '2'])
             self.assertNotIn('result_worsened', moves[0])
             self.assertFalse((out / 'games.csv').exists())
+
+
+class ETATests(unittest.TestCase):
+    def setUp(self):
+        self.schedule = ggs.Schedule(35, '88', 46, 32, ['74', '74', '74', '88', '93', '98', '99'])
+        self.game = StoneLossTests().game('0', 'X', 0)
+        self.known = ggs.PositionTable()
+
+    def position(self, empties, move_offset=0):
+        return ggs.Position(0, 'X' * (64 - empties) + '-' * empties, 'O', 64 - empties + move_offset)
+
+    def remember(self, position, seconds):
+        analysis = dict(played_score=0, played_depth='60@100%', alt_move=None, alt_score=None, alt_depth='')
+        self.known.add(position.board_str, ggs.index_to_coord(position.move), analysis, seconds, 'previous run')
+
+    def estimator(self, positions, jobs=1):
+        eta = ggs.AnalysisETA(self.schedule, jobs, self.known.entries())
+        eta.add_game(self.game, positions, self.known)
+        return eta
+
+    def test_resume_excludes_cached_and_shared_positions_and_counts_running_time(self):
+        cached = self.position(20)
+        pending = self.position(20, 1)
+        self.remember(cached, 300)
+        eta = self.estimator([cached, pending])
+        eta.add_game(replace(self.game, my_color='O'), [cached, pending], self.known)
+        self.assertEqual(eta.remaining_seconds(), 300)
+        with patch.object(ggs.time, 'perf_counter', return_value=10):
+            eta.start(pending)
+        with patch.object(ggs.time, 'perf_counter', return_value=40):
+            self.assertEqual(eta.remaining_seconds(), 270)
+        eta.finish(pending, 60)
+        self.assertEqual(eta.remaining_seconds(), 0)
+        self.assertIn('残り0分（解析完了）', eta.text())
+
+    def test_current_timings_replace_history_and_update_completion_date(self):
+        self.remember(self.position(20), 300)
+        first, second = self.position(20, 1), self.position(20, 2)
+        eta = self.estimator([first, second])
+        self.assertEqual(eta.remaining_seconds(), 600)
+        eta.finish(first, 120)
+        self.assertEqual(eta.remaining_seconds(), 120)
+        with patch.object(ggs, 'datetime') as clock:
+            clock.now.return_value = datetime(2026, 10, 3, 23, 59)
+            text = eta.text()
+        self.assertIn('残り約2分', text)
+        self.assertIn('完了見込み 10/04 00:01', text)
+
+    def test_no_estimate_uses_times_from_a_different_search_phase(self):
+        self.remember(self.position(20), 1)
+        first, second = self.position(50), self.position(49)
+        eta = self.estimator([first, second])
+        self.assertIsNone(eta.remaining_seconds())
+        self.assertIn('算出待ち', eta.text())
+        eta.finish(first, 60)
+        self.assertEqual(eta.remaining_seconds(), 60)
+        eta.failed = True
+        self.assertIn('算出不可（解析失敗あり）', eta.text())
+
+    def test_zero_rounded_timings_do_not_claim_unfinished_work_is_complete(self):
+        self.remember(self.position(20), 0)
+        eta = self.estimator([self.position(20, 1)])
+        self.assertEqual(eta.remaining_seconds(), 0)
+        self.assertIn('残り1分未満', eta.text())
+        self.assertNotIn('解析完了', eta.text())
+
+    def test_parallelism_is_applied_to_whole_matches(self):
+        self.remember(self.position(20), 300)
+        eta = self.estimator([self.position(20, 1), self.position(20, 2)], jobs=2)
+        self.assertEqual(eta.remaining_seconds(), 600)  # One match still uses one process.
+        eta.add_game(replace(self.game, match_no=2), [self.position(20, 3)], self.known)
+        self.assertEqual(eta.remaining_seconds(), 600)
+        eta.add_game(replace(self.game, match_no=3), [self.position(20, 4)], self.known)
+        self.assertEqual(eta.remaining_seconds(), 600)
 
 
 if __name__ == '__main__':
