@@ -92,6 +92,7 @@ int main(int argc, char* argv[]) {
         #else
             std::cerr << "ggs 3min build = false" << std::endl;
         #endif
+        print_build_info(std::cerr);
     }
     print_special_commandline_options(commandline_options);
     init_console(options, binary_path);

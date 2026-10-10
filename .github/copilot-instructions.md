@@ -95,6 +95,7 @@ clang++ -O3 ./src/Egaroucid_for_Console.cpp -o ./bin/Egaroucid_for_Console_clang
 - **Required**: `-march=native` for SIMD, `-std=c++20`, `-pthread` for threading
 - **Optional flags**: `-DINCLUDE_GGS` (GGS server support), `-DIS_GGS_TOURNAMENT`
 - **3-minute GGS profile**: add `-DIS_GGS_3MIN` together with `-DINCLUDE_GGS -DIS_GGS_TOURNAMENT`. Root endgame searches permit MPC100% at 35 empties or fewer, 99.9% at 40, 99% at 42, 98% at 44, and 93% at 48. MPC88% and below have no additional empty-square limit. The gate also applies to pondering, candidate comparisons, and pair-outcome exact searches; midgame searches keep their existing settings. With CMake, `-DIS_GGS_3MIN=ON` enables all three definitions and links the Windows socket library when needed.
+- **Build identification**: with `-noise`, Console writes `build ...` lines to the search log at startup (`src/console/build_info.hpp`): the source revision, compile time and compiler, the profile and A/B macros, the GGS time-plan weights, the 3-minute endgame MPC cap, and the path, size and SHA-256 of the running executable. Pass the revision unquoted when building, e.g. `-DEGAROUCID_BUILD_COMMIT=$(git describe --always --dirty --abbrev=9)` (works in PowerShell and bash); without it the revision is logged as `unknown`, and the SHA-256 still identifies the binary. The command line is not logged because it contains the GGS password.
 
 ### Search Parameters
 - **Level**: Search depth/strength (typically 1-60)

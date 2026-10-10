@@ -10,6 +10,7 @@
 
 #pragma once
 #include "board_info.hpp"
+#include "build_info.hpp"
 #include "close.hpp"
 #include "command.hpp"
 #include "command_definition.hpp"
