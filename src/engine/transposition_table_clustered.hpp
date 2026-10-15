@@ -221,4 +221,5 @@ public:
         _mm_prefetch(reinterpret_cast<const char *>(&bucket(h)) + 64, _MM_HINT_T0);
 #endif
     }
+    void prefetch(const Search *, uint32_t h) { prefetch(h); }
 };

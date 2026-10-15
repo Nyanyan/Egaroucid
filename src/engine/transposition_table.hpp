@@ -379,9 +379,12 @@ class Transposition_table{
     @param table_heap           transposition table on heap
     @param table_size           total table size
 */
-#if USE_CLUSTERED_TT
+#if USE_CLUSTERED_TT && USE_DOGAI_TT
+#include "transposition_table_dogai.hpp"
+#elif USE_CLUSTERED_TT
 #include "transposition_table_clustered.hpp"
 #else
+static_assert(!USE_DOGAI_TT, "USE_DOGAI_TT needs USE_CLUSTERED_TT");
 class Transposition_table {
     private:
         std::mutex mtx;
@@ -1037,6 +1040,10 @@ class Transposition_table {
             _mm_prefetch((char const *)node, _MM_HINT_T0);
             //_mm_prefetch((char const *)(node + TRANSPOSITION_TABLE_N_LOOP - 1), _MM_HINT_T0);
 #endif
+        }
+
+        inline void prefetch(const Search *search, uint32_t hash) {
+            prefetch(hash);
         }
 
     private:

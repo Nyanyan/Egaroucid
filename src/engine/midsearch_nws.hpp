@@ -136,7 +136,7 @@ int nega_alpha_eval2_nws(Search *search, int alpha, const Nws_node_hint node_hin
         return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
     uint32_t hash_code = search->board.hash();
-    transposition_table.prefetch(hash_code);
+    transposition_table.prefetch(search, hash_code);
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (transposition_cutoff_nws(search, hash_code, 2, alpha, &v, moves)) {
         return v;
@@ -249,7 +249,7 @@ int nega_alpha_ordering_nws_simple(Search *search, int alpha, const int depth, c
         return child_value == SCORE_UNDEFINED ? SCORE_UNDEFINED : -child_value;
     }
     uint32_t hash_code = search->board.hash();
-    transposition_table.prefetch(hash_code);
+    transposition_table.prefetch(search, hash_code);
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
         return v;
@@ -476,7 +476,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
         return v;
     }
     uint32_t hash_code = search->board.hash();
-    transposition_table.prefetch(hash_code);
+    transposition_table.prefetch(search, hash_code);
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (transposition_cutoff_nws(search, hash_code, depth, alpha, &v, moves)) {
         return v;

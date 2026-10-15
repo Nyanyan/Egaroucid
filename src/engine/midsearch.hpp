@@ -260,7 +260,7 @@ int nega_scout_node(Search *search, int alpha, int beta, const int depth, const 
         return v;
     }
     uint32_t hash_code = search->board.hash();
-    transposition_table.prefetch(hash_code);
+    transposition_table.prefetch(search, hash_code);
     uint_fast8_t moves[N_TRANSPOSITION_MOVES] = {MOVE_UNDEFINED, MOVE_UNDEFINED};
     if (is_pv_node(node_type)) {
         transposition_table.get_moves_any_level(&search->board, hash_code, moves);
