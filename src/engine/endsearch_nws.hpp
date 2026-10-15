@@ -34,8 +34,9 @@
 #include "endsearch_nws_last_generic.hpp"
 #endif
 
-constexpr int LOCAL_TT_SIZE = 2048;
-constexpr int LOCAL_TT_SIZE_BIT = 11;
+// With 2048 entries, about 97% of probes found another board in the slot.
+constexpr int LOCAL_TT_SIZE = 8192;
+constexpr int LOCAL_TT_SIZE_BIT = 13;
 static_assert(
     (END_NWS_CANCELLATION_POLL_MASK & (END_NWS_CANCELLATION_POLL_MASK + 1)) == 0,
     "END_NWS_CANCELLATION_POLL_MASK must be one less than a power of two"
