@@ -157,6 +157,9 @@ struct LocalTTEntry {
     uint64_t opponent;
     int lower;
     int upper;
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+    uint64_t writer_player; // real board of the last writer, statistics only
+#endif
 
     bool cmp(Board *board) {
         return board->player == player && board->opponent == opponent;
@@ -173,6 +176,73 @@ struct LocalTTEntry {
 
 static thread_local LocalTTEntry lttable[MID_TO_END_DEPTH - END_FAST_DEPTH][LOCAL_TT_SIZE];
 
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+static_assert((DOGAI_LOCAL_TT_EMPTIES_MASK & ~0x1FC0) == 0, "local table holds children with 6 to 12 empties");
+
+// The four lines through each square: horizontal, vertical, d7 and d9.
+struct Dogai_lines {
+    uint64_t line[HW2][4];
+};
+
+constexpr Dogai_lines make_dogai_lines() {
+    Dogai_lines res{};
+    for (int cell = 0; cell < HW2; ++cell) {
+        for (int sq = 0; sq < HW2; ++sq) {
+            const int dy = sq / HW - cell / HW, dx = sq % HW - cell % HW;
+            const uint64_t bit = 1ULL << sq;
+            if (dy == 0) res.line[cell][0] |= bit;
+            if (dx == 0) res.line[cell][1] |= bit;
+            if (dy == -dx) res.line[cell][2] |= bit;
+            if (dy == dx) res.line[cell][3] |= bit;
+        }
+    }
+    return res;
+}
+
+inline constexpr Dogai_lines dogai_lines = make_dogai_lines();
+
+// Full lines of a parent whose children reach the local table.
+struct Dogai_full_lines {
+    uint64_t h = 0, v = 0, d7 = 0, d9 = 0;
+    bool enabled = false;
+};
+
+inline Dogai_full_lines dogai_local_tt_full_lines(const Board &board, const uint32_t child_n_discs) {
+    Dogai_full_lines res;
+    if ((DOGAI_LOCAL_TT_EMPTIES_MASK >> (HW2 - child_n_discs)) & 1) {
+        res.enabled = true;
+        full_stability(board.player | board.opponent, &res.h, &res.v, &res.d7, &res.d9);
+    }
+    return res;
+}
+
+/*
+    @brief Solid discs of the side to move in a child that reaches the local table
+
+    A solid disc has all four lines full, so it never flips and never takes
+    part in a flip. The child is stored with these discs given to the
+    opponent, and its score is 2 * (number of them) higher than that of the
+    stored board. Only the lines through the new disc can become full.
+*/
+inline uint64_t dogai_local_tt_child_solid(const Dogai_full_lines &parent, const Board &child, const uint_fast8_t cell) {
+    if (!parent.enabled) {
+        return 0;
+    }
+    const uint64_t empty = ~(child.player | child.opponent);
+    const uint64_t *line = dogai_lines.line[cell];
+    const uint64_t h = parent.h | ((line[0] & empty) ? 0 : line[0]);
+    const uint64_t v = parent.v | ((line[1] & empty) ? 0 : line[1]);
+    const uint64_t d7 = parent.d7 | ((line[2] & empty) ? 0 : line[2]);
+    const uint64_t d9 = parent.d9 | ((line[3] & empty) ? 0 : line[3]);
+    return h & v & d7 & d9 & child.player;
+}
+
+// Child bounds are stored from the parent's view: parent's value + ofs.
+inline int dogai_local_tt_bound(const int stored, const int ofs) {
+    return std::clamp(stored - ofs, -SCORE_MAX, SCORE_MAX);
+}
+#endif
+
 #if USE_LOCAL_TT_STATISTICS
 struct LocalTTStats {
     std::atomic<uint64_t> probes{0};
@@ -183,6 +253,9 @@ struct LocalTTStats {
     std::atomic<uint64_t> upper_stores{0};
     std::atomic<uint64_t> overwrites{0};
     std::atomic<uint64_t> occupied_misses{0};
+    std::atomic<uint64_t> solid_probes{0};       // probes whose child has solid discs of the side to move
+    std::atomic<uint64_t> other_board_hits{0};   // hits written by a board differing in solid-disc colors
+    std::atomic<uint64_t> other_board_cuts{0};   // cutoffs from those hits
 };
 
 inline LocalTTStats local_tt_stats[MID_TO_END_DEPTH - END_FAST_DEPTH];
@@ -227,6 +300,28 @@ inline void local_tt_record_store(uint32_t n_discs, LocalTTEntry *tt, Board *boa
     }
 }
 
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+inline void local_tt_record_solid_probe(uint32_t n_discs, uint64_t solid) {
+    if (solid) {
+        local_tt_stats[local_tt_depth_index(n_discs)].solid_probes.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
+inline bool local_tt_record_other_board_hit(uint32_t n_discs, const LocalTTEntry *tt, uint64_t real_player) {
+    const bool other = tt->writer_player != real_player;
+    if (other) {
+        local_tt_stats[local_tt_depth_index(n_discs)].other_board_hits.fetch_add(1, std::memory_order_relaxed);
+    }
+    return other;
+}
+
+inline void local_tt_record_other_board_cut(uint32_t n_discs, bool other) {
+    if (other) {
+        local_tt_stats[local_tt_depth_index(n_discs)].other_board_cuts.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+#endif
+
 inline void local_tt_stats_print() {
     uint64_t total_probes = 0;
     uint64_t total_hits = 0;
@@ -237,7 +332,7 @@ inline void local_tt_stats_print() {
     uint64_t total_overwrites = 0;
     uint64_t total_occupied_misses = 0;
     std::cout << "LOCAL_TT_STATS_BEGIN\n";
-    std::cout << "empties\tprobes\thits\tlower_cuts\tupper_cuts\tlower_stores\tupper_stores\toverwrites\toccupied_misses\n";
+    std::cout << "empties\tprobes\thits\tlower_cuts\tupper_cuts\tlower_stores\tupper_stores\toverwrites\toccupied_misses\tsolid_probes\tother_board_hits\tother_board_cuts\n";
     for (int i = 0; i < MID_TO_END_DEPTH - END_FAST_DEPTH; ++i) {
         const uint64_t probes = local_tt_stats[i].probes.load(std::memory_order_relaxed);
         const uint64_t hits = local_tt_stats[i].hits.load(std::memory_order_relaxed);
@@ -256,7 +351,10 @@ inline void local_tt_stats_print() {
                 << lower_stores << '\t'
                 << upper_stores << '\t'
                 << overwrites << '\t'
-                << occupied_misses << '\n';
+                << occupied_misses << '\t'
+                << local_tt_stats[i].solid_probes.load(std::memory_order_relaxed) << '\t'
+                << local_tt_stats[i].other_board_hits.load(std::memory_order_relaxed) << '\t'
+                << local_tt_stats[i].other_board_cuts.load(std::memory_order_relaxed) << '\n';
         }
         total_probes += probes;
         total_hits += hits;
@@ -343,6 +441,9 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
     LocalTTEntry *const child_lttable =
         lttable[HW2 - child_n_discs - END_FAST_DEPTH];
     Flip_value move_list[END_SIMPLE_DEPTH];
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+    uint64_t solids[END_SIMPLE_DEPTH];
+#endif
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip_value(&move_list[idx], &search->board, cell);
@@ -353,6 +454,9 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
     }
     int g;
     // move ordering
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+    const Dogai_full_lines parent_full = dogai_local_tt_full_lines(search->board, child_n_discs);
+#endif
     uint64_t done = 0;
     if (canput > 1) {
         for (int i = 0; i < canput; ++i) {
@@ -365,29 +469,60 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
                 Board nboard = search->board;
                 // static_eval is unused in endgame move ordering.  Carry the
                 // already-computed local-TT index with the move through sort.
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                const uint64_t solid = dogai_local_tt_child_solid(parent_full, nboard, flip_value->flip.pos);
+                const int ofs = 2 * pop_count_ull(solid);
+                solids[i] = solid;
+                nboard.player ^= solid;
+                nboard.opponent ^= solid;
+                // The move's index rides above the table index.
+                flip_value->static_eval = hash_bb(&nboard) | (i << LOCAL_TT_SIZE_BIT);
+                LocalTTEntry *tt = child_lttable + (flip_value->static_eval & (LOCAL_TT_SIZE - 1));
+#else
+                constexpr int ofs = 0;
                 flip_value->static_eval = hash_bb(&nboard);
                 LocalTTEntry *tt = child_lttable + flip_value->static_eval;
+#endif
 #if USE_LOCAL_TT_STATISTICS
                 local_tt_record_probe(child_n_discs, tt, &nboard);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                local_tt_record_solid_probe(child_n_discs, solid);
+#endif
 #endif
                 if (tt->cmp(&nboard)) {
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                    const int tt_lower = dogai_local_tt_bound(tt->lower, ofs);
+                    const int tt_upper = dogai_local_tt_bound(tt->upper, ofs);
+#else
+                    const int tt_lower = tt->lower;
+                    const int tt_upper = tt->upper;
+#endif
 #if USE_LOCAL_TT_STATISTICS
                     local_tt_record_hit(child_n_discs);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                    const bool other_board = local_tt_record_other_board_hit(child_n_discs, tt, search->board.player);
 #endif
-                    if (alpha < tt->lower) {
+#endif
+                    if (alpha < tt_lower) {
 #if USE_LOCAL_TT_STATISTICS
                         local_tt_record_lower_cut(child_n_discs);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                        local_tt_record_other_board_cut(child_n_discs, other_board);
 #endif
-                        v = tt->lower;
+#endif
+                        v = tt_lower;
                         search->undo_noeval(&flip_value->flip);
                         return v;
                     }
-                    if (tt->upper <= alpha) {
+                    if (tt_upper <= alpha) {
 #if USE_LOCAL_TT_STATISTICS
                         local_tt_record_upper_cut(child_n_discs);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                        local_tt_record_other_board_cut(child_n_discs, other_board);
 #endif
-                        if (v < tt->upper) {
-                            v = tt->upper;
+#endif
+                        if (v < tt_upper) {
+                            v = tt_upper;
                         }
                         done |= (1ULL << flip_value->flip.pos);
                         search->undo_noeval(&flip_value->flip);
@@ -409,14 +544,20 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
 #if USE_LOCAL_TT_STATISTICS
                             local_tt_record_store(child_n_discs, tt, &nboard, true);
 #endif
-                            tt->set_score(&nboard, v, 64);
+                            tt->set_score(&nboard, v + ofs, 64);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+                            tt->writer_player = nboard.player ^ solid;
+#endif
                             return v;
                         }
                     }
 #if USE_LOCAL_TT_STATISTICS
                     local_tt_record_store(child_n_discs, tt, &nboard, false);
 #endif
-                    tt->set_score(&nboard, -64, g);
+                    tt->set_score(&nboard, -64, g + ofs);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+                    tt->writer_player = nboard.player ^ solid;
+#endif
                     done |= (1ULL << flip_value->flip.pos);
                     continue;
                 }
@@ -432,9 +573,22 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
         }
         search->move_noeval(&move_list[move_idx].flip);
             Board nboard = search->board;
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+            const uint64_t solid = canput > 1
+                ? solids[move_list[move_idx].static_eval >> LOCAL_TT_SIZE_BIT]
+                : dogai_local_tt_child_solid(parent_full, nboard, move_list[move_idx].flip.pos);
+            const int ofs = 2 * pop_count_ull(solid);
+            nboard.player ^= solid;
+            nboard.opponent ^= solid;
+            const uint32_t ltt_index = canput > 1
+                ? move_list[move_idx].static_eval & (LOCAL_TT_SIZE - 1)
+                : hash_bb(&nboard);
+#else
+            constexpr int ofs = 0;
             const uint32_t ltt_index = canput > 1
                 ? move_list[move_idx].static_eval
                 : hash_bb(&nboard);
+#endif
             LocalTTEntry *tt = child_lttable + ltt_index;
             const int child_value = nega_alpha_end_simple_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, cancellation);
         search->undo_noeval(&move_list[move_idx].flip);
@@ -448,14 +602,20 @@ int nega_alpha_end_simple_nws(Search *search, int alpha, const bool skipped, uin
 #if USE_LOCAL_TT_STATISTICS
                 local_tt_record_store(child_n_discs, tt, &nboard, true);
 #endif
-                tt->set_score(&nboard, v, 64);
+                tt->set_score(&nboard, v + ofs, 64);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+                tt->writer_player = nboard.player ^ solid;
+#endif
                 break;
             }
         }
 #if USE_LOCAL_TT_STATISTICS
         local_tt_record_store(child_n_discs, tt, &nboard, false);
 #endif
-        tt->set_score(&nboard, -64, g);
+        tt->set_score(&nboard, -64, g + ofs);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+        tt->writer_player = nboard.player ^ solid;
+#endif
     }
     return v;
 }
@@ -510,6 +670,9 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
     LocalTTEntry *const child_lttable =
         lttable[HW2 - child_n_discs - END_FAST_DEPTH];
     Flip_value move_list[MID_TO_END_DEPTH];
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+    uint64_t solids[MID_TO_END_DEPTH];
+#endif
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip_value(&move_list[idx], &search->board, cell);
@@ -518,6 +681,9 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         }
         ++idx;
     }
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+    const Dogai_full_lines parent_full = dogai_local_tt_full_lines(search->board, child_n_discs);
+#endif
     uint64_t done = 0;
     if (canput > 1) {
         for (int i = 0; i < canput; ++i) {
@@ -527,29 +693,60 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                 Board nboard = search->board;
                 // static_eval is unused in endgame move ordering.  Carry the
                 // already-computed local-TT index with the move through sort.
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                const uint64_t solid = dogai_local_tt_child_solid(parent_full, nboard, flip_value->flip.pos);
+                const int ofs = 2 * pop_count_ull(solid);
+                solids[i] = solid;
+                nboard.player ^= solid;
+                nboard.opponent ^= solid;
+                // The move's index rides above the table index.
+                flip_value->static_eval = hash_bb(&nboard) | (i << LOCAL_TT_SIZE_BIT);
+                LocalTTEntry *tt = child_lttable + (flip_value->static_eval & (LOCAL_TT_SIZE - 1));
+#else
+                constexpr int ofs = 0;
                 flip_value->static_eval = hash_bb(&nboard);
                 LocalTTEntry *tt = child_lttable + flip_value->static_eval;
+#endif
 #if USE_LOCAL_TT_STATISTICS
                 local_tt_record_probe(child_n_discs, tt, &nboard);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                local_tt_record_solid_probe(child_n_discs, solid);
+#endif
 #endif
                 if (tt->cmp(&nboard)) {
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                    const int tt_lower = dogai_local_tt_bound(tt->lower, ofs);
+                    const int tt_upper = dogai_local_tt_bound(tt->upper, ofs);
+#else
+                    const int tt_lower = tt->lower;
+                    const int tt_upper = tt->upper;
+#endif
 #if USE_LOCAL_TT_STATISTICS
                     local_tt_record_hit(child_n_discs);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                    const bool other_board = local_tt_record_other_board_hit(child_n_discs, tt, search->board.player);
 #endif
-                    if (alpha < tt->lower) {
+#endif
+                    if (alpha < tt_lower) {
 #if USE_LOCAL_TT_STATISTICS
                         local_tt_record_lower_cut(child_n_discs);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                        local_tt_record_other_board_cut(child_n_discs, other_board);
 #endif
-                        v = tt->lower;
+#endif
+                        v = tt_lower;
                         search->undo_endsearch(&flip_value->flip);
                         return v;
                     }
-                    if (tt->upper <= alpha) {
+                    if (tt_upper <= alpha) {
 #if USE_LOCAL_TT_STATISTICS
                         local_tt_record_upper_cut(child_n_discs);
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+                        local_tt_record_other_board_cut(child_n_discs, other_board);
 #endif
-                        if (v < tt->upper) {
-                            v = tt->upper;
+#endif
+                        if (v < tt_upper) {
+                            v = tt_upper;
                         }
                         done |= (1ULL << flip_value->flip.pos);
                         search->undo_endsearch(&flip_value->flip);
@@ -571,14 +768,20 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
 #if USE_LOCAL_TT_STATISTICS
                             local_tt_record_store(child_n_discs, tt, &nboard, true);
 #endif
-                            tt->set_score(&nboard, v, 64);
+                            tt->set_score(&nboard, v + ofs, 64);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+                            tt->writer_player = nboard.player ^ solid;
+#endif
                             return v;
                         }
                     }
 #if USE_LOCAL_TT_STATISTICS
                     local_tt_record_store(child_n_discs, tt, &nboard, false);
 #endif
-                    tt->set_score(&nboard, -64, g);
+                    tt->set_score(&nboard, -64, g + ofs);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+                    tt->writer_player = nboard.player ^ solid;
+#endif
                     done |= (1ULL << flip_value->flip.pos);
                     continue;
                 }
@@ -594,9 +797,22 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         }
         search->move_endsearch(&move_list[move_idx].flip);
             Board nboard = search->board;
+#if DOGAI_LOCAL_TT_EMPTIES_MASK
+            const uint64_t solid = canput > 1
+                ? solids[move_list[move_idx].static_eval >> LOCAL_TT_SIZE_BIT]
+                : dogai_local_tt_child_solid(parent_full, nboard, move_list[move_idx].flip.pos);
+            const int ofs = 2 * pop_count_ull(solid);
+            nboard.player ^= solid;
+            nboard.opponent ^= solid;
+            const uint32_t ltt_index = canput > 1
+                ? move_list[move_idx].static_eval & (LOCAL_TT_SIZE - 1)
+                : hash_bb(&nboard);
+#else
+            constexpr int ofs = 0;
             const uint32_t ltt_index = canput > 1
                 ? move_list[move_idx].static_eval
                 : hash_bb(&nboard);
+#endif
             LocalTTEntry *tt = child_lttable + ltt_index;
             const int child_value = nega_alpha_end_nws(search, -alpha - 1, false, move_list[move_idx].n_legal, cancellation);
         search->undo_endsearch(&move_list[move_idx].flip);
@@ -610,14 +826,20 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
 #if USE_LOCAL_TT_STATISTICS
                 local_tt_record_store(child_n_discs, tt, &nboard, true);
 #endif
-                tt->set_score(&nboard, v, 64);
+                tt->set_score(&nboard, v + ofs, 64);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+                tt->writer_player = nboard.player ^ solid;
+#endif
                 break;
             }
         }
 #if USE_LOCAL_TT_STATISTICS
         local_tt_record_store(child_n_discs, tt, &nboard, false);
 #endif
-        tt->set_score(&nboard, -64, g);
+        tt->set_score(&nboard, -64, g + ofs);
+#if USE_LOCAL_TT_STATISTICS && DOGAI_LOCAL_TT_EMPTIES_MASK
+        tt->writer_player = nboard.player ^ solid;
+#endif
     }
     return v;
 }

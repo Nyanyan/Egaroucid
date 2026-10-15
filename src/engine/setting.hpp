@@ -149,6 +149,16 @@
 #define USE_CLUSTERED_TT true
 #endif
 
+// Endgame local table: child empties at which records are shared among
+// positions that differ only in the colors of solid discs (all four lines
+// full). Bit n set = used at n empties (6 <= n <= 12); 0 disables it. As in
+// Edax, the side to move's solid discs are given to the opponent and the
+// score is shifted, which is inexact when a game ending with empty squares
+// changes the winner.
+#ifndef DOGAI_LOCAL_TT_EMPTIES_MASK
+#define DOGAI_LOCAL_TT_EMPTIES_MASK 0
+#endif
+
 // Multi-ProbCut
 #define USE_MID_MPC true
 
@@ -296,7 +306,9 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #define USE_SEARCH_STATISTICS false
 
 // Local TT statistics
+#ifndef USE_LOCAL_TT_STATISTICS
 #define USE_LOCAL_TT_STATISTICS false
+#endif
 
 // thread monitor
 #define USE_THREAD_MONITOR false
