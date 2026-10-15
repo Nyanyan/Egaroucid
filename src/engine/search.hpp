@@ -398,15 +398,6 @@ struct Analyze_result {
     @param eval_feature_reversed    need to swap player in evaluation?
     @param use_multi_thread     use parallel search?
 */
-#if USE_DOGAI_TT
-constexpr int N_DOGAI_TT_KEY_CACHE = 8;
-struct Dogai_tt_key_cache_slot {
-    uint64_t player = 0;
-    uint64_t opponent = 0;
-    uint64_t solid = 0;
-};
-#endif
-
 class Search {
     public:
         Board board;
@@ -435,10 +426,6 @@ class Search {
         int tt_nonexact_bound_min_ply = 0;
         int_fast8_t pv_extension_empties = PV_EXTENSION_DISABLED;
         uint64_t n_pv_extensions = 0;
-#if USE_DOGAI_TT
-        // Solid discs of the side to move, cached for the transposition table.
-        mutable Dogai_tt_key_cache_slot dogai_tt_key_cache[N_DOGAI_TT_KEY_CACHE];
-#endif
 
         inline bool can_use_tt_nonexact_bounds() const {
             return n_discs - root_n_discs >= tt_nonexact_bound_min_ply;

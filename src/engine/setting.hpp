@@ -149,13 +149,6 @@
 #define USE_CLUSTERED_TT true
 #endif
 
-#ifndef USE_DOGAI_TT
-// Share endgame records among positions that differ only in the colors of
-// solid discs (all four lines full), shifting the score as Edax does.
-// Inexact when a game ending with empty squares changes the winner.
-#define USE_DOGAI_TT false
-#endif
-
 // Multi-ProbCut
 #define USE_MID_MPC true
 
