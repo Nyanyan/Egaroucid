@@ -3427,6 +3427,27 @@ constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_LATE_MAX_GOOD_MOVES = 3;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_SELFPLAYED_TOP_MOVES = 2;
 constexpr int AI_TL_GGS_SELFPLAY_RESOLVE_MIN_REPEATED_TOP_COUNT = 2;
 
+// After the opening the planned time limit is already the move cap, so the cap
+// absorbs any ambiguity boost: skip the probe and give its time to the main
+// search. 36 empties keep it while the selfplay resolver, which reads the
+// probe's values, is on. The late fallback at 36 also reads them, but it never
+// fired in the 3-minute games, while the probe took 5.6 s per pair at 36-29
+// in the 2026-10-16 games.
+inline bool ai_time_limit_ggs_plan_skips_ambiguity_probe(const Time_management_ggs_plan &plan, int n_empties) {
+    if (plan.share_msec == 0ULL) {
+        return false;
+    }
+    switch (plan.phase) {
+        case Time_management_ggs_phase::midgame:
+            return true;
+        case Time_management_ggs_phase::early_endgame:
+        case Time_management_ggs_phase::pre_complete:
+            return !(AI_TL_GGS_SELFPLAY_RESOLVE_ENABLED && n_empties >= AI_TL_GGS_SELFPLAY_RESOLVE_MIN_N_EMPTY);
+        default:
+            return false;
+    }
+}
+
 struct AI_TL_GGS_Selfplay_Resolve_Result {
     bool valid;
     int policy;
@@ -4093,9 +4114,7 @@ Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool
     std::vector<Ponder_elem> ambiguity_move_list;
     bool has_ambiguity_move_list = false;
     uint64_t ambiguity_probe_time = ai_time_limit_ggs_ambiguity_probe_time(board, time_limit, remaining_time_msec);
-    if (ggs_plan.phase == Time_management_ggs_phase::midgame && ggs_plan.share_msec > 0ULL) {
-        // The plan already gives these moves a fixed share; spend all of it on
-        // the main search instead of a probe whose boost the cap would absorb.
+    if (ai_time_limit_ggs_plan_skips_ambiguity_probe(ggs_plan, HW2 - board.n_discs())) {
         ambiguity_probe_time = 0ULL;
     }
     if (ambiguity_probe_time > 0ULL) {

@@ -761,6 +761,37 @@ void test_ggs_plan_application() {
     require_equal(time_management_ggs_apply_plan(plan, 800ULL, false), 800ULL, "late moves keep the ordinary allocation");
 }
 
+void test_ggs_plan_ambiguity_probe_skip() {
+    Time_management_ggs_plan plan;
+    plan.share_msec = 5000ULL;
+    for (const Time_management_ggs_phase phase: {
+        Time_management_ggs_phase::midgame,
+        Time_management_ggs_phase::early_endgame,
+        Time_management_ggs_phase::pre_complete
+    }) {
+        plan.phase = phase;
+        for (const uint64_t time_limit: {1400ULL, 5000ULL, 6000ULL}) {
+            const uint64_t planned = time_management_ggs_apply_plan(plan, time_limit, false);
+            require_equal(time_management_ggs_plan_move_cap(plan, planned), planned, "after the opening the move cap leaves no room for a boost");
+        }
+    }
+    plan.phase = Time_management_ggs_phase::opening;
+    require(!ai_time_limit_ggs_plan_skips_ambiguity_probe(plan, 50), "the opening keeps the probe");
+    plan.phase = Time_management_ggs_phase::midgame;
+    require(ai_time_limit_ggs_plan_skips_ambiguity_probe(plan, 40), "the midgame skips the probe");
+    plan.phase = Time_management_ggs_phase::early_endgame;
+    require(
+        ai_time_limit_ggs_plan_skips_ambiguity_probe(plan, 36) == !AI_TL_GGS_SELFPLAY_RESOLVE_ENABLED,
+        "36 empties keep the probe only for the selfplay resolver"
+    );
+    require(ai_time_limit_ggs_plan_skips_ambiguity_probe(plan, 35), "35 empties skip the probe");
+    plan.phase = Time_management_ggs_phase::pre_complete;
+    require(ai_time_limit_ggs_plan_skips_ambiguity_probe(plan, 34), "34 empties skip the probe");
+    require(ai_time_limit_ggs_plan_skips_ambiguity_probe(plan, 29), "29 empties skip the probe");
+    plan.share_msec = 0ULL;
+    require(!ai_time_limit_ggs_plan_skips_ambiguity_probe(plan, 33), "without a share the boost can add time, so the probe stays");
+}
+
 void test_ggs_plan_time_limits() {
     require(
         calc_time_limit_ply(board_with_empties(40), 33000ULL, false) >= time_management_ggs_make_plan(40, 33000ULL).share_msec,
@@ -882,6 +913,7 @@ int main() {
         test_ggs_plan_shares();
         test_ggs_plan_keeps_late_reserve();
         test_ggs_plan_application();
+        test_ggs_plan_ambiguity_probe_skip();
         test_ggs_plan_time_limits();
         test_time_limit_grows_with_remaining_time();
     } catch (const std::exception &error) {
