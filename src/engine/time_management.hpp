@@ -166,8 +166,22 @@ constexpr int TIME_MANAGEMENT_INITIAL_N_EMPTIES = 50; // 64 - 14 (s8r14)
     #ifndef TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT
         #define TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT 2500.0
     #endif
-    #ifndef TIME_MANAGEMENT_GGS_PLAN_32_TO_29_WEIGHT
-        #define TIME_MANAGEMENT_GGS_PLAN_32_TO_29_WEIGHT TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_32_TO_31_WEIGHT
+        #define TIME_MANAGEMENT_GGS_PLAN_32_TO_31_WEIGHT TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT
+    #endif
+    #ifndef TIME_MANAGEMENT_GGS_PLAN_30_TO_29_WEIGHT
+        #if IS_GGS_3MIN
+            // The last planned own move (30 or 29 empties) gets the whole rest
+            // of the plan, so its weight only decides how much the earlier
+            // moves leave for it. In the 2026-10-16 3:00 games (10 threads)
+            // these moves used 1.5 s / 0.4 s of a 15.5 s / 16.5 s mean share,
+            // because the exact search or Ponder had mostly solved them. A
+            // clock replay with 1000 moved 11 s per pair to the earlier moves
+            // and cut 21 of the 274 moves at 30/29 by 4.4 s on average.
+            #define TIME_MANAGEMENT_GGS_PLAN_30_TO_29_WEIGHT 1000.0
+        #else
+            #define TIME_MANAGEMENT_GGS_PLAN_30_TO_29_WEIGHT TIME_MANAGEMENT_GGS_PLAN_32_TO_31_WEIGHT
+        #endif
     #endif
 #else
     #define TIME_MANAGEMENT_REMAINING_TIME_OFFSET 300 // ms / move
@@ -249,7 +263,10 @@ inline double time_management_ggs_plan_weight(int n_empties) {
         case Time_management_ggs_phase::early_endgame:
             return TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT;
         case Time_management_ggs_phase::pre_complete:
-            return n_empties <= 32 ? TIME_MANAGEMENT_GGS_PLAN_32_TO_29_WEIGHT :
+            if (n_empties <= 30) {
+                return TIME_MANAGEMENT_GGS_PLAN_30_TO_29_WEIGHT;
+            }
+            return n_empties <= 32 ? TIME_MANAGEMENT_GGS_PLAN_32_TO_31_WEIGHT :
                 TIME_MANAGEMENT_GGS_PLAN_PRE_COMPLETE_WEIGHT;
         case Time_management_ggs_phase::late:
             break;

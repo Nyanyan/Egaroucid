@@ -98,7 +98,8 @@ void test_startup_lines() {
     require(lines[2].rfind("build flags INCLUDE_GGS=1 IS_GGS_TOURNAMENT=1 IS_GGS_3MIN=1 ", 0) == 0, "flags line: " + lines[2]);
     require(lines[2].find(" EGAROUCID_GGS_SELFPLAY_RESOLVE=0") != std::string::npos, "selfplay flag: " + lines[2]);
     require(lines[3].find(" TIME_MANAGEMENT_GGS_PLAN_EARLY_ENDGAME_WEIGHT=7000.0") != std::string::npos, "plan line: " + lines[3]);
-    require(lines[3].find(" TIME_MANAGEMENT_GGS_PLAN_32_TO_29_WEIGHT=2500.0") != std::string::npos, "plan line: " + lines[3]);
+    require(lines[3].find(" TIME_MANAGEMENT_GGS_PLAN_32_TO_31_WEIGHT=2500.0") != std::string::npos, "plan line: " + lines[3]);
+    require(lines[3].find(" TIME_MANAGEMENT_GGS_PLAN_30_TO_29_WEIGHT=1000.0") != std::string::npos, "plan line: " + lines[3]);
     require_equal(lines[4], "build endgame mpc cap 1-35:100 36-40:99.9 41-42:99 43-44:98 45-48:93 49-60:88", "cap line");
     require(lines[5].find("[ERROR]") == std::string::npos, "no error marker");
 
