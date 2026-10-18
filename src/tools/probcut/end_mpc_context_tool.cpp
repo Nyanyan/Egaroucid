@@ -481,11 +481,138 @@ int batch_probe(const std::string &path) {
     return 0;
 }
 
+/*
+    Run one endgame MPC shallow probe the way mpc_end_recalibrated_shallow
+    does (selected MPC level, probe nesting, null window), on a cold TT.
+*/
+bool cold_probe_succeeds(
+    const Board &board,
+    int shallow_depth,
+    int mpc_level,
+    bool high,
+    int threshold,
+    uint64_t *n_nodes
+) {
+    transposition_table.init();
+    bool searching = true;
+    global_searching = true;
+    Board probe_board = board;
+    Search search(&probe_board, (uint_fast8_t)mpc_level, false, false);
+    const uint64_t legal = probe_board.get_legal();
+    bool succeeded;
+    {
+        Mpc_probe_scope probe(search, false, true);
+        Move_ordering_eval_scope evaluation_scope(search, shallow_depth, true);
+        if (high) {
+            succeeded = nega_alpha_ordering_nws(
+                &search, threshold - 1, shallow_depth,
+                Nws_node_hint::no_static_eval(), legal, false, &searching
+            ) >= threshold;
+        } else {
+            succeeded = nega_alpha_ordering_nws(
+                &search, threshold, shallow_depth,
+                Nws_node_hint::no_static_eval(), legal, false, &searching
+            ) <= threshold;
+        }
+    }
+    *n_nodes += search.n_nodes;
+    return succeeded;
+}
+
+/*
+    For each "id board shallow_depth mpc_level direction" line, print the
+    current static evaluation, the MPC 100% full-window shallow value, and
+    the probe value: the largest threshold at which an upper probe succeeds,
+    or the smallest threshold at which a lower probe succeeds.
+*/
+int probe_values(const std::string &path) {
+    constexpr int MAX_STEPS = 24;
+    std::ifstream file(path);
+    if (!file) {
+        std::cerr << "cannot open probe file\n";
+        return 2;
+    }
+    std::cout
+        << "id\td0\tlegal_count\tvalue100\tprobe_value\tprobe_calls"
+        << "\tprobe_nodes\n";
+    std::string line;
+    while (std::getline(file, line)) {
+        std::stringstream stream(line);
+        std::string id, board_text_cells, board_text_side, direction;
+        int shallow_depth, mpc_level;
+        if (!(stream >> id >> board_text_cells >> board_text_side >>
+              shallow_depth >> mpc_level >> direction)) {
+            continue;
+        }
+        Board board;
+        if (!board.from_str(board_text_cells + " " + board_text_side)) {
+            std::cerr << "invalid board " << id << '\n';
+            continue;
+        }
+        const uint64_t legal = board.get_legal();
+        if (legal == 0 || shallow_depth <= 0) {
+            continue;
+        }
+        const bool high = direction == "high";
+        Search eval_search(&board, MPC_100_LEVEL, false, false);
+        const int d0_value = mid_evaluate_diff(&eval_search);
+
+        transposition_table.init();
+        bool searching = true;
+        global_searching = true;
+        Search shallow_search(&board, MPC_100_LEVEL, false, false);
+        const int value100 = first_nega_scout_legal(
+            &shallow_search, -SCORE_MAX, SCORE_MAX, shallow_depth, false,
+            std::vector<Clog_result>(), legal, tim(), &searching
+        ).first;
+
+        uint64_t probe_nodes = 0;
+        int calls = 0;
+        int probe_value = value100;
+        auto succeeds = [&](int threshold) {
+            ++calls;
+            return cold_probe_succeeds(
+                board, shallow_depth, mpc_level, high, threshold, &probe_nodes
+            );
+        };
+        if (high) {
+            if (succeeds(probe_value)) {
+                while (probe_value < SCORE_MAX && calls < MAX_STEPS &&
+                       succeeds(probe_value + 1)) {
+                    ++probe_value;
+                }
+            } else {
+                do {
+                    --probe_value;
+                } while (probe_value > -SCORE_MAX && calls < MAX_STEPS &&
+                         !succeeds(probe_value));
+            }
+        } else {
+            if (succeeds(probe_value)) {
+                while (probe_value > -SCORE_MAX && calls < MAX_STEPS &&
+                       succeeds(probe_value - 1)) {
+                    --probe_value;
+                }
+            } else {
+                do {
+                    ++probe_value;
+                } while (probe_value < SCORE_MAX && calls < MAX_STEPS &&
+                         !succeeds(probe_value));
+            }
+        }
+        std::cout
+            << id << '\t' << d0_value << '\t' << pop_count_ull(legal) << '\t'
+            << value100 << '\t' << probe_value << '\t' << calls << '\t'
+            << probe_nodes << '\n';
+    }
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cerr << "usage: end_mpc_context_tool <trace|score-grid|shallow-grid|label> ...\n";
+        std::cerr << "usage: end_mpc_context_tool <trace|score-grid|shallow-grid|label|batch-probe|probe-values> ...\n";
         return 2;
     }
     const std::string command = argv[1];
@@ -519,6 +646,9 @@ int main(int argc, char **argv) {
     }
     if (command == "batch-probe" && argc == 3) {
         return batch_probe(argv[2]);
+    }
+    if (command == "probe-values" && argc == 3) {
+        return probe_values(argv[2]);
     }
     if (command == "label" && argc == 9) {
         return label(
