@@ -322,6 +322,28 @@ inline int mid_evaluate_for_search(Search *search) {
 #endif
 }
 
+// Leaf value seen from the parent of a null-window node (beta = alpha + 1). With
+// EGAROUCID_NNUE_LAZY = C, the pattern evaluation stands in for the network whenever it lies more
+// than C discs from alpha, so the network runs only near the window (not exact: the network may
+// disagree with the pattern evaluation by more than C).
+inline int mid_evaluate_for_search_nws_leaf(Search *search, int alpha) {
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_LAZY)
+#if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION
+    if (search->use_separate_shallow_evaluation) {
+        return -mid_evaluate_for_search(search);
+    }
+#endif
+    const int pattern_value = -mid_evaluate_diff(search);
+    if (pattern_value > alpha + EGAROUCID_NNUE_LAZY || pattern_value < alpha - EGAROUCID_NNUE_LAZY) {
+        return pattern_value;
+    }
+    return -mid_evaluate_nnue(search);
+#else
+    (void)alpha;
+    return -mid_evaluate_for_search(search);
+#endif
+}
+
 inline int move_ordering_leaf_hint(Search *search, int static_value) {
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
     if (search->separate_shallow_model == search_static_ordering_model(search)) return static_value;

@@ -298,15 +298,16 @@ inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint6
             x[v] = _mm256_min_epi16(_mm256_mulhi_epi16(_mm256_slli_epi16(a, 5), b), c127);  // (a * b) >> 11
         }
         const int16_t *l1 = w.l1_w + (size_t)bucket * H_FIXED * HALF;
-        __m256i s[H_FIXED];
-        for (int h = 0; h < H_FIXED; ++h) {
-            __m256i t = _mm256_madd_epi16(x[0], _mm256_loadu_si256((const __m256i*)(l1 + h * HALF)));
-            for (int v = 1; v < NX; ++v) t = _mm256_add_epi32(t, _mm256_madd_epi16(x[v], _mm256_loadu_si256((const __m256i*)(l1 + h * HALF + v * 16))));
-            s[h] = t;
-        }
         __m256i o = _mm256_setzero_si256();
-        for (int g = 0; g < H_FIXED / 8; ++g) {
-            __m256i zs = hsum8_epi32(s[8 * g], s[8 * g + 1], s[8 * g + 2], s[8 * g + 3], s[8 * g + 4], s[8 * g + 5], s[8 * g + 6], s[8 * g + 7]);
+        for (int g = 0; g < H_FIXED / 8; ++g) {  // 8 outputs at a time keeps the partial sums in registers
+            __m256i s[8];
+            for (int h = 0; h < 8; ++h) {
+                const int16_t *row = l1 + (8 * g + h) * HALF;
+                __m256i t = _mm256_madd_epi16(x[0], _mm256_loadu_si256((const __m256i*)row));
+                for (int v = 1; v < NX; ++v) t = _mm256_add_epi32(t, _mm256_madd_epi16(x[v], _mm256_loadu_si256((const __m256i*)(row + v * 16))));
+                s[h] = t;
+            }
+            __m256i zs = hsum8_epi32(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]);
             zs = _mm256_add_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.l1_b[bucket][8 * g]));
             zs = _mm256_min_epi32(_mm256_max_epi32(_mm256_srai_epi32(zs, 6), _mm256_setzero_si256()), _mm256_set1_epi32(127));
             o = _mm256_add_epi32(o, _mm256_mullo_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.out_w[bucket][8 * g])));

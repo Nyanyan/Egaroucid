@@ -47,7 +47,7 @@ def run_engine(engine, extra, rows, workdir):
     out = []
     for line in p.stdout.splitlines():
         cols = [c.strip() for c in line.split("|") if c.strip()]
-        if len(cols) == 7 and cols[0].isdigit():
+        if len(cols) == 7 and cols[0] != "Level":
             out.append({"depth": cols[1], "move": cols[2].lower(), "score": int(cols[3]),
                         "time": parse_time(cols[4]), "nodes": int(cols[5])})
     if len(out) != len(rows):

@@ -80,7 +80,7 @@ inline int nega_alpha_eval1_nws(Search *search, int alpha, const Nws_node_hint n
             calc_flip(&flip, &search->board, cell);
             search->move(&flip);
                 ++search->n_nodes;
-                g = -mid_evaluate_for_search(search);
+                g = mid_evaluate_for_search_nws_leaf(search, alpha);
             search->undo(&flip);
             if (v < g) {
                 if (alpha < g) {
