@@ -184,7 +184,12 @@ inline int move_ordering_mid_evaluate(
     }
 #if USE_DIM0_ONLY_EVALUATION
     else if (cache_static_eval) {
+#if defined(EGAROUCID_NNUE) && EGAROUCID_NNUE_SCOPE < 2
+        // this is the pattern value; children must compute the NNUE leaf value themselves
+        flip_value->static_eval = SCORE_UNDEFINED;
+#else
         flip_value->static_eval = static_eval;
+#endif
     }
 #endif
     return static_eval;

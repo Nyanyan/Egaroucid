@@ -569,6 +569,11 @@ class Search {
             const Eval_features *sibling_base
         ) {
             eval_move_from_sibling_base(&eval, flip, sibling_base);
+#ifdef EGAROUCID_NNUE
+            nnue::lanes_move(reinterpret_cast<const nnue::Lanes*>(&eval.nnue_lanes[eval.feature_idx - 1]),
+                             reinterpret_cast<nnue::Lanes*>(&eval.nnue_lanes[eval.feature_idx]),
+                             board.player, board.opponent & ~flip->flip, flip->pos);
+#endif
             board.move_board(flip);
             ++n_discs;
             parity ^= cell_div4[flip->pos];

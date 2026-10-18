@@ -23,6 +23,9 @@
 #include "search.hpp"
 #include "util.hpp"
 #include "evaluate_common.hpp"
+#ifdef EGAROUCID_NNUE
+#include "nnue/nnue_eval.hpp"
+#endif
 
 /*
     @brief evaluation pattern definition for SIMD
@@ -527,6 +530,9 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         return false;
     }
     pre_calculate_eval_constant();
+#ifdef EGAROUCID_NNUE
+    if (!nnue::init(nnue::default_path(file), show_log)) return false;
+#endif
     if (!initialize_auto_move_ordering_models(file, show_log)) return false;
     if (show_log) {
         std::cerr << "evaluation function initialized" << std::endl;
@@ -639,6 +645,9 @@ inline int mid_evaluate(Board *board) {
 #if !USE_DIM0_ONLY_EVALUATION
     res += eval_fm_calc(phase_idx, &eval.features[eval.feature_idx]);
 #endif
+#if defined(EGAROUCID_NNUE) && EGAROUCID_NNUE_SCOPE >= 2
+    return nnue::evaluate(board->player, board->opponent, HW2 - board->n_discs(), res);
+#endif
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
@@ -659,11 +668,38 @@ inline int mid_evaluate_diff(Search *search) {
 #if !USE_DIM0_ONLY_EVALUATION
     res += eval_fm_calc(phase_idx, &search->eval.features[search->eval.feature_idx]);
 #endif
+#if defined(EGAROUCID_NNUE) && EGAROUCID_NNUE_SCOPE >= 2
+    return nnue::evaluate(search->board.player, search->board.opponent, HW2 - search->n_discs, res);
+#endif
     res += res >= 0 ? STEP_2 : -STEP_2;
     res /= STEP;
     res = std::clamp(res, -SCORE_MAX, SCORE_MAX);
     return res;
 }
+
+#ifdef EGAROUCID_NNUE
+// NNUE value of the current search node; the pattern value is passed for the residual model
+inline int mid_evaluate_nnue(Search *search) {
+    int raw = 0;
+    if (nnue::weights.mode == nnue::MODE_RESIDUAL) {
+        const int phase_idx = search->phase();
+        raw = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][pop_count_ull(search->board.player)];
+    }
+#ifdef EGAROUCID_NNUE_VERIFY
+    {
+        nnue::Lanes ref;
+        nnue::lanes_from_board(search->board.player, search->board.opponent, &ref);
+        if (std::memcmp(&ref, &search->eval.nnue_lanes[search->eval.feature_idx], sizeof(ref)) != 0) {
+            std::cerr << "[ERROR] NNUE incremental indices differ from the board" << std::endl;
+            std::abort();
+        }
+    }
+#endif
+    const int64_t total = nnue::evaluate_total_lanes(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
+                                                    search->board.player, HW2 - search->n_discs, raw);
+    return nnue::score_of_total(total);
+}
+#endif
 
 #if !USE_DIM0_ONLY_EVALUATION
 inline int mid_evaluate_move_ordering_dim0(Search *search) {
@@ -740,6 +776,9 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     eval->features[0].f256[2] = f2;
     eval->features[0].f256[3] = f3;
     eval->feature_idx = 0;
+#ifdef EGAROUCID_NNUE
+    nnue::lanes_from_board(board->player, board->opponent, reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[0]));
+#endif
 }
 
 /*
@@ -857,6 +896,11 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
+#ifdef EGAROUCID_NNUE
+    nnue::lanes_move(reinterpret_cast<const nnue::Lanes*>(&eval->nnue_lanes[eval->feature_idx - 1]),
+                     reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[eval->feature_idx]),
+                     board->player, board->opponent & ~flip->flip, flip->pos);
+#endif
 }
 
 /*
@@ -898,6 +942,9 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
+#ifdef EGAROUCID_NNUE
+    nnue::lanes_pass(reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[eval->feature_idx]), board->player, board->opponent);
+#endif
 }
 
 

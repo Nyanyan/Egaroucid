@@ -10,6 +10,9 @@
 
 #pragma once
 #include "board.hpp"
+#ifdef EGAROUCID_NNUE
+#include "nnue/nnue_eval.hpp"
+#endif
 
 /*
     @brief evaluation pattern definition
@@ -203,6 +206,9 @@ union Eval_features {
 
 struct Eval_search {
     Eval_features features[HW2 - 4];
+#ifdef EGAROUCID_NNUE
+    Eval_features nnue_lanes[HW2 - 4];  // NNUE instance indices, kept with the same feature_idx
+#endif
     uint_fast8_t feature_idx;
 };
 #else

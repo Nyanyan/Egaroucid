@@ -315,7 +315,11 @@ inline int mid_evaluate_for_search(Search *search) {
         return mid_evaluate_dim0(search);
     }
 #endif
+#ifdef EGAROUCID_NNUE
+    return mid_evaluate_nnue(search);
+#else
     return mid_evaluate_diff(search);
+#endif
 }
 
 inline int move_ordering_leaf_hint(Search *search, int static_value) {
