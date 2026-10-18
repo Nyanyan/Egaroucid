@@ -333,11 +333,12 @@ inline int mid_evaluate_for_search_nws_leaf(Search *search, int alpha) {
         return -mid_evaluate_for_search(search);
     }
 #endif
-    const int pattern_value = -mid_evaluate_diff(search);
+    const int raw = mid_evaluate_raw(search);
+    const int pattern_value = -mid_evaluate_round(raw);
     if (pattern_value > alpha + EGAROUCID_NNUE_LAZY || pattern_value < alpha - EGAROUCID_NNUE_LAZY) {
         return pattern_value;
     }
-    return -mid_evaluate_nnue(search);
+    return -mid_evaluate_nnue(search, raw);
 #else
     (void)alpha;
     return -mid_evaluate_for_search(search);

@@ -36,6 +36,10 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
 #ifndef MPC_SIGMA_SCALE
     #define MPC_SIGMA_SCALE 1.0
 #endif
+#ifndef MID_MPC_SIGMA_EXTRA_SCALE
+    // extra factor on the midgame MPC sigma (an evaluation other than the one it was fitted on)
+    #define MID_MPC_SIGMA_EXTRA_SCALE 1.0
+#endif
 #if defined(MID_MPC_SIGMA_SCALE_74) || \
     defined(MID_MPC_SIGMA_SCALE_88) || \
     defined(MID_MPC_SIGMA_SCALE_93) || \
@@ -631,7 +635,7 @@ inline double probcut_sigma_mid_direction(
         b * ((double)depth1 / 60.0) +
         c * ((double)depth2 / 60.0);
     res = d * res * res * res + e * res * res + f * res + g;
-    return MPC_SIGMA_SCALE * res;
+    return MPC_SIGMA_SCALE * MID_MPC_SIGMA_EXTRA_SCALE * res;
 }
 
 /*

@@ -17,6 +17,7 @@
     #include <x86intrin.h>
 #endif
 #include <cstring>
+#include <climits>
 #include "setting.hpp"
 #include "common.hpp"
 #include "board.hpp"
@@ -679,11 +680,24 @@ inline int mid_evaluate_diff(Search *search) {
 
 #ifdef EGAROUCID_NNUE
 // NNUE value of the current search node; the pattern value is passed for the residual model
-inline int mid_evaluate_nnue(Search *search) {
+// pattern evaluation before rounding (1 disc = STEP)
+inline int mid_evaluate_raw(Search *search) {
+    const int phase_idx = search->phase();
+    return calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][pop_count_ull(search->board.player)];
+}
+
+// the rounding of mid_evaluate_diff
+inline int mid_evaluate_round(int res) {
+    res += res >= 0 ? STEP_2 : -STEP_2;
+    res /= STEP;
+    return std::clamp(res, -SCORE_MAX, SCORE_MAX);
+}
+
+// raw_pattern: mid_evaluate_raw of this node when the caller has it (residual model), INT_MIN otherwise
+inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
     int raw = 0;
     if (nnue::weights.mode == nnue::MODE_RESIDUAL) {
-        const int phase_idx = search->phase();
-        raw = calc_pattern(phase_idx, &search->eval.features[search->eval.feature_idx]) + eval_num_arr[phase_idx][pop_count_ull(search->board.player)];
+        raw = raw_pattern != INT_MIN ? raw_pattern : mid_evaluate_raw(search);
     }
 #ifdef EGAROUCID_NNUE_VERIFY
     {

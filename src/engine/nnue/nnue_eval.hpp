@@ -20,6 +20,7 @@
 */
 
 #pragma once
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -32,6 +33,10 @@
 #include <immintrin.h>
 #endif
 #include "nnue_patterns.hpp"
+
+#if !USE_SIMD
+#error "EGAROUCID_NNUE needs the AVX2 (SIMD) build"
+#endif
 
 #ifndef EGAROUCID_NNUE_SCOPE
 // 1: midgame search leaves only (move ordering keeps the pattern evaluation), 2: every midgame evaluation
@@ -104,8 +109,10 @@ inline bool init(const std::string &file, bool show_log) {
     w.mode = head[1];
     w.W = head[4];
     w.H = head[5];
-    if (head[2] != NNUE_N_ROWS || head[3] != NNUE_N_INSTANCES || head[6] != N_BUCKETS ||
-        w.W % 32 != 0 || w.W > MAX_W || (w.mode != MODE_LINEAR && w.H != H_FIXED)) {
+    const bool shape_ok = w.mode == MODE_LINEAR
+        ? (w.W == 0 && w.H == 0)
+        : ((w.mode == MODE_DIRECT || w.mode == MODE_RESIDUAL) && w.W > 0 && w.W % 32 == 0 && w.W <= MAX_W && w.H == H_FIXED);
+    if (head[2] != NNUE_N_ROWS || head[3] != NNUE_N_INSTANCES || head[6] != N_BUCKETS || !shape_ok) {
         std::cerr << "[ERROR] [FATAL] NNUE weight file does not match this build: " << file << std::endl;
         return false;
     }
@@ -239,7 +246,7 @@ inline int64_t forward_scalar(const int idx[NNUE_N_INSTANCES], int bucket) {
     for (int j = 0; j < W; ++j) acc[j] = w.ft_bias[j];
     for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
         const int16_t *row = w.ft + (size_t)idx[i] * W;
-        for (int j = 0; j < W; ++j) acc[j] = (int16_t)(acc[j] + row[j]);  // int16 wrap like the vector path
+        for (int j = 0; j < W; ++j) acc[j] = std::clamp(acc[j] + row[j], -32768, 32767);  // saturate like the vector path
     }
     int32_t x[MAX_W / 2];
     for (int k = 0; k < half; ++k) {
@@ -281,7 +288,7 @@ inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint6
     for (int v = 0; v < NV; ++v) acc[v] = _mm256_load_si256((const __m256i*)&w.ft_bias[v * 16]);
     for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
         const __m256i *row = (const __m256i*)(w.packed + (size_t)idx[i] * STRIDE);
-        for (int v = 0; v < NV; ++v) acc[v] = _mm256_add_epi16(acc[v], _mm256_load_si256(row + v));
+        for (int v = 0; v < NV; ++v) acc[v] = _mm256_adds_epi16(acc[v], _mm256_load_si256(row + v));  // saturating
         if constexpr (LIN) {
             const __m256i l = _mm256_load_si256(row + NV);
             lin_lo = _mm256_add_epi32(lin_lo, _mm256_cvtepi16_epi32(_mm256_castsi256_si128(l)));
