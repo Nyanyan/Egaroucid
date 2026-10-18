@@ -38,8 +38,9 @@ def bucket_of(empties):
 class Features:
     """Bitboards -> 64 instance row indices, on the GPU."""
 
-    def __init__(self, device):
+    def __init__(self, device, fold=False):
         n_inst = len(pat.INSTANCES)
+        self.fold = torch.tensor(pat.fold_rows(), dtype=torch.long, device=device) if fold else None
         cells = torch.full((n_inst, 9), 64, dtype=torch.long)
         pow3 = torch.zeros((n_inst, 9), dtype=torch.long)
         offs = torch.zeros(n_inst, dtype=torch.long)
@@ -70,7 +71,8 @@ class Features:
     def indices(self, st):
         ext = torch.cat([st, torch.zeros((st.shape[0], 1), dtype=st.dtype, device=st.device)], 1)
         g = ext[:, self.cells].view(st.shape[0], -1, 9)
-        return (g * self.pow3).sum(-1) + self.offs
+        idx = (g * self.pow3).sum(-1) + self.offs
+        return self.fold[idx] if self.fold is not None else idx
 
 
 class Net(nn.Module):
@@ -207,6 +209,7 @@ def main():
     ap.add_argument("--val-size", type=int, default=1000000)
     ap.add_argument("--seed", type=int, default=20261019)
     ap.add_argument("--init", default="")
+    ap.add_argument("--fold", action="store_true", help="share rows that a pattern's own symmetry exchanges")
     args = ap.parse_args()
     torch.manual_seed(args.seed)
     rng = np.random.default_rng(args.seed)
@@ -231,7 +234,7 @@ def main():
     frac_bd = args.boards_weight * n_bd / (n_tr + args.boards_weight * n_bd)
     print(f"loaded train {n_tr} + {n_bd} (board share {frac_bd:.3f}), val {len(vsel)} + {int(hold.sum())} in {time.time() - t0:.0f}s", flush=True)
 
-    feat = Features(device)
+    feat = Features(device, args.fold)
     model = Net(args.width, args.hidden, args.mode).to(device)
     if args.init:
         model.load_state_dict(torch.load(args.init, map_location=device))

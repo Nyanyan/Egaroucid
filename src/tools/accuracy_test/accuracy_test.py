@@ -38,7 +38,7 @@ def parse_time(s):
 
 
 def run_engine(engine, extra, rows, workdir):
-    prob = workdir / "problems.txt"
+    prob = (workdir / "problems.txt").resolve()
     with open(prob, "w", encoding="utf-8", newline="\n") as f:
         for r in rows:
             f.write(f"{r['board']} {r['turn']}\n")

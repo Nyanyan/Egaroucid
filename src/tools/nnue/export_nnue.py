@@ -109,6 +109,15 @@ def main():
     model = Net(targs["width"], targs["hidden"], mode)
     model.load_state_dict(torch.load(run / args.model, map_location="cpu"))
     model.eval()
+    if targs.get("fold"):
+        # copy the canonical rows back to every row they stand for
+        fold = torch.tensor(pat.fold_rows(), dtype=torch.long)
+        with torch.no_grad():
+            if mode != "linear":
+                model.ft.weight.copy_(model.ft.weight[fold])
+            if mode != "residual":
+                lw = model.lin.weight.view(N_BUCKETS, pat.N_ROWS)
+                model.lin.weight.copy_(lw[:, fold].reshape(-1, 1))
     q = quantize(model, mode)
     write_file(q, mode, args.out)
 

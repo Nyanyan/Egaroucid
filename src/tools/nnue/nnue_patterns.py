@@ -95,6 +95,31 @@ def build():
 PATTERNS, INSTANCES, N_ROWS = build()
 
 
+def fold_rows():
+    """Row -> canonical row under each pattern's own symmetries (e.g. a row read a1..h1 or h1..a1).
+
+    Training on canonical rows only and copying them back at export makes the evaluation exactly
+    symmetric under the 8 board symmetries, at no cost in the engine.
+    """
+    fold = list(range(N_ROWS))
+    for p in PATTERNS:
+        cs = p["cells"]
+        n = len(cs)
+        perms = []
+        for f in SYMMETRIES:
+            img = [f(*c) for c in cs]
+            if set(img) == set(cs):
+                perms.append([cs.index(c) for c in img])  # digit k moves to position perm[k]
+        for local in range(3 ** n):
+            digits = [(local // 3 ** k) % 3 for k in range(n)]
+            best = local
+            for perm in perms:
+                v = sum(digits[k] * 3 ** perm[k] for k in range(n))
+                best = min(best, v)
+            fold[p["offset"] + local] = p["offset"] + best
+    return fold
+
+
 def write_header(path):
     lines = [
         "/*",
