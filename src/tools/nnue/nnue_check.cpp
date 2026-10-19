@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
         const int16_t *lin = nnue::weights.lin + (size_t)nnue::bucket_of(64 - __builtin_popcountll(v.p | v.o)) * NNUE_N_ROWS;
         int32_t l = 0; for (int i = 0; i < NNUE_N_INSTANCES; ++i) l += lin[v.idx[i]]; return (int64_t)l; });
 #if USE_SIMD
-    if (nnue::weights.W == 64 && !nnue::weights.has_lin) {
+    if (nnue::weights.W == 64 && !nnue::weights.has_lin && !nnue::weights.ft8) {
         // the parts of the network, over all vectors (rows mostly in L2/L3) and with one vector repeated (rows in L1)
         std::vector<std::array<__m256i, 4>> accs(vecs.size());
         timeit("first layer (all vectors)", [&](const Vec &v) {

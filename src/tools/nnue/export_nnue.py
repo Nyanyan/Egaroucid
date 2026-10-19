@@ -11,10 +11,12 @@ Integer model (the engine computes exactly this, src/engine/nnue/nnue_eval.hpp):
   total = lin * 32 + oacc   (direct)            total = P_raw * 256 + oacc (residual, P_raw: 1 disc = 32)
   score = round half away from zero (total / 8192), clamped to [-64, 64]
 
-File (little endian): "EGNNUE01", int32 [version=1, mode, rows, instances, W, H, buckets, 0],
-  int16 ft[rows][W], int16 ft_bias[W], int8 l1_w[buckets][H][W/2], int32 l1_b[buckets][H],
+File (little endian): "EGNNUE01", int32 [version, mode, rows, instances, W, H, buckets, ft_shift],
+  int16 ft[rows][W] (version 1) or int8 ft[rows][W] (version 2), int16 ft_bias[W], int8 l1_w[buckets][H][W/2], int32 l1_b[buckets][H],
   int16 out_w[buckets][H], int32 out_b[buckets], int16 lin[buckets][rows], int16 num[buckets][65]
   (mode: 0 direct, 1 residual, 2 linear; absent parts are written as zeros)
+Version 2 (--ft-int8, residual only): int8 rows in 1/64 (ft_shift = 3);
+  acc = clamp(clamp(sum of 64 int8 rows, -4095, 4095) * 8 + bias, -32768, 32767), then as above.
 
 Usage: python src/tools/nnue/export_nnue.py --run <run dir> [--model best.pt] --data <merged dir> --out <file.egnn>
 """
@@ -31,14 +33,16 @@ from train_nnue import N_BUCKETS, Features, Net, load_split, to_tensors, bucket_
 MODES = {"direct": 0, "residual": 1, "linear": 2}
 
 
-def quantize(model, mode):
+def quantize(model, mode, ft_int8=False):
     rows = pat.N_ROWS
     W, H = (model.width, model.hidden) if mode != "linear" else (0, 0)
     q = {}
     sd = {k: v.detach().cpu().double().numpy() for k, v in model.state_dict().items()}
     if mode != "linear":
-        ft = np.round(sd["ft.weight"] * 512)
-        q["ft"] = np.clip(ft, -32768, 32767).astype(np.int16)
+        if ft_int8:
+            q["ft"] = np.clip(np.round(sd["ft.weight"] * 64), -127, 127).astype(np.int8)
+        else:
+            q["ft"] = np.clip(np.round(sd["ft.weight"] * 512), -32768, 32767).astype(np.int16)
         q["ft_bias"] = np.clip(np.round(sd["ft_bias"] * 512), -32768, 32767).astype(np.int16)
         l1w = sd["l1.weight"].reshape(N_BUCKETS, H, W // 2)
         q["l1_w"] = np.clip(np.round(l1w * 64), -127, 127).astype(np.int8)
@@ -65,7 +69,8 @@ def quantize(model, mode):
 def write_file(q, mode, path):
     with open(path, "wb") as f:
         f.write(b"EGNNUE01")
-        f.write(np.array([1, MODES[mode], pat.N_ROWS, len(pat.INSTANCES), q["W"], q["H"], N_BUCKETS, 0], np.int32).tobytes())
+        int8_ft = q["ft"].dtype == np.int8
+        f.write(np.array([2 if int8_ft else 1, MODES[mode], pat.N_ROWS, len(pat.INSTANCES), q["W"], q["H"], N_BUCKETS, 3 if int8_ft else 0], np.int32).tobytes())
         for k in ("ft", "ft_bias", "l1_w", "l1_b", "out_w", "out_b", "lin", "num"):
             f.write(np.ascontiguousarray(q[k]).tobytes())
 
@@ -77,8 +82,13 @@ def q_forward(q, mode, idx, bucket, n_player, p_raw=None):
     total = np.zeros(n, np.int64)
     overflow = 0
     if mode != "linear":
-        acc = q["ft"][idx].astype(np.int64).sum(1) + q["ft_bias"].astype(np.int64)
-        overflow = int((np.abs(acc) > 32767).any(1).sum())
+        if q["ft"].dtype == np.int8:
+            acc8 = q["ft"][idx].astype(np.int64).sum(1)
+            overflow = int((np.abs(acc8) > 4095).any(1).sum())
+            acc = np.clip(np.clip(acc8, -4095, 4095) * 8 + q["ft_bias"].astype(np.int64), -32768, 32767)
+        else:
+            acc = q["ft"][idx].astype(np.int64).sum(1) + q["ft_bias"].astype(np.int64)
+            overflow = int((np.abs(acc) > 32767).any(1).sum())
         a = np.clip(acc, 0, 512)
         x = np.minimum((a[:, : W // 2] * a[:, W // 2:]) >> 11, 127)
         zacc = np.einsum("nk,nhk->nh", x, q["l1_w"][bucket].astype(np.int64)) + q["l1_b"][bucket]
@@ -102,6 +112,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--n-check", type=int, default=400000)
     ap.add_argument("--n-vectors", type=int, default=2000)
+    ap.add_argument("--ft-int8", action="store_true", help="int8 first layer (residual only)")
     args = ap.parse_args()
     run = Path(args.run)
     targs = json.loads((run / "args.json").read_text(encoding="utf-8"))
@@ -118,7 +129,8 @@ def main():
             if mode != "residual":
                 lw = model.lin.weight.view(N_BUCKETS, pat.N_ROWS)
                 model.lin.weight.copy_(lw[:, fold].reshape(-1, 1))
-    q = quantize(model, mode)
+    assert not args.ft_int8 or mode == "residual"
+    q = quantize(model, mode, args.ft_int8)
     write_file(q, mode, args.out)
 
     # check: float model vs integer model on held-out transcripts

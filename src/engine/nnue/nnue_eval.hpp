@@ -55,7 +55,9 @@ struct Weights {
     int mode = MODE_DIRECT;
     int W = 0;
     int H = 0;
-    int16_t *ft = nullptr;            // [rows][W]
+    int16_t *ft = nullptr;            // [rows][W] (int16 first layer, file version 1)
+    int8_t *ft8 = nullptr;            // [rows][W] (int8 first layer, file version 2, residual only)
+    int ft_shift = 0;                 // int8 rows are in 1 / (512 >> ft_shift)
     alignas(32) int16_t ft_bias[MAX_W];
     int16_t *l1_w = nullptr;          // [buckets][H][W/2], widened from int8
     int32_t l1_b[N_BUCKETS][H_FIXED];
@@ -101,7 +103,7 @@ inline bool init(const std::string &file, bool show_log) {
     int32_t head[8];
     ifs.read(magic, 8);
     ifs.read(reinterpret_cast<char*>(head), sizeof(head));
-    if (!ifs || std::memcmp(magic, "EGNNUE01", 8) != 0 || head[0] != 1) {
+    if (!ifs || std::memcmp(magic, "EGNNUE01", 8) != 0 || (head[0] != 1 && head[0] != 2)) {
         std::cerr << "[ERROR] [FATAL] not an NNUE weight file: " << file << std::endl;
         return false;
     }
@@ -109,22 +111,29 @@ inline bool init(const std::string &file, bool show_log) {
     w.mode = head[1];
     w.W = head[4];
     w.H = head[5];
+    const bool int8_ft = head[0] == 2;
+    w.ft_shift = int8_ft ? head[7] : 0;
     const bool shape_ok = w.mode == MODE_LINEAR
-        ? (w.W == 0 && w.H == 0)
-        : ((w.mode == MODE_DIRECT || w.mode == MODE_RESIDUAL) && w.W > 0 && w.W % 32 == 0 && w.W <= MAX_W && w.H == H_FIXED);
+        ? (w.W == 0 && w.H == 0 && !int8_ft)
+        : ((w.mode == MODE_DIRECT || w.mode == MODE_RESIDUAL) && w.W > 0 && w.W % 32 == 0 && w.W <= MAX_W && w.H == H_FIXED &&
+           (!int8_ft || (w.mode == MODE_RESIDUAL && w.ft_shift >= 0 && w.ft_shift <= 3)));
     if (head[2] != NNUE_N_ROWS || head[3] != NNUE_N_INSTANCES || head[6] != N_BUCKETS || !shape_ok) {
         std::cerr << "[ERROR] [FATAL] NNUE weight file does not match this build: " << file << std::endl;
         return false;
     }
     const size_t rows = NNUE_N_ROWS;
     const int W = w.W, H = w.H, half = W / 2;
-    w.ft = (int16_t*)aligned_alloc64(rows * W * sizeof(int16_t) + 64);
+    if (int8_ft) {
+        w.ft8 = (int8_t*)aligned_alloc64(rows * W + 64);
+    } else {
+        w.ft = (int16_t*)aligned_alloc64(rows * W * sizeof(int16_t) + 64);
+    }
     w.l1_w = (int16_t*)aligned_alloc64((size_t)N_BUCKETS * H_FIXED * (half > 0 ? half : 1) * sizeof(int16_t));
     w.lin = (int16_t*)aligned_alloc64((size_t)N_BUCKETS * rows * sizeof(int16_t));
     std::memset(w.l1_b, 0, sizeof(w.l1_b));
     std::memset(w.out_w, 0, sizeof(w.out_w));
     std::memset(w.out_b, 0, sizeof(w.out_b));
-    bool ok = read_array(ifs, w.ft, rows * W) && read_array(ifs, w.ft_bias, W);
+    bool ok = (int8_ft ? read_array(ifs, w.ft8, rows * W) : read_array(ifs, w.ft, rows * W)) && read_array(ifs, w.ft_bias, W);
     std::vector<int8_t> l1(N_BUCKETS * H * half);
     std::vector<int32_t> l1b(N_BUCKETS * H);
     std::vector<int16_t> ow(N_BUCKETS * H);
@@ -144,12 +153,14 @@ inline bool init(const std::string &file, bool show_log) {
     }
     w.has_lin = w.mode != MODE_RESIDUAL;
     w.stride = W + (w.has_lin ? 16 : 0);
-    w.packed = (int16_t*)aligned_alloc64(rows * w.stride * sizeof(int16_t) + 64);
-    for (size_t r = 0; r < rows; ++r) {
-        int16_t *dst = w.packed + r * w.stride;
-        std::memcpy(dst, w.ft + r * W, W * sizeof(int16_t));
-        if (w.has_lin) {
-            for (int b = 0; b < 16; ++b) dst[W + b] = b < N_BUCKETS ? w.lin[(size_t)b * rows + r] : 0;
+    if (!int8_ft) {
+        w.packed = (int16_t*)aligned_alloc64(rows * w.stride * sizeof(int16_t) + 64);
+        for (size_t r = 0; r < rows; ++r) {
+            int16_t *dst = w.packed + r * w.stride;
+            std::memcpy(dst, w.ft + r * W, W * sizeof(int16_t));
+            if (w.has_lin) {
+                for (int b = 0; b < 16; ++b) dst[W + b] = b < N_BUCKETS ? w.lin[(size_t)b * rows + r] : 0;
+            }
         }
     }
 #if USE_SIMD
@@ -157,7 +168,7 @@ inline bool init(const std::string &file, bool show_log) {
 #endif
     w.loaded = true;
     if (show_log) {
-        std::cerr << "NNUE loaded " << file << " mode " << w.mode << " width " << W << " scope " << EGAROUCID_NNUE_SCOPE << std::endl;
+        std::cerr << "NNUE loaded " << file << " mode " << w.mode << " width " << W << (int8_ft ? " int8" : "") << " scope " << EGAROUCID_NNUE_SCOPE << std::endl;
     }
     return true;
 }
@@ -243,10 +254,20 @@ inline int64_t forward_scalar(const int idx[NNUE_N_INSTANCES], int bucket) {
     const Weights &w = weights;
     const int W = w.W, half = W / 2;
     int32_t acc[MAX_W];
-    for (int j = 0; j < W; ++j) acc[j] = w.ft_bias[j];
-    for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
-        const int16_t *row = w.ft + (size_t)idx[i] * W;
-        for (int j = 0; j < W; ++j) acc[j] = std::clamp(acc[j] + row[j], -32768, 32767);  // saturate like the vector path
+    if (w.ft8) {
+        // int8 rows: sum (fits int16), clamp to +-4095, scale to 1/512 and add the bias (saturating)
+        for (int j = 0; j < W; ++j) acc[j] = 0;
+        for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
+            const int8_t *row = w.ft8 + (size_t)idx[i] * W;
+            for (int j = 0; j < W; ++j) acc[j] += row[j];
+        }
+        for (int j = 0; j < W; ++j) acc[j] = std::clamp(std::clamp(acc[j], -4095, 4095) * (1 << w.ft_shift) + w.ft_bias[j], -32768, 32767);
+    } else {
+        for (int j = 0; j < W; ++j) acc[j] = w.ft_bias[j];
+        for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
+            const int16_t *row = w.ft + (size_t)idx[i] * W;
+            for (int j = 0; j < W; ++j) acc[j] = std::clamp(acc[j] + row[j], -32768, 32767);  // saturate like the vector path
+        }
     }
     int32_t x[MAX_W / 2];
     for (int k = 0; k < half; ++k) {
@@ -331,6 +352,32 @@ inline int64_t head_packed(const __m256i *acc, int bucket) {
     return (int64_t)_mm_cvtsi128_si32(o128) + w.out_b[bucket];
 }
 
+// first layer from int8 rows: one cache line per row for W = 64
+template <int W>
+inline void accumulate_packed8(const int idx[NNUE_N_INSTANCES], __m256i *acc) {
+    const Weights &w = weights;
+    constexpr int NV = W / 16;
+    __m256i a8[NV];
+    for (int v = 0; v < NV; ++v) a8[v] = _mm256_setzero_si256();
+    for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
+        const __m128i *row = (const __m128i*)(w.ft8 + (size_t)idx[i] * W);
+        for (int v = 0; v < NV; ++v) a8[v] = _mm256_add_epi16(a8[v], _mm256_cvtepi8_epi16(_mm_load_si128(row + v)));
+    }
+    const __m256i lo = _mm256_set1_epi16(-4095), hi = _mm256_set1_epi16(4095);
+    const __m128i shift = _mm_cvtsi32_si128(w.ft_shift);
+    for (int v = 0; v < NV; ++v) {
+        const __m256i c = _mm256_min_epi16(_mm256_max_epi16(a8[v], lo), hi);
+        acc[v] = _mm256_adds_epi16(_mm256_sll_epi16(c, shift), _mm256_load_si256((const __m256i*)&w.ft_bias[v * 16]));
+    }
+}
+
+template <int W>
+inline int64_t forward_packed8(const int idx[NNUE_N_INSTANCES], int bucket) {
+    __m256i acc[W / 16];
+    accumulate_packed8<W>(idx, acc);
+    return head_packed<W>(acc, bucket);
+}
+
 template <int W, bool LIN>
 inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint64_t player) {
     const Weights &w = weights;
@@ -365,7 +412,7 @@ union Lanes {
     __m256i v[4];
     uint16_t u[64];
 };
-inline Lanes square_table[64];  // W(1 << square)
+inline Lanes square_table[65];  // W(1 << square); entry 64 is zero (tzcnt of 0)
 inline int instance_offset[NNUE_N_INSTANCES];
 
 inline void init_incremental() {
@@ -405,7 +452,17 @@ inline void lanes_init(uint64_t player, uint64_t opponent, Lanes *lanes, Lanes *
 inline void lanes_move(const Lanes *src, const Lanes *src_occ, Lanes *dst, Lanes *dst_occ, uint64_t flipped, int pos, bool other_side) {
     const Lanes &put = square_table[pos];
     __m256i fl0 = _mm256_setzero_si256(), fl1 = fl0, fl2 = fl0, fl3 = fl0;
-    for (uint64_t f = flipped; f; f &= f - 1) {
+    // the first 6 flipped discs without branches (a variable trip count mispredicts), the rest in a loop
+    uint64_t f = flipped;
+    for (int k = 0; k < 6; ++k) {
+        const Lanes &w = square_table[_tzcnt_u64(f)];
+        fl0 = _mm256_add_epi16(fl0, w.v[0]);
+        fl1 = _mm256_add_epi16(fl1, w.v[1]);
+        fl2 = _mm256_add_epi16(fl2, w.v[2]);
+        fl3 = _mm256_add_epi16(fl3, w.v[3]);
+        f = _blsr_u64(f);
+    }
+    for (; f; f &= f - 1) {
         const Lanes &w = square_table[__builtin_ctzll(f)];
         fl0 = _mm256_add_epi16(fl0, w.v[0]);
         fl1 = _mm256_add_epi16(fl1, w.v[1]);
@@ -469,6 +526,16 @@ inline int64_t evaluate_total_idx(const int idx[NNUE_N_INSTANCES], uint64_t play
     const Weights &w = weights;
     const int bucket = bucket_of(empties);
     int64_t total;
+    if (w.ft8) {
+        switch (w.W) {
+            case 32: total = forward_packed8<32>(idx, bucket); break;
+            case 64: total = forward_packed8<64>(idx, bucket); break;
+            case 128: total = forward_packed8<128>(idx, bucket); break;
+            case 256: total = forward_packed8<256>(idx, bucket); break;
+            default: return evaluate_total_scalar(idx, player, empties, pattern_raw);
+        }
+        return total + (int64_t)pattern_raw * 256;
+    }
     switch (w.W * 2 + (w.has_lin ? 1 : 0)) {
         case 1: total = forward_packed<0, true>(idx, bucket, player); break;
         case 64: total = forward_packed<32, false>(idx, bucket, player); break;
