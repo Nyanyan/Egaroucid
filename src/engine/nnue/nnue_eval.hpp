@@ -72,6 +72,7 @@ struct Weights {
     bool has_lin = false;
 };
 inline Weights weights;
+inline Weights uncertainty_weights;  // optional second network (per-position uncertainty for MPC)
 inline uint16_t bits_to_ternary[512];
 
 inline void *aligned_alloc64(size_t bytes) {
@@ -88,7 +89,7 @@ inline bool read_array(std::ifstream &ifs, T *dst, size_t n) {
 inline void init_incremental();
 #endif
 
-inline bool init(const std::string &file, bool show_log) {
+inline bool init_weights(Weights &w, const std::string &file, bool show_log) {
     for (int b = 0; b < 512; ++b) {
         int t = 0, p = 1;
         for (int k = 0; k < 9; ++k, p *= 3) if ((b >> k) & 1) t += p;
@@ -107,7 +108,6 @@ inline bool init(const std::string &file, bool show_log) {
         std::cerr << "[ERROR] [FATAL] not an NNUE weight file: " << file << std::endl;
         return false;
     }
-    Weights &w = weights;
     w.mode = head[1];
     w.W = head[4];
     w.H = head[5];
@@ -173,18 +173,26 @@ inline bool init(const std::string &file, bool show_log) {
     return true;
 }
 
+inline bool init(const std::string &file, bool show_log) {
+    return init_weights(weights, file, show_log);
+}
+
 #ifndef EGAROUCID_NNUE_FILENAME
 #define EGAROUCID_NNUE_FILENAME "nnue.egnn"
 #endif
 
 // path: $EGAROUCID_NNUE_FILE if set, otherwise EGAROUCID_NNUE_FILENAME next to the pattern evaluation file
-inline std::string default_path(const std::string &eval_file) {
-    if (const char *env = std::getenv("EGAROUCID_NNUE_FILE")) {
+inline std::string default_path(const std::string &eval_file, const char *filename = EGAROUCID_NNUE_FILENAME, const char *env_name = "EGAROUCID_NNUE_FILE") {
+    if (const char *env = std::getenv(env_name)) {
         if (env[0]) return env;
     }
     const size_t sep = eval_file.find_last_of("/\\");
-    return (sep == std::string::npos ? std::string() : eval_file.substr(0, sep + 1)) + EGAROUCID_NNUE_FILENAME;
+    return (sep == std::string::npos ? std::string() : eval_file.substr(0, sep + 1)) + filename;
 }
+
+#ifndef EGAROUCID_NNUE_UNCERTAINTY_FILENAME
+#define EGAROUCID_NNUE_UNCERTAINTY_FILENAME "nnue_uncertainty_w32.egnn"
+#endif
 
 inline uint64_t mirror_cols(uint64_t x) {  // (x, y) -> (7 - x, y): reverse the bits of each byte
     x = ((x >> 1) & 0x5555555555555555ULL) | ((x & 0x5555555555555555ULL) << 1);
@@ -250,8 +258,7 @@ inline int bucket_of(int empties) {
     return b < 0 ? 0 : (b >= N_BUCKETS ? N_BUCKETS - 1 : b);
 }
 
-inline int64_t forward_scalar(const int idx[NNUE_N_INSTANCES], int bucket) {
-    const Weights &w = weights;
+inline int64_t forward_scalar(const int idx[NNUE_N_INSTANCES], int bucket, const Weights &w = weights) {
     const int W = w.W, half = W / 2;
     int32_t acc[MAX_W];
     if (w.ft8) {
@@ -299,8 +306,7 @@ inline __m256i hsum8_epi32(__m256i s0, __m256i s1, __m256i s2, __m256i s3, __m25
 
 // first layer: acc = ft_bias + sum of the instance rows (saturating), and the linear head's lanes
 template <int W, bool LIN>
-inline void accumulate_packed(const int idx[NNUE_N_INSTANCES], __m256i *acc, __m256i *lin_lo, __m256i *lin_hi) {
-    const Weights &w = weights;
+inline void accumulate_packed(const int idx[NNUE_N_INSTANCES], __m256i *acc, __m256i *lin_lo, __m256i *lin_hi, const Weights &w = weights) {
     constexpr int NV = W / 16;     // int16 vectors in the accumulator
     constexpr int STRIDE = W + (LIN ? 16 : 0);
     for (int v = 0; v < NV; ++v) acc[v] = _mm256_load_si256((const __m256i*)&w.ft_bias[v * 16]);
@@ -320,8 +326,7 @@ inline void accumulate_packed(const int idx[NNUE_N_INSTANCES], __m256i *acc, __m
 
 // pairwise product and the bucket's hidden and output layers: oacc
 template <int W>
-inline int64_t head_packed(const __m256i *acc, int bucket) {
-    const Weights &w = weights;
+inline int64_t head_packed(const __m256i *acc, int bucket, const Weights &w = weights) {
     constexpr int HALF = W / 2;
     constexpr int NX = HALF / 16;  // int16 vectors in x
     const __m256i zero = _mm256_setzero_si256(), c512 = _mm256_set1_epi16(512), c127 = _mm256_set1_epi16(127);
@@ -354,8 +359,7 @@ inline int64_t head_packed(const __m256i *acc, int bucket) {
 
 // first layer from int8 rows: one cache line per row for W = 64
 template <int W>
-inline void accumulate_packed8(const int idx[NNUE_N_INSTANCES], __m256i *acc) {
-    const Weights &w = weights;
+inline void accumulate_packed8(const int idx[NNUE_N_INSTANCES], __m256i *acc, const Weights &w = weights) {
     constexpr int NV = W / 16;
     __m256i a8[NV];
     for (int v = 0; v < NV; ++v) a8[v] = _mm256_setzero_si256();
@@ -372,21 +376,20 @@ inline void accumulate_packed8(const int idx[NNUE_N_INSTANCES], __m256i *acc) {
 }
 
 template <int W>
-inline int64_t forward_packed8(const int idx[NNUE_N_INSTANCES], int bucket) {
+inline int64_t forward_packed8(const int idx[NNUE_N_INSTANCES], int bucket, const Weights &w = weights) {
     __m256i acc[W / 16];
-    accumulate_packed8<W>(idx, acc);
-    return head_packed<W>(acc, bucket);
+    accumulate_packed8<W>(idx, acc, w);
+    return head_packed<W>(acc, bucket, w);
 }
 
 template <int W, bool LIN>
-inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint64_t player) {
-    const Weights &w = weights;
+inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint64_t player, const Weights &w = weights) {
     constexpr int NV = W / 16;
     __m256i acc[NV > 0 ? NV : 1];
     __m256i lin_lo, lin_hi;
-    accumulate_packed<W, LIN>(idx, acc, &lin_lo, &lin_hi);
+    accumulate_packed<W, LIN>(idx, acc, &lin_lo, &lin_hi, w);
     int64_t total = 0;
-    if constexpr (W > 0) total += head_packed<W>(acc, bucket);
+    if constexpr (W > 0) total += head_packed<W>(acc, bucket, w);
     if constexpr (LIN) {
         alignas(32) int32_t lanes[16];
         _mm256_store_si256((__m256i*)&lanes[0], lin_lo);
@@ -505,11 +508,10 @@ inline int64_t forward(const int idx[NNUE_N_INSTANCES], int bucket) {
 }
 
 // total in 1/8192 discs; pattern_raw: production pattern evaluation in 1/32 discs (residual mode only)
-inline int64_t evaluate_total_scalar(const int idx[NNUE_N_INSTANCES], uint64_t player, int empties, int pattern_raw) {
-    const Weights &w = weights;
+inline int64_t evaluate_total_scalar(const int idx[NNUE_N_INSTANCES], uint64_t player, int empties, int pattern_raw, const Weights &w = weights) {
     const int bucket = bucket_of(empties);
     int64_t total = 0;
-    if (w.mode != MODE_LINEAR) total += forward_scalar(idx, bucket);
+    if (w.mode != MODE_LINEAR) total += forward_scalar(idx, bucket, w);
     if (w.mode == MODE_RESIDUAL) {
         total += (int64_t)pattern_raw * 256;
     } else {
@@ -521,37 +523,36 @@ inline int64_t evaluate_total_scalar(const int idx[NNUE_N_INSTANCES], uint64_t p
     return total;
 }
 
-inline int64_t evaluate_total_idx(const int idx[NNUE_N_INSTANCES], uint64_t player, int empties, int pattern_raw) {
+inline int64_t evaluate_total_idx(const int idx[NNUE_N_INSTANCES], uint64_t player, int empties, int pattern_raw, const Weights &w = weights) {
 #if USE_SIMD
-    const Weights &w = weights;
     const int bucket = bucket_of(empties);
     int64_t total;
     if (w.ft8) {
         switch (w.W) {
-            case 32: total = forward_packed8<32>(idx, bucket); break;
-            case 64: total = forward_packed8<64>(idx, bucket); break;
-            case 128: total = forward_packed8<128>(idx, bucket); break;
-            case 256: total = forward_packed8<256>(idx, bucket); break;
-            default: return evaluate_total_scalar(idx, player, empties, pattern_raw);
+            case 32: total = forward_packed8<32>(idx, bucket, w); break;
+            case 64: total = forward_packed8<64>(idx, bucket, w); break;
+            case 128: total = forward_packed8<128>(idx, bucket, w); break;
+            case 256: total = forward_packed8<256>(idx, bucket, w); break;
+            default: return evaluate_total_scalar(idx, player, empties, pattern_raw, w);
         }
         return total + (int64_t)pattern_raw * 256;
     }
     switch (w.W * 2 + (w.has_lin ? 1 : 0)) {
-        case 1: total = forward_packed<0, true>(idx, bucket, player); break;
-        case 64: total = forward_packed<32, false>(idx, bucket, player); break;
-        case 65: total = forward_packed<32, true>(idx, bucket, player); break;
-        case 128: total = forward_packed<64, false>(idx, bucket, player); break;
-        case 129: total = forward_packed<64, true>(idx, bucket, player); break;
-        case 256: total = forward_packed<128, false>(idx, bucket, player); break;
-        case 257: total = forward_packed<128, true>(idx, bucket, player); break;
-        case 512: total = forward_packed<256, false>(idx, bucket, player); break;
-        case 513: total = forward_packed<256, true>(idx, bucket, player); break;
-        default: return evaluate_total_scalar(idx, player, empties, pattern_raw);
+        case 1: total = forward_packed<0, true>(idx, bucket, player, w); break;
+        case 64: total = forward_packed<32, false>(idx, bucket, player, w); break;
+        case 65: total = forward_packed<32, true>(idx, bucket, player, w); break;
+        case 128: total = forward_packed<64, false>(idx, bucket, player, w); break;
+        case 129: total = forward_packed<64, true>(idx, bucket, player, w); break;
+        case 256: total = forward_packed<128, false>(idx, bucket, player, w); break;
+        case 257: total = forward_packed<128, true>(idx, bucket, player, w); break;
+        case 512: total = forward_packed<256, false>(idx, bucket, player, w); break;
+        case 513: total = forward_packed<256, true>(idx, bucket, player, w); break;
+        default: return evaluate_total_scalar(idx, player, empties, pattern_raw, w);
     }
     if (w.mode == MODE_RESIDUAL) total += (int64_t)pattern_raw * 256;
     return total;
 #else
-    return evaluate_total_scalar(idx, player, empties, pattern_raw);
+    return evaluate_total_scalar(idx, player, empties, pattern_raw, w);
 #endif
 }
 
@@ -562,14 +563,14 @@ inline int64_t evaluate_total(uint64_t player, uint64_t opponent, int empties, i
 }
 
 #if USE_SIMD
-inline int64_t evaluate_total_lanes(const Lanes *l, uint64_t player, int empties, int pattern_raw) {
+inline int64_t evaluate_total_lanes(const Lanes *l, uint64_t player, int empties, int pattern_raw, const Weights &w = weights) {
     alignas(32) int idx[NNUE_N_INSTANCES];
     for (int v = 0; v < 8; ++v) {
         const __m128i lo = _mm_loadu_si128((const __m128i*)&l->u[8 * v]);
         const __m256i w32 = _mm256_add_epi32(_mm256_cvtepu16_epi32(lo), _mm256_loadu_si256((const __m256i*)&instance_offset[8 * v]));
         _mm256_store_si256((__m256i*)&idx[8 * v], w32);
     }
-    return evaluate_total_idx(idx, player, empties, pattern_raw);
+    return evaluate_total_idx(idx, player, empties, pattern_raw, w);
 }
 #endif
 

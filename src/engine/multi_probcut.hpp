@@ -36,6 +36,14 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
 #ifndef MPC_SIGMA_SCALE
     #define MPC_SIGMA_SCALE 1.0
 #endif
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_B
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_B 0.4  // margin multiplier exp(B * (u - mean u for the disc count))
+    #endif
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH 8  // shallower nodes keep the plain margins (the network costs a little)
+    #endif
+#endif
 #ifndef MID_MPC_SIGMA_EXTRA_SCALE
     // extra factor on the midgame MPC sigma (an evaluation other than the one it was fitted on)
     #define MID_MPC_SIGMA_EXTRA_SCALE 1.0
@@ -1143,6 +1151,16 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             mpc_level, search->n_discs, search_depth, depth,
             &error_search_low, nullptr, false
         );
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+        if constexpr (!IsEndSearch) {
+            if (depth >= EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH) {
+                // per-position margins: widen where the learned uncertainty is high, narrow where it is low
+                const double mult = std::clamp(std::exp(EGAROUCID_NNUE_MPC_UNCERTAINTY_B * nnue_uncertainty_dev(search)), 0.6, 1.8);
+                error_search_high = std::max(1, (int)std::ceil(error_search_high * mult));
+                error_search_low = std::max(1, (int)std::ceil(error_search_low * mult));
+            }
+        }
+#endif
         // if (IsEndSearch) {
         //     error_search += 1.5;
         // }

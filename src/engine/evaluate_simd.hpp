@@ -26,6 +26,9 @@
 #include "evaluate_common.hpp"
 #ifdef EGAROUCID_NNUE
 #include "nnue/nnue_eval.hpp"
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+#include "nnue/nnue_uncertainty_table.hpp"
+#endif
 #endif
 
 /*
@@ -533,6 +536,9 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
     pre_calculate_eval_constant();
 #ifdef EGAROUCID_NNUE
     if (!nnue::init(nnue::default_path(file), show_log)) return false;
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+    if (!nnue::init_weights(nnue::uncertainty_weights, nnue::default_path(file, EGAROUCID_NNUE_UNCERTAINTY_FILENAME, "EGAROUCID_NNUE_UNCERTAINTY_FILE"), show_log)) return false;
+#endif
 #endif
     if (!initialize_auto_move_ordering_models(file, show_log)) return false;
     if (show_log) {
@@ -747,6 +753,19 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
     const int64_t total = nnue::evaluate_total_lanes(&view, search->board.player, HW2 - search->n_discs, raw);
     return nnue::score_of_total(total);
 }
+
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+// learned uncertainty of the position (log sigma^2 of the outcome residual) minus its mean for the disc count
+inline double nnue_uncertainty_dev(Search *search) {
+    nnue_ensure_lanes(&search->eval);
+    nnue::Lanes view;
+    nnue::lanes_view(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
+                     reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_occ[search->eval.feature_idx]),
+                     nnue_other_side(&search->eval), &view);
+    const int64_t total = nnue::evaluate_total_lanes(&view, search->board.player, HW2 - search->n_discs, 0, nnue::uncertainty_weights);
+    return total / 8192.0 - nnue_uncertainty::MEAN_U[search->n_discs];
+}
+#endif
 #endif
 
 #if !USE_DIM0_ONLY_EVALUATION
