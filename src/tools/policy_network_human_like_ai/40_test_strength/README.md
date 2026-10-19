@@ -45,6 +45,22 @@ Eloの95%信頼区間は、完了後に `reanalyze_strength_elo.py --output-dir 
 
 以下は更新前の条件と結果に関する記録である。共通XOT局面、キャッシュ、置換表、既定の対戦数の記述は当時のものであり、新規対戦には上記の条件を適用する。参照先が旧条件の大会を指す追加対戦コマンドは、そのままでは実行できない。
 
+## （石損数＋1）の2乗モデルとEgaroucid L21の融合4種類を追加する
+
+`run_loss_plus_one_squared_egaroucid_strength.bat` は、石損NNとEgaroucid L21を融合したα=0.2・0.4・0.6・0.8の4参加者を、完了済みの23参加者の総当たりへ追加します。αは石損NN側の比率です。各合法手の `α × 石損NNのlogit + (1−α) × L21の探索スコア / 温度` を比較し、最大の手を選びます。温度は参照実験の1を引き継ぎます。
+
+プロジェクトルートから、PowerShellで次を実行してください。
+
+```powershell
+& ".\Egaroucid\src\tools\policy_network_human_like_ai\40_test_strength\run_loss_plus_one_squared_egaroucid_strength.bat" --alphas 0.2,0.4,0.6,0.8 --match-sets-per-pair 50
+```
+
+既定では `output/conv8_bn_loss_plus_one_squared_blends_20261007` の12,650セットを引き継ぎます。追加4参加者対既存23参加者の92組と、追加参加者同士の6組を各50セット行い、追加分は4,900セット・9,800局です。1セットは同じXOT局面で先後を入れ替えた2局で、全組にseed 57の先頭50局面を使います。
+
+α=1の石損NN単体は既存参加者として残し、対戦済みの結果を再利用します。この単体モデルと追加4参加者の間では、新しい対戦が必要です。参加者の重複を防ぐため、追加する `--alphas` には0と1を指定できません。
+
+結果は `output/conv8_bn_loss_plus_one_squared_egaroucid21_20261007` に保存します。中断後は同じコマンドで再開できます。末尾に `--dry-run` を加えると、対戦を始めずに参照結果・モデル・日程・再開条件を検証します。参照先は `--reference-dir`、保存先は `--output-dir` で変更できます。
+
 ## （石損数＋1）の2乗モデルと通常NNのブレンド4種類を追加する
 
 `run_loss_plus_one_squared_blends_strength.bat` は、通常NNと「（石損＋1）²」NNを混ぜたα=0.2・0.4・0.6・0.8の4参加者を追加します。合法手の確率を `P(a) ∝ P通常NN(a)^(1−α) × P石損NN(a)^α` で混ぜ、最大確率の手を選びます。α=0は通常NN、α=1は石損NNです。このコマンドの `--alphas` はNN同士の混合率で、内部ではモデル間ブレンドのβとして渡します。
