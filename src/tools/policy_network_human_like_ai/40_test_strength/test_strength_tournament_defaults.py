@@ -16,6 +16,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import battle_blend_strength
+import run_gpw_strength
 import run_strength_full
 import strength_reporting
 from strength_engine import GtpProcess, ProcessManager
@@ -44,6 +45,7 @@ from strength_tournament import (
 
 
 OPENING = "f5d6c3d3c4f4c5b3"
+OPENINGS = list(dict.fromkeys((battle_blend_strength.BIN_DIR / "problem/xot/openingslarge.txt").read_text().splitlines()))[:64]
 
 
 def game_result(p0_is_black: bool, disc_diff: int) -> GameResult:
@@ -68,7 +70,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             PlayerSpec("player_1", ("player_1",), 2, False),
         ]
 
-    def test_defaults_define_the_500_set_tournament(self) -> None:
+    def test_defaults_define_the_50_set_tournament(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args([])
         levels, alphas = battle_blend_strength.validate_args(args)
         edax_levels = battle_blend_strength.parse_int_list(args.edax_levels)
@@ -76,19 +78,19 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         player_count = len(specs)
         tasks = make_match_set_tasks(
             player_count,
-            [OPENING],
+            OPENINGS,
             args.match_sets_per_pair,
             args.seed,
         )
 
-        self.assertEqual(500, args.match_sets_per_pair)
+        self.assertEqual(50, args.match_sets_per_pair)
         self.assertEqual([1, 5, 9, 13, 17], levels)
         self.assertEqual([1, 5, 9, 13, 17, 21], edax_levels)
         self.assertEqual([0.0, 0.2, 0.4, 0.6, 0.8, 1.0], alphas)
         self.assertEqual(17, player_count)
         self.assertEqual(136, player_count * (player_count - 1) // 2)
-        self.assertEqual(68_000, len(tasks))
-        self.assertEqual(136_000, len(tasks) * 2)
+        self.assertEqual(6_800, len(tasks))
+        self.assertEqual(13_600, len(tasks) * 2)
         self.assertEqual(20, args.parallel_match_sets)
         self.assertEqual(2, args.baseline_processes_per_player)
         self.assertEqual(10, args.blend_processes_per_player)
@@ -97,14 +99,14 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         self.assertNotIn("random", help_text)
         self.assertNotIn("external", help_text)
 
-    def test_wrapper_uses_the_only_parser(self) -> None:
+    def test_production_wrapper_uses_the_paper_roster(self) -> None:
         self.assertIs(
-            battle_blend_strength.make_argparser,
+            run_gpw_strength.make_argparser,
             run_strength_full.make_argparser,
         )
         args = run_strength_full.make_argparser().parse_args([])
-        self.assertEqual(500, args.match_sets_per_pair)
-        self.assertEqual("xot_500sets_17players_edax", args.output_dir.name)
+        self.assertEqual(50, args.match_sets_per_pair)
+        self.assertEqual("gpw30_independent_xot_50sets", args.output_dir.name)
 
     def test_explicit_game_limit_rejects_unreachable_counts(self) -> None:
         parser = battle_blend_strength.make_argparser()
@@ -145,7 +147,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             engine = root / "engine.exe"
             engine.write_bytes(b"mocked engine")
             openings = root / "openings.txt"
-            openings.write_text(OPENING + "\n", encoding="utf-8")
+            openings.write_text("\n".join(OPENINGS) + "\n", encoding="utf-8")
             args = battle_blend_strength.make_argparser().parse_args([
                 "--egaroucid-exe", str(engine), "--openings", str(openings),
                 "--output-dir", str(root / "results"), "--baseline-levels", "1,2",
@@ -161,7 +163,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
                  redirect_stdout(io.StringIO()):
                 game_runner.return_value.play_single_game.side_effect = play
                 battle_blend_strength.run_tournament(args)
-            tasks = make_match_set_tasks(2, [OPENING], 23, args.seed)
+            tasks = make_match_set_tasks(2, battle_blend_strength.read_openings(openings, args.seed), 23, args.seed)
             completed, results = ResultStore(args.output_dir).load({task.task_id: task for task in tasks})
             self.assertEqual(45, peak)
             self.assertEqual(23, len(completed))
@@ -255,7 +257,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             runtime["packages"]["tf-nightly"],
         )
 
-    def test_hint_cache_option_controls_the_shared_cache_only(self) -> None:
+    def test_tournament_disables_both_hint_caches(self) -> None:
         args = battle_blend_strength.make_argparser().parse_args(
             ["--baseline-levels", "", "--alphas", "0.2,0.4", "--edax-levels="]
         )
@@ -267,7 +269,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             policy_server_port=12345,
         )
         self.assertTrue(
-            all("--hint-cache-db" in spec.command for spec in cached)
+            all("--hint-cache-db" not in spec.command for spec in cached)
         )
         self.assertTrue(
             all("--cache-egaroucid" not in spec.command for spec in cached)
@@ -284,7 +286,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             all("--hint-cache-db" not in spec.command for spec in uncached)
         )
 
-    def test_every_pair_gets_the_same_opening_for_each_set_index(self) -> None:
+    def test_pairs_independently_permute_the_opening_population(self) -> None:
         tasks = make_match_set_tasks(
             player_count=4,
             openings=["first", "second", "third"],
@@ -295,10 +297,10 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         for task in tasks:
             by_set.setdefault(task.set_index, set()).add(task.opening)
 
-        self.assertEqual(
-            {0: {"first"}, 1: {"second"}, 2: {"third"}},
-            by_set,
-        )
+        self.assertTrue(any(len(values) > 1 for values in by_set.values()))
+        for pair in {(t.p0_idx, t.p1_idx) for t in tasks}:
+            self.assertEqual({"first", "second", "third"},
+                             {t.opening for t in tasks if (t.p0_idx, t.p1_idx) == pair})
         battle_blend_strength.validate_scheduled_openings(
             ["f5", "f5d6", "f5d6c3"],
             3,
@@ -316,7 +318,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
     def test_limited_schedule_has_exact_pair_targets(self) -> None:
         tasks = make_match_set_tasks(
             player_count=16,
-            openings=[OPENING],
+            openings=OPENINGS,
             match_sets_per_pair=1,
             seed=57,
         )[:64]
@@ -332,7 +334,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
         )
 
     def test_pair_queue_respects_capacity_and_requeues_atomically(self) -> None:
-        tasks = make_match_set_tasks(4, [OPENING], 2, 57)
+        tasks = make_match_set_tasks(4, OPENINGS, 2, 57)
         pending = PendingTaskQueue(tasks, player_count=4)
         active = [0, 0, 0, 0]
         capacities = [1, 1, 1, 1]
@@ -663,7 +665,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
                 result["pair_results"][0],
             )
             self.assertIn(
-                "shared_opening_schedule",
+                "opening_schedule",
                 result["scoring"],
             )
 
@@ -838,7 +840,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
             engine = root / "engine.exe"
             engine.write_bytes(b"mock engine")
             openings = root / "openings.txt"
-            openings.write_text(OPENING + "\n")
+            openings.write_text("\n".join(OPENINGS) + "\n")
             args = battle_blend_strength.make_argparser().parse_args([
                 "--egaroucid-exe", str(engine), "--openings", str(openings),
                 "--output-dir", str(root / "results"), "--baseline-levels", "1,2",
@@ -856,7 +858,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
                     pool.retire.return_value = 0
                 battle_blend_strength.run_tournament(args)
             self.assertEqual([0, 0, 1, 1, 2, 2, 0, 0, 0, 0], calls)
-            tasks = make_match_set_tasks(2, [OPENING], 3, args.seed)
+            tasks = make_match_set_tasks(2, battle_blend_strength.read_openings(openings, args.seed), 3, args.seed)
             _, results = ResultStore(args.output_dir).load({t.task_id: t for t in tasks})
             self.assertEqual([1, 2], [r.set_index for r in results])
             progress = json.loads((args.output_dir / "strength_progress.json").read_text())
@@ -1020,7 +1022,7 @@ class StrengthTournamentDefaultsTest(unittest.TestCase):
                         engine = root / "engine.exe"
                         engine.write_bytes(b"unused engine fixture")
                         openings = root / "openings.txt"
-                        openings.write_text(OPENING + "\n", encoding="utf-8")
+                        openings.write_text("\n".join(OPENINGS) + "\n", encoding="utf-8")
                         output = root / "output"
                         output.mkdir()
                         common = ["--egaroucid-exe", str(engine), "--openings", str(openings),

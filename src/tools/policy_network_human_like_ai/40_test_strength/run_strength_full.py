@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-"""Production entry point for the 500-set strength tournament.
+"""Production entry point for the 30-player GPW tournament including level 3."""
 
-All arguments and defaults live in ``battle_blend_strength.py``. Keeping this
-file as a thin alias avoids the former pair of parsers drifting apart.
-"""
-
-from battle_blend_strength import main, make_argparser
+from run_gpw_strength import main, make_argparser
 
 
 if __name__ == "__main__":

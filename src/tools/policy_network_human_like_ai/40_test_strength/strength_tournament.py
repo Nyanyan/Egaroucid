@@ -155,8 +155,9 @@ def make_match_set_tasks(
 ) -> List[MatchSetTask]:
     """Build a deterministic, balanced schedule.
 
-    Every pair receives the same shuffled XOT opening at a given set index.
-    Pair order is shuffled once to avoid a fixed level-based scheduling bias.
+    Each unordered pair independently shuffles the unique opening population.
+    Pair-specific seeds preserve schedules when players are appended or the
+    requested number of sets changes. Each pair samples without replacement.
     """
 
     if player_count < 2:
@@ -165,6 +166,9 @@ def make_match_set_tasks(
         raise ValueError("match_sets_per_pair must be positive")
     if not openings:
         raise ValueError("at least one XOT opening is required")
+    population = list(dict.fromkeys(openings))
+    if match_sets_per_pair > len(population):
+        raise ValueError("not enough distinct XOT openings for sampling without replacement")
 
     pairs = [
         (p0_idx, p1_idx)
@@ -172,9 +176,15 @@ def make_match_set_tasks(
         for p1_idx in range(p0_idx + 1, player_count)
     ]
     random.Random(seed).shuffle(pairs)
+    pair_openings = {}
+    for pair in pairs:
+        identity = f"xot-pair-v1:{seed}:{pair[0]}:{pair[1]}".encode("ascii")
+        pair_seed = int.from_bytes(hashlib.sha256(identity).digest(), "big")
+        shuffled = population.copy()
+        random.Random(pair_seed).shuffle(shuffled)
+        pair_openings[pair] = shuffled[:match_sets_per_pair]
     tasks: List[MatchSetTask] = []
     for set_index in range(match_sets_per_pair):
-        opening = openings[set_index % len(openings)]
         for p0_idx, p1_idx in pairs:
             tasks.append(
                 MatchSetTask(
@@ -182,7 +192,7 @@ def make_match_set_tasks(
                     p0_idx=p0_idx,
                     p1_idx=p1_idx,
                     set_index=set_index,
-                    opening=opening,
+                    opening=pair_openings[(p0_idx, p1_idx)][set_index],
                 )
             )
     return tasks

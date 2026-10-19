@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""XOT-cluster bootstrap confidence intervals for tournament Elo ratings."""
+"""Elo intervals for shared or independently sampled XOT schedules."""
 
 from __future__ import annotations
 
@@ -52,6 +52,8 @@ class ClusteredEloData:
     manifest_sha256: str
     aggregate_sha256: str
     existing_point_elos: Mapping[str, float]
+    independent_pairs: bool = False
+    pair_openings: Tuple[Tuple[str, ...], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -73,6 +75,7 @@ class ClusteredEloAnalysis:
     bootstrap_elos: np.ndarray
     bootstrap_cluster_rows: np.ndarray
     jackknife_elos: np.ndarray
+    bootstrap_pair_outcome_counts: Optional[np.ndarray] = None
 
 
 def _canonical_task_identity(task: Mapping[str, object]) -> dict:
@@ -93,6 +96,13 @@ def load_clustered_elo_data(output_dir: Path) -> ClusteredEloData:
     aggregate_path = output_dir / "strength_results.json"
     raw_path = output_dir / "strength_games.jsonl"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    schedule = manifest.get("configuration", {}).get("schedule", {})
+    independent_pairs = schedule.get("opening_sampling") == "independent_per_pair_without_replacement_v1"
+    if independent_pairs:
+        if schedule.get("same_opening_sequence_for_every_pair") is not False:
+            raise ValueError("independent sampling conflicts with shared opening schedule")
+    elif schedule.get("same_opening_sequence_for_every_pair") is not True:
+        raise ValueError("manifest does not declare a supported opening schedule")
     aggregate = json.loads(aggregate_path.read_text(encoding="utf-8"))
     if int(aggregate.get("schema_version", -1)) != 3:
         raise ValueError("strength_results.json has an unsupported schema")
@@ -259,15 +269,19 @@ def load_clustered_elo_data(output_dir: Path) -> ClusteredEloData:
                 f"missing={missing}, extra={extra}"
             )
         cluster_openings = {opening for _, opening in cluster.values()}
-        if len(cluster_openings) != 1:
+        if not independent_pairs and len(cluster_openings) != 1:
             raise ValueError(
                 f"set index {set_index} uses multiple XOT openings"
             )
-        openings.append(next(iter(cluster_openings)))
+        if not independent_pairs:
+            openings.append(next(iter(cluster_openings)))
         for pair, (score, _) in cluster.items():
             paired_scores[cluster_row, pair_to_column[pair]] = score
     if len(set(openings)) != len(openings):
         raise ValueError("XOT openings must be unique across set indices")
+    pair_openings = tuple(tuple(by_set[index][pair][1] for index in set_indices) for pair in pairs)
+    if any(len(set(sequence)) != len(sequence) for sequence in pair_openings):
+        raise ValueError("XOT openings must be unique within each player pair")
     expected_total = len(set_indices) * len(pairs)
     if total_match_sets != expected_total:
         raise ValueError(
@@ -298,7 +312,7 @@ def load_clustered_elo_data(output_dir: Path) -> ClusteredEloData:
         raise ValueError("manifest match_sets_per_pair does not match raw data")
     if int(schedule.get("total_match_sets", -1)) != expected_total:
         raise ValueError("manifest total_match_sets does not match raw data")
-    if schedule.get("same_opening_sequence_for_every_pair") is not True:
+    if not independent_pairs and schedule.get("same_opening_sequence_for_every_pair") is not True:
         raise ValueError("manifest does not declare a shared opening schedule")
 
     return ClusteredEloData(
@@ -312,6 +326,8 @@ def load_clustered_elo_data(output_dir: Path) -> ClusteredEloData:
         manifest_sha256=sha256_file(manifest_path),
         aggregate_sha256=sha256_file(aggregate_path),
         existing_point_elos=existing_point_elos,
+        independent_pairs=independent_pairs,
+        pair_openings=pair_openings,
     )
 
 
@@ -402,6 +418,26 @@ def bootstrap_score_sums(
             minlength=paired_scores.shape[0],
         )
     return counts @ paired_scores
+
+
+def bootstrap_independent_pair_counts(paired_scores, replicates, seed):
+    """Resample whole color-swapped sets independently within each pair.
+
+    The score has only three possible values, so multinomial counts are the
+    exact sufficient statistic of ordinary within-pair bootstrap draws. This
+    avoids storing hundreds of millions of redundant sampled row indices.
+    """
+    scores = np.asarray(paired_scores, dtype=float)
+    if scores.ndim != 2 or scores.shape[0] < MINIMUM_CLUSTERS or replicates < 1:
+        raise ValueError("independent bootstrap requires at least three sets and positive replicates")
+    if not np.isin(scores, (0.0, 0.5, 1.0)).all():
+        raise ValueError("paired scores must be 0, 0.5, or 1")
+    rng = np.random.Generator(np.random.PCG64(int(seed)))
+    result = np.empty((replicates, scores.shape[1], 3), dtype=np.uint32)
+    for column in range(scores.shape[1]):
+        probabilities = np.asarray([(scores[:, column] == value).mean() for value in (0, .5, 1)])
+        result[:, column, :] = rng.multinomial(scores.shape[0], probabilities, size=replicates)
+    return result
 
 
 def _fit_bootstrap_chunk(
@@ -620,6 +656,23 @@ def analyze_clustered_elos(
                 f"raw-log Elo does not match existing summary for {name}"
             )
 
+    if data.independent_pairs:
+        counts = bootstrap_independent_pair_counts(data.paired_scores, int(bootstrap_replicates), int(bootstrap_seed))
+        score_sums = counts[:, :, 2] + 0.5 * counts[:, :, 1]
+        bootstrap_elos = fit_bootstrap_elos(data.names, data.pairs, score_sums, cluster_count,
+                                          workers=workers, progress=progress)
+        if not 0 < confidence < 1:
+            raise ValueError("confidence must be between zero and one")
+        lower, upper = (1 - confidence) / 2, (1 + confidence) / 2
+        intervals = tuple(
+            BcaInterval(float(np.quantile(values, lower)), float(np.quantile(values, upper)),
+                        0.0, 0.0, lower, upper, "pair_stratified_percentile_bootstrap", None)
+            for values in bootstrap_elos.T
+        )
+        return ClusteredEloAnalysis(point_elos, intervals, bootstrap_elos,
+                                    np.empty((0, 0), dtype=np.uint32),
+                                    np.empty((0, len(data.names))), counts)
+
     bootstrap_cluster_rows = make_bootstrap_cluster_rows(
         cluster_count,
         int(bootstrap_replicates),
@@ -752,27 +805,20 @@ def write_clustered_elo_outputs(
         _csv_text(list(replicate_rows[0]), replicate_rows),
     )
 
-    sampled_set_indices = np.asarray(data.set_indices)[
-        analysis.bootstrap_cluster_rows
-    ]
-    index_rows = []
-    index_columns = [
-        f"draw_{draw_idx}" for draw_idx in range(sampled_set_indices.shape[1])
-    ]
-    for replicate_idx, sampled_indices in enumerate(sampled_set_indices):
-        row = {"replicate": replicate_idx}
-        row.update(
-            {
-                column: int(set_index)
-                for column, set_index in zip(index_columns, sampled_indices)
-            }
-        )
-        index_rows.append(row)
-    indices_path = output_dir / "strength_elo_bootstrap_cluster_indices.csv"
-    atomic_write_text(
-        indices_path,
-        _csv_text(["replicate"] + index_columns, index_rows),
-    )
+    if data.independent_pairs:
+        indices_path = output_dir / "strength_elo_bootstrap_pair_counts.npz"
+        temporary = indices_path.with_suffix(".tmp")
+        with temporary.open("wb") as stream:
+            np.savez_compressed(stream, counts=analysis.bootstrap_pair_outcome_counts,
+                                pairs=np.asarray(data.pairs), scores=np.asarray([0, .5, 1]))
+        temporary.replace(indices_path)
+    else:
+        sampled_set_indices = np.asarray(data.set_indices)[analysis.bootstrap_cluster_rows]
+        index_columns = [f"draw_{i}" for i in range(sampled_set_indices.shape[1])]
+        index_rows = [{"replicate": i, **dict(zip(index_columns, map(int, sampled)))}
+                      for i, sampled in enumerate(sampled_set_indices)]
+        indices_path = output_dir / "strength_elo_bootstrap_cluster_indices.csv"
+        atomic_write_text(indices_path, _csv_text(["replicate"] + index_columns, index_rows))
 
     generated_hashes = {
         path.name: sha256_file(path)
@@ -869,6 +915,27 @@ def write_clustered_elo_outputs(
             ),
         ],
     }
+    if data.independent_pairs:
+        metadata.update({
+            "schema_version": 2,
+            "method": "pair_stratified_percentile_bootstrap",
+            "cluster_unit": "one color-swapped match set; sampled independently within each player pair",
+            "bca": None,
+            "bootstrap": {
+                "replicates": int(bootstrap_replicates), "seed": int(bootstrap_seed),
+                "rng": "numpy.random.PCG64", "with_replacement": True,
+                "sets_drawn_per_pair": len(data.set_indices),
+                "sampling": "independent multinomial draws of loss/draw/win counts within each pair",
+                "counts_shape": list(analysis.bootstrap_pair_outcome_counts.shape),
+                "counts_file": indices_path.name,
+                "quantile_interpolation": "numpy linear",
+            },
+        })
+        metadata["sample"].pop("openings")
+        metadata["sample"]["openings_by_pair"] = [
+            {"players": list(pair), "openings": list(openings)}
+            for pair, openings in zip(data.pairs, data.pair_openings)
+        ]
     atomic_write_json(output_dir / "strength_elo_ci95.json", metadata)
 
 

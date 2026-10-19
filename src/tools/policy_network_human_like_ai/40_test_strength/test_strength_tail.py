@@ -16,7 +16,7 @@ from blend_policy_with_egaroucid import (
 )
 from strength_engine import GameRunner, ProcessManager
 from strength_tournament import MatchSetTask, PlayerSpec
-from test_strength_tournament_defaults import OPENING, game_result
+from test_strength_tournament_defaults import OPENING, OPENINGS, game_result
 
 
 class TailSchedulingTest(unittest.TestCase):
@@ -46,9 +46,8 @@ class TailSchedulingTest(unittest.TestCase):
                 if cache.get("completed-position") != cached_scores:
                     raise AssertionError("Cleanup discarded a completed search")
                 for color in (True, False):
-                    if not cache.try_claim(f"cancelled-{color}", 43200.0):
-                        raise AssertionError("Tail cannot reclaim a cancelled search")
-                    cache.release_claim(f"cancelled-{color}")
+                    if cache.try_claim(f"cancelled-{color}", 43200.0):
+                        raise AssertionError("An unused legacy cache was modified")
             finally:
                 cache.close()
 
@@ -91,7 +90,7 @@ class TailSchedulingTest(unittest.TestCase):
             root = Path(tmp)
             engine, openings = root / "engine.exe", root / "openings.txt"
             engine.write_bytes(b"fake")
-            openings.write_text(OPENING + "\n")
+            openings.write_text("\n".join(OPENINGS) + "\n")
             if abandoned_at_start:
                 for color in (True, False):
                     leave_claim(color)
@@ -136,7 +135,7 @@ class TailSchedulingTest(unittest.TestCase):
 
 
 class TailTTTest(unittest.TestCase):
-    def test_color_swap_reuses_same_pools_and_acknowledges_tt_clear_before_play(self):
+    def test_color_swap_reuses_same_pools_and_clears_tt_after_each_game(self):
         specs = [PlayerSpec("blend_a", ("fake",), 2, True, .6),
                  PlayerSpec("blend_b", ("fake",), 2, True, .8)]
         manager = ProcessManager(1)

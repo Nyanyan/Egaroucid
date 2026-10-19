@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import battle_blend_strength as battle
+from test_strength_tournament_defaults import OPENINGS
 from strength_engine import GameRunner, PlayerProcessPool
 from strength_resources import AdaptiveEnginePools, GameThreadBudget, finish_priorities
 from strength_tournament import GameResult, MatchSetTask, PendingTaskQueue, PlayerSpec
@@ -415,7 +416,7 @@ class EngineResourcesTest(unittest.TestCase):
             model = root / "model.h5"
             model.write_bytes(b"mock model")
             openings = root / "openings.txt"
-            openings.write_text("f5d6c3d3c4f4c5b3\n")
+            openings.write_text("\n".join(OPENINGS) + "\n")
             args = battle.make_argparser().parse_args([
                 "--egaroucid-exe", str(engine), "--policy-model", str(model),
                 "--openings", str(openings), "--output-dir", str(root / "results"),
@@ -579,7 +580,7 @@ class EngineResourcesTest(unittest.TestCase):
             engine = root / "engine.exe"
             engine.write_bytes(b"mock engine")
             openings = root / "openings.txt"
-            openings.write_text("f5d6c3d3c4f4c5b3\n", encoding="utf-8")
+            openings.write_text("f5\nf5d6\nf5d6c3\n", encoding="utf-8")
             args = battle.make_argparser().parse_args([
                 "--egaroucid-exe", str(engine), "--openings", str(openings),
                 "--output-dir", str(root / "results"), "--baseline-levels", "1,13,17",

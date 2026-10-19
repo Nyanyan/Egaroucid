@@ -766,7 +766,7 @@ def disc_diff_for_p0(state: BoardState, p0_is_black: bool) -> int:
     return black_diff if p0_is_black else -black_diff
 
 
-def validate_xot_opening(opening: str) -> None:
+def validate_xot_opening(opening: str) -> tuple:
     """Replay one opening and reject malformed or illegal transcripts."""
 
     if len(opening) % 2:
@@ -786,6 +786,7 @@ def validate_xot_opening(opening: str) -> None:
                 f"illegal XOT move {move!r} in {opening!r}"
             )
         state.apply_move(state.side, policy)
+    return (state.black, state.white, state.side)
 
 
 class GameRunner:
@@ -862,7 +863,7 @@ class GameRunner:
         }
         if self.sequential_fresh_tt:
             # Only one game can lease these pools. Reuse the same process even
-            # when its color changes, after the acknowledged TT reset below.
+            # when its color changes; every game clears its TT before release.
             color_pools = {p0_idx: 0, p1_idx: 0}
         held: Dict[int, GtpProcess] = {}
         leased: Dict[int, GtpProcess] = {}
@@ -879,14 +880,8 @@ class GameRunner:
             # several stateful games begin at the same time.
             for player_idx in sorted((p0_idx, p1_idx)):
                 stateful = not self.specs[player_idx].setboard_before_genmove
-                if not stateful and not self.game_boundary_threads:
+                if not stateful and not self.game_boundary_threads and self.specs[player_idx].alpha == 1.0:
                     continue
-                if (self.sequential_fresh_tt and stateful and self.specs[player_idx].alpha != 1.0
-                        and not self.pools[player_idx].live_edax_threads):
-                    # The native Egaroucid GTP interface has no TT-reset command
-                    # (clear_board only changes the board). Only this interface
-                    # needs a fresh process; hint wrappers expose clearcache.
-                    self.pools[player_idx].close_idle()
                 engine = self.pools[player_idx].acquire(
                     color_pools[player_idx],
                     search_threads=(search_threads or {}).get(player_idx),
@@ -894,10 +889,6 @@ class GameRunner:
                 # Pin blend wrappers as well when adapting threads. Returning
                 # them after each move would reset their nested engine/TT midgame.
                 leased[player_idx] = engine
-                if self.sequential_fresh_tt and not stateful and self.specs[player_idx].alpha != 1.0:
-                    self._send(engine, "clear_cache")
-                    print(f"game_tt_reset player={self.specs[player_idx].name} "
-                          f"pid={engine.process.pid} method=clearcache", flush=True)
                 if stateful:
                     held[player_idx] = engine
                     if self.specs[player_idx].random_seed is not None:
@@ -998,6 +989,18 @@ class GameRunner:
             )
         finally:
             for player_idx, engine in leased.items():
+                if self.specs[player_idx].alpha != 1.0:
+                    # Never return a search engine carrying this game's TT to
+                    # the pool, including after a failed/interrupted game.
+                    if self.specs[player_idx].setboard_before_genmove and engine.usable:
+                        try:
+                            self._send(engine, "clear_cache")
+                        except Exception:
+                            engine.close()  # A failed reset cannot contaminate another game.
+                    else:
+                        # Native GTP has no acknowledged TT-clear operation.
+                        # Discard its process (and all TT data) after every game.
+                        engine.close()
                 self.pools[player_idx].release(
                     color_pools[player_idx],
                     engine,

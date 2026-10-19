@@ -63,6 +63,15 @@ class ModelExtension:
         if make_manifest(self.configuration) != self.manifest:
             raise ValueError("Reference manifest fingerprint is inconsistent")
         config = self.configuration
+        if (config["schedule"].get("opening_sampling") != "independent_per_pair_without_replacement_v1"
+                or config["schedule"].get("same_opening_sequence_for_every_pair") is not False
+                or config["engine"].get("tt_reset") != "after_every_game_clear_or_discard_process"
+                or config["engine"].get("hint_cache") is not False
+                or config["engine"].get("memory_hint_cache") is not False):
+            raise ValueError(
+                "Reference uses the old tournament protocol. Rerun the reference in a new output directory "
+                "with independent XOT sampling, per-game TT resets, and no hint cache; old results cannot be imported."
+            )
         if config["participants"].get("additional_policy"):
             raise ValueError("Choose the original single-model tournament as reference")
         if config["schedule"]["max_match_sets"] is not None:
@@ -142,7 +151,7 @@ class ModelExtension:
             value = getattr(options, option)
             setattr(args, option, thread_policy.get(source, default) if value is None else value)
         args.edax_processes_per_player = engine["edax"]["processes_per_player"] if engine["edax"] else 2
-        args.no_hint_cache = not engine["hint_cache"]
+        args.no_hint_cache = True
         args.policy_backend = inference["backend"]
         args.allow_policy_cpu = inference["required_device"] != "GPU"
         for target, source in (("policy_max_batch_size", "max_batch_size"), ("policy_batch_wait_ms", "batch_wait_ms"),
@@ -314,7 +323,7 @@ def make_argparser():
     parser.add_argument("--gtp-command-timeout-sec", type=float,
                         help="Outer command timeout; must exceed the hint timeout")
     parser.add_argument("--match-sets-per-pair", type=int,
-                        help="Use the first N reference openings (default: first 50, or all if fewer)")
+                        help="Use the first N independently sampled openings of each reference pair (default: 50, or all if fewer)")
     parser.add_argument("--prepare-only", action="store_true",
                         help="Back up and resize an existing extension; update reports without starting games")
     parser.add_argument("--dry-run", action="store_true", help="Validate reference and plan; start no engines and write no results")

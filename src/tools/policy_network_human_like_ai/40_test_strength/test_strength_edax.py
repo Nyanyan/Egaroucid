@@ -156,6 +156,9 @@ class EdaxConfigurationTest(unittest.TestCase):
 
 
 class StrictPassEngine:
+    def close(self):
+        pass
+
     """Small legal-move engine that rejects terminal or out-of-turn passes."""
 
     def __init__(self):

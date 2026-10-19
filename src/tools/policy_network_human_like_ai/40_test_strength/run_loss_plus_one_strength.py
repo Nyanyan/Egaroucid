@@ -114,8 +114,14 @@ class LossPlusOneExtension(ModelExtension):
                 random_results.append(remap_result_players(result, mapping))
         if len(random_results) != self.old_count * args.match_sets_per_pair:
             raise ValueError("missing prior random-versus-normal match sets")
-        self.results.extend(random_results)
-        self.random_import_count = len(random_results)
+        # Pair-index seeds change if random is moved after removing players.
+        # Replay those pairs under their new schedules instead of importing
+        # games with different openings (and old random seeds).
+        if self.random_source_index == self.old_count + 1:
+            self.results.extend(random_results)
+            self.random_import_count = len(random_results)
+        else:
+            self.random_import_count = 0
         self.excluded_names = [name for name in expected_names[self.old_count:] if name != "random"]
         self.verify_source_unchanged()
 
@@ -133,7 +139,7 @@ class LossPlusOneExtension(ModelExtension):
         configuration[f"{self.label}_experiment"] = {
             "new_player": f"{self.label}_alpha_1.0", "new_player_index": self.old_count,
             "excluded_players": self.excluded_names,
-            "scope": "new standalone network versus every retained opponent only",
+            "scope": "new standalone network and any random-player pairs whose indices changed",
             "random_reference": {"directory": str(self.opponent_reference), "files": self.opponent_files,
                                  "experiment_id": self.opponent_manifest["experiment_id"],
                                  "imported_match_sets": self.random_import_count,
@@ -183,16 +189,20 @@ def prepare(args, extension_class=LossPlusOneExtension):
     imported_ids = {r.task_id for r in imported}
     pending = [t for t in tasks if t.task_id not in imported_ids]
     new_index = extension.old_count
-    if any(new_index not in (t.p0_idx, t.p1_idx) for t in pending):
+    random_index = extension.old_count + 1
+    replay_random = extension.random_import_count == 0
+    if any(new_index not in (t.p0_idx, t.p1_idx)
+           and not (replay_random and t.p1_idx == random_index and t.p0_idx < new_index) for t in pending):
         raise ValueError("unexpected new match between existing opponents")
-    by_opponent = Counter(t.p1_idx if t.p0_idx == new_index else t.p0_idx for t in pending)
+    by_opponent = Counter(t.p1_idx if t.p0_idx == new_index else t.p0_idx for t in pending
+                          if new_index in (t.p0_idx, t.p1_idx))
     if by_opponent != Counter({i: runtime_args.match_sets_per_pair for i in range(len(specs)) if i != new_index}):
         raise ValueError("new model must have exactly N match sets against each opponent")
     print(f"New player: {specs[new_index].name}", flush=True)
     print("Opponents: " + ", ".join(s.name for i, s in enumerate(specs) if i != new_index), flush=True)
     print("Excluded: " + ", ".join(extension.excluded_names), flush=True)
     print(f"Imported: {len(imported):,} sets; new: {len(pending):,} sets / {len(pending) * 2:,} games", flush=True)
-    print(f"Each opponent: {runtime_args.match_sets_per_pair} color-swapped sets; first XOT openings with seed {runtime_args.seed}", flush=True)
+    print(f"Each opponent: {runtime_args.match_sets_per_pair} color-swapped sets; independent XOT samples per pair with seed {runtime_args.seed}", flush=True)
     # Validate resumability now; dry-run must not create even an empty output directory.
     prepare_extension_output(runtime_args, extension, dry_run=True)
     return runtime_args, extension

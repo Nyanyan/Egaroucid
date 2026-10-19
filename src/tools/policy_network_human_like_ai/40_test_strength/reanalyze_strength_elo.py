@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate clustered 95% confidence intervals from a completed raw log."""
+"""Generate 95% Elo intervals using the opening protocol recorded in the manifest."""
 
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ from strength_elo_confidence import (
 def make_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Reanalyze a completed strength_games.jsonl with an XOT/set-index "
-            "cluster BCa bootstrap. Existing tournament logs are not changed."
+            "Reanalyze a completed strength_games.jsonl with independent within-pair "
+            "bootstrap draws, or shared-XOT BCa draws for legacy logs."
         )
     )
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -95,7 +95,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     print("aggregate_results_sha256", data.aggregate_sha256, flush=True)
     print("participants", len(data.names), flush=True)
     print("player_pairs", len(data.pairs), flush=True)
-    print("XOT_clusters", len(data.set_indices), flush=True)
+    print("sets_per_pair", len(data.set_indices), flush=True)
+    print("independent_pair_sampling", data.independent_pairs, flush=True)
     print("bootstrap_replicates", args.bootstrap_replicates, flush=True)
     print("bootstrap_seed", args.bootstrap_seed, flush=True)
     print("workers", args.workers, flush=True)

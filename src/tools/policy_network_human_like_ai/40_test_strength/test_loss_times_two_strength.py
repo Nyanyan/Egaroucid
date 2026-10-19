@@ -63,12 +63,13 @@ class LossTimesTwoStrengthTest(unittest.TestCase):
         self.assertEqual(["loss_weighted_alpha_0.2", "model_blend_beta_0.4"], extension.excluded_names)
         tasks = make_match_set_tasks(4, extension.openings, 3, args.seed)
         imports = extension.missing_imports(tasks, [])
-        self.assertEqual(9, len(imports))
-        self.assertEqual(6, extension.random_import_count)
+        self.assertEqual(3, len(imports))
+        self.assertEqual(0, extension.random_import_count)
         pending = [t for t in tasks if t.task_id not in {r.task_id for r in imports}]
-        self.assertEqual(9, len(pending))
-        self.assertTrue(all(2 in (t.p0_idx, t.p1_idx) for t in pending))
-        self.assertTrue(all(t.opening == self.fixture.openings[t.set_index] for t in tasks))
+        self.assertEqual(15, len(pending))
+        self.assertTrue(all(t.p1_idx >= 2 for t in pending))
+        self.assertTrue(all(len({t.opening for t in tasks if (t.p0_idx, t.p1_idx) == pair}) == 3
+                            for pair in {(t.p0_idx, t.p1_idx) for t in tasks}))
         for result in imports:
             for game in result.color_games:
                 self.assertEqual((result.p0_idx, result.p1_idx), (game.p0_idx, game.p1_idx))
@@ -76,7 +77,7 @@ class LossTimesTwoStrengthTest(unittest.TestCase):
                 self.assertEqual(result.p1_idx if game.p0_is_black else result.p0_idx, game.white_idx)
                 self.assertEqual(result.opening, game.transcript)
 
-    def test_runs_only_new_model_games_and_resume_never_replays(self):
+    def test_runs_new_model_and_remapped_random_games_and_resume_never_replays(self):
         with redirect_stdout(io.StringIO()):
             args, extension = launcher.prepare(self.options)
         args.no_performance_monitor = True
@@ -87,7 +88,7 @@ class LossTimesTwoStrengthTest(unittest.TestCase):
             models.append(Path(settings.policy_model))
             return battle.PolicyServerInfo(10000 + len(models), "tensorflow", "CPU", "test")
         def play(task, black):
-            self.assertIn(2, (task.p0_idx, task.p1_idx))
+            self.assertGreaterEqual(task.p1_idx, 2)
             played.append((task.task_id, black))
             return fixtures.color_result(task, black)
         with patch.object(battle, "GameRunner") as runner, \
@@ -103,7 +104,7 @@ class LossTimesTwoStrengthTest(unittest.TestCase):
             resumed_args, resumed_extension = launcher.prepare(self.options)
             resumed_args.no_performance_monitor = True
             battle.run_tournament(resumed_args, extension=resumed_extension)
-        self.assertEqual(18, len(played))
+        self.assertEqual(30, len(played))
         self.assertEqual([self.fixture.old_model, self.fixture.new_model], models)
         after = {(directory.name, p.name): p.read_bytes() for directory in (self.source, self.fixture.reference)
                  for p in directory.iterdir() if p.is_file()}

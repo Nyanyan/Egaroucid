@@ -79,10 +79,8 @@ def estimate_elos(
 ) -> Dict[str, float]:
     """Return descriptive Elo point estimates from the observed pair graph.
 
-    Every unordered player pair shares its XOT opening sequence with every
-    other pair.  Consequently, the fitted ratings are useful summaries of this
-    tournament, but the usual independent-game uncertainty calculation is not
-    applicable.  A half-win and half-loss are added to every played pair so an
+    The observation is a color-swapped match set, not an individual game.
+    A half-win and half-loss are added to every played pair so an
     observed 0% or 100% score still produces a finite estimate. Unplayed pairs
     have zero fitting weight. Ratings are withheld until the observed pair
     graph connects every participant, because offsets between disconnected
@@ -335,8 +333,7 @@ def build_text_report(
             "sign of their mean disc difference."
         ),
         (
-            "All player pairs use the same set-index/XOT schedule, so the "
-            "all-opponent score and Elo below are descriptive point estimates "
+            "The all-opponent score and Elo below are descriptive point estimates "
             "without confidence intervals. Pair-specific score confidence "
             "intervals are available in strength_pair_results.csv."
         ),
@@ -599,9 +596,9 @@ def write_outputs(
                     "Envelope of a Student-t interval and a Wilson boundary "
                     "safeguard for scores in {0, 0.5, 1}, clipped to [0, 1]"
                 ),
-                "shared_opening_schedule": (
-                    "Every player pair uses the same XOT opening at the same "
-                    "set index, so observations are correlated across pairs"
+                "opening_schedule": (
+                    "See strength_manifest.json for the sampling protocol; "
+                    "Elo intervals must use that protocol's resampling unit"
                 ),
                 "participant_summary": (
                     "descriptive point estimates only; no confidence interval "

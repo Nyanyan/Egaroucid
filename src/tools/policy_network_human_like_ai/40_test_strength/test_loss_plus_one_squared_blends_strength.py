@@ -84,7 +84,8 @@ class SquaredBlendsStrengthTest(unittest.TestCase):
         self.assertEqual(Counter({(i, j): 3 for i in range(8) for j in range(i + 1, 8) if j >= 4}),
                          Counter((t.p0_idx, t.p1_idx) for t in pending))
         self.assertEqual(66, len(pending))
-        self.assertTrue(all(t.opening == self.fixture.openings[t.set_index] for t in tasks))
+        self.assertTrue(all(len({t.opening for t in tasks if (t.p0_idx, t.p1_idx) == pair}) == 3
+                            for pair in {(t.p0_idx, t.p1_idx) for t in tasks}))
 
     def test_runs_only_new_pairs_connects_both_models_and_resumes_without_replay(self):
         args, extension = self.prepare()

@@ -148,7 +148,7 @@ def prepare(args):
     print("Added players: " + ", ".join(s.name for s in specs[extension.retained_player_count:]), flush=True)
     print(f"Participants: {extension.retained_player_count} retained + {len(extension.model_blend_betas)} blends = {len(specs)}", flush=True)
     print(f"Imported: {len(imported):,} sets; new: {len(pending):,} sets / {len(pending) * 2:,} games", flush=True)
-    print(f"Each pair: {runtime_args.match_sets_per_pair} color-swapped sets; first XOT openings with seed {runtime_args.seed}", flush=True)
+    print(f"Each pair: {runtime_args.match_sets_per_pair} color-swapped sets; independent XOT samples per pair with seed {runtime_args.seed}", flush=True)
     print(f"Output: {runtime_args.output_dir}", flush=True)
     base.prepare_extension_output(runtime_args, extension, dry_run=True)
     return runtime_args, extension

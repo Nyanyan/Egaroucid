@@ -80,7 +80,7 @@ from strength_tournament import (  # noqa: E402
 )
 
 
-IMPLEMENTATION_REVISION = "clean-strength-tournament-v5"
+IMPLEMENTATION_REVISION = "independent-xot-fresh-tt-v6"
 
 TENSORFLOW_DISTRIBUTIONS = (
     "tensorflow",
@@ -231,6 +231,12 @@ def read_openings(path: Path, seed: int) -> List[str]:
     ]
     if not openings:
         raise ValueError(f"no XOT openings found in {path}")
+    # Different transcripts can reach the same position. Give each actual
+    # starting position equal weight, keeping its first legal transcript.
+    unique_positions = {}
+    for opening in openings:
+        unique_positions.setdefault(validate_xot_opening(opening), opening)
+    openings = list(unique_positions.values())
     random.Random(seed).shuffle(openings)
     return openings
 
@@ -241,17 +247,12 @@ def validate_scheduled_openings(
 ) -> None:
     if not openings:
         raise ValueError("at least one XOT opening is required")
-    scheduled = [
-        openings[index % len(openings)]
-        for index in range(match_sets_per_pair)
-    ]
-    if len(set(scheduled)) != len(scheduled):
+    if match_sets_per_pair > len(set(openings)):
         raise ValueError(
-            "each match-set index must use a distinct XOT opening for the "
-            "reported confidence intervals; provide at least "
+            "each pair must use distinct XOT openings; provide at least "
             f"{match_sets_per_pair} unique openings"
         )
-    for set_index, opening in enumerate(scheduled):
+    for set_index, opening in enumerate(openings):
         try:
             validate_xot_opening(opening)
         except ValueError as error:
@@ -266,6 +267,8 @@ def game_worker_count(args: argparse.Namespace) -> int:
 
 
 def validate_args(args: argparse.Namespace, additional_alphas=()) -> Tuple[List[int], List[float]]:
+    if not args.no_hint_cache:
+        raise ValueError("Tournament hint caching is disabled; use a fresh output directory for the new protocol")
     baseline_levels = parse_int_list(args.baseline_levels)
     edax_levels = parse_int_list(args.edax_levels)
     alphas = parse_float_list(args.alphas)
@@ -559,9 +562,6 @@ def build_player_specs(
         )
 
     blend_script = BLEND_DIR / "blend_gtp_engine.py"
-    hint_cache_db = (
-        args.output_dir / "egaroucid_hint_cache_v2.sqlite3"
-    ).resolve()
     for alpha in alphas:
         alpha_text = format_alpha(alpha)
         if alpha == 0.0:
@@ -605,10 +605,6 @@ def build_player_specs(
                 "--policy-server-timeout-sec",
                 str(args.policy_server_timeout_sec),
             ]
-            if not args.no_hint_cache:
-                command_parts.extend(
-                    ["--hint-cache-db", str(hint_cache_db)]
-                )
             if args.logit_blend:
                 command_parts.append("--logit-blend")
             command = tuple(command_parts)
@@ -773,7 +769,10 @@ def build_manifest_configuration(
             "match_sets_per_pair": args.match_sets_per_pair,
             "max_match_sets": args.max_match_sets,
             "xot_seed": args.seed,
-            "same_opening_sequence_for_every_pair": True,
+            "same_opening_sequence_for_every_pair": False,
+            "opening_sampling": "independent_per_pair_without_replacement_v1",
+            "pair_seed": "sha256(xot-pair-v1:seed:p0_idx:p1_idx)",
+            "unique_starting_positions": len(openings),
             "max_set_index_lookahead": (
                 PendingTaskQueue.MAX_SET_INDEX_LOOKAHEAD
             ),
@@ -806,11 +805,12 @@ def build_manifest_configuration(
                 if edax_levels else None
             ),
             "engine_threads": args.engine_threads,
+            "tt_reset": "after_every_game_clear_or_discard_process",
             "sequential_tail": {
                 "remaining_match_sets": args.sequential_tail_match_sets,
                 "engine_threads": 32,
                 "parallel_games": 1,
-                "tt_reset": "clear_between_games_reuse_supported_processes",
+                "tt_reset": "after_every_game_clear_or_discard_process",
                 "transition": "cancel_and_requeue_uncommitted_match_sets",
             },
             "adaptive_search_threads": {
@@ -828,7 +828,8 @@ def build_manifest_configuration(
             "blend_egaroucid_level": args.blend_egaroucid_level,
             "score_temperature": args.score_temperature,
             "logit_blend": args.logit_blend,
-            "hint_cache": not args.no_hint_cache,
+            "hint_cache": False,
+            "memory_hint_cache": False,
             "gtp_command_timeout_sec": args.gtp_command_timeout_sec,
             "egaroucid_hint_timeout_sec": (
                 args.egaroucid_hint_timeout_sec
@@ -900,7 +901,8 @@ def print_configuration(
         print("max_engine_threads_per_process", args.max_engine_threads)
         print("engine_thread_budget", args.engine_thread_budget)
     print("xot_openings", repo_relative(Path(args.openings)))
-    print("same_opening_sequence_for_every_pair", True)
+    print("same_opening_sequence_for_every_pair", False)
+    print("opening_sampling", "independent_per_pair_without_replacement_v1")
     print(
         "max_set_index_lookahead",
         PendingTaskQueue.MAX_SET_INDEX_LOOKAHEAD,
@@ -1017,7 +1019,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--match-sets-per-pair",
         type=int,
-        default=500,
+        default=50,
         help=(
             "Paired XOT observations per player pair. Each set contains two "
             "color-swapped actual games."
@@ -1105,7 +1107,7 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=SCRIPT_DIR / "output" / "xot_500sets_17players_edax",
+        default=SCRIPT_DIR / "output" / "xot_independent_50sets_17players_edax",
     )
     parser.add_argument(
         "--seed",
@@ -1116,7 +1118,8 @@ def make_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-hint-cache",
         action="store_true",
-        help="Disable Egaroucid hint caching in blended engines.",
+        default=True,
+        help="Compatibility option: tournament hint caching is always disabled.",
     )
     parser.add_argument(
         "--policy-backend",
@@ -1193,7 +1196,9 @@ def run_tournament(args: argparse.Namespace, *, extension=None) -> None:
     additional_alphas = extension.resource_alphas if extension is not None else ()
     baseline_levels, alphas = validate_args(args, additional_alphas)
     all_alphas = [*alphas, *additional_alphas]
-    policy_server_count = int(any(a > 0 for a in alphas)) + int(bool(additional_alphas))
+    policy_server_count = int(any(a > 0 for a in alphas)) + (
+        getattr(extension, "policy_server_count", int(bool(additional_alphas))) if extension is not None else 0
+    )
     edax_levels = parse_int_list(args.edax_levels)
     validate_input_files(args, alphas)
     if extension is not None and not extension.model.is_file():
@@ -1489,6 +1494,14 @@ def run_tournament(args: argparse.Namespace, *, extension=None) -> None:
                 "device": additional_server.device,
             }
             runtime_manifest = make_manifest(runtime_configuration)
+        extra_servers = getattr(extension, "extra_policy_servers", {}) if extension is not None else {}
+        if extra_servers:
+            runtime_configuration = runtime_manifest["configuration"]
+            runtime_configuration["extra_policy_servers"] = {
+                name: {"backend": server.backend, "backend_version": server.backend_version, "device": server.device}
+                for name, server in extra_servers.items()
+            }
+            runtime_manifest = make_manifest(runtime_configuration)
         ensure_manifest(
             args.output_dir / "strength_runtime_manifest.json",
             runtime_manifest,
@@ -1590,7 +1603,7 @@ def run_tournament(args: argparse.Namespace, *, extension=None) -> None:
                 kwargs = {"search_threads": {i: 32 for i in (in_flight.task.p0_idx, in_flight.task.p1_idx)
                                               if specs[i].alpha != 1.0}}
                 print(f"sequential_game_start match_set={in_flight.task.task_id} "
-                      f"color_game={1 if color else 2}/2 engine_threads=32 tt=clear_before_play", flush=True)
+                          f"color_game={1 if color else 2}/2 engine_threads=32 tt=clear_after_game", flush=True)
             else:
                 kwargs = ({"search_threads": thread_budget.for_game(in_flight.task, color)}
                           if thread_budget is not None else {})
@@ -1649,7 +1662,7 @@ def run_tournament(args: argparse.Namespace, *, extension=None) -> None:
                 "allocated_policy_processes": len(playing - search),
                 "allocated_player_processes": len(playing),
                 "allocated_compute_slots": 32 * len(search) + len(playing - search),
-                "tt_reset": "clear_between_games_reuse_supported_processes",
+                "tt_reset": "after_every_game_clear_or_discard_process",
                 "active_games": [{"task_id": item.task.task_id, "p0_is_black": color}
                                  for item in active_sets.values() for color in item.futures.values()],
                 "players": [{"name": spec.name, "active_sets": active_counts[i],
