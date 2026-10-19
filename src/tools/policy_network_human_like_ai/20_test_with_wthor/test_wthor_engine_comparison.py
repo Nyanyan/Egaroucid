@@ -1,5 +1,6 @@
 from contextlib import redirect_stderr
 import io
+import json
 from pathlib import Path
 import tempfile
 import threading
@@ -48,8 +49,8 @@ class EngineComparisonTest(unittest.TestCase):
             self.assertEqual(first, output.getvalue())
             reporter.report(self.progress("egaroucid", 7))
             reporter.report(self.progress("egaroucid", 10, final=True))
-        self.assertEqual(3, output.getvalue().count("][hint"))
-        self.assertEqual(1, output.getvalue().count("[hint進捗・完了]"))
+        self.assertEqual(3, output.getvalue().count("][エンジン探索"))
+        self.assertEqual(1, output.getvalue().count("[エンジン探索完了]"))
         self.assertEqual(2, output.getvalue().count("metric edax 10"))
         self.assertIn("20/20", output.getvalue())
 
@@ -59,8 +60,45 @@ class EngineComparisonTest(unittest.TestCase):
         with redirect_stderr(output):
             reporter.report(self.progress("egaroucid", final=True, total=0))
             reporter.report(self.progress("edax", final=True, total=0))
-        self.assertEqual(1, output.getvalue().count("[hint進捗・完了]"))
+        self.assertEqual(1, output.getvalue().count("[エンジン探索完了]"))
         self.assertIn("100.0%", output.getvalue())
+        self.assertIn("この探索工程の推定残り 00:00:00", output.getvalue())
+        self.assertIn("実験全体のETAは未算出", output.getvalue())
+
+    def test_quest_scope_keeps_dataset_search_and_whole_run_distinct(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            identity = dict(datasets=[dict(name="band_a"), dict(name="band_b")])
+            path = root / "experiment_identity.json"
+            path.write_text(json.dumps(identity), encoding="utf-8")
+            original = path.read_bytes()
+            (root / "band_a").mkdir()
+            (root / "band_a/summary.json").write_text('{"status":"passed"}', encoding="utf-8")
+            options = {engine: dict(output_dir=root / "band_b" / engine) for engine in ("egaroucid", "edax")}
+            context = comparison.quest_progress_context(options)
+            self.assertEqual(dict(dataset="band_b", index=2, total=2, completed=1), context)
+            self.assertEqual(original, path.read_bytes())
+            reporter = comparison.ComparisonProgressReporter(options, progress_context=context)
+            egaroucid = self.progress("egaroucid", 7)
+            edax = self.progress("edax", 10, final=True)
+            egaroucid["eta_sec"] = 95
+            reporter.snapshots = dict(egaroucid=egaroucid, edax=edax)
+            reporter.metric_lines = {engine: [] for engine in options}
+            text = "\n".join(reporter.format_lines())
+            self.assertIn("[データセット2/2: band_b]", text)
+            self.assertIn("今回実行分 17/20件 (85.0%)", text)
+            self.assertIn("この探索工程の推定残り 00:01:35", text)
+            self.assertIn("評価完了 1/2データセット | 全体ETA: 未算出", text)
+            self.assertIn("この探索後: NN3モデルの推論", text)
+            self.assertIn("1つの盤面・手番 × 1エンジン × 1レベル", text)
+            self.assertNotIn("概算残り", text)
+
+    def test_missing_scope_metadata_does_not_stop_searches(self):
+        self.assertIsNone(comparison.quest_progress_context({"edax": dict(workers=2)}))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "experiment_identity.json").write_text("incomplete", encoding="utf-8")
+            self.assertIsNone(comparison.quest_progress_context({"edax": dict(output_dir=root / "band_a/edax")}))
 
     def test_workers_limit_is_global_and_freed_slots_are_reused(self):
         slots = comparison.SharedEngineSlots(
@@ -107,7 +145,7 @@ class EngineComparisonTest(unittest.TestCase):
         output = io.StringIO()
         with patch.object(comparison, "collect_hints", side_effect=collect), redirect_stderr(output):
             results = comparison.collect_comparison_hints([], 32, options)
-        self.assertEqual(1, output.getvalue().count("[hint進捗・完了]"))
+        self.assertEqual(1, output.getvalue().count("[エンジン探索完了]"))
         self.assertEqual({"egaroucid", "edax"}, set(results))
         self.assertIs(shared[0], shared[1])
         for engine, (result, elapsed) in results.items():
