@@ -108,6 +108,14 @@ inline bool init_weights(Weights &w, const std::string &file, bool show_log) {
         std::cerr << "[ERROR] [FATAL] not an NNUE weight file: " << file << std::endl;
         return false;
     }
+    // a reload starts from an empty object (a version-1 file must not keep version-2 int8 rows)
+    for (void **ptr : {(void**)&w.ft, (void**)&w.ft8, (void**)&w.l1_w, (void**)&w.lin, (void**)&w.packed}) {
+        if (*ptr) {
+            _mm_free(*ptr);
+            *ptr = nullptr;
+        }
+    }
+    w.loaded = false;
     w.mode = head[1];
     w.W = head[4];
     w.H = head[5];

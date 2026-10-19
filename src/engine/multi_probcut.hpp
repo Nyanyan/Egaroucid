@@ -809,6 +809,16 @@ struct Mpc_d0 {
     }
     bool ge(int threshold) { return at(threshold) >= threshold; }
     bool le(int threshold) { return at(threshold) <= threshold; }
+    // the full value (trace builds log it, so they skip the shortcut to keep log and decision equal)
+    int exact_value() {
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_LAZY)
+        if (!exact) {
+            value = mid_evaluate_nnue(search, raw);
+            exact = true;
+        }
+#endif
+        return value;
+    }
 };
 
 inline Mpc_d0 mpc_d0_evaluate(Search *search) {
@@ -838,6 +848,7 @@ inline bool mpc_end_static_eval_cut(
     const int static_high_threshold = end_mpc_static_threshold(depth, beta, true);
     const int static_low_threshold = end_mpc_static_threshold(depth, alpha, false);
 #if defined(END_PROBCUT_CONTEXT_TRACE)
+    d0.exact_value();
     end_probcut_trace_context(
         search, depth, 0, alpha, beta, "high", d0.value, legal_count,
         static_high_threshold, d0.value >= static_high_threshold, true,
@@ -885,6 +896,9 @@ inline bool mpc_end_recalibrated_shallow(
     const int shallow_depth = end_mpc_shallow_depth(depth);
     const int high_threshold = beta + end_mpc_shallow_error(mpc_level, depth, true);
     const int low_threshold = alpha - end_mpc_shallow_error(mpc_level, depth, false);
+#if defined(END_PROBCUT_CONTEXT_TRACE)
+    d0.exact_value();
+#endif
     const bool high_gate = d0.ge(high_threshold -
         end_mpc_shallow_gate_slack(mpc_level, depth, true));
     const bool low_gate = d0.le(low_threshold +
@@ -1114,6 +1128,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         );
 #if defined(END_PROBCUT_CONTEXT_TRACE)
         if constexpr (IsEndSearch) {
+            d0.exact_value();
             end_probcut_trace_context(
                 search, depth, 0, alpha, beta, "high", d0.value,
                 pop_count_ull(legal), beta + static_error_high,
@@ -1178,6 +1193,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         );
 #if defined(END_PROBCUT_CONTEXT_TRACE)
         if constexpr (IsEndSearch) {
+            d0.exact_value();
             end_probcut_trace_context(
                 search, depth, search_depth, alpha, beta, "high", d0.value,
                 pop_count_ull(legal), beta + error_search_high,
