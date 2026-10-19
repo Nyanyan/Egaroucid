@@ -43,6 +43,15 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH
         #define EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH 8  // shallower nodes keep the plain margins (the network costs a little)
     #endif
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END 0  // 1: also scale the endgame MPC margins
+    #endif
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B 0.4
+    #endif
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH 10
+    #endif
 #endif
 #ifndef MID_MPC_SIGMA_EXTRA_SCALE
     // extra factor on the midgame MPC sigma (an evaluation other than the one it was fitted on)
@@ -821,6 +830,46 @@ struct Mpc_d0 {
     }
 };
 
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+/*
+    Per-position MPC margin multiplier m = clamp(k * exp(b * (u - mean u for the disc count)), lo, hi)
+    from the learned uncertainty network. Experiments override the compiled parameters with
+    EGAROUCID_MPC_U_MID / EGAROUCID_MPC_U_END = "b,k,lo,hi,min_depth" (b = 0 and k = 1: plain margins).
+*/
+struct Nnue_mpc_u_params {
+    double b, k, lo, hi;
+    int min_depth;
+    bool on;
+};
+inline Nnue_mpc_u_params nnue_mpc_u_params_from_env(const char *name, Nnue_mpc_u_params p) {
+    if (const char *env = std::getenv(name)) {
+        double b, k, lo, hi;
+        int min_depth;
+        if (std::sscanf(env, "%lf,%lf,%lf,%lf,%d", &b, &k, &lo, &hi, &min_depth) == 5) {
+            p = {b, k, lo, hi, min_depth, true};
+        }
+    }
+    p.on = p.on && !(p.b == 0.0 && p.k == 1.0);
+    return p;
+}
+inline const Nnue_mpc_u_params nnue_mpc_u_mid = nnue_mpc_u_params_from_env("EGAROUCID_MPC_U_MID",
+    {EGAROUCID_NNUE_MPC_UNCERTAINTY_B, 1.0, 0.6, 1.8, EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH, true});
+inline const Nnue_mpc_u_params nnue_mpc_u_end = nnue_mpc_u_params_from_env("EGAROUCID_MPC_U_END",
+    {EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B, 1.0, 0.85, 1.3, EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH, EGAROUCID_NNUE_MPC_UNCERTAINTY_END != 0});
+
+inline double nnue_mpc_u_multiplier(Search *search, int depth, bool is_end_search) {
+    const Nnue_mpc_u_params &p = is_end_search ? nnue_mpc_u_end : nnue_mpc_u_mid;
+    if (!p.on || depth < p.min_depth) {
+        return 1.0;
+    }
+    return std::clamp(p.k * std::exp(p.b * nnue_uncertainty_dev(search)), p.lo, p.hi);
+}
+
+inline int nnue_mpc_scale_error(int error, double mult) {
+    return mult == 1.0 ? error : std::max(1, (int)std::ceil(error * mult));
+}
+#endif
+
 inline Mpc_d0 mpc_d0_evaluate(Search *search) {
 #if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_LAZY)
     if (!search_uses_separate_shallow_evaluation(search)) {
@@ -841,12 +890,21 @@ inline bool mpc_end_static_eval_cut(
     int depth,
     Mpc_d0 &d0,
     uint64_t legal,
-    int *v
+    int *v,
+    double u_mult = 1.0
 ) {
 #if END_MPC_USE_STATIC_EVAL_CUT
     const int legal_count = pop_count_ull(legal);
-    const int static_high_threshold = end_mpc_static_threshold(depth, beta, true);
-    const int static_low_threshold = end_mpc_static_threshold(depth, alpha, false);
+    int static_high_threshold = end_mpc_static_threshold(depth, beta, true);
+    int static_low_threshold = end_mpc_static_threshold(depth, alpha, false);
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+    if (u_mult != 1.0) {
+        static_high_threshold = beta + (int)std::ceil(-END_MPC_STATIC_BIAS + (end_mpc_static_threshold(depth, 0, true) + END_MPC_STATIC_BIAS) * u_mult);
+        static_low_threshold = alpha + (int)std::floor(-END_MPC_STATIC_BIAS + (end_mpc_static_threshold(depth, 0, false) + END_MPC_STATIC_BIAS) * u_mult);
+    }
+#else
+    (void)u_mult;
+#endif
 #if defined(END_PROBCUT_CONTEXT_TRACE)
     d0.exact_value();
     end_probcut_trace_context(
@@ -876,6 +934,7 @@ inline bool mpc_end_static_eval_cut(
     (void)d0;
     (void)legal;
     (void)v;
+    (void)u_mult;
 #endif
     return false;
 }
@@ -889,13 +948,20 @@ inline bool mpc_end_recalibrated_shallow(
     Mpc_d0 &d0,
     uint64_t legal,
     int *v,
-    Searchings &searchings
+    Searchings &searchings,
+    double u_mult = 1.0
 ) {
     const uint_fast8_t mpc_level = search->mpc_level;
     const int legal_count = pop_count_ull(legal);
     const int shallow_depth = end_mpc_shallow_depth(depth);
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+    const int high_threshold = beta + nnue_mpc_scale_error(end_mpc_shallow_error(mpc_level, depth, true), u_mult);
+    const int low_threshold = alpha - nnue_mpc_scale_error(end_mpc_shallow_error(mpc_level, depth, false), u_mult);
+#else
+    (void)u_mult;
     const int high_threshold = beta + end_mpc_shallow_error(mpc_level, depth, true);
     const int low_threshold = alpha - end_mpc_shallow_error(mpc_level, depth, false);
+#endif
 #if defined(END_PROBCUT_CONTEXT_TRACE)
     d0.exact_value();
 #endif
@@ -1098,6 +1164,11 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
     }
     */
 
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+    const double u_mult = nnue_mpc_u_multiplier(search, depth, IsEndSearch);
+#else
+    constexpr double u_mult = 1.0;
+#endif
     if constexpr (IsEndSearch) {
         if ((alpha & 1) == 0) {
             alpha += 1;
@@ -1107,25 +1178,34 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         }
         if (use_recalibrated_end_mpc(mpc_level, depth)) {
             if (mpc_end_static_eval_cut(
-                search, alpha, beta, depth, d0, legal, v
+                search, alpha, beta, depth, d0, legal, v, u_mult
             )) {
                 return true;
             }
 #if END_MPC_USE_RECALIBRATED_SHALLOW
             return mpc_end_recalibrated_shallow(
-                search, alpha, beta, depth, d0, legal, v, searchings
+                search, alpha, beta, depth, d0, legal, v, searchings, u_mult
             );
 #endif
         }
     }
 
     if (search_depth == 0) {
+#ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+        const int static_error_high = nnue_mpc_scale_error(mpc_static_error<IsEndSearch>(
+            mpc_level, search->n_discs, depth, true
+        ), u_mult);
+        const int static_error_low = nnue_mpc_scale_error(mpc_static_error<IsEndSearch>(
+            mpc_level, search->n_discs, depth, false
+        ), u_mult);
+#else
         const int static_error_high = mpc_static_error<IsEndSearch>(
             mpc_level, search->n_discs, depth, true
         );
         const int static_error_low = mpc_static_error<IsEndSearch>(
             mpc_level, search->n_discs, depth, false
         );
+#endif
 #if defined(END_PROBCUT_CONTEXT_TRACE)
         if constexpr (IsEndSearch) {
             d0.exact_value();
@@ -1167,14 +1247,9 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             &error_search_low, nullptr, false
         );
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
-        if constexpr (!IsEndSearch) {
-            if (depth >= EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH) {
-                // per-position margins: widen where the learned uncertainty is high, narrow where it is low
-                const double mult = std::clamp(std::exp(EGAROUCID_NNUE_MPC_UNCERTAINTY_B * nnue_uncertainty_dev(search)), 0.6, 1.8);
-                error_search_high = std::max(1, (int)std::ceil(error_search_high * mult));
-                error_search_low = std::max(1, (int)std::ceil(error_search_low * mult));
-            }
-        }
+        // per-position margins: widen where the learned uncertainty is high, narrow where it is low
+        error_search_high = nnue_mpc_scale_error(error_search_high, u_mult);
+        error_search_low = nnue_mpc_scale_error(error_search_low, u_mult);
 #endif
         // if (IsEndSearch) {
         //     error_search += 1.5;
