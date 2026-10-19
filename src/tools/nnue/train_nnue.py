@@ -198,6 +198,8 @@ class StreamBuffer:
         self._index()
 
     def sample(self, n):
+        if n == 0:
+            return {k: v[:0] for k, v in self.fields.items()}
         if self.ref_p is None:
             sel = torch.randint(0, self.n_blocks * self.block, (n,), device=self.device)
         else:
@@ -242,6 +244,8 @@ class EmptiesStream:
         self.pos[e] = 0
 
     def sample(self, n):
+        if n == 0:
+            return {k: v[:0] for k, v in next(iter(self.buf.values())).items()}
         cnt = torch.bincount(torch.multinomial(self.p_e, n, replacement=True), minlength=61).tolist()
         parts = []
         for e, c in enumerate(cnt):

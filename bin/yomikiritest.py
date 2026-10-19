@@ -98,6 +98,8 @@ for ids, text in zip(shards, outputs):
         raise RuntimeError('engine returned ' + str(len(lines)) + ' results for ' + str(len(ids)) + ' positions')
     for i, line in zip(ids, lines):
         c = [x.strip() for x in line.split('|') if x.strip()]
+        if c[2].lower() == 'ps':
+            raise RuntimeError('a position where the side to move has to pass is not supported: ' + problems[i]['board'])
         if c[0] != 'custom':
             raise RuntimeError('engine did not use the requested probability: ' + line)
         h, m, s = c[4].split(':')

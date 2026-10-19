@@ -27,7 +27,7 @@ def main():
     args = ap.parse_args()
     src, dst = Path(args.src), Path(args.dst)
     dst.mkdir(parents=True, exist_ok=True)
-    tmp = dst / "shuffle_tmp"
+    tmp = dst / f"shuffle_tmp_{args.name}"  # per name, so runs for different files do not collide
     tmp.mkdir(exist_ok=True)
     a = np.memmap(src / f"{args.name}.bin", dtype=REC, mode="r")
     p = np.memmap(src / f"{args.name}.p.f32", dtype=np.float32, mode="r")

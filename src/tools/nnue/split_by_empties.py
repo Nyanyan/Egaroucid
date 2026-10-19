@@ -14,6 +14,9 @@ REC = np.dtype([("p", "<u8"), ("o", "<u8"), ("s", "i1"), ("e", "u1"), ("src", "u
 def main():
     src, dst = Path(sys.argv[1]), Path(sys.argv[2])
     dst.mkdir(parents=True, exist_ok=True)
+    # files of an earlier split would be read as training data too
+    for f in list(dst.glob("e*.bin")) + list(dst.glob("e*.p.f32")):
+        f.unlink()
     a = np.memmap(src / "train_tr.bin", dtype=REC, mode="r")
     p = np.memmap(src / "train_tr.p.f32", dtype=np.float32, mode="r")
     files = {}
