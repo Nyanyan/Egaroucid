@@ -16,6 +16,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <array>
 
 #include "./../../engine/setting.hpp"
 #include "./../../engine/nnue/nnue_eval.hpp"
@@ -81,5 +82,27 @@ int main(int argc, char **argv) {
     timeit("linear (given indices)", [&](const Vec &v) {
         const int16_t *lin = nnue::weights.lin + (size_t)nnue::bucket_of(64 - __builtin_popcountll(v.p | v.o)) * NNUE_N_ROWS;
         int32_t l = 0; for (int i = 0; i < NNUE_N_INSTANCES; ++i) l += lin[v.idx[i]]; return (int64_t)l; });
+#if USE_SIMD
+    if (nnue::weights.W == 64 && !nnue::weights.has_lin) {
+        // the parts of the network, over all vectors (rows mostly in L2/L3) and with one vector repeated (rows in L1)
+        std::vector<std::array<__m256i, 4>> accs(vecs.size());
+        timeit("first layer (all vectors)", [&](const Vec &v) {
+            __m256i acc[4], lo, hi;
+            nnue::accumulate_packed<64, false>(v.idx, acc, &lo, &hi);
+            accs[&v - vecs.data()] = {acc[0], acc[1], acc[2], acc[3]};
+            return (int64_t)_mm256_extract_epi16(acc[0], 0);
+        });
+        timeit("head (all vectors, given the first layer)", [&](const Vec &v) {
+            return nnue::head_packed<64>(accs[&v - vecs.data()].data(), nnue::bucket_of(64 - __builtin_popcountll(v.p | v.o)));
+        });
+        const Vec &one = vecs[0];
+        timeit("network (one vector repeated)", [&](const Vec &) { return nnue::evaluate_total_idx(one.idx, one.p, 64 - __builtin_popcountll(one.p | one.o), one.raw); });
+        timeit("first layer (one vector repeated)", [&](const Vec &) {
+            __m256i acc[4], lo, hi;
+            nnue::accumulate_packed<64, false>(one.idx, acc, &lo, &hi);
+            return (int64_t)_mm256_extract_epi16(acc[1], 3);
+        });
+    }
+#endif
     return (bad_idx || bad_total) ? 1 : 0;
 }

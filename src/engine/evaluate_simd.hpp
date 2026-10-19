@@ -630,6 +630,36 @@ inline int calc_pattern_move_ordering_end(Eval_features *features) {
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
 
+#ifdef EGAROUCID_NNUE
+// the side to move at the current feature_idx is not the side the NNUE lanes were built for
+inline bool nnue_other_side(const Eval_search *eval) {
+    return ((eval->feature_idx & 1) ^ eval->nnue_pass_parity) != 0;
+}
+
+// record the move into feature_idx (call after feature_idx is incremented)
+inline void nnue_lanes_move(Eval_search *eval, const Flip *flip) {
+    const int i = eval->feature_idx;
+    eval->nnue_flip[i] = flip->flip;
+    eval->nnue_pos[i] = (uint8_t)flip->pos;
+    eval->nnue_mover_other[i] = !nnue_other_side(eval);
+    eval->nnue_valid[i] = 0;
+}
+
+// compute the lanes of feature_idx from the last computed slot
+inline void nnue_ensure_lanes(Eval_search *eval) {
+    const int i = eval->feature_idx;
+    if (eval->nnue_valid[i]) return;
+    int j = i - 1;
+    while (!eval->nnue_valid[j]) --j;
+    for (int t = j + 1; t <= i; ++t) {
+        nnue::lanes_move(reinterpret_cast<const nnue::Lanes*>(&eval->nnue_lanes[t - 1]), reinterpret_cast<const nnue::Lanes*>(&eval->nnue_occ[t - 1]),
+                         reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[t]), reinterpret_cast<nnue::Lanes*>(&eval->nnue_occ[t]),
+                         eval->nnue_flip[t], eval->nnue_pos[t], eval->nnue_mover_other[t]);
+        eval->nnue_valid[t] = 1;
+    }
+}
+#endif
+
 /*
     @brief midgame evaluation function
 
@@ -699,18 +729,22 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
     if (nnue::weights.mode == nnue::MODE_RESIDUAL) {
         raw = raw_pattern != INT_MIN ? raw_pattern : mid_evaluate_raw(search);
     }
+    nnue_ensure_lanes(&search->eval);
+    nnue::Lanes view;
+    nnue::lanes_view(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
+                     reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_occ[search->eval.feature_idx]),
+                     nnue_other_side(&search->eval), &view);
 #ifdef EGAROUCID_NNUE_VERIFY
     {
         nnue::Lanes ref;
         nnue::lanes_from_board(search->board.player, search->board.opponent, &ref);
-        if (std::memcmp(&ref, &search->eval.nnue_lanes[search->eval.feature_idx], sizeof(ref)) != 0) {
+        if (std::memcmp(&ref, &view, sizeof(ref)) != 0) {
             std::cerr << "[ERROR] NNUE incremental indices differ from the board" << std::endl;
             std::abort();
         }
     }
 #endif
-    const int64_t total = nnue::evaluate_total_lanes(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
-                                                    search->board.player, HW2 - search->n_discs, raw);
+    const int64_t total = nnue::evaluate_total_lanes(&view, search->board.player, HW2 - search->n_discs, raw);
     return nnue::score_of_total(total);
 }
 #endif
@@ -791,7 +825,9 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     eval->features[0].f256[3] = f3;
     eval->feature_idx = 0;
 #ifdef EGAROUCID_NNUE
-    nnue::lanes_from_board(board->player, board->opponent, reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[0]));
+    nnue::lanes_init(board->player, board->opponent, reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[0]), reinterpret_cast<nnue::Lanes*>(&eval->nnue_occ[0]));
+    eval->nnue_pass_parity = 0;
+    eval->nnue_valid[0] = 1;
 #endif
 }
 
@@ -911,9 +947,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
 #ifdef EGAROUCID_NNUE
-    nnue::lanes_move(reinterpret_cast<const nnue::Lanes*>(&eval->nnue_lanes[eval->feature_idx - 1]),
-                     reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[eval->feature_idx]),
-                     board->player, board->opponent & ~flip->flip, flip->pos);
+    nnue_lanes_move(eval, flip);
 #endif
 }
 
@@ -957,7 +991,7 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
 #ifdef EGAROUCID_NNUE
-    nnue::lanes_pass(reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[eval->feature_idx]), board->player, board->opponent);
+    eval->nnue_pass_parity ^= 1;
 #endif
 }
 

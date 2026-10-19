@@ -207,7 +207,15 @@ union Eval_features {
 struct Eval_search {
     Eval_features features[HW2 - 4];
 #ifdef EGAROUCID_NNUE
-    Eval_features nnue_lanes[HW2 - 4];  // NNUE instance indices, kept with the same feature_idx
+    // NNUE instance indices in fixed colors and occupancy, kept with the same feature_idx. They are
+    // computed only when a network evaluation needs them; each move just records itself.
+    Eval_features nnue_lanes[HW2 - 4];
+    Eval_features nnue_occ[HW2 - 4];
+    uint64_t nnue_flip[HW2 - 4];        // move into slot t: flipped discs, square, mover is not the root side
+    uint8_t nnue_pos[HW2 - 4];
+    uint8_t nnue_mover_other[HW2 - 4];
+    uint8_t nnue_valid[HW2 - 4];        // lanes of slot t are computed
+    uint8_t nnue_pass_parity;           // passes since the features were built, mod 2
 #endif
     uint_fast8_t feature_idx;
 };

@@ -283,6 +283,9 @@ inline void eval_move_from_sibling_base(
     const Eval_features *sibling_base
 );
 inline void eval_pass(Eval_search *eval, const Board *board);
+#ifdef EGAROUCID_NNUE
+inline void nnue_lanes_move(Eval_search *eval, const Flip *flip);
+#endif
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
 inline void eval_prepare_move_endsearch_sibling_base(
     const Eval_search *eval,
@@ -570,9 +573,7 @@ class Search {
         ) {
             eval_move_from_sibling_base(&eval, flip, sibling_base);
 #ifdef EGAROUCID_NNUE
-            nnue::lanes_move(reinterpret_cast<const nnue::Lanes*>(&eval.nnue_lanes[eval.feature_idx - 1]),
-                             reinterpret_cast<nnue::Lanes*>(&eval.nnue_lanes[eval.feature_idx]),
-                             board.player, board.opponent & ~flip->flip, flip->pos);
+            nnue_lanes_move(&eval, flip);
 #endif
             board.move_board(flip);
             ++n_discs;

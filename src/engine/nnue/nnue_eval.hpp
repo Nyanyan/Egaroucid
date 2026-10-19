@@ -276,54 +276,70 @@ inline __m256i hsum8_epi32(__m256i s0, __m256i s1, __m256i s2, __m256i s3, __m25
     return _mm256_add_epi32(_mm256_permute2x128_si256(t0, t2, 0x20), _mm256_permute2x128_si256(t0, t2, 0x31));
 }
 
+// first layer: acc = ft_bias + sum of the instance rows (saturating), and the linear head's lanes
 template <int W, bool LIN>
-inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint64_t player) {
+inline void accumulate_packed(const int idx[NNUE_N_INSTANCES], __m256i *acc, __m256i *lin_lo, __m256i *lin_hi) {
     const Weights &w = weights;
     constexpr int NV = W / 16;     // int16 vectors in the accumulator
-    constexpr int HALF = W / 2;
-    constexpr int NX = HALF / 16;  // int16 vectors in x
     constexpr int STRIDE = W + (LIN ? 16 : 0);
-    __m256i acc[NV > 0 ? NV : 1];
-    __m256i lin_lo = _mm256_setzero_si256(), lin_hi = _mm256_setzero_si256();
     for (int v = 0; v < NV; ++v) acc[v] = _mm256_load_si256((const __m256i*)&w.ft_bias[v * 16]);
+    __m256i llo = _mm256_setzero_si256(), lhi = _mm256_setzero_si256();
     for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
         const __m256i *row = (const __m256i*)(w.packed + (size_t)idx[i] * STRIDE);
         for (int v = 0; v < NV; ++v) acc[v] = _mm256_adds_epi16(acc[v], _mm256_load_si256(row + v));  // saturating
         if constexpr (LIN) {
             const __m256i l = _mm256_load_si256(row + NV);
-            lin_lo = _mm256_add_epi32(lin_lo, _mm256_cvtepi16_epi32(_mm256_castsi256_si128(l)));
-            lin_hi = _mm256_add_epi32(lin_hi, _mm256_cvtepi16_epi32(_mm256_extracti128_si256(l, 1)));
+            llo = _mm256_add_epi32(llo, _mm256_cvtepi16_epi32(_mm256_castsi256_si128(l)));
+            lhi = _mm256_add_epi32(lhi, _mm256_cvtepi16_epi32(_mm256_extracti128_si256(l, 1)));
         }
     }
+    *lin_lo = llo;
+    *lin_hi = lhi;
+}
+
+// pairwise product and the bucket's hidden and output layers: oacc
+template <int W>
+inline int64_t head_packed(const __m256i *acc, int bucket) {
+    const Weights &w = weights;
+    constexpr int HALF = W / 2;
+    constexpr int NX = HALF / 16;  // int16 vectors in x
+    const __m256i zero = _mm256_setzero_si256(), c512 = _mm256_set1_epi16(512), c127 = _mm256_set1_epi16(127);
+    __m256i x[NX];
+    for (int v = 0; v < NX; ++v) {
+        const __m256i a = _mm256_min_epi16(_mm256_max_epi16(acc[v], zero), c512);
+        const __m256i b = _mm256_min_epi16(_mm256_max_epi16(acc[v + NX], zero), c512);
+        x[v] = _mm256_min_epi16(_mm256_mulhi_epi16(_mm256_slli_epi16(a, 5), b), c127);  // (a * b) >> 11
+    }
+    const int16_t *l1 = w.l1_w + (size_t)bucket * H_FIXED * HALF;
+    __m256i o = _mm256_setzero_si256();
+    for (int g = 0; g < H_FIXED / 8; ++g) {  // 8 outputs at a time keeps the partial sums in registers
+        __m256i s[8];
+        for (int h = 0; h < 8; ++h) {
+            const int16_t *row = l1 + (8 * g + h) * HALF;
+            __m256i t = _mm256_madd_epi16(x[0], _mm256_loadu_si256((const __m256i*)row));
+            for (int v = 1; v < NX; ++v) t = _mm256_add_epi32(t, _mm256_madd_epi16(x[v], _mm256_loadu_si256((const __m256i*)(row + v * 16))));
+            s[h] = t;
+        }
+        __m256i zs = hsum8_epi32(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]);
+        zs = _mm256_add_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.l1_b[bucket][8 * g]));
+        zs = _mm256_min_epi32(_mm256_max_epi32(_mm256_srai_epi32(zs, 6), _mm256_setzero_si256()), _mm256_set1_epi32(127));
+        o = _mm256_add_epi32(o, _mm256_mullo_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.out_w[bucket][8 * g])));
+    }
+    __m128i o128 = _mm_add_epi32(_mm256_castsi256_si128(o), _mm256_extracti128_si256(o, 1));
+    o128 = _mm_hadd_epi32(o128, o128);
+    o128 = _mm_hadd_epi32(o128, o128);
+    return (int64_t)_mm_cvtsi128_si32(o128) + w.out_b[bucket];
+}
+
+template <int W, bool LIN>
+inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint64_t player) {
+    const Weights &w = weights;
+    constexpr int NV = W / 16;
+    __m256i acc[NV > 0 ? NV : 1];
+    __m256i lin_lo, lin_hi;
+    accumulate_packed<W, LIN>(idx, acc, &lin_lo, &lin_hi);
     int64_t total = 0;
-    if constexpr (W > 0) {
-        const __m256i zero = _mm256_setzero_si256(), c512 = _mm256_set1_epi16(512), c127 = _mm256_set1_epi16(127);
-        __m256i x[NX > 0 ? NX : 1];
-        for (int v = 0; v < NX; ++v) {
-            const __m256i a = _mm256_min_epi16(_mm256_max_epi16(acc[v], zero), c512);
-            const __m256i b = _mm256_min_epi16(_mm256_max_epi16(acc[v + NX], zero), c512);
-            x[v] = _mm256_min_epi16(_mm256_mulhi_epi16(_mm256_slli_epi16(a, 5), b), c127);  // (a * b) >> 11
-        }
-        const int16_t *l1 = w.l1_w + (size_t)bucket * H_FIXED * HALF;
-        __m256i o = _mm256_setzero_si256();
-        for (int g = 0; g < H_FIXED / 8; ++g) {  // 8 outputs at a time keeps the partial sums in registers
-            __m256i s[8];
-            for (int h = 0; h < 8; ++h) {
-                const int16_t *row = l1 + (8 * g + h) * HALF;
-                __m256i t = _mm256_madd_epi16(x[0], _mm256_loadu_si256((const __m256i*)row));
-                for (int v = 1; v < NX; ++v) t = _mm256_add_epi32(t, _mm256_madd_epi16(x[v], _mm256_loadu_si256((const __m256i*)(row + v * 16))));
-                s[h] = t;
-            }
-            __m256i zs = hsum8_epi32(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]);
-            zs = _mm256_add_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.l1_b[bucket][8 * g]));
-            zs = _mm256_min_epi32(_mm256_max_epi32(_mm256_srai_epi32(zs, 6), _mm256_setzero_si256()), _mm256_set1_epi32(127));
-            o = _mm256_add_epi32(o, _mm256_mullo_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.out_w[bucket][8 * g])));
-        }
-        __m128i o128 = _mm_add_epi32(_mm256_castsi256_si128(o), _mm256_extracti128_si256(o, 1));
-        o128 = _mm_hadd_epi32(o128, o128);
-        o128 = _mm_hadd_epi32(o128, o128);
-        total += (int64_t)_mm_cvtsi128_si32(o128) + w.out_b[bucket];
-    }
+    if constexpr (W > 0) total += head_packed<W>(acc, bucket);
     if constexpr (LIN) {
         alignas(32) int32_t lanes[16];
         _mm256_store_si256((__m256i*)&lanes[0], lin_lo);
@@ -336,25 +352,25 @@ inline int64_t forward_packed(const int idx[NNUE_N_INSTANCES], int bucket, uint6
 
 #if USE_SIMD
 // Incremental instance indices, kept beside the search's pattern features (one 16-bit lane per
-// instance, pattern-local index without the row offset). With digits 0 empty, 1 side to move,
-// 2 opponent, a move by the side to move becomes, from the next side to move's view:
-//     lanes += T(mover's discs) - T(opponent's unflipped discs) + 2 * T(placed square)
-// (flipped discs stay digit 2), and a pass adds T(side to move) - T(opponent).
-// T(bits) is the per-lane sum of 3^k over the instance cells in bits, read 8 squares at a time.
+// instance, pattern-local index without the row offset).
+// The lanes use fixed colors: digit 1 is a disc of the side to move at the position where the
+// features were built (the "root side"), digit 2 a disc of the other side, so a move only changes
+// the placed square and the flipped discs:
+//     root side moves:  lanes += W(placed) - W(flipped)      (0 -> 1, 2 -> 1)
+//     other side moves: lanes += 2 W(placed) + W(flipped)    (0 -> 2, 1 -> 2)
+// and a pass changes nothing. W(bits) is the per-lane sum of 3^k over the instance cells in bits.
+// The occupancy lanes occ = W(occupied) give the side-to-move view when the other side is to move:
+// swapping digits 1 and 2 maps x to 3 occ - x.
 union Lanes {
     __m256i v[4];
     uint16_t u[64];
 };
-inline Lanes byte_table[8][256];
-inline Lanes put_table[64];
+inline Lanes square_table[64];  // W(1 << square)
 inline int instance_offset[NNUE_N_INSTANCES];
 
 inline void init_incremental() {
     static_assert(NNUE_N_INSTANCES == 64, "one 16-bit lane per instance");
-    std::memset(byte_table, 0, sizeof(byte_table));
-    std::memset(put_table, 0, sizeof(put_table));
-    static uint16_t weight[64][NNUE_N_INSTANCES];  // [original bit][instance] -> 3^k or 0
-    std::memset(weight, 0, sizeof(weight));
+    std::memset(square_table, 0, sizeof(square_table));
     for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
         const Nnue_instance &in = nnue_instances[i];
         const uint64_t mask = nnue_patterns[in.pattern].mask;
@@ -367,21 +383,9 @@ inline void init_incremental() {
                 const int k = __builtin_popcountll(mask & ((1ULL << bb) - 1));
                 int p3 = 1;
                 for (int j = 0; j < k; ++j) p3 *= 3;
-                weight[b][i] = (uint16_t)p3;
+                square_table[b].u[i] = (uint16_t)p3;
             }
         }
-    }
-    for (int g = 0; g < 8; ++g) {
-        for (int byte = 0; byte < 256; ++byte) {
-            for (int j = 0; j < 8; ++j) {
-                if ((byte >> j) & 1) {
-                    for (int i = 0; i < NNUE_N_INSTANCES; ++i) byte_table[g][byte].u[i] += weight[8 * g + j][i];
-                }
-            }
-        }
-    }
-    for (int b = 0; b < 64; ++b) {
-        for (int i = 0; i < NNUE_N_INSTANCES; ++i) put_table[b].u[i] = (uint16_t)(2 * weight[b][i]);
     }
 }
 
@@ -391,27 +395,49 @@ inline void lanes_from_board(uint64_t player, uint64_t opponent, Lanes *dst) {
     for (int i = 0; i < NNUE_N_INSTANCES; ++i) dst->u[i] = (uint16_t)(idx[i] - instance_offset[i]);
 }
 
-inline void lanes_move(const Lanes *src, Lanes *dst, uint64_t mover, uint64_t opponent_unflipped, int pos) {
-    __m256i f0 = _mm256_add_epi16(src->v[0], put_table[pos].v[0]);
-    __m256i f1 = _mm256_add_epi16(src->v[1], put_table[pos].v[1]);
-    __m256i f2 = _mm256_add_epi16(src->v[2], put_table[pos].v[2]);
-    __m256i f3 = _mm256_add_epi16(src->v[3], put_table[pos].v[3]);
-    for (int g = 0; g < 8; ++g) {
-        const Lanes &a = byte_table[g][(mover >> (8 * g)) & 0xFF];
-        const Lanes &b = byte_table[g][(opponent_unflipped >> (8 * g)) & 0xFF];
-        f0 = _mm256_sub_epi16(_mm256_add_epi16(f0, a.v[0]), b.v[0]);
-        f1 = _mm256_sub_epi16(_mm256_add_epi16(f1, a.v[1]), b.v[1]);
-        f2 = _mm256_sub_epi16(_mm256_add_epi16(f2, a.v[2]), b.v[2]);
-        f3 = _mm256_sub_epi16(_mm256_add_epi16(f3, a.v[3]), b.v[3]);
-    }
-    dst->v[0] = f0; dst->v[1] = f1; dst->v[2] = f2; dst->v[3] = f3;
+// lanes and occupancy of a freshly built position (the side to move becomes the root side)
+inline void lanes_init(uint64_t player, uint64_t opponent, Lanes *lanes, Lanes *occ) {
+    lanes_from_board(player, opponent, lanes);
+    lanes_from_board(player | opponent, 0, occ);
 }
 
-inline void lanes_pass(Lanes *l, uint64_t player, uint64_t opponent) {
-    for (int g = 0; g < 8; ++g) {
-        const Lanes &a = byte_table[g][(player >> (8 * g)) & 0xFF];
-        const Lanes &b = byte_table[g][(opponent >> (8 * g)) & 0xFF];
-        for (int v = 0; v < 4; ++v) l->v[v] = _mm256_sub_epi16(_mm256_add_epi16(l->v[v], a.v[v]), b.v[v]);
+// other_side: the mover is not the root side
+inline void lanes_move(const Lanes *src, const Lanes *src_occ, Lanes *dst, Lanes *dst_occ, uint64_t flipped, int pos, bool other_side) {
+    const Lanes &put = square_table[pos];
+    __m256i fl0 = _mm256_setzero_si256(), fl1 = fl0, fl2 = fl0, fl3 = fl0;
+    for (uint64_t f = flipped; f; f &= f - 1) {
+        const Lanes &w = square_table[__builtin_ctzll(f)];
+        fl0 = _mm256_add_epi16(fl0, w.v[0]);
+        fl1 = _mm256_add_epi16(fl1, w.v[1]);
+        fl2 = _mm256_add_epi16(fl2, w.v[2]);
+        fl3 = _mm256_add_epi16(fl3, w.v[3]);
+    }
+    if (other_side) {
+        dst->v[0] = _mm256_add_epi16(_mm256_add_epi16(src->v[0], _mm256_slli_epi16(put.v[0], 1)), fl0);
+        dst->v[1] = _mm256_add_epi16(_mm256_add_epi16(src->v[1], _mm256_slli_epi16(put.v[1], 1)), fl1);
+        dst->v[2] = _mm256_add_epi16(_mm256_add_epi16(src->v[2], _mm256_slli_epi16(put.v[2], 1)), fl2);
+        dst->v[3] = _mm256_add_epi16(_mm256_add_epi16(src->v[3], _mm256_slli_epi16(put.v[3], 1)), fl3);
+    } else {
+        dst->v[0] = _mm256_sub_epi16(_mm256_add_epi16(src->v[0], put.v[0]), fl0);
+        dst->v[1] = _mm256_sub_epi16(_mm256_add_epi16(src->v[1], put.v[1]), fl1);
+        dst->v[2] = _mm256_sub_epi16(_mm256_add_epi16(src->v[2], put.v[2]), fl2);
+        dst->v[3] = _mm256_sub_epi16(_mm256_add_epi16(src->v[3], put.v[3]), fl3);
+    }
+    dst_occ->v[0] = _mm256_add_epi16(src_occ->v[0], put.v[0]);
+    dst_occ->v[1] = _mm256_add_epi16(src_occ->v[1], put.v[1]);
+    dst_occ->v[2] = _mm256_add_epi16(src_occ->v[2], put.v[2]);
+    dst_occ->v[3] = _mm256_add_epi16(src_occ->v[3], put.v[3]);
+}
+
+// side-to-move view of the lanes
+inline void lanes_view(const Lanes *lanes, const Lanes *occ, bool other_side, Lanes *dst) {
+    if (other_side) {
+        for (int v = 0; v < 4; ++v) {
+            const __m256i o = occ->v[v];
+            dst->v[v] = _mm256_sub_epi16(_mm256_add_epi16(_mm256_add_epi16(o, o), o), lanes->v[v]);
+        }
+    } else {
+        for (int v = 0; v < 4; ++v) dst->v[v] = lanes->v[v];
     }
 }
 #endif
