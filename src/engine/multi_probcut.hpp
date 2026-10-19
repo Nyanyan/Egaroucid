@@ -52,6 +52,15 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH
         #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH 10
     #endif
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_K
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_K 1.0  // endgame multiplier clamp(K exp(B u_dev), LO, HI)
+    #endif
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_LO
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_LO 0.85
+    #endif
+    #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_HI
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_HI 1.3
+    #endif
 #endif
 #ifdef EGAROUCID_NNUE
     #ifndef EGAROUCID_NNUE_END_MPC_SCALE
@@ -865,7 +874,8 @@ inline Nnue_mpc_u_params nnue_mpc_u_params_from_env(const char *name, Nnue_mpc_u
 inline const Nnue_mpc_u_params nnue_mpc_u_mid = nnue_mpc_u_params_from_env("EGAROUCID_MPC_U_MID",
     {EGAROUCID_NNUE_MPC_UNCERTAINTY_B, 1.0, 0.6, 1.8, EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH, true});
 inline const Nnue_mpc_u_params nnue_mpc_u_end = nnue_mpc_u_params_from_env("EGAROUCID_MPC_U_END",
-    {EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B, 1.0, 0.85, 1.3, EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH, EGAROUCID_NNUE_MPC_UNCERTAINTY_END != 0});
+    {EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B, EGAROUCID_NNUE_MPC_UNCERTAINTY_END_K, EGAROUCID_NNUE_MPC_UNCERTAINTY_END_LO,
+     EGAROUCID_NNUE_MPC_UNCERTAINTY_END_HI, EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH, EGAROUCID_NNUE_MPC_UNCERTAINTY_END != 0});
 
 inline double nnue_mpc_u_multiplier(Search *search, int depth, bool is_end_search) {
     const Nnue_mpc_u_params &p = is_end_search ? nnue_mpc_u_end : nnue_mpc_u_mid;
