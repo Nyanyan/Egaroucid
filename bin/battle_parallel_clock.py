@@ -45,7 +45,27 @@ def parse_args():
     parser.add_argument('--threads-per-engine', type=int, default=1)
     parser.add_argument('--hash-level', type=int, default=None)
     parser.add_argument('--save-kifu', default=None, metavar='PATH')
+    parser.add_argument('--engine-log-dir', default=None, metavar='DIR',
+                        help='save each engine process stderr (and its command) here, to diagnose an engine that exits')
     return parser.parse_args()
+
+
+def install_engine_logging(log_dir):
+    """make the shared runner keep every engine's stderr in log_dir/engine_<n>.err"""
+    import itertools
+    import subprocess
+    log_dir = Path(log_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    counter = itertools.count()
+
+    def start_engine(cmd, cwd):
+        k = next(counter)
+        (log_dir / 'engine_{}.cmd'.format(k)).write_text(cmd, encoding='utf-8')
+        err = open(log_dir / 'engine_{}.err'.format(k), 'w', encoding='utf-8')
+        proc = subprocess.Popen(cmd, cwd=str(cwd), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=err, shell=False)
+        base.register_process(proc)
+        return proc
+    base.start_engine = start_engine
 
 
 def build_player_command(cmd, threads_per_engine, hash_level):
@@ -198,6 +218,8 @@ def main():
     random.seed(args.opening_seed)
     random.shuffle(openings)
     kifu_path = None if args.save_kifu is None else str(base.resolve_script_path(script_dir, args.save_kifu))
+    if args.engine_log_dir:
+        install_engine_logging(base.resolve_script_path(script_dir, args.engine_log_dir))
     init_kifu_file(kifu_path)
     print('game time msec per side:', args.game_time_msec, flush=True)
     print('paired starting positions:', args.n_set_games, flush=True)
