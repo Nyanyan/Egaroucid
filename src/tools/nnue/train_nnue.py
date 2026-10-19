@@ -76,7 +76,7 @@ class Features:
 
 
 class Net(nn.Module):
-    def __init__(self, width, hidden, mode):
+    def __init__(self, width, hidden, mode, bucket_bias=False):
         super().__init__()
         self.mode, self.width, self.hidden = mode, width, hidden
         rows = pat.N_ROWS
@@ -84,6 +84,8 @@ class Net(nn.Module):
             self.ft = nn.Embedding(rows, width)
             nn.init.uniform_(self.ft.weight, -0.02, 0.02)
             self.ft_bias = nn.Parameter(torch.full((width,), 0.25))
+            # optional first-layer bias per bucket (added to the shared one)
+            self.ft_bias_b = nn.Parameter(torch.zeros(N_BUCKETS, width)) if bucket_bias else None
             self.l1 = nn.Linear(width // 2, hidden * N_BUCKETS)
             self.out = nn.Linear(hidden, N_BUCKETS)
             nn.init.zeros_(self.out.weight)
@@ -101,6 +103,8 @@ class Net(nn.Module):
     def correction(self, idx, bucket):
         n = idx.shape[0]
         acc = self.ft(idx).sum(1) + self.ft_bias
+        if self.ft_bias_b is not None:
+            acc = acc + self.ft_bias_b[bucket]
         a = torch.clamp(acc, 0.0, 1.0)
         h = self.width // 2
         x = a[:, :h] * a[:, h:]
@@ -208,8 +212,14 @@ def main():
     ap.add_argument("--val-every", type=int, default=2000)
     ap.add_argument("--val-size", type=int, default=1000000)
     ap.add_argument("--seed", type=int, default=20261019)
+    ap.add_argument("--val-seed", type=int, default=20261019, help="picks the validation transcripts (keep it fixed to compare runs)")
     ap.add_argument("--init", default="")
     ap.add_argument("--fold", action="store_true", help="share rows that a pattern's own symmetry exchanges")
+    ap.add_argument("--bucket-bias", action="store_true", help="first-layer bias per bucket")
+    ap.add_argument("--empties-ref", default="", help="record file whose empties distribution the transcript sampling follows")
+    ap.add_argument("--labels", nargs="*", default=[], help="label sets from label_positions.py (<prefix>.bin, .orig.i8, .p.f32)")
+    ap.add_argument("--label-lambda", type=float, default=1.0, help="target of a labeled position: lambda * search + (1 - lambda) * result")
+    ap.add_argument("--label-share", type=float, default=0.0, help="share of each batch drawn from the labeled positions")
     args = ap.parse_args()
     torch.manual_seed(args.seed)
     rng = np.random.default_rng(args.seed)
@@ -228,16 +238,48 @@ def main():
     train_tr = to_tensors(tr_a, tr_p)
     train_bd = to_tensors(bd_a, bd_p, ids[~hold])
     val_bd = to_tensors(bd_a, bd_p, ids[hold])
-    vsel = np.sort(rng.permutation(len(va_a))[: args.val_size])
+    vsel = np.sort(np.random.default_rng(args.val_seed).permutation(len(va_a))[: args.val_size])
     val_tr = to_tensors(va_a, va_p, vsel)
     n_tr, n_bd = train_tr["s"].shape[0], train_bd["s"].shape[0]
     frac_bd = args.boards_weight * n_bd / (n_tr + args.boards_weight * n_bd)
-    print(f"loaded train {n_tr} + {n_bd} (board share {frac_bd:.3f}), val {len(vsel)} + {int(hold.sum())} in {time.time() - t0:.0f}s", flush=True)
+    # targets: the final result; labeled positions (a separate source) blend in a search value
+    train_tr["y"] = train_tr["s"].float()
+    train_bd["y"] = train_bd["s"].float()
+    # optional: draw transcript records so that the empties counts follow a reference file
+    tr_order = tr_start = tr_count = ref_p = None
+    if args.empties_ref:
+        e_tr = train_tr["e"].numpy()
+        tr_order = torch.from_numpy(np.argsort(e_tr, kind="stable"))
+        cnt = np.bincount(e_tr, minlength=61)
+        tr_count = torch.from_numpy(cnt)
+        tr_start = torch.from_numpy(np.concatenate([[0], np.cumsum(cnt)[:-1]]))
+        ref = np.bincount(np.asarray(np.memmap(args.empties_ref, dtype=REC, mode="r")["e"]), minlength=61).astype(np.float64)
+        ref[cnt == 0] = 0
+        ref_p = torch.from_numpy(ref / ref.sum())
+        print(f"empties sampling follows {args.empties_ref}", flush=True)
+    train_lb, n_lab = None, 0
+    if args.labels:
+        parts = []
+        for prefix in args.labels:
+            recs = np.fromfile(prefix + ".bin", dtype=REC)
+            orig = np.fromfile(prefix + ".orig.i8", dtype=np.int8).astype(np.float32)
+            pv = np.fromfile(prefix + ".p.f32", dtype=np.float32)
+            assert len(recs) == len(orig) == len(pv)
+            t = to_tensors(recs, pv)
+            t["y"] = args.label_lambda * t["s"].float() + (1 - args.label_lambda) * torch.from_numpy(orig)
+            parts.append(t)
+        train_lb = {k: torch.cat([t[k] for t in parts]) for k in parts[0]}
+        n_lab = train_lb["s"].shape[0]
+    print(f"loaded train {n_tr} + {n_bd} (board share {frac_bd:.3f}), labeled {n_lab} (extra share {args.label_share:.3f}, lambda {args.label_lambda}), "
+          f"val {len(vsel)} + {int(hold.sum())} in {time.time() - t0:.0f}s", flush=True)
 
     feat = Features(device, args.fold)
-    model = Net(args.width, args.hidden, args.mode).to(device)
+    model = Net(args.width, args.hidden, args.mode, args.bucket_bias).to(device)
     if args.init:
-        model.load_state_dict(torch.load(args.init, map_location=device))
+        missing, unexpected = model.load_state_dict(torch.load(args.init, map_location=device), strict=False)
+        assert not unexpected, unexpected
+        if missing:
+            print(f"init: new parameters {missing}", flush=True)
     lin_params = [p for n, p in model.named_parameters() if n.startswith(("lin.", "num."))]
     other_params = [p for n, p in model.named_parameters() if not n.startswith(("lin.", "num."))]
     groups = [g for g in ({"params": other_params, "mult": 1.0}, {"params": lin_params, "mult": args.lin_lr_mult}) if g["params"]]
@@ -250,12 +292,20 @@ def main():
         lr = args.lr_final + 0.5 * (args.lr - args.lr_final) * (1 + math.cos(math.pi * frac))
         for g in opt.param_groups:
             g["lr"] = lr * g["mult"]
-        nb = int(np.random.binomial(args.batch, frac_bd))
-        sel_tr = torch.randint(0, n_tr, (args.batch - nb,))
+        nl = int(np.random.binomial(args.batch, args.label_share)) if n_lab else 0
+        nb = int(np.random.binomial(args.batch - nl, frac_bd))
+        if ref_p is not None:
+            ee = torch.multinomial(ref_p, args.batch - nb - nl, replacement=True)
+            sel_tr = tr_order[tr_start[ee] + (torch.rand(ee.shape[0], dtype=torch.float64) * tr_count[ee]).long()]
+        else:
+            sel_tr = torch.randint(0, n_tr, (args.batch - nb - nl,))
         sel_bd = torch.randint(0, n_bd, (nb,))
-        b = {k: torch.cat([train_tr[k][sel_tr], train_bd[k][sel_bd]]) for k in train_tr}
+        srcs = [(train_tr, sel_tr), (train_bd, sel_bd)]
+        if nl:
+            srcs.append((train_lb, torch.randint(0, n_lab, (nl,))))
+        b = {k: torch.cat([src[k][sel] for src, sel in srcs]) for k in train_tr}
         idx, bucket, n_player, _ = batch_inputs(feat, b, device, True)
-        y = b["s"].to(device, non_blocking=True).float()
+        y = b["y"].to(device, non_blocking=True)
         P = b["P"].to(device, non_blocking=True)
         pred, lin = model(idx, bucket, n_player, P)
         loss = ((pred - y) ** 2).mean()
