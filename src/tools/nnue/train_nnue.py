@@ -16,6 +16,8 @@ Usage:
   python src/tools/nnue/train_nnue.py --data <merged dir> --out <run dir> [--mode direct] [--width 64]
   --stream-buffer N keeps only N transcript records (random contiguous blocks of the training file) on
   the GPU and replaces some blocks every few steps, for training files larger than the memory.
+  --stream-by-empties DIR reads the transcript records from one shuffled file per empties count
+  (split_by_empties.py) sequentially, so every record is used once per pass, as with in-memory sampling.
 """
 import argparse
 import json
@@ -204,6 +206,56 @@ class StreamBuffer:
         return {k: v[sel] for k, v in self.fields.items()}
 
 
+class EmptiesStream:
+    """Transcript records from <dir>/e<NN>.bin (+ .p.f32), one shuffled file per empties count. Each
+    file is read sequentially in chunks on the GPU; sample(n) draws the empties counts from ref_p and
+    takes the next records of each count (wrapping around at the end of a file)."""
+
+    def __init__(self, data_dir, ref_p, chunk, device):
+        self.device, self.chunk = device, chunk
+        self.files, self.pos, self.buf, self.off = {}, {}, {}, {}
+        for f in sorted(Path(data_dir).glob("e*.bin")):
+            e = int(f.stem[1:])
+            a = np.memmap(f, dtype=REC, mode="r")
+            pv = np.memmap(f.with_suffix(".p.f32"), dtype=np.float32, mode="r")
+            if len(a):
+                self.files[e] = (a, pv)
+                self.off[e] = 0
+                self._load(e)
+        self.n = sum(len(a) for a, _ in self.files.values())
+        ref = ref_p.clone() if ref_p is not None else torch.from_numpy(np.bincount(
+            np.concatenate([[e] for e in self.files]), weights=[len(self.files[e][0]) for e in self.files], minlength=61))
+        for e in range(61):
+            if e not in self.files:
+                ref[e] = 0
+        self.p_e = (ref / ref.sum()).double()
+
+    def _load(self, e):
+        a, pv = self.files[e]
+        start = self.off[e]
+        if start >= len(a):
+            start = 0
+        t = to_tensors(a[start:start + self.chunk], pv[start:start + self.chunk])
+        t["y"] = t["s"].float()
+        self.buf[e] = {k: v.to(self.device) for k, v in t.items()}
+        self.off[e] = start + len(t["s"])
+        self.pos[e] = 0
+
+    def sample(self, n):
+        cnt = torch.bincount(torch.multinomial(self.p_e, n, replacement=True), minlength=61).tolist()
+        parts = []
+        for e, c in enumerate(cnt):
+            while c > 0:
+                b = self.buf[e]
+                take = min(c, b["s"].shape[0] - self.pos[e])
+                parts.append({k: v[self.pos[e]:self.pos[e] + take] for k, v in b.items()})
+                self.pos[e] += take
+                c -= take
+                if self.pos[e] >= b["s"].shape[0]:
+                    self._load(e)
+        return {k: torch.cat([q[k] for q in parts]) for k in parts[0]}
+
+
 def batch_inputs(feat, b, device, augment):
     p = b["p"].to(device, non_blocking=True)
     o = b["o"].to(device, non_blocking=True)
@@ -278,6 +330,8 @@ def main():
     ap.add_argument("--stream-block", type=int, default=262144, help="records per contiguous block read from the file")
     ap.add_argument("--stream-refresh-every", type=int, default=200, help="steps between block replacements")
     ap.add_argument("--stream-refresh-blocks", type=int, default=8, help="blocks replaced per refresh")
+    ap.add_argument("--stream-by-empties", default="", help="dir of per-empties shuffled files (split_by_empties.py)")
+    ap.add_argument("--stream-chunk", type=int, default=1000000, help="records per GPU chunk of each empties file")
     args = ap.parse_args()
     torch.manual_seed(args.seed)
     rng = np.random.default_rng(args.seed)
@@ -293,7 +347,7 @@ def main():
     # hold out 1% of the board-file records (that file has no game boundaries)
     ids = np.arange(len(bd_a))
     hold = ids % 100 == 37
-    stream = args.stream_buffer > 0
+    stream = args.stream_buffer > 0 or bool(args.stream_by_empties)
     train_tr = None if stream else to_tensors(tr_a, tr_p)
     train_bd = to_tensors(bd_a, bd_p, ids[~hold])
     val_bd = to_tensors(bd_a, bd_p, ids[hold])
@@ -319,7 +373,11 @@ def main():
         ref_p = torch.from_numpy(ref / ref.sum())
         print(f"empties sampling follows {args.empties_ref}", flush=True)
     buf = None
-    if stream:
+    if args.stream_by_empties:
+        buf = EmptiesStream(args.stream_by_empties, ref_p, args.stream_chunk, device)
+        buf.fields = buf.buf[next(iter(buf.buf))]
+        print(f"empties streams {len(buf.files)} files, {buf.n} records", flush=True)
+    elif stream:
         buf = StreamBuffer(tr_a, tr_p, args.stream_buffer, args.stream_block, device, np.random.default_rng(args.seed + 1), ref_p)
         print(f"stream buffer {buf.n_blocks} blocks x {args.stream_block} records of {n_tr}", flush=True)
     train_lb, n_lab = None, 0
@@ -360,7 +418,7 @@ def main():
         nl = int(np.random.binomial(args.batch, args.label_share)) if n_lab else 0
         nb = int(np.random.binomial(args.batch - nl, frac_bd))
         if buf is not None:
-            if step % args.stream_refresh_every == 0:
+            if isinstance(buf, StreamBuffer) and step % args.stream_refresh_every == 0:
                 buf.refresh(args.stream_refresh_blocks)
             srcs = [(train_bd, torch.randint(0, n_bd, (nb,)))]
             if nl:
