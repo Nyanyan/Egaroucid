@@ -1,11 +1,11 @@
 # 読み切り (endgame search with MPC) test on GGS positions
 # Positions: GGS games where egrcd decided a move by an endgame search with MPC (problem/yomikiri_ggs.json,
-# made by reports/20261019_3_yomikiri_build.py). Every position has its exact value and the exact values
+# made by src/tools/yomikiri/build_benchmark.py). Every position has its exact value and the exact values
 # of the moves known so far (the GGS moves, the exact best move and the screen move).
 #
 # Every position is solved to the end with the given MPC probability (-dpr 1 60 60 <prob>), like
 # mpcendtest.py. A move whose exact value is not known is reported as UNKNOWN (solve it with
-# "python reports/20261019_3_yomikiri_build.py extend" to add it).
+# "python src/tools/yomikiri/build_benchmark.py extend" to add it).
 # prob: 74, 88, 93, 98, 99, 99.9, 100
 
 import json
