@@ -1,0 +1,4271 @@
+[
+{
+"board": "----O------OOO---OOOOXOX-OOOOOOO-XXXOOX--XXOXXOO--OXX--O-----X-- X",
+"empties": 28,
+"best_value": 8,
+"move_values": {
+"d8": 8,
+"c2": 6,
+"h5": 6
+},
+"ggs": [
+{
+"move": "c2",
+"value": 6,
+"prob": "98",
+"time_ms": 755,
+"log": "bin/ggs/log/2026-07-21-17=00=51_ggs.log",
+"game": ".66.0",
+"exact_move_value": 6,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "d8",
+"value": 8
+}
+},
+{
+"board": "----X-------X--X---OOOOX--OOOXOX--OOOXOX-OOXOXXX-O--XXXX---XXX-X X",
+"empties": 28,
+"best_value": 8,
+"move_values": {
+"f2": 8,
+"g2": 6,
+"d7": 8
+},
+"ggs": [
+{
+"move": "g2",
+"value": 8,
+"prob": "99",
+"time_ms": 2446,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".19.1",
+"exact_move_value": 6,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "d7",
+"value": 8
+}
+},
+{
+"board": "--XO-X---OX-XO---OOOOOO-XXXOXOOO-XXOOOO-XXXXOOOO-----O---------- X",
+"empties": 28,
+"best_value": 18,
+"move_values": {
+"e7": 18,
+"e1": 16
+},
+"ggs": [
+{
+"move": "e1",
+"value": 16,
+"prob": "99",
+"time_ms": 2945,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".11.1",
+"exact_move_value": 16,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": false,
+"screen": {
+"move": "e1",
+"value": 16
+}
+},
+{
+"board": "---O------XOOO----OOOO---OXOOOO--XXXOOX--XXXXO----XXXX----XXXXX- X",
+"empties": 29,
+"best_value": -6,
+"move_values": {
+"a3": -6,
+"g6": -8
+},
+"ggs": [
+{
+"move": "g6",
+"value": -6,
+"prob": "99",
+"time_ms": 2924,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".38.0",
+"exact_move_value": -8,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "a3",
+"value": -6
+}
+},
+{
+"board": "---XOX---XXOO---OXXOOX---OXXXXX-XXOOXO---OXOOO--O-XOOO---------- X",
+"empties": 29,
+"best_value": -4,
+"move_values": {
+"g5": -4,
+"c1": -6
+},
+"ggs": [
+{
+"move": "c1",
+"value": -4,
+"prob": "93",
+"time_ms": 707,
+"log": "bin/ggs/log/2026-07-26-10=13=11_ggs.log",
+"game": ".18.1",
+"exact_move_value": -6,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g5",
+"value": -4
+}
+},
+{
+"board": "--OOOO----XXX----OXXOO--OOOOXO---XOXXX---XOXXXX---OXX-----OXX--- X",
+"empties": 29,
+"best_value": -14,
+"move_values": {
+"g2": -14,
+"g4": -16
+},
+"ggs": [
+{
+"move": "g4",
+"value": -14,
+"prob": "88",
+"time_ms": 705,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".58.0",
+"exact_move_value": -16,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g2",
+"value": -14
+}
+},
+{
+"board": "-OOOOOO---OXXO----XXXX---OXXOOOO-XXXOOO--X-OOO----OOX-----O----- X",
+"empties": 29,
+"best_value": 16,
+"move_values": {
+"g6": 16,
+"a4": 14
+},
+"ggs": [
+{
+"move": "a4",
+"value": 14,
+"prob": "93",
+"time_ms": 715,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".38.0",
+"exact_move_value": 14,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g6",
+"value": 16
+}
+},
+{
+"board": "-----------OO------OOX--OOOOOO---OOOOOO-XXXXXXX---XOOOX--OOOOO-- X",
+"empties": 30,
+"best_value": 18,
+"move_values": {
+"g3": 18,
+"h4": 14
+},
+"ggs": [
+{
+"move": "h4",
+"value": 14,
+"prob": "88",
+"time_ms": 777,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".29.1",
+"exact_move_value": 14,
+"loss": 4
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g3",
+"value": 18
+}
+},
+{
+"board": "-----------OX----OOOX-X--OOXXXX-O-OOXXO--OOOXOO---OOXO----OOOOO- X",
+"empties": 30,
+"best_value": 22,
+"move_values": {
+"b5": 22,
+"h5": 20
+},
+"ggs": [
+{
+"move": "h5",
+"value": 20,
+"prob": "98",
+"time_ms": 843,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".67.1",
+"exact_move_value": 20,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "b5",
+"value": 22
+}
+},
+{
+"board": "--------X-------XOOOO---XXXXXOXXXXXXXOO-XXXXOO--X-XOO-----OXO--- X",
+"empties": 30,
+"best_value": 22,
+"move_values": {
+"c2": 22,
+"d2": 18
+},
+"ggs": [
+{
+"move": "d2",
+"value": 18,
+"prob": "99",
+"time_ms": 836,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".69.1",
+"exact_move_value": 18,
+"loss": 4
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "c2",
+"value": 22
+}
+},
+{
+"board": "----OOO---OOXO--XOOXOXXX-XXXXOO--XXOOOO---XXOXX----OX----------- X",
+"empties": 30,
+"best_value": -2,
+"move_values": {
+"f7": -2,
+"c1": -4
+},
+"ggs": [
+{
+"move": "c1",
+"value": -4,
+"prob": "93",
+"time_ms": 843,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".20.1",
+"exact_move_value": -4,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "f7",
+"value": -2
+}
+},
+{
+"board": "---O------OO-----OOOOOO-OOOXXOX--XXXOXX--XXOXXX---OXOO----OX---- X",
+"empties": 30,
+"best_value": 10,
+"move_values": {
+"a3": 10,
+"b8": 8
+},
+"ggs": [
+{
+"move": "b8",
+"value": 8,
+"prob": "99",
+"time_ms": 832,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".25.1",
+"exact_move_value": 8,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "a3",
+"value": 10
+}
+},
+{
+"board": "---O------OOOO--OOOOOOOOOXXOXX---XXOXX--XXOXXX----OOX------O---- X",
+"empties": 30,
+"best_value": 6,
+"move_values": {
+"g1": 6,
+"e8": 4,
+"g2": 4
+},
+"ggs": [
+{
+"move": "e8",
+"value": 4,
+"prob": "93",
+"time_ms": 847,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".22.1",
+"exact_move_value": 4,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g1",
+"value": 6
+}
+},
+{
+"board": "---O------OOX----OOOOOO-XXOOOXXX-XOOOOXX--OOOXOX---O-O----O----- X",
+"empties": 30,
+"best_value": 12,
+"move_values": {
+"c1": 12,
+"f8": 10
+},
+"ggs": [
+{
+"move": "f8",
+"value": 10,
+"prob": "99",
+"time_ms": 504,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".9.1",
+"exact_move_value": 10,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "c1",
+"value": 12
+}
+},
+{
+"board": "---OOO----OOOO---OOOOO---OXXOXX-OOXXXOX-OOXX-OO---XX------X----- X",
+"empties": 30,
+"best_value": 18,
+"move_values": {
+"e6": 18,
+"f7": 16
+},
+"ggs": [
+{
+"move": "f7",
+"value": 16,
+"prob": "98",
+"time_ms": 835,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".21.1",
+"exact_move_value": 16,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "e6",
+"value": 18
+}
+},
+{
+"board": "---X-------XXOO--XXXXOOX--OXOOOXOOOOOXOX--OOOOXX-----O-X-------- X",
+"empties": 30,
+"best_value": 0,
+"move_values": {
+"e7": 0,
+"b4": -2
+},
+"ggs": [
+{
+"move": "b4",
+"value": 0,
+"prob": "74",
+"time_ms": 831,
+"log": "bin/ggs/log/2026-07-21-17=00=51_ggs.log",
+"game": ".2.0",
+"exact_move_value": -2,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "e7",
+"value": 0
+}
+},
+{
+"board": "---X------XXXX-XOOOOOOOX-OOXXOOX-OOOOO-X-XOOOO-----OX----------- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"g5": -6,
+"a6": -8
+},
+"ggs": [
+{
+"move": "a6",
+"value": -8,
+"prob": "93",
+"time_ms": 837,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".14.1",
+"exact_move_value": -8,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g5",
+"value": -6
+}
+},
+{
+"board": "---XXO----XX-O--XXOXXOX-OXOXXOO--OXXOO---OOOOO----XOOO---------- X",
+"empties": 30,
+"best_value": -4,
+"move_values": {
+"a5": -4,
+"h4": -6,
+"a7": -4
+},
+"ggs": [
+{
+"move": "h4",
+"value": -4,
+"prob": "74",
+"time_ms": 842,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".17.1",
+"exact_move_value": -6,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "a7",
+"value": -4
+}
+},
+{
+"board": "---XXXX---XXOX----XXXXX---XXOOOOOOOXOOO--OOOOO-X---XO----------- X",
+"empties": 30,
+"best_value": -8,
+"move_values": {
+"h3": -8,
+"e8": -10
+},
+"ggs": [
+{
+"move": "e8",
+"value": -8,
+"prob": "99",
+"time_ms": 903,
+"log": "bin/ggs/log/2026-08-23-15=47=18_ggs.log",
+"game": ".55.1",
+"exact_move_value": -10,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "h3",
+"value": -8
+}
+},
+{
+"board": "--XXX--X--OXXOX---OOOOOX--XXOOX--XXXOO---O-OOOO---XXO-----X----- X",
+"empties": 30,
+"best_value": 6,
+"move_values": {
+"g5": 6,
+"g1": 4
+},
+"ggs": [
+{
+"move": "g1",
+"value": 6,
+"prob": "93",
+"time_ms": 833,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".56.1",
+"exact_move_value": 4,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g5",
+"value": 6
+}
+},
+{
+"board": "-XX-XO----XXXX--XOXOOXX-OOOOOX-X-OOOOOX-O-OOOOO----------------- X",
+"empties": 30,
+"best_value": -10,
+"move_values": {
+"b6": -10,
+"f7": -12
+},
+"ggs": [
+{
+"move": "f7",
+"value": -12,
+"prob": "93",
+"time_ms": 634,
+"log": "bin/ggs/log/2026-08-03-13=11=50_ggs.log",
+"game": ".69.1",
+"exact_move_value": -12,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "b6",
+"value": -10
+}
+},
+{
+"board": "-------------X---XOOXX---OXOOXO-OXXOXXOX-XXOOXOX--XOOO-X--X----- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"a4": -4,
+"e2": -6
+},
+"ggs": [
+{
+"move": "e2",
+"value": -4,
+"prob": "93",
+"time_ms": 893,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".41.0",
+"exact_move_value": -6,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "a4",
+"value": -4
+}
+},
+{
+"board": "-----------XO---XXXXX----XXXOOO-XXXXOOO-XXOXOX-O-O-OXX------OX-- X",
+"empties": 31,
+"best_value": -16,
+"move_values": {
+"a8": -16,
+"h5": -18
+},
+"ggs": [
+{
+"move": "h5",
+"value": -16,
+"prob": "74",
+"time_ms": 827,
+"log": "bin/ggs/log/2026-08-25-15=52=06_ggs.log",
+"game": ".35.0",
+"exact_move_value": -18,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "a8",
+"value": -16
+}
+},
+{
+"board": "-----------XOO--XXXOXXX--XOOOXX--OOXXOXX-OOOOOX---XOOO---------- X",
+"empties": 31,
+"best_value": -10,
+"move_values": {
+"c8": -10,
+"f1": -12
+},
+"ggs": [
+{
+"move": "f1",
+"value": -10,
+"prob": "93",
+"time_ms": 906,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".42.0",
+"exact_move_value": -12,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "c8",
+"value": -10
+}
+},
+{
+"board": "----------XOOX---XOOOOOXOOXXXOX-OOXXOXX--OOXXX----O-XX---------- X",
+"empties": 31,
+"best_value": -6,
+"move_values": {
+"c1": -6,
+"a3": -8
+},
+"ggs": [
+{
+"move": "a3",
+"value": -6,
+"prob": "93",
+"time_ms": 834,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".16.0",
+"exact_move_value": -8,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "c1",
+"value": -6
+}
+},
+{
+"board": "-----O-----OO---OXOO-XX-OOOOOOO-OOXXXOXXOOXXOO----XXO----------- X",
+"empties": 31,
+"best_value": 0,
+"move_values": {
+"f8": 0,
+"e3": -2,
+"c2": -2
+},
+"ggs": [
+{
+"move": "e3",
+"value": 0,
+"prob": "74",
+"time_ms": 365,
+"log": "bin/ggs/log/2026-09-25-12=33=59_ggs.log",
+"game": ".46.0",
+"exact_move_value": -2,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "f8",
+"value": 0
+}
+},
+{
+"board": "----O-------OO--OOXXOX--OOXOX---OXOOXOO-OOXXXOX-O-X-X-------XO-- X",
+"empties": 31,
+"best_value": -14,
+"move_values": {
+"g7": -14,
+"d1": -20
+},
+"ggs": [
+{
+"move": "d1",
+"value": -14,
+"prob": "88",
+"time_ms": 705,
+"log": "bin/ggs/log/2026-07-21-12=58=47_ggs.log",
+"game": ".63.1",
+"exact_move_value": -20,
+"loss": 6
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g7",
+"value": -14
+}
+},
+{
+"board": "---OOO----XO-O----XOOOOX-XXXOOOX-XXXXXOX-O-XXOXX-------X-------- X",
+"empties": 31,
+"best_value": 0,
+"move_values": {
+"f7": 0,
+"h2": -2
+},
+"ggs": [
+{
+"move": "h2",
+"value": 2,
+"prob": "93",
+"time_ms": 898,
+"log": "bin/ggs/log/2026-08-03-13=11=50_ggs.log",
+"game": ".68.0",
+"exact_move_value": -2,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "f7",
+"value": 0
+}
+},
+{
+"board": "---OXO----OXOX--OOXOXO--XXXXXXO--XOXXOX--OOXOX----OX------------ X",
+"empties": 31,
+"best_value": 2,
+"move_values": {
+"g6": 2,
+"f7": 0
+},
+"ggs": [
+{
+"move": "f7",
+"value": 2,
+"prob": "74",
+"time_ms": 835,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".57.0",
+"exact_move_value": 0,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "g6",
+"value": 2
+}
+},
+{
+"board": "-OOOOOO---OXXX--OOXOOX--O-XOXXX--OXOXXO---OXXO------X----------- X",
+"empties": 31,
+"best_value": -10,
+"move_values": {
+"b6": -10,
+"c7": -12
+},
+"ggs": [
+{
+"move": "c7",
+"value": -10,
+"prob": "93",
+"time_ms": 895,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".6.0",
+"exact_move_value": -12,
+"loss": 2
+}
+],
+"ggs_mistake": true,
+"flagged": true,
+"screen": {
+"move": "b6",
+"value": -10
+}
+},
+{
+"board": "-----------XO----XOOOOOOXXXXOXOX-XXXOOXX-XOOOXXX--OOOX------O--- X",
+"empties": 28,
+"best_value": -8,
+"move_values": {
+"h2": -8,
+"f8": -8
+},
+"ggs": [
+{
+"move": "f8",
+"value": -8,
+"prob": "99",
+"time_ms": 756,
+"log": "bin/ggs/log/2026-06-30-06=52=44_ggs.log",
+"game": ".43.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h2",
+"value": -8
+}
+},
+{
+"board": "----------O-O----OOOOOOO-XXXXXOX-XXXOO--XXXXOXX---OOXX----OOXO-- X",
+"empties": 28,
+"best_value": 0,
+"move_values": {
+"g5": 0
+},
+"ggs": [
+{
+"move": "g5",
+"value": 0,
+"prob": "99",
+"time_ms": 2958,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".20.1",
+"exact_move_value": 0,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g5",
+"value": 0
+}
+},
+{
+"board": "----------OX----OOOXX---OOOOOOO-OXXXXOO-OOXXOO--O-OOXX----OOXO-- X",
+"empties": 28,
+"best_value": 10,
+"move_values": {
+"g6": 10
+},
+"ggs": [
+{
+"move": "g6",
+"value": 10,
+"prob": "99",
+"time_ms": 1697,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".12.1",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g6",
+"value": 10
+}
+},
+{
+"board": "----------XXO----OOOOO--OOOXOOX-OOXXOX--OOOXOOOO--OXXO----OX-X-- X",
+"empties": 28,
+"best_value": 10,
+"move_values": {
+"d1": 10,
+"g8": 10
+},
+"ggs": [
+{
+"move": "d1",
+"value": 10,
+"prob": "99",
+"time_ms": 256,
+"log": "bin/ggs/log/2026-09-26-09=50=52_ggs.log",
+"game": ".67.1",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g8",
+"value": 10
+}
+},
+{
+"board": "--------O--O-OX-XOOOOXO--OOXXO---OOOXOO--XXOOO-OXXOOOO----OX---- X",
+"empties": 28,
+"best_value": 22,
+"move_values": {
+"a1": 22,
+"e8": 22
+},
+"ggs": [
+{
+"move": "e8",
+"value": 22,
+"prob": "99",
+"time_ms": 10408,
+"log": "bin/ggs/log/2026-06-24-09=32=57_ggs.log",
+"game": ".29.1",
+"exact_move_value": 22,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a1",
+"value": 22
+}
+},
+{
+"board": "--------O--OX---OXOOXXX-OOXOOXX-OOXXOXXX-OXOXX----XXOX----X-O--- X",
+"empties": 28,
+"best_value": -14,
+"move_values": {
+"c1": -14
+},
+"ggs": [
+{
+"move": "c1",
+"value": -14,
+"prob": "99",
+"time_ms": 3197,
+"log": "bin/ggs/log/2026-08-27-23=02=28_ggs.log",
+"game": ".2.1",
+"exact_move_value": -14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "c1",
+"value": -14
+}
+},
+{
+"board": "-----X----OOX----XXXXX-O-XOOOOO-XXOOXOXXOXOXOXX---OOOO----O----- X",
+"empties": 28,
+"best_value": -2,
+"move_values": {
+"h4": -2,
+"e1": -2
+},
+"ggs": [
+{
+"move": "h4",
+"value": -2,
+"prob": "99",
+"time_ms": 750,
+"log": "bin/ggs/log/2026-07-21-17=00=51_ggs.log",
+"game": ".41.0",
+"exact_move_value": -2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e1",
+"value": -2
+}
+},
+{
+"board": "----O-----OOOO----OOXO---OXOOOO-XXOXXO---OXOXOXXO-XXXX------XXX- X",
+"empties": 28,
+"best_value": 14,
+"move_values": {
+"a6": 14
+},
+"ggs": [
+{
+"move": "a6",
+"value": 14,
+"prob": "99",
+"time_ms": 2951,
+"log": "bin/ggs/log/2026-07-25-14=48=20_ggs.log",
+"game": ".35.0",
+"exact_move_value": 14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "a6",
+"value": 14
+}
+},
+{
+"board": "----X-----OOXX---OOOOXO--OOXXXX-OXOOOX--O-XOOX--O-OOOO----XXX--- X",
+"empties": 28,
+"best_value": 12,
+"move_values": {
+"h4": 12,
+"a3": 12
+},
+"ggs": [
+{
+"move": "a3",
+"value": 12,
+"prob": "98",
+"time_ms": 2453,
+"log": "bin/ggs/log/2026-07-25-15=48=09_ggs.log",
+"game": ".13.0",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h4",
+"value": 12
+}
+},
+{
+"board": "---O------OO-O--OOOOOOO--OOXXOX--OOOOXX-XXOOOXX---XOOX------OX-- X",
+"empties": 28,
+"best_value": 12,
+"move_values": {
+"c8": 12,
+"a4": 12
+},
+"ggs": [
+{
+"move": "c8",
+"value": 12,
+"prob": "98",
+"time_ms": 255,
+"log": "bin/ggs/log/20260926_GGS_tournament/2026-09-26-15=47=13_ggs.log",
+"game": ".30.1",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a4",
+"value": 12
+}
+},
+{
+"board": "---O------OOOO---OXXXXXX--OXOXXX-XXOOXXX-OXXOXX---XXOO-------O-- X",
+"empties": 28,
+"best_value": 2,
+"move_values": {
+"a3": 2
+},
+"ggs": [
+{
+"move": "a3",
+"value": 2,
+"prob": "93",
+"time_ms": 332,
+"log": "bin/ggs/log/2026-10-09-11=45=53_ggs.log",
+"game": ".3.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "a3",
+"value": 2
+}
+},
+{
+"board": "---OO-----OOXO--OOOOXOO-OOOXXOO-OOXXXO--OXOXXO----O-X-----O--X-- X",
+"empties": 28,
+"best_value": 2,
+"move_values": {
+"d8": 2,
+"g6": 2
+},
+"ggs": [
+{
+"move": "d8",
+"value": 2,
+"prob": "99",
+"time_ms": 2443,
+"log": "bin/ggs/log/2026-08-23-15=47=18_ggs.log",
+"game": ".44.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g6",
+"value": 2
+}
+},
+{
+"board": "---X-O-X-OXXOOXXOOOOOOOX-OXOXOOX--OOOOOX--OOXOO----------------- X",
+"empties": 28,
+"best_value": 24,
+"move_values": {
+"f7": 24,
+"d7": 24
+},
+"ggs": [
+{
+"move": "d7",
+"value": 24,
+"prob": "99",
+"time_ms": 2698,
+"log": "bin/ggs/log/2026-08-20-11=26=49_ggs.log",
+"game": ".25.1",
+"exact_move_value": 24,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f7",
+"value": 24
+}
+},
+{
+"board": "---XOOOO--XXOX---OXOOXX---OXOXXX-OOOXXXX--OXXX-X-O-----X-------X X",
+"empties": 28,
+"best_value": -12,
+"move_values": {
+"b6": -12,
+"a8": -12
+},
+"ggs": [
+{
+"move": "b6",
+"value": -12,
+"prob": "99",
+"time_ms": 2700,
+"log": "bin/ggs/log/2026-08-26-14=37=39_ggs.log",
+"game": ".0.1",
+"exact_move_value": -12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a8",
+"value": -12
+}
+},
+{
+"board": "---XX-----XXX----XXXXXO--OOOOXX-OOOOXXX-OOOOOO---OOO-X--O-O----- X",
+"empties": 28,
+"best_value": -10,
+"move_values": {
+"a4": -10,
+"e7": -10
+},
+"ggs": [
+{
+"move": "e7",
+"value": -10,
+"prob": "99",
+"time_ms": 2445,
+"log": "bin/ggs/log/2026-08-25-15=52=06_ggs.log",
+"game": ".3.1",
+"exact_move_value": -10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a4",
+"value": -10
+}
+},
+{
+"board": "--OO------OOOO----OXOOOO--XOOOXO-XXXXOOO-XXXXOOO--O-O-----O--O-- X",
+"empties": 28,
+"best_value": 14,
+"move_values": {
+"f1": 14,
+"b3": 14
+},
+"ggs": [
+{
+"move": "f1",
+"value": 14,
+"prob": "99",
+"time_ms": 2706,
+"log": "bin/ggs/log/2026-08-20-21=41=11_ggs.log",
+"game": ".52.1",
+"exact_move_value": 14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b3",
+"value": 14
+}
+},
+{
+"board": "--OO------OOOX----OXOOX--OXXXXXX-XOXOOO--XXOXOXO---OOO------OO-- X",
+"empties": 28,
+"best_value": 10,
+"move_values": {
+"h5": 10,
+"b3": 10
+},
+"ggs": [
+{
+"move": "h5",
+"value": 10,
+"prob": "99",
+"time_ms": 2947,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".42.1",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b3",
+"value": 10
+}
+},
+{
+"board": "O-------O-------O-XO----OOOOOOX-OOXOOOX--XXXXOO--XXXOO--XXXXXX-- X",
+"empties": 28,
+"best_value": -2,
+"move_values": {
+"g3": -2,
+"d2": -2
+},
+"ggs": [
+{
+"move": "d2",
+"value": -2,
+"prob": "99",
+"time_ms": 758,
+"log": "bin/ggs/log/2026-07-21-17=00=51_ggs.log",
+"game": ".35.0",
+"exact_move_value": -2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g3",
+"value": -2
+}
+},
+{
+"board": "------------O-----OOOOX---OOXOO--OOXXXOO-XXXOXX---OOOOXX-OOOOO-- X",
+"empties": 29,
+"best_value": 20,
+"move_values": {
+"a4": 20,
+"d2": 20
+},
+"ggs": [
+{
+"move": "a4",
+"value": 20,
+"prob": "98",
+"time_ms": 2927,
+"log": "bin/ggs/log/2026-07-22-04=19=32_ggs.log",
+"game": ".21.1",
+"exact_move_value": 20,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d2",
+"value": 20
+}
+},
+{
+"board": "-----------O-X---XOOOXX--OXOXOOO--OOXOOO-OOOXXOO---OO--O--XOOO-- X",
+"empties": 29,
+"best_value": 8,
+"move_values": {
+"g8": 8,
+"c2": 8
+},
+"ggs": [
+{
+"move": "c2",
+"value": 8,
+"prob": "99",
+"time_ms": 718,
+"log": "bin/ggs/log/2026-09-25-12=33=59_ggs.log",
+"game": ".61.0",
+"exact_move_value": 8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g8",
+"value": 8
+}
+},
+{
+"board": "-----------XXO---OOXXO----OXXXO--XXOOOXX--XOOX-X--OOXX-X-OOOO-X- X",
+"empties": 29,
+"best_value": -10,
+"move_values": {
+"c2": -10,
+"g6": -10
+},
+"ggs": [
+{
+"move": "g6",
+"value": -10,
+"prob": "99",
+"time_ms": 3185,
+"log": "bin/ggs/log/2026-08-22-15=36=59_ggs.log",
+"game": ".34.0",
+"exact_move_value": -10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c2",
+"value": -10
+}
+},
+{
+"board": "----------OOOX----OOOOOO-XXOXOOO--OOOXOO--XOXX-O--XXOO-----XXO-- X",
+"empties": 29,
+"best_value": 0,
+"move_values": {
+"b6": 0
+},
+"ggs": [
+{
+"move": "b6",
+"value": 0,
+"prob": "93",
+"time_ms": 719,
+"log": "bin/ggs/log/2026-07-25-15=48=09_ggs.log",
+"game": ".55.1",
+"exact_move_value": 0,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "b6",
+"value": 0
+}
+},
+{
+"board": "----------OOX-----OXOOOO--XOOOO-XXXXOOX--XXXOXX---XXXO----XXXX-- X",
+"empties": 29,
+"best_value": -4,
+"move_values": {
+"f2": -4,
+"b3": -4
+},
+"ggs": [
+{
+"move": "b3",
+"value": -4,
+"prob": "99",
+"time_ms": 708,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".48.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f2",
+"value": -4
+}
+},
+{
+"board": "----------OOXX---OOOXX-O-OXXOXO-O-XXOOOO-OOXOXO---XO-X---XXX---- X",
+"empties": 29,
+"best_value": 2,
+"move_values": {
+"d1": 2,
+"a6": 2,
+"e7": 2
+},
+"ggs": [
+{
+"move": "a6",
+"value": 2,
+"prob": "98",
+"time_ms": 2924,
+"log": "bin/ggs/log/2026-07-25-14=48=20_ggs.log",
+"game": ".40.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d1",
+"value": 2
+}
+},
+{
+"board": "----------XXX---OXXXXOX-XXXXXOO-OXOXXO--OOOOOO----XOOO-----XO--- X",
+"empties": 29,
+"best_value": -2,
+"move_values": {
+"f8": -2
+},
+"ggs": [
+{
+"move": "f8",
+"value": -2,
+"prob": "98",
+"time_ms": 704,
+"log": "bin/ggs/log/2026-07-25-15=48=09_ggs.log",
+"game": ".23.0",
+"exact_move_value": -2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "f8",
+"value": -2
+}
+},
+{
+"board": "----------XXXX---XXXXXO-XXOXOOOOXXXOOOO---OOOO----OOOOX----O---- X",
+"empties": 29,
+"best_value": -12,
+"move_values": {
+"g6": -12
+},
+"ggs": [
+{
+"move": "g6",
+"value": -12,
+"prob": "93",
+"time_ms": 3184,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".55.0",
+"exact_move_value": -12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g6",
+"value": -12
+}
+},
+{
+"board": "--------O--OOX--OXOOOX--OOXOOOX-OXXOOXO-OXXOOOO---OOO------O---- X",
+"empties": 29,
+"best_value": 14,
+"move_values": {
+"f8": 14,
+"f7": 14
+},
+"ggs": [
+{
+"move": "f7",
+"value": 14,
+"prob": "99",
+"time_ms": 2196,
+"log": "bin/ggs/log/2026-06-28-04=17=43_ggs.log",
+"game": ".52.0",
+"exact_move_value": 14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f8",
+"value": 14
+}
+},
+{
+"board": "--------O-OOOO---OOOOOO-XXOOOOO--XOXXOOOOOXXXXXX--X-X----------- X",
+"empties": 29,
+"best_value": 6,
+"move_values": {
+"h4": 6
+},
+"ggs": [
+{
+"move": "h4",
+"value": 6,
+"prob": "99",
+"time_ms": 708,
+"log": "bin/ggs/log/2026-08-03-13=11=50_ggs.log",
+"game": ".53.0",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "h4",
+"value": 6
+}
+},
+{
+"board": "-----O-----X-O--XXXXOO--XXXXO-O-XXXOOOO-XXXXOOO--OXO-O----OX---- X",
+"empties": 29,
+"best_value": 14,
+"move_values": {
+"e7": 14,
+"e8": 14
+},
+"ggs": [
+{
+"move": "e8",
+"value": 14,
+"prob": "99",
+"time_ms": 2201,
+"log": "bin/ggs/log/2026-07-21-13=15=21_ggs.log",
+"game": ".65.1",
+"exact_move_value": 14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e7",
+"value": 14
+}
+},
+{
+"board": "----X-----O-XX----OOXXX--OOOOO-X-OOOOOX---OOOXX---OOXO----OOOOO- X",
+"empties": 29,
+"best_value": 4,
+"move_values": {
+"b6": 4,
+"a3": 4
+},
+"ggs": [
+{
+"move": "b6",
+"value": 4,
+"prob": "99",
+"time_ms": 711,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".6.0",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a3",
+"value": 4
+}
+},
+{
+"board": "----XO----XOOO---OOOXX---OOOXX-O-XOXXXO--XXOXOO---OOOX-----OX--- X",
+"empties": 29,
+"best_value": 16,
+"move_values": {
+"c1": 16
+},
+"ggs": [
+{
+"move": "c1",
+"value": 16,
+"prob": "99",
+"time_ms": 3083,
+"log": "bin/ggs/log/2026-06-30-11=10=18_ggs.log",
+"game": ".63.0",
+"exact_move_value": 16,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "c1",
+"value": 16
+}
+},
+{
+"board": "---OX-------OX----OOXOOXXXXXXOOO-XXXXXO-OXXXXOO---OOOO---------- X",
+"empties": 29,
+"best_value": 10,
+"move_values": {
+"d2": 10,
+"f1": 10
+},
+"ggs": [
+{
+"move": "d2",
+"value": 10,
+"prob": "99",
+"time_ms": 3081,
+"log": "bin/ggs/log/2026-06-28-14=39=04_ggs.log",
+"game": ".0.0",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f1",
+"value": 10
+}
+},
+{
+"board": "---X------XXO----XOOOO---OOXOOX---OXOOO-OOOXXOOO--XXXX----XX--X- X",
+"empties": 29,
+"best_value": -8,
+"move_values": {
+"a4": -8,
+"g3": -8
+},
+"ggs": [
+{
+"move": "g3",
+"value": -8,
+"prob": "99",
+"time_ms": 2932,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".45.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a4",
+"value": -8
+}
+},
+{
+"board": "---X------XXXX--OXXXOX--OXOXXX--OOOOOX--OOOOOO--O-OO-O-----O-O-- X",
+"empties": 29,
+"best_value": -16,
+"move_values": {
+"b7": -16,
+"e7": -16
+},
+"ggs": [
+{
+"move": "e7",
+"value": -16,
+"prob": "99",
+"time_ms": 3184,
+"log": "bin/ggs/log/2026-08-21-17=23=00_ggs.log",
+"game": ".40.0",
+"exact_move_value": -16,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b7",
+"value": -16
+}
+},
+{
+"board": "---XO---X-XXOO--XOOOOO--XOOXXOX-X-OOOOO--OXOXOX-O--XO----------- X",
+"empties": 29,
+"best_value": 6,
+"move_values": {
+"f1": 6,
+"c7": 6
+},
+"ggs": [
+{
+"move": "f1",
+"value": 6,
+"prob": "99",
+"time_ms": 3182,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".21.0",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c7",
+"value": 6
+}
+},
+{
+"board": "--O-------OXO---OXOXXXX-OXOXXX--OOOXOX--OOOXXXX-O-OOOO---------- X",
+"empties": 29,
+"best_value": -10,
+"move_values": {
+"c8": -10,
+"f1": -10
+},
+"ggs": [
+{
+"move": "f1",
+"value": -10,
+"prob": "99",
+"time_ms": 3175,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".56.0",
+"exact_move_value": -10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c8",
+"value": -10
+}
+},
+{
+"board": "--OOO-----OOXX--OOOOOOXOOOXXXOXOOOOOOXOO-O---OOO---------------- X",
+"empties": 29,
+"best_value": 12,
+"move_values": {
+"c6": 12,
+"g2": 12
+},
+"ggs": [
+{
+"move": "c6",
+"value": 12,
+"prob": "99",
+"time_ms": 717,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".54.0",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g2",
+"value": 12
+}
+},
+{
+"board": "--X--O----XX-O---OXXXO--OOXOOOO-OOOOOOOO-OXOXOO---XX-O-------O-- X",
+"empties": 29,
+"best_value": 6,
+"move_values": {
+"g3": 6,
+"a6": 6
+},
+"ggs": [
+{
+"move": "g3",
+"value": 6,
+"prob": "93",
+"time_ms": 709,
+"log": "bin/ggs/log/2026-07-25-15=48=09_ggs.log",
+"game": ".60.0",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a6",
+"value": 6
+}
+},
+{
+"board": "--XO-------OOX--XXOOXOO-XXOXOOO--XOXOXX-O-OOXXX---O-OO------O--- X",
+"empties": 29,
+"best_value": 4,
+"move_values": {
+"d7": 4,
+"h4": 4
+},
+"ggs": [
+{
+"move": "h4",
+"value": 4,
+"prob": "99",
+"time_ms": 2923,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".38.0",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d7",
+"value": 4
+}
+},
+{
+"board": "-OOOOO----OOOX-X-XOOOXXX--OXOXXX--XXOOOX---OOOXX----O----------- X",
+"empties": 29,
+"best_value": -26,
+"move_values": {
+"b4": -26,
+"f7": -26
+},
+"ggs": [
+{
+"move": "f7",
+"value": -16,
+"prob": "88",
+"time_ms": 712,
+"log": "bin/ggs/log/2026-07-21-22=12=55_ggs.log",
+"game": ".62.1",
+"exact_move_value": -26,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f7",
+"value": -24
+}
+},
+{
+"board": "-OOOOO----OXXX---XOOXXX-X-OXOX--X-OOOX--OOOOOX----XXO------X---- X",
+"empties": 29,
+"best_value": -24,
+"move_values": {
+"b7": -24,
+"b5": -28,
+"e8": -24
+},
+"ggs": [
+{
+"move": "e8",
+"value": -24,
+"prob": "99",
+"time_ms": 716,
+"log": "bin/ggs/log/2026-08-21-17=23=00_ggs.log",
+"game": ".68.0",
+"exact_move_value": -24,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b5",
+"value": -22
+}
+},
+{
+"board": "-OOOOO----OXXX---XXOXXX-OOXOXXX--OOXXXX--OOOOOOO---------------- X",
+"empties": 29,
+"best_value": 0,
+"move_values": {
+"d7": 0,
+"a6": -2
+},
+"ggs": [
+{
+"move": "d7",
+"value": 0,
+"prob": "99",
+"time_ms": 3182,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".46.1",
+"exact_move_value": 0,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "d7",
+"value": 0
+}
+},
+{
+"board": "-XXX----X-XXXX---XOOOXOOOOOXOOOOOOXOOOOO-XOO----X--------------- X",
+"empties": 29,
+"best_value": -18,
+"move_values": {
+"d7": -18,
+"g6": -18
+},
+"ggs": [
+{
+"move": "g6",
+"value": -16,
+"prob": "93",
+"time_ms": 2924,
+"log": "bin/ggs/log/2026-08-25-15=52=06_ggs.log",
+"game": ".13.0",
+"exact_move_value": -18,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d7",
+"value": -16
+}
+},
+{
+"board": "-XXXXX----XOOO---XXXOOO-OOOOOOO--XXXOXX--OXOOX----X-O----------- X",
+"empties": 29,
+"best_value": 6,
+"move_values": {
+"a3": 6,
+"f7": 6
+},
+"ggs": [
+{
+"move": "a3",
+"value": 6,
+"prob": "99",
+"time_ms": 711,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".23.0",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f7",
+"value": 6
+}
+},
+{
+"board": "-XXXXXX---XOOX---OOXOX----OOXXX--XXOXX----OOOOO----O-XO-----OX-- X",
+"empties": 29,
+"best_value": 10,
+"move_values": {
+"b4": 10,
+"c7": 10
+},
+"ggs": [
+{
+"move": "c7",
+"value": 10,
+"prob": "98",
+"time_ms": 716,
+"log": "bin/ggs/log/2026-08-20-21=41=11_ggs.log",
+"game": ".41.0",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b4",
+"value": 10
+}
+},
+{
+"board": "------------O----XXXOOO--XXXXOXX-XXXOXXX-XXOOOX---O-OO-----OOOO- X",
+"empties": 30,
+"best_value": -4,
+"move_values": {
+"h3": -4,
+"d7": -4
+},
+"ggs": [
+{
+"move": "h3",
+"value": -4,
+"prob": "99",
+"time_ms": 842,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".41.1",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d7",
+"value": -4
+}
+},
+{
+"board": "------------XOO----XOOOXXXXXXXXX--XXOXOX--XXXO-X--OXO--X--OOX--- X",
+"empties": 30,
+"best_value": 2,
+"move_values": {
+"f7": 2,
+"b8": 2
+},
+"ggs": [
+{
+"move": "f7",
+"value": 2,
+"prob": "99",
+"time_ms": 835,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".67.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b8",
+"value": 2
+}
+},
+{
+"board": "-----------OX----OOOXX---XXOXX---XXOXX---OXOOOO-OOXXXX----XXXXX- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"a5": -6,
+"d1": -6
+},
+"ggs": [
+{
+"move": "d1",
+"value": -6,
+"prob": "93",
+"time_ms": 2612,
+"log": "bin/ggs/log/20260926_GGS_tournament/2026-09-26-15=47=13_ggs.log",
+"game": ".25.0",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a5",
+"value": -6
+}
+},
+{
+"board": "-----------OXX---OOOOXOO-XXXXXXO--XOXOXX--XXOOOO---XOO----X-O--- X",
+"empties": 30,
+"best_value": 0,
+"move_values": {
+"c1": 0,
+"e1": 0
+},
+"ggs": [
+{
+"move": "e1",
+"value": 0,
+"prob": "98",
+"time_ms": 845,
+"log": "bin/ggs/log/2026-07-21-17=00=51_ggs.log",
+"game": ".69.0",
+"exact_move_value": 0,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c1",
+"value": 0
+}
+},
+{
+"board": "-----------XOX--O-OOOOO-OOOXXOOOOXOXOXO-OOXXXXX-O--XO----------- X",
+"empties": 30,
+"best_value": 8,
+"move_values": {
+"d8": 8
+},
+"ggs": [
+{
+"move": "d8",
+"value": 6,
+"prob": "93",
+"time_ms": 835,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".17.1",
+"exact_move_value": 8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "d8",
+"value": 8
+}
+},
+{
+"board": "----------O-------XXXXOX---XOOOX-O-XOOOX--OOXXOX--OXXOX---X-OOOX X",
+"empties": 30,
+"best_value": 2,
+"move_values": {
+"d8": 2,
+"h7": 2
+},
+"ggs": [
+{
+"move": "d8",
+"value": 2,
+"prob": "93",
+"time_ms": 772,
+"log": "bin/ggs/log/2026-08-26-14=37=39_ggs.log",
+"game": ".41.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h7",
+"value": 2
+}
+},
+{
+"board": "----------O-O----OOOOOX--XXXXXXX-XXXOX---OOXOXX---OOXX----OOXO-- X",
+"empties": 30,
+"best_value": 0,
+"move_values": {
+"f2": 0,
+"a6": 0
+},
+"ggs": [
+{
+"move": "a6",
+"value": 0,
+"prob": "93",
+"time_ms": 838,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".20.1",
+"exact_move_value": 0,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f2",
+"value": 0
+}
+},
+{
+"board": "----------O-O----XOOOXXXXXOOXXXX--OOOXOO-XXOXXO---XXOX-------O-- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"h6": -6,
+"b5": -6
+},
+"ggs": [
+{
+"move": "b5",
+"value": -6,
+"prob": "99",
+"time_ms": 710,
+"log": "bin/ggs/log/2026-08-21-17=23=00_ggs.log",
+"game": ".9.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h6",
+"value": -6
+}
+},
+{
+"board": "----------O-XXO--XOOOOO--XXXXOOO-XXXOXOO-OOXXX-O--OXXX---------- X",
+"empties": 30,
+"best_value": 4,
+"move_values": {
+"h1": 4
+},
+"ggs": [
+{
+"move": "h1",
+"value": 4,
+"prob": "93",
+"time_ms": 840,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".43.0",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "h1",
+"value": 4
+}
+},
+{
+"board": "----------OO----OOOOOXX-XOOOOOO-XOOOOOO-OXOXXXX---XXX------X---- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"e2": -6,
+"b7": -6
+},
+"ggs": [
+{
+"move": "e2",
+"value": -6,
+"prob": "98",
+"time_ms": 907,
+"log": "bin/ggs/log/2026-08-23-00=09=03_ggs.log",
+"game": ".60.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b7",
+"value": -6
+}
+},
+{
+"board": "----------OOOX---XOOOOOO-OOOOXOO--OXXXXX--XOOXX---XXO------X-O-- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"b6": -6
+},
+"ggs": [
+{
+"move": "b6",
+"value": -6,
+"prob": "93",
+"time_ms": 838,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".33.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "b6",
+"value": -6
+}
+},
+{
+"board": "----------OOXX---OOXXXOX-XOXXXO--XOOOOOO-XOOXXXX--OOX----------- X",
+"empties": 30,
+"best_value": -8,
+"move_values": {
+"e1": -8,
+"c1": -8
+},
+"ggs": [
+{
+"move": "c1",
+"value": -8,
+"prob": "93",
+"time_ms": 832,
+"log": "bin/ggs/log/2026-07-26-10=13=11_ggs.log",
+"game": ".16.0",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e1",
+"value": -8
+}
+},
+{
+"board": "----------OX-X--XOXXXO-OOXXXXXO-OOXOXOO-XXXXOO----XOOO---------- X",
+"empties": 30,
+"best_value": 2,
+"move_values": {
+"g3": 2
+},
+"ggs": [
+{
+"move": "g3",
+"value": 2,
+"prob": "98",
+"time_ms": 899,
+"log": "bin/ggs/log/2026-08-29-22=38=57_ggs.log",
+"game": ".27.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g3",
+"value": 2
+}
+},
+{
+"board": "----------X-O---OXXXOO-X-OXOOOO-X-OXXOXO--OOXOOO--XXXX-O--X----- X",
+"empties": 30,
+"best_value": -8,
+"move_values": {
+"b6": -8,
+"e1": -8
+},
+"ggs": [
+{
+"move": "b6",
+"value": -8,
+"prob": "99",
+"time_ms": 901,
+"log": "bin/ggs/log/2026-06-30-01=50=49_ggs.log",
+"game": ".36.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e1",
+"value": -8
+}
+},
+{
+"board": "----------XXXO--X-XXOXO--XXOXOOOOOXOOOO-OOOOXX----OOXX---------- X",
+"empties": 30,
+"best_value": -2,
+"move_values": {
+"g6": -2
+},
+"ggs": [
+{
+"move": "g6",
+"value": 0,
+"prob": "98",
+"time_ms": 833,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".66.1",
+"exact_move_value": -2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g6",
+"value": -2
+}
+},
+{
+"board": "--------O--OX---OOXOXXX-OXOOOOO-OXOOXO--OOXXOOO---XXX------X---- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"c2": -6,
+"h4": -6
+},
+"ggs": [
+{
+"move": "h4",
+"value": -6,
+"prob": "93",
+"time_ms": 842,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".59.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c2",
+"value": -6
+}
+},
+{
+"board": "--------O-OX-X--OOXXX----XOXOO--XXOOOOO--OOOOOO---XXXX----XXX--- X",
+"empties": 30,
+"best_value": -4,
+"move_values": {
+"g3": -4
+},
+"ggs": [
+{
+"move": "g3",
+"value": -4,
+"prob": "98",
+"time_ms": 833,
+"log": "bin/ggs/log/2026-07-25-15=48=09_ggs.log",
+"game": ".24.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g3",
+"value": -4
+}
+},
+{
+"board": "-----O-------O-O--OOXO-O--OXOOOO-XXXXOXO--XXOOXO---XXO----OOOO-- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"b4": -6,
+"e2": -6
+},
+"ggs": [
+{
+"move": "b4",
+"value": -6,
+"prob": "93",
+"time_ms": 846,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".1.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e2",
+"value": -6
+}
+},
+{
+"board": "-----X-----OXX---OXOXXXXXXXOOXOX-XXOXXXX--OOOOXX----OO---------- X",
+"empties": 30,
+"best_value": -10,
+"move_values": {
+"a3": -10
+},
+"ggs": [
+{
+"move": "a3",
+"value": -8,
+"prob": "74",
+"time_ms": 767,
+"log": "bin/ggs/log/2026-08-27-23=02=28_ggs.log",
+"game": ".68.1",
+"exact_move_value": -10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "a3",
+"value": -10
+}
+},
+{
+"board": "----O-----OOOO-X-XOOXXX-XOXXOXX-OOOOXXXXOOOO-X-X--O------------- X",
+"empties": 30,
+"best_value": 16,
+"move_values": {
+"e6": 16
+},
+"ggs": [
+{
+"move": "e6",
+"value": 14,
+"prob": "98",
+"time_ms": 845,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".22.0",
+"exact_move_value": 16,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "e6",
+"value": 16
+}
+},
+{
+"board": "---O------OOX---XOXOXX--OXXOXX--XOXOXO--XOOXXO---OOOX------O-X-- X",
+"empties": 30,
+"best_value": 6,
+"move_values": {
+"a8": 6,
+"e1": 6
+},
+"ggs": [
+{
+"move": "a8",
+"value": 6,
+"prob": "98",
+"time_ms": 708,
+"log": "bin/ggs/log/2026-08-26-14=37=39_ggs.log",
+"game": ".54.1",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e1",
+"value": 6
+}
+},
+{
+"board": "---O-X----O-XO---OOOOOO-XXOXXOOO-XOOXOO-XXXXOOOO-----O---------- X",
+"empties": 30,
+"best_value": 18,
+"move_values": {
+"c1": 18,
+"d2": 16
+},
+"ggs": [
+{
+"move": "c1",
+"value": 16,
+"prob": "98",
+"time_ms": 834,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".11.1",
+"exact_move_value": 18,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d2",
+"value": 16
+}
+},
+{
+"board": "---O-X----XOOX---XXOOO--XXOXXO--XOOXOOO-O-XXXOX---OXO-----O----- X",
+"empties": 30,
+"best_value": -2,
+"move_values": {
+"f8": -2
+},
+"ggs": [
+{
+"move": "f8",
+"value": -2,
+"prob": "93",
+"time_ms": 842,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".15.1",
+"exact_move_value": -2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "f8",
+"value": -2
+}
+},
+{
+"board": "---OX--X---OOOOO---XOXOO--XOXOOX--OOXXXX---OXXOX---OXOO--------- X",
+"empties": 30,
+"best_value": 20,
+"move_values": {
+"g1": 20,
+"e8": 20
+},
+"ggs": [
+{
+"move": "g1",
+"value": 20,
+"prob": "98",
+"time_ms": 844,
+"log": "bin/ggs/log/2026-08-23-15=47=18_ggs.log",
+"game": ".62.1",
+"exact_move_value": 20,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e8",
+"value": 20
+}
+},
+{
+"board": "---X------OXXX----OXOOOO-OOXXOOO-OOXOOO---OXOXX---OO------OOO--- X",
+"empties": 30,
+"best_value": 12,
+"move_values": {
+"a4": 12,
+"f7": 12
+},
+"ggs": [
+{
+"move": "f7",
+"value": 12,
+"prob": "93",
+"time_ms": 776,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".69.1",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a4",
+"value": 12
+}
+},
+{
+"board": "---X------XX-----XXOOOO-X-OXXO--OOOXOOO-OOXOXO----OOOO------XXX- X",
+"empties": 30,
+"best_value": 12,
+"move_values": {
+"d8": 12
+},
+"ggs": [
+{
+"move": "d8",
+"value": 12,
+"prob": "99",
+"time_ms": 777,
+"log": "bin/ggs/log/2026-08-25-15=52=06_ggs.log",
+"game": ".3.1",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "d8",
+"value": 12
+}
+},
+{
+"board": "---X------XXX----XXXOOO--XXOOO--XXOOOOO-X-OOOO-----OOO----XOOX-- X",
+"empties": 30,
+"best_value": -14,
+"move_values": {
+"g6": -14,
+"c7": -14
+},
+"ggs": [
+{
+"move": "c7",
+"value": -14,
+"prob": "98",
+"time_ms": 910,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".55.0",
+"exact_move_value": -14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g6",
+"value": -14
+}
+},
+{
+"board": "---XO------XXO----XXXXXO--XXXXOO--XXXOOO--OXXOOO--OOO-----OO---- X",
+"empties": 30,
+"best_value": -4,
+"move_values": {
+"b6": -4,
+"f1": -4
+},
+"ggs": [
+{
+"move": "f1",
+"value": -4,
+"prob": "99",
+"time_ms": 831,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".48.1",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "f1",
+"value": -4
+}
+},
+{
+"board": "---XXX-----XXX---XXXXXX--OOOXOOOO-OOXO----OOXOO----OOX-----OX--- X",
+"empties": 30,
+"best_value": -4,
+"move_values": {
+"h6": -4,
+"c8": -4
+},
+"ggs": [
+{
+"move": "c8",
+"value": -4,
+"prob": "99",
+"time_ms": 768,
+"log": "bin/ggs/log/2026-07-26-00=29=34_ggs.log",
+"game": ".48.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h6",
+"value": -4
+}
+},
+{
+"board": "--O-------OOO---XXXXOO---XXOXOO--XOXOO---OOOOOX----OOX----XXXX-- X",
+"empties": 30,
+"best_value": 6,
+"move_values": {
+"g5": 6
+},
+"ggs": [
+{
+"move": "g5",
+"value": 6,
+"prob": "99",
+"time_ms": 772,
+"log": "bin/ggs/log/2026-08-29-22=38=57_ggs.log",
+"game": ".3.1",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g5",
+"value": 6
+}
+},
+{
+"board": "--O--X----OXXX--OOXOXX---OXOO----XOXXO--XXXOXO----OOOX-----OOX-- X",
+"empties": 30,
+"best_value": -8,
+"move_values": {
+"g5": -8,
+"g4": -8
+},
+"ggs": [
+{
+"move": "g4",
+"value": -8,
+"prob": "98",
+"time_ms": 719,
+"log": "bin/ggs/log/2026-08-26-14=37=39_ggs.log",
+"game": ".11.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g5",
+"value": -8
+}
+},
+{
+"board": "--O-X-----OXX---OOXXXXX-OOOXXXX--OOXXXOO--OOXXO----OXX---------- X",
+"empties": 30,
+"best_value": 4,
+"move_values": {
+"c8": 4,
+"h4": 4
+},
+"ggs": [
+{
+"move": "h4",
+"value": 4,
+"prob": "99",
+"time_ms": 845,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".62.1",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c8",
+"value": 4
+}
+},
+{
+"board": "--OO------OOOX----OOXO---XXXOOO-XXXOOO--XXXXOOX-X-XXXO---------- X",
+"empties": 30,
+"best_value": -16,
+"move_values": {
+"b3": -16,
+"e8": -16
+},
+"ggs": [
+{
+"move": "e8",
+"value": -14,
+"prob": "93",
+"time_ms": 842,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".2.1",
+"exact_move_value": -16,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b3",
+"value": -14
+}
+},
+{
+"board": "--OO-X----OOX---OOOXOO---OOOXO--XOOXXX--XOOOOXX-X-XO------X----- X",
+"empties": 30,
+"best_value": 0,
+"move_values": {
+"f7": 0
+},
+"ggs": [
+{
+"move": "f7",
+"value": 0,
+"prob": "98",
+"time_ms": 840,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".60.1",
+"exact_move_value": 0,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "f7",
+"value": 0
+}
+},
+{
+"board": "--OOOO----OXOO----XOXXOX--OXXXOO-O-XXXXX-XXOOOX---O-O----------- X",
+"empties": 30,
+"best_value": 4,
+"move_values": {
+"c5": 4,
+"b4": 4
+},
+"ggs": [
+{
+"move": "c5",
+"value": 4,
+"prob": "99",
+"time_ms": 8887,
+"log": "bin/ggs/log/2026-06-28-09=35=43_ggs.log",
+"game": ".10.1",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b4",
+"value": 4
+}
+},
+{
+"board": "--OOOOO---OXXO----XXXXX--XXOXXOO-OOOOOOO-OOOOX-X---------------- X",
+"empties": 30,
+"best_value": 12,
+"move_values": {
+"d7": 12,
+"f7": 12
+},
+"ggs": [
+{
+"move": "d7",
+"value": 12,
+"prob": "99",
+"time_ms": 767,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".47.1",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f7",
+"value": 12
+}
+},
+{
+"board": "--OXX-----OXXX----OXOXO--OOXOOOO--OOXOXO-XXXOOOO-----O-O-------- X",
+"empties": 30,
+"best_value": 10,
+"move_values": {
+"a5": 10,
+"a4": 10,
+"e7": 10
+},
+"ggs": [
+{
+"move": "a4",
+"value": 10,
+"prob": "93",
+"time_ms": 139,
+"log": "bin/ggs/log/2026-07-21-17=00=51_ggs.log",
+"game": ".45.0",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e7",
+"value": 10
+}
+},
+{
+"board": "--X--O----XXOO--XXOXOOOOOXOXOX--OOXXXX--XXOXO-X---OO------------ X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"f6": -6,
+"e7": -6
+},
+"ggs": [
+{
+"move": "e7",
+"value": -6,
+"prob": "99",
+"time_ms": 834,
+"log": "bin/ggs/log/2026-06-30-06=52=44_ggs.log",
+"game": ".44.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f6",
+"value": -6
+}
+},
+{
+"board": "--X-OX----XOOX---OOOXXXXOOOOXXX--OOOXO----XOXXO-----XX------X--- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"d1": -6,
+"g5": -6
+},
+"ggs": [
+{
+"move": "g5",
+"value": -6,
+"prob": "98",
+"time_ms": 843,
+"log": "bin/ggs/log/2026-08-03-13=11=50_ggs.log",
+"game": ".22.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d1",
+"value": -6
+}
+},
+{
+"board": "--XXXX-----XOX----XXXXXX--XOXOXX-XXXOXOX-OOOXXXX--O------------- X",
+"empties": 30,
+"best_value": -20,
+"move_values": {
+"c8": -20,
+"d7": -20
+},
+"ggs": [
+{
+"move": "d7",
+"value": -20,
+"prob": "93",
+"time_ms": 772,
+"log": "bin/ggs/log/2026-07-21-23=36=26_ggs.log",
+"game": ".60.0",
+"exact_move_value": -20,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c8",
+"value": -20
+}
+},
+{
+"board": "--XXXX---OXXX-O--XOXOOO--XXOO-X-X-OXO-O--OOOOO----OXXX---------- X",
+"empties": 30,
+"best_value": 10,
+"move_values": {
+"b5": 10
+},
+"ggs": [
+{
+"move": "b5",
+"value": 10,
+"prob": "98",
+"time_ms": 846,
+"log": "bin/ggs/log/2026-08-25-15=52=06_ggs.log",
+"game": ".50.1",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "b5",
+"value": 10
+}
+},
+{
+"board": "-OOO------OOO----XOOOOO--OXOOOO--XOOOOO-X-OOOOXX---OOX---------- X",
+"empties": 30,
+"best_value": 24,
+"move_values": {
+"b6": 24
+},
+"ggs": [
+{
+"move": "b6",
+"value": 24,
+"prob": "99",
+"time_ms": 15004,
+"log": "bin/ggs/log/2026-06-25-06=48=41_ggs.log",
+"game": ".37.1",
+"exact_move_value": 24,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "b6",
+"value": 24
+}
+},
+{
+"board": "-OOO------OXXX---XXOXXX--XXXXOX--OXXXOO---OXXO----OOX------O-X-- X",
+"empties": 30,
+"best_value": -12,
+"move_values": {
+"a6": -12,
+"a5": -12
+},
+"ggs": [
+{
+"move": "a5",
+"value": -12,
+"prob": "99",
+"time_ms": 839,
+"log": "bin/ggs/log/2026-07-26-00=29=34_ggs.log",
+"game": ".46.0",
+"exact_move_value": -12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a6",
+"value": -12
+}
+},
+{
+"board": "-OOOO-----XOXX--XXXOXX--XOOOOX--XOOOOOO---XOO-X----OO------O---- X",
+"empties": 30,
+"best_value": 8,
+"move_values": {
+"a6": 8
+},
+"ggs": [
+{
+"move": "a6",
+"value": 8,
+"prob": "98",
+"time_ms": 840,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".11.1",
+"exact_move_value": 8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "a6",
+"value": 8
+}
+},
+{
+"board": "-XXXX-----XOXOO--OXXOO--OXXXXXX--OXOXX----OOOOX-----OO-------O-- X",
+"empties": 30,
+"best_value": 8,
+"move_values": {
+"a3": 8,
+"a6": 8
+},
+"ggs": [
+{
+"move": "a6",
+"value": 8,
+"prob": "88",
+"time_ms": 640,
+"log": "bin/ggs/log/2026-07-22-00=47=29_ggs.log",
+"game": ".71.0",
+"exact_move_value": 8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a3",
+"value": 8
+}
+},
+{
+"board": "XXXXXX---XXOOO--XXOXOO--XXOXOX--XXXOXX--X-XOO--------O---------- X",
+"empties": 30,
+"best_value": -6,
+"move_values": {
+"g4": -6
+},
+"ggs": [
+{
+"move": "g4",
+"value": -6,
+"prob": "93",
+"time_ms": 643,
+"log": "bin/ggs/log/2026-09-25-12=33=59_ggs.log",
+"game": ".36.1",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g4",
+"value": -6
+}
+},
+{
+"board": "-----------------OOOXXO--OOXXXX-OXXOOOOOXXXXXXOX--XXOO----X----- X",
+"empties": 31,
+"best_value": 2,
+"move_values": {
+"h4": 2,
+"d8": 2
+},
+"ggs": [
+{
+"move": "d8",
+"value": 0,
+"prob": "88",
+"time_ms": 1070,
+"log": "bin/ggs/log/2026-07-21-13=15=21_ggs.log",
+"game": ".68.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h4",
+"value": 2
+}
+},
+{
+"board": "-------------X---OOOXXOO-OXXXXX-O-XOXXX---XXXXX---XXXX----XXXX-- X",
+"empties": 31,
+"best_value": -18,
+"move_values": {
+"e2": -18,
+"h4": -20
+},
+"ggs": [
+{
+"move": "e2",
+"value": -18,
+"prob": "99",
+"time_ms": 2479,
+"log": "bin/ggs/log/2026-06-27-11=21=54_ggs.log",
+"game": ".7.0",
+"exact_move_value": -18,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "e2",
+"value": -18
+}
+},
+{
+"board": "-------------X---OOOXXXX-OOXOXXXOOOOOXO-XXOOXX-O---XO-----X--O-- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"h5": -4
+},
+"ggs": [
+{
+"move": "h5",
+"value": -4,
+"prob": "99",
+"time_ms": 905,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".21.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "h5",
+"value": -4
+}
+},
+{
+"board": "------------X-----XXOO---XXOOOO--XXXXOO--XXOXOO---OXOO---OOOOOO- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"f2": -4
+},
+"ggs": [
+{
+"move": "f2",
+"value": -4,
+"prob": "99",
+"time_ms": 839,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".62.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "f2",
+"value": -4
+}
+},
+{
+"board": "------------X-----XXXXO-X-XXXXO-OXOXOOO--OXOXO---XOOOO----OXXO-- X",
+"empties": 31,
+"best_value": -6,
+"move_values": {
+"h4": -6,
+"g6": -6
+},
+"ggs": [
+{
+"move": "h4",
+"value": -6,
+"prob": "99",
+"time_ms": 766,
+"log": "bin/ggs/log/2026-08-25-15=52=06_ggs.log",
+"game": ".20.0",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g6",
+"value": -6
+}
+},
+{
+"board": "------------X---OOOXXO--OOXXXX--OXOOXX--OOOOXX--O-OOO----XXXX--- X",
+"empties": 31,
+"best_value": -8,
+"move_values": {
+"c2": -8,
+"f2": -10
+},
+"ggs": [
+{
+"move": "c2",
+"value": -8,
+"prob": "98",
+"time_ms": 832,
+"log": "bin/ggs/log/2026-07-21-23=36=26_ggs.log",
+"game": ".44.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f2",
+"value": -6
+}
+},
+{
+"board": "------------XO----OOOO----XOXOO--XXXOOOX--XOOX-X--OOXX-X-OOOO-X- X",
+"empties": 31,
+"best_value": -12,
+"move_values": {
+"d2": -12,
+"g6": -12
+},
+"ggs": [
+{
+"move": "d2",
+"value": -10,
+"prob": "98",
+"time_ms": 895,
+"log": "bin/ggs/log/2026-08-22-15=36=59_ggs.log",
+"game": ".34.0",
+"exact_move_value": -12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g6",
+"value": -12
+}
+},
+{
+"board": "------------XO----XXXO---OOXXOO-OOOOOOOO-XXXXOXX---XXX----OXX--- X",
+"empties": 31,
+"best_value": -8,
+"move_values": {
+"b8": -8,
+"a6": -8
+},
+"ggs": [
+{
+"move": "a6",
+"value": -8,
+"prob": "98",
+"time_ms": 760,
+"log": "bin/ggs/log/2026-07-26-11=10=35_ggs.log",
+"game": ".17.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b8",
+"value": -8
+}
+},
+{
+"board": "-----------O-O----XOOXXO--XOXOXO--XOOOOO--OOOXOO--XOX--O-XXX---- X",
+"empties": 31,
+"best_value": -16,
+"move_values": {
+"f7": -16,
+"b6": -18
+},
+"ggs": [
+{
+"move": "f7",
+"value": -12,
+"prob": "93",
+"time_ms": 899,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".39.1",
+"exact_move_value": -16,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b6",
+"value": -16
+}
+},
+{
+"board": "-----------O-O---OXOOO--XXXOOOOO-XXOXOOOXXXXOOOO--X-O--------O-- X",
+"empties": 31,
+"best_value": 6,
+"move_values": {
+"c2": 6,
+"f7": 6
+},
+"ggs": [
+{
+"move": "f7",
+"value": 6,
+"prob": "99",
+"time_ms": 1224,
+"log": "bin/ggs/log/2026-06-30-06=52=44_ggs.log",
+"game": ".43.0",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c2",
+"value": 6
+}
+},
+{
+"board": "-----------X-X--OOOXOOO-OOOXOOOO-OOXOX---OOXXX----XXXX---X--X--- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"e2": -4,
+"c2": -4
+},
+"ggs": [
+{
+"move": "e2",
+"value": -4,
+"prob": "99",
+"time_ms": 904,
+"log": "bin/ggs/log/2026-08-23-15=47=18_ggs.log",
+"game": ".61.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c2",
+"value": -4
+}
+},
+{
+"board": "----------O-------OOOOO---OXOXX-OOOXXXXX--OXXXXX--XXXX----XOOX-- X",
+"empties": 31,
+"best_value": 6,
+"move_values": {
+"b6": 6,
+"b4": 6
+},
+"ggs": [
+{
+"move": "b6",
+"value": 6,
+"prob": "99",
+"time_ms": 14998,
+"log": "bin/ggs/log/2026-06-24-19=13=26_ggs.log",
+"game": ".38.0",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b4",
+"value": 6
+}
+},
+{
+"board": "----------OO----OXOO-OX-OXOOOX--OOXXXXX-OOOOOXO---X-OO----X-O--- X",
+"empties": 31,
+"best_value": 10,
+"move_values": {
+"d7": 10,
+"h6": 10
+},
+"ggs": [
+{
+"move": "d7",
+"value": 10,
+"prob": "93",
+"time_ms": 769,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".36.0",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h6",
+"value": 10
+}
+},
+{
+"board": "----------OO-O---OOOOOX--XXXXOX---XXXXXX-OOOXOX----OOX----OOX--- X",
+"empties": 31,
+"best_value": 12,
+"move_values": {
+"f8": 12,
+"b8": 12
+},
+"ggs": [
+{
+"move": "b8",
+"value": 12,
+"prob": "99",
+"time_ms": 831,
+"log": "bin/ggs/log/2026-08-29-22=38=57_ggs.log",
+"game": ".29.0",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f8",
+"value": 12
+}
+},
+{
+"board": "----------XO------OOOX----XOXXXOOOOOOOOO--XOXOOO--XXOO----XOO--- X",
+"empties": 31,
+"best_value": 4,
+"move_values": {
+"d1": 4
+},
+"ggs": [
+{
+"move": "d1",
+"value": 6,
+"prob": "93",
+"time_ms": 895,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".56.0",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "d1",
+"value": 4
+}
+},
+{
+"board": "--------O--O-----OOOXX--XOOXXX--XOOXXX--XXOOXX--XXXXO-----XXO--- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"e2": -4
+},
+"ggs": [
+{
+"move": "e2",
+"value": -4,
+"prob": "93",
+"time_ms": 899,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".9.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "e2",
+"value": -4
+}
+},
+{
+"board": "-----X--O-OXXX--OOOOOOO-OXOXXXO-OOOXXXX---OXOX----X--X---------- X",
+"empties": 31,
+"best_value": 0,
+"move_values": {
+"d7": 0,
+"e7": -2
+},
+"ggs": [
+{
+"move": "d7",
+"value": 0,
+"prob": "98",
+"time_ms": 762,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".6.0",
+"exact_move_value": 0,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "d7",
+"value": 0
+}
+},
+{
+"board": "----O-----OO------OXXX-X-OOXOXX-OOOXOOO--OXXXXO---XXXX-----X-O-- X",
+"empties": 31,
+"best_value": 4,
+"move_values": {
+"h4": 4,
+"d1": 4
+},
+"ggs": [
+{
+"move": "d1",
+"value": 4,
+"prob": "93",
+"time_ms": 840,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".50.0",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h4",
+"value": 4
+}
+},
+{
+"board": "----X------OXX---OOOXOO--OOOXOOO-XOOXXX-X-XXOXX----XOO------O--- X",
+"empties": 31,
+"best_value": 4,
+"move_values": {
+"d8": 4,
+"b6": 4
+},
+"ggs": [
+{
+"move": "d8",
+"value": 4,
+"prob": "93",
+"time_ms": 767,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".42.0",
+"exact_move_value": 4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b6",
+"value": 4
+}
+},
+{
+"board": "---O--------O----OX-XOO-XXXXOO--OOOOXO---XXXXOX-XXXXXO----O--O-- X",
+"empties": 31,
+"best_value": -10,
+"move_values": {
+"d3": -10
+},
+"ggs": [
+{
+"move": "d3",
+"value": -10,
+"prob": "98",
+"time_ms": 896,
+"log": "bin/ggs/log/2026-08-23-15=47=18_ggs.log",
+"game": ".14.0",
+"exact_move_value": -10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "d3",
+"value": -10
+}
+},
+{
+"board": "---O-------O----XXXXXO--XXXXXOX-XOXOOOO-XXOOOO--X-OOO-----O----- X",
+"empties": 31,
+"best_value": 14,
+"move_values": {
+"f8": 14,
+"e2": 14
+},
+"ggs": [
+{
+"move": "f8",
+"value": 14,
+"prob": "98",
+"time_ms": 837,
+"log": "bin/ggs/log/2026-08-20-11=26=49_ggs.log",
+"game": ".61.0",
+"exact_move_value": 14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e2",
+"value": 14
+}
+},
+{
+"board": "---O------XOX----XXOXXX--XXOXXX-XXXOOO---OOOOO----OOOO---O--O--- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"e1": -4,
+"c1": -4
+},
+"ggs": [
+{
+"move": "c1",
+"value": -4,
+"prob": "99",
+"time_ms": 905,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".13.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e1",
+"value": -4
+}
+},
+{
+"board": "---O-X-----OX----OOOXX---OOOXXX---OOXXO---OXOO----XOOO---XXXX-O- X",
+"empties": 31,
+"best_value": 10,
+"move_values": {
+"c1": 10
+},
+"ggs": [
+{
+"move": "c1",
+"value": 10,
+"prob": "93",
+"time_ms": 829,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".37.1",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "c1",
+"value": 10
+}
+},
+{
+"board": "---OOO----OXX--O-OXXXXXO-XXXXXXO--XXXXXO-O-XOOOO---------------- X",
+"empties": 31,
+"best_value": 2,
+"move_values": {
+"b1": 2,
+"c1": 0
+},
+"ggs": [
+{
+"move": "b1",
+"value": 2,
+"prob": "93",
+"time_ms": 895,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".16.0",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "c1",
+"value": 2
+}
+},
+{
+"board": "---X------XXO----XOOOO---OOXOXX---OXOOX-OOOXOOO---XXXO----XX---- X",
+"empties": 31,
+"best_value": -8,
+"move_values": {
+"g8": -8,
+"g3": -8
+},
+"ggs": [
+{
+"move": "g8",
+"value": -8,
+"prob": "93",
+"time_ms": 833,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".45.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "g3",
+"value": -8
+}
+},
+{
+"board": "--O--------OOX----XOOO---XOXOOO-OOXXXXXX-OXXOO-O--XX-O----O-X--- X",
+"empties": 31,
+"best_value": 10,
+"move_values": {
+"b3": 10,
+"h7": 10
+},
+"ggs": [
+{
+"move": "b3",
+"value": 10,
+"prob": "98",
+"time_ms": 1077,
+"log": "bin/ggs/log/2026-06-29-22=44=54_ggs.log",
+"game": ".20.0",
+"exact_move_value": 10,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h7",
+"value": 10
+}
+},
+{
+"board": "--O--X----OXXX--XXXXXXO--XXXOOX----XOXXX-OOOOXXX--O-O----------- X",
+"empties": 31,
+"best_value": -16,
+"move_values": {
+"e8": -16,
+"h4": -16
+},
+"ggs": [
+{
+"move": "e8",
+"value": -14,
+"prob": "93",
+"time_ms": 906,
+"log": "bin/ggs/log/2026-08-04-14=04=27_ggs.log",
+"game": ".18.0",
+"exact_move_value": -16,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "h4",
+"value": -16
+}
+},
+{
+"board": "--O-O-----OOOO--XXOOOOOO-XXOOX---XXOXXX-XOXXXXO---X------------- X",
+"empties": 31,
+"best_value": 2,
+"move_values": {
+"g2": 2,
+"h6": 2
+},
+"ggs": [
+{
+"move": "g2",
+"value": 2,
+"prob": "99",
+"time_ms": 901,
+"log": "bin/ggs/log/2026-07-21-17=00=51_ggs.log",
+"game": ".41.1",
+"exact_move_value": 2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "g2",
+"value": 2
+}
+},
+{
+"board": "--OO-X----O-O---XOOXOO---XXXOX--OXOXOX---XXXOO----OXO-----O-OX-- X",
+"empties": 31,
+"best_value": 6,
+"move_values": {
+"f2": 6
+},
+"ggs": [
+{
+"move": "f2",
+"value": 6,
+"prob": "98",
+"time_ms": 906,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".45.0",
+"exact_move_value": 6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "f2",
+"value": 6
+}
+},
+{
+"board": "--OOO-----OOOX--O-OOXX-OOOOXXXX--OOOOOXX-XOOOO-X---------------- X",
+"empties": 31,
+"best_value": 12,
+"move_values": {
+"f7": 12
+},
+"ggs": [
+{
+"move": "f7",
+"value": 12,
+"prob": "99",
+"time_ms": 903,
+"log": "bin/ggs/log/2026-08-03-15=48=52_ggs.log",
+"game": ".68.0",
+"exact_move_value": 12,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": false,
+"screen": {
+"move": "f7",
+"value": 12
+}
+},
+{
+"board": "--OOOO----XXX----OXXOO--OOOOOO---XXXXO---XXXXO----XXX------XX--- X",
+"empties": 31,
+"best_value": -14,
+"move_values": {
+"a5": -14,
+"g6": -14
+},
+"ggs": [
+{
+"move": "g6",
+"value": -12,
+"prob": "74",
+"time_ms": 759,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".58.0",
+"exact_move_value": -14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "a5",
+"value": -14
+}
+},
+{
+"board": "--OOOOO----OOO---OXOOO---XXOXXO---XOXO---XXOOXX---XOOX---------- X",
+"empties": 31,
+"best_value": -8,
+"move_values": {
+"d8": -8,
+"f8": -8
+},
+"ggs": [
+{
+"move": "f8",
+"value": -6,
+"prob": "88",
+"time_ms": 898,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".48.0",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d8",
+"value": -8
+}
+},
+{
+"board": "--X-------X-O----XOOOOO-XXOXOOX--XOOOXXXXXOOOO-O--OO------O----- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"e7": -4,
+"e8": -4
+},
+"ggs": [
+{
+"move": "e8",
+"value": -4,
+"prob": "99",
+"time_ms": 965,
+"log": "bin/ggs/log/2026-08-20-21=41=11_ggs.log",
+"game": ".33.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e7",
+"value": -4
+}
+},
+{
+"board": "--XXO------OOX-O--OOOXOOXXOXOOXO-XOOOOOO-XXOOO------------------ X",
+"empties": 31,
+"best_value": -2,
+"move_values": {
+"f1": -2,
+"e7": -2
+},
+"ggs": [
+{
+"move": "f1",
+"value": -2,
+"prob": "93",
+"time_ms": 892,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".22.0",
+"exact_move_value": -2,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e7",
+"value": -2
+}
+},
+{
+"board": "--XXX--O--XXOOO--XOOOO-O--XOOOOO--XXOX-O--XXOXX-----OO---------- X",
+"empties": 31,
+"best_value": -8,
+"move_values": {
+"d7": -8,
+"g5": -8
+},
+"ggs": [
+{
+"move": "g5",
+"value": -6,
+"prob": "88",
+"time_ms": 906,
+"log": "bin/ggs/log/2026-07-22-09=14=37_ggs.log",
+"game": ".43.1",
+"exact_move_value": -8,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "d7",
+"value": -8
+}
+},
+{
+"board": "-OOOO-----OXO----OOOXOX--XXXXXOX--XXXOOO--XXOO-X----OX---------- X",
+"empties": 31,
+"best_value": -4,
+"move_values": {
+"e8": -4,
+"f1": -6,
+"a3": -4
+},
+"ggs": [
+{
+"move": "a3",
+"value": -4,
+"prob": "99",
+"time_ms": 906,
+"log": "bin/ggs/log/2026-08-26-14=37=39_ggs.log",
+"game": ".44.0",
+"exact_move_value": -4,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "f1",
+"value": -4
+}
+},
+{
+"board": "-OOOOO---OOOXO--XOOXXX--XOXOX---OXXOX---XOXO------XX--------X--- X",
+"empties": 31,
+"best_value": -6,
+"move_values": {
+"e7": -6,
+"a1": -6,
+"e6": -6
+},
+"ggs": [
+{
+"move": "a1",
+"value": -6,
+"prob": "93",
+"time_ms": 899,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".45.0",
+"exact_move_value": -6,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "e6",
+"value": -6
+}
+},
+{
+"board": "-XXXXXX---XXOOO---OXXOOO--OOOXO---OOXOO----XXXOX--X------------- X",
+"empties": 31,
+"best_value": 14,
+"move_values": {
+"b3": 14,
+"b2": 14
+},
+"ggs": [
+{
+"move": "b2",
+"value": 14,
+"prob": "88",
+"time_ms": 764,
+"log": "bin/ggs/log/2026-08-01-00=05=06_ggs.log",
+"game": ".28.0",
+"exact_move_value": 14,
+"loss": 0
+}
+],
+"ggs_mistake": false,
+"flagged": true,
+"screen": {
+"move": "b3",
+"value": 14
+}
+}
+]
