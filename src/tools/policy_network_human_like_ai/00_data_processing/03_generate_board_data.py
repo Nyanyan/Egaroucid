@@ -4,6 +4,7 @@
 import argparse
 from itertools import islice
 import json
+import time
 
 from board_replay import replay_games
 from pipeline_common import (BoardWriter, SPLIT_NAMES, add_dataset_arguments,
@@ -15,6 +16,8 @@ def make_argparser():
     add_dataset_arguments(parser)
     parser.add_argument("--games-per-batch", type=int, default=4096)
     parser.add_argument("--positions-per-file", type=int, default=1000000)
+    parser.add_argument("--allow-unfinished", action="store_true",
+                        help="Keep legal unfinished games with unknown score -128 (Quest policy data).")
     return parser
 
 
@@ -31,6 +34,8 @@ def run(args):
                 writer = BoardWriter(output / name, args.positions_per_file)
                 games = iter_transcripts(source / name)
                 processed = rejected_count = 0
+                unfinished_games = unfinished_positions = 0
+                started = time.monotonic()
                 try:
                     while True:
                         batch = list(islice(games, args.games_per_batch))
@@ -40,13 +45,21 @@ def run(args):
                             if game_id in seen:
                                 raise ValueError(f"repeated game ID across transcript splits: {game_id}")
                             seen.add(game_id)
-                        boards, ids, rejected = replay_games([(g[0], g[1]) for g in batch])
+                        boards, ids, rejected = replay_games([(g[0], g[1]) for g in batch],
+                                                             allow_unfinished=args.allow_unfinished)
+                        unfinished = boards["score"] == -128
+                        unfinished_games += len(set(ids[unfinished].tolist()))
+                        unfinished_positions += int(unfinished.sum())
                         for entry in rejected:
                             rejected_file.write(json.dumps({"split": name, **entry}) + "\n")
                         writer.write(boards, ids)
                         processed += len(batch)
                         rejected_count += len(rejected)
-                        print(f"{name}: {processed:,} games, {writer.positions:,} positions, {rejected_count:,} rejected", flush=True)
+                        elapsed = time.monotonic() - started
+                        total = original["splits"][name]["games"]
+                        eta = elapsed * (total - processed) / processed
+                        print(f"{name}: {processed:,}/{total:,} games, {writer.positions:,} positions, "
+                              f"{rejected_count:,} rejected; elapsed {elapsed:.1f}s, ETA {eta:.1f}s", flush=True)
                 finally:
                     writer.close()
                 if processed != original["splits"][name]["games"]:
@@ -55,11 +68,17 @@ def run(args):
                     raise ValueError(f"no valid games in {name}")
                 counts[name] = {"input_games": processed, "games": processed - rejected_count,
                                 "rejected_games": rejected_count, "positions": writer.positions}
+                if args.allow_unfinished:
+                    counts[name].update(unfinished_games=unfinished_games,
+                                        unfinished_positions=unfinished_positions)
         result = write_manifest(output, "board_split", args.dataset, source=source_info(source),
             seed=original["seed"], ratios=original["ratios"], split_unit=original["split_unit"],
             record_format="<QQbbb: player, opponent, color, policy, score", record_bytes=19,
             game_ids_format="uint64 little-endian; original game ID per position",
-            score_convention="terminal disc difference with empties awarded to winner", splits=counts)
+            score_convention="terminal disc difference with empties awarded to winner" +
+                             ("; -128 if unfinished" if args.allow_unfinished else ""),
+            allow_unfinished=args.allow_unfinished, unknown_score=-128 if args.allow_unfinished else None,
+            splits=counts)
     return result
 
 

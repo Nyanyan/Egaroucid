@@ -24,12 +24,13 @@ def bit_counts(values):
     return BYTE_COUNTS[values.view(np.uint8).reshape(-1, 8)].sum(axis=1)
 
 
-def replay_games(games):
+def replay_games(games, *, allow_unfinished=False):
     """Return board records, original game IDs, and per-game rejection reasons.
 
     `games` contains (game_id, normalized_transcript) pairs. Partial and illegal
-    games contribute no records. Scores award remaining empties to the winner,
-    matching Egaroucid's terminal score convention.
+    games contribute no records by default. With allow_unfinished=True, legal
+    unfinished games are retained with score -128 (unknown). Scores for complete
+    games award remaining empties to the winner, matching Egaroucid's convention.
     """
     n = len(games)
     if not n:
@@ -78,13 +79,16 @@ def replay_games(games):
         opponent = np.where(active, next_opponent, opponent)
         colors ^= active.astype(np.int8)
     incomplete = valid & ((calc_legal_batch(player, opponent) != 0) | (calc_legal_batch(opponent, player) != 0))
-    for i in np.flatnonzero(incomplete):
-        errors[int(i)] = "transcript ended before the game was over"
-    valid &= ~incomplete
+    if not allow_unfinished:
+        for i in np.flatnonzero(incomplete):
+            errors[int(i)] = "transcript ended before the game was over"
+        valid &= ~incomplete
     player_count, opponent_count = bit_counts(player), bit_counts(opponent)
     score = player_count - opponent_count
     score += np.sign(score) * (64 - player_count - opponent_count)
     records["score"] = np.where(records["color"] == colors[:, None], score[:, None], -score[:, None])
+    if allow_unfinished:
+        records["score"][incomplete] = -128
     keep = valid[:, None] & (np.arange(60)[None, :] < lengths[:, None])
     ids = np.array([game[0] for game in games], dtype="<u8")
     rejected = [{"game_id": int(games[i][0]), "reason": error, "transcript": games[i][1]}

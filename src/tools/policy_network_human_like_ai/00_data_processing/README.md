@@ -69,6 +69,8 @@ python "$scripts\03_generate_board_data.py" --dataset "$dataset"
 パスは合法手がない場合だけ認めます。不正着手や終局前に終わった棋譜は、棋譜全体を除外し、
 棋譜ID・理由・棋譜を `rejected_games.jsonl` に記録します。元の棋譜テキストは残ります。
 
+Questのように未終局までの着手も使う場合は、`--allow-unfinished` を付けます。合法な未終局棋譜を保持し、終局得点は不明を表す `-128` にします。不正着手を含む棋譜は、この指定でも局全体を除外します。
+
 ボードデータはヘッダーなしの19バイト形式です。
 手番側の石、相手側の石、手番の色、着手、最終得点を `<QQbbb` の順で保存します。
 石配置はa1が最上位ビット、h8が最下位ビットです。最終得点は手番側から見た石差とし、終局時の空きマスを勝者へ加算します。
@@ -202,6 +204,88 @@ python src\tools\policy_network_human_like_ai\10_train_policy_network\train_poli
 学習側は保存済みのtrain・val・testをそのまま読み込み、棋譜IDの重複が組をまたがないことも確認します。
 この指定では、旧形式用の `--wthor`、`--data-root`、`--split-manifest`、件数上限、`--split-mode sampled` を併用しません。
 使用したデータの情報は学習出力の `prepared_dataset.json` に保存します。
+
+## オセロクエストを手番側の棋力帯で分ける
+
+`prepare_othello_quest_data.py` は、オセロクエストの対局を学習・検証・テストへ分割したあと、各着手を手番側のレートに応じたフォルダへ保存します。既存の01〜03を個別に実行する代わりに、このスクリプトを1回実行してください。
+
+以下は、このREADMEがある `00_data_processing` ディレクトリで実行するPowerShellの例です。
+
+```powershell
+python .\prepare_othello_quest_data.py `
+  --data-root 'E:\egaroucid_data\20261002_policy_network_human_like_data'
+```
+
+入力は `raw_data` 以下の全 `.oth` ファイルです。たとえば `2026-10-04T08_20_22.540Z(対局ID)black(950)-white(1234).oth` なら、黒番の着手は `800-1000`、白番の着手は `1200-1400` に保存します。元のフォルダ名に書かれた棋力帯は分類に使いません。
+
+棋譜本文は `F5D6C3...` の座標列と、古い `;F5;D6;C3;...` の形式に対応します。古い形式の `-` はパス記号として取り除き、実際のパスは盤面から再判定します。
+
+棋力帯は800未満を `under_800` にまとめ、800以上を200刻みにします。各範囲は下端を含み、上端を含みません。たとえばレート999は `800-1000`、1000は `1000-1200` です。上限は設けず、実際に着手が存在する帯を作成します。手番は盤面を再生して判定するため、パスのあとに同じ色が続けて打つ場合も、そのプレイヤーの帯へ保存します。
+
+同じ対局IDのファイルが複数の元フォルダに存在する場合は、対局を1局にまとめます。その際、対局日時・プレイヤー名・両者のレート・棋譜が一致することを確認し、食い違いがあれば停止します。異なる対局IDで同一棋譜が現れた場合は、別の対局として残します。
+
+分割は全棋力帯で共通に行います。WTHORと同様に同一内容の棋譜をグループにまとめ、seed 613でtrain 90%・val 5%・test 5%に割り当てます。黒番・白番の保存先の棋力帯が異なっても、その対局の分割先と棋譜IDは同じです。そのため、複数の棋力帯を使っても、同一対局や同一棋譜が学習とテストにまたがりません。比率は全体の棋譜グループ数に適用し、val・testの端数を切り捨てます。各棋力帯の棋譜数・局面数では、比率が多少ずれます。
+
+出力先は `<data-root>/othello_quest_split` です。
+
+```text
+othello_quest_split/
+  inputs.jsonl                 元ファイル一覧とSHA-256
+  rejected_games.jsonl         不正着手などで除外した棋譜
+  manifest.json                設定・件数・各帯の集計
+  transcript_split/all/
+    games.jsonl               棋譜ID・黒白のレート・元ファイル・分割先
+    manifest.json
+    train/                    全対局を分割した棋譜と.game_ids
+    val/
+    test/
+  board_split/
+    under_800/                800未満
+    800-1000/                 800以上1000未満
+    1000-1200/
+    ...
+```
+
+各棋力帯の直下に `manifest.json` と `train`・`val`・`test` を作成し、各組へ既存の19バイト形式の `.dat` と `.game_ids` を保存します。学習側の `--board-split-dir` には、たとえば `.../othello_quest_split/board_split/1000-1200` を指定できます。データが少なく、いずれかの組が空になる帯は、変換終了時に表示します。その帯は既存の学習処理へそのまま渡せません。
+
+合法な未完了棋譜は、従来のクエスト用変換と同じく保持します。終局得点は不明を表す `-128` とし、着手学習・着手一致率の評価に使えます。得点を教師にする用途には使わないでください。WTHORと同じく未完了棋譜を除外する場合は `--complete-games-only` を付けます。不正着手がある対局は、途中までの局面も含めて除外します。ファイル名や棋譜文字列の形式を読み取れない場合は、そのファイルを示して停止します。
+
+`--seed`、`--train-ratio`、`--val-ratio`、`--test-ratio` で分割条件を変更できます。入力や出力を個別に指定する場合は `--input-dir` と `--output-dir` を使います。元データは変更しません。再実行で出力を作り直す場合は `--replace` を付けると、新しい変換が完了してから、以前の出力フォルダ全体を日時付きのバックアップへ退避します。
+
+回転・鏡映で8倍化する場合は、生成後に既存の04を実行します。
+
+```powershell
+$questRoot = 'E:\egaroucid_data\20261002_policy_network_human_like_data\othello_quest_split'
+Get-ChildItem "$questRoot\board_split" -Directory | ForEach-Object {
+    python .\04_augment_board_data.py --data-root $questRoot --dataset $_.Name
+    if ($LASTEXITCODE -ne 0) { throw "Augmentation failed: $($_.Name)" }
+}
+```
+
+### 同じレート帯同士の対局を抽出する
+
+両者の対局時レートが同じ帯に入る棋譜を抽出する場合は、既存のQuest変換結果を `--same-range-source` に渡します。この指定では、元の対局IDとtrain・val・testの所属を引き継いで、棋譜を保存します。
+
+```powershell
+$dataRoot = Join-Path $env:EGAROUCID_DATA '20261002_policy_network_human_like_data'
+$source = Join-Path $dataRoot 'othello_quest_split\transcript_split\all'
+python .\prepare_othello_quest_data.py --data-root $dataRoot --same-range-source $source
+if ($LASTEXITCODE -ne 0) { throw 'Same-range transcript extraction failed' }
+
+$bands = @('under_800', '800-1000', '1000-1200', '1200-1400', '1400-1600',
+           '1600-1800', '1800-2000', '2000-2200', '2200_plus')
+foreach ($band in $bands) {
+    python .\03_generate_board_data.py --data-root $dataRoot `
+        --dataset "OQ_samerange_$band" --allow-unfinished
+    if ($LASTEXITCODE -ne 0) { throw "Board conversion failed: $band" }
+}
+```
+
+各帯は下端以上・上端未満です。800未満は `under_800`、2200以上は上限を設けず `2200_plus` とします。たとえば黒2200・白2500の対局は `OQ_samerange_2200_plus` に含まれ、黒999・白1000の対局は対象から外れます。同じ対局IDは1局として扱い、異なるIDの同一棋譜は元の分割にまとめたまま保持します。
+
+出力は、`<data-root>/transcript/OQ_samerange_<帯>` の棋譜・対局情報、`transcript_split/OQ_samerange_<帯>` の分割済み棋譜、`board_split/OQ_samerange_<帯>` の盤面・着手ペアです。各フォルダの `manifest.json` に抽出元や件数、SHA-256を保存します。盤面は通常の03と同じ19バイト形式で、対応する `.game_ids` に元のQuest共通IDを保存します。
+
+この手順では、既存の分割を使うため、抽出後の棋譜に02を実行する必要はありません。また、盤面変換までで完了し、回転・鏡映による水増しは別途04で行います。
 
 ## 新しい入力形式を追加する場合
 
