@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render rating/agreement figures from saved report_data.json, without inference."""
+"""Render rating/agreement figures and joint bootstrap tubes from saved results."""
 from __future__ import annotations
 
 import argparse
@@ -22,16 +22,22 @@ from label_editor import (
     LABEL_PREFIX, LabelEditor, annotation_position, apply_label_positions,
     apply_text_overrides, load_label_positions, load_text_overrides, update_leader_line,
 )
+from simultaneous_bands import DEFAULT_SEED, build_simultaneous_bands, draw_tube
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_INPUT = SCRIPT_DIR.parents[4] / "experiment_bat/20261007_2/report_data.json"
-DEFAULT_CI_ALPHA = 0.10
+DEFAULT_INPUT = SCRIPT_DIR.parents[4] / "experiment_bat/20261008/report_data.json"
+DEFAULT_CI_ALPHA = 0.15
+PROPOSED_COLOR = "#D62728"
+ALPHA_OFFSETS = {"normal": 0, "squared_blend": 1, "loss_a_normal": 1, "loss_b_loss_a": 2}
+STANDALONE_MODELS = {0: "Egaroucid L21", 1: "通常モデル", 2: "石損モデルA", 3: "石損モデルB"}
 STYLES = {
     "Egaroucid": {"label": "Egaroucid", "color": "#249972", "marker": "o"},
     "Edax": {"label": "Edax", "color": "#2468B4", "marker": "s"},
-    "normal": {"label": "通常NN＋Egaroucid L21", "color": "#D62728", "marker": "^"},
-    "squared_blend": {"label": "通常NN＋石損NN", "color": "#D55E00", "marker": "D"},
+    "normal": {"label": "提案手法（0 ≤ α ≤ 1）", "color": PROPOSED_COLOR, "marker": "^"},
+    "squared_blend": {"label": "提案手法（1 ≤ α ≤ 2）", "color": PROPOSED_COLOR, "marker": "D"},
+    "loss_a_normal": {"label": "提案手法（1 ≤ α ≤ 2）", "color": PROPOSED_COLOR, "marker": "D"},
+    "loss_b_loss_a": {"label": "提案手法（2 ≤ α ≤ 3）", "color": PROPOSED_COLOR, "marker": "v"},
     "random": {"label": "ランダム（参考）", "color": "#747C85", "marker": "X"},
 }
 FIGURES = (
@@ -41,11 +47,28 @@ FIGURES = (
 EDITABLE_FIGURES = ("elo_vs_agreement", "mistake_elo_vs_agreement", "model_overview",
                     "mistake_model_comparison", "threshold_trends", "agreement_heatmap")
 LINE_STYLES = ("-", "--", "-.", ":", (0, (5, 1, 1, 1)), (0, (3, 1, 1, 1, 1, 1)))
+GROUP_ALIASES = {"E": "Egaroucid", "D": "Edax", "N": "normal",
+                 "A": "loss_a_normal", "B": "loss_b_loss_a", "R": "random"}
 
 
 def validate_report(document):
     """Join measurements by dataset ID, so input row order cannot mix cohorts."""
     data = deepcopy(document)
+    # The 30-model report uses short family IDs and datasets/series keys.
+    # Normalize at the boundary so older reports and label editing still work.
+    if "dataset_counts" not in data:
+        data["dataset_counts"] = data["datasets"]
+    if "series_paths" not in data:
+        data["series_paths"] = data["series"]
+    normalized_paths = {}
+    for family, ids in data["series_paths"].items():
+        canonical = GROUP_ALIASES.get(family, family)
+        if canonical in normalized_paths:
+            raise ValueError(f"Duplicate series alias: {family}")
+        normalized_paths[canonical] = ids
+    data["series_paths"] = normalized_paths
+    for model in data["models"]:
+        model["group"] = GROUP_ALIASES.get(model["group"], model["group"])
     models = data["models"]
     datasets = data["dataset_counts"]
     if not models or not datasets:
@@ -130,7 +153,7 @@ def draw_ci_line(axis, x, y, low, high, *, color, ci_alpha=DEFAULT_CI_ALPHA, **k
 
 
 class ReportPlots:
-    def __init__(self, data, ci_alpha=DEFAULT_CI_ALPHA):
+    def __init__(self, data, ci_alpha=DEFAULT_CI_ALPHA, simultaneous_bands=None):
         if not 0 <= ci_alpha <= 1:
             raise ValueError("CI alpha must be between 0 and 1")
         self.data = validate_report(data)
@@ -139,12 +162,57 @@ class ReportPlots:
         self.datasets = self.data["dataset_counts"]
         self.paths = self.data["series_paths"]
         self.ci_alpha = ci_alpha
+        self.simultaneous_bands = simultaneous_bands
+        self.gpw30_families = "loss_a_normal" in self.paths or "loss_b_loss_a" in self.paths
+        # Only display values change; keep source coefficients, IDs and measurements intact.
+        self.display_alphas = {}
+        for model in self.models:
+            if model["group"] in ALPHA_OFFSETS:
+                local_alpha = model.get("alpha")
+                if local_alpha is None:
+                    local_alpha = model["model_id"].rsplit("alpha_", 1)[-1]
+                try:
+                    self.display_alphas[model["model_id"]] = round(
+                        ALPHA_OFFSETS[model["group"]] + float(local_alpha), 10)
+                except (TypeError, ValueError):
+                    pass  # Custom reports without a coefficient retain their supplied labels.
+        for model_id in self.paths.get("normal", []):
+            if self.index[model_id]["group"] == "Egaroucid":
+                self.display_alphas[model_id] = 0.0
+        for model_id in self.display_alphas:
+            self.index[model_id]["color"] = PROPOSED_COLOR
+        self.alpha_note = (
+            "α=0：Egaroucid L21、α=1：通常モデル、α=2：石損モデルA、α=3：石損モデルB。整数間は隣接モデルを融合。"
+            if self.gpw30_families else
+            "α=0：Egaroucid L21、α=1：通常モデル、α=2：石損モデルA。整数間は隣接モデルを融合。")
+        method = self.data.get("method", {}).get("elo", {}).get("method")
+        self.elo_ci_note = ("Elo：対戦組ごとに先後2局のセットを独立再抽出するpercentileブートストラップ。"
+                            if method == "pair_stratified_percentile_bootstrap" else
+                            "Elo：入力データのXOT局面単位のブートストラップ区間。")
         self.ci_note = (f"帯：一致率の95% Wilson区間（不透明度{ci_alpha:.0%}）。"
-                        "横線：Eloの95%区間。帯は各点の区間を接続したものです。")
+                        "帯は各点の区間を接続。点は推定値を表します。")
+        self.coverage_note = "各区間は点ごとの区間で、同時信頼帯やモデル間の差の検定ではありません。"
+        if simultaneous_bands is not None:
+            self.ci_note = (f"帯：Elo・一致率の95%同時信頼帯（ブートストラップ、不透明度{ci_alpha:.0%}）。"
+                            "点は推定値を表します。")
+            self.coverage_note = "条件・系列ごとに折れ線全体を対象とする近似区間。提案手法はα全体で1系列。一致率は局面単位で再抽出。"
 
     def legend(self):
         return [Line2D([], [], color=STYLES[key]["color"], marker=STYLES[key]["marker"],
                        label=STYLES[key]["label"], lw=1.5, ms=6) for key in self.paths]
+
+    def model_label(self, model, short=False):
+        alpha = self.display_alphas.get(model["model_id"])
+        if alpha is None:
+            return model["short" if short else "model"]
+        label = f"α={alpha:.1f}"
+        if alpha in STANDALONE_MODELS:
+            label += f"（{STANDALONE_MODELS[alpha]}）"
+        return label
+
+    @staticmethod
+    def model_style(model):
+        return dict(STYLES[model["group"]], color=model["color"])
 
     @staticmethod
     def grid(axis):
@@ -153,7 +221,7 @@ class ReportPlots:
 
     def row_labels(self, axis):
         axis.set_yticks(range(len(self.models)))
-        axis.set_yticklabels([model["model"] for model in self.models])
+        axis.set_yticklabels([self.model_label(model) for model in self.models])
         axis.set_ylim(len(self.models) - .4, -.7)
         for tick, model in zip(axis.get_yticklabels(), self.models):
             tick.set_color(model["color"])
@@ -162,17 +230,27 @@ class ReportPlots:
         for i, model in enumerate(self.models):
             if i and model["group"] != self.models[i - 1]["group"]:
                 axis.axhline(i - .5, color="white" if heatmap else "#DCE2EA", lw=2 if heatmap else .7)
-            if model["group"] == "squared_blend" and not heatmap:
-                axis.axhspan(i - .5, i + .5, color="#FFF3E7", zorder=-2)
+            if model["model_id"] in self.display_alphas and not heatmap:
+                axis.axhspan(i - .5, i + .5, color=PROPOSED_COLOR, alpha=.04, zorder=-2)
 
     def elo_limits(self):
         low = min(model["elo_low"] for model in self.models)
         high = max(model["elo_high"] for model in self.models)
+        if self.simultaneous_bands is not None:
+            for curves in self.simultaneous_bands["datasets"].values():
+                for bounds in curves.values():
+                    low = min(low, min(row[0] for row in bounds["lower"]))
+                    high = max(high, max(row[0] for row in bounds["upper"]))
         return min(0, math.floor((low - 60) / 100) * 100), math.ceil((high + 180) / 100) * 100
 
     def agreement_limit(self, indices, padding=3):
+        indices = list(indices)
         high = max(model["results"][k]["top1_ci95_upper"] * 100
                    for model in self.models for k in indices)
+        if self.simultaneous_bands is not None:
+            for k in indices:
+                for bounds in self.simultaneous_bands["datasets"][self.datasets[k]["dataset"]].values():
+                    high = max(high, max(row[1] * 100 for row in bounds["upper"]))
         return min(100, math.ceil(high + padding))
 
     def interval_point(self, axis, x, y, low, high, style, yerr=None, size=5.5):
@@ -188,7 +266,7 @@ class ReportPlots:
             values = [(model["elo"], model["elo_low"], model["elo_high"]),
                       tuple(result[key] * 100 for key in ("top1_accuracy", "top1_ci95_lower", "top1_ci95_upper"))]
             for j, (point, low, high) in enumerate(values):
-                self.interval_point(axes[j], point, i, low, high, STYLES[model["group"]])
+                self.interval_point(axes[j], point, i, low, high, self.model_style(model))
                 axes[j].text(high + (30 if j == 0 else .7), i,
                              f"{point:.1f}" if j == 0 else f"{point:.3f}%",
                              va="center", color=model["color"])
@@ -203,7 +281,7 @@ class ReportPlots:
         figure.suptitle("対戦の強さと、人間の着手の再現", fontsize=18, y=.99)
         figure.legend(handles=self.legend(), loc="upper center", bbox_to_anchor=(.59, .955), ncol=3, frameon=False)
         figure.subplots_adjust(left=.235, right=.985, top=.86, bottom=.09, wspace=.15)
-        figure.text(.235, .025, "横線：入力データに保存された95%信頼区間。EloはXOT局面単位のブートストラップ、\n"
+        figure.text(.235, .025, "横線：入力データに保存された95%信頼区間。\n" + self.elo_ci_note + "\n"
                     "一致率はWilson区間（棋譜内相関の補正なし）。", fontsize=9, color="#596575")
         return figure
 
@@ -214,7 +292,7 @@ class ReportPlots:
             for i, model in enumerate(self.models):
                 row = model["results"][k]
                 point, low, high = (row[key] * 100 for key in ("top1_accuracy", "top1_ci95_lower", "top1_ci95_upper"))
-                self.interval_point(axis, point, i, low, high, STYLES[model["group"]])
+                self.interval_point(axis, point, i, low, high, self.model_style(model))
                 axis.text(high + .7, i, f"{point:.2f}", va="center", fontsize=9, color=model["color"])
             axis.set(xlim=(0, self.agreement_limit(range(1, len(self.datasets)), 6)), xlabel="着手一致率（%）")
             axis.set_title(self.dataset_title(k), fontsize=12)
@@ -256,7 +334,7 @@ class ReportPlots:
             for i, model_id in enumerate(ids):
                 model = self.index[model_id]
                 rows = model["results"][1:]
-                label = "B0.0" if family == "squared_blend" and model_id == "alpha_1.0" else model["short"]
+                label = self.model_label(model, short=True) if family in ALPHA_OFFSETS else model["short"]
                 draw_ci_line(axis, x, [row["top1_accuracy"] * 100 for row in rows],
                              [row["top1_ci95_lower"] * 100 for row in rows],
                              [row["top1_ci95_upper"] * 100 for row in rows], color=style["color"],
@@ -267,12 +345,12 @@ class ReportPlots:
             axis.set_xticklabels([dataset["label"] for dataset in self.datasets[1:]])
             axis.set_ylim(0, self.agreement_limit(range(1, len(self.datasets))))
             self.grid(axis)
-            axis.legend(loc="upper right", ncol=3, fontsize=9)
+            axis.legend(loc="upper right", ncol=2 if family in ALPHA_OFFSETS else 3, fontsize=9)
         for axis in axes[::2]:
             axis.set_ylabel("着手一致率（%）")
         figure.suptitle("石損の閾値による一致率の変化", fontsize=18, y=.992)
         figure.subplots_adjust(left=.065, right=.99, top=.92, bottom=.11, hspace=.28, wspace=.14)
-        figure.text(.065, .022, "Nは通常NN＋L21の通常NN側のα、Bは石損NN側のα（B0.0は通常NN、B1.0は石損NN単体）。\n"
+        figure.text(.065, .022, self.alpha_note + "\n"
                     f"横軸は累積条件を等間隔で表示。帯は95% Wilson区間（不透明度{self.ci_alpha:.0%}、同時信頼帯ではありません）。",
                     fontsize=9, color="#596575")
         return figure
@@ -302,23 +380,36 @@ class ReportPlots:
 
     def scatter_panel(self, axis, k):
         axis.set_gid(f"dataset:{self.datasets[k]['dataset']}")
+        if self.simultaneous_bands is not None:
+            for family, bounds in self.simultaneous_bands["datasets"][self.datasets[k]["dataset"]].items():
+                color = PROPOSED_COLOR if family == "proposed" else STYLES[family]["color"]
+                draw_tube(axis, bounds, color=color, alpha=self.ci_alpha, gid=f"simultaneous-band:{family}")
         for family, ids in self.paths.items():
             if len(ids) < 2:
                 continue
             models = [self.index[key] for key in ids]
-            draw_ci_line(axis, [model["elo"] for model in models],
-                         [model["results"][k]["top1_accuracy"] * 100 for model in models],
-                         [model["results"][k]["top1_ci95_lower"] * 100 for model in models],
-                         [model["results"][k]["top1_ci95_upper"] * 100 for model in models],
-                         color=STYLES[family]["color"], ci_alpha=self.ci_alpha, lw=1.4)
+            x = [model["elo"] for model in models]
+            y = [model["results"][k]["top1_accuracy"] * 100 for model in models]
+            if self.simultaneous_bands is not None:
+                axis.plot(x, y, color=STYLES[family]["color"], lw=1.4, zorder=3)
+            else:
+                draw_ci_line(axis, x, y,
+                             [model["results"][k]["top1_ci95_lower"] * 100 for model in models],
+                             [model["results"][k]["top1_ci95_upper"] * 100 for model in models],
+                             color=STYLES[family]["color"], ci_alpha=self.ci_alpha, lw=1.4)
         for model in self.models:
             row = model["results"][k]
             y = row["top1_accuracy"] * 100
-            self.interval_point(axis, model["elo"], y, model["elo_low"], model["elo_high"], STYLES[model["group"]],
-                                yerr=[[y - row["top1_ci95_lower"] * 100], [row["top1_ci95_upper"] * 100 - y]])
-        blend_ids = [key for key in self.paths.get("squared_blend", []) if key != "alpha_1.0"]
+            style = self.model_style(model)
+            axis.plot(model["elo"], y, marker=style["marker"], color=style["color"],
+                      linestyle="none", ms=5.5, alpha=1.0, zorder=4,
+                      gid=f"model-point:{model['model_id']}")
         for model in self.models:
             model_id = model["model_id"]
+            family = model["group"]
+            blend_ids = [key for key in self.paths.get(family, [])
+                         if self.index[key]["group"] == family] if family in (
+                             "squared_blend", "loss_a_normal", "loss_b_loss_a") else []
             offset = (6, 9)
             if model_id in blend_ids[:-1]:
                 i = blend_ids.index(model_id)
@@ -326,14 +417,14 @@ class ReportPlots:
                            [(10, -2), (10, 6), (-12, 10), (-22, 10)] if k == 1 else
                            [(10, -2), (10, 2), (-15, -16), (-15, -16)])
                 offset = choices[i % len(choices)]
-            elif model_id == "alpha_1.0" and k:
+            elif model_id in ("alpha_1.0", "normal_egaroucid_alpha_1.0") and k:
                 offset = (10, -16)
-            elif model_id == "alpha_0.0":
+            elif model_id in ("alpha_0.0", "egaroucid_l21"):
                 offset = (-24, -16) if k < 3 else (8, 8)
             elif model_id == "edax_l21":
                 offset = (-18, 9) if k < 3 else (-24, 22)
             annotation = axis.annotate(
-                model["short"], (model["elo"], model["results"][k]["top1_accuracy"] * 100),
+                self.model_label(model, short=True), (model["elo"], model["results"][k]["top1_accuracy"] * 100),
                 xytext=offset, textcoords="offset points", fontsize=10, color=model["color"], weight="bold",
                 arrowprops={"arrowstyle": "-", "color": model["color"], "lw": .8, "shrinkA": 3, "shrinkB": 5},
                 zorder=5)
@@ -359,9 +450,9 @@ class ReportPlots:
         figure.suptitle("対戦レートと人間の着手一致率", fontsize=18, y=.99)
         figure.legend(handles=self.legend(), loc="upper center", bbox_to_anchor=(.52, .945), ncol=3, frameon=False)
         figure.subplots_adjust(left=.065, right=.985, top=.79, bottom=.17, wspace=.19)
-        figure.text(.065, .025, "Bは石損NN側のα（B1.0は石損NN単体）、N1.0は通常NN単体、E21はEgaroucid L21、D21はEdax L21、Rはランダム。\n"
-                    + self.ci_note + "\n各区間は点ごとの区間で、同時信頼帯やモデル間の差の検定ではありません。左右は縦軸の範囲が異なります。",
-                    fontsize=9, color="#596575")
+        figure.text(.065, .025, self.alpha_note + "\n"
+                    + self.ci_note + "\n" + self.coverage_note,
+                    fontsize=9, color="#596575", gid="joint-ci-note-v2" if self.simultaneous_bands is not None else None)
         return figure
 
     def mistake_elo_vs_agreement(self):
@@ -372,9 +463,9 @@ class ReportPlots:
         figure.suptitle("対戦レートと、石損した着手との一致率", fontsize=18, y=.992)
         figure.legend(handles=self.legend(), loc="upper center", bbox_to_anchor=(.53, .969), ncol=3, frameon=False)
         figure.subplots_adjust(left=.07, right=.985, top=.90, bottom=.08, hspace=.35, wspace=.20)
-        figure.text(.07, .015, self.ci_note + "\n線はレベル・αの順に接続。区間は点ごとの95%区間で、同時信頼帯ではありません。\n"
+        figure.text(.07, .015, self.ci_note + "\n" + self.coverage_note + "\n"
                     "石損条件は累積しており、同じ局面が複数条件に含まれます。一致率の区間は棋譜内相関の補正なし。",
-                    fontsize=9, color="#596575")
+                    fontsize=9, color="#596575", gid="joint-ci-note-v2" if self.simultaneous_bands is not None else None)
         return figure
 
 
@@ -407,17 +498,24 @@ def enable_interactive_backend():
 
 def render_report(input_path, output_dir, figures=FIGURES, formats=("png", "svg"),
                   ci_alpha=DEFAULT_CI_ALPHA, dpi=200, label_positions_path=None,
-                  adjust_labels=False, reset_labels=False):
+                  adjust_labels=False, reset_labels=False, ci_mode="simultaneous", band_seed=DEFAULT_SEED):
     input_path, output_dir = Path(input_path).resolve(), Path(output_dir).resolve()
     positions_path = Path(label_positions_path or output_dir / "label_positions.json").resolve()
     if any(name not in FIGURES for name in figures):
         raise ValueError("Unknown figure name")
+    if ci_mode not in ("simultaneous", "pointwise"):
+        raise ValueError("CI mode must be simultaneous or pointwise")
     if adjust_labels:
         # Batch rendering uses Agg; only the editor needs a desktop window.
         enable_interactive_backend()
     # Hash and parse the same bytes, even if an aggregator replaces the input.
     source = input_path.read_bytes()
-    plots = ReportPlots(json.loads(source.decode("utf-8-sig")), ci_alpha)
+    data = validate_report(json.loads(source.decode("utf-8-sig")))
+    bands = None
+    band_path = output_dir / "simultaneous_band_data.json"
+    if ci_mode == "simultaneous" and any(name in ("elo_vs_agreement", "mistake_elo_vs_agreement") for name in figures):
+        bands = build_simultaneous_bands(data, input_path, band_path, band_seed)
+    plots = ReportPlots(data, ci_alpha, bands)
     saved_positions = {} if reset_labels else load_label_positions(positions_path)
     saved_texts = {} if reset_labels else load_text_overrides(positions_path)
     configure_plotting()
@@ -429,9 +527,22 @@ def render_report(input_path, output_dir, figures=FIGURES, formats=("png", "svg"
         "input": str(input_path), "input_sha256": hashlib.sha256(source).hexdigest(),
         "models": len(plots.models), "datasets": plots.datasets, "series_paths": plots.paths,
         "styles": plots.data["groups"], "ci_transparency": 1 - ci_alpha, "ci_alpha": ci_alpha,
+        "display_alphas": plots.display_alphas,
+        "model_labels": {model["model_id"]: plots.model_label(model) for model in plots.models},
         "ci_errorbar_alpha": 1.0,
-        "confidence_intervals": "Saved pointwise 95% intervals; y = Wilson, x = XOT-cluster bootstrap. "
-                                "Connecting y bounds is visual interpolation, not a simultaneous confidence band.",
+        "scatter_errorbars": False,
+        "ci_mode": ci_mode,
+        "simultaneous_bands": None if bands is None else {
+            "data_file": str(band_path), "sha256": hashlib.sha256(band_path.read_bytes()).hexdigest(),
+            "replicates": bands["replicates"], "signature": bands["signature"],
+            "coverage_scope": bands["coverage_scope"], "assumptions": bands["assumptions"],
+        },
+        "confidence_intervals": "Saved pointwise 95% intervals; y = Wilson. " + plots.elo_ci_note + " "
+                                + ("Scatter shading: joint XY max-standardized bootstrap 95% simultaneous tube. "
+                                   "Threshold-trend shading: pointwise Wilson intervals."
+                                   if bands is not None else
+                                   "Connecting y bounds is visual interpolation, not a simultaneous confidence band."),
+        "elo_method": plots.data.get("method", {}).get("elo", {}),
         "label_positions_path": str(positions_path), "label_positions": labels_used,
         "text_overrides": texts_used, "outputs": generated,
     }
@@ -474,16 +585,19 @@ def render_report(input_path, output_dir, figures=FIGURES, formats=("png", "svg"
 
 def make_argparser():
     parser = argparse.ArgumentParser(description="保存済みreport_data.jsonからレートと着手一致率の図を描画します。")
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="集計JSON（既定：experiment_bat/20261007_2/report_data.json）")
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="集計JSON（既定：experiment_bat/20261008/report_data.json）")
     parser.add_argument("--output-dir", type=Path, help="出力先（既定：このフォルダ/output/入力JSONの親フォルダ名）")
     parser.add_argument("--figures", nargs="+", choices=FIGURES,
                         help="描画・編集する図（既定：全6種類）")
     parser.add_argument("--formats", nargs="+", choices=("png", "svg"), default=["png", "svg"])
+    parser.add_argument("--ci-mode", choices=("simultaneous", "pointwise"), default="simultaneous",
+                        help="レート対一致率の帯：両軸の95%%同時信頼帯（既定）／従来の一致率の点ごとの区間")
+    parser.add_argument("--band-seed", type=int, default=DEFAULT_SEED, help="一致率ブートストラップの乱数seed（既定614）")
     ci_options = parser.add_mutually_exclusive_group()
     ci_options.add_argument("--ci-alpha", type=float, default=DEFAULT_CI_ALPHA,
-                            help="95%%信頼区間の帯の不透明度。0=透明、1=不透明、既定0.10。十字は常に不透明")
+                            help="95%%信頼区間の帯の不透明度。0=透明、1=不透明、既定0.15")
     ci_options.add_argument("--ci-transparency", type=float,
-                            help="従来オプション：帯の透過率（1−alpha）。0.90で--ci-alpha 0.10と同じ")
+                            help="従来オプション：帯の透過率（1−alpha）。0.85で--ci-alpha 0.15と同じ")
     parser.add_argument("--adjust-labels", action="store_true", help="タイトル・軸名・凡例など全文字と点ラベルの位置を編集しSキーで保存")
     parser.add_argument("--label-positions", type=Path, help="位置JSON（既定：出力先/label_positions.json）")
     parser.add_argument("--reset-labels", action="store_true", help="保存済み位置を読み込まず、既定の位置から開始")
@@ -501,7 +615,7 @@ def main(argv=None):
     figures = args.figures or (EDITABLE_FIGURES if args.adjust_labels else FIGURES)
     try:
         generated = render_report(args.input, output, figures, args.formats, ci_alpha, args.dpi,
-                                  args.label_positions, args.adjust_labels, args.reset_labels)
+                                  args.label_positions, args.adjust_labels, args.reset_labels, args.ci_mode, args.band_seed)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     print(f"Saved {len(generated)} figures: {output.resolve()}")

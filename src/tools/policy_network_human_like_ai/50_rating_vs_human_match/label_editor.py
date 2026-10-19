@@ -158,7 +158,7 @@ def figure_text_targets(figure):
             targets[key] = TextTarget(artist, setter)
 
     for i, artist in enumerate(figure.texts):
-        key = "figure/title" if artist is getattr(figure, "_suptitle", None) else f"figure/text/{i}"
+        key = "figure/title" if artist is getattr(figure, "_suptitle", None) else f"figure/text/{artist.get_gid() or i}"
         add(key, artist)
     for i, legend in enumerate(figure.legends):
         add(f"figure/legend/{i}/title", legend.get_title())

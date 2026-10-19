@@ -92,11 +92,11 @@ class LabelEditorTest(unittest.TestCase):
             position = LabelPosition(60, -20, "right", "top")
             save_label_positions(positions_path, "elo_vs_agreement", {key: position})
             original = positions_path.read_bytes()
-            render_report(source, root, figures=["elo_vs_agreement"], dpi=45)
+            render_report(source, root, ci_mode="pointwise", figures=["elo_vs_agreement"], dpi=45)
             manifest = json.loads((root / "plot_manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(60, manifest["label_positions"]["elo_vs_agreement"][key]["dx"])
             self.assertEqual("right", manifest["label_positions"]["elo_vs_agreement"][key]["horizontal_alignment"])
-            render_report(source, root, figures=["elo_vs_agreement"], dpi=45, reset_labels=True)
+            render_report(source, root, ci_mode="pointwise", figures=["elo_vs_agreement"], dpi=45, reset_labels=True)
             manifest = json.loads((root / "plot_manifest.json").read_text(encoding="utf-8"))
             self.assertNotEqual(60, manifest["label_positions"]["elo_vs_agreement"][key]["dx"])
             self.assertEqual(original, positions_path.read_bytes())
@@ -119,9 +119,9 @@ class LabelEditorTest(unittest.TestCase):
             renamed = "通常NN（名前は自由）"
             with patch("label_editor.request_label_text", return_value=renamed) as dialog:
                 figure.canvas.callbacks.process("button_press_event", event)
-            dialog.assert_called_once_with(figure, "N1.0")
+            dialog.assert_called_once_with(figure, "α=1.0（通常モデル）")
             self.assertEqual(renamed, label.get_text())
-            self.assertEqual("N1.0", annotations[other_key].get_text())
+            self.assertEqual("α=1.0（通常モデル）", annotations[other_key].get_text())
             self.assertEqual((original.dx, original.dy), label.xyann)
             editor.on_key_press(SimpleNamespace(key="s"))
             positions = load_label_positions(root / "label_positions.json")
@@ -133,7 +133,7 @@ class LabelEditorTest(unittest.TestCase):
                 editor.on_key_press(SimpleNamespace(key="e"))
             self.assertEqual(renamed, label.get_text())
             editor.on_key_press(SimpleNamespace(key="r"))
-            self.assertEqual("N1.0", label.get_text())
+            self.assertEqual("α=1.0（通常モデル）", label.get_text())
             self.assertIn(renamed, (root / (name + ".svg")).read_text(encoding="utf-8"))
 
     def test_older_positions_without_names_still_load(self):
@@ -145,7 +145,7 @@ class LabelEditorTest(unittest.TestCase):
             figure = ReportPlots(example_report()).elo_vs_agreement()
             annotations = apply_label_positions(figure, load_label_positions(path)["elo_vs_agreement"])
             label = annotations["overall/alpha_1.0"]
-            self.assertEqual("N1.0", label.get_text())
+            self.assertEqual("α=1.0（通常モデル）", label.get_text())
             self.assertEqual((40, 60), label.xyann)
 
     def test_double_click_edits_titles_axes_legends_ticks_and_notes_and_persists_after_redraw(self):
@@ -186,7 +186,7 @@ class LabelEditorTest(unittest.TestCase):
                 self.assertEqual(text, targets[key].artist.get_text())
             source = root / "report_data.json"
             source.write_text(json.dumps(example_report()), encoding="utf-8")
-            render_report(source, root, figures=[name], formats=["svg"], label_positions_path=root / "labels.json")
+            render_report(source, root, ci_mode="pointwise", figures=[name], formats=["svg"], label_positions_path=root / "labels.json")
             saved_svg = (root / (name + ".svg")).read_text(encoding="utf-8")
             for text in edited.values():
                 self.assertIn(text, saved_svg)
@@ -222,14 +222,14 @@ class LabelEditorTest(unittest.TestCase):
             with patch("plot_rating_vs_human_match.enable_interactive_backend"), patch(
                 "plot_rating_vs_human_match.plt.show", side_effect=edit_current_window
             ):
-                generated = render_report(source, root, figures=["elo_vs_agreement"], dpi=45, adjust_labels=True)
+                generated = render_report(source, root, ci_mode="pointwise", figures=["elo_vs_agreement"], dpi=45, adjust_labels=True)
             self.assertEqual(2, len(generated))
             self.assertTrue((root / "label_positions.json").is_file())
             manifest = json.loads((root / "plot_manifest.json").read_text(encoding="utf-8"))
             self.assertGreater(manifest["label_positions"]["elo_vs_agreement"]["overall/alpha_1.0"]["dx"], 6)
             originals = {path.name: path.read_bytes() for path in root.iterdir() if path.is_file()}
             with patch("plot_rating_vs_human_match.enable_interactive_backend"), patch("plot_rating_vs_human_match.plt.show"):
-                generated = render_report(source, root, figures=["elo_vs_agreement"], adjust_labels=True, reset_labels=True)
+                generated = render_report(source, root, ci_mode="pointwise", figures=["elo_vs_agreement"], adjust_labels=True, reset_labels=True)
             self.assertEqual([], generated)
             for filename, contents in originals.items():
                 self.assertEqual(contents, (root / filename).read_bytes())
