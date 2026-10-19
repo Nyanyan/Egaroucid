@@ -857,7 +857,8 @@ struct Mpc_d0 {
 /*
     Per-position MPC margin multiplier m = clamp(k * exp(b * (u - mean u for the disc count)), lo, hi)
     from the learned uncertainty network. Experiments override the compiled parameters with
-    EGAROUCID_MPC_U_MID / EGAROUCID_MPC_U_END = "b,k,lo,hi,min_depth" (b = 0 and k = 1: plain margins).
+    EGAROUCID_MPC_U_MID / EGAROUCID_MPC_U_END = "b,k,lo,hi,min_depth" (b = 0 and k = 1: plain margins)
+    in builds with EGAROUCID_MPC_U_ENV.
 */
 struct Nnue_mpc_u_params {
     double b, k, lo, hi;
@@ -865,13 +866,22 @@ struct Nnue_mpc_u_params {
     bool on;
 };
 inline Nnue_mpc_u_params nnue_mpc_u_params_from_env(const char *name, Nnue_mpc_u_params p) {
+#ifdef EGAROUCID_MPC_U_ENV  // experiment builds only
     if (const char *env = std::getenv(name)) {
         double b, k, lo, hi;
         int min_depth;
-        if (std::sscanf(env, "%lf,%lf,%lf,%lf,%d", &b, &k, &lo, &hi, &min_depth) == 5) {
+        const bool parsed = std::sscanf(env, "%lf,%lf,%lf,%lf,%d", &b, &k, &lo, &hi, &min_depth) == 5;
+        if (parsed && std::isfinite(b) && std::isfinite(k) && std::isfinite(lo) && std::isfinite(hi) &&
+            std::fabs(b) <= 4.0 && 0.0 < lo && lo <= hi && hi <= 4.0 && 0.0 < k && 0 <= min_depth) {
             p = {b, k, lo, hi, min_depth, true};
+            std::cerr << name << " = " << env << std::endl;
+        } else {
+            std::cerr << "[WARNING] ignored " << name << " = " << env << " (expected b,k,lo,hi,min_depth)" << std::endl;
         }
     }
+#else
+    (void)name;
+#endif
     p.on = p.on && !(p.b == 0.0 && p.k == 1.0);
     return p;
 }
