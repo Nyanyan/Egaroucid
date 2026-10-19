@@ -774,12 +774,54 @@ inline int mpc_shallow_gate_slack(int depth, bool high, bool is_end_search) {
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, const Search_cancellation_context &cancellation);
 int nega_alpha_ordering_nws(Search *search, int alpha, int depth, Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, bool *searching);
 
+/*
+    Depth-0 value for the MPC gates (side to move). With the NNUE and EGAROUCID_NNUE_LAZY = C, a
+    comparison with a threshold more than C away from the pattern value takes the pattern value,
+    and the network runs at most once, for a threshold within C (the same approximation as the
+    leaves of the null window search).
+*/
+struct Mpc_d0 {
+    Search *search;
+    int value;
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_LAZY)
+    int raw = 0;
+    bool exact = true;
+#endif
+
+    int at(int threshold) {
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_LAZY)
+        if (!exact && value - EGAROUCID_NNUE_LAZY <= threshold && threshold <= value + EGAROUCID_NNUE_LAZY) {
+            value = mid_evaluate_nnue(search, raw);
+            exact = true;
+        }
+#else
+        (void)threshold;
+#endif
+        return value;
+    }
+    bool ge(int threshold) { return at(threshold) >= threshold; }
+    bool le(int threshold) { return at(threshold) <= threshold; }
+};
+
+inline Mpc_d0 mpc_d0_evaluate(Search *search) {
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_LAZY)
+    if (!search_uses_separate_shallow_evaluation(search)) {
+        Mpc_d0 d0{search, 0};
+        d0.raw = mid_evaluate_raw(search);
+        d0.value = mid_evaluate_round(d0.raw);
+        d0.exact = false;
+        return d0;
+    }
+#endif
+    return Mpc_d0{search, mid_evaluate_for_search(search)};
+}
+
 inline bool mpc_end_static_eval_cut(
     Search *search,
     int alpha,
     int beta,
     int depth,
-    int d0_value,
+    Mpc_d0 &d0,
     uint64_t legal,
     int *v
 ) {
@@ -789,21 +831,21 @@ inline bool mpc_end_static_eval_cut(
     const int static_low_threshold = end_mpc_static_threshold(depth, alpha, false);
 #if defined(END_PROBCUT_CONTEXT_TRACE)
     end_probcut_trace_context(
-        search, depth, 0, alpha, beta, "high", d0_value, legal_count,
-        static_high_threshold, d0_value >= static_high_threshold, true,
+        search, depth, 0, alpha, beta, "high", d0.value, legal_count,
+        static_high_threshold, d0.value >= static_high_threshold, true,
         search->mpc_level
     );
     end_probcut_trace_context(
-        search, depth, 0, alpha, beta, "low", d0_value, legal_count,
-        static_low_threshold, d0_value <= static_low_threshold, true,
+        search, depth, 0, alpha, beta, "low", d0.value, legal_count,
+        static_low_threshold, d0.value <= static_low_threshold, true,
         search->mpc_level
     );
 #endif
-    if (d0_value >= static_high_threshold) {
+    if (d0.ge(static_high_threshold)) {
         *v = beta + (beta & 1);
         return true;
     }
-    if (d0_value <= static_low_threshold) {
+    if (d0.le(static_low_threshold)) {
         *v = alpha - (alpha & 1);
         return true;
     }
@@ -812,7 +854,7 @@ inline bool mpc_end_static_eval_cut(
     (void)alpha;
     (void)beta;
     (void)depth;
-    (void)d0_value;
+    (void)d0;
     (void)legal;
     (void)v;
 #endif
@@ -825,7 +867,7 @@ inline bool mpc_end_recalibrated_shallow(
     int alpha,
     int beta,
     int depth,
-    int d0_value,
+    Mpc_d0 &d0,
     uint64_t legal,
     int *v,
     Searchings &searchings
@@ -835,17 +877,17 @@ inline bool mpc_end_recalibrated_shallow(
     const int shallow_depth = end_mpc_shallow_depth(depth);
     const int high_threshold = beta + end_mpc_shallow_error(mpc_level, depth, true);
     const int low_threshold = alpha - end_mpc_shallow_error(mpc_level, depth, false);
-    const bool high_gate = d0_value >= high_threshold -
-        end_mpc_shallow_gate_slack(mpc_level, depth, true);
-    const bool low_gate = d0_value <= low_threshold +
-        end_mpc_shallow_gate_slack(mpc_level, depth, false);
+    const bool high_gate = d0.ge(high_threshold -
+        end_mpc_shallow_gate_slack(mpc_level, depth, true));
+    const bool low_gate = d0.le(low_threshold +
+        end_mpc_shallow_gate_slack(mpc_level, depth, false));
 #if defined(END_PROBCUT_CONTEXT_TRACE)
     end_probcut_trace_context(
-        search, depth, shallow_depth, alpha, beta, "high", d0_value,
+        search, depth, shallow_depth, alpha, beta, "high", d0.value,
         legal_count, high_threshold, high_gate, false, mpc_level
     );
     end_probcut_trace_context(
-        search, depth, shallow_depth, alpha, beta, "low", d0_value,
+        search, depth, shallow_depth, alpha, beta, "low", d0.value,
         legal_count, low_threshold, low_gate, false, mpc_level
     );
 #endif
@@ -989,18 +1031,18 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
     const uint_fast8_t mpc_level = search->mpc_level;
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
 #if USE_DIM0_ONLY_EVALUATION
-    int d0value;
+    Mpc_d0 d0{search, 0};
     if constexpr (!IsEndSearch) {
         if (node_hint.has_static_eval()) {
-            d0value = node_hint.get_static_eval();
+            d0.value = node_hint.get_static_eval();
 #if defined(EGAROUCID_VALIDATE_NWS_STATIC_EVAL_REUSE)
-            assert(d0value == mid_evaluate_for_search(search));
+            assert(d0.value == mid_evaluate_for_search(search));
 #endif
         } else {
-            d0value = mid_evaluate_for_search(search);
+            d0 = mpc_d0_evaluate(search);
         }
     } else {
-        d0value = mid_evaluate_for_search(search);
+        d0 = mpc_d0_evaluate(search);
     }
 #else
     const bool use_dim0_mpc_eval = eval_fm_enabled && eval_fm_use_dim0_mpc_search && !IsEndSearch;
@@ -1018,6 +1060,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
     } else {
         d0value = mid_evaluate_for_search(search);
     }
+    Mpc_d0 d0{search, d0value};
 #endif
     /*
     if (alpha - MPC_ADD_DEPTH_VALUE_THRESHOLD < d0value && d0value < beta + MPC_ADD_DEPTH_VALUE_THRESHOLD && depth >= 20 && search_depth < depth - 2) {
@@ -1042,13 +1085,13 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         }
         if (use_recalibrated_end_mpc(mpc_level, depth)) {
             if (mpc_end_static_eval_cut(
-                search, alpha, beta, depth, d0value, legal, v
+                search, alpha, beta, depth, d0, legal, v
             )) {
                 return true;
             }
 #if END_MPC_USE_RECALIBRATED_SHALLOW
             return mpc_end_recalibrated_shallow(
-                search, alpha, beta, depth, d0value, legal, v, searchings
+                search, alpha, beta, depth, d0, legal, v, searchings
             );
 #endif
         }
@@ -1064,25 +1107,25 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 #if defined(END_PROBCUT_CONTEXT_TRACE)
         if constexpr (IsEndSearch) {
             end_probcut_trace_context(
-                search, depth, 0, alpha, beta, "high", d0value,
+                search, depth, 0, alpha, beta, "high", d0.value,
                 pop_count_ull(legal), beta + static_error_high,
-                d0value >= beta + static_error_high, true, mpc_level
+                d0.value >= beta + static_error_high, true, mpc_level
             );
             end_probcut_trace_context(
-                search, depth, 0, alpha, beta, "low", d0value,
+                search, depth, 0, alpha, beta, "low", d0.value,
                 pop_count_ull(legal), alpha - static_error_low,
-                d0value <= alpha - static_error_low, true, mpc_level
+                d0.value <= alpha - static_error_low, true, mpc_level
             );
         }
 #endif
-        if (d0value >= beta + static_error_high) {
+        if (d0.ge(beta + static_error_high)) {
             *v = beta;
             if constexpr (IsEndSearch) {
                 *v += beta & 1;
             }
             return true;
         }
-        if (d0value <= alpha - static_error_low) {
+        if (d0.le(alpha - static_error_low)) {
             *v = alpha;
             if constexpr (IsEndSearch) {
                 *v -= alpha & 1;
@@ -1118,14 +1161,14 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 #if defined(END_PROBCUT_CONTEXT_TRACE)
         if constexpr (IsEndSearch) {
             end_probcut_trace_context(
-                search, depth, search_depth, alpha, beta, "high", d0value,
+                search, depth, search_depth, alpha, beta, "high", d0.value,
                 pop_count_ull(legal), beta + error_search_high,
-                d0value >= beta + error_0_high, false, mpc_level
+                d0.value >= beta + error_0_high, false, mpc_level
             );
             end_probcut_trace_context(
-                search, depth, search_depth, alpha, beta, "low", d0value,
+                search, depth, search_depth, alpha, beta, "low", d0.value,
                 pop_count_ull(legal), alpha - error_search_low,
-                d0value <= alpha - error_0_low, false, mpc_level
+                d0.value <= alpha - error_0_low, false, mpc_level
             );
         }
 #endif
@@ -1162,7 +1205,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             }
         }
 #endif
-        if (d0value >= beta + error_0_high) {
+        if (d0.ge(beta + error_0_high)) {
             int pc_beta = beta + error_search_high;
             if (pc_beta <= SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) >= pc_beta) {
@@ -1174,7 +1217,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
                 }
             }
         }
-        if (d0value <= alpha - error_0_low) {
+        if (d0.le(alpha - error_0_low)) {
             int pc_alpha = alpha - error_search_low;
             if (pc_alpha >= -SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) <= pc_alpha) {
