@@ -157,6 +157,7 @@ class StreamBuffer:
     refresh() replaces the oldest blocks; sample(n) draws records, following ref_p over empties if given."""
 
     def __init__(self, a, p, n_records, block, device, rng, ref_p=None):
+        block = max(1, min(block, n_records, len(a)))
         self.a, self.p, self.block, self.device, self.rng = a, p, block, device, rng
         self.n_blocks = max(1, n_records // block)
         self.ref_p = ref_p
@@ -183,9 +184,10 @@ class StreamBuffer:
         cnt = torch.bincount(e, minlength=61)
         self.count = cnt
         self.start = torch.cumsum(cnt, 0) - cnt
+        # an empties count missing from the buffer gives its share to the others until it is refilled
         ref = self.ref_p.to(self.device).clone()
         ref[cnt == 0] = 0
-        self.p_e = ref / ref.sum()
+        self.p_e = ref / ref.sum() if ref.sum() > 0 else (cnt > 0).double() / (cnt > 0).sum()
 
     def refresh(self, n_blocks):
         for _ in range(n_blocks):

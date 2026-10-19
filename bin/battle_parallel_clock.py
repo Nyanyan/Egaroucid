@@ -55,12 +55,25 @@ def build_player_command(cmd, threads_per_engine, hash_level):
     return result
 
 
+def wait_ready(proc):
+    """read the engine output up to the end of the version message (the @website line)"""
+    while True:
+        raw = proc.stdout.readline()
+        if raw == b'':
+            raise RuntimeError('engine terminated while waiting for the version message')
+        if raw.strip().startswith(b'@website'):
+            return
+
+
 def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, game_time_msec):
     p0_proc = base.acquire_process(p0_idx, players)
     p1_proc = base.acquire_process(p1_idx, players)
     try:
-        base.send_command(p0_proc, 'clearcache\n')
-        base.send_command(p1_proc, 'clearcache\n')
+        # clear the caches and wait until both engines answer, so start-up and clearing are not charged
+        for proc in (p0_proc, p1_proc):
+            base.send_command(proc, 'clearcache\nversion\n')
+        for proc in (p0_proc, p1_proc):
+            wait_ready(proc)
         o = othello()
         record = base.apply_opening(o, opening)
         black_player = p0_idx if p0_black else p1_idx
