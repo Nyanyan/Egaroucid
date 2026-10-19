@@ -14,6 +14,8 @@ Phase bucket = (60 - empties) // 4, 15 buckets.
 
 Usage:
   python src/tools/nnue/train_nnue.py --data <merged dir> --out <run dir> [--mode direct] [--width 64]
+  --stream-buffer N keeps only N transcript records (random contiguous blocks of the training file) on
+  the GPU and replaces some blocks every few steps, for training files larger than the memory.
 """
 import argparse
 import json
@@ -150,6 +152,56 @@ def to_tensors(a, p, sel=None):
     }
 
 
+class StreamBuffer:
+    """Transcript records on the GPU: n_blocks random contiguous blocks of the memory-mapped training file.
+    refresh() replaces the oldest blocks; sample(n) draws records, following ref_p over empties if given."""
+
+    def __init__(self, a, p, n_records, block, device, rng, ref_p=None):
+        self.a, self.p, self.block, self.device, self.rng = a, p, block, device, rng
+        self.n_blocks = max(1, n_records // block)
+        self.ref_p = ref_p
+        self.fields = {}
+        self.next_slot = 0
+        for k in range(self.n_blocks):
+            self._load(k)
+        self._index()
+
+    def _load(self, slot):
+        start = int(self.rng.integers(0, len(self.a) - self.block + 1))
+        t = to_tensors(self.a[start:start + self.block], self.p[start:start + self.block])
+        t["y"] = t["s"].float()
+        for k, v in t.items():
+            if k not in self.fields:
+                self.fields[k] = torch.empty((self.n_blocks * self.block,), dtype=v.dtype, device=self.device)
+            self.fields[k][slot * self.block:(slot + 1) * self.block] = v.to(self.device)
+
+    def _index(self):
+        if self.ref_p is None:
+            return
+        e = self.fields["e"].long()
+        self.order = torch.argsort(e, stable=True)
+        cnt = torch.bincount(e, minlength=61)
+        self.count = cnt
+        self.start = torch.cumsum(cnt, 0) - cnt
+        ref = self.ref_p.to(self.device).clone()
+        ref[cnt == 0] = 0
+        self.p_e = ref / ref.sum()
+
+    def refresh(self, n_blocks):
+        for _ in range(n_blocks):
+            self._load(self.next_slot)
+            self.next_slot = (self.next_slot + 1) % self.n_blocks
+        self._index()
+
+    def sample(self, n):
+        if self.ref_p is None:
+            sel = torch.randint(0, self.n_blocks * self.block, (n,), device=self.device)
+        else:
+            ee = torch.multinomial(self.p_e, n, replacement=True)
+            sel = self.order[self.start[ee] + (torch.rand(n, device=self.device, dtype=torch.float64) * self.count[ee]).long()]
+        return {k: v[sel] for k, v in self.fields.items()}
+
+
 def batch_inputs(feat, b, device, augment):
     p = b["p"].to(device, non_blocking=True)
     o = b["o"].to(device, non_blocking=True)
@@ -220,6 +272,10 @@ def main():
     ap.add_argument("--labels", nargs="*", default=[], help="label sets from label_positions.py (<prefix>.bin, .orig.i8, .p.f32)")
     ap.add_argument("--label-lambda", type=float, default=1.0, help="target of a labeled position: lambda * search + (1 - lambda) * result")
     ap.add_argument("--label-share", type=float, default=0.0, help="share of each batch drawn from the labeled positions")
+    ap.add_argument("--stream-buffer", type=int, default=0, help="transcript records kept on the GPU (0: load the whole file)")
+    ap.add_argument("--stream-block", type=int, default=262144, help="records per contiguous block read from the file")
+    ap.add_argument("--stream-refresh-every", type=int, default=200, help="steps between block replacements")
+    ap.add_argument("--stream-refresh-blocks", type=int, default=8, help="blocks replaced per refresh")
     args = ap.parse_args()
     torch.manual_seed(args.seed)
     rng = np.random.default_rng(args.seed)
@@ -235,28 +291,35 @@ def main():
     # hold out 1% of the board-file records (that file has no game boundaries)
     ids = np.arange(len(bd_a))
     hold = ids % 100 == 37
-    train_tr = to_tensors(tr_a, tr_p)
+    stream = args.stream_buffer > 0
+    train_tr = None if stream else to_tensors(tr_a, tr_p)
     train_bd = to_tensors(bd_a, bd_p, ids[~hold])
     val_bd = to_tensors(bd_a, bd_p, ids[hold])
     vsel = np.sort(np.random.default_rng(args.val_seed).permutation(len(va_a))[: args.val_size])
     val_tr = to_tensors(va_a, va_p, vsel)
-    n_tr, n_bd = train_tr["s"].shape[0], train_bd["s"].shape[0]
+    n_tr, n_bd = len(tr_a), train_bd["s"].shape[0]
     frac_bd = args.boards_weight * n_bd / (n_tr + args.boards_weight * n_bd)
     # targets: the final result; labeled positions (a separate source) blend in a search value
-    train_tr["y"] = train_tr["s"].float()
+    if not stream:
+        train_tr["y"] = train_tr["s"].float()
     train_bd["y"] = train_bd["s"].float()
     # optional: draw transcript records so that the empties counts follow a reference file
     tr_order = tr_start = tr_count = ref_p = None
     if args.empties_ref:
-        e_tr = train_tr["e"].numpy()
-        tr_order = torch.from_numpy(np.argsort(e_tr, kind="stable"))
-        cnt = np.bincount(e_tr, minlength=61)
-        tr_count = torch.from_numpy(cnt)
-        tr_start = torch.from_numpy(np.concatenate([[0], np.cumsum(cnt)[:-1]]))
         ref = np.bincount(np.asarray(np.memmap(args.empties_ref, dtype=REC, mode="r")["e"]), minlength=61).astype(np.float64)
-        ref[cnt == 0] = 0
+        if not stream:
+            e_tr = train_tr["e"].numpy()
+            tr_order = torch.from_numpy(np.argsort(e_tr, kind="stable"))
+            cnt = np.bincount(e_tr, minlength=61)
+            tr_count = torch.from_numpy(cnt)
+            tr_start = torch.from_numpy(np.concatenate([[0], np.cumsum(cnt)[:-1]]))
+            ref[cnt == 0] = 0
         ref_p = torch.from_numpy(ref / ref.sum())
         print(f"empties sampling follows {args.empties_ref}", flush=True)
+    buf = None
+    if stream:
+        buf = StreamBuffer(tr_a, tr_p, args.stream_buffer, args.stream_block, device, np.random.default_rng(args.seed + 1), ref_p)
+        print(f"stream buffer {buf.n_blocks} blocks x {args.stream_block} records of {n_tr}", flush=True)
     train_lb, n_lab = None, 0
     if args.labels:
         parts = []
@@ -294,16 +357,25 @@ def main():
             g["lr"] = lr * g["mult"]
         nl = int(np.random.binomial(args.batch, args.label_share)) if n_lab else 0
         nb = int(np.random.binomial(args.batch - nl, frac_bd))
-        if ref_p is not None:
+        if buf is not None:
+            if step % args.stream_refresh_every == 0:
+                buf.refresh(args.stream_refresh_blocks)
+            srcs = [(train_bd, torch.randint(0, n_bd, (nb,)))]
+            if nl:
+                srcs.append((train_lb, torch.randint(0, n_lab, (nl,))))
+            parts = [buf.sample(args.batch - nb - nl)] + [{k: src[k][sel].to(device, non_blocking=True) for k in buf.fields} for src, sel in srcs]
+            b = {k: torch.cat([q[k] for q in parts]) for k in buf.fields}
+        elif ref_p is not None:
             ee = torch.multinomial(ref_p, args.batch - nb - nl, replacement=True)
             sel_tr = tr_order[tr_start[ee] + (torch.rand(ee.shape[0], dtype=torch.float64) * tr_count[ee]).long()]
         else:
             sel_tr = torch.randint(0, n_tr, (args.batch - nb - nl,))
-        sel_bd = torch.randint(0, n_bd, (nb,))
-        srcs = [(train_tr, sel_tr), (train_bd, sel_bd)]
-        if nl:
-            srcs.append((train_lb, torch.randint(0, n_lab, (nl,))))
-        b = {k: torch.cat([src[k][sel] for src, sel in srcs]) for k in train_tr}
+        if buf is None:
+            sel_bd = torch.randint(0, n_bd, (nb,))
+            srcs = [(train_tr, sel_tr), (train_bd, sel_bd)]
+            if nl:
+                srcs.append((train_lb, torch.randint(0, n_lab, (nl,))))
+            b = {k: torch.cat([src[k][sel] for src, sel in srcs]) for k in train_tr}
         idx, bucket, n_player, _ = batch_inputs(feat, b, device, True)
         y = b["y"].to(device, non_blocking=True)
         P = b["P"].to(device, non_blocking=True)
