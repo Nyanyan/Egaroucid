@@ -37,29 +37,33 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
     #define MPC_SIGMA_SCALE 1.0
 #endif
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
+    // midgame: margin multiplier exp(B * (u - mean u for the disc count)); off by default (no gain in
+    // warm searches, reports/20261019_2_nnue_speed_accuracy.md)
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_B
-        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_B 0.4  // margin multiplier exp(B * (u - mean u for the disc count))
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_B 0.0
     #endif
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH
         #define EGAROUCID_NNUE_MPC_UNCERTAINTY_MIN_DEPTH 8  // shallower nodes keep the plain margins (the network costs a little)
     #endif
+    // endgame: clamp(K exp(B u_dev), LO, HI) at depths >= MIN_DEPTH; B = 0.3 in 0.75-1.33 had fewer 読み切り
+    // mistakes at the same time (bin/yomikiritest.py, reports/20261019_3_yomikiri_mpc_clock_report.md)
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END
-        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END 0  // 1: also scale the endgame MPC margins
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END 1
     #endif
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B
-        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B 0.4
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_B 0.3
     #endif
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH
         #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_MIN_DEPTH 10
     #endif
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_K
-        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_K 1.0  // endgame multiplier clamp(K exp(B u_dev), LO, HI)
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_K 1.0
     #endif
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_LO
-        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_LO 0.85
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_LO 0.75
     #endif
     #ifndef EGAROUCID_NNUE_MPC_UNCERTAINTY_END_HI
-        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_HI 1.3
+        #define EGAROUCID_NNUE_MPC_UNCERTAINTY_END_HI 1.33
     #endif
 #endif
 #ifdef EGAROUCID_NNUE
@@ -879,7 +883,7 @@ inline const Nnue_mpc_u_params nnue_mpc_u_end = nnue_mpc_u_params_from_env("EGAR
 
 inline double nnue_mpc_u_multiplier(Search *search, int depth, bool is_end_search) {
     const Nnue_mpc_u_params &p = is_end_search ? nnue_mpc_u_end : nnue_mpc_u_mid;
-    if (!p.on || depth < p.min_depth) {
+    if (!p.on || depth < p.min_depth || !nnue_uncertainty_loaded) {
         return 1.0;
     }
     if (p.b == 0.0) {

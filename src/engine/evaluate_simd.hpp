@@ -28,6 +28,7 @@
 #include "nnue/nnue_eval.hpp"
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
 #include "nnue/nnue_uncertainty_table.hpp"
+inline bool nnue_uncertainty_loaded = false;  // set by evaluate_init
 #endif
 #endif
 
@@ -537,7 +538,11 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
 #ifdef EGAROUCID_NNUE
     if (!nnue::init(nnue::default_path(file), show_log)) return false;
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
-    if (!nnue::init_weights(nnue::uncertainty_weights, nnue::default_path(file, EGAROUCID_NNUE_UNCERTAINTY_FILENAME, "EGAROUCID_NNUE_UNCERTAINTY_FILE"), show_log)) return false;
+    // without the uncertainty network the MPC margins stay as they are
+    nnue_uncertainty_loaded = nnue::init_weights(nnue::uncertainty_weights, nnue::default_path(file, EGAROUCID_NNUE_UNCERTAINTY_FILENAME, "EGAROUCID_NNUE_UNCERTAINTY_FILE"), show_log);
+    if (!nnue_uncertainty_loaded) {
+        std::cerr << "[WARNING] NNUE uncertainty network not loaded; MPC margins are not scaled per position" << std::endl;
+    }
 #endif
 #endif
     if (!initialize_auto_move_ordering_models(file, show_log)) return false;

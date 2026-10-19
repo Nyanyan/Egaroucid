@@ -29,6 +29,12 @@
     #error "IS_GGS_3MIN requires IS_GGS_TOURNAMENT"
 #endif
 
+// NNUE build: the endgame MPC margins follow the learned per-position uncertainty (multi_probcut.hpp)
+// unless EGAROUCID_NNUE_NO_MPC_UNCERTAINTY is defined
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_NO_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
+    #define EGAROUCID_NNUE_MPC_UNCERTAINTY
+#endif
+
 /*
     @brief Option
 */
