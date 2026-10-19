@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
     std::cout
         << "index\tboard\tn_discs\tdeep_depth\tshallow_depth\tstatic_value"
            "\tshallow_value\tdeep_value\terror\tshallow_nodes\tdeep_nodes"
-           "\tshallow_time_ms\tdeep_time_ms\tlegal_count\n";
+           "\tshallow_time_ms\tdeep_time_ms\tlegal_count\tpattern_value\n";
     while (std::getline(input, line)) {
         if (line.empty()) {
             continue;
@@ -131,11 +131,18 @@ int main(int argc, char **argv) {
         }
         Board board;
         if (!board.from_str(line) || deep_depth > HW2 - board.n_discs() || board.get_legal() == 0ULL) {
-            std::cerr << "invalid position at line " << index << '\n';
-            return 2;
+            std::cerr << "skip invalid position at line " << index << '\n';  // e.g. no legal move
+            continue;
         }
         Search eval_search(&board, MPC_100_LEVEL, false, false);
-        const int static_value = mid_evaluate_diff(&eval_search);
+        // static_value: the evaluation the search's depth-0 MPC gate uses (the network in an NNUE
+        // build); pattern_value: the pattern evaluation alone
+        const int pattern_value = mid_evaluate_diff(&eval_search);
+#ifdef EGAROUCID_NNUE
+        const int static_value = mid_evaluate_nnue(&eval_search);
+#else
+        const int static_value = pattern_value;
+#endif
         const Score deep = search_score(board, deep_depth, n_threads);
         if (!deep.complete) {
             std::cerr << "deep search terminated at line " << index << '\n';
@@ -166,7 +173,8 @@ int main(int argc, char **argv) {
                 << deep.nodes << '\t'
                 << shallow.elapsed << '\t'
                 << deep.elapsed << '\t'
-                << pop_count_ull(board.get_legal()) << '\n';
+                << pop_count_ull(board.get_legal()) << '\t'
+                << pattern_value << '\n';
         }
     }
     return 0;
