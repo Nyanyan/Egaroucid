@@ -795,7 +795,37 @@ constexpr int mpc_shallow_depth(int depth) {
 }
 
 
+#ifdef EGAROUCID_MPC_U_ENV
+// experiment builds: EGAROUCID_MPC_GATE_SLACK = "high,low" or "high,low,high_deep,low_deep,deep_from" overrides the
+// midgame shallow-search gate slack (the deep pair from depth deep_from on)
+struct Mpc_gate_slack_env {
+    bool on = false;
+    int h = 0, l = 0, hd = 0, ld = 0, from = 99;
+};
+inline Mpc_gate_slack_env mpc_gate_slack_from_env() {
+    Mpc_gate_slack_env e;
+    if (const char *env = std::getenv("EGAROUCID_MPC_GATE_SLACK")) {
+        const int k = std::sscanf(env, "%d,%d,%d,%d,%d", &e.h, &e.l, &e.hd, &e.ld, &e.from);
+        if (k == 2) {
+            e.hd = e.h;
+            e.ld = e.l;
+            e.on = true;
+        } else if (k == 5) {
+            e.on = true;
+        }
+    }
+    return e;
+}
+inline const Mpc_gate_slack_env mpc_gate_slack_env = mpc_gate_slack_from_env();
+#endif
+
 inline int mpc_shallow_gate_slack(int depth, bool high, bool is_end_search) {
+#ifdef EGAROUCID_MPC_U_ENV
+    if (!is_end_search && mpc_gate_slack_env.on) {
+        const Mpc_gate_slack_env &e = mpc_gate_slack_env;
+        return depth >= e.from ? (high ? e.hd : e.ld) : (high ? e.h : e.l);
+    }
+#endif
 #if defined(EGAROUCID_MPC_RUNTIME_TUNING)
     if (
         mid_mpc_runtime_tuning_enabled && !is_end_search &&
@@ -1287,22 +1317,50 @@ inline void mpc_search_errors(
     @return cutoff occurred?
 */
 #if defined(EGAROUCID_MPC_COUNTERS)
-// diagnostic (one search thread): midgame MPC calls, gates passed and cuts per deep depth, printed at exit
+// diagnostic (one search thread): midgame MPC calls, gates passed and cuts per deep depth, and the nodes of the
+// shallow searches that cut or did not (per depth, and counted once at the outermost probe), printed at exit
 struct Mpc_counters {
     uint64_t calls[HW2 + 1] = {}, gate_high[HW2 + 1] = {}, cut_high[HW2 + 1] = {}, gate_low[HW2 + 1] = {}, cut_low[HW2 + 1] = {};
+    uint64_t nodes_cut_high[HW2 + 1] = {}, nodes_fail_high[HW2 + 1] = {}, nodes_cut_low[HW2 + 1] = {}, nodes_fail_low[HW2 + 1] = {};
+    uint64_t outer_cut = 0, outer_fail = 0;
+    int nest = 0;
+    // shallow-search attempts by depth, side (0 high, 1 low), gap g = how far the depth-0 value passes the probe
+    // threshold (beta + error_search, or alpha - error_search for low; -8..+23) and u - mean u (4 bins)
+    uint64_t h_n[19][2][32][4] = {}, h_cut[19][2][32][4] = {}, h_nodes[19][2][32][4] = {};
+    void hist(int depth, int side, int gap, double du, bool cut, uint64_t nodes) {
+        if (depth > 18) return;
+        const int g = std::clamp(gap + 8, 0, 31);
+        const int ub = du < -0.4 ? 0 : (du < 0.0 ? 1 : (du < 0.4 ? 2 : 3));
+        ++h_n[depth][side][g][ub];
+        h_cut[depth][side][g][ub] += cut;
+        h_nodes[depth][side][g][ub] += nodes;
+    }
     ~Mpc_counters() {
-        std::cerr << "mpc_counters depth calls gate_high cut_high gate_low cut_low" << std::endl;
-        for (int d = 0; d <= HW2; ++d) {
-            if (calls[d]) {
-                std::cerr << "mpc_counters " << d << ' ' << calls[d] << ' ' << gate_high[d] << ' ' << cut_high[d] << ' ' << gate_low[d] << ' ' << cut_low[d] << std::endl;
+        for (int d = 0; d <= 18; ++d) for (int sd = 0; sd < 2; ++sd) for (int g = 0; g < 32; ++g) for (int ub = 0; ub < 4; ++ub) {
+            if (h_n[d][sd][g][ub]) {
+                std::cerr << "mpc_hist " << d << ' ' << sd << ' ' << g - 8 << ' ' << ub << ' ' << h_n[d][sd][g][ub] << ' ' << h_cut[d][sd][g][ub] << ' ' << h_nodes[d][sd][g][ub] << std::endl;
             }
         }
+        std::cerr << "mpc_counters depth calls gate_high cut_high gate_low cut_low nodes_cut_high nodes_fail_high nodes_cut_low nodes_fail_low" << std::endl;
+        for (int d = 0; d <= HW2; ++d) {
+            if (calls[d]) {
+                std::cerr << "mpc_counters " << d << ' ' << calls[d] << ' ' << gate_high[d] << ' ' << cut_high[d] << ' ' << gate_low[d] << ' ' << cut_low[d]
+                          << ' ' << nodes_cut_high[d] << ' ' << nodes_fail_high[d] << ' ' << nodes_cut_low[d] << ' ' << nodes_fail_low[d] << std::endl;
+            }
+        }
+        std::cerr << "mpc_counters outermost probe nodes: cut " << outer_cut << " no cut " << outer_fail << std::endl;
     }
 };
 inline Mpc_counters mpc_counters;
 #define EGAROUCID_MPC_COUNT(field, depth) do { if constexpr (!IsEndSearch) ++mpc_counters.field[depth]; } while (0)
+#define EGAROUCID_MPC_PROBE_BEGIN() const uint64_t mpc_probe_n0 = search->n_nodes; if constexpr (!IsEndSearch) ++mpc_counters.nest
+#define EGAROUCID_MPC_PROBE_END(side, depth, cut) do { if constexpr (!IsEndSearch) { --mpc_counters.nest; const uint64_t dn = search->n_nodes - mpc_probe_n0; \
+    ((cut) ? mpc_counters.nodes_cut_##side : mpc_counters.nodes_fail_##side)[depth] += dn; \
+    if (mpc_counters.nest == 0) ((cut) ? mpc_counters.outer_cut : mpc_counters.outer_fail) += dn; } } while (0)
 #else
 #define EGAROUCID_MPC_COUNT(field, depth) do {} while (0)
+#define EGAROUCID_MPC_PROBE_BEGIN() do {} while (0)
+#define EGAROUCID_MPC_PROBE_END(side, depth, cut) do {} while (0)
 #endif
 
 template<bool IsEndSearch, typename Searchings>
@@ -1544,7 +1602,13 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             EGAROUCID_MPC_COUNT(gate_high, depth);
             int pc_beta = beta + error_search_high;
             if (pc_beta <= SCORE_MAX) {
-                if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) >= pc_beta) {
+                EGAROUCID_MPC_PROBE_BEGIN();
+                const bool probe_cut = nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) >= pc_beta;
+                EGAROUCID_MPC_PROBE_END(high, depth, probe_cut);
+#if defined(EGAROUCID_MPC_COUNTERS) && defined(EGAROUCID_NNUE_MPC_NET) && defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
+                if constexpr (!IsEndSearch) mpc_counters.hist(depth, 0, d0.value - pc_beta, net_u - nnue_uncertainty::MEAN_U[search->n_discs], probe_cut, search->n_nodes - mpc_probe_n0);
+#endif
+                if (probe_cut) {
                     EGAROUCID_MPC_COUNT(cut_high, depth);
                     *v = beta;
                     if constexpr (IsEndSearch) {
@@ -1558,7 +1622,13 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             EGAROUCID_MPC_COUNT(gate_low, depth);
             int pc_alpha = alpha - error_search_low;
             if (pc_alpha >= -SCORE_MAX) {
-                if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) <= pc_alpha) {
+                EGAROUCID_MPC_PROBE_BEGIN();
+                const bool probe_cut = nega_alpha_ordering_nws(search, pc_alpha, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) <= pc_alpha;
+                EGAROUCID_MPC_PROBE_END(low, depth, probe_cut);
+#if defined(EGAROUCID_MPC_COUNTERS) && defined(EGAROUCID_NNUE_MPC_NET) && defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
+                if constexpr (!IsEndSearch) mpc_counters.hist(depth, 1, pc_alpha - d0.value, net_u - nnue_uncertainty::MEAN_U[search->n_discs], probe_cut, search->n_nodes - mpc_probe_n0);
+#endif
+                if (probe_cut) {
                     EGAROUCID_MPC_COUNT(cut_low, depth);
                     *v = alpha;
                     if constexpr (IsEndSearch) {
