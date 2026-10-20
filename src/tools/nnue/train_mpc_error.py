@@ -74,16 +74,21 @@ def board_bits(board):
     return p, o
 
 
-def features(u, n, D, s, v, parity, s_max, gap_max, full=True):
-    """(mu features, log sigma features); s_max / gap_max are per-row clamps (the group's data range)"""
+def features(u, n, D, s, v, parity, s_max, gap_max, full=True, u2=None):
+    """(mu features, log sigma features); s_max / gap_max are per-row clamps (the group's data range);
+    u2: a second u (diagnostic: does it add to u?)"""
     one = torch.ones_like(n)
     nn_ = (n - 28.0) / 14.0
     ss = torch.minimum(s, s_max) / 13.0
     gg = torch.minimum(D - s, gap_max) / 13.0
     if not full:
         return torch.stack([one, parity, nn_], 1), torch.stack([one, nn_, ss, gg], 1)
-    return (torch.stack([one, parity, nn_, u, v / 32.0], 1),
-            torch.stack([one, nn_, ss, gg, u, u * u, v.abs() / 32.0], 1))
+    fm = [one, parity, nn_, u, v / 32.0]
+    fs = [one, nn_, ss, gg, u, u * u, v.abs() / 32.0]
+    if u2 is not None:
+        fm += [u2]
+        fs += [u2, u2 * u2, u * u2]
+    return torch.stack(fm, 1), torch.stack(fs, 1)
 
 
 class Head(torch.nn.Module):
@@ -132,8 +137,9 @@ def main():
     ap.add_argument("--mean-u-below", type=int, default=0, help="rows with a deep depth below this use the mean u for the disc count")
     ap.add_argument("--apply-head", default="", help="head.json of a fitted model: no fitting, its predictions for these rows")
     args = ap.parse_args()
-    if bool(args.unc) == bool(args.dual) or (args.x_terms and not args.dual) or (args.finetune and args.dual):
-        ap.error("give exactly one of --unc / --dual; --x-terms needs --dual; --finetune needs --unc")
+    both_u = bool(args.unc) and bool(args.dual)
+    if not (args.unc or args.dual) or (args.x_terms and not args.dual) or (args.finetune and args.dual):
+        ap.error("give --unc and / or --dual; --x-terms needs --dual; --finetune needs --unc only")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -150,28 +156,30 @@ def main():
     parity = D.remainder(2)
     g = t([(2 if r[6] else 0) + (0 if r[3] == 0 else 1) for r in rows], torch.long)
     val = t(is_val_board[[bidx[r[0]] for r in rows]], torch.bool)
-    if args.dual:
-        trunk_fn, feat, uhead, inputs = load_uhead(args.dual, device)
-        net = None
-    else:
+    net = None
+    if args.unc:
         targs = json.loads((Path(args.unc) / "args.json").read_text(encoding="utf-8"))
         net = Net(targs["width"], targs["hidden"], "residual").to(device)
         net.load_state_dict(torch.load(Path(args.unc) / "best.pt", map_location=device))
         feat = Features(device, True)
+    if args.dual:
+        trunk_fn, dfeat, uhead, inputs = load_uhead(args.dual, device)
     p_all = torch.from_numpy(bits[:, 0].view(np.int64)).to(device)
     o_all = torch.from_numpy(bits[:, 1].view(np.int64)).to(device)
-    st = feat.states(p_all, o_all)
-    idx_all = feat.indices(st)
+    base_feat = feat if args.unc else dfeat
+    st = base_feat.states(p_all, o_all)
+    idx_all = base_feat.indices(st)
     empt_all = 64 - (st != 0).sum(1)
     bucket_all = bucket_of(empt_all)
     fx_all = None
     if args.dual:
         with torch.no_grad():
-            f_all = head_inputs(trunk_fn(idx_all, bucket_all), inputs)
+            didx_all = dfeat.indices(st)
+            f_all = head_inputs(trunk_fn(didx_all, bucket_all), inputs)
             u_dual = uhead(f_all, bucket_all)
             if args.x_terms:
                 fx_all = f_all
-    else:
+    if net is not None:
         for prm in net.parameters():
             prm.requires_grad_(False)
     net_params = []
@@ -193,10 +201,14 @@ def main():
     def row_u():
         # u per row: the network output for the board (log sigma^2 of the outcome residual, the engine's total / 8192),
         # or the disc-count mean where the engine skips the network
-        u = (u_dual if args.dual else net.correction(idx_all, bucket_all))[rb]
+        u = (net.correction(idx_all, bucket_all) if args.unc else u_dual)[rb]
         if mean_u is not None:
             u = torch.where(shallow_row, mean_u, u)
         return u * 0.0 if args.no_u else u
+
+    def row_u2():
+        # with both: the head's u as extra features (no disc-count mean policy; a diagnostic)
+        return u_dual[rb] if both_u else None
 
     # clamps: the largest shallow depth and depth gap of each group in the data
     s_max_g = torch.zeros(len(GROUPS), device=device)
@@ -212,7 +224,7 @@ def main():
         gap_max_g = torch.tensor(applied["gap_max"], device=device)
         args.steps = 0
     s_max, gap_max = s_max_g[g], gap_max_g[g]
-    head = Head(5, 7, fx_all.shape[1] if fx_all is not None else 0).to(device)
+    head = Head(5 + (1 if both_u else 0), 7 + (3 if both_u else 0), fx_all.shape[1] if fx_all is not None else 0).to(device)
     if applied is not None:
         with torch.no_grad():
             head.mu.copy_(torch.tensor(applied["mu"], device=device))
@@ -227,7 +239,7 @@ def main():
     t0 = time.time()
     for step in range(1, args.steps + 1):
         u = row_u()
-        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max), g, fx)
+        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max, u2=row_u2()), g, fx)
         mu0, ls0 = base_head(features(u, n, D, s, v, parity, s_max, gap_max, full=False), g)
         loss = nll(e[tr], mu[tr], ls[tr]) + nll(e[tr], mu0[tr], ls0[tr]) + args.x_l2 * head.penalty()
         opt.zero_grad(set_to_none=True)
@@ -246,7 +258,7 @@ def main():
             print(line + f" | {time.time() - t0:.0f}s", flush=True)
     with torch.no_grad():
         u = row_u()
-        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max), g, fx)
+        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max, u2=row_u2()), g, fx)
         mu0, ls0 = base_head(features(u, n, D, s, v, parity, s_max, gap_max, full=False), g)
     res = {"groups": GROUPS, "mu_features": ["1", "parity", "n'", "u", "v/32"],
            "log_sigma_features": ["1", "n'", "s'", "gap'", "u", "u^2", "|v|/32"],

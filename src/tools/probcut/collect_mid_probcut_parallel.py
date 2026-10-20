@@ -30,6 +30,7 @@ def main():
     ap.add_argument("--procs", type=int, default=24)
     ap.add_argument("--shard", type=int, default=100, help="positions per process")
     ap.add_argument("--hash", type=int, default=20)
+    ap.add_argument("--static-only", action="store_true", help="shallow depth 0 (the static evaluation) only")
     args = ap.parse_args()
     tool = Path(args.tool).resolve()
     out = Path(args.out).resolve()
@@ -59,7 +60,7 @@ def main():
             pos = out / f"{args.tag}_d{d}_{lo:05d}.pos"
             pos.write_text("\n".join(lines[lo:hi]) + "\n", encoding="utf-8")
             f = open(res, "w", encoding="utf-8")
-            depths = f"0,{POLICY_SHALLOW[d]}" if POLICY_SHALLOW[d] else "0"
+            depths = f"0,{POLICY_SHALLOW[d]}" if POLICY_SHALLOW[d] and not args.static_only else "0"
             proc = subprocess.Popen([str(tool), str(pos), str(d), depths, "1", str(args.hash)], cwd=tool.parent,
                                     stdin=subprocess.DEVNULL, stdout=f, stderr=subprocess.DEVNULL,
                                     creationflags=getattr(subprocess, "BELOW_NORMAL_PRIORITY_CLASS", 0))
