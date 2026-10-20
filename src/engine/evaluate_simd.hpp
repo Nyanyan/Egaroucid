@@ -678,8 +678,8 @@ inline void nnue_ensure_lanes(Eval_search *eval) {
     int j = i - 1;
     while (!eval->nnue_valid[j]) --j;
     for (int t = j + 1; t <= i; ++t) {
-        nnue::lanes_move(reinterpret_cast<const nnue::Lanes*>(&eval->nnue_lanes[t - 1]), reinterpret_cast<const nnue::Lanes*>(&eval->nnue_occ[t - 1]),
-                         reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[t]), reinterpret_cast<nnue::Lanes*>(&eval->nnue_occ[t]),
+        nnue::lanes_move(&eval->nnue_lanes[t - 1], &eval->nnue_occ[t - 1],
+                         &eval->nnue_lanes[t], &eval->nnue_occ[t],
                          eval->nnue_flip[t], eval->nnue_pos[t], eval->nnue_mover_other[t]);
         eval->nnue_valid[t] = 1;
     }
@@ -761,8 +761,8 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
     }
     nnue_ensure_lanes(&search->eval);
     nnue::Lanes view;
-    nnue::lanes_view(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
-                     reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_occ[search->eval.feature_idx]),
+    nnue::lanes_view(&search->eval.nnue_lanes[search->eval.feature_idx],
+                     &search->eval.nnue_occ[search->eval.feature_idx],
                      nnue_other_side(&search->eval), &view);
 #ifdef EGAROUCID_NNUE_VERIFY
     {
@@ -783,8 +783,8 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
 inline double nnue_uncertainty_dev(Search *search) {
     nnue_ensure_lanes(&search->eval);
     nnue::Lanes view;
-    nnue::lanes_view(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
-                     reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_occ[search->eval.feature_idx]),
+    nnue::lanes_view(&search->eval.nnue_lanes[search->eval.feature_idx],
+                     &search->eval.nnue_occ[search->eval.feature_idx],
                      nnue_other_side(&search->eval), &view);
     const int64_t total = nnue::evaluate_total_lanes(&view, search->board.player, HW2 - search->n_discs, 0, nnue::uncertainty_weights);
     return total / 8192.0 - nnue_uncertainty::MEAN_U[search->n_discs];
@@ -803,8 +803,8 @@ inline int mid_evaluate_nnue_and_u(Search *search, int raw_pattern, double *u) {
     const int raw = raw_pattern != INT_MIN ? raw_pattern : mid_evaluate_raw(search);
     nnue_ensure_lanes(&search->eval);
     nnue::Lanes view;
-    nnue::lanes_view(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
-                     reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_occ[search->eval.feature_idx]),
+    nnue::lanes_view(&search->eval.nnue_lanes[search->eval.feature_idx],
+                     &search->eval.nnue_occ[search->eval.feature_idx],
                      nnue_other_side(&search->eval), &view);
     int64_t total;
     if (!nnue::evaluate_total_and_u_lanes(&view, search->board.player, HW2 - search->n_discs, raw, &total, u)) {
@@ -891,7 +891,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     eval->features[0].f256[3] = f3;
     eval->feature_idx = 0;
 #ifdef EGAROUCID_NNUE
-    nnue::lanes_init(board->player, board->opponent, reinterpret_cast<nnue::Lanes*>(&eval->nnue_lanes[0]), reinterpret_cast<nnue::Lanes*>(&eval->nnue_occ[0]));
+    nnue::lanes_init(board->player, board->opponent, &eval->nnue_lanes[0], &eval->nnue_occ[0]);
     eval->nnue_pass_parity = 0;
     eval->nnue_valid[0] = 1;
 #endif

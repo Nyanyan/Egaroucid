@@ -209,8 +209,10 @@ struct Eval_search {
 #ifdef EGAROUCID_NNUE
     // NNUE instance indices in fixed colors and occupancy, kept with the same feature_idx. They are
     // computed only when a network evaluation needs them; each move just records itself.
-    Eval_features nnue_lanes[HW2 - 4];
-    Eval_features nnue_occ[HW2 - 4];
+    // stored as nnue::Lanes, the type they are read and written as (an Eval_features accessed through a
+    // Lanes pointer broke strict aliasing: PGO builds searched different trees)
+    nnue::Lanes nnue_lanes[HW2 - 4];
+    nnue::Lanes nnue_occ[HW2 - 4];
     uint64_t nnue_flip[HW2 - 4];        // move into slot t: flipped discs, square, mover is not the root side
     uint8_t nnue_pos[HW2 - 4];
     uint8_t nnue_mover_other[HW2 - 4];
