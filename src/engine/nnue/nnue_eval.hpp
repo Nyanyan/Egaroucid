@@ -690,8 +690,10 @@ inline int64_t evaluate_total_lanes(const Lanes *l, uint64_t player, int empties
 #if USE_SIMD
 /*
     Uncertainty head on the main network's first layer (dual network, src/tools/nnue/train_uncertainty_head.py):
-    inputs f = x / 128 (inputs 0), (x / 128, z / 128) (1) or (a / 512, x / 128, z / 128) (2);
+    inputs f = x / 128 (inputs 0), (x / 128, z / 128) (1), (a / 512, x / 128, z / 128) (2) or z / 128 (3);
     h = clamp(l1_w[bucket] f + l1_b[bucket], 0, 1);  u = 16 (out_w[bucket] . h + out_b[bucket]),
+    or with hidden 0 (a linear output; inputs 3: the second output of a dual network trained with
+    train_nnue.py --u-weight) u = 16 (out_w[bucket] . f + out_b[bucket]),
     an estimate of log sigma^2 of (final result - evaluation). It runs only at MPC nodes. The hidden layer
     uses int16 multiply-adds on the integer features: the loader folds the feature scales (1/512, 1/128)
     into the weights and quantizes them to int16 with one scale per head (sums stay below 2^31).
@@ -699,7 +701,8 @@ inline int64_t evaluate_total_lanes(const Lanes *l, uint64_t player, int empties
     p = clamp(sum of the 64 rows + bias, 0, 64) / 64, appended to the inputs (n_in counts them).
     File (little endian, src/tools/nnue/export_uncertainty_head.py): "EGUHEAD1", int32 [version 1 or 2, inputs,
     n_in, hidden, main W, main H, buckets, P (version 2)], uint64 FNV-1a 64 of the main weight file,
-    float l1_w[buckets][hidden][n_in], l1_b[buckets][hidden], out_w[buckets][hidden], out_b[buckets],
+    float l1_w[buckets][hidden][n_in], l1_b[buckets][hidden], out_w[buckets][hidden] (hidden 0: no l1, out_w[buckets][n_in]),
+    out_b[buckets],
     then (version 2, P > 0) int8 private[rows][P], int16 private_bias[P].
 */
 constexpr int UHEAD_MAX_PRIVATE = 32;
@@ -754,11 +757,15 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     const int inputs = head[1], n_in = head[2], hidden = head[3];
     const int n_private = head[0] >= 2 ? head[7] : 0;
     const int W = weights.W, H = weights.H;
-    const int expected_n_in = (inputs == 0 ? W / 2 : (inputs == 1 ? W / 2 + H : W + W / 2 + H)) + n_private;
-    if (!ifs || std::memcmp(magic, "EGUHEAD1", 8) != 0 || head[0] < 1 || head[0] > 2 || inputs < 0 || inputs > 2 || hidden <= 0 || hidden > 256 || hidden % 8 != 0 ||
+    const int expected_n_in = (inputs == 0 ? W / 2 : (inputs == 1 ? W / 2 + H : (inputs == 2 ? W + W / 2 + H : H))) + n_private;
+    if (!ifs || std::memcmp(magic, "EGUHEAD1", 8) != 0 || head[0] < 1 || head[0] > 2 || inputs < 0 || inputs > 3 || hidden < 0 || hidden > 256 || hidden % 8 != 0 ||
         !(n_private == 0 || n_private == 8 || n_private == 16 || n_private == 32) || n_in > MAX_W + MAX_W / 2 + H_FIXED + UHEAD_MAX_PRIVATE || head[4] != W || head[5] != H || head[6] != N_BUCKETS || n_in != expected_n_in ||
         weights.mode != MODE_RESIDUAL || !weights.loaded) {
         std::cerr << "[WARNING] NNUE uncertainty head does not match the main network: " << file << std::endl;
+        return false;
+    }
+    if (hidden == 0 && (inputs != 3 || n_private != 0)) {
+        std::cerr << "[WARNING] NNUE uncertainty head: a linear output needs inputs z and no private lanes: " << file << std::endl;
         return false;
     }
     bool hash_ok = false;
@@ -773,7 +780,7 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     uhead.n_pad = (n_in + 15) / 16 * 16;
     uhead.l1_w.resize((size_t)N_BUCKETS * hidden * n_in);
     uhead.l1_b.resize((size_t)N_BUCKETS * hidden);
-    uhead.out_w.resize((size_t)N_BUCKETS * hidden);
+    uhead.out_w.resize((size_t)N_BUCKETS * (hidden ? hidden : n_in));
     uhead.out_b.resize(N_BUCKETS);
     if (!(read_array(ifs, uhead.l1_w.data(), uhead.l1_w.size()) && read_array(ifs, uhead.l1_b.data(), uhead.l1_b.size()) &&
           read_array(ifs, uhead.out_w.data(), uhead.out_w.size()) && read_array(ifs, uhead.out_b.data(), uhead.out_b.size()))) {
@@ -790,6 +797,15 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
             std::cerr << "[WARNING] NNUE uncertainty head is truncated: " << file << std::endl;
             return false;
         }
+    }
+    if (hidden == 0) {
+        // linear output: fold the feature scale (z: 1.0 = 128) into the weights
+        for (float &x : uhead.out_w) x *= 1.0f / 128.0f;
+        uhead.loaded = true;
+        if (show_log) {
+            std::cerr << "NNUE uncertainty output loaded " << file << " (linear on the last hidden layer)" << std::endl;
+        }
+        return true;
     }
     // integer features: a (1.0 = 512), x and z (1.0 = 128), private lanes (1.0 = 64)
     const int n_a = inputs == 2 ? W : 0;
@@ -819,6 +835,13 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
 
 // idx: the position's 64 row indices (for the private lanes)
 inline double uhead_u(const Trunk &t, const int idx[NNUE_N_INSTANCES], int bucket, int W) {
+    if (uhead.hidden == 0) {
+        // the second output of a dual network: linear on the last hidden layer z
+        const float *w2 = uhead.out_w.data() + (size_t)bucket * uhead.n_in;
+        float u = uhead.out_b[bucket];
+        for (int j = 0; j < H_FIXED; ++j) u += w2[j] * t.z[j];
+        return 16.0 * u;
+    }
     // integer features in the head's input order (a, x, z, private lanes), int16, zero up to n_pad
     alignas(32) int16_t f[MAX_W + MAX_W / 2 + H_FIXED + UHEAD_MAX_PRIVATE + 16];
     int k = 0;

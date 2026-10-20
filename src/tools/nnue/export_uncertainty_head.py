@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from train_nnue import N_BUCKETS, batch_inputs, load_split, to_tensors  # noqa: E402
 from train_uncertainty_head import N_IN, IntTrunk, UHead, head_inputs  # noqa: E402
 
-INPUTS = {"x": 0, "xz": 1, "axz": 2}
+INPUTS = {"x": 0, "xz": 1, "axz": 2, "z": 3}
 
 
 def fnv1a64(path):
@@ -59,9 +59,11 @@ def main():
         f.write(b"EGUHEAD1")
         f.write(np.array([2, INPUTS[hargs["inputs"]], n_in, hidden, it.W, it.H, N_BUCKETS, n_private], np.int32).tobytes())
         f.write(np.array([main_hash], np.uint64).tobytes())
-        f.write(np.ascontiguousarray(sd["l1.weight"].reshape(N_BUCKETS, hidden, n_in)).tobytes())
-        f.write(np.ascontiguousarray(sd["l1.bias"].reshape(N_BUCKETS, hidden)).tobytes())
-        f.write(np.ascontiguousarray(sd["out.weight"].reshape(N_BUCKETS, hidden)).tobytes())
+        if hidden:
+            f.write(np.ascontiguousarray(sd["l1.weight"].reshape(N_BUCKETS, hidden, n_in)).tobytes())
+            f.write(np.ascontiguousarray(sd["l1.bias"].reshape(N_BUCKETS, hidden)).tobytes())
+        # hidden 0: one linear output per bucket on the inputs, out_w[buckets][n_in]
+        f.write(np.ascontiguousarray(sd["out.weight"].reshape(N_BUCKETS, hidden or n_in)).tobytes())
         f.write(np.ascontiguousarray(sd["out.bias"].reshape(N_BUCKETS)).tobytes())
         if n_private:
             # private rows in 1/64 (int8), unfolded: every row holds its canonical row; bias in 1/64 (int16)
