@@ -9,6 +9,9 @@ results), like train_uncertainty.py, but without a first layer of its own: the e
 accumulator once and gets both the evaluation and u.
 
 Head: inputs (x; x and z; or a, x and z) -> hidden (one set per bucket) -> clamp [0, 1] -> one output per bucket (x 16).
+--private P adds P private first-layer lanes read only by the head (their own small table over the same pattern
+rows, sum + bias, clamp [0, 1]), as inputs beside the shared features. Their weights and bias are used on the
+1/64 grid (straight-through rounding), so the engine's int8 rows give the same values.
 
 Usage:
     python src/tools/nnue/train_uncertainty_head.py --data ignored/nnue_data2/merged --main ignored/nnue_runs/residual_w64_fold_d3 \
@@ -97,19 +100,35 @@ class IntTrunk:
 
 
 class UHead(nn.Module):
-    def __init__(self, n_in, hidden):
+    def __init__(self, n_in, hidden, private=0):
         super().__init__()
-        self.n_in, self.hidden = n_in, hidden
-        self.l1 = nn.Linear(n_in, hidden * N_BUCKETS)
+        self.n_in, self.hidden, self.n_private = n_in, hidden, private
+        if private:
+            self.private = nn.Embedding(pat.N_ROWS, private)
+            nn.init.uniform_(self.private.weight, -0.02, 0.02)
+            self.private_bias = nn.Parameter(torch.full((private,), 0.25))
+            self.register_buffer("fold", torch.tensor(pat.fold_rows(), dtype=torch.long))
+        self.l1 = nn.Linear(n_in + private, hidden * N_BUCKETS)
         self.out = nn.Linear(hidden, N_BUCKETS)
         nn.init.zeros_(self.out.weight)
         nn.init.zeros_(self.out.bias)
 
-    def forward(self, f, bucket):
+    def forward(self, f, bucket, idx=None):
+        """idx: the 64 row indices (raw or folded) of the positions, for the private lanes"""
         n = f.shape[0]
+        if self.n_private:
+            q = lambda w: w + (torch.round(w * 64.0) / 64.0 - w).detach()
+            rows = torch.nn.functional.embedding(self.fold[idx], q(self.private.weight))
+            pa = torch.clamp(rows.sum(1) + q(self.private_bias), 0.0, 1.0)
+            f = torch.cat([f, pa], 1)
         ar = torch.arange(n, device=f.device)
         h = torch.clamp(self.l1(f).view(n, N_BUCKETS, self.hidden)[ar, bucket], 0.0, 1.0)
         return self.out(h)[ar, bucket] * 16.0
+
+    def clip_for_quantization(self):
+        if self.n_private:
+            with torch.no_grad():
+                self.private.weight.clamp_(-127 / 64, 127 / 64)
 
 
 N_IN = {"x": lambda m: m.width // 2, "xz": lambda m: m.width // 2 + m.hidden, "axz": lambda m: m.width + m.width // 2 + m.hidden}
@@ -130,7 +149,7 @@ def load_uhead(run, device):
         trunk_fn, feat = (lambda idx, bucket: it(idx, bucket)[1]), it.feat
     else:
         trunk_fn = lambda idx, bucket: trunk(main_model, idx, bucket)
-    head = UHead(N_IN[args["inputs"]](main_model), args["hidden"]).to(device)
+    head = UHead(N_IN[args["inputs"]](main_model), args["hidden"], args.get("private", 0)).to(device)
     head.load_state_dict(torch.load(Path(run) / "best.pt", map_location=device))
     head.eval()
     for p in head.parameters():
@@ -146,6 +165,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--inputs", default="x", choices=list(N_IN))
     ap.add_argument("--hidden", type=int, default=16)
+    ap.add_argument("--private", type=int, default=0, help="private first-layer lanes of the head")
     ap.add_argument("--batch", type=int, default=16384)
     ap.add_argument("--steps", type=int, default=20000)
     ap.add_argument("--lr", type=float, default=2e-3)
@@ -189,7 +209,7 @@ def main():
         ref = np.bincount(np.asarray(np.memmap(args.empties_ref, dtype=REC, mode="r")["e"]), minlength=61).astype(np.float64)
         ref[cnt == 0] = 0
         ref_p = torch.from_numpy(ref / ref.sum())
-    head = UHead(N_IN[args.inputs](main_model), args.hidden).to(device)
+    head = UHead(N_IN[args.inputs](main_model), args.hidden, args.private).to(device)
     opt = torch.optim.Adam(head.parameters(), lr=args.lr)
 
     def residual_and_u(b):
@@ -204,7 +224,7 @@ def main():
                 y_hat, _ = main_model(idx, bucket, n_player, P)
                 t = trunk(main_model, idx, bucket)
         y = b["s"].to(device, non_blocking=True).float()
-        return y - y_hat, head(head_inputs(t, args.inputs), bucket), e, idx, bucket
+        return y - y_hat, head(head_inputs(t, args.inputs), bucket, idx), e, idx, bucket
 
     cmp_net = None
     if args.compare:
@@ -237,6 +257,7 @@ def main():
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()
+        head.clip_for_quantization()
         if step % args.val_every == 0 or step == args.steps:
             head.eval()
             with torch.no_grad():

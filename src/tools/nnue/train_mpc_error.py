@@ -57,7 +57,7 @@ def read_rows(patterns, is_end):
                 if len(c) < 15:
                     continue
                 board, n_discs, D, s, static, shallow, deep = c[1], int(c[2]), int(c[3]), int(c[4]), int(c[5]), int(c[6]), int(c[7])
-                rows.append((board, n_discs, D, s, static, deep - shallow, is_end))
+                rows.append((board, n_discs, D, s, static, deep - shallow, is_end, int(c[13]), int(c[14])))
     return rows
 
 
@@ -135,6 +135,7 @@ def main():
     ap.add_argument("--val-mod", type=int, default=5)
     ap.add_argument("--no-u", action="store_true", help="ablation: replace u by 0 (cheap features only)")
     ap.add_argument("--mean-u-below", type=int, default=0, help="rows with a deep depth below this use the mean u for the disc count")
+    ap.add_argument("--extra", default="", help="comma-separated extra features of mu and log sigma: dpv (|static - pattern value| / 32), legal (legal moves / 10)")
     ap.add_argument("--apply-head", default="", help="head.json of a fitted model: no fitting, its predictions for these rows")
     args = ap.parse_args()
     both_u = bool(args.unc) and bool(args.dual)
@@ -153,6 +154,15 @@ def main():
     rb = t([bidx[r[0]] for r in rows], torch.long)
     n = t([r[1] for r in rows]); D = t([r[2] for r in rows]); s = t([r[3] for r in rows])
     v = t([r[4] for r in rows]); e = t([r[5] for r in rows])
+    extra_cols = []
+    for name in [x for x in args.extra.split(",") if x]:
+        if name == "dpv":
+            extra_cols.append(t([abs(r[4] - r[8]) / 32.0 for r in rows]))
+        elif name == "legal":
+            extra_cols.append(t([r[7] / 10.0 for r in rows]))
+        else:
+            ap.error(f"unknown extra feature {name}")
+    fx_extra = torch.stack(extra_cols, 1) if extra_cols else None
     parity = D.remainder(2)
     g = t([(2 if r[6] else 0) + (0 if r[3] == 0 else 1) for r in rows], torch.long)
     val = t(is_val_board[[bidx[r[0]] for r in rows]], torch.bool)
@@ -176,7 +186,7 @@ def main():
         with torch.no_grad():
             didx_all = dfeat.indices(st)
             f_all = head_inputs(trunk_fn(didx_all, bucket_all), inputs)
-            u_dual = uhead(f_all, bucket_all)
+            u_dual = uhead(f_all, bucket_all, didx_all)
             if args.x_terms:
                 fx_all = f_all
     if net is not None:
@@ -224,12 +234,15 @@ def main():
         gap_max_g = torch.tensor(applied["gap_max"], device=device)
         args.steps = 0
     s_max, gap_max = s_max_g[g], gap_max_g[g]
-    head = Head(5 + (1 if both_u else 0), 7 + (3 if both_u else 0), fx_all.shape[1] if fx_all is not None else 0).to(device)
+    fx = fx_all[rb] if fx_all is not None else None
+    if fx_extra is not None:
+        # extra features enter like the x terms (linear in mu and log sigma per group)
+        fx = fx_extra if fx is None else torch.cat([fx, fx_extra], 1)
+    head = Head(5 + (1 if both_u else 0), 7 + (3 if both_u else 0), fx.shape[1] if fx is not None else 0).to(device)
     if applied is not None:
         with torch.no_grad():
             head.mu.copy_(torch.tensor(applied["mu"], device=device))
             head.ls.copy_(torch.tensor(applied["log_sigma"], device=device))
-    fx = fx_all[rb] if fx_all is not None else None
     base_head = Head(3, 4).to(device)
     groups = [{"params": list(head.parameters()) + list(base_head.parameters()), "lr": args.lr}]
     if net_params:

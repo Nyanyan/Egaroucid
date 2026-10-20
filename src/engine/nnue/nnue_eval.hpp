@@ -614,16 +614,24 @@ inline int64_t evaluate_total_lanes(const Lanes *l, uint64_t player, int empties
     an estimate of log sigma^2 of (final result - evaluation). It runs only at MPC nodes. The hidden layer
     uses int16 multiply-adds on the integer features: the loader folds the feature scales (1/512, 1/128)
     into the weights and quantizes them to int16 with one scale per head (sums stay below 2^31).
-    File (little endian, src/tools/nnue/export_uncertainty_head.py): "EGUHEAD1", int32 [version 1, inputs,
-    n_in, hidden, main W, main H, buckets, 0], uint64 FNV-1a 64 of the main weight file,
-    float l1_w[buckets][hidden][n_in], l1_b[buckets][hidden], out_w[buckets][hidden], out_b[buckets].
+    Version 2 adds P private lanes read only by the head (8, 16 or 32): their own int8 table over the pattern rows,
+    p = clamp(sum of the 64 rows + bias, 0, 64) / 64, appended to the inputs (n_in counts them).
+    File (little endian, src/tools/nnue/export_uncertainty_head.py): "EGUHEAD1", int32 [version 1 or 2, inputs,
+    n_in, hidden, main W, main H, buckets, P (version 2)], uint64 FNV-1a 64 of the main weight file,
+    float l1_w[buckets][hidden][n_in], l1_b[buckets][hidden], out_w[buckets][hidden], out_b[buckets],
+    then (version 2, P > 0) int8 private[rows][P], int16 private_bias[P].
 */
+constexpr int UHEAD_MAX_PRIVATE = 32;
 struct Uhead {
     bool loaded = false;
     int inputs = 0, n_in = 0, hidden = 0;
+    int n_private = 0;        // private lanes (the last n_private inputs)
+    int n_pad = 0;            // n_in rounded up to 16 (zero weights beyond n_in)
     std::vector<float> l1_w, l1_b, out_w, out_b;
-    int16_t *l1_q = nullptr;  // [buckets][hidden][n_in], weight / feature scale * q_scale
+    int16_t *l1_q = nullptr;  // [buckets][hidden][n_pad], weight / feature scale * q_scale
     float q_inv = 0.0f;       // 1 / q_scale
+    int8_t *private_rows = nullptr;  // [rows][n_private]
+    int16_t private_bias[UHEAD_MAX_PRIVATE];
 };
 inline Uhead uhead;
 
@@ -663,10 +671,11 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     ifs.read(reinterpret_cast<char*>(head), sizeof(head));
     ifs.read(reinterpret_cast<char*>(&main_hash), sizeof(main_hash));
     const int inputs = head[1], n_in = head[2], hidden = head[3];
+    const int n_private = head[0] >= 2 ? head[7] : 0;
     const int W = weights.W, H = weights.H;
-    const int expected_n_in = inputs == 0 ? W / 2 : (inputs == 1 ? W / 2 + H : W + W / 2 + H);
-    if (!ifs || std::memcmp(magic, "EGUHEAD1", 8) != 0 || head[0] != 1 || inputs < 0 || inputs > 2 || hidden <= 0 || hidden > 256 || hidden % 8 != 0 ||
-        n_in % 16 != 0 || n_in > MAX_W + MAX_W / 2 + H_FIXED || head[4] != W || head[5] != H || head[6] != N_BUCKETS || n_in != expected_n_in ||
+    const int expected_n_in = (inputs == 0 ? W / 2 : (inputs == 1 ? W / 2 + H : W + W / 2 + H)) + n_private;
+    if (!ifs || std::memcmp(magic, "EGUHEAD1", 8) != 0 || head[0] < 1 || head[0] > 2 || inputs < 0 || inputs > 2 || hidden <= 0 || hidden > 256 || hidden % 8 != 0 ||
+        !(n_private == 0 || n_private == 8 || n_private == 16 || n_private == 32) || n_in > MAX_W + MAX_W / 2 + H_FIXED + UHEAD_MAX_PRIVATE || head[4] != W || head[5] != H || head[6] != N_BUCKETS || n_in != expected_n_in ||
         weights.mode != MODE_RESIDUAL || !weights.loaded) {
         std::cerr << "[WARNING] NNUE uncertainty head does not match the main network: " << file << std::endl;
         return false;
@@ -679,6 +688,8 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     uhead.inputs = inputs;
     uhead.n_in = n_in;
     uhead.hidden = hidden;
+    uhead.n_private = n_private;
+    uhead.n_pad = (n_in + 15) / 16 * 16;
     uhead.l1_w.resize((size_t)N_BUCKETS * hidden * n_in);
     uhead.l1_b.resize((size_t)N_BUCKETS * hidden);
     uhead.out_w.resize((size_t)N_BUCKETS * hidden);
@@ -688,20 +699,34 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
         std::cerr << "[WARNING] NNUE uncertainty head is truncated: " << file << std::endl;
         return false;
     }
-    // integer features: a (1.0 = 512), x and z (1.0 = 128)
+    if (uhead.private_rows) {
+        _mm_free(uhead.private_rows);
+        uhead.private_rows = nullptr;
+    }
+    if (n_private) {
+        uhead.private_rows = (int8_t*)aligned_alloc64((size_t)NNUE_N_ROWS * n_private + 64);
+        if (!(read_array(ifs, uhead.private_rows, (size_t)NNUE_N_ROWS * n_private) && read_array(ifs, uhead.private_bias, n_private))) {
+            std::cerr << "[WARNING] NNUE uncertainty head is truncated: " << file << std::endl;
+            return false;
+        }
+    }
+    // integer features: a (1.0 = 512), x and z (1.0 = 128), private lanes (1.0 = 64)
     const int n_a = inputs == 2 ? W : 0;
-    auto feature_scale = [&](int k) { return k < n_a ? 512.0 : 128.0; };
+    auto feature_scale = [&](int k) { return k < n_a ? 512.0 : (k < n_in - n_private ? 128.0 : 64.0); };
     double max_w = 0.0;
     for (size_t r = 0; r < (size_t)N_BUCKETS * hidden; ++r) {
         for (int k = 0; k < n_in; ++k) max_w = std::max(max_w, std::fabs(uhead.l1_w[r * n_in + k] / feature_scale(k)));
     }
     // largest |weight| q_max: |sum| <= n_in * 512 * q_max <= 2e9 < 2^31
-    const double q_max = std::min(32000.0, 2.0e9 / (n_in * 512.0));
+    const double q_max = std::min(32000.0, 2.0e9 / (uhead.n_pad * 512.0));
     const double q_scale = max_w > 0.0 ? q_max / max_w : 1.0;
     if (uhead.l1_q) _mm_free(uhead.l1_q);
-    uhead.l1_q = (int16_t*)aligned_alloc64((size_t)N_BUCKETS * hidden * n_in * sizeof(int16_t));
+    const int n_pad = uhead.n_pad;
+    uhead.l1_q = (int16_t*)aligned_alloc64((size_t)N_BUCKETS * hidden * n_pad * sizeof(int16_t));
     for (size_t r = 0; r < (size_t)N_BUCKETS * hidden; ++r) {
-        for (int k = 0; k < n_in; ++k) uhead.l1_q[r * n_in + k] = (int16_t)std::lround(uhead.l1_w[r * n_in + k] / feature_scale(k) * q_scale);
+        for (int k = 0; k < n_pad; ++k) {
+            uhead.l1_q[r * n_pad + k] = k < n_in ? (int16_t)std::lround(uhead.l1_w[r * n_in + k] / feature_scale(k) * q_scale) : 0;
+        }
     }
     uhead.q_inv = (float)(1.0 / q_scale);
     uhead.loaded = true;
@@ -711,9 +736,10 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     return true;
 }
 
-inline double uhead_u(const Trunk &t, int bucket, int W) {
-    // integer features in the head's input order (a, x, z), int16
-    alignas(32) int16_t f[MAX_W + MAX_W / 2 + H_FIXED];
+// idx: the position's 64 row indices (for the private lanes)
+inline double uhead_u(const Trunk &t, const int idx[NNUE_N_INSTANCES], int bucket, int W) {
+    // integer features in the head's input order (a, x, z, private lanes), int16, zero up to n_pad
+    alignas(32) int16_t f[MAX_W + MAX_W / 2 + H_FIXED + UHEAD_MAX_PRIVATE + 16];
     int k = 0;
     if (uhead.inputs == 2) {
         std::memcpy(f, t.a, W * sizeof(int16_t));
@@ -723,8 +749,28 @@ inline double uhead_u(const Trunk &t, int bucket, int W) {
     k += W / 2;
     if (uhead.inputs >= 1) {
         for (int j = 0; j < H_FIXED; ++j) f[k + j] = (int16_t)t.z[j];
+        k += H_FIXED;
     }
-    const int n_in = uhead.n_in, hidden = uhead.hidden;
+    if (const int P = uhead.n_private) {
+        // private lanes: int8 rows summed in int16 (64 * 127 fits), then bias and clamp to [0, 64]
+        __m256i p0 = _mm256_setzero_si256(), p1 = _mm256_setzero_si256();
+        for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
+            const int8_t *row = uhead.private_rows + (size_t)idx[i] * P;
+            if (P == 8) {
+                p0 = _mm256_add_epi16(p0, _mm256_cvtepi8_epi16(_mm_loadl_epi64((const __m128i*)row)));
+            } else {
+                p0 = _mm256_add_epi16(p0, _mm256_cvtepi8_epi16(_mm_loadu_si128((const __m128i*)row)));
+                if (P == 32) p1 = _mm256_add_epi16(p1, _mm256_cvtepi8_epi16(_mm_loadu_si128((const __m128i*)(row + 16))));
+            }
+        }
+        alignas(32) int16_t ps[32];
+        _mm256_store_si256((__m256i*)ps, p0);
+        _mm256_store_si256((__m256i*)(ps + 16), p1);
+        for (int j = 0; j < P; ++j) f[k + j] = (int16_t)std::clamp(ps[j] + uhead.private_bias[j], 0, 64);
+        k += P;
+    }
+    for (; k < uhead.n_pad; ++k) f[k] = 0;
+    const int n_in = uhead.n_pad, hidden = uhead.hidden;
     const int16_t *w1 = uhead.l1_q + (size_t)bucket * hidden * n_in;
     const float *b1 = uhead.l1_b.data() + (size_t)bucket * hidden;
     const float *w2 = uhead.out_w.data() + (size_t)bucket * hidden;
@@ -766,7 +812,7 @@ inline bool evaluate_total_and_u_idx(const int idx[NNUE_N_INSTANCES], uint64_t p
             *total_out = evaluate_total_idx(idx, player, empties, pattern_raw, w);
             return false;
     }
-    *u = uhead_u(t, bucket, w.W);
+    *u = uhead_u(t, idx, bucket, w.W);
     *total_out = total + (int64_t)pattern_raw * 256;
     return true;
 }

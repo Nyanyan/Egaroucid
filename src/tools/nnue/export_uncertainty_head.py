@@ -48,20 +48,28 @@ def main():
 
     class Dims:
         width, hidden = it.W, it.H
-    head = UHead(N_IN[hargs["inputs"]](Dims), hargs["hidden"]).to(device)
+    n_private = hargs.get("private", 0)
+    head = UHead(N_IN[hargs["inputs"]](Dims), hargs["hidden"], n_private).to(device)
     head.load_state_dict(torch.load(Path(args.run) / "best.pt", map_location=device))
     head.eval()
-    n_in, hidden = head.n_in, head.hidden
+    n_in, hidden = head.n_in + n_private, head.hidden
     sd = {k: v.detach().cpu().numpy().astype(np.float32) for k, v in head.state_dict().items()}
     main_hash = fnv1a64(args.main_file)
     with open(args.out, "wb") as f:
         f.write(b"EGUHEAD1")
-        f.write(np.array([1, INPUTS[hargs["inputs"]], n_in, hidden, it.W, it.H, N_BUCKETS, 0], np.int32).tobytes())
+        f.write(np.array([2, INPUTS[hargs["inputs"]], n_in, hidden, it.W, it.H, N_BUCKETS, n_private], np.int32).tobytes())
         f.write(np.array([main_hash], np.uint64).tobytes())
         f.write(np.ascontiguousarray(sd["l1.weight"].reshape(N_BUCKETS, hidden, n_in)).tobytes())
         f.write(np.ascontiguousarray(sd["l1.bias"].reshape(N_BUCKETS, hidden)).tobytes())
         f.write(np.ascontiguousarray(sd["out.weight"].reshape(N_BUCKETS, hidden)).tobytes())
         f.write(np.ascontiguousarray(sd["out.bias"].reshape(N_BUCKETS)).tobytes())
+        if n_private:
+            # private rows in 1/64 (int8), unfolded: every row holds its canonical row; bias in 1/64 (int16)
+            w = np.round(sd["private.weight"].astype(np.float64) * 64)
+            assert np.abs(w).max() <= 127
+            fold = head.fold.cpu().numpy()
+            f.write(np.ascontiguousarray(w[fold].astype(np.int8)).tobytes())
+            f.write(np.round(sd["private_bias"].astype(np.float64) * 64).astype(np.int16).tobytes())
     print("wrote", args.out, "hash of the head file", fnv1a64(args.out))
 
     va_a, va_p = load_split(args.data, "val_tr")
@@ -74,7 +82,7 @@ def main():
             vb = {k: v[i:i + 65536] for k, v in val.items()}
             idx, bucket, _, e = batch_inputs(it.feat, vb, device, False)
             oacc, t = it(idx, bucket)
-            u = head(head_inputs(t, hargs["inputs"]), bucket).cpu().numpy().astype(np.float64)
+            u = head(head_inputs(t, hargs["inputs"]), bucket, idx).cpu().numpy().astype(np.float64)
             n = 64 - e.cpu().numpy()
             np.add.at(sums, n, u)
             np.add.at(cnts, n, 1)
