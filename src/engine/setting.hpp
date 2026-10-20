@@ -35,7 +35,11 @@
     #define EGAROUCID_NNUE_MPC_UNCERTAINTY
 #endif
 // EGAROUCID_NNUE_MPC_NET: MPC margins from the MPC error network alone (multi_probcut.hpp); it reads the
-// network through the uncertainty network loader
+// network through the uncertainty network loader. The default of NNUE builds unless
+// EGAROUCID_NNUE_NO_MPC_NET is defined (then the sigma formula x0.9 and u03 are used)
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_NO_MPC_NET) && !defined(EGAROUCID_NNUE_MPC_NET)
+    #define EGAROUCID_NNUE_MPC_NET
+#endif
 #if defined(EGAROUCID_NNUE_MPC_NET) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
     #define EGAROUCID_NNUE_MPC_UNCERTAINTY
 #endif
