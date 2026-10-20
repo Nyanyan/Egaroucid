@@ -403,13 +403,25 @@ inline int64_t head_packed(const __m256i *acc, int bucket, const Weights &w = we
     return (int64_t)_mm_cvtsi128_si32(o128) + w.out_b[bucket];
 }
 
+// first-layer row prefetch: 0 off, -1 all rows before summing, k > 0 k rows ahead inside the loop (12: about 1-1.5%
+// faster at one thread on the 2026-10-21 benchmarks, identical values)
+#ifndef EGAROUCID_NNUE_PREFETCH
+#define EGAROUCID_NNUE_PREFETCH 12
+#endif
+
 // first layer from int8 rows: one cache line per row for W = 64
 template <int W>
 inline void accumulate_packed8(const int idx[NNUE_N_INSTANCES], __m256i *acc, const Weights &w = weights) {
     constexpr int NV = W / 16;
     __m256i a8[NV];
     for (int v = 0; v < NV; ++v) a8[v] = _mm256_setzero_si256();
+#if EGAROUCID_NNUE_PREFETCH < 0
+    for (int i = 0; i < NNUE_N_INSTANCES; ++i) _mm_prefetch((const char*)(w.ft8 + (size_t)idx[i] * W), _MM_HINT_T0);
+#endif
     for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
+#if EGAROUCID_NNUE_PREFETCH > 0
+        if (i + EGAROUCID_NNUE_PREFETCH < NNUE_N_INSTANCES) _mm_prefetch((const char*)(w.ft8 + (size_t)idx[i + EGAROUCID_NNUE_PREFETCH] * W), _MM_HINT_T0);
+#endif
         const __m128i *row = (const __m128i*)(w.ft8 + (size_t)idx[i] * W);
         for (int v = 0; v < NV; ++v) a8[v] = _mm256_add_epi16(a8[v], _mm256_cvtepi8_epi16(_mm_load_si128(row + v)));
     }
