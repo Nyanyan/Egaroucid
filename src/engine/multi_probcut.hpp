@@ -77,8 +77,15 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
     #endif
 #endif
 #ifndef MID_MPC_SIGMA_EXTRA_SCALE
-    // extra factor on the midgame MPC sigma (an evaluation other than the one it was fitted on)
-    #define MID_MPC_SIGMA_EXTRA_SCALE 1.0
+    // extra factor on the midgame MPC sigma (an evaluation other than the one it was fitted on).
+    // The sigma was fitted with the pattern evaluation; the NNUE build's shallow/deep errors are 5-13%
+    // smaller (more so in lopsided positions), and with the same margins it cut less and visited more
+    // nodes there. 0.9 gives the pattern build's wrong-cut rate (reports/20261020_1_node_count_analysis.md).
+    #ifdef EGAROUCID_NNUE
+        #define MID_MPC_SIGMA_EXTRA_SCALE 0.9
+    #else
+        #define MID_MPC_SIGMA_EXTRA_SCALE 1.0
+    #endif
 #endif
 #if defined(MID_MPC_SIGMA_SCALE_74) || \
     defined(MID_MPC_SIGMA_SCALE_88) || \
@@ -1153,8 +1160,28 @@ inline void mpc_search_errors(
     @param searchings           flag or linked flags for terminating this search
     @return cutoff occurred?
 */
+#if defined(EGAROUCID_MPC_COUNTERS)
+// diagnostic (one search thread): midgame MPC calls, gates passed and cuts per deep depth, printed at exit
+struct Mpc_counters {
+    uint64_t calls[HW2 + 1] = {}, gate_high[HW2 + 1] = {}, cut_high[HW2 + 1] = {}, gate_low[HW2 + 1] = {}, cut_low[HW2 + 1] = {};
+    ~Mpc_counters() {
+        std::cerr << "mpc_counters depth calls gate_high cut_high gate_low cut_low" << std::endl;
+        for (int d = 0; d <= HW2; ++d) {
+            if (calls[d]) {
+                std::cerr << "mpc_counters " << d << ' ' << calls[d] << ' ' << gate_high[d] << ' ' << cut_high[d] << ' ' << gate_low[d] << ' ' << cut_low[d] << std::endl;
+            }
+        }
+    }
+};
+inline Mpc_counters mpc_counters;
+#define EGAROUCID_MPC_COUNT(field, depth) do { if constexpr (!IsEndSearch) ++mpc_counters.field[depth]; } while (0)
+#else
+#define EGAROUCID_MPC_COUNT(field, depth) do {} while (0)
+#endif
+
 template<bool IsEndSearch, typename Searchings>
 inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Nws_node_hint node_hint, Searchings &searchings) {
+    EGAROUCID_MPC_COUNT(calls, depth);
     int search_depth = mpc_shallow_depth<IsEndSearch>(depth);
     const uint_fast8_t mpc_level = search->mpc_level;
     // int search_depth = ((depth / 2) & 0b11111110) + (depth & 1); // depth / 2 + parity
@@ -1357,9 +1384,11 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
         }
 #endif
         if (d0.ge(beta + error_0_high)) {
+            EGAROUCID_MPC_COUNT(gate_high, depth);
             int pc_beta = beta + error_search_high;
             if (pc_beta <= SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_beta - 1, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) >= pc_beta) {
+                    EGAROUCID_MPC_COUNT(cut_high, depth);
                     *v = beta;
                     if constexpr (IsEndSearch) {
                         *v += beta & 1;
@@ -1369,9 +1398,11 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             }
         }
         if (d0.le(alpha - error_0_low)) {
+            EGAROUCID_MPC_COUNT(gate_low, depth);
             int pc_alpha = alpha - error_search_low;
             if (pc_alpha >= -SCORE_MAX) {
                 if (nega_alpha_ordering_nws(search, pc_alpha, search_depth, Nws_node_hint::no_static_eval(), legal, false, searchings) <= pc_alpha) {
+                    EGAROUCID_MPC_COUNT(cut_low, depth);
                     *v = alpha;
                     if constexpr (IsEndSearch) {
                         *v -= alpha & 1;
