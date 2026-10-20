@@ -5,7 +5,12 @@ so that MPC margins come from the model alone (no depth / disc-count sigma formu
     high cut: shallow >= beta + ceil(z * sigma - mu),   low cut: shallow <= alpha - ceil(z * sigma + mu).
 
 Model: u(x) is the output of the pattern network trained by train_uncertainty.py (frozen, or with its
-heads fine-tuned with --finetune). Four groups (mid static, mid shallow, end static, end shallow) each have
+heads fine-tuned with --finetune), or with --dual the output of the uncertainty head on the main NNUE's
+first layer (train_uncertainty_head.py; the dual network). --x-terms adds linear terms in the main
+network's first-layer features f (the head's inputs) to mu and log sigma: + a_g . f, with an L2 penalty.
+--mean-u-below K follows the engine: MPC nodes shallower than K use the mean u for the disc count instead of
+the network (EGAROUCID_NNUE_MPC_NET_MIN_DEPTH). --apply-head <head.json> fits nothing and writes the predictions
+of a given model (e.g. the engine's current coefficients) for these rows. Four groups (mid static, mid shallow, end static, end shallow) each have
     mu        = w_mu . [1, parity, n', u, v/32]
     log sigma = w_sigma . [1, n', s', gap', u, u^2, |v|/32]
 (n' = (discs - 28) / 14, s' = min(s, S_MAX) / 13, gap' = min(D - s, GAP_MAX) / 13 with the group's largest
@@ -26,6 +31,7 @@ import glob
 import hashlib
 import json
 import math
+import re
 import sys
 import time
 from pathlib import Path
@@ -35,6 +41,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from train_nnue import Features, Net, bucket_of  # noqa: E402
+from train_uncertainty_head import head_inputs, load_uhead  # noqa: E402
 
 GROUPS = ["mid_static", "mid_shallow", "end_static", "end_shallow"]
 
@@ -80,16 +87,27 @@ def features(u, n, D, s, v, parity, s_max, gap_max, full=True):
 
 
 class Head(torch.nn.Module):
-    def __init__(self, n_mu, n_ls):
+    def __init__(self, n_mu, n_ls, n_x=0):
         super().__init__()
         self.mu = torch.nn.Parameter(torch.zeros(len(GROUPS), n_mu))
         self.ls = torch.nn.Parameter(torch.zeros(len(GROUPS), n_ls))
+        self.n_x = n_x
+        if n_x:
+            self.mx = torch.nn.Parameter(torch.zeros(len(GROUPS), n_x))
+            self.lx = torch.nn.Parameter(torch.zeros(len(GROUPS), n_x))
         with torch.no_grad():
             self.ls[:, 0] = math.log(3.0)
 
-    def forward(self, f, g):
+    def forward(self, f, g, fx=None):
         fm, fs = f
-        return (fm * self.mu[g]).sum(1), (fs * self.ls[g]).sum(1)
+        mu, ls = (fm * self.mu[g]).sum(1), (fs * self.ls[g]).sum(1)
+        if self.n_x:
+            mu = mu + (fx * self.mx[g]).sum(1)
+            ls = ls + (fx * self.lx[g]).sum(1)
+        return mu, ls
+
+    def penalty(self):
+        return (self.mx ** 2).sum() + (self.lx ** 2).sum() if self.n_x else 0.0
 
 
 def nll(e, mu, ls):
@@ -100,7 +118,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mid", nargs="*", default=[])
     ap.add_argument("--end", nargs="*", default=[])
-    ap.add_argument("--unc", required=True, help="run directory of the uncertainty network")
+    ap.add_argument("--unc", default="", help="run directory of the uncertainty network")
+    ap.add_argument("--dual", default="", help="run directory of train_uncertainty_head.py (u from the main network's first layer)")
+    ap.add_argument("--x-terms", action="store_true", help="linear terms in the main network's first-layer features (needs --dual)")
+    ap.add_argument("--x-l2", type=float, default=1e-3, help="L2 penalty of the x terms")
     ap.add_argument("--out", required=True)
     ap.add_argument("--finetune", action="store_true", help="also train the uncertainty network's heads (first layer frozen)")
     ap.add_argument("--steps", type=int, default=4000)
@@ -108,7 +129,11 @@ def main():
     ap.add_argument("--lr-net", type=float, default=2e-4)
     ap.add_argument("--val-mod", type=int, default=5)
     ap.add_argument("--no-u", action="store_true", help="ablation: replace u by 0 (cheap features only)")
+    ap.add_argument("--mean-u-below", type=int, default=0, help="rows with a deep depth below this use the mean u for the disc count")
+    ap.add_argument("--apply-head", default="", help="head.json of a fitted model: no fitting, its predictions for these rows")
     args = ap.parse_args()
+    if bool(args.unc) == bool(args.dual) or (args.x_terms and not args.dual) or (args.finetune and args.dual):
+        ap.error("give exactly one of --unc / --dual; --x-terms needs --dual; --finetune needs --unc")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -125,27 +150,52 @@ def main():
     parity = D.remainder(2)
     g = t([(2 if r[6] else 0) + (0 if r[3] == 0 else 1) for r in rows], torch.long)
     val = t(is_val_board[[bidx[r[0]] for r in rows]], torch.bool)
-    targs = json.loads((Path(args.unc) / "args.json").read_text(encoding="utf-8"))
-    net = Net(targs["width"], targs["hidden"], "residual").to(device)
-    net.load_state_dict(torch.load(Path(args.unc) / "best.pt", map_location=device))
-    feat = Features(device, True)
+    if args.dual:
+        trunk_fn, feat, uhead, inputs = load_uhead(args.dual, device)
+        net = None
+    else:
+        targs = json.loads((Path(args.unc) / "args.json").read_text(encoding="utf-8"))
+        net = Net(targs["width"], targs["hidden"], "residual").to(device)
+        net.load_state_dict(torch.load(Path(args.unc) / "best.pt", map_location=device))
+        feat = Features(device, True)
     p_all = torch.from_numpy(bits[:, 0].view(np.int64)).to(device)
     o_all = torch.from_numpy(bits[:, 1].view(np.int64)).to(device)
     st = feat.states(p_all, o_all)
     idx_all = feat.indices(st)
     empt_all = 64 - (st != 0).sum(1)
     bucket_all = bucket_of(empt_all)
-    for prm in net.parameters():
-        prm.requires_grad_(False)
+    fx_all = None
+    if args.dual:
+        with torch.no_grad():
+            f_all = head_inputs(trunk_fn(idx_all, bucket_all), inputs)
+            u_dual = uhead(f_all, bucket_all)
+            if args.x_terms:
+                fx_all = f_all
+    else:
+        for prm in net.parameters():
+            prm.requires_grad_(False)
     net_params = []
     if args.finetune:
         for prm in list(net.l1.parameters()) + list(net.out.parameters()):
             prm.requires_grad_(True)
             net_params.append(prm)
 
-    def board_u():
-        # u per board: the network output (log sigma^2 of the outcome residual), the engine's total / 8192
-        u = net.correction(idx_all, bucket_all)
+    mean_u = None
+    if args.mean_u_below > 0:
+        if args.dual:
+            table = json.loads((Path(args.dual) / "mean_u.json").read_text(encoding="utf-8"))["mean_u"]
+        else:
+            txt = (Path(__file__).resolve().parents[3] / "src" / "engine" / "nnue" / "nnue_uncertainty_table.hpp").read_text(encoding="utf-8")
+            table = [float(x) for x in re.findall(r"[-+]?\d+\.?\d*(?:[eE][-+]?\d+)?", txt[txt.index("{"):txt.index("}")])]
+        mean_u = torch.tensor(table, dtype=torch.float32, device=device)[n.long()]
+    shallow_row = D < args.mean_u_below
+
+    def row_u():
+        # u per row: the network output for the board (log sigma^2 of the outcome residual, the engine's total / 8192),
+        # or the disc-count mean where the engine skips the network
+        u = (u_dual if args.dual else net.correction(idx_all, bucket_all))[rb]
+        if mean_u is not None:
+            u = torch.where(shallow_row, mean_u, u)
         return u * 0.0 if args.no_u else u
 
     # clamps: the largest shallow depth and depth gap of each group in the data
@@ -156,8 +206,18 @@ def main():
         if m.any():
             s_max_g[gi] = s[m].max()
             gap_max_g[gi] = (D[m] - s[m]).max()
+    applied = json.loads(Path(args.apply_head).read_text(encoding="utf-8")) if args.apply_head else None
+    if applied is not None:
+        s_max_g = torch.tensor(applied["s_max"], device=device)
+        gap_max_g = torch.tensor(applied["gap_max"], device=device)
+        args.steps = 0
     s_max, gap_max = s_max_g[g], gap_max_g[g]
-    head = Head(5, 7).to(device)
+    head = Head(5, 7, fx_all.shape[1] if fx_all is not None else 0).to(device)
+    if applied is not None:
+        with torch.no_grad():
+            head.mu.copy_(torch.tensor(applied["mu"], device=device))
+            head.ls.copy_(torch.tensor(applied["log_sigma"], device=device))
+    fx = fx_all[rb] if fx_all is not None else None
     base_head = Head(3, 4).to(device)
     groups = [{"params": list(head.parameters()) + list(base_head.parameters()), "lr": args.lr}]
     if net_params:
@@ -166,10 +226,10 @@ def main():
     tr = ~val
     t0 = time.time()
     for step in range(1, args.steps + 1):
-        u = board_u()[rb]
-        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max), g)
+        u = row_u()
+        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max), g, fx)
         mu0, ls0 = base_head(features(u, n, D, s, v, parity, s_max, gap_max, full=False), g)
-        loss = nll(e[tr], mu[tr], ls[tr]) + nll(e[tr], mu0[tr], ls0[tr])
+        loss = nll(e[tr], mu[tr], ls[tr]) + nll(e[tr], mu0[tr], ls0[tr]) + args.x_l2 * head.penalty()
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()
@@ -185,8 +245,8 @@ def main():
                     line += f" | {name} val nll {nll(e[m], mu[m], ls[m]).item():.4f} (base {nll(e[m], mu0[m], ls0[m]).item():.4f})"
             print(line + f" | {time.time() - t0:.0f}s", flush=True)
     with torch.no_grad():
-        u = board_u()[rb]
-        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max), g)
+        u = row_u()
+        mu, ls = head(features(u, n, D, s, v, parity, s_max, gap_max), g, fx)
         mu0, ls0 = base_head(features(u, n, D, s, v, parity, s_max, gap_max, full=False), g)
     res = {"groups": GROUPS, "mu_features": ["1", "parity", "n'", "u", "v/32"],
            "log_sigma_features": ["1", "n'", "s'", "gap'", "u", "u^2", "|v|/32"],
@@ -194,7 +254,10 @@ def main():
            "mu": head.mu.detach().cpu().tolist(), "log_sigma": head.ls.detach().cpu().tolist(),
            "base_mu_features": ["1", "parity", "n'"], "base_log_sigma_features": ["1", "n'", "s'", "gap'"],
            "base_mu": base_head.mu.detach().cpu().tolist(), "base_log_sigma": base_head.ls.detach().cpu().tolist(),
-           "unc": str(args.unc), "finetune": args.finetune}
+           "unc": str(args.unc), "dual": str(args.dual), "finetune": args.finetune}
+    if head.n_x:
+        res["x_mu"] = head.mx.detach().cpu().tolist()
+        res["x_log_sigma"] = head.lx.detach().cpu().tolist()
     # standardized residual quantiles on validation (tail shape per group)
     for gi, name in enumerate(GROUPS):
         m = (val & (g == gi)).cpu().numpy()

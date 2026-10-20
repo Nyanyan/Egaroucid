@@ -1,11 +1,19 @@
 """Write src/engine/nnue/nnue_mpc_net_head.hpp from a trained MPC error model (train_mpc_error.py head.json)
 and a z table (calibrate_mpc_net.py output; without it the nominal z of each MPC level is used).
 
+For a model fitted with u from an uncertainty head on the main network (dual network), --dual-head <file.egnh>
+writes src/engine/nnue/nnue_mpc_dual_head.hpp instead, with the head file's hash (the engine loads only that head)
+and the head's mean u per disc count (<head run>/mean_u.json, given by --mean-u).
+
 Usage: python src/tools/nnue/export_mpc_net_head.py ignored/nnue_runs/mpcerr_b1/head.json [--z ignored/nnue_runs/mpcerr_b1/z.json]
+       python src/tools/nnue/export_mpc_net_head.py <run>/head.json --z <run>/z.json --dual-head bin/resources/nnue_uhead.egnh --mean-u <head run>/mean_u.json
 """
 import argparse
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 ROOT = Path(__file__).resolve().parents[3]
 Z_MID = [1.13, 1.55, 1.81, 2.088, 2.1845, 2.7965, 9.99]
@@ -20,8 +28,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("head")
     ap.add_argument("--z", default="")
-    ap.add_argument("--out", default=str(ROOT / "src" / "engine" / "nnue" / "nnue_mpc_net_head.hpp"))
+    ap.add_argument("--out", default="")
+    ap.add_argument("--dual-head", default="", help="the uncertainty head file (.egnh) the model was fitted with")
+    ap.add_argument("--mean-u", default="", help="mean_u.json of the head run (with --dual-head)")
     args = ap.parse_args()
+    if bool(args.dual_head) != bool(args.mean_u):
+        ap.error("--dual-head and --mean-u go together")
+    out = args.out or str(ROOT / "src" / "engine" / "nnue" / ("nnue_mpc_dual_head.hpp" if args.dual_head else "nnue_mpc_net_head.hpp"))
     h = json.loads(Path(args.head).read_text(encoding="utf-8"))
     if args.z:
         z = json.loads(Path(args.z).read_text(encoding="utf-8"))
@@ -44,11 +57,19 @@ def main():
         "constexpr double Z[4][7] = {" + ", ".join(arr(r) for r in Z) + "};",
         "// endgame static cut (the recalibrated path at <= 93%): its own conservative z",
         "constexpr double Z_END_STATIC_CUT[7] = " + arr(Z_SC) + ";",
-        "}",
-        "",
     ]
-    Path(args.out).write_text("\n".join(lines), encoding="utf-8")
-    print("wrote", args.out)
+    if args.dual_head:
+        from export_uncertainty_head import fnv1a64
+        mean_u = json.loads(Path(args.mean_u).read_text(encoding="utf-8"))["mean_u"]
+        lines += [
+            "// the uncertainty head file these coefficients were fitted with (FNV-1a 64; the engine loads no other head)",
+            f"constexpr unsigned long long UHEAD_HASH = {fnv1a64(args.dual_head)}ULL;",
+            "// mean u of the head by disc count (MPC nodes that skip the head)",
+            "constexpr double MEAN_U[65] = " + arr(mean_u) + ";",
+        ]
+    lines += ["}", ""]
+    Path(out).write_text("\n".join(lines), encoding="utf-8")
+    print("wrote", out)
 
 
 if __name__ == "__main__":

@@ -935,7 +935,11 @@ inline int nnue_mpc_scale_error(int error, double mult) {
 #endif
 
 #ifdef EGAROUCID_NNUE_MPC_NET
+#ifdef EGAROUCID_NNUE_MPC_DUAL
+#include "nnue/nnue_mpc_dual_head.hpp"  // coefficients fitted with u from the uncertainty head (dual network)
+#else
 #include "nnue/nnue_mpc_net_head.hpp"
+#endif
 #ifndef EGAROUCID_NNUE_MPC_NET_MIN_DEPTH
     #define EGAROUCID_NNUE_MPC_NET_MIN_DEPTH 5  // shallower MPC nodes use the disc-count mean of u (no network call)
 #endif
@@ -988,12 +992,42 @@ inline Mpc_net_margins mpc_net_margins(int group, double z, double u, int n_disc
     return m;
 }
 
-inline double mpc_net_u(Search *search, int depth) {
+#ifdef EGAROUCID_NNUE_MPC_DUAL
+/*
+    u from the uncertainty head on the main network's first layer. The same pass gives the exact NNUE value,
+    which replaces a lazy depth-0 value (the MPC error data used the exact value).
+*/
+inline double mpc_net_u(Search *search, int depth, Mpc_d0 &d0) {
+    if (depth >= EGAROUCID_NNUE_MPC_NET_MIN_DEPTH && nnue_uhead_loaded) {
+        double u;
+#if defined(EGAROUCID_NNUE_LAZY)
+        const int value = mid_evaluate_nnue_and_u(search, d0.exact ? INT_MIN : d0.raw, &u);
+        if (!d0.exact) {
+            d0.value = value;
+            d0.exact = true;
+        }
+#else
+        (void)d0;
+        mid_evaluate_nnue_and_u(search, INT_MIN, &u);
+#endif
+        return u;
+    }
+    return nnue_mpc_net::MEAN_U[search->n_discs];
+}
+#else
+// EGAROUCID_NNUE_MPC_EXACT_D0 (experiment): the exact NNUE depth-0 value wherever the network u is computed
+inline double mpc_net_u(Search *search, int depth, Mpc_d0 &d0) {
     if (depth >= EGAROUCID_NNUE_MPC_NET_MIN_DEPTH && nnue_uncertainty_loaded) {
+#ifdef EGAROUCID_NNUE_MPC_EXACT_D0
+        d0.exact_value();
+#else
+        (void)d0;
+#endif
         return nnue_uncertainty_raw(search);
     }
     return nnue_uncertainty::MEAN_U[search->n_discs];
 }
+#endif
 #endif
 
 inline Mpc_d0 mpc_d0_evaluate(Search *search) {
@@ -1325,7 +1359,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
 
 #if defined(EGAROUCID_NNUE_MPC_NET)
     constexpr double u_mult = 1.0;
-    const double net_u = mpc_net_u(search, depth);
+    const double net_u = mpc_net_u(search, depth, d0);
     const int net_static_v = d0.value;
 #elif defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
     const double u_mult = nnue_mpc_u_multiplier(search, depth, IsEndSearch);

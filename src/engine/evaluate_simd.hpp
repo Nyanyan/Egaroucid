@@ -30,6 +30,13 @@
 #include "nnue/nnue_uncertainty_table.hpp"
 inline bool nnue_uncertainty_loaded = false;  // set by evaluate_init
 #endif
+#ifdef EGAROUCID_NNUE_MPC_DUAL
+#include "nnue/nnue_mpc_dual_head.hpp"
+#ifndef EGAROUCID_NNUE_UHEAD_FILENAME
+#define EGAROUCID_NNUE_UHEAD_FILENAME "nnue_uhead.egnh"
+#endif
+inline bool nnue_uhead_loaded = false;  // set by evaluate_init
+#endif
 #endif
 
 /*
@@ -544,6 +551,14 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[WARNING] NNUE uncertainty network not loaded; MPC margins are not scaled per position" << std::endl;
     }
 #endif
+#ifdef EGAROUCID_NNUE_MPC_DUAL
+    // without the head the MPC margins use the disc-count mean of u
+    nnue_uhead_loaded = nnue::init_uhead(nnue::default_path(file, EGAROUCID_NNUE_UHEAD_FILENAME, "EGAROUCID_NNUE_UHEAD_FILE"),
+                                         nnue::default_path(file), nnue_mpc_net::UHEAD_HASH, show_log);
+    if (!nnue_uhead_loaded) {
+        std::cerr << "[WARNING] NNUE uncertainty head not loaded; MPC margins use the mean uncertainty for the disc count" << std::endl;
+    }
+#endif
 #endif
     if (!initialize_auto_move_ordering_models(file, show_log)) return false;
     if (show_log) {
@@ -774,6 +789,24 @@ inline double nnue_uncertainty_dev(Search *search) {
 // the same network output without the disc-count mean (the MPC error network's input u)
 inline double nnue_uncertainty_raw(Search *search) {
     return nnue_uncertainty_dev(search) + nnue_uncertainty::MEAN_U[search->n_discs];
+}
+#endif
+
+#ifdef EGAROUCID_NNUE_MPC_DUAL
+// NNUE value of the node and the uncertainty head's u (dual network) from one first-layer pass;
+// raw_pattern as in mid_evaluate_nnue; u is the disc-count mean if the head cannot run
+inline int mid_evaluate_nnue_and_u(Search *search, int raw_pattern, double *u) {
+    const int raw = raw_pattern != INT_MIN ? raw_pattern : mid_evaluate_raw(search);
+    nnue_ensure_lanes(&search->eval);
+    nnue::Lanes view;
+    nnue::lanes_view(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
+                     reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_occ[search->eval.feature_idx]),
+                     nnue_other_side(&search->eval), &view);
+    int64_t total;
+    if (!nnue::evaluate_total_and_u_lanes(&view, search->board.player, HW2 - search->n_discs, raw, &total, u)) {
+        *u = nnue_mpc_net::MEAN_U[search->n_discs];
+    }
+    return nnue::score_of_total(total);
 }
 #endif
 #endif

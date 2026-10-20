@@ -31,7 +31,7 @@
 
 // NNUE build: the endgame MPC margins follow the learned per-position uncertainty (multi_probcut.hpp)
 // unless EGAROUCID_NNUE_NO_MPC_UNCERTAINTY is defined
-#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_NO_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_NO_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_MPC_DUAL)
     #define EGAROUCID_NNUE_MPC_UNCERTAINTY
 #endif
 // EGAROUCID_NNUE_MPC_NET: MPC margins from the MPC error network alone (multi_probcut.hpp); it reads the
@@ -40,7 +40,15 @@
 #if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_NO_MPC_NET) && !defined(EGAROUCID_NNUE_MPC_NET)
     #define EGAROUCID_NNUE_MPC_NET
 #endif
-#if defined(EGAROUCID_NNUE_MPC_NET) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
+// EGAROUCID_NNUE_MPC_DUAL: the MPC error network's u comes from an uncertainty head on the main network's
+// first layer (dual network, nnue_eval.hpp init_uhead); the separate uncertainty network is not loaded
+#if defined(EGAROUCID_NNUE_MPC_DUAL) && defined(EGAROUCID_NNUE_NO_MPC_NET)
+    #error "EGAROUCID_NNUE_MPC_DUAL needs the MPC error network (EGAROUCID_NNUE_NO_MPC_NET is defined)"
+#endif
+#if defined(EGAROUCID_NNUE_MPC_DUAL) && !defined(EGAROUCID_NNUE_MPC_NET)
+    #define EGAROUCID_NNUE_MPC_NET
+#endif
+#if defined(EGAROUCID_NNUE_MPC_NET) && !defined(EGAROUCID_NNUE_MPC_DUAL) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
     #define EGAROUCID_NNUE_MPC_UNCERTAINTY
 #endif
 

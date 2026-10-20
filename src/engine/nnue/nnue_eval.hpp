@@ -21,6 +21,7 @@
 
 #pragma once
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -332,9 +333,17 @@ inline void accumulate_packed(const int idx[NNUE_N_INSTANCES], __m256i *acc, __m
     *lin_hi = lhi;
 }
 
-// pairwise product and the bucket's hidden and output layers: oacc
+// first-layer features kept for the uncertainty head (dual network): clamped accumulator a (1.0 = 512),
+// pairwise products x (1.0 = 128) and the bucket's clamped hidden layer z (1.0 = 128)
+struct Trunk {
+    alignas(32) int16_t a[MAX_W];
+    alignas(32) int16_t x[MAX_W / 2];
+    alignas(32) int32_t z[H_FIXED];
+};
+
+// pairwise product and the bucket's hidden and output layers: oacc (t: also keep the features)
 template <int W>
-inline int64_t head_packed(const __m256i *acc, int bucket, const Weights &w = weights) {
+inline int64_t head_packed(const __m256i *acc, int bucket, const Weights &w = weights, Trunk *t = nullptr) {
     constexpr int HALF = W / 2;
     constexpr int NX = HALF / 16;  // int16 vectors in x
     const __m256i zero = _mm256_setzero_si256(), c512 = _mm256_set1_epi16(512), c127 = _mm256_set1_epi16(127);
@@ -343,6 +352,11 @@ inline int64_t head_packed(const __m256i *acc, int bucket, const Weights &w = we
         const __m256i a = _mm256_min_epi16(_mm256_max_epi16(acc[v], zero), c512);
         const __m256i b = _mm256_min_epi16(_mm256_max_epi16(acc[v + NX], zero), c512);
         x[v] = _mm256_min_epi16(_mm256_mulhi_epi16(_mm256_slli_epi16(a, 5), b), c127);  // (a * b) >> 11
+        if (t) {
+            _mm256_store_si256((__m256i*)&t->a[v * 16], a);
+            _mm256_store_si256((__m256i*)&t->a[HALF + v * 16], b);
+            _mm256_store_si256((__m256i*)&t->x[v * 16], x[v]);
+        }
     }
     const int16_t *l1 = w.l1_w + (size_t)bucket * H_FIXED * HALF;
     __m256i o = _mm256_setzero_si256();
@@ -357,6 +371,7 @@ inline int64_t head_packed(const __m256i *acc, int bucket, const Weights &w = we
         __m256i zs = hsum8_epi32(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]);
         zs = _mm256_add_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.l1_b[bucket][8 * g]));
         zs = _mm256_min_epi32(_mm256_max_epi32(_mm256_srai_epi32(zs, 6), _mm256_setzero_si256()), _mm256_set1_epi32(127));
+        if (t) _mm256_store_si256((__m256i*)&t->z[8 * g], zs);
         o = _mm256_add_epi32(o, _mm256_mullo_epi32(zs, _mm256_loadu_si256((const __m256i*)&w.out_w[bucket][8 * g])));
     }
     __m128i o128 = _mm_add_epi32(_mm256_castsi256_si128(o), _mm256_extracti128_si256(o, 1));
@@ -384,10 +399,19 @@ inline void accumulate_packed8(const int idx[NNUE_N_INSTANCES], __m256i *acc, co
 }
 
 template <int W>
-inline int64_t forward_packed8(const int idx[NNUE_N_INSTANCES], int bucket, const Weights &w = weights) {
+inline int64_t forward_packed8(const int idx[NNUE_N_INSTANCES], int bucket, const Weights &w = weights, Trunk *t = nullptr) {
     __m256i acc[W / 16];
     accumulate_packed8<W>(idx, acc, w);
-    return head_packed<W>(acc, bucket, w);
+    return head_packed<W>(acc, bucket, w, t);
+}
+
+// residual model with an int16 first layer, keeping the features
+template <int W>
+inline int64_t forward_packed_trunk(const int idx[NNUE_N_INSTANCES], int bucket, Trunk *t, const Weights &w = weights) {
+    __m256i acc[W / 16];
+    __m256i lin_lo, lin_hi;
+    accumulate_packed<W, false>(idx, acc, &lin_lo, &lin_hi, w);
+    return head_packed<W>(acc, bucket, w, t);
 }
 
 template <int W, bool LIN>
@@ -579,6 +603,182 @@ inline int64_t evaluate_total_lanes(const Lanes *l, uint64_t player, int empties
         _mm256_store_si256((__m256i*)&idx[8 * v], w32);
     }
     return evaluate_total_idx(idx, player, empties, pattern_raw, w);
+}
+#endif
+
+#if USE_SIMD
+/*
+    Uncertainty head on the main network's first layer (dual network, src/tools/nnue/train_uncertainty_head.py):
+    inputs f = x / 128 (inputs 0), (x / 128, z / 128) (1) or (a / 512, x / 128, z / 128) (2);
+    h = clamp(l1_w[bucket] f + l1_b[bucket], 0, 1);  u = 16 (out_w[bucket] . h + out_b[bucket]),
+    an estimate of log sigma^2 of (final result - evaluation). It runs only at MPC nodes. The hidden layer
+    uses int16 multiply-adds on the integer features: the loader folds the feature scales (1/512, 1/128)
+    into the weights and quantizes them to int16 with one scale per head (sums stay below 2^31).
+    File (little endian, src/tools/nnue/export_uncertainty_head.py): "EGUHEAD1", int32 [version 1, inputs,
+    n_in, hidden, main W, main H, buckets, 0], uint64 FNV-1a 64 of the main weight file,
+    float l1_w[buckets][hidden][n_in], l1_b[buckets][hidden], out_w[buckets][hidden], out_b[buckets].
+*/
+struct Uhead {
+    bool loaded = false;
+    int inputs = 0, n_in = 0, hidden = 0;
+    std::vector<float> l1_w, l1_b, out_w, out_b;
+    int16_t *l1_q = nullptr;  // [buckets][hidden][n_in], weight / feature scale * q_scale
+    float q_inv = 0.0f;       // 1 / q_scale
+};
+inline Uhead uhead;
+
+inline uint64_t fnv1a64_file(const std::string &file, bool *ok) {
+    std::ifstream ifs(file, std::ios::binary);
+    *ok = (bool)ifs;
+    uint64_t h = 1469598103934665603ULL;
+    std::vector<char> buf(1 << 20);
+    while (ifs) {
+        ifs.read(buf.data(), buf.size());
+        const std::streamsize n = ifs.gcount();
+        for (std::streamsize i = 0; i < n; ++i) {
+            h = (h ^ (uint8_t)buf[i]) * 1099511628211ULL;
+        }
+    }
+    return h;
+}
+
+// main_file: the weight file of the loaded main network (a head belongs to one main weight file);
+// expected_hash: FNV-1a 64 of the head file that the compiled MPC coefficients were fitted with (0: any)
+inline bool init_uhead(const std::string &file, const std::string &main_file, uint64_t expected_hash, bool show_log) {
+    uhead.loaded = false;
+    std::ifstream ifs(file, std::ios::binary);
+    if (!ifs) {
+        std::cerr << "[WARNING] NNUE uncertainty head not found: " << file << std::endl;
+        return false;
+    }
+    bool file_ok = false;
+    if (expected_hash != 0 && (fnv1a64_file(file, &file_ok) != expected_hash || !file_ok)) {
+        std::cerr << "[WARNING] NNUE uncertainty head is not the one the MPC coefficients were fitted with: " << file << std::endl;
+        return false;
+    }
+    char magic[8];
+    int32_t head[8];
+    uint64_t main_hash = 0;
+    ifs.read(magic, 8);
+    ifs.read(reinterpret_cast<char*>(head), sizeof(head));
+    ifs.read(reinterpret_cast<char*>(&main_hash), sizeof(main_hash));
+    const int inputs = head[1], n_in = head[2], hidden = head[3];
+    const int W = weights.W, H = weights.H;
+    const int expected_n_in = inputs == 0 ? W / 2 : (inputs == 1 ? W / 2 + H : W + W / 2 + H);
+    if (!ifs || std::memcmp(magic, "EGUHEAD1", 8) != 0 || head[0] != 1 || inputs < 0 || inputs > 2 || hidden <= 0 || hidden > 256 || hidden % 8 != 0 ||
+        n_in % 16 != 0 || n_in > MAX_W + MAX_W / 2 + H_FIXED || head[4] != W || head[5] != H || head[6] != N_BUCKETS || n_in != expected_n_in ||
+        weights.mode != MODE_RESIDUAL || !weights.loaded) {
+        std::cerr << "[WARNING] NNUE uncertainty head does not match the main network: " << file << std::endl;
+        return false;
+    }
+    bool hash_ok = false;
+    if (fnv1a64_file(main_file, &hash_ok) != main_hash || !hash_ok) {
+        std::cerr << "[WARNING] NNUE uncertainty head belongs to another main weight file: " << file << std::endl;
+        return false;
+    }
+    uhead.inputs = inputs;
+    uhead.n_in = n_in;
+    uhead.hidden = hidden;
+    uhead.l1_w.resize((size_t)N_BUCKETS * hidden * n_in);
+    uhead.l1_b.resize((size_t)N_BUCKETS * hidden);
+    uhead.out_w.resize((size_t)N_BUCKETS * hidden);
+    uhead.out_b.resize(N_BUCKETS);
+    if (!(read_array(ifs, uhead.l1_w.data(), uhead.l1_w.size()) && read_array(ifs, uhead.l1_b.data(), uhead.l1_b.size()) &&
+          read_array(ifs, uhead.out_w.data(), uhead.out_w.size()) && read_array(ifs, uhead.out_b.data(), uhead.out_b.size()))) {
+        std::cerr << "[WARNING] NNUE uncertainty head is truncated: " << file << std::endl;
+        return false;
+    }
+    // integer features: a (1.0 = 512), x and z (1.0 = 128)
+    const int n_a = inputs == 2 ? W : 0;
+    auto feature_scale = [&](int k) { return k < n_a ? 512.0 : 128.0; };
+    double max_w = 0.0;
+    for (size_t r = 0; r < (size_t)N_BUCKETS * hidden; ++r) {
+        for (int k = 0; k < n_in; ++k) max_w = std::max(max_w, std::fabs(uhead.l1_w[r * n_in + k] / feature_scale(k)));
+    }
+    // largest |weight| q_max: |sum| <= n_in * 512 * q_max <= 2e9 < 2^31
+    const double q_max = std::min(32000.0, 2.0e9 / (n_in * 512.0));
+    const double q_scale = max_w > 0.0 ? q_max / max_w : 1.0;
+    if (uhead.l1_q) _mm_free(uhead.l1_q);
+    uhead.l1_q = (int16_t*)aligned_alloc64((size_t)N_BUCKETS * hidden * n_in * sizeof(int16_t));
+    for (size_t r = 0; r < (size_t)N_BUCKETS * hidden; ++r) {
+        for (int k = 0; k < n_in; ++k) uhead.l1_q[r * n_in + k] = (int16_t)std::lround(uhead.l1_w[r * n_in + k] / feature_scale(k) * q_scale);
+    }
+    uhead.q_inv = (float)(1.0 / q_scale);
+    uhead.loaded = true;
+    if (show_log) {
+        std::cerr << "NNUE uncertainty head loaded " << file << " inputs " << inputs << " hidden " << hidden << std::endl;
+    }
+    return true;
+}
+
+inline double uhead_u(const Trunk &t, int bucket, int W) {
+    // integer features in the head's input order (a, x, z), int16
+    alignas(32) int16_t f[MAX_W + MAX_W / 2 + H_FIXED];
+    int k = 0;
+    if (uhead.inputs == 2) {
+        std::memcpy(f, t.a, W * sizeof(int16_t));
+        k = W;
+    }
+    std::memcpy(f + k, t.x, W / 2 * sizeof(int16_t));
+    k += W / 2;
+    if (uhead.inputs >= 1) {
+        for (int j = 0; j < H_FIXED; ++j) f[k + j] = (int16_t)t.z[j];
+    }
+    const int n_in = uhead.n_in, hidden = uhead.hidden;
+    const int16_t *w1 = uhead.l1_q + (size_t)bucket * hidden * n_in;
+    const float *b1 = uhead.l1_b.data() + (size_t)bucket * hidden;
+    const float *w2 = uhead.out_w.data() + (size_t)bucket * hidden;
+    const __m256 q_inv = _mm256_set1_ps(uhead.q_inv), zero = _mm256_setzero_ps(), one = _mm256_set1_ps(1.0f);
+    __m256 o = _mm256_setzero_ps();
+    for (int g = 0; g < hidden; g += 8) {  // 8 hidden units at a time keep the partial sums in registers
+        __m256i s[8];
+        for (int h = 0; h < 8; ++h) {
+            const int16_t *row = w1 + (size_t)(g + h) * n_in;
+            __m256i t = _mm256_madd_epi16(_mm256_load_si256((const __m256i*)row), _mm256_load_si256((const __m256i*)f));
+            for (int j = 16; j < n_in; j += 16) t = _mm256_add_epi32(t, _mm256_madd_epi16(_mm256_load_si256((const __m256i*)(row + j)), _mm256_load_si256((const __m256i*)(f + j))));
+            s[h] = t;
+        }
+        const __m256 z = _mm256_fmadd_ps(_mm256_cvtepi32_ps(hsum8_epi32(s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7])), q_inv, _mm256_loadu_ps(b1 + g));
+        o = _mm256_fmadd_ps(_mm256_min_ps(_mm256_max_ps(z, zero), one), _mm256_loadu_ps(w2 + g), o);
+    }
+    __m128 r = _mm_add_ps(_mm256_castps256_ps128(o), _mm256_extractf128_ps(o, 1));
+    r = _mm_add_ps(r, _mm_movehl_ps(r, r));
+    r = _mm_add_ss(r, _mm_shuffle_ps(r, r, 1));
+    return 16.0 * (_mm_cvtss_f32(r) + uhead.out_b[bucket]);
+}
+
+// total (as evaluate_total_idx, residual model) and the uncertainty head's u from one first-layer pass;
+// false (and no u) for a network shape without the shared pass
+inline bool evaluate_total_and_u_idx(const int idx[NNUE_N_INSTANCES], uint64_t player, int empties, int pattern_raw, int64_t *total_out, double *u, const Weights &w = weights) {
+    const int bucket = bucket_of(empties);
+    Trunk t;
+    int64_t total;
+    switch (w.W * 2 + (w.ft8 ? 1 : 0)) {
+        case 65: total = forward_packed8<32>(idx, bucket, w, &t); break;
+        case 129: total = forward_packed8<64>(idx, bucket, w, &t); break;
+        case 257: total = forward_packed8<128>(idx, bucket, w, &t); break;
+        case 513: total = forward_packed8<256>(idx, bucket, w, &t); break;
+        case 64: total = forward_packed_trunk<32>(idx, bucket, &t, w); break;
+        case 128: total = forward_packed_trunk<64>(idx, bucket, &t, w); break;
+        case 256: total = forward_packed_trunk<128>(idx, bucket, &t, w); break;
+        case 512: total = forward_packed_trunk<256>(idx, bucket, &t, w); break;
+        default:
+            *total_out = evaluate_total_idx(idx, player, empties, pattern_raw, w);
+            return false;
+    }
+    *u = uhead_u(t, bucket, w.W);
+    *total_out = total + (int64_t)pattern_raw * 256;
+    return true;
+}
+
+inline bool evaluate_total_and_u_lanes(const Lanes *l, uint64_t player, int empties, int pattern_raw, int64_t *total_out, double *u, const Weights &w = weights) {
+    alignas(32) int idx[NNUE_N_INSTANCES];
+    for (int v = 0; v < 8; ++v) {
+        const __m128i lo = _mm_loadu_si128((const __m128i*)&l->u[8 * v]);
+        const __m256i w32 = _mm256_add_epi32(_mm256_cvtepu16_epi32(lo), _mm256_loadu_si256((const __m256i*)&instance_offset[8 * v]));
+        _mm256_store_si256((__m256i*)&idx[8 * v], w32);
+    }
+    return evaluate_total_and_u_idx(idx, player, empties, pattern_raw, total_out, u, w);
 }
 #endif
 
