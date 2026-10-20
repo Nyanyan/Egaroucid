@@ -770,6 +770,11 @@ inline double nnue_uncertainty_dev(Search *search) {
     const int64_t total = nnue::evaluate_total_lanes(&view, search->board.player, HW2 - search->n_discs, 0, nnue::uncertainty_weights);
     return total / 8192.0 - nnue_uncertainty::MEAN_U[search->n_discs];
 }
+
+// the same network output without the disc-count mean (the MPC error network's input u)
+inline double nnue_uncertainty_raw(Search *search) {
+    return nnue_uncertainty_dev(search) + nnue_uncertainty::MEAN_U[search->n_discs];
+}
 #endif
 #endif
 

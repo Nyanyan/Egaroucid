@@ -15,7 +15,7 @@ import subprocess
 import time
 from pathlib import Path
 
-POLICY_SHALLOW = {3: 1, 4: 0, 5: 1, 6: 2, 7: 3, 8: 2, 9: 3, 10: 4, 11: 5, 12: 4, 13: 5, 14: 4, 15: 7, 16: 6}
+POLICY_SHALLOW = {3: 1, 4: 0, 5: 1, 6: 2, 7: 3, 8: 2, 9: 3, 10: 4, 11: 5, 12: 4, 13: 5, 14: 4, 15: 7, 16: 6, 17: 7, 18: 6}  # 17-18: the formula
 
 
 def main():

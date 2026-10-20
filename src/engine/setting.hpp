@@ -34,6 +34,11 @@
 #if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_NO_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
     #define EGAROUCID_NNUE_MPC_UNCERTAINTY
 #endif
+// EGAROUCID_NNUE_MPC_NET: MPC margins from the MPC error network alone (multi_probcut.hpp); it reads the
+// network through the uncertainty network loader
+#if defined(EGAROUCID_NNUE_MPC_NET) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
+    #define EGAROUCID_NNUE_MPC_UNCERTAINTY
+#endif
 
 /*
     @brief Option

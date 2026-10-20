@@ -76,6 +76,9 @@ static_assert((END_MPC_SHALLOW_DEPTH_OFFSET & 1) == 0);
         #define EGAROUCID_NNUE_END_MPC_SCALE_MIN_DEPTH 10
     #endif
 #endif
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_MID_SIGMA_REFIT)
+    #include "nnue/nnue_mid_sigma_correction.hpp"
+#endif
 #ifndef MID_MPC_SIGMA_EXTRA_SCALE
     // extra factor on the midgame MPC sigma (an evaluation other than the one it was fitted on).
     // The sigma was fitted with the pattern evaluation; the NNUE build's shallow/deep errors are 5-13%
@@ -682,7 +685,21 @@ inline double probcut_sigma_mid_direction(
         b * ((double)depth1 / 60.0) +
         c * ((double)depth2 / 60.0);
     res = d * res * res * res + e * res * res + f * res + g;
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_MID_SIGMA_REFIT)
+    // NNUE refit (replaces MID_MPC_SIGMA_EXTRA_SCALE): the same safety as the pattern build at every disc
+    // count and depth, sigma * exp(c . [1, (discs - 28) / 14, s / 13, (D - s) / 13, s == 0])
+    {
+        const double *cc = high ? NNUE_MID_SIGMA_CORRECTION_HIGH : NNUE_MID_SIGMA_CORRECTION_LOW;
+        const double phi[5] = {1.0, (n_discs - 28.0) / 14.0, depth1 / 13.0, (depth2 - depth1) / 13.0, depth1 == 0 ? 1.0 : 0.0};
+        double x = 0.0;
+        for (int i = 0; i < 5; ++i) {
+            x += cc[i] * phi[i];
+        }
+        return MPC_SIGMA_SCALE * std::exp(x) * res;
+    }
+#else
     return MPC_SIGMA_SCALE * MID_MPC_SIGMA_EXTRA_SCALE * res;
+#endif
 }
 
 /*
@@ -917,6 +934,68 @@ inline int nnue_mpc_scale_error(int error, double mult) {
 }
 #endif
 
+#ifdef EGAROUCID_NNUE_MPC_NET
+#include "nnue/nnue_mpc_net_head.hpp"
+#ifndef EGAROUCID_NNUE_MPC_NET_MIN_DEPTH
+    #define EGAROUCID_NNUE_MPC_NET_MIN_DEPTH 5  // shallower MPC nodes use the disc-count mean of u (no network call)
+#endif
+/*
+    MPC margins from the MPC error network alone: for the test (deep depth D, shallow depth s; s = 0: the
+    static evaluation) e = deep - shallow has mean mu and scale sigma from the head of the network output u
+    (src/tools/nnue/train_mpc_error.py); high margin ceil(z sigma - mu), low margin ceil(z sigma + mu), with z
+    per group and MPC level (nnue_mpc_net_head.hpp). No depth / disc-count sigma formula, no u03.
+*/
+enum Mpc_net_group { MPC_NET_MID_STATIC = 0, MPC_NET_MID_SHALLOW = 1, MPC_NET_END_STATIC = 2, MPC_NET_END_SHALLOW = 3 };
+
+inline double mpc_net_zscale_from_env(int group) {
+#ifdef EGAROUCID_MPC_U_ENV
+    if (const char *env = std::getenv("EGAROUCID_MPC_NET_ZSCALE")) {  // "mid_static,mid_shallow,end_static,end_shallow"
+        double z[4];
+        if (std::sscanf(env, "%lf,%lf,%lf,%lf", &z[0], &z[1], &z[2], &z[3]) == 4 && std::isfinite(z[group]) && 0.2 <= z[group] && z[group] <= 5.0) {
+            return z[group];
+        }
+    }
+#else
+    (void)group;
+#endif
+    return 1.0;
+}
+inline const double mpc_net_zscale[4] = {mpc_net_zscale_from_env(0), mpc_net_zscale_from_env(1), mpc_net_zscale_from_env(2), mpc_net_zscale_from_env(3)};
+
+struct Mpc_net_margins {
+    int high = -1, low = -1;
+};
+
+inline Mpc_net_margins mpc_net_margins(int group, double z, double u, int n_discs, int deep_depth, int shallow_depth, int static_value) {
+    const double n = (n_discs - 28.0) / 14.0;
+    const double fm[5] = {1.0, (double)(deep_depth & 1), n, u, static_value / 32.0};
+    // depths beyond the training data keep the edge value
+    const double fs[7] = {
+        1.0, n, std::min<double>(shallow_depth, nnue_mpc_net::S_MAX[group]) / 13.0,
+        std::min<double>(deep_depth - shallow_depth, nnue_mpc_net::GAP_MAX[group]) / 13.0, u, u * u, std::abs(static_value) / 32.0
+    };
+    double mu = 0.0, ls = 0.0;
+    for (int i = 0; i < 5; ++i) {
+        mu += nnue_mpc_net::MU[group][i] * fm[i];
+    }
+    for (int i = 0; i < 7; ++i) {
+        ls += nnue_mpc_net::LOG_SIGMA[group][i] * fs[i];
+    }
+    const double zs = z * mpc_net_zscale[group] * std::exp(std::clamp(ls, -1.0, 4.2));  // sigma within 0.37-67 discs
+    Mpc_net_margins m;
+    m.high = std::max(1, (int)std::ceil(zs - mu));
+    m.low = std::max(1, (int)std::ceil(zs + mu));
+    return m;
+}
+
+inline double mpc_net_u(Search *search, int depth) {
+    if (depth >= EGAROUCID_NNUE_MPC_NET_MIN_DEPTH && nnue_uncertainty_loaded) {
+        return nnue_uncertainty_raw(search);
+    }
+    return nnue_uncertainty::MEAN_U[search->n_discs];
+}
+#endif
+
 inline Mpc_d0 mpc_d0_evaluate(Search *search) {
 #if defined(EGAROUCID_NNUE) && defined(EGAROUCID_NNUE_LAZY)
     if (!search_uses_separate_shallow_evaluation(search)) {
@@ -938,12 +1017,19 @@ inline bool mpc_end_static_eval_cut(
     Mpc_d0 &d0,
     uint64_t legal,
     int *v,
-    double u_mult = 1.0
+    double u_mult = 1.0,
+    int net_high = -1,
+    int net_low = -1
 ) {
 #if END_MPC_USE_STATIC_EVAL_CUT
     const int legal_count = pop_count_ull(legal);
     int static_high_threshold = end_mpc_static_threshold(depth, beta, true);
     int static_low_threshold = end_mpc_static_threshold(depth, alpha, false);
+    if (net_high >= 0) {  // margins from the MPC error network
+        static_high_threshold = beta + net_high;
+        static_low_threshold = alpha - net_low;
+        u_mult = 1.0;
+    }
 #ifdef EGAROUCID_NNUE
     if (u_mult != 1.0) {
         static_high_threshold = beta + (int)std::ceil(-END_MPC_STATIC_BIAS + (end_mpc_static_threshold(depth, 0, true) + END_MPC_STATIC_BIAS) * u_mult);
@@ -982,6 +1068,8 @@ inline bool mpc_end_static_eval_cut(
     (void)legal;
     (void)v;
     (void)u_mult;
+    (void)net_high;
+    (void)net_low;
 #endif
     return false;
 }
@@ -996,15 +1084,19 @@ inline bool mpc_end_recalibrated_shallow(
     uint64_t legal,
     int *v,
     Searchings &searchings,
-    double u_mult = 1.0
+    double u_mult = 1.0,
+    int net_high = -1,
+    int net_low = -1
 ) {
     const uint_fast8_t mpc_level = search->mpc_level;
     const int legal_count = pop_count_ull(legal);
     const int shallow_depth = end_mpc_shallow_depth(depth);
 #ifdef EGAROUCID_NNUE
-    const int high_threshold = beta + nnue_mpc_scale_error(end_mpc_shallow_error(mpc_level, depth, true), u_mult);
-    const int low_threshold = alpha - nnue_mpc_scale_error(end_mpc_shallow_error(mpc_level, depth, false), u_mult);
+    const int high_threshold = beta + (net_high >= 0 ? net_high : nnue_mpc_scale_error(end_mpc_shallow_error(mpc_level, depth, true), u_mult));
+    const int low_threshold = alpha - (net_low >= 0 ? net_low : nnue_mpc_scale_error(end_mpc_shallow_error(mpc_level, depth, false), u_mult));
 #else
+    (void)net_high;
+    (void)net_low;
     (void)u_mult;
     const int high_threshold = beta + end_mpc_shallow_error(mpc_level, depth, true);
     const int low_threshold = alpha - end_mpc_shallow_error(mpc_level, depth, false);
@@ -1231,7 +1323,11 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
     }
     */
 
-#if defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
+#if defined(EGAROUCID_NNUE_MPC_NET)
+    constexpr double u_mult = 1.0;
+    const double net_u = mpc_net_u(search, depth);
+    const int net_static_v = d0.value;
+#elif defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
     const double u_mult = nnue_mpc_u_multiplier(search, depth, IsEndSearch);
 #elif defined(EGAROUCID_NNUE)
     const double u_mult = IsEndSearch && depth >= EGAROUCID_NNUE_END_MPC_SCALE_MIN_DEPTH ? EGAROUCID_NNUE_END_MPC_SCALE : 1.0;
@@ -1246,6 +1342,20 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             beta -= 1;
         }
         if (use_recalibrated_end_mpc(mpc_level, depth)) {
+#if defined(EGAROUCID_NNUE_MPC_NET)
+            const Mpc_net_margins net_static = mpc_net_margins(MPC_NET_END_STATIC, nnue_mpc_net::Z_END_STATIC_CUT[mpc_level], net_u, search->n_discs, depth, 0, net_static_v);
+            const Mpc_net_margins net_shallow = mpc_net_margins(MPC_NET_END_SHALLOW, nnue_mpc_net::Z[MPC_NET_END_SHALLOW][mpc_level], net_u, search->n_discs, depth, end_mpc_shallow_depth(depth), net_static_v);
+            if (mpc_end_static_eval_cut(
+                search, alpha, beta, depth, d0, legal, v, u_mult, net_static.high, net_static.low
+            )) {
+                return true;
+            }
+#if END_MPC_USE_RECALIBRATED_SHALLOW
+            return mpc_end_recalibrated_shallow(
+                search, alpha, beta, depth, d0, legal, v, searchings, u_mult, net_shallow.high, net_shallow.low
+            );
+#endif
+#else
             if (mpc_end_static_eval_cut(
                 search, alpha, beta, depth, d0, legal, v, u_mult
             )) {
@@ -1256,11 +1366,17 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
                 search, alpha, beta, depth, d0, legal, v, searchings, u_mult
             );
 #endif
+#endif
         }
     }
 
     if (search_depth == 0) {
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE_MPC_NET)
+        const int net_group = IsEndSearch ? MPC_NET_END_STATIC : MPC_NET_MID_STATIC;
+        const Mpc_net_margins net_m = mpc_net_margins(net_group, nnue_mpc_net::Z[net_group][mpc_level], net_u, search->n_discs, depth, 0, net_static_v);
+        const int static_error_high = net_m.high;
+        const int static_error_low = net_m.low;
+#elif defined(EGAROUCID_NNUE)
         const int static_error_high = nnue_mpc_scale_error(mpc_static_error<IsEndSearch>(
             mpc_level, search->n_discs, depth, true
         ), u_mult);
@@ -1315,7 +1431,14 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             mpc_level, search->n_discs, search_depth, depth,
             &error_search_low, nullptr, false
         );
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE_MPC_NET)
+        {
+            const int net_group = IsEndSearch ? MPC_NET_END_SHALLOW : MPC_NET_MID_SHALLOW;
+            const Mpc_net_margins net_m = mpc_net_margins(net_group, nnue_mpc_net::Z[net_group][mpc_level], net_u, search->n_discs, depth, search_depth, net_static_v);
+            error_search_high = net_m.high;
+            error_search_low = net_m.low;
+        }
+#elif defined(EGAROUCID_NNUE)
         // margin multiplier: the NNUE endgame scale, or the learned per-position uncertainty
         error_search_high = nnue_mpc_scale_error(error_search_high, u_mult);
         error_search_low = nnue_mpc_scale_error(error_search_low, u_mult);
