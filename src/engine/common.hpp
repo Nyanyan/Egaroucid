@@ -29,6 +29,14 @@ constexpr int HW2 = 64;
 constexpr int HW2_M1 = 63;
 constexpr int HW2_P1 = 65;
 
+// the four 16-bit groups of a bitboard (reading a uint64_t through a uint16_t pointer breaks strict aliasing:
+// the compiler may then move the read before a store to the bitboard)
+struct Bit_groups16 {
+    uint64_t x;
+    explicit Bit_groups16(uint64_t x) : x(x) {}
+    uint16_t operator[](int i) const { return static_cast<uint16_t>(x >> (i * 16)); }
+};
+
 // color definition
 constexpr int BLACK = 0;
 constexpr int WHITE = 1;

@@ -84,7 +84,7 @@ class Board {
         }
 #else
         inline uint32_t hash() const {
-            const uint16_t *p = (uint16_t*)&player;     const uint16_t *o = (uint16_t*)&opponent;
+            const Bit_groups16 p(player), o(opponent);
             uint32_t h1 = hash_rand_player[0][p[0]];    uint32_t h2 = hash_rand_opponent[0][o[0]];
             h1 ^= hash_rand_player[1][p[1]];            h2 ^= hash_rand_opponent[1][o[1]];
             h1 ^= hash_rand_player[2][p[2]];            h2 ^= hash_rand_opponent[2][o[2]];

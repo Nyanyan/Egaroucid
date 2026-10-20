@@ -184,8 +184,8 @@ void book_hash_init(bool show_log) {
 */
 struct Book_hash {
     size_t operator()(Board board) const{
-        const uint16_t *p = (uint16_t*)&board.player;
-        const uint16_t *o = (uint16_t*)&board.opponent;
+        const Bit_groups16 p(board.player);
+        const Bit_groups16 o(board.opponent);
         return 
             hash_rand_player_book[0][p[0]] ^ 
             hash_rand_player_book[1][p[1]] ^ 

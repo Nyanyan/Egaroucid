@@ -623,9 +623,9 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     @param flip                 flip information
 */
 inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
-    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
+    const Bit_groups16 flipped_group(flip->flip);
+    const Bit_groups16 player_group(board->player);
+    const Bit_groups16 opponent_group(board->opponent);
     __m256i f0, f1, f2, f3;
     uint16_t unflipped_p;
     uint16_t unflipped_o;
@@ -673,8 +673,8 @@ inline void eval_undo(Eval_search *eval) {
     @param eval                 evaluation features
 */
 inline void eval_pass(Eval_search *eval, const Board *board) {
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
+    const Bit_groups16 player_group(board->player);
+    const Bit_groups16 opponent_group(board->opponent);
     __m256i f0, f1, f2, f3;
     f0 = eval->features[eval->feature_idx].f256[0];
     f1 = eval->features[eval->feature_idx].f256[1];
@@ -701,9 +701,9 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
 
 // only corner+block cross edge+2X triangle
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board) {
-    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
+    const Bit_groups16 flipped_group(flip->flip);
+    const Bit_groups16 player_group(board->player);
+    const Bit_groups16 opponent_group(board->opponent);
     // put cell 2 -> 1
     __m256i f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
     for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
@@ -721,8 +721,8 @@ inline void eval_undo_endsearch(Eval_search *eval) {
 }
 
 inline void eval_pass_endsearch(Eval_search *eval, const Board *board) {
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
+    const Bit_groups16 player_group(board->player);
+    const Bit_groups16 opponent_group(board->opponent);
     __m256i f2 = eval->features[eval->feature_idx].f256[2];
     for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
         f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
