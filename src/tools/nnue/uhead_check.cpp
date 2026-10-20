@@ -8,7 +8,8 @@
     @author Takuto Yamana
     @license GPL-3.0-or-later
 
-    Usage: uhead_check <weights.egnn> <head.egnh> <head.vectors.txt>
+    Usage: uhead_check <weights.egnn> <head.egnh> <head.vectors.txt> [<separate uncertainty network.egnn>]
+    (the last one only for the timing comparison)
     vector line: player(hex) opponent(hex) pattern_raw expected_total expected_u
 */
 
@@ -68,6 +69,15 @@ int main(int argc, char **argv) {
         std::cout << "  " << name << " " << t << " ns (checksum " << acc << ")" << std::endl;
     };
     timeit("evaluation only", [&](const Vec &v) { return (double)nnue::evaluate_total_idx(v.idx, v.p, 64 - __builtin_popcountll(v.p | v.o), v.raw); });
+    if (argc >= 5 && nnue::init_weights(nnue::uncertainty_weights, argv[4], false)) {
+        timeit("separate uncertainty network", [&](const Vec &v) {
+            return (double)nnue::evaluate_total_idx(v.idx, v.p, 64 - __builtin_popcountll(v.p | v.o), 0, nnue::uncertainty_weights);
+        });
+        timeit("evaluation + separate uncertainty network", [&](const Vec &v) {
+            const int empties = 64 - __builtin_popcountll(v.p | v.o);
+            return (double)nnue::evaluate_total_idx(v.idx, v.p, empties, v.raw) + nnue::evaluate_total_idx(v.idx, v.p, empties, 0, nnue::uncertainty_weights);
+        });
+    }
     timeit("evaluation and u (shared pass)", [&](const Vec &v) {
         int64_t total;
         double u;
