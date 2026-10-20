@@ -8,7 +8,9 @@ move are skipped by the tool. Processes run at below-normal priority.
 
 Usage:
     python src/tools/probcut/collect_mid_probcut_parallel.py --tool bin/mid_probcut_dataset_nnue.exe --tag nnue \
-        --positions ignored/mpc_data/positions_6000.txt --out ignored/mpc_data --depths 3-14:3000 15-16:1000 --procs 24
+        --positions ignored/mpc_data/positions_6000.txt --out ignored/mpc_data --depths 3-14:3000 15-16:1000:20 --procs 24
+A third field in a depth range is that range's positions per process (deep searches: smaller shards keep
+the last processes from running alone for hours).
 """
 import argparse
 import subprocess
@@ -24,7 +26,7 @@ def main():
     ap.add_argument("--tag", required=True)
     ap.add_argument("--positions", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--depths", nargs="+", required=True, help="ranges with position counts, e.g. 3-14:3000 15-16:1000")
+    ap.add_argument("--depths", nargs="+", required=True, help="ranges with position counts and optional shard sizes, e.g. 3-14:3000 15-16:1000:20")
     ap.add_argument("--procs", type=int, default=24)
     ap.add_argument("--shard", type=int, default=100, help="positions per process")
     ap.add_argument("--hash", type=int, default=20)
@@ -35,12 +37,14 @@ def main():
     lines = [l for l in Path(args.positions).read_text(encoding="utf-8").splitlines() if l.strip()]
     jobs = []
     for spec in args.depths:
-        rng, _, count = spec.partition(":")
+        rng, _, rest = spec.partition(":")
+        count, _, shard = rest.partition(":")
+        shard = int(shard or args.shard)
         lo, _, hi = rng.partition("-")
         for d in range(int(lo), int(hi or lo) + 1):
             n = min(int(count), len(lines))
-            for k in range(0, n, args.shard):
-                jobs.append((d, k, min(k + args.shard, n)))
+            for k in range(0, n, shard):
+                jobs.append((d, k, min(k + shard, n)))
     jobs.sort(key=lambda j: -j[0])  # deep ones first: they are the long ones
     pending, running = list(jobs), {}
     t0 = time.time()
