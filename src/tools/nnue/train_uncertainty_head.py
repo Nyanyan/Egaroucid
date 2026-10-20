@@ -33,17 +33,17 @@ import torch.nn as nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import nnue_patterns as pat  # noqa: E402
-from train_nnue import N_BUCKETS, REC, Features, Net, batch_inputs, load_split, to_tensors  # noqa: E402
+from train_nnue import N_BUCKETS, REC, Features, Net, batch_inputs, load_split, make_features, make_net, to_tensors  # noqa: E402
 
 
 def load_run(run, device, model_file="best.pt"):
     targs = json.loads((Path(run) / "args.json").read_text(encoding="utf-8"))
-    model = Net(targs["width"], targs["hidden"], targs["mode"], bool(targs.get("bucket_bias"))).to(device)
+    model = make_net(targs).to(device)
     model.load_state_dict(torch.load(Path(run) / model_file, map_location=device))
     model.eval()
     for p in model.parameters():
         p.requires_grad_(False)
-    return model, Features(device, bool(targs.get("fold"))), targs
+    return model, make_features(device, targs), targs
 
 
 def trunk(model, idx, bucket):
@@ -108,8 +108,9 @@ class UHead(nn.Module):
             nn.init.uniform_(self.private.weight, -0.02, 0.02)
             self.private_bias = nn.Parameter(torch.full((private,), 0.25))
             self.register_buffer("fold", torch.tensor(pat.fold_rows(), dtype=torch.long))
-        self.l1 = nn.Linear(n_in + private, hidden * N_BUCKETS)
-        self.out = nn.Linear(hidden, N_BUCKETS)
+        # hidden 0: one linear output per bucket on the inputs (with inputs z: the last-layer split of a dual network)
+        self.l1 = nn.Linear(n_in + private, hidden * N_BUCKETS) if hidden else None
+        self.out = nn.Linear(hidden or (n_in + private), N_BUCKETS)
         nn.init.zeros_(self.out.weight)
         nn.init.zeros_(self.out.bias)
 
@@ -122,7 +123,7 @@ class UHead(nn.Module):
             pa = torch.clamp(rows.sum(1) + q(self.private_bias), 0.0, 1.0)
             f = torch.cat([f, pa], 1)
         ar = torch.arange(n, device=f.device)
-        h = torch.clamp(self.l1(f).view(n, N_BUCKETS, self.hidden)[ar, bucket], 0.0, 1.0)
+        h = torch.clamp(self.l1(f).view(n, N_BUCKETS, self.hidden)[ar, bucket], 0.0, 1.0) if self.l1 is not None else f
         return self.out(h)[ar, bucket] * 16.0
 
     def clip_for_quantization(self):
@@ -131,13 +132,14 @@ class UHead(nn.Module):
                 self.private.weight.clamp_(-127 / 64, 127 / 64)
 
 
-N_IN = {"x": lambda m: m.width // 2, "xz": lambda m: m.width // 2 + m.hidden, "axz": lambda m: m.width + m.width // 2 + m.hidden}
+N_IN = {"x": lambda m: m.width // 2, "xz": lambda m: m.width // 2 + m.hidden, "axz": lambda m: m.width + m.width // 2 + m.hidden,
+        "z": lambda m: m.hidden}
 
 
 def head_inputs(t, inputs):
     """t = trunk(...)"""
     x, z, a = t
-    return {"x": lambda: x, "xz": lambda: torch.cat([x, z], 1), "axz": lambda: torch.cat([a, x, z], 1)}[inputs]()
+    return {"x": lambda: x, "xz": lambda: torch.cat([x, z], 1), "axz": lambda: torch.cat([a, x, z], 1), "z": lambda: z}[inputs]()
 
 
 def load_uhead(run, device):

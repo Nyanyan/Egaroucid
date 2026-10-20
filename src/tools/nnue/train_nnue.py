@@ -79,14 +79,95 @@ class Features:
         return self.fold[idx] if self.fold is not None else idx
 
 
+class SquareFeatures(Features):
+    """Bitboards -> 64 square row indices for the square input (--input squares): a disc of the side to move on
+    square k is row k, an opponent disc row 64 + k, an empty square row 128 (a zero row)."""
+
+    N_ROWS = 129
+
+    def __init__(self, device):
+        super().__init__(device, False)
+        self.sq = torch.arange(64, device=device).view(1, 64)
+
+    def indices(self, st):
+        return torch.where(st == 1, self.sq, torch.where(st == 2, self.sq + 64, torch.full_like(st, 128)))
+
+
+def _shift(x, s):
+    """x << s for s > 0, logical x >> -s for s < 0 (int64 bitboards)"""
+    if s > 0:
+        return x << s
+    return (x >> -s) & ((1 << (64 + s)) - 1)
+
+
+def legal_moves(p, o):
+    """legal-move bitboard of the side owning p (int64 tensors, bit 63 = a1 as in Features.states)"""
+    empty = ~(p | o)
+    inner = o & 0x7E7E7E7E7E7E7E7E
+    moves = torch.zeros_like(p)
+    for s, mo in ((1, inner), (-1, inner), (8, o), (-8, o), (7, inner), (-7, inner), (9, inner), (-9, inner)):
+        t = _shift(p, s) & mo
+        for _ in range(5):
+            t = t | (_shift(t, s) & mo)
+        moves = moves | (_shift(t, s) & empty)
+    return moves
+
+
+class SquareMobilityFeatures(SquareFeatures):
+    """Square input plus the legal moves of both sides (--input squares_mobility): rows 0-128 as SquareFeatures,
+    129 + k: square k is a legal move of the side to move, 193 + k: of the opponent. states() keeps the boards so
+    that indices() can see them; symmetries are applied to the boards before the moves are generated."""
+
+    N_ROWS = 257
+
+    def states(self, p, o, sym=None):
+        st = super().states(p, o, sym)
+        bits = (1 << (63 - torch.arange(64, device=st.device))).view(1, 64)
+        pp = ((st == 1).long() * bits).sum(1)
+        oo = ((st == 2).long() * bits).sum(1)
+        mp, mo = legal_moves(pp, oo), legal_moves(oo, pp)
+        lp = (mp.view(-1, 1) >> self.shifts) & 1
+        lo = (mo.view(-1, 1) >> self.shifts) & 1
+        return torch.cat([st, lp, lo], 1)
+
+    def indices(self, st):
+        sq = super().indices(st[:, :64])
+        lp = torch.where(st[:, 64:128] == 1, self.sq + 129, torch.full_like(self.sq.expand_as(sq), 128))
+        lo = torch.where(st[:, 128:] == 1, self.sq + 193, torch.full_like(self.sq.expand_as(sq), 128))
+        return torch.cat([sq, lp, lo], 1)
+
+
+def make_features(device, targs):
+    """the input features of a run (its args.json)"""
+    kind = targs.get("input", "patterns")
+    if kind == "squares":
+        return SquareFeatures(device)
+    if kind == "squares_mobility":
+        return SquareMobilityFeatures(device)
+    return Features(device, bool(targs.get("fold")))
+
+
+def make_net(targs):
+    """an untrained network with the shape of a run (its args.json)"""
+    kind = targs.get("input", "patterns")
+    u_out = float(targs.get("u_weight", 0.0)) > 0
+    if kind in ("squares", "squares_mobility"):
+        rows = SquareFeatures.N_ROWS if kind == "squares" else SquareMobilityFeatures.N_ROWS
+        return Net(targs["width"], targs["hidden"], targs["mode"], bool(targs.get("bucket_bias")), n_rows=rows, padding_idx=128, u_out=u_out)
+    return Net(targs["width"], targs["hidden"], targs["mode"], bool(targs.get("bucket_bias")), u_out=u_out)
+
+
 class Net(nn.Module):
-    def __init__(self, width, hidden, mode, bucket_bias=False):
+    def __init__(self, width, hidden, mode, bucket_bias=False, n_rows=None, padding_idx=None, u_out=False):
         super().__init__()
         self.mode, self.width, self.hidden = mode, width, hidden
-        rows = pat.N_ROWS
+        rows = n_rows or pat.N_ROWS
         if mode != "linear":
-            self.ft = nn.Embedding(rows, width)
+            self.ft = nn.Embedding(rows, width, padding_idx=padding_idx)
             nn.init.uniform_(self.ft.weight, -0.02, 0.02)
+            if padding_idx is not None:
+                with torch.no_grad():
+                    self.ft.weight[padding_idx].zero_()  # the empty-square row of the square input stays zero
             self.ft_bias = nn.Parameter(torch.full((width,), 0.25))
             # optional first-layer bias per bucket (added to the shared one)
             self.ft_bias_b = nn.Parameter(torch.zeros(N_BUCKETS, width)) if bucket_bias else None
@@ -94,6 +175,11 @@ class Net(nn.Module):
             self.out = nn.Linear(hidden, N_BUCKETS)
             nn.init.zeros_(self.out.weight)
             nn.init.zeros_(self.out.bias)
+            # optional second output on the last hidden layer (dual network): u = log sigma^2 of the residual
+            self.uout = nn.Linear(hidden, N_BUCKETS) if u_out else None
+            if u_out:
+                nn.init.zeros_(self.uout.weight)
+                nn.init.constant_(self.uout.bias, 3.7 / 16.0)
         if mode != "residual":
             self.lin = nn.Embedding(rows * N_BUCKETS, 1)
             nn.init.zeros_(self.lin.weight)
@@ -118,6 +204,18 @@ class Net(nn.Module):
         r = self.out(z)
         return r[torch.arange(n, device=idx.device), bucket] * 16.0
 
+    def correction_and_u(self, idx, bucket):
+        """(correction, u) of the dual network: both outputs read the last hidden layer"""
+        n = idx.shape[0]
+        ar = torch.arange(n, device=idx.device)
+        acc = self.ft(idx).sum(1) + self.ft_bias
+        if self.ft_bias_b is not None:
+            acc = acc + self.ft_bias_b[bucket]
+        a = torch.clamp(acc, 0.0, 1.0)
+        h = self.width // 2
+        z = torch.clamp(self.l1(a[:, :h] * a[:, h:]).view(n, N_BUCKETS, self.hidden)[ar, bucket], 0.0, 1.0)
+        return self.out(z)[ar, bucket] * 16.0, self.uout(z)[ar, bucket] * 16.0
+
     def forward(self, idx, bucket, n_player, p_eval):
         lin = self.linear(idx, bucket, n_player) if self.mode != "residual" else None
         if self.mode == "linear":
@@ -133,6 +231,8 @@ class Net(nn.Module):
             self.ft.weight.clamp_(-63.0, 63.0)
             self.l1.weight.clamp_(-127 / 64, 127 / 64)
             self.out.weight.clamp_(-127 / 64, 127 / 64)
+            if self.uout is not None:
+                self.uout.weight.clamp_(-127 / 64, 127 / 64)
 
 
 def load_split(data_dir, name):
@@ -310,6 +410,11 @@ def main():
     ap.add_argument("--data", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--mode", default="direct", choices=["direct", "residual", "linear"])
+    ap.add_argument("--u-weight", type=float, default=0.0,
+                    help="dual network: weight of the uncertainty output's NLL (u from the last hidden layer; residual mode)")
+    ap.add_argument("--input", default="patterns", choices=["patterns", "squares", "squares_mobility"],
+                    help="first-layer input: pattern configurations (157,464 rows), squares (own / opponent disc, 128 rows), "
+                         "or squares and the legal moves of both sides (256 rows)")
     ap.add_argument("--width", type=int, default=64)
     ap.add_argument("--hidden", type=int, default=32)
     ap.add_argument("--batch", type=int, default=16384)
@@ -400,8 +505,10 @@ def main():
     print(f"loaded train {n_tr} + {n_bd} (board share {frac_bd:.3f}), labeled {n_lab} (extra share {args.label_share:.3f}, lambda {args.label_lambda}), "
           f"val {len(vsel)} + {int(hold.sum())} in {time.time() - t0:.0f}s", flush=True)
 
-    feat = Features(device, args.fold)
-    model = Net(args.width, args.hidden, args.mode, args.bucket_bias).to(device)
+    if args.input != "patterns" and (args.fold or args.mode != "residual"):
+        ap.error("--input squares: residual mode only, no --fold")
+    feat = make_features(device, vars(args))
+    model = make_net(vars(args)).to(device)
     if args.init:
         missing, unexpected = model.load_state_dict(torch.load(args.init, map_location=device), strict=False)
         assert not unexpected, unexpected
@@ -443,8 +550,13 @@ def main():
         idx, bucket, n_player, _ = batch_inputs(feat, b, device, True)
         y = b["y"].to(device, non_blocking=True)
         P = b["P"].to(device, non_blocking=True)
-        pred, lin = model(idx, bucket, n_player, P)
-        loss = ((pred - y) ** 2).mean()
+        if args.u_weight > 0:
+            r, u = model.correction_and_u(idx, bucket)
+            pred, lin = P + r, None
+            loss = ((pred - y) ** 2).mean() + args.u_weight * (u + (y - pred.detach()) ** 2 * torch.exp(-u)).mean()
+        else:
+            pred, lin = model(idx, bucket, n_player, P)
+            loss = ((pred - y) ** 2).mean()
         if args.mode == "direct" and args.lambda_l > 0:
             loss = loss + args.lambda_l * ((lin - y) ** 2).mean()
         opt.zero_grad(set_to_none=True)
@@ -455,6 +567,17 @@ def main():
             vt = evaluate(model, feat, val_tr, device)
             vb = evaluate(model, feat, val_bd, device)
             rec = {"step": step, "lr": lr, "loss": loss.item(), "elapsed": time.time() - t0, "val_tr": vt, "val_boards": vb}
+            if args.u_weight > 0:
+                with torch.no_grad():
+                    tot, cnt = 0.0, 0
+                    for i in range(0, val_tr["s"].shape[0], 65536):
+                        vbt = {k: v[i:i + 65536] for k, v in val_tr.items()}
+                        vidx, vbk, _, _ = batch_inputs(feat, vbt, device, False)
+                        vr, vu = model.correction_and_u(vidx, vbk)
+                        res = vbt["s"].to(device).float() - (vbt["P"].to(device) + vr)
+                        tot += float((vu + res ** 2 * torch.exp(-vu)).sum())
+                        cnt += res.shape[0]
+                rec["val_tr_u_nll"] = tot / cnt
             log.write(json.dumps(rec) + "\n")
             log.flush()
             key = vt["model"]["30-59"]
@@ -462,7 +585,10 @@ def main():
                    f"(30-59 {key:.2f}) P {vt['P']['all']:.2f} (30-59 {vt['P']['30-59']:.2f})")
             if "linear" in vt:
                 msg += f" linear {vt['linear']['all']:.2f}"
-            msg += f" | boards model {vb['model']['all']:.2f} P {vb['P']['all']:.2f} | {time.time() - t0:.0f}s"
+            msg += f" | boards model {vb['model']['all']:.2f} P {vb['P']['all']:.2f}"
+            if "val_tr_u_nll" in rec:
+                msg += f" | u nll {rec['val_tr_u_nll']:.4f}"
+            msg += f" | {time.time() - t0:.0f}s"
             print(msg, flush=True)
             torch.save(model.state_dict(), out / "last.pt")
             if key < best:

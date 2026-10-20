@@ -28,13 +28,13 @@ import numpy as np
 import torch
 
 import nnue_patterns as pat
-from train_nnue import N_BUCKETS, Features, Net, load_split, to_tensors, bucket_of
+from train_nnue import N_BUCKETS, Features, Net, SquareFeatures, load_split, make_net, to_tensors, bucket_of
 
 MODES = {"direct": 0, "residual": 1, "linear": 2}
 
 
 def quantize(model, mode, ft_int8=False):
-    rows = pat.N_ROWS
+    rows = model.ft.weight.shape[0] if mode != "linear" else pat.N_ROWS  # 129 for the square input
     W, H = (model.width, model.hidden) if mode != "linear" else (0, 0)
     q = {}
     sd = {k: v.detach().cpu().double().numpy() for k, v in model.state_dict().items()}
@@ -70,7 +70,7 @@ def write_file(q, mode, path):
     with open(path, "wb") as f:
         f.write(b"EGNNUE01")
         int8_ft = q["ft"].dtype == np.int8
-        f.write(np.array([2 if int8_ft else 1, MODES[mode], pat.N_ROWS, len(pat.INSTANCES), q["W"], q["H"], N_BUCKETS, 3 if int8_ft else 0], np.int32).tobytes())
+        f.write(np.array([2 if int8_ft else 1, MODES[mode], q["ft"].shape[0], len(pat.INSTANCES), q["W"], q["H"], N_BUCKETS, 3 if int8_ft else 0], np.int32).tobytes())
         for k in ("ft", "ft_bias", "l1_w", "l1_b", "out_w", "out_b", "lin", "num"):
             f.write(np.ascontiguousarray(q[k]).tobytes())
 
@@ -117,7 +117,7 @@ def main():
     run = Path(args.run)
     targs = json.loads((run / "args.json").read_text(encoding="utf-8"))
     mode = targs["mode"]
-    model = Net(targs["width"], targs["hidden"], mode)
+    model = make_net(targs)
     model.load_state_dict(torch.load(run / args.model, map_location="cpu"))
     model.eval()
     if targs.get("fold"):
@@ -138,7 +138,8 @@ def main():
     rng = np.random.default_rng(1)
     sel = np.sort(rng.permutation(len(va_a))[: args.n_check])
     val = to_tensors(va_a, va_p, sel)
-    feat = Features(torch.device("cpu"))
+    # exported pattern rows are unfolded; the square input has its own rows
+    feat = SquareFeatures(torch.device("cpu")) if targs.get("input") == "squares" else Features(torch.device("cpu"))
     st = feat.states(val["p"], val["o"])
     idx = feat.indices(st)
     bucket = bucket_of(val["e"].long())

@@ -40,7 +40,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from train_nnue import Features, Net, bucket_of  # noqa: E402
+from train_nnue import Features, Net, bucket_of, make_features, make_net  # noqa: E402
 from train_uncertainty_head import head_inputs, load_uhead  # noqa: E402
 
 GROUPS = ["mid_static", "mid_shallow", "end_static", "end_shallow"]
@@ -169,9 +169,11 @@ def main():
     net = None
     if args.unc:
         targs = json.loads((Path(args.unc) / "args.json").read_text(encoding="utf-8"))
-        net = Net(targs["width"], targs["hidden"], "residual").to(device)
+        # a dual network trained with train_nnue.py --u-weight: u is its second output
+        joint_u = float(targs.get("u_weight", 0.0)) > 0
+        net = (make_net(targs) if joint_u else Net(targs["width"], targs["hidden"], "residual")).to(device)
         net.load_state_dict(torch.load(Path(args.unc) / "best.pt", map_location=device))
-        feat = Features(device, True)
+        feat = make_features(device, targs) if joint_u else Features(device, True)
     if args.dual:
         trunk_fn, dfeat, uhead, inputs = load_uhead(args.dual, device)
     p_all = torch.from_numpy(bits[:, 0].view(np.int64)).to(device)
@@ -211,7 +213,9 @@ def main():
     def row_u():
         # u per row: the network output for the board (log sigma^2 of the outcome residual, the engine's total / 8192),
         # or the disc-count mean where the engine skips the network
-        u = (net.correction(idx_all, bucket_all) if args.unc else u_dual)[rb]
+        if args.unc:
+            u_board = net.correction_and_u(idx_all, bucket_all)[1] if joint_u else net.correction(idx_all, bucket_all)
+        u = (u_board if args.unc else u_dual)[rb]
         if mean_u is not None:
             u = torch.where(shallow_row, mean_u, u)
         return u * 0.0 if args.no_u else u

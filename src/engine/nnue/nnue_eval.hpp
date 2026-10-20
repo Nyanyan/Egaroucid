@@ -17,6 +17,10 @@
         score = round half away from zero (total / 8192), clamped to [-64, 64]
     Instance rows: the board is mapped by the instance's inverse symmetry and the base pattern mask
     is extracted with pext, digits 1 = side to move, 2 = opponent, 0 = empty, weight 3^k.
+    Square input (a file with SQUARE_ROWS = 129 rows, residual mode): the first layer sums the rows of the
+    occupied squares instead, row k for a disc of the side to move on square k (bit 63 - k), row 64 + k for
+    an opponent disc, and row 128 once per empty square (zero in models trained after 2026-10-20; kept exact
+    through a table by the number of empties).
 */
 
 #pragma once
@@ -47,6 +51,7 @@
 namespace nnue {
 
 constexpr int N_BUCKETS = 15;
+constexpr int SQUARE_ROWS = 129;
 constexpr int MAX_W = 256;
 constexpr int H_FIXED = 32;
 enum Mode { MODE_DIRECT = 0, MODE_RESIDUAL = 1, MODE_LINEAR = 2 };
@@ -71,6 +76,9 @@ struct Weights {
     int16_t *packed = nullptr;
     int stride = 0;
     bool has_lin = false;
+    bool input_squares = false;  // square input (SQUARE_ROWS rows) instead of the pattern rows
+    // square input, by the number of empties e: int16 rows: saturate(bias + e * row 128); int8 rows: e * row 128
+    std::vector<int16_t> sq_empty;
 };
 inline Weights weights;
 inline Weights uncertainty_weights;  // optional second network (per-position uncertainty for MPC)
@@ -126,11 +134,17 @@ inline bool init_weights(Weights &w, const std::string &file, bool show_log) {
         ? (w.W == 0 && w.H == 0 && !int8_ft)
         : ((w.mode == MODE_DIRECT || w.mode == MODE_RESIDUAL) && w.W > 0 && w.W % 32 == 0 && w.W <= MAX_W && w.H == H_FIXED &&
            (!int8_ft || (w.mode == MODE_RESIDUAL && w.ft_shift >= 0 && w.ft_shift <= 3)));
-    if (head[2] != NNUE_N_ROWS || head[3] != NNUE_N_INSTANCES || head[6] != N_BUCKETS || !shape_ok) {
+    const bool squares = head[2] == SQUARE_ROWS && w.mode == MODE_RESIDUAL;
+    if ((head[2] != NNUE_N_ROWS && !squares) || head[3] != NNUE_N_INSTANCES || head[6] != N_BUCKETS || !shape_ok) {
         std::cerr << "[ERROR] [FATAL] NNUE weight file does not match this build: " << file << std::endl;
         return false;
     }
-    const size_t rows = NNUE_N_ROWS;
+    if (squares && !(w.W == 32 || w.W == 64 || w.W == 128 || w.W == 256)) {
+        std::cerr << "[ERROR] [FATAL] NNUE square input needs a width of 32, 64, 128 or 256: " << file << std::endl;
+        return false;
+    }
+    w.input_squares = squares;
+    const size_t rows = head[2];
     const int W = w.W, H = w.H, half = W / 2;
     if (int8_ft) {
         w.ft8 = (int8_t*)aligned_alloc64(rows * W + 64);
@@ -172,12 +186,21 @@ inline bool init_weights(Weights &w, const std::string &file, bool show_log) {
             }
         }
     }
+    if (squares) {
+        w.sq_empty.assign((size_t)65 * W, 0);
+        for (int e = 0; e <= 64; ++e) {
+            for (int j = 0; j < W; ++j) {
+                const int32_t r = int8_ft ? w.ft8[(size_t)128 * W + j] : w.ft[(size_t)128 * W + j];
+                w.sq_empty[(size_t)e * W + j] = int8_ft ? (int16_t)(e * r) : (int16_t)std::clamp(w.ft_bias[j] + e * r, -32768, 32767);
+            }
+        }
+    }
 #if USE_SIMD
     init_incremental();
 #endif
     w.loaded = true;
     if (show_log) {
-        std::cerr << "NNUE loaded " << file << " mode " << w.mode << " width " << W << (int8_ft ? " int8" : "") << " scope " << EGAROUCID_NNUE_SCOPE << std::endl;
+        std::cerr << "NNUE loaded " << file << " mode " << w.mode << " width " << W << (int8_ft ? " int8" : "") << (squares ? " square input" : "") << " scope " << EGAROUCID_NNUE_SCOPE << std::endl;
     }
     return true;
 }
@@ -405,6 +428,46 @@ inline int64_t forward_packed8(const int idx[NNUE_N_INSTANCES], int bucket, cons
     return head_packed<W>(acc, bucket, w, t);
 }
 
+// square input: the rows of the occupied squares (player: row k, opponent: row 64 + k for bit 63 - k)
+template <int W>
+inline void accumulate_squares(uint64_t player, uint64_t opponent, __m256i *acc, const Weights &w = weights) {
+    constexpr int NV = W / 16;
+    const int16_t *empty_row = w.sq_empty.data() + (size_t)(64 - __builtin_popcountll(player | opponent)) * W;
+    if (w.ft8) {
+        __m256i a8[NV];
+        for (int v = 0; v < NV; ++v) a8[v] = _mm256_loadu_si256((const __m256i*)(empty_row + v * 16));
+        for (int side = 0; side < 2; ++side) {
+            const int8_t *base = w.ft8 + (side ? (size_t)64 * W : 0);
+            for (uint64_t b = side ? opponent : player; b; b &= b - 1) {
+                const __m128i *row = (const __m128i*)(base + (size_t)(63 - __builtin_ctzll(b)) * W);
+                for (int v = 0; v < NV; ++v) a8[v] = _mm256_add_epi16(a8[v], _mm256_cvtepi8_epi16(_mm_load_si128(row + v)));
+            }
+        }
+        const __m256i lo = _mm256_set1_epi16(-4095), hi = _mm256_set1_epi16(4095);
+        const __m128i shift = _mm_cvtsi32_si128(w.ft_shift);
+        for (int v = 0; v < NV; ++v) {
+            const __m256i c = _mm256_min_epi16(_mm256_max_epi16(a8[v], lo), hi);
+            acc[v] = _mm256_adds_epi16(_mm256_sll_epi16(c, shift), _mm256_load_si256((const __m256i*)&w.ft_bias[v * 16]));
+        }
+        return;
+    }
+    for (int v = 0; v < NV; ++v) acc[v] = _mm256_loadu_si256((const __m256i*)(empty_row + v * 16));
+    for (int side = 0; side < 2; ++side) {
+        const int16_t *base = w.packed + (side ? (size_t)64 * w.stride : 0);
+        for (uint64_t b = side ? opponent : player; b; b &= b - 1) {
+            const __m256i *row = (const __m256i*)(base + (size_t)(63 - __builtin_ctzll(b)) * w.stride);
+            for (int v = 0; v < NV; ++v) acc[v] = _mm256_adds_epi16(acc[v], _mm256_load_si256(row + v));  // saturating
+        }
+    }
+}
+
+template <int W>
+inline int64_t forward_squares(uint64_t player, uint64_t opponent, int bucket, const Weights &w = weights, Trunk *t = nullptr) {
+    __m256i acc[W / 16];
+    accumulate_squares<W>(player, opponent, acc, w);
+    return head_packed<W>(acc, bucket, w, t);
+}
+
 // residual model with an int16 first layer, keeping the features
 template <int W>
 inline int64_t forward_packed_trunk(const int idx[NNUE_N_INSTANCES], int bucket, Trunk *t, const Weights &w = weights) {
@@ -588,7 +651,25 @@ inline int64_t evaluate_total_idx(const int idx[NNUE_N_INSTANCES], uint64_t play
 #endif
 }
 
+#if USE_SIMD
+// square-input model: total in 1/8192 discs (residual), pattern_raw as in evaluate_total_scalar
+inline int64_t evaluate_total_squares(uint64_t player, uint64_t opponent, int empties, int pattern_raw, const Weights &w = weights) {
+    const int bucket = bucket_of(empties);
+    int64_t total;
+    switch (w.W) {
+        case 32: total = forward_squares<32>(player, opponent, bucket, w); break;
+        case 64: total = forward_squares<64>(player, opponent, bucket, w); break;
+        case 128: total = forward_squares<128>(player, opponent, bucket, w); break;
+        default: total = forward_squares<256>(player, opponent, bucket, w); break;
+    }
+    return total + (int64_t)pattern_raw * 256;
+}
+#endif
+
 inline int64_t evaluate_total(uint64_t player, uint64_t opponent, int empties, int pattern_raw) {
+#if USE_SIMD
+    if (weights.input_squares) return evaluate_total_squares(player, opponent, empties, pattern_raw);
+#endif
     int idx[NNUE_N_INSTANCES];
     compute_indices(player, opponent, idx);
     return evaluate_total_idx(idx, player, empties, pattern_raw);

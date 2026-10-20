@@ -755,6 +755,10 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
     if (nnue::weights.mode == nnue::MODE_RESIDUAL) {
         raw = raw_pattern != INT_MIN ? raw_pattern : mid_evaluate_raw(search);
     }
+    if (nnue::weights.input_squares) {
+        // square input: straight from the bitboards (no pattern indices)
+        return nnue::score_of_total(nnue::evaluate_total_squares(search->board.player, search->board.opponent, HW2 - search->n_discs, raw));
+    }
     nnue_ensure_lanes(&search->eval);
     nnue::Lanes view;
     nnue::lanes_view(reinterpret_cast<const nnue::Lanes*>(&search->eval.nnue_lanes[search->eval.feature_idx]),
