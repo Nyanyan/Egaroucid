@@ -327,8 +327,13 @@ def run_main(args, device):
     tables, nums = {}, {}
     summary = {"phases": {}, "patterns": args.patterns, "rows": ps.n_rows}
     t0 = time.time()
-    for e in range(1, 61):
+    only = [int(x) for x in args.only_empties.split(",")] if args.only_empties else None
+    for e in (only or range(1, 61)):
         phase = 60 - e
+        if only:
+            # training-budget check: each listed phase from zero weights, no egev2 written
+            table = torch.zeros(ps.n_rows, device=device)
+            num = torch.zeros(65, device=device)
         if e > args.max_data_empties:
             tables[phase], nums[phase] = table.clone(), num.clone()
             continue
@@ -356,6 +361,9 @@ def run_main(args, device):
         print(msg + f" | {time.time() - t0:.0f}s", flush=True)
         del tr, va, va_tr, va_bd
         torch.cuda.empty_cache()
+    if only:
+        (out / "summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
+        return
     # totals over the validation transcripts and boards
     for name in ("val_tr", "val_boards"):
         tot_m = tot_p = cnt = 0.0
@@ -444,6 +452,7 @@ def main():
     ap.add_argument("--val-size", type=int, default=1000000)
     ap.add_argument("--val-seed", type=int, default=20261019)
     ap.add_argument("--no-fold", action="store_true")
+    ap.add_argument("--only-empties", default="", help="comma-separated empties counts: train only these phases from zero (no egev2)")
     ap.add_argument("--mo-end", default="", help="comma-separated nnue12 pattern names: train the endgame ordering table")
     ap.add_argument("--mo-end-records", type=int, default=0, help="records per empties count for --mo-end (0: all)")
     ap.add_argument("--seed", type=int, default=20261021)
