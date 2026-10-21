@@ -20,6 +20,13 @@
 #pragma once
 #include <string>
 
+// folder (below the executable) of the pattern evaluation and its companion files (ordering tables, NNUE weights)
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    #define EGAROUCID_EVAL_DIR "resources/unused/p12/"  // experiment: the pattern evaluation over the NNUE patterns
+#else
+    #define EGAROUCID_EVAL_DIR "resources/"
+#endif
+
 // Separate the 3-minute profile from other GGS tournament time controls.
 // Endgame selectivity limits are defined in ai.hpp for this profile.
 #ifndef IS_GGS_3MIN

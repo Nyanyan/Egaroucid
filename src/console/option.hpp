@@ -262,10 +262,8 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     }
     #if defined(USE_NNUE_EVALUATION)
         res.eval_file = binary_path + "resources/eval_nnue.egevnnue";
-    #elif defined(EGAROUCID_EVAL_NNUE_PATTERNS)
-        res.eval_file = binary_path + "resources/unused/p12/eval.egev2";  // experiment: the NNUE pattern set and its companion files
     #else
-        res.eval_file = binary_path + "resources/eval.egev2";
+        res.eval_file = binary_path + EGAROUCID_EVAL_DIR "eval.egev2";
     #endif
     if (find_commandline_option(commandline_options, ID_EVAL_FILE)) {
         std::vector<std::string> arg = get_commandline_option_arg(commandline_options, ID_EVAL_FILE);

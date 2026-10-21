@@ -794,7 +794,7 @@ bool evaluate_init(const std::string file, std::string mo_end_nws_file, bool sho
 */
 bool evaluate_init(bool show_log) {
 #if USE_DIM0_ONLY_EVALUATION
-    return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval.egev2", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
+    return evaluate_init(EXE_DIRECTORY_PATH + EGAROUCID_EVAL_DIR "eval.egev2", EXE_DIRECTORY_PATH + EGAROUCID_EVAL_DIR "eval_move_ordering_end.egev", show_log);
 #else
     return evaluate_init(EXE_DIRECTORY_PATH + "resources/eval_dim8_fm.egevfm", EXE_DIRECTORY_PATH + "resources/eval_move_ordering_end.egev", show_log);
 #endif

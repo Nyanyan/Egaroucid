@@ -43,8 +43,8 @@ bool initialize_engine(int n_threads, int hash_level) {
     }
     stability_init();
     return evaluate_init(
-        "./resources/eval.egev2",
-        "./resources/eval_move_ordering_end.egev",
+        "./" EGAROUCID_EVAL_DIR "eval.egev2",
+        "./" EGAROUCID_EVAL_DIR "eval_move_ordering_end.egev",
         false
     );
 }
