@@ -45,7 +45,8 @@ constexpr Move_ordering_policy select_move_ordering_policy(int depth, bool is_en
         policy.auxiliary_max_depth = 5;
         policy.share_tt = true;
     }
-    // experiment variants: 1 no models, 2 static ordering only, 3 auxiliary leaves only, 4 auxiliary TT isolated
+    // experiment variants: 1 no models, 2 static ordering only, 3 auxiliary leaves only, 4 auxiliary TT isolated,
+    // 5 no auxiliary leaves in the selective endgame (MPC 88-99.9%) only
     if constexpr (EGAROUCID_MO_POLICY_VARIANT == 1 || EGAROUCID_MO_POLICY_VARIANT == 2) {
         if constexpr (EGAROUCID_MO_POLICY_VARIANT == 1) policy.static_model = Move_ordering_model::ordinary;
         policy.auxiliary_model = Move_ordering_model::ordinary;
@@ -55,6 +56,14 @@ constexpr Move_ordering_policy select_move_ordering_policy(int depth, bool is_en
         policy.static_model = Move_ordering_model::ordinary;
     } else if constexpr (EGAROUCID_MO_POLICY_VARIANT == 4) {
         policy.share_tt = false;
+    } else if constexpr (EGAROUCID_MO_POLICY_VARIANT == 5) {
+        // selective endgame only: ordinary (NNUE) leaves in the auxiliary searches; Offset static ordering, the
+        // midgame and the exact search (Decay) unchanged
+        if (is_end_search && mpc_level != MPC_100_LEVEL) {
+            policy.auxiliary_model = Move_ordering_model::ordinary;
+            policy.auxiliary_max_depth = 0;
+            policy.share_tt = false;
+        }
     }
     return policy;
 }
