@@ -84,6 +84,9 @@ bin/*.s
 # bin directory (for Linux)
 bin/resources/engine
 
+# resource files not used by the current builds (experiments, old weights)
+bin/resources/unused/
+
 # img
 img/demo
 

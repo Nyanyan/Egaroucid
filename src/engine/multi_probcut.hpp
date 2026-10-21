@@ -947,7 +947,7 @@ inline const Nnue_mpc_u_params nnue_mpc_u_end = nnue_mpc_u_params_from_env("EGAR
 
 inline double nnue_mpc_u_multiplier(Search *search, int depth, bool is_end_search) {
     const Nnue_mpc_u_params &p = is_end_search ? nnue_mpc_u_end : nnue_mpc_u_mid;
-    if (!p.on || depth < p.min_depth || !nnue_uncertainty_loaded) {
+    if (!p.on || depth < p.min_depth) {
         return 1.0;
     }
     if (p.b == 0.0) {
@@ -1028,7 +1028,7 @@ inline Mpc_net_margins mpc_net_margins(int group, double z, double u, int n_disc
     which replaces a lazy depth-0 value (the MPC error data used the exact value).
 */
 inline double mpc_net_u(Search *search, int depth, Mpc_d0 &d0) {
-    if (depth >= EGAROUCID_NNUE_MPC_NET_MIN_DEPTH && nnue_uhead_loaded) {
+    if (depth >= EGAROUCID_NNUE_MPC_NET_MIN_DEPTH) {
         double u;
 #if defined(EGAROUCID_NNUE_LAZY)
         const int value = mid_evaluate_nnue_and_u(search, d0.exact ? INT_MIN : d0.raw, &u);
@@ -1047,7 +1047,7 @@ inline double mpc_net_u(Search *search, int depth, Mpc_d0 &d0) {
 #else
 // EGAROUCID_NNUE_MPC_EXACT_D0 (experiment): the exact NNUE depth-0 value wherever the network u is computed
 inline double mpc_net_u(Search *search, int depth, Mpc_d0 &d0) {
-    if (depth >= EGAROUCID_NNUE_MPC_NET_MIN_DEPTH && nnue_uncertainty_loaded) {
+    if (depth >= EGAROUCID_NNUE_MPC_NET_MIN_DEPTH) {
 #ifdef EGAROUCID_NNUE_MPC_EXACT_D0
         d0.exact_value();
 #else

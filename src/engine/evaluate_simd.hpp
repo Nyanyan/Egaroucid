@@ -28,14 +28,12 @@
 #include "nnue/nnue_eval.hpp"
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
 #include "nnue/nnue_uncertainty_table.hpp"
-inline bool nnue_uncertainty_loaded = false;  // set by evaluate_init
 #endif
 #ifdef EGAROUCID_NNUE_MPC_DUAL
 #include "nnue/nnue_mpc_dual_head.hpp"
 #ifndef EGAROUCID_NNUE_UHEAD_FILENAME
-#define EGAROUCID_NNUE_UHEAD_FILENAME "nnue_uhead_d3_q16.egnh"  // the head nnue_mpc_dual_head.hpp was fitted for
+#define EGAROUCID_NNUE_UHEAD_FILENAME "nnue.egnh"  // the head nnue_mpc_dual_head.hpp was fitted for
 #endif
-inline bool nnue_uhead_loaded = false;  // set by evaluate_init
 #endif
 #endif
 
@@ -545,18 +543,16 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
 #ifdef EGAROUCID_NNUE
     if (!nnue::init(nnue::default_path(file), show_log)) return false;
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
-    // without the uncertainty network the MPC margins stay as they are
-    nnue_uncertainty_loaded = nnue::init_weights(nnue::uncertainty_weights, nnue::default_path(file, EGAROUCID_NNUE_UNCERTAINTY_FILENAME, "EGAROUCID_NNUE_UNCERTAINTY_FILE"), show_log);
-    if (!nnue_uncertainty_loaded) {
-        std::cerr << "[WARNING] NNUE uncertainty network not loaded; MPC margins are not scaled per position" << std::endl;
+    if (!nnue::init_weights(nnue::uncertainty_weights, nnue::default_path(file, EGAROUCID_NNUE_UNCERTAINTY_FILENAME, "EGAROUCID_NNUE_UNCERTAINTY_FILE"), show_log)) {
+        std::cerr << "[ERROR] [FATAL] NNUE uncertainty network not loaded" << std::endl;
+        return false;
     }
 #endif
 #ifdef EGAROUCID_NNUE_MPC_DUAL
-    // without the head the MPC margins use the disc-count mean of u
-    nnue_uhead_loaded = nnue::init_uhead(nnue::default_path(file, EGAROUCID_NNUE_UHEAD_FILENAME, "EGAROUCID_NNUE_UHEAD_FILE"),
-                                         nnue::default_path(file), nnue_mpc_net::UHEAD_HASH, show_log);
-    if (!nnue_uhead_loaded) {
-        std::cerr << "[WARNING] NNUE uncertainty head not loaded; MPC margins use the mean uncertainty for the disc count" << std::endl;
+    if (!nnue::init_uhead(nnue::default_path(file, EGAROUCID_NNUE_UHEAD_FILENAME, "EGAROUCID_NNUE_UHEAD_FILE"),
+                          nnue::default_path(file), nnue_mpc_net::UHEAD_HASH, show_log)) {
+        std::cerr << "[ERROR] [FATAL] NNUE uncertainty head not loaded" << std::endl;
+        return false;
     }
 #endif
 #endif

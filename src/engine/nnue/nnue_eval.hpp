@@ -752,12 +752,12 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     uhead.loaded = false;
     std::ifstream ifs(file, std::ios::binary);
     if (!ifs) {
-        std::cerr << "[WARNING] NNUE uncertainty head not found: " << file << std::endl;
+        std::cerr << "[ERROR] NNUE uncertainty head not found: " << file << std::endl;
         return false;
     }
     bool file_ok = false;
     if (expected_hash != 0 && (fnv1a64_file(file, &file_ok) != expected_hash || !file_ok)) {
-        std::cerr << "[WARNING] NNUE uncertainty head is not the one the MPC coefficients were fitted with: " << file << std::endl;
+        std::cerr << "[ERROR] NNUE uncertainty head is not the one the MPC coefficients were fitted with: " << file << std::endl;
         return false;
     }
     char magic[8];
@@ -773,16 +773,16 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     if (!ifs || std::memcmp(magic, "EGUHEAD1", 8) != 0 || head[0] < 1 || head[0] > 2 || inputs < 0 || inputs > 3 || hidden < 0 || hidden > 256 || hidden % 8 != 0 ||
         !(n_private == 0 || n_private == 8 || n_private == 16 || n_private == 32) || n_in > MAX_W + MAX_W / 2 + H_FIXED + UHEAD_MAX_PRIVATE || head[4] != W || head[5] != H || head[6] != N_BUCKETS || n_in != expected_n_in ||
         weights.mode != MODE_RESIDUAL || !weights.loaded) {
-        std::cerr << "[WARNING] NNUE uncertainty head does not match the main network: " << file << std::endl;
+        std::cerr << "[ERROR] NNUE uncertainty head does not match the main network: " << file << std::endl;
         return false;
     }
     if (hidden == 0 && (inputs != 3 || n_private != 0)) {
-        std::cerr << "[WARNING] NNUE uncertainty head: a linear output needs inputs z and no private lanes: " << file << std::endl;
+        std::cerr << "[ERROR] NNUE uncertainty head: a linear output needs inputs z and no private lanes: " << file << std::endl;
         return false;
     }
     bool hash_ok = false;
     if (fnv1a64_file(main_file, &hash_ok) != main_hash || !hash_ok) {
-        std::cerr << "[WARNING] NNUE uncertainty head belongs to another main weight file: " << file << std::endl;
+        std::cerr << "[ERROR] NNUE uncertainty head belongs to another main weight file: " << file << std::endl;
         return false;
     }
     uhead.inputs = inputs;
@@ -796,7 +796,7 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     uhead.out_b.resize(N_BUCKETS);
     if (!(read_array(ifs, uhead.l1_w.data(), uhead.l1_w.size()) && read_array(ifs, uhead.l1_b.data(), uhead.l1_b.size()) &&
           read_array(ifs, uhead.out_w.data(), uhead.out_w.size()) && read_array(ifs, uhead.out_b.data(), uhead.out_b.size()))) {
-        std::cerr << "[WARNING] NNUE uncertainty head is truncated: " << file << std::endl;
+        std::cerr << "[ERROR] NNUE uncertainty head is truncated: " << file << std::endl;
         return false;
     }
     if (uhead.private_rows) {
@@ -806,7 +806,7 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     if (n_private) {
         uhead.private_rows = (int8_t*)aligned_alloc64((size_t)NNUE_N_ROWS * n_private + 64);
         if (!(read_array(ifs, uhead.private_rows, (size_t)NNUE_N_ROWS * n_private) && read_array(ifs, uhead.private_bias, n_private))) {
-            std::cerr << "[WARNING] NNUE uncertainty head is truncated: " << file << std::endl;
+            std::cerr << "[ERROR] NNUE uncertainty head is truncated: " << file << std::endl;
             return false;
         }
     }
