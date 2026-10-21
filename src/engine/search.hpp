@@ -283,7 +283,7 @@ inline void eval_move_from_sibling_base(
     const Eval_features *sibling_base
 );
 inline void eval_pass(Eval_search *eval, const Board *board);
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_EVAL_NNUE_PATTERNS)
 inline void nnue_lanes_move(Eval_search *eval, const Flip *flip);
 #endif
 inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board);
@@ -572,7 +572,7 @@ class Search {
             const Eval_features *sibling_base
         ) {
             eval_move_from_sibling_base(&eval, flip, sibling_base);
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_EVAL_NNUE_PATTERNS)
             nnue_lanes_move(&eval, flip);
 #endif
             board.move_board(flip);

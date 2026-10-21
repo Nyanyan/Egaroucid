@@ -150,6 +150,9 @@ inline int mid_evaluate_separate_move_ordering(Search *search, bool auxiliary = 
 #if USE_SIMD_EVALUATION
     const auto &model_patterns = use_auxiliary ? eval_move_ordering_aux_patterns : eval_move_ordering_mid_patterns;
     const int16_t *table = model_patterns.data() + size_t(phase) * N_PATTERN_PARAMS;
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    int result = calc_pattern_table(table, &search->eval.features[search->eval.feature_idx]);
+#else
     const int *start0 = reinterpret_cast<const int *>(table);
     const int *start4 = reinterpret_cast<const int *>(table + PATTERN4_START_IDX);
     const int *start6 = reinterpret_cast<const int *>(table + PATTERN6_START_IDX);
@@ -166,6 +169,7 @@ inline int mid_evaluate_separate_move_ordering(Search *search, bool auxiliary = 
     __m128i sum128 = _mm_add_epi32(_mm256_castsi256_si128(sum), _mm256_extracti128_si256(sum, 1));
     sum128 = _mm_hadd_epi32(sum128, sum128);
     int result = _mm_cvtsi128_si32(sum128) + _mm_extract_epi32(sum128, 1) - SIMD_EVAL_MAX_VALUE * N_PATTERN_FEATURES;
+#endif
 #else
     const int orientation = search->eval.reversed[search->eval.feature_idx];
     const auto &model_tables = use_auxiliary ? eval_move_ordering_aux_tables : eval_move_ordering_mid_tables;

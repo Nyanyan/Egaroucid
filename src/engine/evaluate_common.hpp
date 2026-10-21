@@ -206,7 +206,7 @@ union Eval_features {
 
 struct Eval_search {
     Eval_features features[HW2 - 4];
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_EVAL_NNUE_PATTERNS)  // with the NNUE patterns the features are the lanes
     // NNUE instance indices in fixed colors and occupancy, kept with the same feature_idx. They are
     // computed only when a network evaluation needs them; each move just records itself.
     // stored as nnue::Lanes, the type they are read and written as (an Eval_features accessed through a

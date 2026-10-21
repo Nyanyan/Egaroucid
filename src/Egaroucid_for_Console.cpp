@@ -34,7 +34,13 @@ void init_console(Options options, std::string binary_path) {
         hash_tt_init(options.binary_path, options.show_log);
     #endif
     stability_init();
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    // the endgame move ordering table belongs to the pattern set: it is read beside the main evaluation file
+    const size_t eval_dir_end = options.eval_file.find_last_of("/\\");
+    std::string mo_end_file = (eval_dir_end == std::string::npos ? std::string() : options.eval_file.substr(0, eval_dir_end + 1)) + "eval_move_ordering_end.egev";
+#else
     std::string mo_end_file = binary_path + "resources/eval_move_ordering_end.egev"; // filename fixed
+#endif
     eval_move_ordering_auto_requested = !options.eval_move_ordering_auto_off && options.eval_move_ordering_mid_file.empty();
     if (!evaluate_init(options.eval_file, mo_end_file, options.show_log))
         std::exit(1);

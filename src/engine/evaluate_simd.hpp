@@ -37,6 +37,56 @@
 #endif
 #endif
 
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+#include "nnue/nnue_patterns.hpp"
+/*
+    Pattern evaluation over the 12 NNUE shapes (EGAROUCID_EVAL_NNUE_PATTERNS). The 64 feature lanes are the
+    NNUE instances, so an NNUE build reads its first-layer rows straight from the search's features.
+
+    Lane value: the instance's row within its pattern in the NNUE convention (digit 0 = empty, 1 = side to
+    move, 2 = opponent; digit k weighs 3^k, src/tools/nnue/nnue_patterns.py). Lane 16 v + e is element e of
+    f256[v], so f128[k] holds lanes 8 k .. 8 k + 7. Lanes 32-47 (f256[2], the part the endgame search keeps)
+    hold the 16 instances of the 4 endgame move-ordering patterns; the other 48 instances fill lanes 0-31 and
+    48-63 in NNUE order.
+
+    A move changes the lanes by the same sums as the production layout: the placed square adds 2 W (stored
+    as -2 W in coord_to_feature_simd, which eval_move subtracts), the mover's other discs add W and the
+    opponent's unflipped discs subtract W (W: the per-lane 3^k of a square). A pass adds W(player) - W(opponent).
+    The tables (eval.egev2 layout: per phase the 157464 rows in NNUE row order, then 65 disc-count values)
+    are made by src/tools/nnue/train_pattern_eval.py.
+*/
+#if !USE_SIMD_EVALUATION
+#error "EGAROUCID_EVAL_NNUE_PATTERNS needs the SIMD evaluation"
+#endif
+constexpr int CEIL_N_PATTERN_FEATURES = 64;
+constexpr int N_PATTERN_PARAMS_RAW = NNUE_N_ROWS;           // rows of 1 phase
+constexpr int N_PATTERN_PARAMS = N_PATTERN_PARAMS_RAW + 1;  // +1 for byte bound
+constexpr int SIMD_EVAL_MAX_VALUE = 4092;                   // evaluate range [-4092, 4092]
+constexpr int N_SIMD_EVAL_FEATURE_CELLS = 16;
+constexpr int N_SIMD_EVAL_FEATURE_GROUP = 4;
+// the 4 patterns (NNUE pattern ids, 4 instances each) of the endgame move ordering evaluation
+#ifndef EGAROUCID_EVAL_MO_END_PATTERNS
+#define EGAROUCID_EVAL_MO_END_PATTERNS 0, 6, 8, 9
+#endif
+constexpr int EVAL_MO_END_PATTERNS[4] = {EGAROUCID_EVAL_MO_END_PATTERNS};
+constexpr int eval_mo_end_rows() {
+    int rows = 0;
+    for (const int p : EVAL_MO_END_PATTERNS) {
+        int r = 1;
+        for (int k = 0; k < nnue_patterns[p].size; ++k) r *= 3;
+        rows += r;
+    }
+    return rows;
+}
+constexpr int N_PATTERN_PARAMS_MO_END = eval_mo_end_rows() + 1; // +1 for byte bound
+constexpr int SIMD_EVAL_MAX_VALUE_MO_END = 16380;
+
+int eval_lane_instance[CEIL_N_PATTERN_FEATURES];                 // NNUE instance of each lane
+uint16_t eval_lane_square_weight[HW2][CEIL_N_PATTERN_FEATURES];  // W: 3^k of square (bit) b in each lane
+__m256i eval_lane_offset_simd[N_EVAL_VECTORS * 2];               // 1 + row offset of the lane's pattern (8 lanes)
+__m256i eval_lane_offset_mo_end_simd[2];                         // the same within the move ordering end table
+__m256i eval_lane_offset_nnue_simd[N_EVAL_VECTORS * 2];          // NNUE row offset of the lane's pattern
+#else
 /*
     @brief evaluation pattern definition for SIMD
 */
@@ -239,18 +289,23 @@ constexpr int pattern_sizes[N_PATTERNS] = {
     10, 10, 10, 10,
     10, 10, 10, 10
 };
+#endif
 
 /*
     @brief constants used for evaluation function with SIMD
 */
 __m256i eval_lower_mask;
+#ifndef EGAROUCID_EVAL_NNUE_PATTERNS
 __m256i feature_to_coord_simd_mul[N_EVAL_VECTORS][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_EVAL_VECTORS][MAX_PATTERN_CELLS][2];
+#endif
 __m256i coord_to_feature_simd[HW2][N_EVAL_VECTORS];
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS];
+#ifndef EGAROUCID_EVAL_NNUE_PATTERNS
 Eval_features eval_empty_features;
 __m256i eval_simd_offsets_simple[N_EVAL_VECTORS_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
+#endif
 
 
 /*
@@ -296,6 +351,13 @@ inline bool load_eval_file(const char* file, bool show_log) {
         }
     }
 #endif
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    if (unzipped_params.size() != (size_t)N_PHASES * (N_PATTERN_PARAMS_RAW + MAX_STONE_NUM)) {
+        std::cerr << "[ERROR] [FATAL] evaluation file " << file << " has " << unzipped_params.size() << " parameters, the NNUE pattern layout needs "
+                  << (size_t)N_PHASES * (N_PATTERN_PARAMS_RAW + MAX_STONE_NUM) << std::endl;
+        return false;
+    }
+#endif
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         pattern_arr[phase_idx][0] = 0; // memory bound
@@ -336,6 +398,14 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
         fclose(fp);
         return false;
     }
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    char extra;
+    if (fread(&extra, 1, 1, fp) == 1) {
+        std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end " << file << " is larger than the table of its 4 NNUE patterns" << std::endl;
+        fclose(fp);
+        return false;
+    }
+#endif
     // check max value
     for (int i = 1; i < N_PATTERN_PARAMS_MO_END; ++i) {
         if (pattern_move_ordering_end_arr[i] < -SIMD_EVAL_MAX_VALUE_MO_END) {
@@ -384,6 +454,118 @@ inline bool load_eval_move_ordering_mid_dim0_file(const char* file, bool show_lo
 }
 #endif
 
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+// cell (x, y) mapped by symmetry s of src/tools/nnue/nnue_patterns.py
+inline void eval_nnue_symmetry(int s, int x, int y, int *nx, int *ny) {
+    switch (s) {
+        case 0: *nx = x; *ny = y; break;
+        case 1: *nx = 7 - x; *ny = y; break;
+        case 2: *nx = x; *ny = 7 - y; break;
+        case 3: *nx = 7 - x; *ny = 7 - y; break;
+        case 4: *nx = y; *ny = x; break;
+        case 5: *nx = 7 - y; *ny = 7 - x; break;
+        case 6: *nx = 7 - y; *ny = x; break;
+        default: *nx = y; *ny = 7 - x; break;
+    }
+}
+
+inline __m256i eval_lanes_set(const int32_t *v8) {
+    return _mm256_loadu_si256((const __m256i*)v8);
+}
+
+inline void pre_calculate_eval_constant() {
+    // lane order: the move ordering end patterns' instances in lanes 32-47, the others in NNUE order
+    {
+        bool mo_end[NNUE_N_PATTERNS] = {};
+        for (const int p : EVAL_MO_END_PATTERNS) mo_end[p] = true;
+        int n_mo = 0, n_other = 0;
+        for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
+            if (mo_end[nnue_instances[i].pattern]) {
+                eval_lane_instance[32 + n_mo++] = i;
+            } else {
+                eval_lane_instance[n_other < 32 ? n_other : n_other + 16] = i;
+                ++n_other;
+            }
+        }
+        if (n_mo != 16) {
+            std::cerr << "[ERROR] [FATAL] the move ordering end patterns must have 16 instances, found " << n_mo << std::endl;
+            std::exit(1);
+        }
+    }
+    // W(square) per lane: the instance reads the board mapped by inv_sym through the pattern mask, and the
+    // k-th mask bit (ascending) weighs 3^k
+    std::memset(eval_lane_square_weight, 0, sizeof(eval_lane_square_weight));
+    for (int lane = 0; lane < CEIL_N_PATTERN_FEATURES; ++lane) {
+        const Nnue_instance &in = nnue_instances[eval_lane_instance[lane]];
+        const uint64_t mask = nnue_patterns[in.pattern].mask;
+        for (int b = 0; b < HW2; ++b) {
+            const int x = (63 - b) % 8, y = (63 - b) / 8;
+            int nx, ny;
+            eval_nnue_symmetry(in.inv_sym, x, y, &nx, &ny);
+            const int bb = 63 - (8 * ny + nx);
+            if ((mask >> bb) & 1) {
+                const int k = pop_count_ull(mask & ((1ULL << bb) - 1));
+                int p3 = 1;
+                for (int j = 0; j < k; ++j) p3 *= 3;
+                eval_lane_square_weight[b][lane] = (uint16_t)p3;
+            }
+        }
+    }
+    {
+        alignas(32) int32_t off[CEIL_N_PATTERN_FEATURES], off_nnue[CEIL_N_PATTERN_FEATURES], off_mo[16];
+        int mo_start[NNUE_N_PATTERNS] = {};
+        int mo_rows = 0;
+        for (const int p : EVAL_MO_END_PATTERNS) {
+            mo_start[p] = mo_rows;
+            int r = 1;
+            for (int k = 0; k < nnue_patterns[p].size; ++k) r *= 3;
+            mo_rows += r;
+        }
+        for (int lane = 0; lane < CEIL_N_PATTERN_FEATURES; ++lane) {
+            const int p = nnue_instances[eval_lane_instance[lane]].pattern;
+            off_nnue[lane] = nnue_patterns[p].offset;
+            off[lane] = 1 + nnue_patterns[p].offset;
+            if (32 <= lane && lane < 48) off_mo[lane - 32] = 1 + mo_start[p];
+        }
+        for (int k = 0; k < N_EVAL_VECTORS * 2; ++k) {
+            eval_lane_offset_simd[k] = eval_lanes_set(off + 8 * k);
+            eval_lane_offset_nnue_simd[k] = eval_lanes_set(off_nnue + 8 * k);
+        }
+        eval_lane_offset_mo_end_simd[0] = eval_lanes_set(off_mo);
+        eval_lane_offset_mo_end_simd[1] = eval_lanes_set(off_mo + 8);
+    }
+    // coord_to_feature_simd: -2 W, so that eval_move's subtraction adds the placed disc (0 -> 2)
+    for (int cell = 0; cell < HW2; ++cell) {
+        alignas(32) int16_t c2f[CEIL_N_PATTERN_FEATURES];
+        for (int lane = 0; lane < CEIL_N_PATTERN_FEATURES; ++lane) c2f[lane] = (int16_t)(-2 * eval_lane_square_weight[cell][lane]);
+        for (int v = 0; v < N_EVAL_VECTORS; ++v) coord_to_feature_simd[cell][v] = _mm256_load_si256((const __m256i*)(c2f + 16 * v));
+    }
+    for (int bits = 0; bits < N_16BIT; ++bits) {
+        for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) {
+            alignas(32) uint16_t sum[CEIL_N_PATTERN_FEATURES] = {};
+            for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) {
+                if (1 & (bits >> cell)) {
+                    const int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
+                    for (int lane = 0; lane < CEIL_N_PATTERN_FEATURES; ++lane) sum[lane] += eval_lane_square_weight[global_cell][lane];
+                }
+            }
+            for (int v = 0; v < N_EVAL_VECTORS; ++v) eval_move_unflipped_16bit[bits][group][v] = _mm256_load_si256((const __m256i*)(sum + 16 * v));
+        }
+    }
+    eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
+}
+
+// lane values of a board from scratch (reference for the incremental updates)
+inline void eval_lanes_from_board(uint64_t player, uint64_t opponent, uint16_t lanes[CEIL_N_PATTERN_FEATURES]) {
+    for (int lane = 0; lane < CEIL_N_PATTERN_FEATURES; ++lane) {
+        int v = 0;
+        for (int b = 0; b < HW2; ++b) {
+            v += eval_lane_square_weight[b][lane] * ((int)((player >> b) & 1) + 2 * (int)((opponent >> b) & 1));
+        }
+        lanes[lane] = (uint16_t)v;
+    }
+}
+#else
 inline void pre_calculate_eval_constant() {
     { // calc_eval_features initialization
         int16_t f2c[16];
@@ -501,6 +683,7 @@ inline void pre_calculate_eval_constant() {
         eval_lower_mask = _mm256_set1_epi32(0x0000FFFF);
     }
 }
+#endif
 
 /*
     @brief initialize the evaluation function
@@ -593,13 +776,41 @@ bool evaluate_init(bool show_log) {
     @param search               search information
     @return pattern evaluation value
 */
-inline __m256i calc_idx8_comp(const __m128i feature, const int i) {
-    return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_comp[i]);
-}
-
 inline __m256i gather_eval(const int *start_addr, const __m256i idx8) {
     return _mm256_i32gather_epi32(start_addr, idx8, 2); // stride is 2 byte, because 16 bit array used, HACK: if (SIMD_EVAL_MAX_VALUE * 2) * (N_ADD=8) < 2 ^ 16, AND is unnecessary
     // return _mm256_and_si256(_mm256_i32gather_epi32(start_addr, idx8, 2), eval_lower_mask);
+}
+
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+// pattern value of a table in the pattern_arr layout (row r at index 1 + r, stored + SIMD_EVAL_MAX_VALUE)
+inline int calc_pattern_table(const int16_t *table, const Eval_features *features) {
+    const int *start_addr = (const int*)table;
+    __m256i res256 = gather_eval(start_addr, _mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[0]), eval_lane_offset_simd[0]));
+    for (int k = 1; k < N_EVAL_VECTORS * 2; ++k) {
+        res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[k]), eval_lane_offset_simd[k])));
+    }
+    res256 = _mm256_and_si256(res256, eval_lower_mask);
+    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
+    res128 = _mm_hadd_epi32(res128, res128);
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE * N_PATTERN_FEATURES;
+}
+
+inline int calc_pattern(const int phase_idx, Eval_features *features) {
+    return calc_pattern_table(pattern_arr[phase_idx], features);
+}
+
+inline int calc_pattern_move_ordering_end(Eval_features *features) {
+    const int *start_addr = (const int*)pattern_move_ordering_end_arr;
+    __m256i res256 =                  gather_eval(start_addr, _mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[4]), eval_lane_offset_mo_end_simd[0]));
+    res256 = _mm256_add_epi32(res256, gather_eval(start_addr, _mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[5]), eval_lane_offset_mo_end_simd[1])));
+    res256 = _mm256_and_si256(res256, eval_lower_mask);
+    __m128i res128 = _mm_add_epi32(_mm256_castsi256_si128(res256), _mm256_extracti128_si256(res256, 1));
+    res128 = _mm_hadd_epi32(res128, res128);
+    return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_END * N_PATTERN_FEATURES_MO_END;
+}
+#else
+inline __m256i calc_idx8_comp(const __m128i feature, const int i) {
+    return _mm256_add_epi32(_mm256_cvtepu16_epi32(feature), eval_simd_offsets_comp[i]);
 }
 
 inline int calc_pattern(const int phase_idx, Eval_features *features) {
@@ -649,10 +860,18 @@ inline int calc_pattern_move_ordering_end(Eval_features *features) {
     res128 = _mm_hadd_epi32(res128, res128);
     return _mm_cvtsi128_si32(res128) + _mm_extract_epi32(res128, 1) - SIMD_EVAL_MAX_VALUE_MO_END * N_PATTERN_FEATURES_MO_END;
 }
+#endif
 
 inline void calc_eval_features(Board *board, Eval_search *eval);
 
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE) && defined(EGAROUCID_EVAL_NNUE_PATTERNS)
+// NNUE rows of the position: the feature lanes plus their patterns' row offsets
+inline void nnue_rows_of_features(const Eval_features *features, int idx[NNUE_N_INSTANCES]) {
+    for (int k = 0; k < N_EVAL_VECTORS * 2; ++k) {
+        _mm256_store_si256((__m256i*)&idx[8 * k], _mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[k]), eval_lane_offset_nnue_simd[k]));
+    }
+}
+#elif defined(EGAROUCID_NNUE)
 // the side to move at the current feature_idx is not the side the NNUE lanes were built for
 inline bool nnue_other_side(const Eval_search *eval) {
     return ((eval->feature_idx & 1) ^ eval->nnue_pass_parity) != 0;
@@ -755,6 +974,18 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
         // square input: straight from the bitboards (no pattern indices)
         return nnue::score_of_total(nnue::evaluate_total_squares(search->board.player, search->board.opponent, HW2 - search->n_discs, raw));
     }
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    alignas(32) int idx[NNUE_N_INSTANCES];
+    nnue_rows_of_features(&search->eval.features[search->eval.feature_idx], idx);
+    const int64_t total = nnue::evaluate_total_idx(idx, search->board.player, HW2 - search->n_discs, raw);
+#ifdef EGAROUCID_NNUE_VERIFY
+    if (total != nnue::evaluate_total(search->board.player, search->board.opponent, HW2 - search->n_discs, raw)) {
+        std::cerr << "[ERROR] NNUE value from the feature lanes differs from the board" << std::endl;
+        std::abort();
+    }
+#endif
+    return nnue::score_of_total(total);
+#else
     nnue_ensure_lanes(&search->eval);
     nnue::Lanes view;
     nnue::lanes_view(&search->eval.nnue_lanes[search->eval.feature_idx],
@@ -772,17 +1003,24 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
 #endif
     const int64_t total = nnue::evaluate_total_lanes(&view, search->board.player, HW2 - search->n_discs, raw);
     return nnue::score_of_total(total);
+#endif
 }
 
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
 // learned uncertainty of the position (log sigma^2 of the outcome residual) minus its mean for the disc count
 inline double nnue_uncertainty_dev(Search *search) {
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    alignas(32) int idx[NNUE_N_INSTANCES];
+    nnue_rows_of_features(&search->eval.features[search->eval.feature_idx], idx);
+    const int64_t total = nnue::evaluate_total_idx(idx, search->board.player, HW2 - search->n_discs, 0, nnue::uncertainty_weights);
+#else
     nnue_ensure_lanes(&search->eval);
     nnue::Lanes view;
     nnue::lanes_view(&search->eval.nnue_lanes[search->eval.feature_idx],
                      &search->eval.nnue_occ[search->eval.feature_idx],
                      nnue_other_side(&search->eval), &view);
     const int64_t total = nnue::evaluate_total_lanes(&view, search->board.player, HW2 - search->n_discs, 0, nnue::uncertainty_weights);
+#endif
     return total / 8192.0 - nnue_uncertainty::MEAN_U[search->n_discs];
 }
 
@@ -797,15 +1035,23 @@ inline double nnue_uncertainty_raw(Search *search) {
 // raw_pattern as in mid_evaluate_nnue; u is the disc-count mean if the head cannot run
 inline int mid_evaluate_nnue_and_u(Search *search, int raw_pattern, double *u) {
     const int raw = raw_pattern != INT_MIN ? raw_pattern : mid_evaluate_raw(search);
+    int64_t total;
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    alignas(32) int idx[NNUE_N_INSTANCES];
+    nnue_rows_of_features(&search->eval.features[search->eval.feature_idx], idx);
+    if (!nnue::evaluate_total_and_u_idx(idx, search->board.player, HW2 - search->n_discs, raw, &total, u)) {
+        *u = nnue_mpc_net::MEAN_U[search->n_discs];
+    }
+#else
     nnue_ensure_lanes(&search->eval);
     nnue::Lanes view;
     nnue::lanes_view(&search->eval.nnue_lanes[search->eval.feature_idx],
                      &search->eval.nnue_occ[search->eval.feature_idx],
                      nnue_other_side(&search->eval), &view);
-    int64_t total;
     if (!nnue::evaluate_total_and_u_lanes(&view, search->board.player, HW2 - search->n_discs, raw, &total, u)) {
         *u = nnue_mpc_net::MEAN_U[search->n_discs];
     }
+#endif
     return nnue::score_of_total(total);
 }
 #endif
@@ -844,6 +1090,7 @@ inline int mid_evaluate_move_ordering_end(Search *search) {
     return res;
 }
 
+#ifndef EGAROUCID_EVAL_NNUE_PATTERNS
 inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, const int n) {
     f = _mm256_set1_epi16(0);
     for (int j = 0; j < n; ++j) { // n: max n_cells in pattern - 1
@@ -854,12 +1101,41 @@ inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, c
     f = _mm256_add_epi16(f, _mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n][0], 4));
     f = _mm256_add_epi16(f, _mm256_slli_epi32(_mm256_i32gather_epi32(b_arr_int, feature_to_coord_simd_cell[i][n][1], 4), 16));
 }
+#endif
 
 /*
     @brief calculate features for pattern evaluation
 
     @param search               search information
 */
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+inline void calc_eval_features(Board *board, Eval_search *eval) {
+    // digit 1 = player, 2 = opponent, 0 = empty: every lane is W(occupied) + W(opponent)
+    const uint64_t opponent = board->opponent;
+    const uint64_t occupied = board->player | opponent;
+    __m256i f0 = _mm256_setzero_si256();
+    __m256i f1 = _mm256_setzero_si256();
+    __m256i f2 = _mm256_setzero_si256();
+    __m256i f3 = _mm256_setzero_si256();
+    for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) {
+        const uint16_t opponent_group = static_cast<uint16_t>(opponent >> (group * N_SIMD_EVAL_FEATURE_CELLS));
+        const uint16_t occupied_group = static_cast<uint16_t>(occupied >> (group * N_SIMD_EVAL_FEATURE_CELLS));
+        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[opponent_group][group][0]);
+        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[occupied_group][group][0]);
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[opponent_group][group][1]);
+        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[occupied_group][group][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[opponent_group][group][2]);
+        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[occupied_group][group][2]);
+        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[opponent_group][group][3]);
+        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[occupied_group][group][3]);
+    }
+    eval->features[0].f256[0] = f0;
+    eval->features[0].f256[1] = f1;
+    eval->features[0].f256[2] = f2;
+    eval->features[0].f256[3] = f3;
+    eval->feature_idx = 0;
+}
+#else
 inline void calc_eval_features(Board *board, Eval_search *eval) {
     // With ternary digits player=0, opponent=1, empty=2, every feature is
     // empty_feature - T[player] - T[player | opponent].
@@ -892,6 +1168,7 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     eval->nnue_valid[0] = 1;
 #endif
 }
+#endif
 
 /*
     Build the portion of a child feature update shared by every legal move.
@@ -1008,7 +1285,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_EVAL_NNUE_PATTERNS)
     nnue_lanes_move(eval, flip);
 #endif
 }
@@ -1052,7 +1329,7 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
-#ifdef EGAROUCID_NNUE
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_EVAL_NNUE_PATTERNS)
     eval->nnue_pass_parity ^= 1;
 #endif
 }
