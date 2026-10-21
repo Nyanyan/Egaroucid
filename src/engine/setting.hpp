@@ -69,6 +69,12 @@
 #if defined(EGAROUCID_NNUE_MPC_NET) && !defined(EGAROUCID_NNUE_MPC_DUAL) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY)
     #define EGAROUCID_NNUE_MPC_UNCERTAINTY
 #endif
+// NNUE builds keep their own incremental instance lanes, except when the pattern evaluation uses the NNUE patterns
+// (EGAROUCID_EVAL_NNUE_PATTERNS: the search features are the lanes). EGAROUCID_NNUE_SEPARATE_LANES keeps them anyway,
+// as a timing reference for the shared lanes (same values, same search tree)
+#if defined(EGAROUCID_NNUE) && (!defined(EGAROUCID_EVAL_NNUE_PATTERNS) || defined(EGAROUCID_NNUE_SEPARATE_LANES))
+    #define EGAROUCID_NNUE_OWN_LANES
+#endif
 
 /*
     @brief Option

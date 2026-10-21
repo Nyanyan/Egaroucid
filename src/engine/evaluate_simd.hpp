@@ -902,7 +902,8 @@ inline void nnue_rows_of_features(const Eval_features *features, int idx[NNUE_N_
         _mm256_store_si256((__m256i*)&idx[8 * k], _mm256_add_epi32(_mm256_cvtepu16_epi32(features->f128[k]), eval_lane_offset_nnue_simd[k]));
     }
 }
-#elif defined(EGAROUCID_NNUE)
+#endif
+#ifdef EGAROUCID_NNUE_OWN_LANES
 // the side to move at the current feature_idx is not the side the NNUE lanes were built for
 inline bool nnue_other_side(const Eval_search *eval) {
     return ((eval->feature_idx & 1) ^ eval->nnue_pass_parity) != 0;
@@ -1005,7 +1006,7 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
         // square input: straight from the bitboards (no pattern indices)
         return nnue::score_of_total(nnue::evaluate_total_squares(search->board.player, search->board.opponent, HW2 - search->n_discs, raw));
     }
-#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+#ifndef EGAROUCID_NNUE_OWN_LANES
     alignas(32) int idx[NNUE_N_INSTANCES];
     nnue_rows_of_features(&search->eval.features[search->eval.feature_idx], idx);
     const int64_t total = nnue::evaluate_total_idx(idx, search->board.player, HW2 - search->n_discs, raw);
@@ -1040,7 +1041,7 @@ inline int mid_evaluate_nnue(Search *search, int raw_pattern = INT_MIN) {
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
 // learned uncertainty of the position (log sigma^2 of the outcome residual) minus its mean for the disc count
 inline double nnue_uncertainty_dev(Search *search) {
-#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+#ifndef EGAROUCID_NNUE_OWN_LANES
     alignas(32) int idx[NNUE_N_INSTANCES];
     nnue_rows_of_features(&search->eval.features[search->eval.feature_idx], idx);
     const int64_t total = nnue::evaluate_total_idx(idx, search->board.player, HW2 - search->n_discs, 0, nnue::uncertainty_weights);
@@ -1067,7 +1068,7 @@ inline double nnue_uncertainty_raw(Search *search) {
 inline int mid_evaluate_nnue_and_u(Search *search, int raw_pattern, double *u) {
     const int raw = raw_pattern != INT_MIN ? raw_pattern : mid_evaluate_raw(search);
     int64_t total;
-#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+#ifndef EGAROUCID_NNUE_OWN_LANES
     alignas(32) int idx[NNUE_N_INSTANCES];
     nnue_rows_of_features(&search->eval.features[search->eval.feature_idx], idx);
     if (!nnue::evaluate_total_and_u_idx(idx, search->board.player, HW2 - search->n_discs, raw, &total, u)) {
@@ -1165,6 +1166,11 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
     eval->features[0].f256[2] = f2;
     eval->features[0].f256[3] = f3;
     eval->feature_idx = 0;
+#ifdef EGAROUCID_NNUE_OWN_LANES
+    nnue::lanes_init(board->player, board->opponent, &eval->nnue_lanes[0], &eval->nnue_occ[0]);
+    eval->nnue_pass_parity = 0;
+    eval->nnue_valid[0] = 1;
+#endif
 }
 #else
 inline void calc_eval_features(Board *board, Eval_search *eval) {
@@ -1316,7 +1322,7 @@ inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
-#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_EVAL_NNUE_PATTERNS)
+#ifdef EGAROUCID_NNUE_OWN_LANES
     nnue_lanes_move(eval, flip);
 #endif
 }
@@ -1360,7 +1366,7 @@ inline void eval_pass(Eval_search *eval, const Board *board) {
     eval->features[eval->feature_idx].f256[1] = f1;
     eval->features[eval->feature_idx].f256[2] = f2;
     eval->features[eval->feature_idx].f256[3] = f3;
-#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_EVAL_NNUE_PATTERNS)
+#ifdef EGAROUCID_NNUE_OWN_LANES
     eval->nnue_pass_parity ^= 1;
 #endif
 }
