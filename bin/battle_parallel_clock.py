@@ -4,7 +4,12 @@ The runner keeps both clocks. Before every move it sends the position, then
 "settimems <color> <remaining milliseconds>" and "go", so the engine allocates its own time
 (ai_time_limit). The time from sending the position to receiving a legal move is subtracted from the
 mover's clock. A side whose clock runs out keeps playing with 0 ms left; the game is recorded with a
-time-loss flag, and the disc result is kept as played.
+time-loss flag, and the disc result is kept as played. The clock used is recorded without clamping, so it
+can exceed the game time.
+
+--ggs-time sends the time the GGS client would give the search instead of the clock (GGS reports whole
+seconds and src/console/ggs.hpp subtracts ggs_time_safety_margin_msec). --board-openings reads the problem
+file as start positions ("<64 squares X/O/-> <X|O>" per line, e.g. GGS s8r14 starts) instead of move lists.
 
 Example:
   python battle_parallel_clock.py 60000 200 3 --threads-per-engine 4 --hash-level 23 \
@@ -47,7 +52,33 @@ def parse_args():
     parser.add_argument('--save-kifu', default=None, metavar='PATH')
     parser.add_argument('--engine-log-dir', default=None, metavar='DIR',
                         help='save each engine process stderr (and its command) here, to diagnose an engine that exits')
+    parser.add_argument('--ggs-time', action='store_true',
+                        help='send the search time of the GGS client (whole seconds minus its safety margin)')
+    parser.add_argument('--board-openings', action='store_true',
+                        help='the problem file holds start positions ("<64 squares> <side>") instead of move lists')
     return parser.parse_args()
+
+
+def ggs_time_safety_margin_msec(remaining_msec):
+    """same as ggs_time_safety_margin_msec in src/console/ggs.hpp"""
+    if remaining_msec > 120000:
+        return 3000
+    if remaining_msec > 60000:
+        return 2500
+    if remaining_msec > 30000:
+        return 2000
+    if remaining_msec > 10000:
+        return 1500
+    return 1000
+
+
+def ggs_search_time_msec(clock_msec):
+    """the time the GGS client gives the search: GGS shows whole seconds, the client subtracts its safety margin"""
+    raw = int(clock_msec) // 1000 * 1000
+    margin = ggs_time_safety_margin_msec(raw)
+    if raw > margin:
+        return raw - margin
+    return max(int(raw * 0.1), 1)
 
 
 def install_engine_logging(log_dir):
@@ -85,7 +116,7 @@ def wait_ready(proc):
             return
 
 
-def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, game_time_msec):
+def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, game_time_msec, ggs_time, board_openings):
     p0_proc = base.acquire_process(p0_idx, players)
     p1_proc = base.acquire_process(p1_idx, players)
     try:
@@ -95,7 +126,12 @@ def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, ga
         for proc in (p0_proc, p1_proc):
             wait_ready(proc)
         o = othello()
-        record = base.apply_opening(o, opening)
+        if board_openings:
+            if not o.set_board_from_str(opening):
+                raise RuntimeError('bad start position: ' + opening)
+            record = ''
+        else:
+            record = base.apply_opening(o, opening)
         black_player = p0_idx if p0_black else p1_idx
         white_player = p1_idx if p0_black else p0_idx
         clock = {black: float(game_time_msec), white: float(game_time_msec)}
@@ -110,6 +146,8 @@ def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, ga
             player_idx = black_player if color == black else white_player
             proc = p0_proc if player_idx == p0_idx else p1_proc
             remaining = max(0, int(clock[color]))
+            if ggs_time:
+                remaining = ggs_search_time_msec(remaining)
             t0 = time.perf_counter()
             base.send_command(proc, base.board_command(o) + 'settimems ' + ('X' if color == black else 'O') + ' ' + str(remaining) + '\ngo\n')
             coord, line = base.read_move(proc)
@@ -117,7 +155,6 @@ def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, ga
             clock[color] -= elapsed
             if clock[color] < 0:
                 flagged[color] = True
-                clock[color] = 0.0
             move_times.append(int(round(elapsed)))
             if coord == 'ps':
                 raise RuntimeError('engine returned pass in a legal position: ' + players[player_idx][NAME_IDX])
@@ -143,10 +180,10 @@ def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, ga
         base.release_process(p1_idx, players, p1_proc)
 
 
-def play_pair(players, p0_idx, p1_idx, opening_idx, opening, game_time_msec):
+def play_pair(players, p0_idx, p1_idx, opening_idx, opening, game_time_msec, ggs_time=False, board_openings=False):
     with ThreadPoolExecutor(max_workers=2) as executor:
-        fb = executor.submit(play_single_game, players, p0_idx, p1_idx, opening_idx, opening, True, game_time_msec)
-        fw = executor.submit(play_single_game, players, p0_idx, p1_idx, opening_idx, opening, False, game_time_msec)
+        fb = executor.submit(play_single_game, players, p0_idx, p1_idx, opening_idx, opening, True, game_time_msec, ggs_time, board_openings)
+        fw = executor.submit(play_single_game, players, p0_idx, p1_idx, opening_idx, opening, False, game_time_msec, ggs_time, board_openings)
         results = [fb.result(), fw.result()]
     sum_diff = sum(r['p0_disc_diff'] for r in results)
     with stats_lock:
@@ -228,6 +265,7 @@ def main():
     print('hash level:', '-' if args.hash_level is None else args.hash_level, flush=True)
     print('problem file:', str(problem_file), flush=True)
     print('opening seed:', args.opening_seed, 'start:', args.opening_start, flush=True)
+    print('GGS search time:', 'yes' if args.ggs_time else 'no', 'board openings:', 'yes' if args.board_openings else 'no', flush=True)
     base.start_player_processes(players, 2 * args.n_parallel_pairs, script_dir)
     matches = []
     opening_pos = args.opening_start
@@ -246,7 +284,7 @@ def main():
             futures = {}
             for _ in range(min(args.n_parallel_pairs, total)):
                 match = next(iterator)
-                futures[executor.submit(play_pair, players, *match, args.game_time_msec)] = match
+                futures[executor.submit(play_pair, players, *match, args.game_time_msec, args.ggs_time, args.board_openings)] = match
             while futures:
                 for future in as_completed(list(futures.keys())):
                     futures.pop(future)
@@ -265,7 +303,7 @@ def main():
                     except StopIteration:
                         pass
                     else:
-                        futures[executor.submit(play_pair, players, *next_match, args.game_time_msec)] = next_match
+                        futures[executor.submit(play_pair, players, *next_match, args.game_time_msec, args.ggs_time, args.board_openings)] = next_match
                     break
     finally:
         base.shutdown_all_processes()
