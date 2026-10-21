@@ -32,7 +32,7 @@
 #ifdef EGAROUCID_NNUE_MPC_DUAL
 #include "nnue/nnue_mpc_dual_head.hpp"
 #ifndef EGAROUCID_NNUE_UHEAD_FILENAME
-#define EGAROUCID_NNUE_UHEAD_FILENAME "nnue.egnh"  // the head nnue_mpc_dual_head.hpp was fitted for
+#define EGAROUCID_NNUE_UHEAD_FILENAME "nnue_mpc.egnh"  // the head nnue_mpc_dual_head.hpp was fitted for
 #endif
 #endif
 #endif

@@ -12,7 +12,7 @@ Boards are split into training and validation sets by a hash of the board (all p
 data are held-out transcripts, these are training transcripts). best.pt follows the validation NLL.
 
 Usage: python src/tools/nnue/train_uncertainty_sr.py --tsv "ignored/mpc_sr_data/sr_d8_*.tsv" --main ignored/nnue_runs/residual_w64_fold_d3 \
-           --int-trunk bin/resources/nnue_rw64f_d3_i8.egnn --out ignored/nnue_runs/uhead_sr_axz16 [--inputs axz --hidden 16 | --own-width 32]
+           --int-trunk bin/resources/nnue.egnn --out ignored/nnue_runs/uhead_sr_axz16 [--inputs axz --hidden 16 | --own-width 32]
 """
 import argparse
 import glob

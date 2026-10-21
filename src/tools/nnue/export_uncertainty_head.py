@@ -8,7 +8,7 @@ written to <run>/mean_u.json. Test vectors (board, pattern value, expected total
 (src/tools/nnue/uhead_check.cpp).
 
 Usage: python src/tools/nnue/export_uncertainty_head.py --run ignored/nnue_runs/uhead_d3_axz_h16_int \
-           --main-file bin/resources/nnue_rw64f_d3_i8.egnn --data ignored/nnue_data2/merged --out bin/resources/nnue_uhead.egnh
+           --main-file bin/resources/nnue.egnn --data ignored/nnue_data2/merged --out bin/resources/unused/nnue_uhead.egnh
 """
 import argparse
 import json
