@@ -29,6 +29,15 @@
     #error "IS_GGS_3MIN requires IS_GGS_TOURNAMENT"
 #endif
 
+// NNUE build: the MPC uncertainty u comes from the dual network (EGAROUCID_NNUE_MPC_DUAL below) unless
+// EGAROUCID_NNUE_MPC_SEPARATE (the separate uncertainty network) or one of the options without it is defined
+#if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_MPC_DUAL) && !defined(EGAROUCID_NNUE_MPC_SEPARATE) && \
+    !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_NO_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_NO_MPC_NET)
+    #define EGAROUCID_NNUE_MPC_DUAL
+#endif
+#if defined(EGAROUCID_NNUE_MPC_DUAL) && defined(EGAROUCID_NNUE_MPC_SEPARATE)
+    #error "EGAROUCID_NNUE_MPC_DUAL and EGAROUCID_NNUE_MPC_SEPARATE are both defined"
+#endif
 // NNUE build: the endgame MPC margins follow the learned per-position uncertainty (multi_probcut.hpp)
 // unless EGAROUCID_NNUE_NO_MPC_UNCERTAINTY is defined
 #if defined(EGAROUCID_NNUE) && !defined(EGAROUCID_NNUE_NO_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_MPC_UNCERTAINTY) && !defined(EGAROUCID_NNUE_MPC_DUAL)
@@ -41,7 +50,9 @@
     #define EGAROUCID_NNUE_MPC_NET
 #endif
 // EGAROUCID_NNUE_MPC_DUAL: the MPC error network's u comes from an uncertainty head on the main network's
-// first layer (dual network, nnue_eval.hpp init_uhead); the separate uncertainty network is not loaded
+// first layer plus 16 private units (dual network, nnue_eval.hpp init_uhead); the separate uncertainty
+// network is not loaded. The default of NNUE builds since 2026-10-21 (same strength per time as the
+// separate network, slightly stronger at the same depth, 2.6 MB of weights instead of 10.1 MB)
 #if defined(EGAROUCID_NNUE_MPC_DUAL) && defined(EGAROUCID_NNUE_NO_MPC_NET)
     #error "EGAROUCID_NNUE_MPC_DUAL needs the MPC error network (EGAROUCID_NNUE_NO_MPC_NET is defined)"
 #endif

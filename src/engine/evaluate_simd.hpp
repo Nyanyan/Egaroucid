@@ -33,7 +33,7 @@ inline bool nnue_uncertainty_loaded = false;  // set by evaluate_init
 #ifdef EGAROUCID_NNUE_MPC_DUAL
 #include "nnue/nnue_mpc_dual_head.hpp"
 #ifndef EGAROUCID_NNUE_UHEAD_FILENAME
-#define EGAROUCID_NNUE_UHEAD_FILENAME "nnue_uhead.egnh"
+#define EGAROUCID_NNUE_UHEAD_FILENAME "nnue_uhead_d3_q16.egnh"  // the head nnue_mpc_dual_head.hpp was fitted for
 #endif
 inline bool nnue_uhead_loaded = false;  // set by evaluate_init
 #endif
