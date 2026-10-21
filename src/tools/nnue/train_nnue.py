@@ -33,6 +33,8 @@ import nnue_patterns as pat
 
 N_BUCKETS = 15
 REC = np.dtype([("p", "<u8"), ("o", "<u8"), ("s", "i1"), ("e", "u1"), ("src", "u1"), ("r", "u1")])
+# file suffix of the pattern-evaluation values (P) beside each record file (--p-suffix)
+P_SUFFIX = ".p.f32"
 
 
 def bucket_of(empties):
@@ -237,7 +239,7 @@ class Net(nn.Module):
 
 def load_split(data_dir, name):
     a = np.memmap(Path(data_dir) / f"{name}.bin", dtype=REC, mode="r")
-    p = np.memmap(Path(data_dir) / f"{name}.p.f32", dtype=np.float32, mode="r")
+    p = np.memmap(Path(data_dir) / f"{name}{P_SUFFIX}", dtype=np.float32, mode="r")
     return a, p
 
 
@@ -319,7 +321,7 @@ class EmptiesStream:
         for f in sorted(Path(data_dir).glob("e*.bin")):
             e = int(f.stem[1:])
             a = np.memmap(f, dtype=REC, mode="r")
-            pv = np.memmap(f.with_suffix(".p.f32"), dtype=np.float32, mode="r")
+            pv = np.memmap(str(f.with_suffix("")) + P_SUFFIX, dtype=np.float32, mode="r")
             if len(a):
                 self.files[e] = (a, pv)
                 self.off[e] = 0
@@ -441,7 +443,10 @@ def main():
     ap.add_argument("--stream-refresh-blocks", type=int, default=8, help="blocks replaced per refresh")
     ap.add_argument("--stream-by-empties", default="", help="dir of per-empties shuffled files (split_by_empties.py)")
     ap.add_argument("--stream-chunk", type=int, default=1000000, help="records per GPU chunk of each empties file")
+    ap.add_argument("--p-suffix", default=".p.f32", help="suffix of the P files (pattern_eval_values.py writes others)")
     args = ap.parse_args()
+    global P_SUFFIX
+    P_SUFFIX = args.p_suffix
     torch.manual_seed(args.seed)
     rng = np.random.default_rng(args.seed)
     device = torch.device("cuda")
@@ -450,7 +455,11 @@ def main():
     (out / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
 
     t0 = time.time()
-    tr_a, tr_p = load_split(args.data, "train_tr")
+    if args.stream_by_empties:
+        # the transcripts come from the per-empties files: only the record count of train_tr is used
+        tr_a, tr_p = np.memmap(Path(args.data) / "train_tr.bin", dtype=REC, mode="r"), None
+    else:
+        tr_a, tr_p = load_split(args.data, "train_tr")
     bd_a, bd_p = load_split(args.data, "train_boards")
     va_a, va_p = load_split(args.data, "val_tr")
     # hold out 1% of the board-file records (that file has no game boundaries)

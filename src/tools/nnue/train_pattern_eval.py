@@ -289,11 +289,11 @@ def quantize(table, num):
 
 def write_egev2(path, phase_rows, phase_num):
     """phase_rows: per phase int16 rows in engine order; phase_num: per phase 65 int16 values"""
-    flat = []
-    for rows, num in zip(phase_rows, phase_num):
-        flat.append(rows.astype(np.int16))
-        flat.append(num.astype(np.int16))
-    flat = np.concatenate(flat)
+    flat = np.concatenate([np.concatenate([np.asarray(rows), np.asarray(num)]) for rows, num in zip(phase_rows, phase_num)])
+    # values >= N_ZEROS_PLUS would read as runs of zeros, and int16 must not wrap
+    if flat.min() < -32768 or flat.max() >= N_ZEROS_PLUS:
+        raise ValueError(f"egev2 values out of range: {flat.min()} .. {flat.max()} (allowed -32768 .. {N_ZEROS_PLUS - 1})")
+    flat = flat.astype(np.int16)
     out = []
     zeros = 0
     for v in flat.tolist():

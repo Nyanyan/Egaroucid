@@ -41,7 +41,12 @@ void init_console(Options options, std::string binary_path) {
 #else
     std::string mo_end_file = binary_path + "resources/eval_move_ordering_end.egev"; // filename fixed
 #endif
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    // the NNUE pattern set has no Offset/Decay models: those situations use the main evaluation
+    eval_move_ordering_auto_requested = false;
+#else
     eval_move_ordering_auto_requested = !options.eval_move_ordering_auto_off && options.eval_move_ordering_mid_file.empty();
+#endif
     if (!evaluate_init(options.eval_file, mo_end_file, options.show_log))
         std::exit(1);
     if (!options.eval_move_ordering_mid_file.empty() &&

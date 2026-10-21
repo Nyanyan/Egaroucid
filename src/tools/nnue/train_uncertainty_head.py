@@ -179,7 +179,10 @@ def main():
     ap.add_argument("--compare", default="", help="run directory of a separate uncertainty network to evaluate alongside")
     ap.add_argument("--distill", type=float, default=0.0, help="weight a of (u - u_compare)^2 (needs --compare): loss = (1 - a) NLL + a distillation")
     ap.add_argument("--int-trunk", default="", help="the engine weight file (.egnn, int8) exported from --main")
+    ap.add_argument("--p-suffix", default=".p.f32", help="suffix of the P files (as train_nnue.py --p-suffix)")
     args = ap.parse_args()
+    import train_nnue
+    train_nnue.P_SUFFIX = args.p_suffix
     torch.manual_seed(args.seed)
     device = torch.device("cuda")
     out = Path(args.out)

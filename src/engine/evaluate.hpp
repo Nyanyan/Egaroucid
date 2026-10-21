@@ -10,6 +10,9 @@
 
 #pragma once
 #include "setting.hpp"
+#if defined(EGAROUCID_EVAL_NNUE_PATTERNS) && (defined(USE_NNUE_EVALUATION) || !USE_SIMD_EVALUATION)
+#error "EGAROUCID_EVAL_NNUE_PATTERNS needs the SIMD pattern evaluation (evaluate_simd.hpp)"
+#endif
 #if defined(USE_NNUE_EVALUATION)
 #include "./../tools/evaluation/nnue/evaluate_nnue.hpp"
 #elif USE_SIMD_EVALUATION

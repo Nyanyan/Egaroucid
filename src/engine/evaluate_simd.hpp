@@ -30,7 +30,11 @@
 #include "nnue/nnue_uncertainty_table.hpp"
 #endif
 #ifdef EGAROUCID_NNUE_MPC_DUAL
+#ifdef EGAROUCID_NNUE_MPC_DUAL_HEADER  // the coefficients of another head (e.g. "nnue/nnue_mpc_dual_head_p12.hpp")
+#include EGAROUCID_NNUE_MPC_DUAL_HEADER
+#else
 #include "nnue/nnue_mpc_dual_head.hpp"
+#endif
 #ifndef EGAROUCID_NNUE_UHEAD_FILENAME
 #define EGAROUCID_NNUE_UHEAD_FILENAME "nnue_mpc.egnh"  // the head nnue_mpc_dual_head.hpp was fitted for
 #endif
@@ -60,13 +64,14 @@
 #endif
 constexpr int CEIL_N_PATTERN_FEATURES = 64;
 constexpr int N_PATTERN_PARAMS_RAW = NNUE_N_ROWS;           // rows of 1 phase
-constexpr int N_PATTERN_PARAMS = N_PATTERN_PARAMS_RAW + 1;  // +1 for byte bound
+// +1 for byte bound, +1 so that the 4-byte gather of the last row stays inside the table
+constexpr int N_PATTERN_PARAMS = N_PATTERN_PARAMS_RAW + 2;
 constexpr int SIMD_EVAL_MAX_VALUE = 4092;                   // evaluate range [-4092, 4092]
 constexpr int N_SIMD_EVAL_FEATURE_CELLS = 16;
 constexpr int N_SIMD_EVAL_FEATURE_GROUP = 4;
 // the 4 patterns (NNUE pattern ids, 4 instances each) of the endgame move ordering evaluation
 #ifndef EGAROUCID_EVAL_MO_END_PATTERNS
-#define EGAROUCID_EVAL_MO_END_PATTERNS 0, 6, 8, 9
+#define EGAROUCID_EVAL_MO_END_PATTERNS 0, 6, 7, 8  // row1, diag7_2corner, diag8_g2, corner3x3 (best of the 70 sets of 4-instance patterns, reports 20261021_3)
 #endif
 constexpr int EVAL_MO_END_PATTERNS[4] = {EGAROUCID_EVAL_MO_END_PATTERNS};
 constexpr int eval_mo_end_rows() {
@@ -78,7 +83,8 @@ constexpr int eval_mo_end_rows() {
     }
     return rows;
 }
-constexpr int N_PATTERN_PARAMS_MO_END = eval_mo_end_rows() + 1; // +1 for byte bound
+constexpr int N_PATTERN_PARAMS_MO_END = eval_mo_end_rows() + 1; // +1 for byte bound (rows read from the file: N - 1)
+constexpr int N_PATTERN_PARAMS_MO_END_ALLOC = N_PATTERN_PARAMS_MO_END + 1;  // + the last gather's upper half
 constexpr int SIMD_EVAL_MAX_VALUE_MO_END = 16380;
 
 int eval_lane_instance[CEIL_N_PATTERN_FEATURES];                 // NNUE instance of each lane
@@ -320,7 +326,11 @@ int16_t pattern_move_ordering_mid_dim0_arr[N_PHASES][N_PATTERN_PARAMS];
 int16_t eval_move_ordering_mid_dim0_num_arr[N_PHASES][MAX_STONE_NUM];
 #endif
 // move ordering evaluation
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END_ALLOC];
+#else
 int16_t pattern_move_ordering_end_arr[N_PATTERN_PARAMS_MO_END];
+#endif
 
 #if !USE_DIM0_ONLY_EVALUATION
 #include "evaluate_fm.hpp"
@@ -477,7 +487,19 @@ inline void pre_calculate_eval_constant() {
     // lane order: the move ordering end patterns' instances in lanes 32-47, the others in NNUE order
     {
         bool mo_end[NNUE_N_PATTERNS] = {};
-        for (const int p : EVAL_MO_END_PATTERNS) mo_end[p] = true;
+        for (const int p : EVAL_MO_END_PATTERNS) {
+            if (p < 0 || p >= NNUE_N_PATTERNS || mo_end[p]) {
+                std::cerr << "[ERROR] [FATAL] EGAROUCID_EVAL_MO_END_PATTERNS must be 4 distinct NNUE pattern ids" << std::endl;
+                std::exit(1);
+            }
+            mo_end[p] = true;
+        }
+        int n_mo_instances = 0;
+        for (int i = 0; i < NNUE_N_INSTANCES; ++i) n_mo_instances += mo_end[nnue_instances[i].pattern];
+        if (n_mo_instances != 16) {
+            std::cerr << "[ERROR] [FATAL] the move ordering end patterns must have 16 instances, found " << n_mo_instances << std::endl;
+            std::exit(1);
+        }
         int n_mo = 0, n_other = 0;
         for (int i = 0; i < NNUE_N_INSTANCES; ++i) {
             if (mo_end[nnue_instances[i].pattern]) {
@@ -486,10 +508,6 @@ inline void pre_calculate_eval_constant() {
                 eval_lane_instance[n_other < 32 ? n_other : n_other + 16] = i;
                 ++n_other;
             }
-        }
-        if (n_mo != 16) {
-            std::cerr << "[ERROR] [FATAL] the move ordering end patterns must have 16 instances, found " << n_mo << std::endl;
-            std::exit(1);
         }
     }
     // W(square) per lane: the instance reads the board mapped by inv_sym through the pattern mask, and the
@@ -725,11 +743,24 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
     pre_calculate_eval_constant();
 #ifdef EGAROUCID_NNUE
     if (!nnue::init(nnue::default_path(file), show_log)) return false;
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    // the rows arrive in feature-lane order: only the int8 first layer sums them exactly in any order
+    if (nnue::weights.mode != nnue::MODE_LINEAR && !nnue::weights.input_squares && !nnue::weights.ft8) {
+        std::cerr << "[ERROR] [FATAL] EGAROUCID_EVAL_NNUE_PATTERNS needs an NNUE with an int8 first layer" << std::endl;
+        return false;
+    }
+#endif
 #ifdef EGAROUCID_NNUE_MPC_UNCERTAINTY
     if (!nnue::init_weights(nnue::uncertainty_weights, nnue::default_path(file, EGAROUCID_NNUE_UNCERTAINTY_FILENAME, "EGAROUCID_NNUE_UNCERTAINTY_FILE"), show_log)) {
         std::cerr << "[ERROR] [FATAL] NNUE uncertainty network not loaded" << std::endl;
         return false;
     }
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+    if (!nnue::uncertainty_weights.ft8) {
+        std::cerr << "[ERROR] [FATAL] EGAROUCID_EVAL_NNUE_PATTERNS needs an uncertainty network with an int8 first layer" << std::endl;
+        return false;
+    }
+#endif
 #endif
 #ifdef EGAROUCID_NNUE_MPC_DUAL
     if (!nnue::init_uhead(nnue::default_path(file, EGAROUCID_NNUE_UHEAD_FILENAME, "EGAROUCID_NNUE_UHEAD_FILE"),

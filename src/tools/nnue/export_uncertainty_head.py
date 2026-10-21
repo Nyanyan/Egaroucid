@@ -41,7 +41,10 @@ def main():
     ap.add_argument("--data", required=True, help="merged data dir (val_tr: mean u per disc count, test vectors)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--n-vectors", type=int, default=2000)
+    ap.add_argument("--p-suffix", default=".p.f32", help="suffix of the P files (as train_nnue.py --p-suffix)")
     args = ap.parse_args()
+    import train_nnue
+    train_nnue.P_SUFFIX = args.p_suffix
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     hargs = json.loads((Path(args.run) / "args.json").read_text(encoding="utf-8"))
     it = IntTrunk(args.main_file, device)

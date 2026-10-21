@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
         std::cerr << "usage: eval_positions <eval.egev2> <eval_move_ordering_end.egev> <in.bin> <out.f32> [threads]" << std::endl;
         return 1;
     }
+    eval_move_ordering_auto_requested = false;  // the pattern value needs no ordering models
     if (!evaluate_init(std::string(argv[1]), std::string(argv[2]), false)) return 1;
     std::FILE *in = std::fopen(argv[3], "rb");
     std::FILE *outf = std::fopen(argv[4], "wb");

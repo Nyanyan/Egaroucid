@@ -113,7 +113,10 @@ def main():
     ap.add_argument("--n-check", type=int, default=400000)
     ap.add_argument("--n-vectors", type=int, default=2000)
     ap.add_argument("--ft-int8", action="store_true", help="int8 first layer (residual only)")
+    ap.add_argument("--p-suffix", default=".p.f32", help="suffix of the P files (as train_nnue.py --p-suffix)")
     args = ap.parse_args()
+    import train_nnue
+    train_nnue.P_SUFFIX = args.p_suffix
     run = Path(args.run)
     targs = json.loads((run / "args.json").read_text(encoding="utf-8"))
     mode = targs["mode"]

@@ -17,7 +17,11 @@ struct Move_ordering_policy {
 
 // Set only while initializing models, before any search threads start.
 inline bool eval_move_ordering_auto_enabled = false;
+#ifdef EGAROUCID_EVAL_NNUE_PATTERNS
+inline bool eval_move_ordering_auto_requested = false;  // no Offset/Decay models for the NNUE pattern set
+#else
 inline bool eval_move_ordering_auto_requested = true;
+#endif
 
 // Defined after the ordinary evaluator in evaluate_move_ordering.hpp.
 inline bool initialize_auto_move_ordering_models(const char *main_eval_file, bool show_log);

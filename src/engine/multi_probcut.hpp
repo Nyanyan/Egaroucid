@@ -966,7 +966,11 @@ inline int nnue_mpc_scale_error(int error, double mult) {
 
 #ifdef EGAROUCID_NNUE_MPC_NET
 #ifdef EGAROUCID_NNUE_MPC_DUAL
+#ifdef EGAROUCID_NNUE_MPC_DUAL_HEADER
+#include EGAROUCID_NNUE_MPC_DUAL_HEADER
+#else
 #include "nnue/nnue_mpc_dual_head.hpp"  // coefficients fitted with u from the uncertainty head (dual network)
+#endif
 #else
 #include "nnue/nnue_mpc_net_head.hpp"
 #endif
