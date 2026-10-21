@@ -1321,7 +1321,10 @@ inline void mpc_search_errors(
     @return cutoff occurred?
 */
 #if defined(EGAROUCID_MPC_COUNTERS)
-// diagnostic (one search thread): midgame MPC calls, gates passed and cuts per deep depth, and the nodes of the
+#ifndef EGAROUCID_MPC_COUNTERS_END
+#define EGAROUCID_MPC_COUNTERS_END 0  // 1: count the endgame MPC instead of the midgame MPC
+#endif
+// diagnostic (one search thread): midgame (or endgame) MPC calls, gates passed and cuts per deep depth, and the nodes of the
 // shallow searches that cut or did not (per depth, and counted once at the outermost probe), printed at exit
 struct Mpc_counters {
     uint64_t calls[HW2 + 1] = {}, gate_high[HW2 + 1] = {}, cut_high[HW2 + 1] = {}, gate_low[HW2 + 1] = {}, cut_low[HW2 + 1] = {};
@@ -1356,9 +1359,9 @@ struct Mpc_counters {
     }
 };
 inline Mpc_counters mpc_counters;
-#define EGAROUCID_MPC_COUNT(field, depth) do { if constexpr (!IsEndSearch) ++mpc_counters.field[depth]; } while (0)
-#define EGAROUCID_MPC_PROBE_BEGIN() const uint64_t mpc_probe_n0 = search->n_nodes; if constexpr (!IsEndSearch) ++mpc_counters.nest
-#define EGAROUCID_MPC_PROBE_END(side, depth, cut) do { if constexpr (!IsEndSearch) { --mpc_counters.nest; const uint64_t dn = search->n_nodes - mpc_probe_n0; \
+#define EGAROUCID_MPC_COUNT(field, depth) do { if constexpr (IsEndSearch == (bool)EGAROUCID_MPC_COUNTERS_END) ++mpc_counters.field[depth]; } while (0)
+#define EGAROUCID_MPC_PROBE_BEGIN() const uint64_t mpc_probe_n0 = search->n_nodes; if constexpr (IsEndSearch == (bool)EGAROUCID_MPC_COUNTERS_END) ++mpc_counters.nest
+#define EGAROUCID_MPC_PROBE_END(side, depth, cut) do { if constexpr (IsEndSearch == (bool)EGAROUCID_MPC_COUNTERS_END) { --mpc_counters.nest; const uint64_t dn = search->n_nodes - mpc_probe_n0; \
     ((cut) ? mpc_counters.nodes_cut_##side : mpc_counters.nodes_fail_##side)[depth] += dn; \
     if (mpc_counters.nest == 0) ((cut) ? mpc_counters.outer_cut : mpc_counters.outer_fail) += dn; } } while (0)
 #else

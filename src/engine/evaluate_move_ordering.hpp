@@ -274,7 +274,9 @@ public:
         const bool permitted_context = !end_only || is_end_search || saved_evaluation;
         const auto model = policy.automatic ? policy.auxiliary_model
             : (eval_move_ordering_aux_enabled ? Move_ordering_model::secondary : Move_ordering_model::primary);
-        if (search_uses_separate_ordering_evaluation(&search) && model != Move_ordering_model::ordinary &&
+        // (experiment variant 3 keeps static ordering ordinary but still substitutes the auxiliary leaves)
+        if ((search_uses_separate_ordering_evaluation(&search) || (EGAROUCID_MO_POLICY_VARIANT == 3 && policy.automatic)) &&
+            model != Move_ordering_model::ordinary &&
             permitted_context && depth > 0 && depth <= max_depth) {
             search.use_separate_shallow_evaluation = true;
             search.separate_shallow_model = model;
