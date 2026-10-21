@@ -18,6 +18,7 @@ Example:
 """
 import argparse
 import random
+import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -116,6 +117,26 @@ def wait_ready(proc):
             return
 
 
+def read_move_or_report(proc, name, command):
+    """read the engine's move; if the engine exits instead, raise with its exit code, the commands of this move
+    and its last output lines (an engine that dies leaves nothing on stderr)"""
+    tail = []
+    while True:
+        raw = proc.stdout.readline()
+        if raw == b'':
+            try:
+                code = hex(proc.wait(timeout=10) & 0xffffffff)
+            except subprocess.TimeoutExpired:
+                code = 'unknown (still running)'
+            raise RuntimeError('engine terminated while searching: {} exit code {}; sent {!r}; last output {!r}'.format(
+                name, code, command, tail[-20:]))
+        line = raw.decode(errors='replace').replace('\r', '').replace('\n', '')
+        move = base.parse_engine_move(line)
+        if move is not None:
+            return move, line
+        tail.append(line)
+
+
 def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, game_time_msec, ggs_time, board_openings):
     p0_proc = base.acquire_process(p0_idx, players)
     p1_proc = base.acquire_process(p1_idx, players)
@@ -149,8 +170,9 @@ def play_single_game(players, p0_idx, p1_idx, opening_idx, opening, p0_black, ga
             if ggs_time:
                 remaining = ggs_search_time_msec(remaining)
             t0 = time.perf_counter()
-            base.send_command(proc, base.board_command(o) + 'settimems ' + ('X' if color == black else 'O') + ' ' + str(remaining) + '\ngo\n')
-            coord, line = base.read_move(proc)
+            command = base.board_command(o) + 'settimems ' + ('X' if color == black else 'O') + ' ' + str(remaining) + '\ngo\n'
+            base.send_command(proc, command)
+            coord, line = read_move_or_report(proc, players[player_idx][NAME_IDX], command)
             elapsed = 1000.0 * (time.perf_counter() - t0)
             clock[color] -= elapsed
             if clock[color] < 0:
