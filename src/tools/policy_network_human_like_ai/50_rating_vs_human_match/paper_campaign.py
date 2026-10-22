@@ -349,7 +349,7 @@ def create_paper_figure(data, key, ci_alpha=.15, font_size=DEFAULT_FONT_SIZE):
                          "axes.titlesize": font_size + 2, "pdf.fonttype": 42})
     dataset = data["datasets"][key]
     rows = {r["model"]: r for r in dataset["rows"]}
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(12, 6.5))
     fig.subplots_adjust(left=.10, right=.98, bottom=.10, top=.97)
     ax.set_gid("dataset:" + key)
     for group, spec in PAPER_CURVES.items():
@@ -439,7 +439,7 @@ def render_paper(campaign=DEFAULT_CAMPAIGN, output_dir=DEFAULT_OUTPUT, figures=P
     manifest = dict(schema_version=1, campaign=str(source), models=24, figures=list(figures),
         datasets={k:dict(label=v["label"], positions=v["positions"], cohort=v["cohort"]) for k,v in data["datasets"].items()},
         sources=data["sources"], curves=deepcopy(PAPER_CURVES), confidence=data["confidence"],
-        graph_title=False, figure_size_inches=[12, 7], legend_locations=LEGEND_LOCATIONS,
+        graph_title=False, figure_size_inches=[12, 6.5], legend_locations=LEGEND_LOCATIONS,
         y_limits_percent={k:paper_y_limits(v) for k,v in data["datasets"].items()},
         axis_font_size=font_size + AXIS_FONT_SIZE_INCREMENT,
         legend_font_size=font_size + AXIS_FONT_SIZE_INCREMENT,
