@@ -300,9 +300,12 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 // shared-split helpers take and moves of the serial NWS loop are searched at full depth, so the amount of
 // LMR depends on how many threads help. true reduces those moves too (one thread already reduces every
 // eligible move, because nothing is handed out).
-// Midgame LMR at all (reduction 1 from depth 8 for the 4th and later young brothers, ybwc.hpp).
+// Midgame LMR at all (reduction 1 from depth 8 for the 4th and later young brothers, ybwc.hpp). Off since
+// 2026-10-23: without it the NNUE GGS engine searched fewer nodes at the same depth (one thread, 120 GGS positions
+// at depths 21-28: 0.78-0.84 times the time; 20 threads, depth 27: 0.95 times) and reached about 0.3 ply deeper in
+// 3 s and 15 s per move at 20 threads (reports/20261022_3_overnight_improvements.md).
 #ifndef USE_MID_LMR
-#define USE_MID_LMR true
+#define USE_MID_LMR false
 #endif
 #ifndef USE_MID_LMR_ALL_PATHS
 #define USE_MID_LMR_ALL_PATHS false
