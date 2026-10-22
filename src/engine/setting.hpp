@@ -337,11 +337,12 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #endif
 // Highest MPC level (0: 74%, 1: 88%, 2: 93%, ... 5: 99.9%) that uses it from
 // the depth above. Higher levels use it only from
-// END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH. 4 (up to 99%) since 2026-10-23: with
-// the NNUE engine, 20 GGS positions at 36-39 empties took 0.93 times the time at
-// 98% and 99% (20 threads) with the same values as before (it was 2: up to 93%).
+// END_NWS_SEARCH_ORDERING_EXACT_MIN_DEPTH. 5 (up to 99.9%; exact searches still
+// from that depth) since 2026-10-23: with the NNUE engine, 20 GGS positions at
+// 36-39 empties took 0.93 times the time at 98% and 99% and 0.905 times at 99.9%
+// (20 threads) with the same values as before (it was 2: up to 93%).
 #ifndef END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL
-#define END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL 4
+#define END_NWS_SEARCH_ORDERING_MAX_MPC_LEVEL 5
 #endif
 // Remaining depth from which the other levels, including the exact search,
 // use it.  Near the root of 32-34 empty exact searches it cut the time by
