@@ -979,9 +979,11 @@ inline int nnue_mpc_scale_error(int error, double mult) {
 #endif
 // The network's endgame data has 10-22 empties. Endgame shallow-search margins at deeper nodes
 // (depth > EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH) are those of the pattern build (sigma formula); there the
-// network, extrapolated, gave about twice the pattern margins at 40-44 empties. 64 keeps the network everywhere.
+// network, extrapolated, gave about twice the pattern margins at 40-44 empties. 30 since 2026-10-23: 40-42 empties
+// at 74% took 0.53 times the time (20 threads), 36-39 empties at 88% / 93% kept the accuracy against 99% results,
+// the 28-31 empty 読み切り benchmark was unchanged; 24 cost accuracy at 28-31 empties. 64 keeps the network everywhere.
 #ifndef EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH
-    #define EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH 64
+    #define EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH 30
 #endif
 // the recalibrated endgame path (depths 10-18) always takes the network's margins
 static_assert(EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH >= 18, "EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH below 18 is not supported");
