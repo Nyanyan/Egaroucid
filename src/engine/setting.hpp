@@ -275,8 +275,12 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #endif
 // Join only splits where this many handed-out moves already failed low,
 // i.e. nodes that look like ALL nodes whose remaining moves are all needed.
+// 0 since 2026-10-23 (any split with moves left): about 40% of the thread time
+// was idle in the 20-thread NNUE midgame; with 0 the midgame took 0.951 times
+// the time at 20 threads (13 paired runs) and 0.960 at 10 threads, the 40-42
+// empty MPC endgame 0.956 (6 runs), with 2-5% more nodes.
 #ifndef YBWC_JOIN_MIN_FAIL_LOW
-#define YBWC_JOIN_MIN_FAIL_LOW 1
+#define YBWC_JOIN_MIN_FAIL_LOW 0
 #endif
 // How far below its own split an owner looks for work.
 #ifndef YBWC_JOIN_MAX_LEVELS
