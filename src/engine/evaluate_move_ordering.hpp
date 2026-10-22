@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <fstream>
 #include <vector>
+#include "large_pages.hpp"
 #include "move_ordering_policy.hpp"
 
 inline int eval_move_ordering_mid_shallow_max_depth = 0;
@@ -20,10 +21,10 @@ inline bool eval_move_ordering_mid_shallow_end_only = false;
 
 #if USE_SEPARATE_MID_MOVE_ORDERING_EVALUATION && !defined(USE_NNUE_EVALUATION)
 inline bool eval_move_ordering_mid_enabled = false;
-inline std::vector<int16_t> eval_move_ordering_mid_patterns;
+inline Eval_table_vector eval_move_ordering_mid_patterns;
 inline int16_t eval_move_ordering_mid_num[N_PHASES][MAX_STONE_NUM];
 inline bool eval_move_ordering_aux_enabled = false;
-inline std::vector<int16_t> eval_move_ordering_aux_patterns;
+inline Eval_table_vector eval_move_ordering_aux_patterns;
 inline int16_t eval_move_ordering_aux_num[N_PHASES][MAX_STONE_NUM];
 #if !USE_SIMD_EVALUATION
 inline const int16_t *eval_move_ordering_mid_tables[2][N_PHASES][N_PATTERNS];
@@ -87,11 +88,11 @@ inline bool load_eval_move_ordering_model_file(const char *file, bool show_log, 
         source_offset += N_PATTERN_PARAMS_RAW + MAX_STONE_NUM;
     }
 #if USE_SIMD_EVALUATION
-    std::vector<int16_t> patterns(size_t(N_PHASES) * N_PATTERN_PARAMS, 0);
+    Eval_table_vector patterns(size_t(N_PHASES) * N_PATTERN_PARAMS, 0);
 #else
     // Compact tables for both player orientations, without padding patterns
     // to MAX_EVALUATE_IDX. Main evaluation and FM Dim0 tables are untouched.
-    std::vector<int16_t> patterns(size_t(2) * N_PHASES * N_PATTERN_PARAMS_RAW);
+    Eval_table_vector patterns(size_t(2) * N_PHASES * N_PATTERN_PARAMS_RAW);
 #endif
     source_offset = 0;
     for (int phase = 0; phase < N_PHASES; ++phase) {

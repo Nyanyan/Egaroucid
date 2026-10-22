@@ -382,6 +382,9 @@ class Transposition_table{
 #if USE_CLUSTERED_TT
 #include "transposition_table_clustered.hpp"
 #else
+#ifdef EGAROUCID_LARGE_PAGES_TT
+#error "EGAROUCID_LARGE_PAGES_TT is implemented only for the clustered transposition table (USE_CLUSTERED_TT)"
+#endif
 class Transposition_table {
     private:
         std::mutex mtx;
@@ -1118,6 +1121,9 @@ bool hash_resize(int hash_level_failed, int hash_level, bool show_log) {
     if (show_log) {
         double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+#ifdef EGAROUCID_LARGE_PAGES_TT
+        std::cerr << "transposition table in large pages" << std::endl;
+#endif
     }
     return true;
 }
@@ -1155,6 +1161,9 @@ bool hash_resize(int hash_level_failed, int hash_level, std::string binary_path,
     if (show_log) {
         double size_mb = (double)sizeof(Hash_node) / 1024 / 1024 * hash_sizes[hash_level];
         std::cerr << "hash resized to level " << hash_level << " elements " << hash_sizes[hash_level] << " size " << size_mb << " MB" << std::endl;
+#ifdef EGAROUCID_LARGE_PAGES_TT
+        std::cerr << "transposition table in large pages" << std::endl;
+#endif
     }
     return true;
 }

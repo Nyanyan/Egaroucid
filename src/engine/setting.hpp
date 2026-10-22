@@ -15,10 +15,22 @@
     -DHAS_AMD_PROCESSOR : Optimization for AMD CPU
     -DHAS_32_BIT_OS     : 32bit environment
     -DIS_GGS_3MIN       : 3-minute GGS profile (requires IS_GGS_TOURNAMENT)
+    -DEGAROUCID_LARGE_PAGES : transposition table and evaluation tables in 2 MiB large pages
+                              (Windows, needs "Lock pages in memory", see large_pages.hpp)
 */
 
 #pragma once
 #include <string>
+
+// EGAROUCID_LARGE_PAGES = both parts; a build may define only EGAROUCID_LARGE_PAGES_TT or EGAROUCID_LARGE_PAGES_EVAL
+#ifdef EGAROUCID_LARGE_PAGES
+    #ifndef EGAROUCID_LARGE_PAGES_TT
+        #define EGAROUCID_LARGE_PAGES_TT
+    #endif
+    #ifndef EGAROUCID_LARGE_PAGES_EVAL
+        #define EGAROUCID_LARGE_PAGES_EVAL
+    #endif
+#endif
 
 // folder (below the executable) of the pattern evaluation and its companion files (ordering tables, NNUE weights)
 #ifdef EGAROUCID_EVAL_NNUE_PATTERNS

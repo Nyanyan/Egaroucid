@@ -5,6 +5,7 @@
 */
 #pragma once
 #include <climits>
+#include "large_pages.hpp"
 
 // Only the board prefilter is read without the bucket lock. Atomic board words
 // make even a concurrent replacement well-defined; a hit is always rechecked
@@ -27,6 +28,18 @@ class Transposition_table {
     size_t bucket_mask = 0;
     int lane_count = 4;
     std::atomic<uint16_t> generation{1};
+
+#ifdef EGAROUCID_LARGE_PAGES_TT
+    static_assert(std::is_trivially_destructible_v<Clustered_hash_bucket>, "large pages are freed without destructors");
+#endif
+    void release() {
+#ifdef EGAROUCID_LARGE_PAGES_TT
+        large_page_free(table);
+#else
+        delete[] table;
+#endif
+        table = nullptr;
+    }
 
     Clustered_hash_bucket &bucket(uint32_t hash) {
         return table[(hash >> 2) & bucket_mask];
@@ -120,14 +133,23 @@ public:
     Transposition_table() = default;
     Transposition_table(const Transposition_table &) = delete;
     Transposition_table &operator=(const Transposition_table &) = delete;
-    ~Transposition_table() { delete[] table; }
+    ~Transposition_table() { release(); }
 
     bool resize(int hash_level) {
         const size_t entries = hash_sizes[hash_level];
         const size_t buckets = std::max<size_t>(1, entries / 4);
+#ifdef EGAROUCID_LARGE_PAGES_TT
+        // Large pages are locked physical memory: free the old table before taking the new one.
+        // A failed allocation stops the engine (large_pages.hpp), so the old table is not needed.
+        release();
+        auto *replacement = static_cast<Clustered_hash_bucket*>(
+            large_page_alloc(buckets * sizeof(Clustered_hash_bucket), "transposition table"));
+        for (size_t i = 0; i < buckets; ++i) new (&replacement[i]) Clustered_hash_bucket;
+#else
         auto *replacement = new (std::nothrow) Clustered_hash_bucket[buckets];
         if (!replacement) return false;
         delete[] table;
+#endif
         table = replacement;
         bucket_mask = buckets - 1;
         lane_count = int(std::min<size_t>(entries, 4));

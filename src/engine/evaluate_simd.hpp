@@ -23,6 +23,7 @@
 #include "board.hpp"
 #include "search.hpp"
 #include "util.hpp"
+#include "large_pages.hpp"
 #include "evaluate_common.hpp"
 #ifdef EGAROUCID_NNUE
 #include "nnue/nnue_eval.hpp"
@@ -306,7 +307,11 @@ __m256i feature_to_coord_simd_mul[N_EVAL_VECTORS][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_EVAL_VECTORS][MAX_PATTERN_CELLS][2];
 #endif
 __m256i coord_to_feature_simd[HW2][N_EVAL_VECTORS];
+#ifdef EGAROUCID_LARGE_PAGES_EVAL
+__m256i (*eval_move_unflipped_16bit)[N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS] = nullptr; // N_16BIT rows in large pages, allocated by evaluate_init
+#else
 __m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS];
+#endif
 #ifndef EGAROUCID_EVAL_NNUE_PATTERNS
 Eval_features eval_empty_features;
 __m256i eval_simd_offsets_simple[N_EVAL_VECTORS_SIMPLE]; // 16bit * 16 * N
@@ -318,7 +323,11 @@ __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
     @brief evaluation parameters
 */
 // normal
+#ifdef EGAROUCID_LARGE_PAGES_EVAL
+int16_t (*pattern_arr)[N_PATTERN_PARAMS] = nullptr; // N_PHASES rows in large pages, allocated by load_eval_file
+#else
 int16_t pattern_arr[N_PHASES][N_PATTERN_PARAMS];
+#endif
 int16_t eval_num_arr[N_PHASES][MAX_STONE_NUM];
 #if !USE_DIM0_ONLY_EVALUATION
 // Dim0 static evaluation used only for move ordering.
@@ -366,6 +375,13 @@ inline bool load_eval_file(const char* file, bool show_log) {
         std::cerr << "[ERROR] [FATAL] evaluation file " << file << " has " << unzipped_params.size() << " parameters, the NNUE pattern layout needs "
                   << (size_t)N_PHASES * (N_PATTERN_PARAMS_RAW + MAX_STONE_NUM) << std::endl;
         return false;
+    }
+#endif
+#ifdef EGAROUCID_LARGE_PAGES_EVAL
+    // zero-filled like the static array of the normal build
+    if (pattern_arr == nullptr) {
+        pattern_arr = static_cast<int16_t (*)[N_PATTERN_PARAMS]>(
+            large_page_alloc(sizeof(int16_t) * N_PHASES * N_PATTERN_PARAMS, "evaluation table"));
     }
 #endif
     size_t param_idx = 0;
@@ -740,6 +756,12 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
+#ifdef EGAROUCID_LARGE_PAGES_EVAL
+    if (eval_move_unflipped_16bit == nullptr) {
+        eval_move_unflipped_16bit = static_cast<__m256i (*)[N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS]>(
+            large_page_alloc(sizeof(__m256i) * N_16BIT * N_SIMD_EVAL_FEATURE_GROUP * N_EVAL_VECTORS, "evaluation table"));
+    }
+#endif
     pre_calculate_eval_constant();
 #ifdef EGAROUCID_NNUE
     if (!nnue::init(nnue::default_path(file), show_log)) return false;

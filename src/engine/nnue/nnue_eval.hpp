@@ -38,6 +38,7 @@
 #include <immintrin.h>
 #endif
 #include "nnue_patterns.hpp"
+#include "../large_pages.hpp"
 
 #if !USE_SIMD
 #error "EGAROUCID_NNUE needs the AVX2 (SIMD) build"
@@ -84,9 +85,21 @@ inline Weights weights;
 inline Weights uncertainty_weights;  // optional second network (per-position uncertainty for MPC)
 inline uint16_t bits_to_ternary[512];
 
+#ifdef EGAROUCID_LARGE_PAGES_EVAL
+inline void *aligned_alloc64(size_t bytes) {
+    return large_page_alloc(bytes, "NNUE weights");
+}
+inline void aligned_free64(void *memory) {
+    large_page_free(memory);
+}
+#else
 inline void *aligned_alloc64(size_t bytes) {
     return _mm_malloc((bytes + 63) / 64 * 64, 64);
 }
+inline void aligned_free64(void *memory) {
+    _mm_free(memory);
+}
+#endif
 
 template <typename T>
 inline bool read_array(std::ifstream &ifs, T *dst, size_t n) {
@@ -120,7 +133,7 @@ inline bool init_weights(Weights &w, const std::string &file, bool show_log) {
     // a reload starts from an empty object (a version-1 file must not keep version-2 int8 rows)
     for (void **ptr : {(void**)&w.ft, (void**)&w.ft8, (void**)&w.l1_w, (void**)&w.lin, (void**)&w.packed}) {
         if (*ptr) {
-            _mm_free(*ptr);
+            aligned_free64(*ptr);
             *ptr = nullptr;
         }
     }
@@ -800,7 +813,7 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
         return false;
     }
     if (uhead.private_rows) {
-        _mm_free(uhead.private_rows);
+        aligned_free64(uhead.private_rows);
         uhead.private_rows = nullptr;
     }
     if (n_private) {
@@ -829,7 +842,7 @@ inline bool init_uhead(const std::string &file, const std::string &main_file, ui
     // largest |weight| q_max: |sum| <= n_in * 512 * q_max <= 2e9 < 2^31
     const double q_max = std::min(32000.0, 2.0e9 / (uhead.n_pad * 512.0));
     const double q_scale = max_w > 0.0 ? q_max / max_w : 1.0;
-    if (uhead.l1_q) _mm_free(uhead.l1_q);
+    if (uhead.l1_q) aligned_free64(uhead.l1_q);
     const int n_pad = uhead.n_pad;
     uhead.l1_q = (int16_t*)aligned_alloc64((size_t)N_BUCKETS * hidden * n_pad * sizeof(int16_t));
     for (size_t r = 0; r < (size_t)N_BUCKETS * hidden; ++r) {
