@@ -38,6 +38,8 @@ def apply_position(annotation, position):
     annotation.xyann = (position.dx, position.dy)
     annotation.set_ha(position.horizontal_alignment)
     annotation.set_va(position.vertical_alignment)
+    # Center lines within the label without changing its saved anchor position.
+    annotation.set_multialignment("center")
     if position.text is not None:
         annotation.set_text(position.text)
     update_leader_line(annotation)
@@ -279,12 +281,14 @@ def request_label_text(figure, current_text):
 
 
 class LabelEditor:
-    def __init__(self, figure, annotations, figure_name, positions_path, on_save, text_targets=None):
+    def __init__(self, figure, annotations, figure_name, positions_path, on_save, text_targets=None,
+                 before_save=None):
         self.figure = figure
         self.annotations = annotations
         self.figure_name = figure_name
         self.positions_path = Path(positions_path)
         self.on_save = on_save
+        self.before_save = before_save
         self.initial_positions = self.current_positions()
         self.text_targets = figure_text_targets(figure) if text_targets is None else text_targets
         self.initial_texts = self.current_texts()
@@ -357,6 +361,9 @@ class LabelEditor:
             self.figure.canvas.draw_idle()
 
     def save(self):
+        if self.before_save is not None:
+            self.before_save()
+            self.figure.canvas.draw_idle()
         save_label_positions(self.positions_path, self.figure_name, self.current_positions(), self.current_texts())
         self.on_save()
         print(f"Saved label positions and figures: {self.figure_name}\n{self.positions_path}", flush=True)

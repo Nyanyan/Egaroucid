@@ -8,6 +8,7 @@ from dataclasses import asdict
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 
 import matplotlib
@@ -23,6 +24,10 @@ from label_editor import (
     apply_text_overrides, load_label_positions, load_text_overrides, update_leader_line,
 )
 from simultaneous_bands import DEFAULT_SEED, build_simultaneous_bands, draw_tube
+from paper_campaign import (
+    DEFAULT_CAMPAIGN, DEFAULT_FONT_SIZE, DEFAULT_OUTPUT,
+    PAPER_FIGURES, render_paper,
+)
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -128,8 +133,14 @@ def read_report(path):
 
 
 def configure_plotting():
+    # Matplotlib's cached font list can omit per-user Windows installations.
+    for directory in (Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft/Windows/Fonts",
+                      Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"):
+        ipaex = directory / "ipaexg.ttf"
+        if ipaex.is_file():
+            font_manager.fontManager.addfont(str(ipaex))
     installed = {font.name for font in font_manager.fontManager.ttflist}
-    family = next((name for name in ("Meiryo", "Yu Gothic", "Noto Sans CJK JP", "IPAexGothic")
+    family = next((name for name in ("IPAexGothic", "Meiryo", "Yu Gothic", "Noto Sans CJK JP")
                    if name in installed), "sans-serif")
     plt.rcParams.update({
         "font.family": family, "font.size": 10, "axes.spines.top": False,
@@ -469,13 +480,26 @@ class ReportPlots:
         return figure
 
 
+def replace_rendered_file(temporary, destination):
+    """Replace atomically, allowing previews that permit writes but deny renames."""
+    try:
+        temporary.replace(destination)
+    except PermissionError:
+        if not destination.is_file():
+            raise
+        # Windows viewers may hold a non-delete-sharing handle. Render fully
+        # before touching the destination; preserve its path for the viewer.
+        destination.write_bytes(temporary.read_bytes())
+        temporary.unlink()
+
+
 def save_figure(figure, output_dir, name, formats, dpi):
     generated = []
     for extension in formats:
         destination = output_dir / f"{name}.{extension}"
         temporary = destination.with_name(f".{name}.rendering.{extension}")
         figure.savefig(temporary, format=extension, dpi=dpi, bbox_inches="tight", pad_inches=.18)
-        temporary.replace(destination)
+        replace_rendered_file(temporary, destination)
         generated.append(destination.name)
     return generated
 
@@ -584,12 +608,15 @@ def render_report(input_path, output_dir, figures=FIGURES, formats=("png", "svg"
 
 
 def make_argparser():
-    parser = argparse.ArgumentParser(description="保存済みreport_data.jsonからレートと着手一致率の図を描画します。")
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="集計JSON（既定：experiment_bat/20261008/report_data.json）")
-    parser.add_argument("--output-dir", type=Path, help="出力先（既定：このフォルダ/output/入力JSONの親フォルダ名）")
-    parser.add_argument("--figures", nargs="+", choices=FIGURES,
-                        help="描画・編集する図（既定：全6種類）")
-    parser.add_argument("--formats", nargs="+", choices=("png", "svg"), default=["png", "svg"])
+    parser = argparse.ArgumentParser(description="確定済み24モデルの5条件から論文用のレート対着手一致率図を描画します。")
+    parser.add_argument("--input", type=Path, help="旧形式の集計JSONを明示した場合は従来の6種類の図を描画")
+    parser.add_argument("--experiment-dir", type=Path, default=DEFAULT_CAMPAIGN,
+                        help="24モデルの実験フォルダ（既定：20261016_gpw_add_zebra/followup21）")
+    parser.add_argument("--output-dir", type=Path, help="出力先（既定：このフォルダ/output/gpw2026_paper_figures）")
+    parser.add_argument("--figures", nargs="+", choices=(*PAPER_FIGURES, *FIGURES),
+                        help="描画・編集する条件（既定：WTHOR2条件＋Quest優先3帯の各1図）")
+    parser.add_argument("--formats", nargs="+", choices=("png", "svg", "pdf"),
+                        help="既定：論文用5図はpng svg pdf、旧形式はpng svg")
     parser.add_argument("--ci-mode", choices=("simultaneous", "pointwise"), default="simultaneous",
                         help="レート対一致率の帯：両軸の95%%同時信頼帯（既定）／従来の一致率の点ごとの区間")
     parser.add_argument("--band-seed", type=int, default=DEFAULT_SEED, help="一致率ブートストラップの乱数seed（既定614）")
@@ -601,7 +628,9 @@ def make_argparser():
     parser.add_argument("--adjust-labels", action="store_true", help="タイトル・軸名・凡例など全文字と点ラベルの位置を編集しSキーで保存")
     parser.add_argument("--label-positions", type=Path, help="位置JSON（既定：出力先/label_positions.json）")
     parser.add_argument("--reset-labels", action="store_true", help="保存済み位置を読み込まず、既定の位置から開始")
-    parser.add_argument("--dpi", type=int, default=200)
+    parser.add_argument("--dpi", type=int, default=300)
+    parser.add_argument("--font-size", type=float, default=DEFAULT_FONT_SIZE,
+                        help=f"論文用5図の基準文字サイズ（既定{DEFAULT_FONT_SIZE}）")
     return parser
 
 
@@ -611,11 +640,19 @@ def main(argv=None):
     ci_alpha = args.ci_alpha if args.ci_transparency is None else 1 - args.ci_transparency
     if not 0 <= ci_alpha <= 1 or args.dpi < 1:
         parser.error("--ci-alpha / --ci-transparency must be in [0, 1]; --dpi must be positive")
-    output = args.output_dir or SCRIPT_DIR / "output" / args.input.resolve().parent.name
-    figures = args.figures or (EDITABLE_FIGURES if args.adjust_labels else FIGURES)
     try:
-        generated = render_report(args.input, output, figures, args.formats, ci_alpha, args.dpi,
-                                  args.label_positions, args.adjust_labels, args.reset_labels, args.ci_mode, args.band_seed)
+        if args.input is None:
+            if args.ci_mode != "simultaneous" or args.band_seed != DEFAULT_SEED:
+                parser.error("論文用5図は固定seedによる両軸の同時信頼帯を使用します。--ci-mode simultaneous、--band-seed 614を指定してください。")
+            output = args.output_dir or DEFAULT_OUTPUT
+            generated = render_paper(args.experiment_dir, output, args.figures or PAPER_FIGURES,
+                args.formats or ("png", "svg", "pdf"), ci_alpha, args.dpi, args.label_positions,
+                args.adjust_labels, args.reset_labels, args.font_size)
+        else:
+            output = args.output_dir or SCRIPT_DIR / "output" / args.input.resolve().parent.name
+            figures = args.figures or (EDITABLE_FIGURES if args.adjust_labels else FIGURES)
+            generated = render_report(args.input, output, figures, args.formats or ("png", "svg"), ci_alpha, args.dpi,
+                                      args.label_positions, args.adjust_labels, args.reset_labels, args.ci_mode, args.band_seed)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     print(f"Saved {len(generated)} figures: {output.resolve()}")

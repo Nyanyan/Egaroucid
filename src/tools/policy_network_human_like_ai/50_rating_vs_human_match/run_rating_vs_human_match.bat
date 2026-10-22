@@ -1,6 +1,7 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-rem Render saved report and bootstrap sources. No inference or tournament is started.
+rem Default: five verified 24-model paper figures (PNG, SVG, PDF).
+rem Explicit --input keeps the legacy report-JSON renderer available.
 rem POLICY_PYTHON may point to a Python interpreter with numpy and matplotlib.
 if not defined POLICY_PYTHON set "POLICY_PYTHON=python"
 set "PYTHONIOENCODING=utf-8"
