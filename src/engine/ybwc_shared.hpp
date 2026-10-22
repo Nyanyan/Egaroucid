@@ -5,7 +5,32 @@
 */
 #pragma once
 
+#include <cstddef>
+#include <cstring>
+#include <type_traits>
 #include "ybwc_split_point.hpp"
+
+// Copy of a Search for a split's seed or worker. With YBWC_LIVE_SEARCH_COPY only the evaluation slots up to
+// the current ply are copied (copy_eval_search_live); the search is the same.
+inline void ybwc_copy_search(Search *dst, const Search &src) {
+#if YBWC_LIVE_SEARCH_COPY
+    static_assert(std::is_trivially_copyable_v<Search> && std::is_standard_layout_v<Search>, "a split copies Search byte by byte");
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Winvalid-offsetof"
+#endif
+    constexpr std::size_t eval_begin = offsetof(Search, eval);
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#endif
+    constexpr std::size_t eval_end = eval_begin + sizeof(Eval_search);
+    std::memcpy(static_cast<void *>(dst), static_cast<const void *>(&src), eval_begin);
+    std::memcpy(reinterpret_cast<char *>(dst) + eval_end, reinterpret_cast<const char *>(&src) + eval_end, sizeof(Search) - eval_end);
+    copy_eval_search_live(&dst->eval, src.eval);
+#else
+    *dst = src;
+#endif
+}
 
 // Everything a helper or a joiner needs to search the moves of a split. It
 // lives in the owner's frame, which outlives every worker of the split.
@@ -34,7 +59,7 @@ inline void ybwc_shared_worker(
         const Nws_node_hint hint = child_nws_hint(move, is_end_search);
         ybwc_move_child(search, &move.flip, end_move);
         int g;
-        const int reduction = !pv && !helper
+        const int reduction = !pv && (USE_MID_LMR_ALL_PATHS || !helper)
             ? mid_nws_lmr_reduction(search, depth, work.ordinal, is_end_search) : 0;
         g = -nega_alpha_ordering_nws(search, -work.alpha - 1, depth - 1 - reduction,
             hint, move.n_legal, is_end_search, cancellation);
@@ -99,7 +124,8 @@ inline void ybwc_run_shared_worker(Ybwc_split_point &split, const Ybwc_join_cont
     uint64_t nodes;
     {
         const Ybwc_current_split_scope scope(&split);
-        Search local = *context.seed;
+        Search local;
+        ybwc_copy_search(&local, *context.seed);
         local.n_nodes = 0;
         ybwc_shared_worker(&local, split, context.moves, context.depth, context.is_end_search,
             context.pv, context.node_type, *context.cancellation, true);
@@ -238,7 +264,8 @@ inline bool ybwc_search_shared(
 
     // Reserve work for the parent before helpers can claim the remaining moves.
     const auto parent_work = split.take();
-    const Search seed = *search;
+    Search seed;
+    ybwc_copy_search(&seed, *search);
     const Search_cancellation_context cancellation{split.cancellation_flag(), &parent};
     const Ybwc_join_context join_context{&seed, moves, depth, is_end_search, pv, node_type, &cancellation};
     split.set_join_context(&join_context, YBWC_JOIN_MIN_FAIL_LOW);

@@ -296,6 +296,28 @@ static_assert(MPC_MAX_PROBE_NESTING >= 1 && MPC_MAX_PROBE_NESTING <= 2);
 #define USE_YBWC_NWS true
 #define USE_YBWC_NEGASCOUT true
 #define USE_YBWC_NEGASCOUT_ANALYZE false
+// Midgame LMR (ybwc.hpp mid_nws_lmr_reduction) is applied by the owner of a split only: moves that
+// shared-split helpers take and moves of the serial NWS loop are searched at full depth, so the amount of
+// LMR depends on how many threads help. true reduces those moves too (one thread already reduces every
+// eligible move, because nothing is handed out).
+// Midgame LMR at all (reduction 1 from depth 8 for the 4th and later young brothers, ybwc.hpp).
+#ifndef USE_MID_LMR
+#define USE_MID_LMR true
+#endif
+#ifndef USE_MID_LMR_ALL_PATHS
+#define USE_MID_LMR_ALL_PATHS false
+#endif
+// A shared YBWC split copies the owner's Search for its seed and for every helper. true copies only the
+// evaluation slots up to the current ply (about 24 KB of a NNUE Search are slots; the search is the same).
+#ifndef YBWC_LIVE_SEARCH_COPY
+#define YBWC_LIVE_SEARCH_COPY false
+#endif
+// Inside MPC probes started from endgame nodes (midgame searches), split only children at least this deep.
+// In September most of the extra nodes of parallel endgame searches with MPC were inside such probes,
+// which split from child depth 6 like the midgame. 0 keeps the midgame rule.
+#ifndef YBWC_END_PROBE_SPLIT_MIN_DEPTH
+#define YBWC_END_PROBE_SPLIT_MIN_DEPTH 0
+#endif
 
 // Order deep endgame NWS moves with shallow searches, like Edax and Melody,
 // instead of only mobility and a static evaluation.  In the MPC40 benchmark

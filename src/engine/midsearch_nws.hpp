@@ -540,7 +540,8 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
 #if USE_YBWC_NWS
         if (
             search->use_multi_thread && 
-            ybwc_can_split_child(search->mpc_level, depth - 1, is_end_search) //&&
+            ybwc_can_split_child(search->mpc_level, depth - 1, is_end_search) &&
+            (!search->in_end_mpc_probe || depth - 1 >= YBWC_END_PROBE_SPLIT_MIN_DEPTH) //&&
             //((!is_end_search && depth - 1 <= YBWC_MID_SPLIT_MAX_DEPTH) || (is_end_search && depth - 1 <= YBWC_END_SPLIT_MAX_DEPTH))
         ) {
             move_list_sort(move_list, canput);
@@ -570,7 +571,19 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
                 }
 #endif
                 search->move(&move_list[move_idx].flip);
+#if USE_MID_LMR_ALL_PATHS
+                {
+                    // the same numbering as the YBWC paths: 1 for the first move after the eldest brother
+                    const int lmr_reduction = mid_nws_lmr_reduction(search, depth, move_idx + (serial_searched ? 1 : 0), is_end_search);
+                    const Nws_node_hint child_hint = child_nws_hint(move_list[move_idx], is_end_search);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1 - lmr_reduction, child_hint, move_list[move_idx].n_legal, is_end_search, cancellation);
+                    if (lmr_reduction > 0 && alpha < g && is_searching(cancellation)) {
+                        g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_hint, move_list[move_idx].n_legal, is_end_search, cancellation);
+                    }
+                }
+#else
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1, child_nws_hint(move_list[move_idx], is_end_search), move_list[move_idx].n_legal, is_end_search, cancellation);
+#endif
                 search->undo(&move_list[move_idx].flip);
                 if (v < g) {
                     v = g;

@@ -54,7 +54,7 @@ constexpr int YBWC_PUSHED = 124;
 constexpr int MID_NWS_LMR_MIN_DEPTH = 8;
 constexpr int MID_NWS_LMR_MIN_MOVE = 4;
 inline int mid_nws_lmr_reduction(Search *search, const int depth, const int move_count, const bool is_end_search) {
-    if (is_end_search || search->mpc_probe_nesting || search->mpc_level >= MPC_100_LEVEL || depth < MID_NWS_LMR_MIN_DEPTH || move_count < MID_NWS_LMR_MIN_MOVE) {
+    if (!USE_MID_LMR || is_end_search || search->mpc_probe_nesting || search->mpc_level >= MPC_100_LEVEL || depth < MID_NWS_LMR_MIN_DEPTH || move_count < MID_NWS_LMR_MIN_MOVE) {
         return 0;
     }
     return 1;
@@ -300,7 +300,7 @@ inline void ybwc_undo_child(Search *search, const Flip *flip, const bool use_end
     @param cancellation         linked flags for terminating this search
     @return the result in Parallel_task structure
 */
-Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, bool use_dim0_mpc_eval, thread_id_t thread_id, int mid_split_task_limit, int parent_alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, uint_fast8_t policy, int move_idx, Search_cancellation_context cancellation, uint8_t mpc_probe_nesting, Move_ordering_policy ordering_policy) {
+Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n_discs, uint_fast8_t parity, uint_fast8_t mpc_level, bool is_presearch, bool use_dim0_mpc_eval, thread_id_t thread_id, int mid_split_task_limit, int parent_alpha, const int depth, const Nws_node_hint node_hint, uint64_t legal, const bool is_end_search, uint_fast8_t policy, int move_idx, Search_cancellation_context cancellation, uint8_t mpc_probe_nesting, bool in_end_mpc_probe, Move_ordering_policy ordering_policy) {
 #if USE_YBWC_SPLIT_STATISTICS
     const int running_tasks = ybwc_tasks_running.fetch_add(1, std::memory_order_relaxed) + 1;
     ybwc_stats_update_max(&ybwc_tasks_running_max, running_tasks);
@@ -320,6 +320,7 @@ Parallel_task ybwc_do_task_nws(uint64_t player, uint64_t opponent, int_fast8_t n
         thread_id
     );
     search.mpc_probe_nesting = mpc_probe_nesting;
+    search.in_end_mpc_probe = in_end_mpc_probe;
     search.use_dim0_mpc_eval = use_dim0_mpc_eval;
     search.mid_split_task_limit = mid_split_task_limit;
     search.move_ordering_policy = ordering_policy;
@@ -411,7 +412,7 @@ inline int ybwc_split_nws(Search *search, int parent_alpha, const int depth, con
             const int task_limit = is_end_search ? YBWC_END_MAX_SPLIT_TASKS : search->mid_split_task_limit;
             const Nws_node_hint task_node_hint = Nws_node_hint::no_static_eval();
             const std::size_t task_slot = parallel_tasks.reserve_slot();
-            auto search_task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, task_node_hint, legal, is_end_search, policy, move_idx, cancellation, search->mpc_probe_nesting, search->move_ordering_policy);
+            auto search_task = std::bind(&ybwc_do_task_nws, search->board.player, search->board.opponent, search->n_discs, search->parity, search->mpc_level, search->is_presearch, search->use_dim0_mpc_eval, search->thread_id, search->mid_split_task_limit, parent_alpha, depth, task_node_hint, legal, is_end_search, policy, move_idx, cancellation, search->mpc_probe_nesting, search->in_end_mpc_probe, search->move_ordering_policy);
             auto completion_task = [search_task = std::move(search_task), completion_group = &parallel_tasks, task_slot]() noexcept {
                 try {
                     completion_group->publish(task_slot, search_task());

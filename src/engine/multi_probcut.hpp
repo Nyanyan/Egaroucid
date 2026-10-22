@@ -977,6 +977,14 @@ inline int nnue_mpc_scale_error(int error, double mult) {
 #ifndef EGAROUCID_NNUE_MPC_NET_MIN_DEPTH
     #define EGAROUCID_NNUE_MPC_NET_MIN_DEPTH 5  // shallower MPC nodes use the disc-count mean of u (no network call)
 #endif
+// The network's endgame data has 10-22 empties. Endgame shallow-search margins at deeper nodes
+// (depth > EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH) are those of the pattern build (sigma formula); there the
+// network, extrapolated, gave about twice the pattern margins at 40-44 empties. 64 keeps the network everywhere.
+#ifndef EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH
+    #define EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH 64
+#endif
+// the recalibrated endgame path (depths 10-18) always takes the network's margins
+static_assert(EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH >= 18, "EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH below 18 is not supported");
 /*
     MPC margins from the MPC error network alone: for the test (deep depth D, shallow depth s; s = 0: the
     static evaluation) e = deep - shallow has mean mu and scale sigma from the head of the network output u
@@ -1531,7 +1539,7 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             &error_search_low, nullptr, false
         );
 #if defined(EGAROUCID_NNUE_MPC_NET)
-        {
+        if (!IsEndSearch || depth <= EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH) {
             const int net_group = IsEndSearch ? MPC_NET_END_SHALLOW : MPC_NET_MID_SHALLOW;
             const Mpc_net_margins net_m = mpc_net_margins(net_group, nnue_mpc_net::Z[net_group][mpc_level], net_u, search->n_discs, depth, search_depth, net_static_v);
             error_search_high = net_m.high;

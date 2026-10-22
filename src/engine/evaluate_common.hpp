@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <cstring>
 #include "board.hpp"
 #ifdef EGAROUCID_NNUE
 #include "nnue/nnue_eval.hpp"
@@ -228,6 +229,57 @@ struct Eval_search {
     uint_fast8_t feature_idx;
 };
 #endif
+
+/*
+    @brief copy the evaluation state of a search that starts a parallel split
+
+    Only the slots 0 .. feature_idx are live: a move writes slot feature_idx + 1 before anything reads it,
+    and the NNUE lanes of a slot are rebuilt from the last computed slot at or below it. The slots above
+    are not copied (most of a 24 KB Search with the NNUE lanes at a typical split ply).
+
+    @param dst                  destination
+    @param src                  source
+*/
+inline void copy_eval_search_live(Eval_search *dst, const Eval_search &src) {
+    const size_t n = (size_t)src.feature_idx + 1;
+#if defined(USE_NNUE_EVALUATION)
+    std::memcpy(dst->accumulator, src.accumulator, n * sizeof(src.accumulator[0]));
+    std::memcpy(dst->pattern_features, src.pattern_features, n * sizeof(src.pattern_features[0]));
+    std::memcpy(dst->nnue_phase, src.nnue_phase, n * sizeof(src.nnue_phase[0]));
+#elif USE_SIMD
+    std::memcpy(dst->features, src.features, n * sizeof(src.features[0]));
+#ifdef EGAROUCID_NNUE_OWN_LANES
+    std::memcpy(dst->nnue_lanes, src.nnue_lanes, n * sizeof(src.nnue_lanes[0]));
+    std::memcpy(dst->nnue_occ, src.nnue_occ, n * sizeof(src.nnue_occ[0]));
+    std::memcpy(dst->nnue_flip, src.nnue_flip, n * sizeof(src.nnue_flip[0]));
+    std::memcpy(dst->nnue_pos, src.nnue_pos, n * sizeof(src.nnue_pos[0]));
+    std::memcpy(dst->nnue_mover_other, src.nnue_mover_other, n * sizeof(src.nnue_mover_other[0]));
+    std::memcpy(dst->nnue_valid, src.nnue_valid, n * sizeof(src.nnue_valid[0]));
+    dst->nnue_pass_parity = src.nnue_pass_parity;
+#endif
+#else
+    std::memcpy(dst->features, src.features, n * sizeof(src.features[0]));
+    std::memcpy(dst->reversed, src.reversed, n * sizeof(src.reversed[0]));
+#endif
+    dst->feature_idx = src.feature_idx;
+#if defined(EGAROUCID_VALIDATE_SPLIT_COPY)
+    // poison the slots that were not copied: a search that read them would go wrong or crash
+#if defined(USE_NNUE_EVALUATION)
+    std::memset(&dst->accumulator[n], 0xCD, (HW2 - 4 - n) * sizeof(dst->accumulator[0]));
+    std::memset(&dst->pattern_features[n], 0xCD, (HW2 - 4 - n) * sizeof(dst->pattern_features[0]));
+#elif USE_SIMD
+    std::memset(&dst->features[n], 0xCD, (HW2 - 4 - n) * sizeof(dst->features[0]));
+#ifdef EGAROUCID_NNUE_OWN_LANES
+    std::memset(&dst->nnue_lanes[n], 0xCD, (HW2 - 4 - n) * sizeof(dst->nnue_lanes[0]));
+    std::memset(&dst->nnue_occ[n], 0xCD, (HW2 - 4 - n) * sizeof(dst->nnue_occ[0]));
+    std::memset(&dst->nnue_flip[n], 0xCD, (HW2 - 4 - n) * sizeof(dst->nnue_flip[0]));
+    std::memset(&dst->nnue_valid[n], 1, (HW2 - 4 - n) * sizeof(dst->nnue_valid[0]));  // claims stale lanes are computed
+#endif
+#else
+    std::memset(&dst->features[n], 0xCD, (HW2 - 4 - n) * sizeof(dst->features[0]));
+#endif
+#endif
+}
 
 /*
     @brief constants of 3 ^ N
