@@ -25,16 +25,23 @@ int main() {
         assert(s.mpc_probe_nesting == 1);
     }
     assert(s.mpc_probe_nesting == 0 && s.mpc_level == MPC_74_LEVEL && s.use_dim0_mpc_eval);
-    assert(mid_nws_lmr_reduction(&s, 20, 9, false) == 1);
+    assert(mid_nws_lmr_reduction(&s, 20, 9, false) == (USE_MID_LMR ? 1 : 0));
     s.mid_split_task_limit = YBWC_MID_MAX_SPLIT_TASKS;
     {
         Mpc_probe_scope midgame(s, false);
         assert(s.mid_split_task_limit == YBWC_MID_MAX_SPLIT_TASKS);
+        assert(!s.in_end_mpc_probe);
         Mpc_probe_scope endgame(s, false, true);
         assert(s.mid_split_task_limit == std::min(YBWC_MID_MAX_SPLIT_TASKS, YBWC_END_PROBE_MAX_SPLIT_TASKS));
+        assert(s.in_end_mpc_probe);
         Search helper = s;
-        assert(helper.mid_split_task_limit == s.mid_split_task_limit);
+        assert(helper.mid_split_task_limit == s.mid_split_task_limit && helper.in_end_mpc_probe);
+        {
+            Mpc_probe_scope nested(s, false);
+            assert(s.in_end_mpc_probe);
+        }
+        assert(s.in_end_mpc_probe);
     }
-    assert(s.mid_split_task_limit == YBWC_MID_MAX_SPLIT_TASKS);
-    std::cout << "PASS MPC probe nesting, helper inheritance, restoration, LMR exclusion and endgame probe split limit\n";
+    assert(s.mid_split_task_limit == YBWC_MID_MAX_SPLIT_TASKS && !s.in_end_mpc_probe);
+    std::cout << "PASS MPC probe nesting, helper inheritance, restoration, LMR exclusion, endgame probe split limit and endgame probe flag\n";
 }
