@@ -222,7 +222,6 @@ void redo(Board_info *board, int remain) {
 }
 
 Search_result go_noprint(Board_info *board, Options *options, State *state) {
-    Search_progress_scope progress_scope(console_search_progress_callback(!options->quiet && !options->gtp));
     if (board->board.get_legal() == 0) {
         if (board->board.is_end()) { // game over
             std::cerr << "[ERROR] game over" << std::endl;
@@ -417,7 +416,12 @@ bool contest_book_analyze_result(const Board &board, const Contest_book &contest
 
 void go(Board_info *board, Options *options, State *state, uint64_t start_time) {
     int before_player = board->player;
-    Search_result result = go_noprint(board, options, state);
+    Search_result result;
+    {
+        // only interactive searches; -solve prints its own result table on stdout
+        Search_progress_scope progress_scope(console_search_progress_callback(!options->quiet && !options->gtp));
+        result = go_noprint(board, options, state);
+    }
     update_time(before_player, state, options, tim() - start_time);
     if (options->show_log) {
         print_search_result_debug(result, options, state);
