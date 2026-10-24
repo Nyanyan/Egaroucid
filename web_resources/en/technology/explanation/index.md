@@ -24,9 +24,9 @@ Regardless of the method used to create an Othello AI, board implementation (Oth
 
 ### Bitboard
 
-The most recommended board implementation method for Othello AI is the bitboard. Egaroucid also uses a bitboard. If written well, a bitboard can execute Othello rules (legal move generation, stone flipping calculation) incredibly fast, and also reduce memory usage.
+The most recommended board implementation method for Othello AI is the bitboard. Egaroucid also uses a bitboard. If written well, a bitboard can execute Othello rules (legal move generation, disc flipping calculation) incredibly fast, and also reduce memory usage.
 
-In a bitboard, to handle an Othello board of 64 squares (8x8), two 64-bit integers are used: one 64-bit integer to represent the presence or absence of your own stones, and another 64-bit integer to represent the presence or absence of opponent's stones. With this, the Othello board can be represented with just 128 bits (two 64-bit integers). This significantly reduces memory usage.
+In a bitboard, to handle an Othello board of 64 squares (8x8), two 64-bit integers are used: one 64-bit integer to represent the presence or absence of your own discs, and another 64-bit integer to represent the presence or absence of opponent's discs. With this, the Othello board can be represented with just 128 bits (two 64-bit integers). This significantly reduces memory usage.
 
 Low memory usage itself can lead to speed improvements by increasing cache hit rates, but bitboards offer the advantage of simply increasing calculation speed, even more than memory efficiency. Computers inherently store information as bit strings, so they are very good at bitwise operations, meaning they can perform bitwise operations at lightning speed. And by using bitboards, Othello rules can be described with bitwise operations. Furthermore, since a 64-bit integer can represent 64 squares, multiple squares can be affected by a single operation. This means that Othello rules can be implemented with fewer instructions. Since fast bitwise operations are used with a small number of instructions, it becomes incredibly fast.
 
@@ -44,7 +44,7 @@ I would like to explain SIMD on this site someday, but it has been put off due t
 
 Boards can be implemented in various ways other than bitboards, but regardless of the method, it is necessary to verify that there are no implementation errors. Also, while it is good for board processing to be fast, it is necessary to firmly confirm how much performance improvement has been achieved before and after changes.
 
-For such debugging and verification purposes, a method called Perft is convenient. Perft is a method that expands the entire game tree to a predetermined depth and counts the number of leaf nodes. Since it counts the number of leaves, if there is a bug in the board implementation, it can be noticed immediately. Also, since game tree expansion involves a large number of legal move generations and stone flipping calculations, the speed of these board operations is conspicuously reflected in the execution time. Perft stands for "PERformance Test, move path enumeration" (according to Chess Programming Wiki). The implementation method is [described in detail on the Chess Programming Wiki](https://www.chessprogramming.org/Perft).
+For such debugging and verification purposes, a method called Perft is convenient. Perft is a method that expands the entire game tree to a predetermined depth and counts the number of leaf nodes. Since it counts the number of leaves, if there is a bug in the board implementation, it can be noticed immediately. Also, since game tree expansion involves a large number of legal move generations and disc flipping calculations, the speed of these board operations is conspicuously reflected in the execution time. Perft stands for "PERformance Test, move path enumeration" (according to Chess Programming Wiki). The implementation method is [described in detail on the Chess Programming Wiki](https://www.chessprogramming.org/Perft).
 
 In Othello, the game ends after 9 moves. If the game ends, that node is a leaf of the game tree, so it is counted as one leaf even if it has not reached the specified depth.
 
@@ -106,7 +106,7 @@ If the number of legal moves for each position is $b$, and the search depth is $
 
 ### Games that Maximize Score
 
-Unlike Go and Shogi, Othello is a game where the task is to maximize the difference in the number of stones with the opponent at the end of the game (final stone difference) in order to determine victory or defeat. In fact, in human Othello tournaments, if there are multiple people with the same win/loss record, the person with the larger total stone difference (the person who won many games by a large margin) will generally be ranked higher.
+Unlike Go and Shogi, Othello is a game where the task is to maximize the difference in the number of discs with the opponent at the end of the game (final disc difference) in order to determine victory or defeat. In fact, in human Othello tournaments, if there are multiple people with the same win/loss record, the person with the larger total disc difference (the person who won many games by a large margin) will generally be ranked higher.
 
 Empirically, MCTS-based systems are said to be weak at games that maximize scores. Therefore, in Othello, the minimax system is considered better in this respect.
 
@@ -142,7 +142,7 @@ When I talk to Shogi AI developers, it seems that minor speedups are more effect
 
 The pattern evaluation widely used in existing strong Othello AIs was proposed in Logistello [(Buro 1997)](https://skatgame.net/mburo/ps/improve.pdf), [(Buro 1999)](https://skatgame.net/mburo/ps/pattern.pdf), and has been passed down to today's Edax with almost no change. Egaroucid is also based on this pattern evaluation, but with some added features.
 
-Egaroucid added additional features to the existing method of evaluating stones as patterns, and the sum of all scores was used as the evaluation value. The evaluation function prepared a total of 60 phases, with each move as one phase, and a large amount of training data (1.8 billion positions in total for all phases) was prepared and optimized with Adam.
+Egaroucid added additional features to the existing method of evaluating discs as patterns, and the sum of all scores was used as the evaluation value. The evaluation function prepared a total of 60 phases, with each move as one phase, and a large amount of training data (1.8 billion positions in total for all phases) was prepared and optimized with Adam.
 
 References
 
@@ -151,14 +151,14 @@ References
 
 Last updated: 2025/11/29
 
-### Stone Evaluation Patterns
+### Disc Evaluation Patterns
 
 The patterns used in Egaroucid 7.7.0 for the board are as follows.
 
 <div class="centering_box">
     <img class="pic2" src="img/patterns.png">
 </div>
-In Othello, the number of legal moves can be effectively used to evaluate the board position, so it is good to cover all linear continuous patterns of 3 or more squares so that potential information about the number of legal moves can be obtained from the stone patterns [(Buro 1999)](https://skatgame.net/mburo/ps/pattern.pdf).
+In Othello, the number of legal moves can be effectively used to evaluate the board position, so it is good to cover all linear continuous patterns of 3 or more squares so that potential information about the number of legal moves can be obtained from the disc patterns [(Buro 1999)](https://skatgame.net/mburo/ps/pattern.pdf).
 
 By rotating and flipping these patterns, 64 features shown below are generated, and the sum of the scores assigned to these features is used as the evaluation value.
 
@@ -181,7 +181,7 @@ Last updated: 2025/11/29
 
 ### Other Features
 
-Egaroucid also uses the number of stones of the current player as an additional feature. Since Egaroucid uses an evaluation function divided into 60 phases based on the total number of stones on the board (both players), using only the number of stones of the current player implicitly includes the number of opponent's stones as a feature.
+Egaroucid also uses the number of discs of the current player as an additional feature. Since Egaroucid uses an evaluation function divided into 60 phases based on the total number of discs on the board (both players), using only the number of discs of the current player implicitly includes the number of opponent's discs as a feature.
 
 ### Trade-off between Accuracy and Speed
 
@@ -201,13 +201,13 @@ Neural networks tend to give the impression of being slow, and slow speeds might
 
 The advantage of NNUE is that it is a nonlinear evaluation function. Pattern evaluation and Shogi's three-piece relationship are both linear evaluation functions, so their expressive power has inherent limitations. However, neural networks do not have this limitation.
 
-I tried to see if a model of this scale could be sufficiently trained for Othello. As an experiment, I tentatively created a model (see figure below) with a total of 128 inputs (i.e., bitboard directly), 64 for the presence or absence of black stones and 64 for the presence or absence of white stones, with two fully connected layers of 32 nodes as hidden layers and ReLU as the activation function, and trained it with sufficient training data.
+I tried to see if a model of this scale could be sufficiently trained for Othello. As an experiment, I tentatively created a model (see figure below) with a total of 128 inputs (i.e., bitboard directly), 64 for the presence or absence of black discs and 64 for the presence or absence of white discs, with two fully connected layers of 32 nodes as hidden layers and ReLU as the activation function, and trained it with sufficient training data.
 
 <div class="centering_box">
     <img class="pic3" src="img/nnue_model.png">
 </div>
 
-As a result, the evaluation performance did not reach that of existing pattern evaluations. Specifically, regarding the mean absolute error (MAE) of the evaluation function against the training data, pattern evaluation was about 3.5 stones, while this test model was about 5.4 stones. The advantage of NNUE was the improvement in evaluation performance due to its nonlinearity, so in Othello, I could not feel the superiority of NNUE in this experiment. If NNUE is to be used in Othello, I feel that devising the input layer or increasing the volume of the hidden layer is important for making NNUE practical. However, these solutions may impair inference speed, so it is necessary to consider this while balancing with speed.
+As a result, the evaluation performance did not reach that of existing pattern evaluations. Specifically, regarding the mean absolute error (MAE) of the evaluation function against the training data, pattern evaluation was about 3.5 discs, while this test model was about 5.4 discs. The advantage of NNUE was the improvement in evaluation performance due to its nonlinearity, so in Othello, I could not feel the superiority of NNUE in this experiment. If NNUE is to be used in Othello, I feel that devising the input layer or increasing the volume of the hidden layer is important for making NNUE practical. However, these solutions may impair inference speed, so it is necessary to consider this while balancing with speed.
 
 By the way, a model of the size shown above seemed indeed to be able to infer quite fast on a CPU. Therefore, I feel that NNUE is worth trying a little harder.
 
@@ -215,13 +215,13 @@ By the way, a model of the size shown above seemed indeed to be able to infer qu
 
 ## Training Data for Evaluation Function
 
-Once the evaluation function model is decided, a large amount of data is prepared to optimize (train) the parameters included in that model. Here, we describe the process with an evaluation function that predicts the final stone difference for a given position in mind.
+Once the evaluation function model is decided, a large amount of data is prepared to optimize (train) the parameters included in that model. Here, we describe the process with an evaluation function that predicts the final disc difference for a given position in mind.
 
 <h3>How to Create Training Data for Mid-game and Beyond</h3>
 
 It is good to generate training data through self-play between Othello AIs. Egaroucid used self-play between past versions of Egaroucid. The AI's strength was set to Level 11 (mid-game 11-ply lookahead, end-game 25-ply perfect reading) considering the balance between calculation speed and accuracy.
 
-There are various ways to create correct labels, but Egaroucid simply used the final stone difference of the game as is for all positions. To improve data accuracy, a method of performing lookahead with Othello AI for all positions included in the training data and using the results could be considered, but this method is very time-consuming. For Egaroucid's Level 11, it is strong enough, and stone losses during self-play are considered acceptable.
+There are various ways to create correct labels, but Egaroucid simply used the final disc difference of the game as is for all positions. To improve data accuracy, a method of performing lookahead with Othello AI for all positions included in the training data and using the results could be considered, but this method is very time-consuming. For Egaroucid's Level 11, it is strong enough, and disc losses during self-play are considered acceptable.
 
 In self-play, if battles are only conducted from the first move, data diversity cannot be ensured. Therefore, random moves were made for a fixed number of opening moves, and then self-play was performed from there. To ensure the quality of the training data, positions from the random move part are excluded from the training data. At this time, it is better to prepare many different numbers of random moves, not just one, so that the quality of the training data does not become biased. Egaroucid performed random moves at various ply counts, such as 12, 18, 21, 24, 30, 31, 32, 35, 39, 40, ..., 58.
 
@@ -274,7 +274,7 @@ The test data is generated by making random moves for the first $N (0 \leq N \le
 
 <h4>Egaroucid 7.5.0 Training Results</h4>
 
-The following figures plot the loss of the evaluation function for the training data and test data. The horizontal axis represents the phase (synonymous with the number of moves), and the vertical axis represents the loss (MSE is the mean squared error, MAE is the mean absolute error). Since the teacher data is the final stone difference, the units are stone difference squared and stone difference, respectively.
+The following figures plot the loss of the evaluation function for the training data and test data. The horizontal axis represents the phase (synonymous with the number of moves), and the vertical axis represents the loss (MSE is the mean squared error, MAE is the mean absolute error). Since the teacher data is the final disc difference, the units are disc difference squared and disc difference, respectively.
 
 <div class="centering_box">
     <img class="pic2" src="img/eval_loss_mse.png">
@@ -319,9 +319,9 @@ Once the evaluation function has been trained, it is necessary to create a part 
 
 In pattern evaluation, for all patterns (considering symmetrical shapes), all feature indices are calculated, and then optimized evaluation parameters are looked up using those indices. At this time, the most computationally intensive process is the calculation of feature indices. Therefore, it is good to make this part differential.
 
-If all indices are calculated at the start of the search and only the changed parts are updated each time a move is made, feature calculation becomes fast. When a move is made, for each square where a stone is placed and each stone that is flipped, differential calculation can be implemented by adding or subtracting $3^x$ for the pattern to which that square belongs. At this time, the pattern to which the square belongs and $x$ are constants determined by the square and pattern, so they are pre-calculated.
+If all indices are calculated at the start of the search and only the changed parts are updated each time a move is made, feature calculation becomes fast. When a move is made, for each square where a disc is placed and each disc that is flipped, differential calculation can be implemented by adding or subtracting $3^x$ for the pattern to which that square belongs. At this time, the pattern to which the square belongs and $x$ are constants determined by the square and pattern, so they are pre-calculated.
 
-Now, let's consider the computational cost (calculation amount + estimation of calculation frequency). Let $F$ be the number of patterns (which Egaroucid calls "features" in the code) that are considered identical due to symmetry, $G$ be the average number of features a single square belongs to, $S$ be the average number of squares included in one pattern, and $D$ be the number of stones flipped per move. Then, the cost of calculating all features is $O(FS)$, and the cost of differential calculation per move is $O(GS(D+1))$. In Egaroucid, $F=64$, $G=8.8125$, and $S=8.8125$. Also, in Othello, on average $D=2.24$ (see [Average Number of Flipped Stones](./#ゲームの特性_返る石数の平均値) for details), so the number of calculations when calculating all features is about 564, and the number of calculations for differential calculation is about 252.
+Now, let's consider the computational cost (calculation amount + estimation of calculation frequency). Let $F$ be the number of patterns (which Egaroucid calls "features" in the code) that are considered identical due to symmetry, $G$ be the average number of features a single square belongs to, $S$ be the average number of squares included in one pattern, and $D$ be the number of discs flipped per move. Then, the cost of calculating all features is $O(FS)$, and the cost of differential calculation per move is $O(GS(D+1))$. In Egaroucid, $F=64$, $G=8.8125$, and $S=8.8125$. Also, in Othello, on average $D=2.24$ (see [Average Number of Flipped Discs](./#ゲームの特性_返る石数の平均値) for details), so the number of calculations when calculating all features is about 564, and the number of calculations for differential calculation is about 252.
 
 In Othello AI, in addition to making moves, undoing moves is also frequently used. Undoing moves can also be implemented with differential calculation, but since Othello ends in at most 60 moves, there is no need to specifically use differential calculation. If 60 moves' worth of pattern evaluation features are prepared in advance and copied while performing differential calculation for each move, then for undoing moves, it is only necessary to refer to the previous calculation results.
 
@@ -331,7 +331,7 @@ Differential calculation can also be sped up with SIMD. This uses an idea from [
 
 If differential calculation is done naively, it seems to involve looping through each feature that a changing square belongs to one by one. However, different features can be calculated independently, so this can be parallelized (in a SIMD-like manner).
 
-The indices used for pattern evaluation can be limited to $3^{10} (<2^{16})$ types if the number of squares included in a pattern is limited to 10. Therefore, all indices can be represented with 16 bits. If there are 64 features, then 4 ($=F(=64)\times16/256$) 256-bit SIMD vectors would be sufficient. For these 4 256-bit vectors, information about "how to operate if this square is flipped" is pre-calculated, and differential calculation is performed 4 times (number of vectors) for each flipped stone square.
+The indices used for pattern evaluation can be limited to $3^{10} (<2^{16})$ types if the number of squares included in a pattern is limited to 10. Therefore, all indices can be represented with 16 bits. If there are 64 features, then 4 ($=F(=64)\times16/256$) 256-bit SIMD vectors would be sufficient. For these 4 256-bit vectors, information about "how to operate if this square is flipped" is pre-calculated, and differential calculation is performed 4 times (number of vectors) for each flipped disc square.
 
 In this case, the computational complexity of differential calculation (to emphasize the importance of the constant factor) is $O(F\times16/256\times (D+1))$, and the number of calculations is approximately 13. This is a dramatic speedup. Of course, the speed differs depending on the instruction, so it is not possible to simply discuss speed in terms of the number of calculations, but SIMDization of differential calculation is very beneficial.
 
@@ -363,7 +363,7 @@ By the way, iterative deepening may be performed in αβ search, and one reason 
 
 ### Value of Dedicated Evaluation Function
 
-Egaroucid 7.0.0 and later uses a lightweight evaluation function dedicated to move ordering in the endgame search. The normally used evaluation function is too slow to be used for endgame move ordering, but we still wanted to use an evaluation function for endgame move ordering, so we created a small evaluation function using only some patterns. By reducing the number of patterns, the number of memory accesses was reduced, resulting in very high speed. Also, the accuracy is about 4.2 stones in absolute error for the training data, which is sufficient for move ordering.
+Egaroucid 7.0.0 and later uses a lightweight evaluation function dedicated to move ordering in the endgame search. The normally used evaluation function is too slow to be used for endgame move ordering, but we still wanted to use an evaluation function for endgame move ordering, so we created a small evaluation function using only some patterns. By reducing the number of patterns, the number of memory accesses was reduced, resulting in very high speed. Also, the accuracy is about 4.2 discs in absolute error for the training data, which is sufficient for move ordering.
 
 The endgame move ordering dedicated evaluation function in Egaroucid 7.4.0 uses the following four patterns. These patterns are part of the patterns used in the regular evaluation function, so they require minimal computational cost. Once the endgame search begins, differential calculation of evaluation values is performed only for these patterns. This calculates the endgame move ordering dedicated evaluation value at about 1/4 the cost of the regular evaluation function.
 
@@ -383,19 +383,19 @@ As an aside, I think it is a very beautiful story that this simple metric of "op
 
 This method of searching in ascending order of the number of legal moves is sometimes called "speed-first search."
 
-### Number of Empty Squares Adjacent to Own Stones After a Move (Potential Legal Moves)
+### Number of Empty Squares Adjacent to Own Discs After a Move (Potential Legal Moves)
 
-After making a move, prioritize moves that result in fewer empty squares adjacent to one's own stones in any of the 8 surrounding directions. This is largely the same meaning as reducing the places the opponent can play.
+After making a move, prioritize moves that result in fewer empty squares adjacent to one's own discs in any of the 8 surrounding directions. This is largely the same meaning as reducing the places the opponent can play.
 
-In Othello, legal moves are always only to empty squares, and the rule is to flip opponent's stones by sandwiching them. Therefore, where the opponent moves is always an empty square, and there is at least one of one's own stones adjacent to that empty square.
+In Othello, legal moves are always only to empty squares, and the rule is to flip opponent's discs by sandwiching them. Therefore, where the opponent moves is always an empty square, and there is at least one of one's own discs adjacent to that empty square.
 
-Empty squares adjacent to one's own stones may not become legal moves for the opponent immediately, but they may become legal moves for the opponent in the future. Therefore, it is judged better to have fewer such empty squares. This idea is sometimes called "potential legal moves."
+Empty squares adjacent to one's own discs may not become legal moves for the opponent immediately, but they may become legal moves for the opponent in the future. Therefore, it is judged better to have fewer such empty squares. This idea is sometimes called "potential legal moves."
 
 In human Othello, the concept of "openness" is (essentially) similar to this potential number of legal moves.
 
 ### Parity of Empty Squares When the Board is Divided into 4 (Quasi-Parity Theory)
 
-In Othello, due to the rule of flipping opponent's stones by sandwiching them, stones placed and flipped by the last move of the game are never flipped back. Furthermore, in a similar vein, if the last square is played "locally," the stones placed and flipped by that move are less likely to be flipped back again. Therefore, it is desirable to play first in locally odd-numbered empty squares, and if there are three empty squares, it is desirable to finish that local area with one's own move, such as me -> opponent -> me. In human Othello, this idea is called the parity theory. Due to its characteristics, the parity theory is a very useful tactic in the endgame of Othello.
+In Othello, due to the rule of flipping opponent's discs by sandwiching them, discs placed and flipped by the last move of the game are never flipped back. Furthermore, in a similar vein, if the last square is played "locally," the discs placed and flipped by that move are less likely to be flipped back again. Therefore, it is desirable to play first in locally odd-numbered empty squares, and if there are three empty squares, it is desirable to finish that local area with one's own move, such as me -> opponent -> me. In human Othello, this idea is called the parity theory. Due to its characteristics, the parity theory is a very useful tactic in the endgame of Othello.
 
 Quasi-parity theory (which I named arbitrarily) is an approximate implementation of parity theory in Othello. The difficulty in implementing parity theory lies in the concept of "local." When observing game records of strong human Othello players, it is often found that squares near the corners remain empty in the endgame. Based on this fact, quasi-parity theory fixes this "local" area as the board divided into four 4x4 sub-boards. The number of empty squares belonging to each sub-board is counted, and legal moves belonging to odd-numbered empty sub-boards are prioritized for search.
 
@@ -439,6 +439,72 @@ In the former, where each thread has its own transposition table, there is no ne
 
 In the latter, where all threads share the transposition table, it is necessary to lock the transposition table each time it is rewritten, but this significantly reduces redundant searches. Especially when parallelizing with many threads, performing efficient searches even if it incurs the cost of locking tends to speed up the search overall. However, near the leaf nodes of the tree, the cost of locking tends to be relatively large, so not using a transposition table near the leaf nodes is faster. When locking the transposition table, if only one element is locked instead of the entire transposition table, other threads trying to access the transposition table (different elements) at the same time will not be blocked, which speeds it up.
 
+### Solid Stone / Solid Disc
+
+I personally consider it of little practical use, but there is an interesting technique related to the transposition table, so I will introduce it. In Othello, there are discs that "have no influence on any later development from that position," called Solid Stone or Solid Disc. These are discs that will never be flipped afterwards and will never serve as an anchor disc (the disc at the end of a line that triggers flipping) for any other move. There are approaches that manage positions containing such discs together, reducing transposition table consumption and increasing the transposition table hit rate [(Matsuo et al., 2006)](https://www.ieice.org/publications/conference-FIT-DVDs/FIT2006/pdf/F/F_031.pdf), [(Okuhara, 20XX)](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#dogaishi).
+
+Solid discs can be computed with bit operations, using as the condition (a sufficient condition for being a solid disc) that all lines through the disc (vertical, horizontal, and both diagonals) are filled with some discs. In the figure below, d5, marked with ☆, is a solid disc. All lines through this disc are filled with other discs (those marked with □). Therefore, whether d5 is black or white has no influence at all on the subsequent development.
+
+<div class="centering_box">
+    <img class="pic2" src="img/solid_disc.png">
+</div>
+
+In the implementation, it is good to register both the board and the score in the transposition table with all solid discs treated as belonging to either yourself or the opponent. When looking up the transposition table, you also process the solid discs before searching. For example, suppose a position has $N$ solid discs, of which $P$ are your own. If all solid discs were registered in the transposition table as the opponent's, the score $S$ registered in the transposition table is
+$$
+S=(\text{own discs}-\text{own solid discs})-(\text{opponent discs}-\text{opponent solid discs}+N)
+$$
+Here, the score $S'$ we want to know for the current position is
+$$
+S'=(\text{own discs}-\text{own solid discs}+P)-(\text{opponent discs}-\text{opponent solid discs}+(N-P))=S+2P
+$$
+so it turns out that we only need to compute $S+2P$.
+
+Also, the computation of solid discs shares much with [stability cutoff](#後ろ向き枝刈り_確定石による枝刈り (Stability Cutoff)), so it is good to compute them together with stable discs [(Okuhara, 20XX)](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#dogaishi).
+
+However, I think solid discs have two practical problems.
+
+First, the condition for solid discs to occur (all vertical, horizontal, and diagonal lines are filled) is mostly met only fairly close to the end of the game. In the endgame, what leads to speedup is sometimes simply computing a few clock cycles faster rather than reducing the number of visited nodes, and the transposition table is often used only in a limited way. The cost of computing solid discs is not negligible compared with the search itself, so in many cases it does not speed things up much in the first place. Incidentally, [stability cutoff](#後ろ向き枝刈り_確定石による枝刈り (Stability Cutoff)), which shares much with the solid disc computation, addresses this problem by computing stable discs only in search windows where there is a high chance of pruning with stable discs.
+
+The other problem concerns games that end with empty squares. In Othello, when a game ends with empty squares, (in most cases) the empty squares are counted as the winner's discs. This rule combines very badly with solid discs. Let us consider the position below. It is Black's turn, and the best move is h6 (-4). The discs marked with ☆ are solid discs (here all of them are White discs = the opponent's), and there are 15 of them. If the game is played to the end with best play from this position, it goes `h6h6g1f1`, ending with 30 black discs, 33 white discs, and one empty square at h7, so Black loses by 4 (30-33-1=-4).
+
+```
+XOXXX--XOOOXXXXXOOOOXXXOOOXXOXXOOXXOOOXOOOOOOOO-XXXXXXX-OOOOOXXX X
+```
+
+<div class="centering_box">
+    <img class="pic2" src="img/solid_disc_example_1.png">
+    <img class="pic2" src="img/solid_disc_example_2.png">
+</div>
+
+Now, what if all the solid discs were black? If there were no empty squares, we would add twice the number of own solid discs, 15, to the score of -4 obtained with all solid discs as the opponent's, giving $-4+2\times15=26$, so it seems Black would win by 26. But in reality that is not the case. Let's try it.
+
+```
+XOXXX--XXXOXXXXXXXXOXXXOXXXXOXXOXXXXXOXOOOOOOOO-XXXXXXX-XXXXXXXX X
+```
+
+<div class="centering_box">
+    <img class="pic2" src="img/solid_disc_example_3.png">
+    <img class="pic2" src="img/solid_disc_example_4.png">
+</div>
+
+The result was 45 black discs, 18 white discs, and one empty square: Black wins by 28 (45-18+1=28). Because of the empty square, the score shifted when the color of the solid discs changed. This is only a problem in the rare case where the game ends with an empty square and the win/loss changes depending on the distribution of solid discs, but it nonetheless affects the exactness of the search.
+
+It is quite difficult to avoid this phenomenon. One option is to register solid-disc-aware entries in the transposition table only when the game over reached in the search has no empty squares, but this can make other pruning techniques unusable. Also, when looking up the transposition table, you end up in a state where "it is unknown whether solid discs can be used for this position," so you would need to perform both a solid-disc-aware lookup and a normal lookup, which increases the number of random memory accesses. That hardly leads to a speedup. Another solution is to compute the score in anticipation of the game ending with empty squares and record the range in which the score exists in the transposition table. However, this significantly reduces the pruning efficiency of the transposition table. If you have to pay this price, it is probably faster not to use solid discs.
+
+In [Okuhara's edax-reversi-AVX](https://github.com/okuhara/edax-reversi-AVX), an accelerated version of Edax using AVX and so on, it appears to be implemented on the assumption that this exception does not exist (confirmed with the code as of October 2026; according to Okuhara, solid discs themselves may be disabled in the near future).
+
+According to [(Matsuo et al., 2006)](https://www.ieice.org/publications/conference-FIT-DVDs/FIT2006/pdf/F/F_031.pdf), solid discs improved the transposition table hit rate, reduced the number of visited nodes by 44.7%, and shortened the search time by 43% (that is, nearly doubled the speed). However, according to [(Okuhara, 20XX)](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#dogaishi), implementing solid discs in Edax reduced the number of visited nodes by only about 1-2%. When I tried implementing solid discs in Egaroucid (ignoring the exception caused by games ending with empty squares), the reduction in nodes was indeed only 1-2%. Considering the risk that the score cannot be calculated accurately in games ending with empty squares against such a very small benefit, my view is that solid discs are not worth implementing. It is a very interesting idea, so it is rather a pity. Egaroucid searches without solid discs.
+
+As an aside, when [(Takizawa, 2023)](https://arxiv.org/abs/2310.19387) reported the weak solution of Othello, a slightly modified version of Okuhara's [edax-reversi-AVX](https://github.com/okuhara/edax-reversi-AVX) was used. I worried that if solid discs had been implemented in the version used in that paper, the paper's reliability would be in question, so I hurriedly checked the Edax implementation used in the paper, and there was no solid disc implementation. What a relief.
+
+References
+
+- (Matsuo et al., 2006): 松尾, 英和，楢崎, 修二：[オセロ盤面の冗長情報の破棄による探索の効率化](https://www.ieice.org/publications/conference-FIT-DVDs/FIT2006/pdf/F/F_031.pdf)，FIT2006 第5回情報科学技術フォーラム（2006）．
+- (Okuhara, 20XX): [solid stones (endgame.c)](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#dogaishi), Edax AVX - bitboard 以外の最適化 (Visited: 2026/10/24)
+- (Takizawa, 2023): Takizawa, H.: [Othello is Solved](https://arxiv.org/abs/2310.19387), arXiv preprint arXiv:2310.19387 (2023).
+
+Last updated: 2026/10/24
+
 
 
 ## Backward Pruning
@@ -471,22 +537,22 @@ This repeatedly references the transposition table after expanding child nodes, 
 
 ### Stability Cutoff
 
-For a given board position, if there are B black stable stones and W white stable stones, the final position will be somewhere between B vs 64-B and 64-W vs W. For example, the evaluation value (final stone difference) from black's perspective will be between 2B-64 and 64-2W. This can sometimes be used to narrow the search window. This is an idea implemented in Edax as Stability Cutoff.
+For a given board position, if there are B black stable discs and W white stable discs, the final position will be somewhere between B vs 64-B and 64-W vs W. For example, the evaluation value (final disc difference) from black's perspective will be between 2B-64 and 64-2W. This can sometimes be used to narrow the search window. This is an idea implemented in Edax as Stability Cutoff.
 
-This method can only be used when the node being searched is sufficiently close to the end of the game, i.e., when there is a high possibility of stable stones existing. Also, calculating stable stones has overhead, so if it is too close to the end of the game, simply searching may often be faster.
+This method can only be used when the node being searched is sufficiently close to the end of the game, i.e., when there is a high possibility of stable discs existing. Also, calculating stable discs has overhead, so if it is too close to the end of the game, simply searching may often be faster.
 
-Note that if the number of stable stones is small, the range of the search window that can be narrowed will be close to -64 or +64. Therefore, if the number of stable stones is expected to be small before calculating stable stones, this is done only when the target search window for narrowing includes areas close to -64 or 64. If the number of stable stones is expected to be large, pruning is attempted even when the target search window for narrowing is close to 0. The expected value of the number of stable stones tends to increase as the game progresses, so this expectation uses a correspondence between depth and the upper/lower bounds of the search window.
+Note that if the number of stable discs is small, the range of the search window that can be narrowed will be close to -64 or +64. Therefore, if the number of stable discs is expected to be small before calculating stable discs, this is done only when the target search window for narrowing includes areas close to -64 or 64. If the number of stable discs is expected to be large, pruning is attempted even when the target search window for narrowing is close to 0. The expected value of the number of stable discs tends to increase as the game progresses, so this expectation uses a correspondence between depth and the upper/lower bounds of the search window.
 
-The calculation of stable stones itself involves:
+The calculation of stable discs itself involves:
 
 <ul>
     <li>Best move from past searches (value registered in the transposition table)</li>
-    <li>Stable stones on the edges (pre-calculated and determined by referencing the shape of the edges)</li>
-    <li>Stones for which all 8 directions (vertical, horizontal, diagonal) are filled with other stones are considered stable stones.</li>
-    <li>Stones surrounded by 8 adjacent stable stones are considered stable stones (processed in a loop).</li>
+    <li>Stable discs on the edges (pre-calculated and determined by referencing the shape of the edges)</li>
+    <li>Discs for which all 8 directions (vertical, horizontal, diagonal) are filled with other discs are considered stable discs.</li>
+    <li>Discs surrounded by 8 adjacent stable discs are considered stable discs (processed in a loop).</li>
 </ul>
 
-Of course, this alone cannot perfectly find all stable stones. However, in the context of Othello AI pruning, this is sufficient, and being too accurate and slow is meaningless.
+Of course, this alone cannot perfectly find all stable discs. However, in the context of Othello AI pruning, this is sufficient, and being too accurate and slow is meaningless.
 
 
 
@@ -518,7 +584,7 @@ The basic flow for searching a certain position is "transposition table pruning 
     <li>Legal Move Generation
         <ul>
             <li>Enumerate all legal moves.</li>
-            <li>Calculate the stones flipped by that move.</li>
+            <li>Calculate the discs flipped by that move.</li>
             <li>Verify if the opponent can be wiped out (if wiped out, immediately set score to +64 and end search).</li>
         </ul>
     </li>
@@ -593,24 +659,24 @@ In reality, it is difficult to determine whether it is close to the endgame, so 
 
 ### Optimization for 1 Empty Square
 
-Normally, stone counting is done by counting the stones on the board after placing a stone, but for 1 empty square, the process of placing a stone on the board is no longer necessary. What is needed are only two numbers:
+Normally, disc counting is done by counting the discs on the board after placing a disc, but for 1 empty square, the process of placing a disc on the board is no longer necessary. What is needed are only two numbers:
 
 <ul>
-    <li>The current stone difference on the board.</li>
-    <li>The number of stones flipped when playing on the empty square.</li>
+    <li>The current disc difference on the board.</li>
+    <li>The number of discs flipped when playing on the empty square.</li>
 </ul>
 
-The current stone difference on the board can be calculated by simply counting the number of stones of one player, utilizing the characteristic that the board always has 1 empty square.
+The current disc difference on the board can be calculated by simply counting the number of discs of one player, utilizing the characteristic that the board always has 1 empty square.
 
-The number of stones flipped when playing on an empty square is found by creating a dedicated function. The number of flipped stones is calculated for each of the four directions (vertical, horizontal, diagonal) from the empty square and then summed up. At this time, the number of flipped stones for each line is pre-calculated, and in the actual search, it is implemented by extracting lines and performing table lookups.
+The number of discs flipped when playing on an empty square is found by creating a dedicated function. The number of flipped discs is calculated for each of the four directions (vertical, horizontal, diagonal) from the empty square and then summed up. At this time, the number of flipped discs for each line is pre-calculated, and in the actual search, it is implemented by extracting lines and performing table lookups.
 
-Also, if it is clearly possible to prune compared to the search window at the point when the current stone difference on the board is determined, the calculation of the number of flipped stones can be omitted.
+Also, if it is clearly possible to prune compared to the search window at the point when the current disc difference on the board is determined, the calculation of the number of flipped discs can be omitted.
 
-Furthermore, if the number of flipped stones is 0, it is necessary to handle passes, and if neither player can make a move, the game ends as is. Here, if the game ends with 1 empty square (odd number of empty squares), there are no draws, which can slightly speed up the game ending process.
+Furthermore, if the number of flipped discs is 0, it is necessary to handle passes, and if neither player can make a move, the game ends as is. Here, if the game ends with 1 empty square (odd number of empty squares), there are no draws, which can slightly speed up the game ending process.
 
 ### Optimization for 2 Empty Squares
 
-For 2 empty squares, legal move generation was omitted, and if there were opponent's stones around the empty squares, they were simply considered legal moves, the flipped stones were calculated, and a move was made if stones were flipped.
+For 2 empty squares, legal move generation was omitted, and if there were opponent's discs around the empty squares, they were simply considered legal moves, the flipped discs were calculated, and a move was made if discs were flipped.
 
 Also, for 2 empty squares, quasi-parity theory (see Move Ordering section) has no meaning, so no move ordering is performed. However, if there is a move sequence that guarantees two consecutive moves, that should be prioritized (i.e., prioritize searching squares that the opponent can also play).
 
@@ -618,7 +684,7 @@ Also, for 2 empty squares, quasi-parity theory (see Move Ordering section) has n
 
 For 3 empty squares, move ordering can be performed using quasi-parity theory. Looking at each quadrant of the board, if one quadrant has 1 empty square and another quadrant has 2 empty squares, moves in the quadrant with 1 empty square are prioritized. To eliminate conditional branching in this ordering, the move ordering is achieved by using the position of the square (represented by 0 to 63) and a bit that corresponds to the quadrant, along with SIMD's shuffle function and table lookups. This idea is based on [Mr. Okuhara's explanation](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm) of optimizing Edax for AVX.
 
-For 3 empty squares, similar to 2 empty squares, legal move generation is omitted, and legal moves are simply determined, and moves are attempted in order. If the game ends with 3 empty squares, there are no draws, so the stone difference is calculated with a function that omits draw handling.
+For 3 empty squares, similar to 2 empty squares, legal move generation is omitted, and legal moves are simply determined, and moves are attempted in order. If the game ends with 3 empty squares, there are no draws, so the disc difference is calculated with a function that omits draw handling.
 
 ### Optimization for 4 Empty Squares
 
@@ -632,7 +698,7 @@ For 4 empty squares, legal move generation is omitted, and legal moves are simpl
 
 Egaroucid performs mid-game search in the opening. This is a search that uses evaluation values from an evaluation function as search results without reading to the end of the game.
 
-However, evaluation functions are naturally not perfect. For example, if a large number of stones are taken, even if the position is overwhelmingly advantageous, there may be special endings that cannot be found by the evaluation function alone, such as mistakenly falling into a wipeout line.
+However, evaluation functions are naturally not perfect. For example, if a large number of discs are taken, even if the position is overwhelmingly advantageous, there may be special endings that cannot be found by the evaluation function alone, such as mistakenly falling into a wipeout line.
 
 For example, in the following position, it is White's turn, and White is in an overwhelmingly advantageous situation. However, if White mistakenly plays e6, Black plays e3, and White is wiped out and loses.
 
@@ -807,7 +873,7 @@ In general, the game tree size tends to be larger than the number of legal posit
 </div>
 The estimate of $10^{60}$ for Othello's game tree size is likely based on the fact that Othello generally has about 10 legal moves per position, and a game typically ends in about 60 moves. The $10^{58}$ estimate likely came from reducing one move for the symmetry of the first move and one move for the last move, as there is no choice for the last move. However, after 9 empty squares, the number of legal moves obviously falls below 10, and the number of legal moves in the opening is often less than 10. On the other hand, the number of legal moves in the mid-game often exceeds 10. Therefore, this estimate of the game tree size is not one that can be expected to be highly accurate.
 
-By the way, a trivial upper bound for the number of legal positions in Othello is $2^4 \times 3^{60} = 6.783 \times 10^{29}$, considering the arrangement of the four central stones (black/white) and the arrangement of the other 60 squares (black/white/empty). Even seeing that this number is extremely small compared to the commonly cited $10^{58}$ for game tree size, it is clear that $10^{58}$ is an unsuitable value to represent the number of legal positions.
+By the way, a trivial upper bound for the number of legal positions in Othello is $2^4 \times 3^{60} = 6.783 \times 10^{29}$, considering the arrangement of the four central discs (black/white) and the arrangement of the other 60 squares (black/white/empty). Even seeing that this number is extremely small compared to the commonly cited $10^{58}$ for game tree size, it is clear that $10^{58}$ is an unsuitable value to represent the number of legal positions.
 
 Last updated: 2025/11/30
 
@@ -815,7 +881,7 @@ Last updated: 2025/11/30
 
 [(Ishii, Tanaka 2025)](https://ipsj.ixsq.nii.ac.jp/records/2005522), [(Ishii, Tanaka 2025 Presentation Slides)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/conference-slide-ja.pdf), and [(Ishii, Tanaka 2025 Errata)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs/blob/master/%E3%82%AA%E3%82%BB%E3%83%AD%E3%81%AE%E5%AE%9F%E7%8F%BE%E5%8F%AF%E8%83%BD%E5%B1%80%E9%9D%A2%E6%95%B0%E3%81%AE%E6%8E%A8%E8%A8%88_%E6%AD%A3%E8%AA%A4%E8%A1%A8.pdf) estimate the number of legal positions in Othello. As a result, it was found that in Othello, there are between $4.488\times 10^{25}$ and $1.127\times 10^{26}$ legal positions with a significance level of 99.5%.
 
-This research estimates the number of legal positions in Othello by randomly generating one million positions with stones randomly placed on the board and counting how many of them were legal positions. The method for checking the legality of random positions is very well thought out and interesting (which is why I haven't fully grasped it myself), so please read the paper and code. The legality determination is explained not only in the paper but also in detail in the publicly available code [(Ishii, Tanaka 2025 GitHub)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs), and I am currently studying it. Also, this research includes positions whose legality is unknown, but it cleverly takes them into statistical consideration, which is very interesting.
+This research estimates the number of legal positions in Othello by randomly generating one million positions with discs randomly placed on the board and counting how many of them were legal positions. The method for checking the legality of random positions is very well thought out and interesting (which is why I haven't fully grasped it myself), so please read the paper and code. The legality determination is explained not only in the paper but also in detail in the publicly available code [(Ishii, Tanaka 2025 GitHub)](https://github.com/u-tokyo-gps-tanaka-lab/othello_complexity_rs), and I am currently studying it. Also, this research includes positions whose legality is unknown, but it cleverly takes them into statistical consideration, which is very interesting.
 
 In this research, symmetrical (line symmetry, rotational symmetry) board positions are considered identical. Also, positions where the same position occurs with a different turn are also considered identical (although such positions would be rare in Othello).
 
@@ -866,7 +932,7 @@ Also, let's consider how many positions there are for each move. The number of l
 
 $s(p) = 2^4 \times {}_{60}\mathrm{C}_p \times 2^p$
 
-The first term is the combination of the initially filled 4 squares, the second term is the number of ways to fill $p$ squares with stones out of the remaining 60 squares, and the third term is the combination of colors of the stones filled up to the $p$-th move. Calculating this for $0 \leq p \leq 60$ gives the graph below. The number of positions increases from the beginning to around the 40th move, and then decreases slightly as it approaches the end of the game. The blue line is the upper bound for reference. Also, for $p \leq 12$, the exact value is known because all opening expansions were calculated above. I also plotted that.
+The first term is the combination of the initially filled 4 squares, the second term is the number of ways to fill $p$ squares with discs out of the remaining 60 squares, and the third term is the combination of colors of the discs filled up to the $p$-th move. Calculating this for $0 \leq p \leq 60$ gives the graph below. The number of positions increases from the beginning to around the 40th move, and then decreases slightly as it approaches the end of the game. The blue line is the upper bound for reference. Also, for $p \leq 12$, the exact value is known because all opening expansions were calculated above. I also plotted that.
 
 <div class="centering_box">
     <img class="pic2" src="img/state_space_complexity_0.png">
@@ -877,33 +943,69 @@ Another method for estimating the size of the state space that might be useful i
 
 
 
+### Shortest Game Over
+
+The shortest game over is a famous one: 9 moves (White is wiped out). If Black is wiped out, it takes 10 moves.
+
+The most famous shortest game over (wipeout) is probably the one shown below. It occasionally appears even in games between humans (you tend to get wiped out if you don't know it).
+
+```
+f5d6c5f4e3f6g5e6e7
+```
+
+<div class="centering_box">
+    <img class="pic2" src="img/fastest_wipeout.png">
+</div>
+
+Last updated: 2026/10/24
+
+
+
+### Shortest Game Over Without Wipeout
+
+The quickest way to end an Othello game is for one player to wipe out the other, but [according to hasera](https://hasera.net/othello/mame005.html), there is exactly one shortest non-wipeout game over, at 11 moves. Remarkably, this game over was discovered by hand by chance. According to hasera's computer search, there is also only one non-wipeout game over at 12 moves. I quote the final positions from [hasera's article](https://hasera.net/othello/mame005.html). Please also see the original article.
+
+<div class="centering_box">
+    <img class="pic2" src="img/fastest_non_wipeout_gameover.png">
+    <img class="pic2" src="img/fastest_non_wipeout_gameover_2.png">
+</div>
+
+Last updated: 2026/10/24
+
+
+
 ### Shortest Draw
 
 In Othello, games sometimes end with many empty squares, but here we consider a draw with a sparse board.
 
 The shortest draw was 20 moves, with 185 game records (standardized to start with f5). The following are examples of game records.
 
-`f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g3f2f1a1c5`
-`f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g2f2f1a1c5`
-`f5f4c3f6g7f7f3h7f8b2h6e3a1e7f2f1h8e2d7c5`
-`f5f6e6f4g7c6f3g2f2f7b7a8h2f1f8h3e2h1c4d2`
-`f5d6c6b6b7f6b5a6e6a8b8f3f7g6g2c8h6h1d3b4`
-`f5d6c6b6b7f6b5a6f7f3g2b4e6g6b3h1h6a8d3b2`
-`f5f6e6f4g5c6f3g2f2f7b7a8h2f1f8h3e2h1c4d2`
-`f5f4g3e6c4b3b4g4f7g8b2a2h4b5b6a4d7b7d6b1`
-`f5f4g3e6c4b3b4g4b2a4f7c2h4g8d2d1d7e2d6a2`
-`f5f4g3e6c4b3b4g4f7g8b2a2d6b5b6c2h4a4d7b7`
+```
+f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g3f2f1a1c5
+f5f4c3f6g7f7f3h7f8b2h6e7h8e3d7g2f2f1a1c5
+f5f4c3f6g7f7f3h7f8b2h6e3a1e7f2f1h8e2d7c5
+f5f6e6f4g7c6f3g2f2f7b7a8h2f1f8h3e2h1c4d2
+f5d6c6b6b7f6b5a6e6a8b8f3f7g6g2c8h6h1d3b4
+f5d6c6b6b7f6b5a6f7f3g2b4e6g6b3h1h6a8d3b2
+f5f6e6f4g5c6f3g2f2f7b7a8h2f1f8h3e2h1c4d2
+f5f4g3e6c4b3b4g4f7g8b2a2h4b5b6a4d7b7d6b1
+f5f4g3e6c4b3b4g4b2a4f7c2h4g8d2d1d7e2d6a2
+f5f4g3e6c4b3b4g4f7g8b2a2d6b5b6c2h4a4d7b7
+```
 
 
 There were 10 types of game endings, considering line symmetry, point symmetry, and rotational symmetry as identical.
 
 <div class="centering_box">
-    <img class="pic2" src="img/shortest_draw.png">
+    <img class="pic" src="img/shortest_draw.png">
 </div>
+
 
 I wrote a [detailed explanation article](https://qiita.com/Nyanyan_Cube/items/ccab30af5c6a2b9d1e06) on the shortest draw on Qiita. Also, the [code used to find this result](https://github.com/Nyanyan/Shortest_Draw_Othello) is publicly available on GitHub.
 
 One of the shortest draws was found manually before my efforts. A [manual search explanation article](https://note.com/berlin9/n/nc0e02c83b636) is available on note.
+
+Last updated: 2026/10/24 (appearance fix)
 
 
 
@@ -921,11 +1023,11 @@ I wrote a [detailed explanation article](https://qiita.com/Nyanyan_Cube/items/bd
 
 
 
-### Average Number of Flipped Stones
+### Average Number of Flipped Discs
 
-In Othello, what is the average number of flipped stones? I tried to estimate this. As a result, it was found that the average number of stones flipped per legal move, from the 1st move to the 60th move, is approximately 2.244. The code used for this experiment is publicly available [here](https://github.com/Nyanyan/Count_Flipped_Othello).
+In Othello, what is the average number of flipped discs? I tried to estimate this. As a result, it was found that the average number of discs flipped per legal move, from the 1st move to the 60th move, is approximately 2.244. The code used for this experiment is publicly available [here](https://github.com/Nyanyan/Count_Flipped_Othello).
 
-Plotting this result for each move is as follows. The blue line shows the average, and the yellow shaded area represents the range of average ± standard deviation. This means that if a random board is set up and a random move is made, the number of flipped stones (assuming the distribution of flipped stones is a binomial distribution) will fall within the yellow area with approximately 68% probability. It does not mean that the average value itself will fluctuate within the yellow range.
+Plotting this result for each move is as follows. The blue line shows the average, and the yellow shaded area represents the range of average ± standard deviation. This means that if a random board is set up and a random move is made, the number of flipped discs (assuming the distribution of flipped discs is a binomial distribution) will fall within the yellow area with approximately 68% probability. It does not mean that the average value itself will fluctuate within the yellow range.
 
 Note that the results up to the 14th move (green vertical line) are exact, calculated by enumerating all possible states. The results from the 15th move onwards are estimates based on $10^7$ games (by random moves).
 
