@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import re
+from html import escape
 from PIL import Image
 import requests
 from packaging import version
@@ -272,8 +273,8 @@ tex_js = ''' <link rel="stylesheet"
         src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/contrib/auto-render.min.js"
         onload="renderMathInElement(document.body, {
         delimiters: [
-            {left: '$', right: '$', display: false},
-            {left: '$$', right: '$$', display: true}
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
         ]
         });"></script>
 <script defer
@@ -322,6 +323,50 @@ def judge_raw_html(html_elem):
     # ignore img, input, br
     return count
 
+
+def convert_markdown_links(elem):
+    result = []
+    last_end = 0
+    for match in re.finditer(r'\[(.+?)\]\(', elem):
+        if match.start() < last_end:
+            continue
+        url_start = match.end()
+        if elem[url_start:url_start + 1] == '<':
+            url_end = elem.find('>', url_start + 1)
+            if url_end == -1 or elem[url_end + 1:url_end + 2] != ')':
+                continue
+            url = elem[url_start + 1:url_end]
+            link_end = url_end + 2
+        else:
+            depth = 1
+            url_end = url_start
+            while url_end < len(elem):
+                char = elem[url_end]
+                if char == '\\':
+                    url_end += 2
+                    continue
+                if char == '(':
+                    depth += 1
+                elif char == ')':
+                    depth -= 1
+                    if depth == 0:
+                        break
+                url_end += 1
+            if depth:
+                continue
+            url = elem[url_start:url_end].strip()
+            link_end = url_end + 1
+        url = re.sub(r'\\([\\()<>])', r'\1', url)
+        if url.startswith(('.', '#')):
+            html_link = link21 + escape(url, quote=True) + link22 + match.group(1) + link23
+        else:
+            html_link = link1 + escape(url, quote=True) + link2 + match.group(1) + link3
+        result.append(elem[last_end:match.start()] + html_link)
+        last_end = link_end
+    result.append(elem[last_end:])
+    return ''.join(result)
+
+
 def create_html(dr):
     noenglish = False
     try:
@@ -361,20 +406,89 @@ def create_html(dr):
     md_split = md.splitlines()
     raw_html = 0
     code_block_depth = 0
+    fenced_code_marker = ''
+    protected_fragments = {}
+
+    def protect_fragment(fragment):
+        placeholder = f'\0FRAGMENT{len(protected_fragments)}\0'
+        protected_fragments[placeholder] = fragment
+        return placeholder
+
+    math_delimiter = re.compile(r'(?<!\\)\$\$')
+    math_or_code = re.compile(r'```.+?```|<code\b[^>]*>.*?</code>|(?<!\\)\$\$')
+
+    def protect_display_math(elem, line_index):
+        nonlocal need_tex_js
+        cursor = 0
+        next_line_index = line_index + 1
+        while (opening := math_or_code.search(elem, cursor)) is not None:
+            if opening.group() != '$$':
+                cursor = opening.end()
+                continue
+            closing = math_delimiter.search(elem, opening.end())
+            last_index = next_line_index - 1
+            if closing:
+                math = elem[opening.start():closing.end()]
+                suffix = elem[closing.end():]
+            else:
+                math_lines = [elem[opening.start():]]
+                for last_index in range(next_line_index, len(md_split)):
+                    next_line = md_split[last_index]
+                    closing = math_delimiter.search(next_line)
+                    if closing:
+                        math_lines.append(next_line[:closing.end()])
+                        suffix = next_line[closing.end():]
+                        break
+                    math_lines.append(next_line)
+                if not closing:
+                    break
+                math = '\n'.join(math_lines)
+            placeholder = protect_fragment(escape(math, quote=False))
+            elem = elem[:opening.start()] + placeholder + suffix
+            for consumed_index in range(next_line_index, last_index + 1):
+                md_split[consumed_index] = ''
+            next_line_index = last_index + 1
+            cursor = opening.start() + len(placeholder)
+            need_tex_js = True
+        return elem
+
     last_h3_title = ''
     bullet_list_depth = 0
     for i, elem in enumerate(md_split):
         original_elem = elem
+        if fenced_code_marker:
+            closing_fence = re.fullmatch(r'(`{3,})[ \t]*', elem.strip())
+            if closing_fence and len(closing_fence.group(1)) >= len(fenced_code_marker):
+                md_split[i] = '</code>'
+                fenced_code_marker = ''
+            else:
+                md_split[i] = protect_fragment(escape(original_elem, quote=False) + '\n')
+            continue
         in_code_block = code_block_depth > 0
         leading_spaces = len(original_elem) - len(original_elem.lstrip(' '))
         if not in_code_block:
             while elem and (elem[0] == ' ' or elem[0] == '\t'):
                 elem = elem[1:]
+            opening_fence = re.fullmatch(r'(`{3,})[^`]*', elem)
+            if opening_fence:
+                if bullet_list_depth > 0:
+                    md_split[i - 1] += ''.join('\n</ul>' for _ in range(bullet_list_depth))
+                    raw_html -= bullet_list_depth
+                    bullet_list_depth = 0
+                fenced_code_marker = opening_fence.group(1)
+                md_split[i] = '<code class="code_block">'
+                continue
+        # Keep each display equation in one text node for KaTeX auto-render.
+        if not in_code_block and not re.search(r'<code\b', elem):
+            elem = protect_display_math(elem, i)
+        # Protect code before interpreting HTML, Markdown, and replacement markers.
+        elem = re.sub(r'```(.+?)```', lambda match: protect_fragment(
+            '<code>' + escape(match.group(1), quote=False) + '</code>'), elem)
         html_elems = re.findall('\<.+?\>', elem)
         for html_elem in html_elems:
             raw_html += judge_raw_html(html_elem)
-        code_block_depth += len(re.findall(r'<code\b[^>]*class=["\'][^"\']*\bcode_block\b[^"\']*["\'][^>]*>', original_elem))
-        code_block_depth -= len(re.findall(r'</code>', original_elem))
+        code_block_depth += len(re.findall(r'<code\b[^>]*class=["\'][^"\']*\bcode_block\b[^"\']*["\'][^>]*>', elem))
+        code_block_depth -= len(re.findall(r'</code>', elem))
         code_block_depth = max(0, code_block_depth)
         # download button
         if 'REPLACE_DOWNLOAD_BUTTON_HERE' in elem:
@@ -407,24 +521,12 @@ def create_html(dr):
         elif elem[:5] == '#### ':
             elem = '<h4>' + elem[5:] + '</h4>'
         # links
-        links = re.findall('\[.+?\]\(.+?\)', elem)
-        for link in links:
-            text, url = link[1:-1].split('](')
-            if url[0] != '.':
-                html_link = link1 + url + link2 + text + link3
-            else:
-                html_link = link21 + url + link22 + text + link23
-            elem = elem.replace(link, html_link)
+        elem = convert_markdown_links(elem)
         # bold
         bolds = re.findall('\*\*.+?\*\*', elem)
         for bold in bolds:
             html_bold = '<b>' + bold[2:-2] + '</b>'
             elem = elem.replace(bold, html_bold)
-        # code
-        codes = re.findall('```.+?```', elem)
-        for code in codes:
-            html_code = '<code>' + code[3:-3] + '</code>'
-            elem = elem.replace(code, html_code)
         # bullet list
         if elem[:2] == '- ':
             target_depth = leading_spaces // 2 + 1
@@ -462,6 +564,8 @@ def create_html(dr):
                 elem = '<img width="' + str(img_width) + '" height="' + str(img_height) + '"' + elem[4:]
         # modify data
         md_split[i] = elem
+    if fenced_code_marker:
+        md_split.append('</code>')
     if bullet_list_depth > 0 and md_split:
         md_split[-1] += ''.join('\n</ul>' for _ in range(bullet_list_depth))
         raw_html -= bullet_list_depth
@@ -522,6 +626,8 @@ def create_html(dr):
             last_empty = False
     html += '<p></p>\n'
     html += '</div>\n'
+    for placeholder, fragment in protected_fragments.items():
+        html = html.replace(placeholder, fragment)
     out_dr = 'generated/' + dr
     if not os.path.exists(out_dr):
         os.mkdir(out_dr)
