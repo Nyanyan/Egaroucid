@@ -954,6 +954,37 @@ $s(p)=2^4 \times {}_{60}\mathrm{C}_p \times 2^p$
 
 
 
+### 最短終局
+
+最短終局は結構有名で、9手(白が全滅)です。黒が全滅する場合は10手だそうです。
+
+一番有名な最短終局(全滅)は下図のものだと思います。人間同士での対局でもたまに出てきます(知識として知らないと全滅させられがちです)。
+
+```
+f5d6c5f4e3f6g5e6e7
+```
+
+<div class="centering_box">
+    <img class="pic2" src="img/fastest_wipeout.png">
+</div>
+
+最終更新: 2026/10/24
+
+
+
+### 全滅でない最短終局
+
+オセロで早く終局させるには、どちらかがどちらかを全滅させるのが手っ取り早いわけですが、[hasera氏によると](https://hasera.net/othello/mame005.html)、全滅でない最短終局が11手でただ1つだけ存在するとのことです。しかもこの終局は人力で偶然発見されていたそうです。すごすぎます。hasera氏がコンピュータで探索した結果によると、12手の非全滅終局も1つしかないようです。[hasera氏の記事](https://hasera.net/othello/mame005.html)から終局の盤面を引用します。ぜひ元記事もご覧ください。
+
+<div class="centering_box">
+    <img class="pic2" src="img/fastest_non_wipeout_gameover.png">
+    <img class="pic2" src="img/fastest_non_wipeout_gameover_2.png">
+</div>
+
+最終更新: 2026/10/24
+
+
+
 ### 最短引き分け
 
 オセロでは多くのマスが空いた状態で終局することがありますが、ここでは盤面がスカスカの状態で引き分けに終わる状態を考えます。
@@ -977,14 +1008,15 @@ f5f4g3e6c4b3b4g4f7g8b2a2d6b5b6c2h4a4d7b7
 終局結果は線対称・点対称・回転対称を同一視して10通りありました。
 
 <div class="centering_box">
-    <img class="pic2" src="img/shortest_draw.png">
+    <img class="pic" src="img/shortest_draw.png">
 </div>
+
 
 最短引き分けの[詳しい解説記事](https://qiita.com/Nyanyan_Cube/items/ccab30af5c6a2b9d1e06)をQiitaに書きました。また、この結果を求めるために[使ったコード](https://github.com/Nyanyan/Shortest_Draw_Othello)をGitHubにて公開しています。
 
 最短引き分けのうち一つは私の取り組み以前に人力で見つかっていました。[人力探索の解説記事](https://note.com/berlin9/n/nc0e02c83b636)がnoteに公開されています。
 
-最終更新: 2026/10/24 (コードブロックを使うようにした)
+最終更新: 2026/10/24 (見た目の修正)
 
 
 
