@@ -497,7 +497,7 @@ XOXXX--XXXOXXXXXXXXOXXXOXXXXOXXOXXXXXOXOOOOOOOO-XXXXXXX-XXXXXXXX X
 
 EdaxをAVX等で高速化した[奥原氏のedax-reversi-AVX](https://github.com/okuhara/edax-reversi-AVX)では、この例外が存在しないものとして実装してあるようです(2026年10月時点のコードで確認したもの。奥原氏曰く近日中に度外石自体を無効化するかもとのこと)
 
-[(松尾 et al., 2006)](https://www.ieice.org/publications/conference-FIT-DVDs/FIT2006/pdf/F/F_031.pdf)によると、度外石によって置換表ヒット率が向上し、訪問ノード数が44.7%減少し、探索時間も43%短縮した(つまり倍速近く)とのことでしたが、[(奥原, 20XX)](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#dogaishi)によると、Edaxに度外石を実装してみた結果では訪問ノード数の減少は1~2%程度だったとのことでした。私もEgaroucidで度外石を(空きマスのある終局による例外をないものとして扱って)試しに実装してみたところ、確かに1~2%のノード数削減にとどまりました。これくらいのごく小さい恩恵に対して、空きマスのある終局でスコアが正確に計算できないリスクがあると考えると、度外石には実装価値が見いだせないというのが私の見解です。とても面白い発想なので、どうにも惜しいですね。Egaroucidでは度外石なしで探索を行っています。
+[(松尾 et al., 2006)](https://www.ieice.org/publications/conference-FIT-DVDs/FIT2006/pdf/F/F_031.pdf)によると、度外石によって置換表ヒット率が向上し、訪問ノード数が44.7%減少し、探索時間も43%短縮した(つまり倍速近く)とのことでしたが、[(奥原, 20XX)](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#dogaishi)によると、Edaxに度外石を実装してみた結果では訪問ノード数の減少は(8~9マス空きで常に使うようにした場合)1~2%程度だったとのことでした。実用上の問題で実際のedax-reversi-AVXでは確定石の計算時だけ実行しているようで、その場合はノード数の減少が1%未満だったとのことです。私もEgaroucidで度外石を(空きマスのある終局による例外をないものとして扱って)試しに実装してみたところ、確かに1~2%のノード数削減にとどまりました。これくらいのごく小さい恩恵に対して、空きマスのある終局でスコアが正確に計算できないリスクがあると考えると、度外石には実装価値が見いだせないというのが私の見解です。とても面白い発想なので、どうにも惜しいですね。Egaroucidでは度外石なしで探索を行っています。
 
 余談ですが、[(Takizawa, 2023)](https://arxiv.org/abs/2310.19387)でオセロの弱解決が報告されたとき、奥原氏による[edax-reversi-AVX](https://github.com/okuhara/edax-reversi-AVX)の微修正版が使われていました。この論文で使われたバージョンで度外石が実装されていたら論文の信頼性に問題が生じると思って焦ってこの論文で使われたEdaxの実装を確認したところ、度外石の実装はありませんでした。よかった。
 
@@ -507,7 +507,7 @@ EdaxをAVX等で高速化した[奥原氏のedax-reversi-AVX](https://github.com
 - (奥原, 20XX): [solid stones (度外石) (endgame.c)](http://www.amy.hi-ho.ne.jp/okuhara/edaxopt.htm#dogaishi)，Edax AVX - bitboard 以外の最適化 (訪問日: 2026/10/24)
 - (Takizawa, 2023): Takizawa, H.: [Othello is Solved](https://arxiv.org/abs/2310.19387)，arXiv preprint arXiv:2310.19387 (2023).
 
-最終更新: 2026/10/24
+最終更新: 2026/10/25
 
 
 
