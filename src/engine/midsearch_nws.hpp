@@ -29,6 +29,13 @@
 #include "util.hpp"
 #include "stability_cutoff.hpp"
 
+// Search the second TT move before ordering/splitting: 0 = off, 1 = endgame,
+// 2 = endgame and its MPC probes. Ordinary midgame searches are unchanged.
+#ifndef EGAROUCID_END_TT2_MODE
+    #define EGAROUCID_END_TT2_MODE 0
+#endif
+static_assert(0 <= EGAROUCID_END_TT2_MODE && EGAROUCID_END_TT2_MODE <= 2);
+
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Search_cancellation_context &cancellation);
 inline bool mpc_mid(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, Nws_node_hint node_hint, const Search_cancellation_context &cancellation);
 inline bool mpc_end(Search* search, int alpha, int beta, int depth, uint64_t legal, int* v, const Search_cancellation_context &cancellation);
@@ -526,6 +533,39 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
         move_list[tt_moves_idx0].flip.flip = 0;
         move_list[tt_moves_idx0].value = -INF;
     }
+    int n_serial_extra = 0;
+#if EGAROUCID_END_TT2_MODE != 0
+    if (serial_searched && v <= alpha &&
+        (is_end_search || (EGAROUCID_END_TT2_MODE == 2 && search->in_end_mpc_probe)) &&
+        moves[1] != MOVE_UNDEFINED && moves[1] != moves[0]) {
+        if (!global_searching || !is_searching(cancellation)) {
+            return SCORE_UNDEFINED;
+        }
+        // ETC may already have resolved either TT move. Count only a move
+        // actually searched here, and remove it from the remaining siblings.
+        for (int i = 0; i < canput; ++i) {
+            if (move_list[i].flip.pos == moves[1]) {
+                if (move_list[i].flip.flip) {
+                    search->move(&move_list[i].flip);
+                    g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1,
+                        Nws_node_hint::no_static_eval(), move_list[i].n_legal, is_end_search, cancellation);
+                    search->undo(&move_list[i].flip);
+                    if (!global_searching || !is_searching(cancellation)) {
+                        return SCORE_UNDEFINED;
+                    }
+                    if (v < g) {
+                        v = g;
+                        best_move = move_list[i].flip.pos;
+                    }
+                    move_list[i].flip.flip = 0;
+                    move_list[i].value = -INF;
+                    n_serial_extra = 1;
+                }
+                break;
+            }
+        }
+    }
+#endif
     if (v <= alpha) {
         if (is_end_search) {
 #if USE_END_NWS_SEARCH_ORDERING
@@ -558,7 +598,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
                     }
                 }
                 if (v <= alpha) {
-                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1, hash_code, depth, is_end_search, move_list, canput, cancellation);
+                    ybwc_search_young_brothers_nws(search, alpha, &v, &best_move, canput - n_etc_done - 1 - n_serial_extra, hash_code, depth, is_end_search, move_list, canput, cancellation);
                 }
             }
         } else{
@@ -574,7 +614,7 @@ int nega_alpha_ordering_nws(Search *search, int alpha, const int depth, const Nw
 #if USE_MID_LMR_ALL_PATHS
                 {
                     // the same numbering as the YBWC paths: 1 for the first move after the eldest brother
-                    const int lmr_reduction = mid_nws_lmr_reduction(search, depth, move_idx + (serial_searched ? 1 : 0), is_end_search);
+                    const int lmr_reduction = mid_nws_lmr_reduction(search, depth, move_idx + (serial_searched ? 1 : 0) + n_serial_extra, is_end_search);
                     const Nws_node_hint child_hint = child_nws_hint(move_list[move_idx], is_end_search);
                     g = -nega_alpha_ordering_nws(search, -alpha - 1, depth - 1 - lmr_reduction, child_hint, move_list[move_idx].n_legal, is_end_search, cancellation);
                     if (lmr_reduction > 0 && alpha < g && is_searching(cancellation)) {
