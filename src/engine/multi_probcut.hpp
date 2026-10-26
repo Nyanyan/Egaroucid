@@ -10,6 +10,7 @@
 
 #pragma once
 #include <iostream>
+#include <cassert>
 #include "board.hpp"
 #include "evaluate.hpp"
 #include "search.hpp"
@@ -985,6 +986,12 @@ inline int nnue_mpc_scale_error(int error, double mult) {
 #ifndef EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH
     #define EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH 30
 #endif
+// Experiments for the midgame shallow-search group at remaining depth > 18:
+// 0 = unchanged network, 1 = pattern margins, 2 = rescale network sigma only.
+#ifndef EGAROUCID_NNUE_MID_MPC_DEEP_MODE
+    #define EGAROUCID_NNUE_MID_MPC_DEEP_MODE 0
+#endif
+static_assert(0 <= EGAROUCID_NNUE_MID_MPC_DEEP_MODE && EGAROUCID_NNUE_MID_MPC_DEEP_MODE <= 2);
 // the recalibrated endgame path (depths 10-18) always takes the network's margins
 static_assert(EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH >= 18, "EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH below 18 is not supported");
 /*
@@ -1031,6 +1038,25 @@ inline Mpc_net_margins mpc_net_margins(int group, double z, double u, int n_disc
     }
     const double zs = z * mpc_net_zscale[group] * std::exp(std::clamp(ls, -1.0, 4.2));  // sigma within 0.37-67 discs
     Mpc_net_margins m;
+#if EGAROUCID_NNUE_MID_MPC_DEEP_MODE == 2
+    if (group == MPC_NET_MID_SHALLOW && deep_depth > 18) {
+        const int sc = std::min<double>(shallow_depth, nnue_mpc_net::S_MAX[group]);
+        const int dc = sc + std::min<double>(deep_depth - shallow_depth, nnue_mpc_net::GAP_MAX[group]);
+        const double denominator_high = probcut_sigma_mid_direction(n_discs, sc, dc, true);
+        const double denominator_low = probcut_sigma_mid_direction(n_discs, sc, dc, false);
+        assert(std::isfinite(denominator_high) && denominator_high > 0.0);
+        assert(std::isfinite(denominator_low) && denominator_low > 0.0);
+        // The common pattern sigma scales cancel. Apply the ratio after the
+        // network sigma clamp, leaving mu and all per-position features intact.
+        const double ratio_high = probcut_sigma_mid_direction(n_discs, shallow_depth, deep_depth, true) / denominator_high;
+        const double ratio_low = probcut_sigma_mid_direction(n_discs, shallow_depth, deep_depth, false) / denominator_low;
+        assert(std::isfinite(ratio_high) && ratio_high > 0.0);
+        assert(std::isfinite(ratio_low) && ratio_low > 0.0);
+        m.high = std::max(1, (int)std::ceil(zs * ratio_high - mu));
+        m.low = std::max(1, (int)std::ceil(zs * ratio_low + mu));
+        return m;
+    }
+#endif
     m.high = std::max(1, (int)std::ceil(zs - mu));
     m.low = std::max(1, (int)std::ceil(zs + mu));
     return m;
@@ -1541,7 +1567,8 @@ inline bool mpc_impl(Search* search, int alpha, int beta, int depth, uint64_t le
             &error_search_low, nullptr, false
         );
 #if defined(EGAROUCID_NNUE_MPC_NET)
-        if (!IsEndSearch || depth <= EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH) {
+        if (IsEndSearch ? depth <= EGAROUCID_NNUE_END_MPC_NET_MAX_DEPTH
+                        : (EGAROUCID_NNUE_MID_MPC_DEEP_MODE != 1 || depth <= 18)) {
             const int net_group = IsEndSearch ? MPC_NET_END_SHALLOW : MPC_NET_MID_SHALLOW;
             const Mpc_net_margins net_m = mpc_net_margins(net_group, nnue_mpc_net::Z[net_group][mpc_level], net_u, search->n_discs, depth, search_depth, net_static_v);
             error_search_high = net_m.high;
