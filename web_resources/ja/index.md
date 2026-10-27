@@ -184,6 +184,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
   - HiraokaTakuya
   - Ben Stokmans
   - seigot
+  - わんりゅー
 - 翻訳
   - ZhangHengge (簡体字)
   - YuYutw123 (繁体字(台湾))

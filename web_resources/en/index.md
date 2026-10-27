@@ -184,6 +184,7 @@ I would like to thank these people for great contributions (in no particular ord
   - HiraokaTakuya
   - Ben Stokmans
   - seigot
+  - Wanryu
 - Translation
   - ZhangHengge (Simplified Chinese)
   - YuYutw123 (Traditional Chinese (Taiwan))
