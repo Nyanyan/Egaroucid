@@ -871,7 +871,10 @@ struct AI_TL_Array {
     }
 };
 
-AI_TL_Array ai_tl_array;
+// This array is used only by the time-limit search which is commented out below.
+// As a global variable it took about 390 MB (1,000,000 elements * 384 bytes) in every process,
+// and all elements were initialized at startup. Define it again when that search is enabled.
+// AI_TL_Array ai_tl_array;
 
 
 // Search_result ai_time_limit(Board board, bool use_book, int book_acc_level, bool use_multi_thread, bool show_log, uint64_t remaining_time_msec, thread_id_t thread_id, bool *searching) {
@@ -1405,7 +1408,7 @@ void ai_hint(Board board, int level, bool use_book, int book_acc_level, bool use
         uint64_t search_legal = legal;
         for (int i = 0; i < n_display && search_legal && global_searching; ++i) {
             Search_result elem = ai_legal(board, search_level, use_book, book_acc_level, use_multi_thread, false, search_legal);
-            if (global_searching && (search_legal & (1ULL << elem.policy))) {
+            if (global_searching && is_valid_policy(elem.policy) && (search_legal & (1ULL << elem.policy))) {
                 search_legal ^= 1ULL << elem.policy;
                 values[elem.policy] = elem.value;
                 if (elem.is_end_search) {
@@ -2117,13 +2120,19 @@ Search_result ai_range(Board board, int level, int score_min, int score_max, boo
                 board.pass();
                 passed = true;
             }
-            int alpha = passed ? score_min : -score_max;
-            int beta = passed ? score_max : -score_min;
-            alpha = std::min(-SCORE_MAX, alpha - 1);
-            beta = std::max(SCORE_MAX, beta + 1);
+            // [score_min, score_max] is the range of the value of the board after the move, seen from the player to move there.
+            // After a pass, the searched board is seen from the other player: the range and the value are negated.
+            // (v7.8.3 negated the window in the opposite cases and compared the value without negation after a pass;
+            //  the window was always [-64, 64] because std::min / std::max were swapped, so only the comparison was wrong.)
+            int alpha = passed ? -score_max : score_min;
+            int beta = passed ? -score_min : score_max;
+            alpha = std::max(-SCORE_MAX, alpha - 1); // values just outside the range are also told apart
+            beta = std::min(SCORE_MAX, beta + 1);
             Search_result res = ai_window_legal_searching(board, alpha, beta, level, true, 0, true, false, board.get_legal(), searching);
-            if (res.value >= score_min && res.value <= score_max) {
+            int value = passed ? -res.value : res.value;
+            if (*searching && res.value != SCORE_UNDEFINED && value >= score_min && value <= score_max) {
                 Search_result move_res = res;
+                move_res.value = value;
                 move_res.policy = cell;
                 moves_in_range.push_back(move_res);
             }

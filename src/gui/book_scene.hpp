@@ -102,6 +102,7 @@ private:
     std::string book_file;
     bool book_deleting;
     bool book_importing;
+    bool book_restoring;
     bool failed;
     bool done;
     int level;
@@ -116,6 +117,7 @@ public:
         go_button.init(GO_BACK_BUTTON_GO_SX, GO_BACK_BUTTON_SY, GO_BACK_BUTTON_WIDTH, GO_BACK_BUTTON_HEIGHT, GO_BACK_BUTTON_RADIUS, language.get("book", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         book_deleting = false;
         book_importing = false;
+        book_restoring = false;
         failed = false;
         done = false;
         need_level = false;
@@ -175,12 +177,12 @@ public:
             }
             go_button.draw();
             if (formatted_file && (go_button.clicked() || return_pressed || (file_dragged && !need_level_setting))) {
-                getData().book_information.changed = true;
+                // book_information.changed is set only when the import succeeded (see below)
                 need_level = need_level_setting;
                 delete_book_future = std::async(std::launch::async, delete_book);
                 book_deleting = true;
             }
-        } else if (book_deleting || book_importing) {
+        } else if (book_deleting || book_importing || book_restoring) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             if (book_deleting) {
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -197,6 +199,30 @@ public:
                 if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     failed = !import_book_future.get();
                     book_importing = false;
+                    if (failed) {
+                        // The book in memory was deleted before the import, so it is empty (or a part of the file) now.
+                        // If it were left as it is, the empty book would be saved to the book file when the app is closed
+                        // (book_information.changed was set to true before the import in v7.8.3).
+                        // The book file is read again to restore the book.
+                        std::string book_file_to_restore = getData().settings.book_file;
+                        import_book_future = std::async(std::launch::async, [book_file_to_restore]() {
+                            delete_book(); // remove the part of the failed import
+                            return import_book(book_file_to_restore);
+                        });
+                        book_restoring = true;
+                    } else {
+                        getData().book_information.changed = true;
+                        done = true;
+                    }
+                }
+            } else if (book_restoring) {
+                if (import_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    if (!import_book_future.get()) {
+                        // could not restore either: do not save this book to the book file when the app is closed
+                        delete_book();
+                        getData().book_information.changed = false;
+                    }
+                    book_restoring = false;
                     done = true;
                 }
             }
@@ -555,9 +581,21 @@ public:
             go_button.draw();
             if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
                 //getData().book_information.changed = true;
+                // Unsaved changes of the current book (book learning etc.) are saved to its file before it is deleted
+                // from memory. Without this, they were lost: the book is saved only when the app is closed,
+                // and then to the new book file.
+                std::string old_book_file = getData().settings.book_file;
+                bool save_old_book = getData().book_information.changed;
+                getData().book_information.changed = false;
                 getData().settings.book_file = book_file;
                 std::cerr << "book reference changed to " << book_file << std::endl;
-                delete_book_future = std::async(std::launch::async, delete_book);
+                delete_book_future = std::async(std::launch::async, [old_book_file, save_old_book]() {
+                    if (save_old_book) {
+                        std::cerr << "saving the current book before changing the reference " << old_book_file << std::endl;
+                        book.save_egbk3(old_book_file, old_book_file + ".bak");
+                    }
+                    delete_book();
+                });
                 book_deleting = true;
             }
         } else if (book_deleting || book_importing) {

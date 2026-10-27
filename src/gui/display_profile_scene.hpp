@@ -212,7 +212,7 @@ private:
         apply_display_profile_values(values, &getData().menu_elements);
         apply_display_profile_values(values, &getData().settings);
         getData().settings.display_profile_file = profiles[idx].file_name.narrow();
-        getData().settings.display_profile_name = profile_name.narrow();
+        getData().settings.display_profile_name = profile_name.toUTF8();
         message.clear();
         return true;
     }
@@ -225,7 +225,7 @@ private:
         const bool saved = save_display_profile_values(profiles[idx].path, values, profiles[idx].profile_name);
         if (saved) {
             getData().settings.display_profile_file = profiles[idx].file_name.narrow();
-            getData().settings.display_profile_name = profiles[idx].profile_name.narrow();
+            getData().settings.display_profile_name = profiles[idx].profile_name.toUTF8();
             message = language.get("settings", "profile", "saved");
             refresh_profiles();
         } else {
@@ -321,17 +321,33 @@ public:
     }
 
 private:
-    void save_profile(const String& profile_name) {
-        String path;
-        if (rename_mode && !target_file_name.empty()) {
-            path = get_display_settings_file_path(getData().directories, Unicode::Widen(target_file_name));
-        } else {
-            path = generate_unique_display_profile_filepath(getData().directories);
+    // Rename (pencil button): only the name of the profile file is changed.
+    // In v7.8.3 renaming went through save_profile(), which wrote the current display settings into the
+    // renamed file (its own settings were lost) and made it the current profile.
+    void rename_profile(const String& profile_name) {
+        const String path = get_display_settings_file_path(getData().directories, Unicode::Widen(target_file_name));
+        Display_profile_values values = to_display_profile_values(getData().menu_elements); // for keys missing in the file, as when it is loaded
+        if (!load_display_profile_values(path, &values, nullptr) || !save_display_profile_values(path, values, profile_name)) {
+            status_message = language.get("settings", "profile", "save_failed");
+            return;
         }
+        if (target_file_name == getData().settings.display_profile_file) {
+            getData().settings.display_profile_name = profile_name.toUTF8();
+        }
+        getData().graph_resources.need_init = false;
+        changeScene(U"Display_profile_load", SCENE_FADE_TIME);
+    }
+
+    void save_profile(const String& profile_name) {
+        if (rename_mode && !target_file_name.empty()) {
+            rename_profile(profile_name);
+            return;
+        }
+        const String path = generate_unique_display_profile_filepath(getData().directories);
         const Display_profile_values values = to_display_profile_values(getData().menu_elements);
         if (save_display_profile_values(path, values, profile_name)) {
             getData().settings.display_profile_file = FileSystem::FileName(path).narrow();
-            getData().settings.display_profile_name = profile_name.narrow();
+            getData().settings.display_profile_name = profile_name.toUTF8();
             status_message = language.get("settings", "profile", "saved");
             getData().graph_resources.need_init = false;
             if (rename_mode) {

@@ -213,7 +213,9 @@ std::mt19937 raw_myrandom(tim());
     @return random value from 0.0 to 1.0 (not including 1.0)
 */
 inline double myrandom() {
-    return (double)raw_myrandom() / std::mt19937::max();
+    // divide by max + 1: with max, 1.0 was returned once in 2^32 times,
+    // and myrandrange(s, e) returned e (out of range of an array when used as an index)
+    return (double)raw_myrandom() / ((double)std::mt19937::max() + 1.0);
 }
 
 /*
@@ -298,8 +300,9 @@ int get_localtime(tm* a, time_t* b) {
 #if _WIN64 || _WIN32
     return localtime_s(a, b);
 #else
-    a = localtime(b);
-    return 0;
+    // "a = localtime(b)" only changed the local pointer: the caller's tm stayed uninitialized,
+    // and calc_date() returned "1900_01_00_00_00_00" (or garbage) on Linux.
+    return localtime_r(b, a) != nullptr ? 0 : 1;
 #endif
 }
 

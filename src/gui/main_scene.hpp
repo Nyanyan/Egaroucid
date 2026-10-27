@@ -946,7 +946,7 @@ private:
         apply_ai_profile_values(values, &getData().menu_elements);
         apply_ai_profile_values(values, &getData().settings);
         getData().settings.ai_profile_file = profile_file.narrow();
-        getData().settings.ai_profile_name = profile_name.narrow();
+        getData().settings.ai_profile_name = profile_name.toUTF8();
         resume_calculating();
         return true;
     }
@@ -969,7 +969,7 @@ private:
         apply_display_profile_values(values, &getData().menu_elements);
         apply_display_profile_values(values, &getData().settings);
         getData().settings.display_profile_file = profile_file.narrow();
-        getData().settings.display_profile_name = profile_name.narrow();
+        getData().settings.display_profile_name = profile_name.toUTF8();
         resume_calculating();
         return true;
     }
@@ -1296,12 +1296,30 @@ private:
                 int n_discs_before = getData().history_elem.board.n_discs();
                 while (getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs() >= n_discs_before && 
                     ((getData().graph_resources.branch == GRAPH_MODE_NORMAL && getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() > 1) || (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() > 0))) {
+                    const int removed_n_discs = getData().graph_resources.nodes[getData().graph_resources.branch].back().board.n_discs();
                     getData().graph_resources.nodes[getData().graph_resources.branch].pop_back();
                     History_elem n_history_elem = getData().history_elem;
                     if (getData().graph_resources.branch == GRAPH_MODE_INSPECT && getData().graph_resources.nodes[GRAPH_MODE_INSPECT].size() == 0) {
+                        // The last move of the variation (inspection branch) was taken back: return to the
+                        // position of the main line where the variation started, and stop there.
+                        // This used to continue with the main-line node that has as many discs as the removed
+                        // node: its next_policy was cleared, and because the branch is now the main line and
+                        // all its later nodes have at least n_discs_before discs, the loop went on and removed
+                        // the whole rest of the main line (the game after the fork was lost).
+                        // It also indexed nodes[0][-1] when the main line has no node with that disc count.
                         getData().graph_resources.branch = GRAPH_MODE_NORMAL;
-                        getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())].next_policy = -1;
-                        n_history_elem = getData().graph_resources.nodes[0][getData().graph_resources.node_find(0, getData().history_elem.board.n_discs())];
+                        const std::vector<History_elem>& main_line = getData().graph_resources.nodes[GRAPH_MODE_NORMAL];
+                        int fork_parent_idx = 0;
+                        for (int i = 0; i < (int)main_line.size(); ++i) {
+                            if (main_line[i].board.n_discs() < removed_n_discs) {
+                                fork_parent_idx = i;
+                            }
+                        }
+                        getData().history_elem = main_line[fork_parent_idx];
+                        getData().graph_resources.n_discs = getData().history_elem.board.n_discs();
+                        stop_calculating();
+                        resume_calculating();
+                        break;
                     } else {
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().next_policy = -1;
                         n_history_elem = getData().graph_resources.nodes[getData().graph_resources.branch].back();
@@ -1335,11 +1353,20 @@ private:
                 stop_calculating();
                 if (getData().graph_resources.branch == GRAPH_MODE_INSPECT) {
                     std::vector<History_elem> new_branch;
-                    int fork_start_idx = getData().graph_resources.node_find(0, getData().graph_resources.nodes[1].front().board.n_discs());
-                    for (int i = 0; i < fork_start_idx; ++i) {
-                        new_branch.emplace_back(getData().graph_resources.nodes[0][i]);
+                    // Keep the main-line nodes before the first node of the variation.
+                    // This used the index of the main-line node with the same number of discs as that node.
+                    // When the main line has no such node (a position made with "edit board" leaves a gap in
+                    // the disc counts), node_find() returned -1, new_branch stayed empty and
+                    // new_branch.back() crashed. Select the nodes by their number of discs instead.
+                    const int fork_n_discs = getData().graph_resources.nodes[1].front().board.n_discs();
+                    for (const History_elem& elem : getData().graph_resources.nodes[0]) {
+                        if (elem.board.n_discs() < fork_n_discs) {
+                            new_branch.emplace_back(elem);
+                        }
                     }
-                    new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+                    if (!new_branch.empty()) {
+                        new_branch.back().next_policy = getData().graph_resources.nodes[1][0].policy;
+                    }
                     for (History_elem elem: getData().graph_resources.nodes[1]) {
                         new_branch.emplace_back(elem);
                     }
@@ -2065,7 +2092,8 @@ private:
                         ai_calculation_interrupted = false;
                         return;
                     }
-                    if (1 & (legal >> search_result.policy)) {
+                    // policy is MOVE_UNDEFINED (125) when the search was stopped: shifting by 64 or more is undefined
+                    if (is_valid_policy(search_result.policy) && (1 & (legal >> search_result.policy))) {
                         int player_bef = getData().history_elem.player;
                         int sgn = getData().history_elem.player == BLACK ? 1 : -1;
                         getData().graph_resources.nodes[getData().graph_resources.branch].back().v = sgn * search_result.value;

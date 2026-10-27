@@ -324,7 +324,8 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
     int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
-    std::vector<Flip_value> move_list(canput);
+    // An array on the stack is used (same as midsearch): std::vector allocated / freed heap memory at every node.
+    Flip_value move_list[MAX_N_BRANCHES];
     int idx = 0;
     for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
@@ -334,7 +335,7 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         ++idx;
     }
     uint64_t done = 0;
-    if (move_list.size() > 1) {
+    if (canput > 1) {
         for (int i = 0; i < canput; ++i) {
             Flip_value *flip_value = &move_list[i];
             flip_value->value = 0;

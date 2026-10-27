@@ -250,6 +250,11 @@ inline bool load_eval_file(const char* file, bool show_log) {
     if (failed) {
         return false;
     }
+    const size_t n_params_expected = (size_t)N_PHASES * (N_PATTERN_PARAMS_RAW + MAX_STONE_NUM);
+    if (unzipped_params.size() < n_params_expected) { // do not read out of the data
+        std::cerr << "[ERROR] [FATAL] evaluation file broken. " << unzipped_params.size() << " elems found, " << n_params_expected << " elems expected" << std::endl;
+        return false;
+    }
     size_t param_idx = 0;
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
         pattern_arr[phase_idx][0] = 0; // memory bound
@@ -260,15 +265,25 @@ inline bool load_eval_file(const char* file, bool show_log) {
     }
     // check max value
     for (int phase_idx = 0; phase_idx < N_PHASES; ++phase_idx) {
+        // values are usually in the range: find min / max first (simple loops are vectorized by the compiler)
+        int16_t min_value = 0, max_value = 0;
         for (int i = 1; i < N_PATTERN_PARAMS; ++i) {
-            if (pattern_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE) {
-                std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
-                pattern_arr[phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
+            min_value = std::min(min_value, pattern_arr[phase_idx][i]);
+            max_value = std::max(max_value, pattern_arr[phase_idx][i]);
+        }
+        if (min_value < -SIMD_EVAL_MAX_VALUE || max_value > SIMD_EVAL_MAX_VALUE) {
+            for (int i = 1; i < N_PATTERN_PARAMS; ++i) {
+                if (pattern_arr[phase_idx][i] < -SIMD_EVAL_MAX_VALUE) {
+                    std::cerr << "[ERROR] evaluation value too low. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
+                    pattern_arr[phase_idx][i] = -SIMD_EVAL_MAX_VALUE;
+                }
+                if (pattern_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE) {
+                    std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
+                    pattern_arr[phase_idx][i] = SIMD_EVAL_MAX_VALUE;
+                }
             }
-            if (pattern_arr[phase_idx][i] > SIMD_EVAL_MAX_VALUE) {
-                std::cerr << "[ERROR] evaluation value too high. you can ignore this error. phase " << phase_idx << " index " << i << " found " << pattern_arr[phase_idx][i] << std::endl;
-                pattern_arr[phase_idx][i] = SIMD_EVAL_MAX_VALUE;
-            }
+        }
+        for (int i = 1; i < N_PATTERN_PARAMS; ++i) {
             pattern_arr[phase_idx][i] += SIMD_EVAL_MAX_VALUE;
         }
     }
@@ -372,26 +387,40 @@ inline void pre_calculate_eval_constant() {
                 );
             }
         }
-        for (int bits = 0; bits < N_16BIT; ++bits) { // 1: unflipped discs, 0: others
-            for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) { // a1-h2, a3-h4, ..., a7-h8
+        // eval_move_unflipped_16bit[bits]: sum of the features of the cells whose bit is set (1: unflipped discs, 0: others)
+        for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) { // a1-h2, a3-h4, ..., a7-h8
+            for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
+                eval_move_unflipped_16bit[0][group][simd_feature_idx] = _mm256_setzero_si256();
+            }
+            for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) { // 1 cell
                 for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i) {
                     c2f[i] = 0;
                 }
-                for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) {
-                    if (1 & (bits >> cell)) {
-                        int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
-                        for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i) {
-                            c2f[coord_to_feature[global_cell].features[i].feature] += coord_to_feature[global_cell].features[i].x;
-                        }
-                    }
+                int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
+                for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i) {
+                    c2f[coord_to_feature[global_cell].features[i].feature] += coord_to_feature[global_cell].features[i].x;
                 }
                 for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
                     int idx = simd_feature_idx * 16;
-                    eval_move_unflipped_16bit[bits][group][simd_feature_idx] = _mm256_set_epi16(
-                        c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
-                        c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
-                        c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], 
+                    eval_move_unflipped_16bit[1 << cell][group][simd_feature_idx] = _mm256_set_epi16(
+                        c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3],
+                        c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7],
+                        c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11],
                         c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
+                    );
+                }
+            }
+        }
+        for (int bits = 1; bits < N_16BIT; ++bits) { // 2 or more cells: the lowest cell + other cells (already calculated)
+            int lowest_bit = bits & (-bits);
+            if (lowest_bit == bits) {
+                continue;
+            }
+            for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) {
+                for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
+                    eval_move_unflipped_16bit[bits][group][simd_feature_idx] = _mm256_add_epi16(
+                        eval_move_unflipped_16bit[bits ^ lowest_bit][group][simd_feature_idx],
+                        eval_move_unflipped_16bit[lowest_bit][group][simd_feature_idx]
                     );
                 }
             }

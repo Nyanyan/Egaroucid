@@ -186,6 +186,11 @@ int clog_search(Search *search, int depth, bool *searching) {
         }
     }
 #endif
+    if (res < beta && (!(*searching) || !global_searching)) {
+        // The search was stopped before all moves were searched.
+        // res is the best of the moves searched so far (the other moves can be better), so it must not be returned as the exact value.
+        return CLOG_NOT_FOUND;
+    }
     if (uncertain_value_found && res < beta) {
         res = CLOG_NOT_FOUND;
     }

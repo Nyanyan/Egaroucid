@@ -40,8 +40,12 @@ class Thread_pool {
         mutable std::mutex mtx;
         bool running;
         int n_thread;
-        //std::atomic<int> n_idle;
-        int n_idle;
+        // n_idle is changed by the worker threads (with the mutex) and read without the mutex
+        // (push(), push_task(), get_n_idle()), so it must be atomic.
+        // With a plain int, a compiler may read it only once in the loops which wait for an idle thread,
+        // "while (!pushed) { thread_pool.push(&pushed, ...); }" (Transposition_table::init() etc.):
+        // push() returns before any other function is called when n_idle is 0.
+        std::atomic<int> n_idle;
         std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
@@ -166,6 +170,13 @@ class Thread_pool {
         template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
 #endif
         std::future<R> push(bool *pushed, F &&func, const Args &&...args) {
+            // No idle thread: push_task() refuses the task, so return before the task object is created.
+            // (The packaged_task, the copies of the arguments and the state of the future were allocated on the heap
+            //  and discarded at once every time a task was refused.)
+            if (n_idle <= 0) {
+                *pushed = false;
+                return std::future<R>();
+            }
             auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
                 return func(args...);
             });
@@ -181,7 +192,10 @@ class Thread_pool {
 #endif
     std::future<R> push(thread_id_t id, bool *pushed, F &&func, const Args &&...args) {
         //if (id != THREAD_ID_NONE) {
-        if (n_using_thread[id] >= max_thread_size[id]) {
+        // "n_idle <= 0": no idle thread. push_task() refuses the task, so return before the task object is created.
+        // (YBWC tries to split at every younger brother. While all threads were busy, each try allocated
+        //  the packaged_task, the copies of the arguments and the state of the future on the heap and discarded them.)
+        if (n_idle <= 0 || n_using_thread[id] >= max_thread_size[id]) {
             *pushed = false;
             return std::future<R>();
         }

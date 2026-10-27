@@ -148,15 +148,18 @@ bool hash_init(int hash_level) {
     for (int i = 0; i < 4; ++i) {
         if (fread(hash_rand_player[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+            fclose(fp);
             return false;
         }
     }
     for (int i = 0; i < 4; ++i) {
         if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+            fclose(fp);
             return false;
         }
     }
+    fclose(fp); // the file was left open (a file handle was lost every time the hash size was changed)
     return true;
 }
 
@@ -175,14 +178,17 @@ bool hash_init(int hash_level, std::string binary_path) {
     for (int i = 0; i < 4; ++i) {
         if (fread(hash_rand_player[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+            fclose(fp);
             return false;
         }
     }
     for (int i = 0; i < 4; ++i) {
         if (fread(hash_rand_opponent[i], 4, 65536, fp) < 65536) {
             std::cerr << "[ERROR] hash" + std::to_string(hash_level) + ".eghs broken" << std::endl;
+            fclose(fp);
             return false;
         }
     }
+    fclose(fp); // the file was left open (a file handle was lost every time the hash size was changed)
     return true;
 }

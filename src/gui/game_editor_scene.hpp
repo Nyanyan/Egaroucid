@@ -88,7 +88,7 @@ namespace game_save_helper {
         }
         String date_for_csv = game_date.isEmpty() ? filename_date.substr(0, 10).replaced(U"_", U"-") : game_date;
         csv.writeRow(filename_date, black_player_name, white_player_name, memo_summary, black_discs, white_discs, date_for_csv);
-        csv.save(csv_path);
+        save_csv_escaped(csv, csv_path); // escapes backslashes, see util.hpp
     }
 
     // Update existing game in CSV (for editing existing games)
@@ -142,7 +142,7 @@ namespace game_save_helper {
             }
         }
         
-        new_csv.save(csv_path);
+        save_csv_escaped(new_csv, csv_path); // escapes backslashes, see util.hpp
     }
 }
 
@@ -396,7 +396,7 @@ private:
         // Load existing game history from JSON
         const String json_path = base_dir + existing_game_date + U".json";
         JSON game_json = JSON::Load(json_path);
-        if (!game_json) {
+        if (!game_json || !game_json.isObject()) { // operator[] with a key throws if the file is not a JSON object
             std::cerr << "Failed to load game JSON: " << json_path.narrow() << std::endl;
             return;
         }
@@ -405,7 +405,7 @@ private:
         std::vector<History_elem> history;
         for (int n_discs = 4; n_discs <= HW2; ++n_discs) {
             String n_discs_str = Format(n_discs);
-            if (game_json[n_discs_str]) {
+            if (game_json[n_discs_str].isObject()) { // was "if (json value)", which is true for any value
                 History_elem history_elem;
                 if (game_json[n_discs_str][GAME_BOARD_PLAYER].getType() == JSONValueType::Number) {
                     history_elem.board.player = game_json[n_discs_str][GAME_BOARD_PLAYER].get<uint64_t>();
@@ -468,14 +468,24 @@ private:
         // Update CSV only (do not append)
         int black_discs = GAME_DISCS_UNDEFINED;
         int white_discs = GAME_DISCS_UNDEFINED;
-        Board last_board = history.back().board;
-        if (last_board.is_end()) {
-            if (history.back().player == BLACK) {
-                black_discs = last_board.count_player();
-                white_discs = last_board.count_opponent();
-            } else {
-                black_discs = last_board.count_opponent();
-                white_discs = last_board.count_player();
+        // The scores saved in the JSON are used (they are not changed by this edit).
+        // v7.8.3 always used history.back(): the history above starts at the key "4", so it was empty
+        // for a game that starts from another position (XOT, random board, ...) and editing such a game
+        // terminated the app (EXCEPTION_ACCESS_VIOLATION; the JSON was already saved, summary.csv not).
+        // Recomputing also lost scores given at save time (black_score_override, e.g. Othello Quest games).
+        if (game_json[GAME_BLACK_DISCS].getType() == JSONValueType::Number && game_json[GAME_WHITE_DISCS].getType() == JSONValueType::Number) {
+            black_discs = game_json[GAME_BLACK_DISCS].get<int>();
+            white_discs = game_json[GAME_WHITE_DISCS].get<int>();
+        } else if (!history.empty()) {
+            Board last_board = history.back().board;
+            if (last_board.is_end()) {
+                if (history.back().player == BLACK) {
+                    black_discs = last_board.count_player();
+                    white_discs = last_board.count_opponent();
+                } else {
+                    black_discs = last_board.count_opponent();
+                    white_discs = last_board.count_player();
+                }
             }
         }
         
