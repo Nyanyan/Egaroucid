@@ -170,19 +170,8 @@ class Thread_pool {
         template<typename F, typename... Args, typename R = typename std::result_of<std::decay_t<F>(std::decay_t<Args>...)>::type>
 #endif
         std::future<R> push(bool *pushed, F &&func, const Args &&...args) {
-            // No idle thread: push_task() refuses the task, so return before the task object is created.
-            // (The packaged_task, the copies of the arguments and the state of the future were allocated on the heap
-            //  and discarded at once every time a task was refused.)
-            if (n_idle <= 0) {
-                *pushed = false;
-                return std::future<R>();
-            }
-            auto task = std::make_shared<std::packaged_task<R()>>([func, args...]() {
-                return func(args...);
-            });
-            auto future = task->get_future();
-            *pushed = push_task(THREAD_ID_NONE, [task]() {(*task)();});
-            return future;
+            // same as the function below with THREAD_ID_NONE, which has no limit of the number of threads
+            return push(THREAD_ID_NONE, pushed, std::forward<F>(func), std::move(args)...);
         }
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
@@ -193,8 +182,9 @@ class Thread_pool {
     std::future<R> push(thread_id_t id, bool *pushed, F &&func, const Args &&...args) {
         //if (id != THREAD_ID_NONE) {
         // "n_idle <= 0": no idle thread. push_task() refuses the task, so return before the task object is created.
-        // (YBWC tries to split at every younger brother. While all threads were busy, each try allocated
-        //  the packaged_task, the copies of the arguments and the state of the future on the heap and discarded them.)
+        // (The packaged_task, the copies of the arguments and the state of the future were allocated on the heap
+        //  and discarded at once every time a task was refused. YBWC tries to split at every younger brother,
+        //  so this happened at every move while all threads were busy.)
         if (n_idle <= 0 || n_using_thread[id] >= max_thread_size[id]) {
             *pushed = false;
             return std::future<R>();

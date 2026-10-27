@@ -75,12 +75,6 @@ public:
         text_area.active = true;
         bool text_changed = text_area_with_ime_candidate_window(text_area, Vec2{X_CENTER - 300, sy + 40}, SizeF{600, 150}, INPUT_STR_MAX_SIZE);
         getData().fonts.font(language.get("in_out", "you_can_paste_with_ctrl_v") + U" / " + language.get("in_out", "you_can_drag_and_drop_game_file")).draw(13, Arg::topCenter(X_CENTER, sy + 195), getData().colors.white);
-        bool return_pressed = false;
-        if (text_area.text.size()) {
-            if (text_area.text[text_area.text.size() - 1] == '\n') {
-                return_pressed = true;
-            }
-        }
         if (DragDrop::HasNewFilePaths()) {
             std::string path = DragDrop::GetDroppedFilePaths()[0].path.narrow();
             std::ifstream ifs(path);

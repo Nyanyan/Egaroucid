@@ -17,7 +17,6 @@
 #include <new>
 #include <thread>
 #include <vector>
-#include <algorithm>
 #include "board.hpp"
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -394,11 +393,8 @@ class Board_table {
             @param hash                 book_hash_board() of the board
         */
         inline void prefetch(uint64_t hash) const {
-            const Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            if (segment.n_groups) {
-                BOOK_TABLE_PREFETCH(segment.ctrl + (size_t)home_group(hash, segment.n_groups) * GROUP_SIZE);
-            }
+            Segment_guard guard(segments[segment_idx(hash)]);
+            prefetch_unlocked(hash);
         }
 
         /*
@@ -409,17 +405,8 @@ class Board_table {
             @param hash                 book_hash_board() of the board
         */
         inline void prefetch_entry(uint64_t hash) const {
-            const Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            if (segment.n_groups) {
-                uint32_t group = home_group(hash, segment.n_groups);
-                uint64_t match = match_tag(load_ctrl(segment.ctrl, group), tag_of(hash));
-                if (match) {
-                    uint32_t slot = group * GROUP_SIZE + first_match_idx(match);
-                    BOOK_TABLE_PREFETCH(segment.keys + slot);
-                    BOOK_TABLE_PREFETCH(segment.values + slot);
-                }
-            }
+            Segment_guard guard(segments[segment_idx(hash)]);
+            prefetch_entry_unlocked(hash);
         }
 
         /*
@@ -428,6 +415,7 @@ class Board_table {
             Faster when many threads search at the same time (a lock is a write to shared memory).
             Use them only while no thread registers / deletes boards.
             Different threads may modify different boards.
+            (prefetch() / prefetch_entry() / get() / modify() lock the segment and call these.)
         */
         inline void prefetch_unlocked(uint64_t hash) const {
             const Segment &segment = segments[segment_idx(hash)];
@@ -479,14 +467,8 @@ class Board_table {
             @return registered?
         */
         inline bool get(const Board &key, uint64_t hash, Value *res) const {
-            const Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            uint32_t slot = find_slot(segment, key, hash);
-            if (slot == NOT_FOUND) {
-                return false;
-            }
-            *res = segment.values[slot];
-            return true;
+            Segment_guard guard(segments[segment_idx(hash)]);
+            return get_unlocked(key, hash, res);
         }
 
         /*
@@ -513,14 +495,8 @@ class Board_table {
 
         template<class F>
         inline bool modify(const Board &key, uint64_t hash, F &&func) {
-            Segment &segment = segments[segment_idx(hash)];
-            Segment_guard guard(segment);
-            uint32_t slot = find_slot(segment, key, hash);
-            if (slot == NOT_FOUND) {
-                return false;
-            }
-            func(segment.values[slot]);
-            return true;
+            Segment_guard guard(segments[segment_idx(hash)]);
+            return modify_unlocked(key, hash, func);
         }
 
         /*
@@ -631,61 +607,19 @@ class Board_table {
         }
 
         /*
-            @brief release unused memory
-        */
-        inline void shrink_to_fit() {
-            for (int i = 0; i < N_SEGMENTS; ++i) {
-                Segment &segment = segments[i];
-                Segment_guard guard(segment);
-                uint32_t n_groups = (segment.n_used + MAX_USED_PER_GROUP - 1) / MAX_USED_PER_GROUP;
-                if (segment.n_used % MAX_USED_PER_GROUP == 0 && segment.n_used) {
-                    ++n_groups; // keep at least 1 empty slot
-                }
-                if (n_groups < segment.n_groups) {
-                    resize_segment(segment, n_groups); // out of memory: the segment is kept as it is
-                }
-            }
-        }
-
-        /*
-            @brief memory used by this table in bytes
-        */
-        inline size_t memory_usage() const {
-            size_t res = sizeof(Segment) * N_SEGMENTS;
-            for (int i = 0; i < N_SEGMENTS; ++i) {
-                res += (size_t)segments[i].n_groups * GROUP_SIZE * (sizeof(Board) + sizeof(Value) + 1);
-            }
-            return res;
-        }
-
-        /*
             @brief call func(const Board&, Value&) for all boards in a segment
 
             No lock is taken: boards must not be registered / deleted while iterating.
-            If func returns false, iteration stops.
-
-            @return false if stopped
         */
         template<class F>
-        inline bool for_each_in_segment_while(int segment_idx_, F &&func) {
+        inline void for_each_in_segment(int segment_idx_, F &&func) {
             Segment &segment = segments[segment_idx_];
             const uint32_t capacity = segment.n_groups * GROUP_SIZE;
             for (uint32_t slot = 0; slot < capacity; ++slot) {
                 if (segment.ctrl[slot] < CTRL_EMPTY) {
-                    if (!func((const Board&)segment.keys[slot], segment.values[slot])) {
-                        return false;
-                    }
+                    func((const Board&)segment.keys[slot], segment.values[slot]);
                 }
             }
-            return true;
-        }
-
-        template<class F>
-        inline void for_each_in_segment(int segment_idx_, F &&func) {
-            for_each_in_segment_while(segment_idx_, [&func](const Board &key, Value &value) {
-                func(key, value);
-                return true;
-            });
         }
 
         /*
@@ -698,21 +632,6 @@ class Board_table {
             for (int i = 0; i < N_SEGMENTS; ++i) {
                 for_each_in_segment(i, func);
             }
-        }
-
-        /*
-            @brief call func(const Board&, Value&) for all boards while func returns true
-
-            @return false if stopped
-        */
-        template<class F>
-        inline bool for_each_while(F &&func) {
-            for (int i = 0; i < N_SEGMENTS; ++i) {
-                if (!for_each_in_segment_while(i, func)) {
-                    return false;
-                }
-            }
-            return true;
         }
 
         /*
@@ -739,11 +658,6 @@ class Board_table {
         }
 
         /*
-            @brief copy all boards in a segment
-
-            Used for iterating safely while the table is modified.
-        */
-        /*
             @brief copy the boards in a segment which satisfy pred(const Board&, const Value&)
 
             pred must not access this table (the segment is locked).
@@ -761,6 +675,11 @@ class Board_table {
             }
         }
 
+        /*
+            @brief copy all boards in a segment
+
+            Used for iterating safely while the table is modified.
+        */
         inline void get_keys_in_segment(int segment_idx_, std::vector<Board> &res) const {
             res.clear();
             const Segment &segment = segments[segment_idx_];

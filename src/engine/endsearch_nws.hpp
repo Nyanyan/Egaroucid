@@ -321,7 +321,6 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         search->pass_endsearch();
         return v;
     }
-    int best_move = MOVE_UNDEFINED;
     int g;
     const int canput = pop_count_ull(legal);
     // An array on the stack is used (same as midsearch): std::vector allocated / freed heap memory at every node.
@@ -344,7 +343,6 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                 LocalTTEntry *tt = get_ltt(&nboard, search->n_discs);
                 if (tt->cmp(&nboard)) {
                     if (alpha < tt->lower) {
-                        best_move = flip_value->flip.pos;
                         v = tt->lower;
                         search->undo_endsearch(&flip_value->flip);
                         return v;
@@ -365,7 +363,6 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
                     search->undo_endsearch(&flip_value->flip);
                     if (v < g) {
                         v = g;
-                        best_move = flip_value->flip.pos;
                         if (alpha < v) {
                             tt->set_score(&nboard, v, 64);
                             return v;
@@ -392,7 +389,6 @@ int nega_alpha_end_nws(Search *search, int alpha, const bool skipped, uint64_t l
         search->undo_endsearch(&move_list[move_idx].flip);
         if (v < g) {
             v = g;
-            best_move = move_list[move_idx].flip.pos;
             if (alpha < v) {
                 tt->set_score(&nboard, v, 64);
                 break;
