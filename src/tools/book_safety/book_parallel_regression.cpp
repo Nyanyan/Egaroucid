@@ -85,7 +85,7 @@ int main() {
         const Snapshot reachable = snapshot(book);
         book.reset_seen();
         std::unordered_set<Board, Book_hash> expected_pass_boards;
-        book.get_pass_boards(root, expected_pass_boards, false, false);
+        book.get_pass_boards(root, expected_pass_boards, false);
         const Snapshot pass_seen = snapshot(book);
 
         bool race_free = true;
@@ -105,7 +105,7 @@ int main() {
                 std::unordered_set<Board, Book_hash> actual_pass_boards;
                 book_access_probe::conflicts = 0;
                 book_access_probe::enabled = true;
-                book.get_pass_boards(root, actual_pass_boards, false, false);
+                book.get_pass_boards(root, actual_pass_boards, false);
                 book_access_probe::enabled = false;
                 std::cout << "pass boards threads=" << threads << " repeat=" << repeat << " conflicts=" << book_access_probe::conflicts << '\n';
                 race_free &= book_access_probe::conflicts == 0;
