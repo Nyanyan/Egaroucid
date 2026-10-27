@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#include <algorithm>
 #include <iostream>
 #include "common.hpp"
 #include "mobility.hpp"
