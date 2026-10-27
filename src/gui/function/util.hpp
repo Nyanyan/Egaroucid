@@ -276,8 +276,12 @@ inline bool is_list_folder_empty(const String& folder_dir) {
     csv_path += U"summary.csv";
     if (FileSystem::Exists(csv_path)) {
         TextReader reader{ csv_path };
+        if (!reader) {
+            // An unreadable summary is not an empty one; deleting this folder could lose games/openings.
+            return false;
+        }
         String line;
-        if (reader && reader.readLine(line)) {
+        if (reader.readLine(line)) {
             return false;
         }
     }
