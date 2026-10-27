@@ -1205,6 +1205,8 @@ class Book {
             if (stop_saving && *stop_saving) {
                 return;
             }
+            // Several parents can reach the same child concurrently. Lock both the element copies
+            // and seen updates: copying the whole element also reads seen while another parent sets it.
             // check the moves of a board: flag the next boards and collect the boards before pass
             auto check_moves = [this, only_exported](const Board &b, std::vector<Board> &found_pass_boards) {
                 Moved_board moved_boards[HW2];
@@ -1214,13 +1216,13 @@ class Book {
                 for (int i = 0; i < n_moved_boards; ++i) {
                     const Moved_board &moved_board = moved_boards[i];
                     if (moved_board.is_end) { // game over
-                        if (book.get_unlocked(moved_board.board, moved_board.hash, &book_elem)) {
+                        if (book.get(moved_board.board, moved_board.hash, &book_elem)) {
                             continue; // registered as it is: not a board before pass
                         }
-                        if (book.get_unlocked(moved_board.end_board, moved_board.end_hash, &book_elem) && (!only_exported || book_elem.exported)) {
+                        if (book.get(moved_board.end_board, moved_board.end_hash, &book_elem) && (!only_exported || book_elem.exported)) {
                             found_pass_boards.emplace_back(moved_board.board);
                         }
-                    } else if (book.get_unlocked(moved_board.board, moved_board.hash, &book_elem) && (!only_exported || book_elem.exported)) {
+                    } else if (book.get(moved_board.board, moved_board.hash, &book_elem) && (!only_exported || book_elem.exported)) {
                         if (moved_board.passed) { // moved_board.board is the board after pass
                             Board board_before_pass = representative_board(Board(moved_board.board.opponent, moved_board.board.player));
                             if (book.contains(board_before_pass)) {
@@ -1228,7 +1230,7 @@ class Book {
                             }
                             found_pass_boards.emplace_back(board_before_pass);
                         }
-                        flagged |= book.modify_unlocked(moved_board.board, moved_board.hash, [](Book_elem &child_elem) {
+                        flagged |= book.modify(moved_board.board, moved_board.hash, [](Book_elem &child_elem) {
                             if (!child_elem.seen) { // several threads may flag the same board
                                 child_elem.seen = true;
                             }
@@ -2806,7 +2808,8 @@ class Book {
                     bool flagged_local = false;
                     for (int i = 0; i < n_moved_boards; ++i) {
                         if (!moved_boards[i].is_end) {
-                            flagged_local |= book.modify_unlocked(moved_boards[i].board, moved_boards[i].hash, [](Book_elem &child_elem) {
+                            // Different parent tasks can flag the same child; serialize its seen access.
+                            flagged_local |= book.modify(moved_boards[i].board, moved_boards[i].hash, [](Book_elem &child_elem) {
                                 if (!child_elem.seen) { // several threads may flag the same board
                                     child_elem.seen = true;
                                 }
