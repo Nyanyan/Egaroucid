@@ -516,13 +516,51 @@ private:
     Button default_button;
     Button go_button;
     std::string book_file;
+    std::future<bool> save_book_future;
     std::future<void> delete_book_future;
     std::future<bool> import_book_future;
+    bool book_saving;
     bool book_deleting;
     bool book_importing;
+    bool save_failed;
+    bool close_requested;
     bool failed;
     bool done;
     TextAreaEditState text_area;
+
+    void start_book_import() {
+        // Only called after the old book was saved successfully, or had no changes.
+        getData().settings.book_file = book_file;
+        getData().book_information.changed = false;
+        std::cerr << "book reference changed to " << book_file << std::endl;
+        delete_book_future = std::async(std::launch::async, delete_book);
+        book_deleting = true;
+    }
+
+    void start_reference_change() {
+        save_failed = false;
+        if (getData().book_information.changed) {
+            const std::string old_book_file = getData().settings.book_file;
+            save_book_future = std::async(std::launch::async, [old_book_file]() {
+                std::cerr << "saving the current book before changing the reference " << old_book_file << std::endl;
+                return book.save_egbk3(old_book_file, old_book_file + ".bak");
+            });
+            book_saving = true;
+        } else {
+            start_book_import();
+        }
+    }
+
+    void finish_book_save() {
+        const bool saved = save_book_future.get();
+        book_saving = false;
+        if (!saved) {
+            // Keep the reference, dirty flag and in-memory book so the user can retry.
+            save_failed = true;
+            return;
+        }
+        start_book_import();
+    }
 
 public:
     Refer_book(const InitData& init) : IScene{ init } {
@@ -532,22 +570,30 @@ public:
         default_button.init(BUTTON3_2_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "use_default"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         go_button.init(BUTTON3_3_SX, BUTTON3_SY, BUTTON3_WIDTH, BUTTON3_HEIGHT, BUTTON3_RADIUS, language.get("book", "import"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         set_path_textarea_text(text_area, Unicode::Widen(getData().settings.book_file));
+        book_saving = false;
         book_deleting = false;
         book_importing = false;
+        save_failed = false;
+        close_requested = false;
         failed = false;
         done = false;
     }
 
     void update() override {
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            close_requested = true;
+        }
+        // Close must not save the same file concurrently, or save a book being replaced.
+        if (close_requested && !book_saving && !book_deleting && !book_importing) {
             changeScene(U"Close", SCENE_FADE_TIME);
+            return;
         }
         Scene::SetBackground(getData().colors.green);
         const int icon_width = SCENE_ICON_WIDTH;
         getData().resources.icon.scaled((double)icon_width / getData().resources.icon.width()).draw(X_CENTER - icon_width / 2, 20);
         getData().resources.logo.scaled((double)icon_width / getData().resources.logo.width()).draw(X_CENTER - icon_width / 2, 20 + icon_width);
         int sy = 20 + icon_width + 40;
-        if (!book_deleting && !book_importing && !failed && !done) {
+        if (!book_saving && !book_deleting && !book_importing && !failed && !done) {
             getData().fonts.font(language.get("book", "book_reference")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
             getData().fonts.font(language.get("book", "input_book_path")).draw(15, Arg::topCenter(X_CENTER, sy + 50), getData().colors.white);
             text_area.active = true;
@@ -579,28 +625,19 @@ public:
                 set_path_textarea_text(text_area, Unicode::Widen(getData().directories.document_dir + "book" + BOOK_EXTENSION));
             }
             go_button.draw();
-            if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
-                //getData().book_information.changed = true;
-                // Unsaved changes of the current book (book learning etc.) are saved to its file before it is deleted
-                // from memory. Without this, they were lost: the book is saved only when the app is closed,
-                // and then to the new book file.
-                std::string old_book_file = getData().settings.book_file;
-                bool save_old_book = getData().book_information.changed;
-                getData().book_information.changed = false;
-                getData().settings.book_file = book_file;
-                std::cerr << "book reference changed to " << book_file << std::endl;
-                delete_book_future = std::async(std::launch::async, [old_book_file, save_old_book]() {
-                    if (save_old_book) {
-                        std::cerr << "saving the current book before changing the reference " << old_book_file << std::endl;
-                        book.save_egbk3(old_book_file, old_book_file + ".bak");
-                    }
-                    delete_book();
-                });
-                book_deleting = true;
+            if (save_failed) {
+                getData().fonts.font(language.get("settings", "profile", "save_failed")).draw(15, Arg::topCenter(X_CENTER, sy + 220), getData().colors.white);
             }
-        } else if (book_deleting || book_importing) {
+            if (formatted_book && (go_button.clicked() || return_pressed || file_dragged)) {
+                start_reference_change();
+            }
+        } else if (book_saving || book_deleting || book_importing) {
             getData().fonts.font(language.get("book", "loading")).draw(25, Arg::topCenter(X_CENTER, sy), getData().colors.white);
-            if (book_deleting) {
+            if (book_saving) {
+                if (save_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    finish_book_save();
+                }
+            } else if (book_deleting) {
                 if (delete_book_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     delete_book_future.get();
                     book_deleting = false;
