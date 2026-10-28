@@ -9,6 +9,16 @@ All scripts write logs under `src/tools/diagnostics/logs` by default. Scripts th
 
 ## Current main / 7.8.2
 
+Run deterministic Windows shortcut state regression tests (Issue #641):
+
+```powershell
+python src/tools/diagnostics/test_shortcut_key_state.py
+```
+
+Requires MinGW `g++` on PATH. The tests compile the production observer and matcher without Siv3D, using deterministic Win32 input queries. They cover Caps Lock / IME key-code changes, repeats, missing key-up messages, focus recovery, extended keys, modifier aliases, and pending short-input events. `--source <header>` can select an older revision to verify a regression.
+
+Also check the built GUI with Microsoft IME: main scene (IME disabled), focus another application, return, open a text input scene, then type, convert, and commit Japanese text. Check normal shortcuts before and after Caps Lock, including Shift+Caps Lock. The deterministic tests simulate the differing key codes and missing releases; hardware/IME reproduction remains a separate check. The short-input tests verify retention of pending down events, not recognition of a complete key chord released between frames; very short automated taps can still be missed by the existing matcher.
+
 Collect environment only:
 
 ```powershell
