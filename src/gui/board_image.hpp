@@ -23,7 +23,7 @@ constexpr int BOARD_IMAGE_FRAME_WIDTH = 2;
 
 class Board_image : public App::Scene {
 private:
-    Button back_button;
+    FrameButton back_button;
     Button save_image_button;
     FrameButton clear_button;
     Radio_button color_radio;
@@ -36,6 +36,15 @@ private:
     bool taking_screen_shot = false;
     bool erasing_arrow = false;
     int selected_mark;
+
+    static void draw_outline_action(const FrameButton& button) {
+        button.rect.drawFrame(button.frame_width, 0, button.frame_color);
+        button.font(button.str).drawAt(button.font_size, button.rect.x + button.rect.w / 2,
+            button.rect.y + button.rect.h / 2, button.font_color);
+        if (button.rect.mouseOver()) {
+            Cursor::RequestStyle(CursorStyle::Hand);
+        }
+    }
 
     Board_image_position position() const {
         const auto& history = getData().history_elem;
@@ -310,8 +319,8 @@ private:
 public:
     Board_image(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(false);
-        back_button.init(480, 436, 90, 44, 8, language.get("common", "back"), 17, getData().fonts.font, getData().colors.dark_green, getData().colors.white);
-        clear_button.init(578, 436, 90, 44, 8, 1, language.get("board_image", "clear"), 17, getData().fonts.font, getData().colors.green, getData().colors.white, getData().colors.white);
+        back_button.init(480, 436, 90, 44, 8, 1, language.get("common", "back"), 17, getData().fonts.font, Color(0, 0, 0, 0), getData().colors.white, getData().colors.white);
+        clear_button.init(578, 436, 90, 44, 8, 1, language.get("board_image", "clear"), 17, getData().fonts.font, Color(0, 0, 0, 0), getData().colors.white, getData().colors.white);
         save_image_button.init(676, 436, 104, 44, 8, language.get("board_image", "save_image"), 17, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
         coordinate_radio.init();
@@ -362,8 +371,8 @@ public:
         getData().settings.board_image_color = color_radio.checked;
         getData().settings.board_image_outer_frame_color = outer_frame_color_radio.checked;
         Line(480, 420, 780, 420).draw(1, ColorF(getData().colors.white, 0.35));
-        clear_button.draw();
-        back_button.draw();
+        draw_outline_action(clear_button);
+        draw_outline_action(back_button);
         save_image_button.draw();
         if (clear_button.clicked()) {
             edit.clear();
