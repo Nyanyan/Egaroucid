@@ -2277,6 +2277,57 @@ class Book {
         }
 
         /*
+            @brief functions without lock for the walks of book learning (book_walk_by_error())
+
+            Use them only while no thread registers / deletes boards. Other threads may change the flags of the
+            boards at the same time: only the value of a board is read here (the flags are other bits).
+
+            get_all_moves_with_value_unlocked(): same result as get_all_moves_with_value()
+            get_value_unlocked(): value of a board (any orientation), SCORE_UNDEFINED if it is not registered
+            prefetch_unlocked() / prefetch_entry_unlocked(): ask the memory which flag_if_not_seen() will read for a
+                representative board (call the first one for all boards, then the second one, then visit the boards)
+        */
+        inline std::vector<Book_value> get_all_moves_with_value_unlocked(Board *b) {
+            Moved_board moved_boards[HW2];
+            int n_moved_boards = get_moved_boards(b, moved_boards, true);
+            std::vector<Book_value> policies;
+            int8_t value = SCORE_UNDEFINED;
+            auto read_value = [&value](Book_elem &book_elem) {
+                value = book_elem.value;
+            };
+            for (int i = 0; i < n_moved_boards; ++i) {
+                const Moved_board &elem = moved_boards[i];
+                Book_value book_value;
+                book_value.policy = elem.policy;
+                if (book.modify_unlocked(elem.board, elem.hash, read_value)) {
+                    book_value.value = (elem.passed && !elem.is_end) ? value : -value;
+                    policies.emplace_back(book_value);
+                } else if (elem.is_end && book.modify_unlocked(elem.end_board, elem.end_hash, read_value)) {
+                    book_value.value = value;
+                    policies.emplace_back(book_value);
+                }
+            }
+            return policies;
+        }
+
+        inline int get_value_unlocked(const Board &b) {
+            Board representative = representative_board(b);
+            int8_t value = SCORE_UNDEFINED;
+            book.modify_unlocked(representative, book_hash_board(representative.player, representative.opponent), [&value](Book_elem &book_elem) {
+                value = book_elem.value;
+            });
+            return value;
+        }
+
+        inline void prefetch_unlocked(const Board &representative) {
+            book.prefetch_unlocked(book_hash_board(representative.player, representative.opponent));
+        }
+
+        inline void prefetch_entry_unlocked(const Board &representative) {
+            book.prefetch_entry_unlocked(book_hash_board(representative.player, representative.opponent));
+        }
+
+        /*
             @brief get all registered moves with value, and the moves written as links to Edax-formatted book
 
             @param b                    a board pointer to find
@@ -3264,6 +3315,29 @@ class Book {
             book.modify(representative_board(board), [](Book_elem &book_elem) {
                 book_elem.seen = true;
             });
+        }
+
+        /*
+            @brief flag (seen) a registered board which is not flagged yet, and get its element
+
+            The test and the flag are done while the segment of the board is locked:
+            when several threads call this function for the same board, only one of them gets true.
+            (Used by the walks of book learning, which visit each board once with several threads.)
+
+            @param representative       a board, which must be the representative board
+            @param res                  the element (as it was before the flag) is copied here if true is returned
+            @return true if the board is registered and was not flagged
+        */
+        inline bool flag_if_not_seen(const Board &representative, Book_elem *res) {
+            bool flagged = false;
+            book.modify(representative, [&flagged, res](Book_elem &book_elem) {
+                if (!book_elem.seen) {
+                    *res = book_elem;
+                    book_elem.seen = true;
+                    flagged = true;
+                }
+            });
+            return flagged;
         }
 
         /*
