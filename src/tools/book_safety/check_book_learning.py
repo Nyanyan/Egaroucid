@@ -24,6 +24,7 @@ def block(source, marker):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ref", help="Git revision instead of the working tree")
+    parser.add_argument("--case", choices=("all", "exceptions", "cancellation"), default="all")
     args = parser.parse_args()
     root = pathlib.Path(__file__).absolute().parents[3]
     variant = "ref-" + hashlib.sha256(args.ref.encode()).hexdigest()[:12] if args.ref else "current"
@@ -40,8 +41,12 @@ def main():
     learning = read("src/engine/book_enlarge.hpp")
     (output / "book_parallel_method.hpp").write_text(
         "template<class F>\n" + block(book, "inline void parallel_for(int n,"), encoding="utf-8")
+    function_start = learning.index("void book_learning_for_each(int n,")
+    template_start = learning.rfind("template<", 0, function_start)
+    function_end = learning.index("\nvoid book_recalculate_leaves(", function_start)
+    feature = "#define BOOK_LEARNING_HAS_STOP_PREDICATE\n" if "Continue &&should_continue" in learning else ""
     (output / "book_learning_method.hpp").write_text(
-        "template<class F>\n" + block(learning, "void book_learning_for_each(int n,"), encoding="utf-8")
+        feature + learning[template_start:function_end], encoding="utf-8")
     compiler = shutil.which("g++")
     if not compiler:
         raise SystemExit("g++ is required on PATH")
@@ -49,7 +54,7 @@ def main():
     subprocess.run([compiler, "-std=c++17", "-O2", "-pthread", "-I" + str(output),
                     str(root / "src/tools/book_safety/book_learning_tasks_regression.cpp"),
                     "-o", str(executable)], check=True)
-    raise SystemExit(subprocess.run([str(executable)], timeout=20).returncode)
+    raise SystemExit(subprocess.run([str(executable), args.case], timeout=20).returncode)
 
 
 if __name__ == "__main__":

@@ -135,12 +135,66 @@ void check_normal(bool learning) {
     std::cout << "PASS: normal queue runs each element once, including the search tail\n";
 }
 
-int main() {
-    try {
-        for (bool learning: {false, true}) {
-            for (int source: {0, 1, 2}) check_exception(learning, source);
-            check_normal(learning);
+template<class F, class Continue>
+void run_cancellable(int n, F function, Continue should_continue) {
+#ifdef BOOK_LEARNING_HAS_STOP_PREDICATE
+    book_learning_for_each(n, function, should_continue);
+#else
+    book_learning_for_each(n, function);
+#endif
+}
+
+void check_cancellation() {
+    for (int threads: {1, 2, 8, 32}) for (bool initially_running: {false, true}) {
+        set_threads(threads);
+        std::atomic<bool> running(initially_running);
+        std::atomic<int> calls(0);
+        run_cancellable(1000000, [&](int, bool) {
+            ++calls;
+            if (!running.load()) return; // the old callback checked the stop flag here
+            running.store(false);
+        }, [&] { return running.load(); });
+        require(calls.load() <= (initially_running ? threads : 0), "stopped queue drained pending elements");
+    }
+    // With fewer elements than the multi-thread tail, cancellation must still stop the caller's loop.
+    set_threads(8);
+    bool running = true;
+    int calls = 0;
+    run_cancellable(3, [&](int, bool) { ++calls; running = false; }, [&] { return running; });
+    require(calls == 1, "multi-thread tail ignored cancellation");
+
+    set_threads(3);
+    std::atomic<bool> continue_work(true), started(false), release(false);
+    const auto caller = std::this_thread::get_id();
+    std::thread gate([&] {
+        while (!started.load()) std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        release.store(true);
+    });
+    run_cancellable(1000000, [&](int, bool) {
+        if (std::this_thread::get_id() == caller) {
+            while (!started.load()) std::this_thread::yield();
+            continue_work.store(false);
+        } else {
+            started.store(true);
+            while (!release.load()) std::this_thread::yield();
         }
+    }, [&] { return continue_work.load(); });
+    require_joined(test_pool.completed.load() == test_pool.submitted, "cancellation did not join workers");
+    gate.join();
+    std::cout << "PASS: cancellation stops new work and joins active workers (1/2/8/32 threads)\n";
+}
+
+int main(int argc, char **argv) {
+    try {
+        std::string mode = argc > 1 ? argv[1] : "all";
+        if (mode != "cancellation") {
+            for (bool learning: {false, true}) {
+                for (int source: {0, 1, 2}) check_exception(learning, source);
+                check_normal(learning);
+            }
+        }
+        if (mode != "exceptions") check_cancellation();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;
         return 1;

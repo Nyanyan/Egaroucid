@@ -329,22 +329,36 @@ void book_search_leaf(Board board, int level, bool use_multi_thread) {
 
     @param n                    number of elements
     @param func                 func(int idx, bool use_multi_thread)
+    @param should_continue      false stops taking new elements; running tasks are still joined
 */
-template<class F>
-void book_learning_for_each(int n, F &&func) {
+template<class F, class Continue>
+void book_learning_for_each(int n, F &&func, Continue &&should_continue) {
+    if (n <= 0 || !should_continue()) {
+        return;
+    }
     const int n_pool_threads = thread_pool.size();
     if (n_pool_threads == 0) { // one thread: as before (the push to the empty pool failed, and the element was run with use_multi_thread = true)
-        for (int idx = 0; idx < n; ++idx) {
+        for (int idx = 0; idx < n && should_continue(); ++idx) {
             func(idx, true);
         }
         return;
     }
     const int n_single = std::clamp(n - n_pool_threads * 2 + 1, 0, n); // elements run with a one-thread search
     std::atomic<int> next_idx(0);
-    std::atomic<bool> failed(false);
-    auto worker = [&next_idx, &failed, &func, n_single]() {
+    std::atomic<bool> stop_requested(false);
+    auto can_continue = [&stop_requested, &should_continue]() {
+        if (stop_requested.load()) {
+            return false;
+        }
+        if (!should_continue()) {
+            stop_requested.store(true);
+            return false;
+        }
+        return true;
+    };
+    auto worker = [&next_idx, &stop_requested, &can_continue, &func, n_single]() {
         try {
-            while (!failed.load()) {
+            while (can_continue()) {
                 int idx = next_idx.fetch_add(1);
                 if (idx >= n_single) {
                     break;
@@ -352,15 +366,15 @@ void book_learning_for_each(int n, F &&func) {
                 func(idx, false);
             }
         } catch (...) {
-            failed.store(true);
+            stop_requested.store(true);
             throw;
         }
     };
     Thread_pool_task_group tasks(n_pool_threads);
     try {
-        while (!failed.load()) {
+        while (can_continue()) {
             // a worker on each thread of the pool (a thread which was not idle yet gets its worker at a later turn)
-            while ((int)tasks.size() < n_pool_threads && next_idx.load() < n_single && !failed.load()) {
+            while ((int)tasks.size() < n_pool_threads && next_idx.load() < n_single && can_continue()) {
                 bool pushed = false;
                 std::future<void> task = thread_pool.push(&pushed, worker);
                 if (!pushed) {
@@ -369,20 +383,28 @@ void book_learning_for_each(int n, F &&func) {
                 tasks.add(std::move(task));
             }
             // the calling thread works too
+            if (!can_continue()) {
+                break;
+            }
             int idx = next_idx.fetch_add(1);
             if (idx >= n_single) {
                 break;
             }
             func(idx, false);
         }
-        for (int idx = n_single; idx < n && !failed.load(); ++idx) {
+        for (int idx = n_single; idx < n && can_continue(); ++idx) {
             func(idx, true);
         }
         tasks.get();
     } catch (...) {
-        failed.store(true);
+        stop_requested.store(true);
         throw; // tasks waits while the callback and the queue state are still alive
     }
+}
+
+template<class F>
+void book_learning_for_each(int n, F &&func) {
+    book_learning_for_each(n, std::forward<F>(func), [] { return true; });
 }
 
 void book_recalculate_leaves(int level, std::vector<Book_deviate_todo_elem> &todo_list, uint64_t all_strt, uint64_t strt, bool *book_learning, Board *board_copy, int *player) {
@@ -411,7 +433,7 @@ void book_recalculate_leaves(int level, std::vector<Book_deviate_todo_elem> &tod
             uint64_t eta = (tim() - strt) * ((double)n_all / n_done - 1.0);
             std::cerr << "book recalculating leaves " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
         }
-    });
+    }, [book_learning] { return global_searching && *book_learning; });
     int percent = 100ULL * n_done / n_all;
     uint64_t eta = n_done ? (uint64_t)((tim() - strt) * ((double)n_all / n_done - 1.0)) : 0;
     std::cerr << "book recalculating leaves finished " << percent << "% " <<  n_done << "/" << n_all << " time " << ms_to_time_short(tim() - all_strt) << " ETA " << ms_to_time_short(eta) << std::endl;
@@ -689,6 +711,9 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::v
     std::mutex save_mtx; // one thread saves the book
     const std::thread::id calling_thread = std::this_thread::get_id();
     book_learning_for_each(n_all, [&](int idx, bool use_multi_thread) {
+        if (!global_searching || !(*book_learning)) {
+            return;
+        }
         // automatic save: by the thread which sees that it is time; the other threads go on (as the tasks did before)
         if (tim() - last_save.load() >= AUTO_BOOK_SAVE_TIME) {
             std::unique_lock<std::mutex> save_lock(save_mtx, std::try_to_lock);
@@ -715,7 +740,7 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::v
         std::string time_short = ms_to_time_short(tim() - all_strt);
         std::string eta_short = ms_to_time_short(eta);
         std::cerr << "loop " << n_loop << " book deviating " << percent << "% " <<  n_done << "/" << n_all << " registered " << n_add << " time " << time_short << " ETA " << eta_short << std::endl;
-    });
+    }, [book_learning] { return global_searching && *book_learning; });
     return n_add;
 }
 
