@@ -599,7 +599,7 @@ void init_settings(const Directories* directories, const Resources* resources, S
         settings->has_window_pos = has_window_pos_x && has_window_pos_y;
     }
     settings->window_scale = std::clamp(settings->window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
-    settings->board_image_mark = std::clamp(settings->board_image_mark, BOARD_IMAGE_BRECT, BOARD_IMAGE_NOMARK);
+    settings->board_image_mark = std::clamp(settings->board_image_mark, BOARD_IMAGE_BRECT, BOARD_IMAGE_MARK_MAX);
     settings->board_image_coordinate = std::clamp(settings->board_image_coordinate, BOARD_IMAGE_COORDINATE_INCLUDE, BOARD_IMAGE_COORDINATE_EXCLUDE);
     settings->board_image_color = std::clamp(settings->board_image_color, BOARD_IMAGE_COLOR_DEFAULT, BOARD_IMAGE_COLOR_MONOCHROME);
     settings->board_image_outer_frame_color = std::clamp(settings->board_image_outer_frame_color, BOARD_IMAGE_OUTER_FRAME_WHITE, BOARD_IMAGE_OUTER_FRAME_DARK);

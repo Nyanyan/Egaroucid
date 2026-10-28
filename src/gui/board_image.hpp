@@ -1,6 +1,5 @@
 /*
     Egaroucid Project
-
     @file board_image.hpp
         Edit board image
     @date 2021-2026
@@ -17,7 +16,7 @@
 #include "screen_shot.hpp"
 
 constexpr int BOARD_IMAGE_MARK_DELETED = -1;
-constexpr int BOARD_IMAGE_NOT_CLICKED = 2;
+constexpr int BOARD_IMAGE_NOT_CLICKED = -2;
 constexpr int BOARD_IMAGE_RECT_SIZE = 20;
 constexpr int BOARD_IMAGE_STAR_SIZE = 15;
 constexpr int BOARD_IMAGE_FRAME_WIDTH = 2;
@@ -27,216 +26,230 @@ private:
     Button back_button;
     Button save_image_button;
     Radio_button mark_radio;
+    std::vector<int> tool_ids;
+    Radio_button mark_style_radio;
     Radio_button color_radio;
     Radio_button outer_frame_color_radio;
     Radio_button coordinate_radio;
-    int marks[HW2];
-    int last_marked[HW2];
-    int eval_values[HW2];
-    bool eval_calculating[HW2];
+    Board_image_edit edit;
+    std::array<int, HW2> last_marked;
     std::future<int> eval_futures[HW2];
-    bool taking_screen_shot;
+    bool taking_screen_shot = false;
+    int selected_mark;
+
+    Board_image_position position() const {
+        const auto& history = getData().history_elem;
+        return {history.board.player, history.board.opponent, history.player};
+    }
+
+    void save_edit() {
+        getData().graph_resources.board_image_edits.save(position(), edit);
+    }
+
+    static Vec2 cell_center(int cell) {
+        return Vec2{BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2,
+                    BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2};
+    }
+
+
+
+
+    void update_board_input() {
+        for (int cell = 0; cell < HW2; ++cell) {
+            const Rect region(BOARD_SX + (cell % HW) * BOARD_CELL_SIZE,
+                              BOARD_SY + (cell / HW) * BOARD_CELL_SIZE,
+                              BOARD_CELL_SIZE, BOARD_CELL_SIZE);
+            if (region.leftPressed()) {
+                const bool legal = (getData().history_elem.board.get_legal() >> (HW2_M1 - cell)) & 1ULL;
+                if (selected_mark == BOARD_IMAGE_VALUE && !legal) {
+                    continue;
+                }
+                if (edit.marks[cell] == selected_mark && last_marked[cell] != selected_mark) {
+                    edit.marks[cell] = BOARD_IMAGE_NOMARK;
+                    edit.values[cell].reset();
+                    last_marked[cell] = BOARD_IMAGE_MARK_DELETED;
+                } else if (last_marked[cell] != BOARD_IMAGE_MARK_DELETED && last_marked[cell] != selected_mark) {
+                    edit.marks[cell] = selected_mark;
+                    edit.values[cell].reset();
+                    last_marked[cell] = selected_mark;
+                }
+            } else {
+                last_marked[cell] = BOARD_IMAGE_NOT_CLICKED;
+            }
+        }
+    }
+
+    void update_evaluations() {
+        const uint64_t legal = getData().history_elem.board.get_legal();
+        for (int cell = 0; cell < HW2; ++cell) {
+            if (eval_futures[cell].valid() && eval_futures[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                const int value = eval_futures[cell].get();
+                if (edit.marks[cell] == BOARD_IMAGE_VALUE) {
+                    edit.values[cell] = value;
+                }
+            }
+            if (edit.marks[cell] == BOARD_IMAGE_VALUE && !edit.values[cell] && !eval_futures[cell].valid() &&
+                ((legal >> (HW2_M1 - cell)) & 1ULL)) {
+                const Board board = getData().history_elem.board;
+                const int level = getData().menu_elements.level;
+                const int policy = HW2_M1 - cell;
+                eval_futures[cell] = std::async(std::launch::async, [board, level, policy]() {
+                    Board b = board;
+                    Flip flip;
+                    calc_flip(&flip, &b, policy);
+                    b.move_board(&flip);
+                    return -ai(b, level, true, 0, false, false).value;
+                });
+            }
+        }
+    }
+
+
+    void draw_mark(int cell, int disc, bool monochrome) const {
+        const int mark = edit.marks[cell];
+        if (mark == BOARD_IMAGE_NOMARK) {
+            return;
+        }
+        const Vec2 center = cell_center(cell);
+        const auto& colors = getData().colors;
+        if (mark == BOARD_IMAGE_VALUE) {
+            const String value = edit.values[cell] ? Format(*edit.values[cell]) : U"...";
+            getData().fonts.font_bold(value).drawAt(22, center, monochrome ? colors.black : colors.white);
+            return;
+        }
+        const auto [tool, style] = board_image_tool_from_mark(mark);
+        const Color color = style == BOARD_IMAGE_STYLE_BLACK ? colors.black : colors.white;
+        const bool halo = ((style == BOARD_IMAGE_STYLE_BLACK && disc == BLACK) ||
+            (style == BOARD_IMAGE_STYLE_WHITE && (disc == WHITE || (disc == VACANT && monochrome))));
+        const Color halo_color = style == BOARD_IMAGE_STYLE_BLACK ? colors.white : colors.black;
+        if (tool == BOARD_IMAGE_TOOL_RECT) {
+            const RectF rect(Arg::center = center, BOARD_IMAGE_RECT_SIZE, BOARD_IMAGE_RECT_SIZE);
+            rect.draw(color);
+            if (halo) rect.drawFrame(1, 1, halo_color);
+        } else if (tool == BOARD_IMAGE_TOOL_STAR) {
+            const auto star = Shape2D::Star(BOARD_IMAGE_STAR_SIZE, center);
+            star.draw(color);
+            if (halo) star.drawFrame(BOARD_IMAGE_FRAME_WIDTH, halo_color);
+        }
+    }
 
 public:
     Board_image(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(false);
         back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         save_image_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("board_image", "save_image"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        Radio_button_element radio_button_elem;
-
+        Radio_button_element elem;
         mark_radio.init();
-        radio_button_elem.init(480, 100, getData().fonts.font, 15, language.get("board_image", "rect"), true, getData().colors.black);
-        mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 120, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.black);
-        mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 140, getData().fonts.font, 15, language.get("board_image", "rect"), false, getData().colors.white);
-        mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 160, getData().fonts.font, 15, language.get("board_image", "star"), false, getData().colors.white);
-        mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 180, getData().fonts.font, 15, language.get("board_image", "value"), false, getData().colors.white);
-        mark_radio.push(radio_button_elem);
-        radio_button_elem.init(480, 200, getData().fonts.font, 15, language.get("board_image", "nomark"), false, getData().colors.white);
-        mark_radio.push(radio_button_elem);
-
+        tool_ids = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
+        const char* tools[] = {"rect", "star", "value", "nomark"};
+        for (int i = 0; i < 4; ++i) {
+            elem.init(480, 100 + i * 24, getData().fonts.font, 15, language.get("board_image", tools[i]), i == 0);
+            mark_radio.push(elem);
+        }
+        mark_style_radio.init();
+        const char* styles[] = {"black", "white"};
+        for (int i = 0; i < 2; ++i) {
+            elem.init(480, 290 + i * 20, getData().fonts.font, 15, language.get("board_image", styles[i]), i == 0);
+            mark_style_radio.push(elem);
+        }
         coordinate_radio.init();
-        radio_button_elem.init(600, 100, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
-        coordinate_radio.push(radio_button_elem);
-        radio_button_elem.init(600, 120, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
-        coordinate_radio.push(radio_button_elem);
-        
+        elem.init(600, 100, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
+        coordinate_radio.push(elem);
+        elem.init(600, 120, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
+        coordinate_radio.push(elem);
         color_radio.init();
-        radio_button_elem.init(600, 180, getData().fonts.font, 15, language.get("board_image", "default"), true);
-        color_radio.push(radio_button_elem);
-        radio_button_elem.init(600, 200, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
-        color_radio.push(radio_button_elem);
-
+        elem.init(600, 180, getData().fonts.font, 15, language.get("board_image", "default"), true);
+        color_radio.push(elem);
+        elem.init(600, 200, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
+        color_radio.push(elem);
         outer_frame_color_radio.init();
-        radio_button_elem.init(600, 260, getData().fonts.font, 15, language.get("board_image", "white"), true);
-        outer_frame_color_radio.push(radio_button_elem);
-        radio_button_elem.init(600, 280, getData().fonts.font, 15, language.get("board_image", "dark_gray"), false);
-        outer_frame_color_radio.push(radio_button_elem);
+        elem.init(600, 260, getData().fonts.font, 15, language.get("board_image", "white"), true);
+        outer_frame_color_radio.push(elem);
+        elem.init(600, 280, getData().fonts.font, 15, language.get("board_image", "dark_gray"), false);
+        outer_frame_color_radio.push(elem);
 
-        mark_radio.set_checked(getData().settings.board_image_mark);
+        selected_mark = getData().settings.board_image_mark;
+        const auto [tool, style] = board_image_tool_from_mark(selected_mark);
+        mark_radio.set_checked(static_cast<int>(std::find(tool_ids.begin(), tool_ids.end(), tool) - tool_ids.begin()));
+        mark_style_radio.set_checked(style);
         coordinate_radio.set_checked(getData().settings.board_image_coordinate);
         color_radio.set_checked(getData().settings.board_image_color);
         outer_frame_color_radio.set_checked(getData().settings.board_image_outer_frame_color);
-
-        for (int i = 0; i < HW2; ++i) {
-            marks[i] = BOARD_IMAGE_NOMARK;
-            last_marked[i] = BOARD_IMAGE_NOT_CLICKED;
-            eval_values[i] = SCORE_INF;
-            eval_calculating[i] = false;
-        }
-        taking_screen_shot = false;
+        getData().graph_resources.prune_board_image_edits();
+        edit = getData().graph_resources.board_image_edits.load(position());
+        last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
     }
 
     void update() override {
         if (taking_screen_shot) {
-            std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
-            take_board_image_screen_shot(
-                getData().window_state.window_scale,
+            take_board_image_screen_shot(getData().window_state.window_scale,
                 getData().user_settings.screenshot_saving_dir,
-                transcript,
-                coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE
-            );
+                get_transcript(getData().graph_resources, getData().history_elem),
+                coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE);
             taking_screen_shot = false;
         }
-
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
+            save_edit();
             changeScene(U"Close", SCENE_FADE_TIME);
+            return;
         }
-        uint64_t legal = getData().history_elem.board.get_legal();
-        for (int cell = 0; cell < HW2; ++cell) {
-            if (eval_calculating[cell] && eval_futures[cell].valid()) {
-                if (eval_futures[cell].wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    eval_values[cell] = eval_futures[cell].get();
-                    eval_calculating[cell] = false;
-                }
-            }
-        }
-        for (int cell = 0; cell < HW2; ++cell) {
-            int x = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE;
-            int y = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE;
-            Rect cell_region(x, y, BOARD_CELL_SIZE, BOARD_CELL_SIZE);
-            if (cell_region.leftPressed()) {
-                const int policy = HW2_M1 - cell;
-                const bool is_legal = (legal >> policy) & 1ULL;
-                if (mark_radio.checked == BOARD_IMAGE_VALUE && !is_legal) {
-                    continue;
-                }
-                if (marks[cell] == mark_radio.checked && last_marked[cell] != mark_radio.checked) {
-                    marks[cell] = BOARD_IMAGE_NOMARK;
-                    last_marked[cell] = BOARD_IMAGE_MARK_DELETED;
-                } else if (last_marked[cell] != BOARD_IMAGE_MARK_DELETED) {
-                    marks[cell] = mark_radio.checked;
-                    last_marked[cell] = mark_radio.checked;
-                    if (mark_radio.checked == BOARD_IMAGE_VALUE) {
-                        if (eval_values[cell] == SCORE_INF && !eval_calculating[cell]) {
-                            Board board = getData().history_elem.board;
-                            const int level = getData().menu_elements.level;
-                            eval_calculating[cell] = true;
-                            eval_futures[cell] = std::async(std::launch::async, [board, level, policy]() {
-                                Board b = board;
-                                Flip flip;
-                                calc_flip(&flip, &b, policy);
-                                b.move_board(&flip);
-                                return -ai(b, level, true, 0, false, false).value;
-                            });
-                        }
-                    }
-                }
-            } else {
-                last_marked[cell] = BOARD_IMAGE_NOT_CLICKED;
-            }
-        }
-
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("in_out", "board_image")).draw(25, 480, 20, getData().colors.white);
         getData().fonts.font(language.get("board_image", "mark")).draw(15, 480, 70, getData().colors.white);
         getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 600, 70, getData().colors.white);
         getData().fonts.font(language.get("board_image", "color")).draw(15, 600, 150, getData().colors.white);
-        if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
-            getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 230, getData().colors.white);
-        }
         mark_radio.draw();
+        if (tool_ids[mark_radio.checked] <= BOARD_IMAGE_TOOL_STAR) {
+            getData().fonts.font(language.get("board_image", "mark_style")).draw(15, 480, 265, getData().colors.white);
+            mark_style_radio.draw();
+        }
         color_radio.draw();
         if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
+            getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 230, getData().colors.white);
             outer_frame_color_radio.draw();
         }
         coordinate_radio.draw();
-        getData().settings.board_image_mark = mark_radio.checked;
+        const int new_mark = board_image_mark_from_tool(tool_ids[mark_radio.checked], mark_style_radio.checked);
+        if (new_mark != selected_mark) {
+            last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
+            selected_mark = new_mark;
+        }
+        getData().settings.board_image_mark = selected_mark;
         getData().settings.board_image_coordinate = coordinate_radio.checked;
         getData().settings.board_image_color = color_radio.checked;
         getData().settings.board_image_outer_frame_color = outer_frame_color_radio.checked;
-        if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
-            const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
-            const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
-            const int clip_size_x = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7 + 2;
-            const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7 + 2;
-            Rect(clip_sx, clip_sy, clip_size_x, clip_size_y).draw(getData().colors.white);
-        }
-        const bool monochrome = color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME;
-        const bool include_coordinate = coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE;
-        draw_board(getData().fonts, getData().colors, getData().history_elem, monochrome, include_coordinate);
-        const Color outer_frame_color = monochrome ? getData().colors.black : 
-            ((outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_WHITE) ? getData().colors.white : getData().colors.dark_gray);
-        s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, outer_frame_color);
-
-        int board_arr[HW2];
-        getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);
-        for (int cell = 0; cell < HW2; ++cell) {
-            int x_center = BOARD_SX + (cell % HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-            int y_center = BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2;
-            if (marks[cell] == BOARD_IMAGE_BRECT || marks[cell] == BOARD_IMAGE_WRECT) {
-                Rect rect(Arg::center(x_center, y_center), BOARD_IMAGE_RECT_SIZE, BOARD_IMAGE_RECT_SIZE);
-                if (marks[cell] == BOARD_IMAGE_BRECT) {
-                    rect.draw(getData().colors.black);
-                    if (board_arr[cell] == BLACK) {
-                        rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH / 2, BOARD_IMAGE_FRAME_WIDTH / 2, getData().colors.white);
-                    }
-                } else if (marks[cell] == BOARD_IMAGE_WRECT) {
-                    rect.draw(getData().colors.white);
-                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME)) {
-                        rect.drawFrame(BOARD_IMAGE_FRAME_WIDTH / 2, BOARD_IMAGE_FRAME_WIDTH / 2, getData().colors.black);
-                    }
-                }
-            } else if (marks[cell] == BOARD_IMAGE_BSTAR || marks[cell] == BOARD_IMAGE_WSTAR) {
-                if (marks[cell] == BOARD_IMAGE_BSTAR) {
-                    Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).draw(getData().colors.black);
-                    if (board_arr[cell] == BLACK) {
-                        Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).drawFrame(BOARD_IMAGE_FRAME_WIDTH, getData().colors.white);
-                    }
-                } else if (marks[cell] == BOARD_IMAGE_WSTAR) {
-                    Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).draw(getData().colors.white);
-                    if (board_arr[cell] == WHITE || (board_arr[cell] == VACANT && color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME)) {
-                        Shape2D::Star(BOARD_IMAGE_STAR_SIZE, Vec2{ x_center, y_center }).drawFrame(BOARD_IMAGE_FRAME_WIDTH, getData().colors.black);
-                    }
-                }
-            } else if (marks[cell] == BOARD_IMAGE_VALUE) {
-                const String value_str = eval_calculating[cell] ? U"…" : Format(eval_values[cell]);
-                Color color = getData().colors.white;
-                if (monochrome) {
-                    color = getData().colors.black;
-                }
-                const String display_value_str = eval_calculating[cell] ? U"..." : Format(eval_values[cell]);
-                getData().fonts.font_bold(display_value_str).drawAt(22, x_center, y_center, color);
-            }
-        }
-
-        save_image_button.draw();
         back_button.draw();
-
+        save_image_button.draw();
+        if (back_button.clicked() || KeyEscape.pressed()) {
+            save_edit();
+            getData().graph_resources.need_init = false;
+            changeScene(U"Main_scene", SCENE_FADE_TIME);
+            return;
+        }
         if (save_image_button.clicked()) {
             taking_screen_shot = true;
             ScreenCapture::RequestCurrentFrame();
         }
-        if (back_button.clicked() || KeyEscape.pressed()) {
-            getData().graph_resources.need_init = false;
-            changeScene(U"Main_scene", SCENE_FADE_TIME);
+        update_board_input();
+        update_evaluations();
+        const bool monochrome = color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME;
+        const bool include_coordinate = coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE;
+        if (monochrome) {
+            Rect(BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1,
+                 BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1,
+                 BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 9,
+                 BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 9).draw(getData().colors.white);
+        }
+        draw_board(getData().fonts, getData().colors, getData().history_elem, monochrome, include_coordinate);
+        const Color frame_color = monochrome ? getData().colors.black :
+            (outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_WHITE ? getData().colors.white : getData().colors.dark_gray);
+        s3d::RoundRect(BOARD_SX, BOARD_SY, BOARD_CELL_SIZE * HW, BOARD_CELL_SIZE * HW, BOARD_ROUND_DIAMETER).drawFrame(0, BOARD_ROUND_FRAME_WIDTH, frame_color);
+        int board_arr[HW2];
+        getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);
+        for (int cell = 0; cell < HW2; ++cell) {
+            draw_mark(cell, board_arr[cell], monochrome);
         }
     }
 
-    void draw() const override {
-
-    }
+    void draw() const override {}
 };

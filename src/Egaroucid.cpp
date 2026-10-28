@@ -121,6 +121,7 @@ void Main() {
 
         // scene
         scene_manager.update();
+        scene_manager.get()->graph_resources.prune_board_image_edits();
 
         // log
         #if !GUI_OPEN_CONSOLE

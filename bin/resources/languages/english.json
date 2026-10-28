@@ -397,6 +397,8 @@
         "save_image": "Save Image",
         "rect": "■",
         "star": "★",
+        "mark_style": "Mark style",
+        "black": "Black",
         "nomark": "Delete",
         "default": "Default",
         "monochrome": "Monochrome",

@@ -13,6 +13,7 @@
 #include <iostream>
 #include <Siv3D.hpp>
 #include "./../../../engine/engine_all.hpp"
+#include "../board_image_edit.hpp"
 
 constexpr int UMIGAME_VALUE_SCORE_MIN = 0;
 constexpr int UMIGAME_VALUE_SCORE_MAX = 18;
@@ -549,12 +550,6 @@ constexpr int BOARD_IMAGE_OUTER_FRAME_WHITE = 0;
 constexpr int BOARD_IMAGE_OUTER_FRAME_DARK = 1;
 constexpr int BOARD_IMAGE_COORDINATE_INCLUDE = 0;
 constexpr int BOARD_IMAGE_COORDINATE_EXCLUDE = 1;
-constexpr int BOARD_IMAGE_BRECT = 0;
-constexpr int BOARD_IMAGE_BSTAR = 1;
-constexpr int BOARD_IMAGE_WRECT = 2;
-constexpr int BOARD_IMAGE_WSTAR = 3;
-constexpr int BOARD_IMAGE_VALUE = 4;
-constexpr int BOARD_IMAGE_NOMARK = 5;
 
 struct Settings {
     int n_threads;
@@ -1037,6 +1032,7 @@ struct Menu_elements {
 
 struct Graph_resources {
     std::vector<History_elem> nodes[2];
+    Board_image_edit_cache board_image_edits;
     int n_discs;
     int delta;
     int branch;
@@ -1050,11 +1046,25 @@ struct Graph_resources {
     void init() {
         nodes[0].clear();
         nodes[1].clear();
+        board_image_edits.positions.clear();
         n_discs = 4;
         delta = 0;
         branch = 0;
         xot_start_n_discs = -1;
         need_init = true;
+    }
+
+    void prune_board_image_edits() {
+        if (board_image_edits.positions.empty()) {
+            return;
+        }
+        std::vector<Board_image_position> live_positions;
+        for (const auto& branch_nodes : nodes) {
+            for (const History_elem& node : branch_nodes) {
+                live_positions.emplace_back(node.board.player, node.board.opponent, node.player);
+            }
+        }
+        board_image_edits.retain(live_positions);
     }
 
     int node_find(int mode, int n_discs) {

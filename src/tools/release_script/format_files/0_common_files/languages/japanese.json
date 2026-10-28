@@ -399,6 +399,8 @@
         "save_image": "画像を保存",
         "rect": "■",
         "star": "★",
+        "mark_style": "表示方法",
+        "black": "黒",
         "nomark": "削除",
         "default": "デフォルト",
         "monochrome": "モノクロ",

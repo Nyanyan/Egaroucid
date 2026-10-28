@@ -399,6 +399,8 @@
         "save_image": "保存图片",
         "rect": "■",
         "star": "★",
+        "mark_style": "标记样式",
+        "black": "黑",
         "nomark": "删除",
         "default": "默认",
         "monochrome": "单色",

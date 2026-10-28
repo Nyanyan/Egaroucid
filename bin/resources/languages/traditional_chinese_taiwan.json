@@ -397,6 +397,8 @@
         "save_image": "儲存圖片",
         "rect": "■",
         "star": "★",
+        "mark_style": "標記樣式",
+        "black": "黑",
         "nomark": "刪除",
         "default": "預設",
         "monochrome": "單色",
