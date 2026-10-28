@@ -24,10 +24,12 @@ constexpr int BOARD_IMAGE_WRECT = 2;
 constexpr int BOARD_IMAGE_WSTAR = 3;
 constexpr int BOARD_IMAGE_VALUE = 4;
 constexpr int BOARD_IMAGE_NOMARK = 5;
-constexpr int BOARD_IMAGE_MARK_MAX = BOARD_IMAGE_NOMARK;
+constexpr int BOARD_IMAGE_FLIP = 11;
+constexpr int BOARD_IMAGE_MARK_MAX = BOARD_IMAGE_FLIP;
 
 constexpr int BOARD_IMAGE_TOOL_RECT = 0;
 constexpr int BOARD_IMAGE_TOOL_STAR = 1;
+constexpr int BOARD_IMAGE_TOOL_FLIP = 3;
 constexpr int BOARD_IMAGE_TOOL_VALUE = 4;
 constexpr int BOARD_IMAGE_TOOL_ERASE = 6;
 constexpr int BOARD_IMAGE_STYLE_BLACK = 0;
@@ -42,13 +44,14 @@ inline int board_image_mark_from_tool(int tool, int style) {
         return marks[tool][std::clamp(style, BOARD_IMAGE_STYLE_BLACK, BOARD_IMAGE_STYLE_WHITE)];
     }
     switch (tool) {
+    case BOARD_IMAGE_TOOL_FLIP: return BOARD_IMAGE_FLIP;
     case BOARD_IMAGE_TOOL_VALUE: return BOARD_IMAGE_VALUE;
     default: return BOARD_IMAGE_NOMARK;
     }
 }
 
 inline std::pair<int, int> board_image_tool_from_mark(int mark) {
-    constexpr int tools[] = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
+    constexpr int tools[] = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_FLIP, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
     for (int tool : tools) {
         for (int style = BOARD_IMAGE_STYLE_BLACK; style <= BOARD_IMAGE_STYLE_WHITE; ++style) {
             if (board_image_mark_from_tool(tool, style) == mark) {

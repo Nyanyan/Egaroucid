@@ -105,6 +105,20 @@ private:
         }
     }
 
+    static void draw_flip(const Vec2& center, const Color& color, double thickness = 2) {
+        constexpr double radius = 11;
+        for (int half = 0; half < 2; ++half) {
+            const double start = -Math::HalfPi + 0.22 + half * Math::Pi;
+            const double angle = Math::Pi - 0.52;
+            Circle(center, radius).drawArc(start, angle, thickness / 2, thickness / 2, color);
+            const double end = start + angle;
+            const Vec2 radial{std::sin(end), -std::cos(end)};
+            const Vec2 tangent{std::cos(end), std::sin(end)};
+            const Vec2 tip = center + radial * radius + tangent * 3;
+            const Vec2 base = tip - tangent * (5 + thickness);
+            Triangle(tip, base + radial * (2 + thickness), base - radial * (2 + thickness)).draw(color);
+        }
+    }
 
     void draw_mark(int cell, int disc, bool monochrome) const {
         const int mark = edit.marks[cell];
@@ -113,6 +127,14 @@ private:
         }
         const Vec2 center = cell_center(cell);
         const auto& colors = getData().colors;
+        const Color contrast = disc == WHITE ? colors.black : colors.white;
+        if (mark == BOARD_IMAGE_FLIP) {
+            if (disc == VACANT && monochrome) {
+                draw_flip(center, colors.black, 4);
+            }
+            draw_flip(center, contrast);
+            return;
+        }
         if (mark == BOARD_IMAGE_VALUE) {
             const String value = edit.values[cell] ? Format(*edit.values[cell]) : U"...";
             getData().fonts.font_bold(value).drawAt(22, center, monochrome ? colors.black : colors.white);
@@ -142,9 +164,9 @@ public:
         clear_button.init(600, 305, 160, 30, 10, language.get("board_image", "clear"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
         mark_radio.init();
-        tool_ids = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
-        const char* tools[] = {"rect", "star", "value", "nomark"};
-        for (int i = 0; i < 4; ++i) {
+        tool_ids = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_FLIP, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
+        const char* tools[] = {"rect", "star", "flip", "value", "nomark"};
+        for (int i = 0; i < 5; ++i) {
             elem.init(480, 100 + i * 24, getData().fonts.font, 15, language.get("board_image", tools[i]), i == 0);
             mark_radio.push(elem);
         }
