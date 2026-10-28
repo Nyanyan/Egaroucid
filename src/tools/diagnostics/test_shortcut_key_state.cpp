@@ -186,6 +186,60 @@ int main() {
         observe(WM_KEYDOWN, 'A', 0x1E);
         require(!match({U"A"}).down_found, "extra B was ignored");
     });
+    test("missing Caps key-up recovers without a focus change", [] {
+        observe(WM_KEYDOWN, VK_CAPITAL, 0x3A);
+        auto& state = windows_shortcut_message_state();
+        state.pending_down_vks.clear(); // The first frame consumed the down.
+        windows_shortcut_reconcile_message_keys_unlocked(state);
+        expect_normal_shortcuts();
+        observe(WM_KEYDOWN, 0xF0, 0x3A);
+        require(state.pressed_vks.count(0xF0) != 0, "stale scan survived reconciliation");
+        observe(WM_KEYUP, VK_CAPITAL, 0x3A);
+    });
+    test("held Caps remains pressed during reconciliation", [] {
+        observe(WM_KEYDOWN, VK_CAPITAL, 0x3A);
+        auto& state = windows_shortcut_message_state();
+        state.pending_down_vks.clear();
+        async_pressed.insert(VK_CAPITAL);
+        windows_shortcut_reconcile_message_keys_unlocked(state);
+        require(match({U"CapsLock"}).pressed_found, "held Caps was discarded");
+    });
+    test("reconciliation preserves a new short down for its first frame", [] {
+        observe(WM_KEYDOWN, 'A', 0x1E);
+        auto& state = windows_shortcut_message_state();
+        windows_shortcut_reconcile_message_keys_unlocked(state);
+        require(match({U"A"}).down_found, "new down was discarded before its first frame");
+        state.pending_down_vks.clear();
+        windows_shortcut_reconcile_message_keys_unlocked(state);
+        require(!match({U"A"}).pressed_found, "released key was not removed on the next frame");
+    });
+    test("completed short tap keeps its pending edge during reconciliation", [] {
+        observe(WM_KEYDOWN, 'A', 0x1E);
+        observe(WM_KEYUP, 'A', 0x1E);
+        auto& state = windows_shortcut_message_state();
+        windows_shortcut_reconcile_message_keys_unlocked(state);
+        require(state.pending_down_vks.count('A') != 0, "completed tap edge was discarded");
+    });
+    test("reconciliation retains held right Ctrl and its generic alias", [] {
+        observe(WM_KEYDOWN, VK_CONTROL, 0x1D);
+        observe(WM_KEYDOWN, VK_CONTROL, 0x1D, true);
+        auto& state = windows_shortcut_message_state();
+        state.pending_down_vks.clear();
+        async_pressed = {VK_CONTROL, VK_RCONTROL};
+        windows_shortcut_reconcile_message_keys_unlocked(state);
+        require(state.pressed_vks.count(VK_LCONTROL) == 0, "released left Ctrl survived");
+        observe(WM_KEYDOWN, 'V', 0x2F);
+        require(match({U"Ctrl", U"V"}).down_found, "held right Ctrl alias was cleared");
+    });
+    test("unmapped IME fallback clears stale scan identities", [] {
+        observe(WM_KEYDOWN, VK_CAPITAL, 0x3A);
+        windows_shortcut_message_state().pending_down_vks.clear();
+        observe(WM_KEYDOWN, VK_PROCESSKEY);
+        observe(WM_KEYDOWN, 0xF0, 0x3A);
+        require(windows_shortcut_message_state().pressed_vks.count(0xF0) != 0, "IME fallback left a stale scan");
+        observe(WM_KEYUP, VK_CAPITAL, 0x3A);
+        expect_normal_shortcuts();
+    });
 
     std::cout << cases - failures << '/' << cases << " passed\n";
     return failures ? 1 : 0;

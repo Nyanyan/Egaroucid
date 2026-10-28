@@ -1105,6 +1105,34 @@ inline void windows_shortcut_clear_message_keys_unlocked(Windows_shortcut_messag
     state.pressed_scan_codes.clear();
 }
 
+inline void windows_shortcut_forget_vk_unlocked(Windows_shortcut_message_state& state, const int vk) {
+    for (auto it = state.pressed_scan_codes.begin(); it != state.pressed_scan_codes.end();) {
+        if (it->second == vk || windows_shortcut_generic_modifier_vk(it->second) == vk) {
+            it = state.pressed_scan_codes.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    windows_shortcut_remove_vk_with_aliases(&state.pressed_vks, vk);
+}
+
+inline void windows_shortcut_reconcile_message_keys_unlocked(Windows_shortcut_message_state& state) {
+    // Repair missing key-up messages without discarding a newly observed down
+    // before the frame can consume it (the physical key may already be up).
+    const auto pressed_vks = state.pressed_vks;
+    for (const int vk : pressed_vks) {
+        if (state.pending_down_vks.find(vk) != state.pending_down_vks.end()) {
+            continue;
+        }
+        // Generic modifier entries are aliases of the held left/right keys.
+        const bool is_alias = std::any_of(state.pressed_vks.begin(), state.pressed_vks.end(),
+            [vk](const int held_vk) { return windows_shortcut_generic_modifier_vk(held_vk) == vk; });
+        if (!is_alias && !windows_vk_pressed(vk)) {
+            windows_shortcut_forget_vk_unlocked(state, vk);
+        }
+    }
+}
+
 inline void windows_shortcut_clear_message_keys() {
     std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
     windows_shortcut_clear_message_keys_unlocked(windows_shortcut_message_state());
@@ -1177,7 +1205,7 @@ inline void windows_shortcut_update_unmapped_process_key_state_unlocked(
                 windows_shortcut_add_vk_with_aliases(&state.pending_down_vks, vk);
             }
         } else if (state.pressed_vks.find(vk) != state.pressed_vks.end()) {
-            windows_shortcut_remove_vk_with_aliases(&state.pressed_vks, vk);
+            windows_shortcut_forget_vk_unlocked(state, vk);
         }
     }
 }
@@ -1625,6 +1653,8 @@ inline Windows_shortcut_keyboard_state collect_windows_shortcut_keyboard_state()
             state.focused = window_focused && message_state.focused;
             if (!state.focused) {
                 windows_shortcut_clear_message_keys_unlocked(message_state);
+            } else {
+                windows_shortcut_reconcile_message_keys_unlocked(message_state);
             }
             state.pressed_vks = message_state.pressed_vks;
             state.down_vks = message_state.pending_down_vks;
