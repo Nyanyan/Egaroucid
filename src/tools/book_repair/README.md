@@ -18,8 +18,10 @@ The Python runner builds with MSVC `/O2 /arch:AVX2`; other platforms use g++ wit
 `-O3 -march=native -pthread` (Windows/MSVC is the validated configuration).
 Python 3.9+ is required. Optional `psutil` adds measured CPU, thread and RAM status.
 
-Hash levels 25..29 are supported. A level-29 table contains 536,870,912 entries
-(16 GiB with the current 32-byte entry). The supplied resources stop at level 27;
+Hash levels 25..29 are supported. A level-29 table contains 536,870,912 entries.
+The validated MSVC/AVX2 build uses 24 bytes per entry (12 GiB for the table and
+about 12.3 GiB for the repair process); other build configurations may differ.
+The supplied resources stop at level 27;
 prepare a separate resource snapshot for a larger table:
 
 ```powershell
