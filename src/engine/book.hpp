@@ -2277,7 +2277,7 @@ class Book {
         }
 
         /*
-            @brief functions without lock for the walks of book learning (book_walk_by_error())
+            @brief functions without lock for the scans of book learning (book_scan_by_error())
 
             Use them only while no thread registers / deletes boards. Other threads may change the flags of the
             boards at the same time: only the value of a board is read here (the flags are other bits).
@@ -3331,7 +3331,7 @@ class Book {
 
             The test and the flag are done while the segment of the board is locked:
             when several threads call this function for the same board, only one of them gets true.
-            (Used by the walks of book learning, which visit each board once with several threads.)
+            (Used by the scans of book learning, which visit each board once with several threads.)
 
             @param representative       a board, which must be the representative board
             @param res                  the element (as it was before the flag) is copied here if true is returned

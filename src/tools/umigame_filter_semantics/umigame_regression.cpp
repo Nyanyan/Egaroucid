@@ -1,7 +1,7 @@
 /*
     Bounded real-book regression verifier for generalized Umigame conditions.
 
-    The verifier loads a real Egaroucid book, walks book-reachable positions
+    The verifier loads a real Egaroucid book, scans book-reachable positions
     from the initial board, and compares calculate_umigame() with an independent
     oracle that applies a black-perspective score range and cumulative local
     loss budget recursively at every internal node.

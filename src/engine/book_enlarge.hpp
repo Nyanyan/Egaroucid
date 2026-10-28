@@ -68,20 +68,20 @@ inline bool book_deviate_todo_less(const Book_deviate_todo_elem &a, const Book_d
 
 
 /*
-    Walk of the book for book learning, with all threads
+    Scan of the book for book learning, with all threads
 
-    The walks of book learning (positions to expand, leaves to recalculate) start at a root board and
+    The scans of book learning (positions to expand, leaves to recalculate) start at a root board and
     follow the registered moves while the error of each move and the sum of the errors are within the limits.
-    They were recursive functions on one thread: with a book of 650M boards, one walk for the positions
+    They were recursive functions on one thread: with a book of 650M boards, one scan for the positions
     to expand visited 170M boards and took 6 minutes in every loop of book_deviate(), whatever the number of threads.
 
-    Here the boards are walked in order of the sum of the errors (0 first), and the boards with the same sum are
-    walked round by round: the boards of a round are processed by all threads, and the boards after their
+    Here the boards are scanned in order of the sum of the errors (0 first), and the boards with the same sum are
+    scanned round by round: the boards of a round are processed by all threads, and the boards after their
     moves without error make the next round. The boards after a move with an error wait for their sum.
 
-    A board is walked once (flag "seen" of the book), by the first walk which reaches it:
-    - a board which can be reached with several sums of errors is walked with the smallest one
-      (the recursive function walked it with the sum of the path which reached it first, which depended
+    A board is scanned once (flag "seen" of the book), by the first scan which reaches it:
+    - a board which can be reached with several sums of errors is scanned with the smallest one
+      (the recursive function scanned it with the sum of the path which reached it first, which depended
       on the order of the moves: with a larger sum than necessary, fewer moves were followed from it),
     - in a round, the boards with BLACK to move are processed before the boards with WHITE to move
       (the same board can be reached with both only by lines with a different number of passes),
@@ -90,17 +90,17 @@ inline bool book_deviate_todo_less(const Book_deviate_todo_elem &a, const Book_d
 */
 
 // number of boards given to a thread at once
-constexpr size_t BOOK_WALK_CHUNK_SIZE = 256;
+constexpr size_t BOOK_SCAN_CHUNK_SIZE = 256;
 
 /*
     @brief what a thread found in the boards of a chunk
 
-    same:   boards after a move without error (by player to move): walked in the next round
-    later:  boards after a move with an error of 1 or more (by player to move and error): walked later
+    same:   boards after a move without error (by player to move): scanned in the next round
+    later:  boards after a move with an error of 1 or more (by player to move and error): scanned later
     found:  elements for the caller (positions to expand, leaves to recalculate)
 */
 template<class Found>
-struct Book_walk_output {
+struct Book_scan_output {
     std::vector<Board> same[2];
     std::vector<std::vector<Board>> later[2];
     std::vector<Found> found;
@@ -108,7 +108,7 @@ struct Book_walk_output {
     /*
         @brief add the board after a move
 
-        @param board                board after the move (as it is: the walk passes if needed and makes it representative when the board is walked)
+        @param board                board after the move (as it is: the scan passes if needed and makes it representative when the board is scanned)
         @param player               player to move
         @param error                error of the move (0 or less: no error)
     */
@@ -125,17 +125,17 @@ struct Book_walk_output {
 };
 
 /*
-    @brief walk the book from a board in order of the sum of the errors, with all threads
+    @brief scan the book from a board in order of the sum of the errors, with all threads
 
-    Boards must not be registered / deleted during the walk. The flag "seen" must be reset before.
+    Boards must not be registered / deleted during the scan. The flag "seen" must be reset before.
 
     @param root_board           board to start from
     @param root_player          player to move of root_board
     @param max_error_sum        maximum of the sum of the errors
-    @param book_learning        the walk stops if this becomes false
+    @param book_learning        the scan stops if this becomes false
     @param board_copy           board pointer for screen drawing
     @param player               player information for screen drawing
-    @param visit                visit(const Board &board, int player, int remaining_error, Book_walk_output<Found> &output) is called for each board
+    @param visit                visit(const Board &board, int player, int remaining_error, Book_scan_output<Found> &output) is called for each board
                                 reached (from several threads at the same time). board is the representative board, after a pass if the
                                 player had no move (game-over boards are not visited), player is the player to move.
                                 It checks and flags the board with book.flag_if_not_seen(),
@@ -143,7 +143,7 @@ struct Book_walk_output {
     @param collect              collect(int error_sum, std::vector<Found> &found) is called on the calling thread for the output of each chunk
 */
 template<class Found, class Visit, class Collect>
-void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bool *book_learning, Board *board_copy, int *player, Visit &&visit, Collect &&collect) {
+void book_scan_by_error(Board root_board, int root_player, int max_error_sum, bool *book_learning, Board *board_copy, int *player, Visit &&visit, Collect &&collect) {
     const int n_error_sums = std::max(0, max_error_sum) + 1;
     std::vector<std::vector<Board>> waiting[2]; // [player][sum of errors]
     waiting[BLACK].resize(n_error_sums);
@@ -165,16 +165,16 @@ void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bo
                 }
                 *board_copy = boards[0];
                 *player = round_player;
-                const int n_chunks = (int)((n_boards + BOOK_WALK_CHUNK_SIZE - 1) / BOOK_WALK_CHUNK_SIZE);
-                std::vector<Book_walk_output<Found>> outputs(n_chunks);
-                auto walk_chunk = [&boards, &outputs, &visit, n_boards, round_player, remaining_error, book_learning](int chunk_idx) {
-                    const size_t chunk_start = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE;
-                    const size_t chunk_end = std::min(n_boards, chunk_start + BOOK_WALK_CHUNK_SIZE);
+                const int n_chunks = (int)((n_boards + BOOK_SCAN_CHUNK_SIZE - 1) / BOOK_SCAN_CHUNK_SIZE);
+                std::vector<Book_scan_output<Found>> outputs(n_chunks);
+                auto scan_chunk = [&boards, &outputs, &visit, n_boards, round_player, remaining_error, book_learning](int chunk_idx) {
+                    const size_t chunk_start = (size_t)chunk_idx * BOOK_SCAN_CHUNK_SIZE;
+                    const size_t chunk_end = std::min(n_boards, chunk_start + BOOK_SCAN_CHUNK_SIZE);
                     // pass if needed and representative board, for all boards of the chunk first: the memory of the book
                     // which the visits read is asked in advance (the table is much larger than the cache, and the
                     // visits of a chunk would wait for the memory one after the other)
-                    Board chunk_boards[BOOK_WALK_CHUNK_SIZE];
-                    int chunk_players[BOOK_WALK_CHUNK_SIZE]; // -1: game over (not visited)
+                    Board chunk_boards[BOOK_SCAN_CHUNK_SIZE];
+                    int chunk_players[BOOK_SCAN_CHUNK_SIZE]; // -1: game over (not visited)
                     for (size_t i = chunk_start; i < chunk_end; ++i) {
                         Board board = boards[i];
                         int board_player = round_player;
@@ -203,12 +203,12 @@ void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bo
                     }
                 };
                 if (n_chunks == 1) { // a few boards: no task
-                    walk_chunk(0);
+                    scan_chunk(0);
                 } else {
-                    book.parallel_for(n_chunks, walk_chunk);
+                    book.parallel_for(n_chunks, scan_chunk);
                 }
                 // Join chunks here; duplicate ownership can vary between runs, so callers sort the candidates.
-                for (Book_walk_output<Found> &output: outputs) {
+                for (Book_scan_output<Found> &output: outputs) {
                     for (int child_player = BLACK; child_player <= WHITE; ++child_player) {
                         next_round[child_player].insert(next_round[child_player].end(), output.same[child_player].begin(), output.same[child_player].end());
                         for (int error = 1; error < (int)output.later[child_player].size(); ++error) {
@@ -230,8 +230,8 @@ void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bo
 /*
     @brief find the boards whose leaf has to be recalculated
 
-    The tests of each board are the ones of the former recursive function; the walk is done by
-    book_walk_by_error() (all threads; a board is walked with its smallest sum of errors).
+    The tests of each board are the ones of the former recursive function; the scan is done by
+    book_scan_by_error() (all threads; a board is scanned with its smallest sum of errors).
     (The former test "already searched?" looked for the representative board in the list: a board in the list
     was always flagged "seen" too, so the test of the flag is enough.)
 
@@ -240,7 +240,7 @@ void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bo
     @param level                level of the leaves
     @param todo_list            the boards are added here, in order of the sum of the errors
     @param all_strt             start time (for the log)
-    @param book_learning        the walk stops if this becomes false
+    @param book_learning        the scan stops if this becomes false
     @param board_copy           board pointer for screen drawing
     @param player               player information for screen drawing
     @param only_illegal         true: only the invalid leaves, false: also the leaves with a lower level
@@ -248,14 +248,14 @@ void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bo
 void get_book_recalculate_leaf_todo(Book_deviate_todo_elem root_elem, int book_depth, int level, std::vector<Book_deviate_todo_elem> &todo_list, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, bool only_illegal) {
     const int max_error_per_move = root_elem.max_error_per_move;
     const int max_leaf_error = root_elem.max_leaf_error;
-    auto visit = [book_depth, level, only_illegal, max_error_per_move, max_leaf_error](const Board &reached_board, int reached_player, int remaining_error, Book_walk_output<Book_deviate_todo_elem> &output) {
+    auto visit = [book_depth, level, only_illegal, max_error_per_move, max_leaf_error](const Board &reached_board, int reached_player, int remaining_error, Book_scan_output<Book_deviate_todo_elem> &output) {
         Book_deviate_todo_elem todo_elem;
         todo_elem.board = reached_board;
         todo_elem.player = reached_player;
         todo_elem.max_error_per_move = max_error_per_move;
         todo_elem.remaining_error = remaining_error;
         todo_elem.max_leaf_error = max_leaf_error;
-        // (pass and game over: done by book_walk_by_error())
+        // (pass and game over: done by book_scan_by_error())
         // check depth
         if (todo_elem.board.n_discs() > book_depth + 4) {
             return;
@@ -316,7 +316,7 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem root_elem, int book_d
     auto collect = [&todo_list](int error_sum, std::vector<Book_deviate_todo_elem> &found) {
         todo_list.insert(todo_list.end(), found.begin(), found.end());
     };
-    book_walk_by_error<Book_deviate_todo_elem>(root_elem.board, root_elem.player, root_elem.remaining_error, book_learning, board_copy, player, visit, collect);
+    book_scan_by_error<Book_deviate_todo_elem>(root_elem.board, root_elem.player, root_elem.remaining_error, book_learning, board_copy, player, visit, collect);
     if (global_searching && *book_learning) {
         std::sort(todo_list.begin(), todo_list.end(), book_deviate_todo_less);
     }
@@ -487,14 +487,14 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
 
 
 /*
-    @brief find the positions to expand in book learning (one walk; book_deviate() does two of them)
+    @brief find the positions to expand in book learning (one scan; book_deviate() does two of them)
 
     The player best_move_only_player follows only the best moves, the other player the moves within the errors.
     The tests of each board are the ones of the former recursive function. Differences:
-    - the walk is done by book_walk_by_error() (all threads; a board is walked with its smallest sum of errors),
+    - the scan is done by book_scan_by_error() (all threads; a board is scanned with its smallest sum of errors),
     - the former first test "already searched?" looked for the board in the list of positions to expand before
       the board was made representative, so it matched only when the board was reached in its representative
-      orientation (and then the moves of a position found by the first walk were not followed by the second walk).
+      orientation (and then the moves of a position found by the first scan were not followed by the second scan).
       Whether it matched depended on the path which reached the board first. It is not done any more: with the
       bundled book, 2,145 positions instead of 2,142 were found without it (v7.8.3, level 7, depth 18).
 
@@ -503,7 +503,7 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
     @param book_depth           depth of the book
     @param todo_by_error        the positions to expand are added here: todo_by_error[sum of the errors]
     @param all_strt             start time of book learning (for the log)
-    @param book_learning        the walk stops if this becomes false
+    @param book_learning        the scan stops if this becomes false
     @param board_copy           board pointer for screen drawing
     @param player               player information for screen drawing
     @param n_loop               loop of book_deviate() (for the log)
@@ -511,14 +511,14 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
 void get_book_deviate_todo(Book_deviate_todo_elem root_elem, int best_move_only_player, int book_depth, std::vector<std::vector<Book_deviate_todo_elem>> &todo_by_error, uint64_t all_strt, bool *book_learning, Board *board_copy, int *player, int n_loop) {
     const int max_error_per_move = root_elem.max_error_per_move;
     const int max_leaf_error = root_elem.max_leaf_error;
-    auto visit = [best_move_only_player, book_depth, max_error_per_move, max_leaf_error](const Board &reached_board, int reached_player, int remaining_error, Book_walk_output<Book_deviate_todo_elem> &output) {
+    auto visit = [best_move_only_player, book_depth, max_error_per_move, max_leaf_error](const Board &reached_board, int reached_player, int remaining_error, Book_scan_output<Book_deviate_todo_elem> &output) {
         Book_deviate_todo_elem todo_elem;
         todo_elem.board = reached_board;
         todo_elem.player = reached_player;
         todo_elem.max_error_per_move = max_error_per_move;
         todo_elem.remaining_error = remaining_error;
         todo_elem.max_leaf_error = max_leaf_error;
-        // (pass and game over: done by book_walk_by_error())
+        // (pass and game over: done by book_scan_by_error())
         // check depth
         if (todo_elem.board.n_discs() >= book_depth + 4) {
             return;
@@ -579,7 +579,7 @@ void get_book_deviate_todo(Book_deviate_todo_elem root_elem, int best_move_only_
         todo_by_error[error_sum].insert(todo_by_error[error_sum].end(), found.begin(), found.end());
         n_todo += found.size();
     };
-    book_walk_by_error<Book_deviate_todo_elem>(root_elem.board, root_elem.player, root_elem.remaining_error, book_learning, board_copy, player, visit, collect);
+    book_scan_by_error<Book_deviate_todo_elem>(root_elem.board, root_elem.player, root_elem.remaining_error, book_learning, board_copy, player, visit, collect);
     if (global_searching && *book_learning) {
         for (auto &elems: todo_by_error) {
             std::sort(elems.begin(), elems.end(), book_deviate_todo_less);
@@ -589,24 +589,24 @@ void get_book_deviate_todo(Book_deviate_todo_elem root_elem, int best_move_only_
 }
 
 /*
-    @brief make the list of the positions to expand from the results of the two walks of book_deviate()
+    @brief make the list of the positions to expand from the results of the two scans of book_deviate()
 
-    A position found by both walks is kept once (the one of the first walk, as before).
-    The positions are in order of the sum of the errors (the lines without error first), first walk before second walk.
+    A position found by both scans is kept once (the one of the first scan, as before).
+    The positions are in order of the sum of the errors (the lines without error first), first scan before second scan.
     (Formerly: the order of the std::unordered_set which held them.)
     The flag "seen" must be reset before, and is used: reset it afterwards.
 
-    @param first                result of the first walk
-    @param second               result of the second walk
+    @param first                result of the first scan
+    @param second               result of the second scan
     @return the positions to expand
 */
 std::vector<Book_deviate_todo_elem> merge_book_deviate_todo(const std::vector<std::vector<Book_deviate_todo_elem>> &first, const std::vector<std::vector<Book_deviate_todo_elem>> &second) {
-    // flag the positions of the first walk
+    // flag the positions of the first scan
     for (const std::vector<Book_deviate_todo_elem> &elems: first) {
-        const int n_chunks = (int)((elems.size() + BOOK_WALK_CHUNK_SIZE - 1) / BOOK_WALK_CHUNK_SIZE);
+        const int n_chunks = (int)((elems.size() + BOOK_SCAN_CHUNK_SIZE - 1) / BOOK_SCAN_CHUNK_SIZE);
         book.parallel_for(n_chunks, [&elems](int chunk_idx) {
-            const size_t chunk_end = std::min(elems.size(), (size_t)(chunk_idx + 1) * BOOK_WALK_CHUNK_SIZE);
-            for (size_t i = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE; i < chunk_end; ++i) {
+            const size_t chunk_end = std::min(elems.size(), (size_t)(chunk_idx + 1) * BOOK_SCAN_CHUNK_SIZE);
+            for (size_t i = (size_t)chunk_idx * BOOK_SCAN_CHUNK_SIZE; i < chunk_end; ++i) {
                 book.flag_book_elem(elems[i].board);
             }
         });
@@ -615,13 +615,13 @@ std::vector<Book_deviate_todo_elem> merge_book_deviate_todo(const std::vector<st
     std::vector<char> is_new;
     for (size_t error_sum = 0; error_sum < first.size(); ++error_sum) {
         res.insert(res.end(), first[error_sum].begin(), first[error_sum].end());
-        // positions of the second walk which the first walk did not find
+        // positions of the second scan which the first scan did not find
         const std::vector<Book_deviate_todo_elem> &elems = second[error_sum];
         is_new.assign(elems.size(), 0);
-        const int n_chunks = (int)((elems.size() + BOOK_WALK_CHUNK_SIZE - 1) / BOOK_WALK_CHUNK_SIZE);
+        const int n_chunks = (int)((elems.size() + BOOK_SCAN_CHUNK_SIZE - 1) / BOOK_SCAN_CHUNK_SIZE);
         book.parallel_for(n_chunks, [&elems, &is_new](int chunk_idx) {
-            const size_t chunk_end = std::min(elems.size(), (size_t)(chunk_idx + 1) * BOOK_WALK_CHUNK_SIZE);
-            for (size_t i = (size_t)chunk_idx * BOOK_WALK_CHUNK_SIZE; i < chunk_end; ++i) {
+            const size_t chunk_end = std::min(elems.size(), (size_t)(chunk_idx + 1) * BOOK_SCAN_CHUNK_SIZE);
+            for (size_t i = (size_t)chunk_idx * BOOK_SCAN_CHUNK_SIZE; i < chunk_end; ++i) {
                 is_new[i] = !book.get(elems[i].board).seen;
             }
         });
@@ -809,7 +809,7 @@ inline void book_deviate(Board root_board, int level, int book_depth, int max_er
         }
         bool book_recalculating = true;
         book_recalculate_leaf(root_board, std::min(20 + (level & 1), std::max(1, level - 2)), std::max(1, book_depth - 1), max_error_per_move, max_error_sum, board_copy, player, &book_recalculating, true, all_strt);
-        // positions to expand: two walks (black, then white follows only the best moves), by sum of the errors
+        // positions to expand: two scans (black, then white follows only the best moves), by sum of the errors
         const int n_error_sums = std::max(0, max_error_sum) + 1;
         std::vector<std::vector<Book_deviate_todo_elem>> todo_black_best(n_error_sums), todo_white_best(n_error_sums);
         book.reset_seen();
