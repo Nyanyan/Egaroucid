@@ -399,6 +399,7 @@
         "star": "★",
         "mark_style": "標記樣式",
         "black": "黑",
+        "clear": "清除標記",
         "nomark": "刪除",
         "default": "預設",
         "monochrome": "單色",

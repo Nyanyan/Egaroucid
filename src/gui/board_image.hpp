@@ -25,6 +25,7 @@ class Board_image : public App::Scene {
 private:
     Button back_button;
     Button save_image_button;
+    Button clear_button;
     Radio_button mark_radio;
     std::vector<int> tool_ids;
     Radio_button mark_style_radio;
@@ -138,6 +139,7 @@ public:
         set_scene_ime_enabled(false);
         back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
         save_image_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("board_image", "save_image"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
+        clear_button.init(600, 305, 160, 30, 10, language.get("board_image", "clear"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
         mark_radio.init();
         tool_ids = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
@@ -218,8 +220,13 @@ public:
         getData().settings.board_image_coordinate = coordinate_radio.checked;
         getData().settings.board_image_color = color_radio.checked;
         getData().settings.board_image_outer_frame_color = outer_frame_color_radio.checked;
+        clear_button.draw();
         back_button.draw();
         save_image_button.draw();
+        if (clear_button.clicked()) {
+            edit.clear();
+            last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
+        }
         if (back_button.clicked() || KeyEscape.pressed()) {
             save_edit();
             getData().graph_resources.need_init = false;

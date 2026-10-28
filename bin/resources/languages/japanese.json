@@ -401,6 +401,7 @@
         "star": "★",
         "mark_style": "表示方法",
         "black": "黒",
+        "clear": "マークをクリア",
         "nomark": "削除",
         "default": "デフォルト",
         "monochrome": "モノクロ",

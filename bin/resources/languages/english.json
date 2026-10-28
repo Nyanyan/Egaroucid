@@ -399,6 +399,7 @@
         "star": "★",
         "mark_style": "Mark style",
         "black": "Black",
+        "clear": "Clear marks",
         "nomark": "Delete",
         "default": "Default",
         "monochrome": "Monochrome",
