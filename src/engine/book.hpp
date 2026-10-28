@@ -93,7 +93,19 @@ struct Leaf {
 /*
     @brief book element structure
 
-    The size of this structure determines the memory usage of book: keep it 12 bytes.
+    The size of this structure determines the memory usage of book: keep it 10 bytes.
+    The fields need 4 + 1 + 1 + 3 bytes and 2 flags. Without packing the structure was 12 bytes
+    (2 bool of 1 byte each and 1 byte of padding for the alignment of n_lines).
+    The 2 flags share 1 byte and the structure is packed, so that a slot of the book table is
+    16 (board) + 10 + 1 = 27 bytes instead of 29 (book memory -7%).
+    n_lines is then not aligned; it is always read and written as a member of a Book_elem or copied with memcpy
+    (no uint32_t pointer or reference to it is used), which the compilers handle for packed structures.
+
+    seen and exported share 1 byte, so a thread which writes one of them writes the byte of the other one too.
+    They are never written for the same board by 2 threads at the same time:
+    exported is written with the segment locked or by a single thread, and the parallel passes which set seen
+    without lock (flag_reachable_boards(), get_pass_boards(), reset_seen()) run while no thread writes exported.
+    A new parallel pass must keep this rule.
 
     @param n_lines              number of lines
     @param value                registered score
@@ -102,19 +114,21 @@ struct Leaf {
     @param seen                 used in various situation
     @param exported             used in Edax export (the board is written to the Edax book)
 */
+#pragma pack(push, 1)
 struct Book_elem {
     uint32_t n_lines;
     int8_t value;
     int8_t level;
     Leaf leaf;
-    bool seen; // used in various situation
-    bool exported; // used in Edax export
+    bool seen : 1; // used in various situation
+    bool exported : 1; // used in Edax export
 
     Book_elem()
         : n_lines(0), value(SCORE_UNDEFINED), level(LEVEL_UNDEFINED), seen(false), exported(false) {}
 };
+#pragma pack(pop)
 
-static_assert(sizeof(Book_elem) == 12, "Book_elem must be 12 bytes");
+static_assert(sizeof(Book_elem) == 10, "Book_elem must be 10 bytes");
 
 struct Book_info {
     uint64_t n_boards;
@@ -941,7 +955,10 @@ class Book {
                 fclose(fp);
                 return false;
             }
-            int n_boards = elem_int;
+            // The number of positions in the header is read as an unsigned 32-bit integer.
+            // As a signed int, a book with 2^31 (2,147,483,648) or more positions had a negative count:
+            // the loop below did not run, and the import "succeeded" with no position.
+            uint32_t n_boards = (uint32_t)elem_int;
             std::cerr << n_boards << " boards found" << std::endl;
             uint64_t player, opponent;
             int16_t value;
@@ -951,7 +968,7 @@ class Book {
             Flip flip;
             Book_elem book_elem;
             int percent = -1;
-            for (int i = 0; i < n_boards; ++i) {
+            for (uint32_t i = 0; i < n_boards; ++i) {
                 if (*stop) {
                     fclose(fp);
                     return false;
@@ -1786,6 +1803,14 @@ class Book {
                 }
             });
             std::cerr << "pass board calculated " << pass_boards.size() << std::endl;
+            // The number of positions in the header of an Edax book is a 32-bit field.
+            // It is written as an unsigned integer (2^31 or more positions were written with the same bits,
+            // but shown as a negative number in the log); more than 2^32 - 1 positions cannot be stored.
+            const uint64_t n_position_all = (uint64_t)n_boards_to_write + (uint64_t)pass_boards.size();
+            if (n_position_all > 0xFFFFFFFFULL) {
+                std::cerr << "[ERROR] too many positions for an Edax book: " << n_position_all << std::endl;
+                return;
+            }
             Book_file_writer fout;
             if (!fout.open(file)) {
                 std::cerr << "can't open " << file << std::endl;
@@ -1829,7 +1854,7 @@ class Book {
             fout.write((char*)&err_end, 4);
             int verb = 0;
             fout.write((char*)&verb, 4);
-            int n_position = (int)(n_boards_to_write + pass_boards.size());
+            uint32_t n_position = (uint32_t)n_position_all;
             fout.write((char*)&n_position, 4);
             int percent = -1;
             uint64_t n_boards = n_boards_to_write;
