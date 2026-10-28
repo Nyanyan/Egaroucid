@@ -54,6 +54,11 @@ private:
                     BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2};
     }
 
+    static int cursor_cell() {
+        const Vec2 cursor = Cursor::PosF();
+        return board_image_cell_at(cursor.x - BOARD_SX, cursor.y - BOARD_SY, BOARD_CELL_SIZE);
+    }
+
     static Shape2D arrow_shape(const Vec2& from, const Vec2& to) {
         return Shape2D::Arrow(from, to, 6, Vec2{18, 16});
     }
@@ -80,6 +85,12 @@ private:
     }
 
     void update_board_input() {
+        if (selected_mark == BOARD_IMAGE_ARROW) {
+            if (MouseL.down()) {
+                arrow_input.click(cursor_cell(), &edit);
+            }
+            return;
+        }
         if (!MouseL.pressed()) {
             erasing_arrow = false;
         }
@@ -90,11 +101,7 @@ private:
             const Rect region(BOARD_SX + (cell % HW) * BOARD_CELL_SIZE,
                               BOARD_SY + (cell / HW) * BOARD_CELL_SIZE,
                               BOARD_CELL_SIZE, BOARD_CELL_SIZE);
-            if (selected_mark == BOARD_IMAGE_ARROW) {
-                if (region.leftClicked()) {
-                    arrow_input.click(cell, &edit);
-                }
-            } else if (!erasing_arrow && region.leftPressed()) {
+            if (!erasing_arrow && region.leftPressed()) {
                 const bool legal = (getData().history_elem.board.get_legal() >> (HW2_M1 - cell)) & 1ULL;
                 if (selected_mark == BOARD_IMAGE_VALUE && !legal) {
                     continue;
@@ -341,8 +348,9 @@ public:
         for (const auto& arrow : edit.arrows) {
             draw_arrow(cell_center(arrow.from), cell_center(arrow.to));
         }
-        if (arrow_input.start != -1) {
-            draw_arrow(cell_center(arrow_input.start), Cursor::PosF());
+        const int preview_cell = cursor_cell();
+        if (arrow_input.start != -1 && preview_cell != -1) {
+            draw_arrow(cell_center(arrow_input.start), cell_center(preview_cell));
         }
     }
 

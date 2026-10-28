@@ -3,6 +3,16 @@
 #include "../../gui/function/board_image_edit.hpp"
 
 int main() {
+    assert(board_image_cell_at(0, 0, 50) == 0);
+    assert(board_image_cell_at(49.9, 49.9, 50) == 0);
+    assert(board_image_cell_at(50, 49.9, 50) == 1);
+    assert(board_image_cell_at(49.9, 50, 50) == 8);
+    assert(board_image_cell_at(399.9, 399.9, 50) == 63);
+    assert(board_image_cell_at(-0.1, 0, 50) == -1);
+    assert(board_image_cell_at(0, -0.1, 50) == -1);
+    assert(board_image_cell_at(400, 0, 50) == -1);
+    assert(board_image_cell_at(0, 400, 50) == -1);
+    assert(board_image_cell_at(0, 0, 0) == -1);
     for (int mark = 0; mark <= BOARD_IMAGE_MARK_MAX; ++mark) {
         const auto [tool, style] = board_image_tool_from_mark(mark);
         assert(board_image_mark_from_tool(tool, style) == mark);

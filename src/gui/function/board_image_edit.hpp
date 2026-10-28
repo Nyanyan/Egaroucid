@@ -118,6 +118,14 @@ struct Board_image_arrow_input {
     }
 };
 
+// Board-local pixel coordinates; the outer right/bottom edges are excluded.
+inline int board_image_cell_at(double x, double y, double cell_size) {
+    if (cell_size <= 0 || x < 0 || y < 0 || x >= 8 * cell_size || y >= 8 * cell_size) {
+        return -1;
+    }
+    return static_cast<int>(y / cell_size) * 8 + static_cast<int>(x / cell_size);
+}
+
 using Board_image_position = std::tuple<uint64_t, uint64_t, int>;
 
 struct Board_image_edit_cache {
