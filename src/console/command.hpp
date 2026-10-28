@@ -390,6 +390,24 @@ void set_mode(Options *options, std::string mode_str) {
     }
 }
 
+void set_threads(Options *options, const std::string& thread_str) {
+    std::istringstream input(thread_str);
+    int n_threads;
+    std::string extra;
+    if (!(input >> n_threads) || n_threads < 1 || (input >> extra)) {
+        std::cerr << "[ERROR] thread count must be a positive integer" << std::endl;
+        return;
+    }
+    // check_command() has already stopped and joined any ponder search.
+    if (thread_pool.size() != n_threads - 1) {
+        thread_pool.resize(n_threads - 1);
+    }
+    options->n_threads = n_threads;
+    if (options->show_log) {
+        std::cerr << "thread size = " << options->n_threads << std::endl;
+    }
+}
+
 void hint(Board_info *board, Options *options, State *state, std::string arg) {
     int n_show = 1;
     try {
@@ -560,6 +578,9 @@ void check_command(Board_info *board, State *state, Options *options) {
             break;
         case CMD_ID_MODE:
             set_mode(options, arg);
+            break;
+        case CMD_ID_THREAD:
+            set_threads(options, arg);
             break;
         case CMD_ID_HINT:
             hint(board, options, state, arg);
