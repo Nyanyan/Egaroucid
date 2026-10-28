@@ -2683,27 +2683,36 @@ class Book {
         template<class F>
         inline void parallel_for(int n, F &&func) {
             std::atomic<int> next_idx(0);
-            auto worker = [&next_idx, &func, n]() {
-                for (;;) {
-                    int idx = next_idx.fetch_add(1);
-                    if (idx >= n) {
-                        break;
+            std::atomic<bool> failed(false);
+            auto worker = [&next_idx, &failed, &func, n]() {
+                try {
+                    while (!failed.load()) {
+                        int idx = next_idx.fetch_add(1);
+                        if (idx >= n) {
+                            break;
+                        }
+                        func(idx);
                     }
-                    func(idx);
+                } catch (...) {
+                    failed.store(true);
+                    throw;
                 }
             };
-            std::vector<std::future<void>> tasks;
             const int n_workers = thread_pool.size();
-            for (int i = 0; i < n_workers; ++i) {
-                bool pushed = false;
-                std::future<void> task = thread_pool.push(&pushed, worker);
-                if (pushed) {
-                    tasks.emplace_back(std::move(task));
+            Thread_pool_task_group tasks(n_workers);
+            try {
+                for (int i = 0; i < n_workers; ++i) {
+                    bool pushed = false;
+                    std::future<void> task = thread_pool.push(&pushed, worker);
+                    if (pushed) {
+                        tasks.add(std::move(task));
+                    }
                 }
-            }
-            worker();
-            for (std::future<void> &task: tasks) {
-                task.get();
+                worker();
+                tasks.get();
+            } catch (...) {
+                failed.store(true);
+                throw; // tasks waits before next_idx, failed and the callback can go out of scope
             }
         }
 

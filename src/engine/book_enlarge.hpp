@@ -341,38 +341,47 @@ void book_learning_for_each(int n, F &&func) {
     }
     const int n_single = std::clamp(n - n_pool_threads * 2 + 1, 0, n); // elements run with a one-thread search
     std::atomic<int> next_idx(0);
-    auto worker = [&next_idx, &func, n_single]() {
-        for (;;) {
+    std::atomic<bool> failed(false);
+    auto worker = [&next_idx, &failed, &func, n_single]() {
+        try {
+            while (!failed.load()) {
+                int idx = next_idx.fetch_add(1);
+                if (idx >= n_single) {
+                    break;
+                }
+                func(idx, false);
+            }
+        } catch (...) {
+            failed.store(true);
+            throw;
+        }
+    };
+    Thread_pool_task_group tasks(n_pool_threads);
+    try {
+        while (!failed.load()) {
+            // a worker on each thread of the pool (a thread which was not idle yet gets its worker at a later turn)
+            while ((int)tasks.size() < n_pool_threads && next_idx.load() < n_single && !failed.load()) {
+                bool pushed = false;
+                std::future<void> task = thread_pool.push(&pushed, worker);
+                if (!pushed) {
+                    break;
+                }
+                tasks.add(std::move(task));
+            }
+            // the calling thread works too
             int idx = next_idx.fetch_add(1);
             if (idx >= n_single) {
                 break;
             }
             func(idx, false);
         }
-    };
-    std::vector<std::future<void>> tasks;
-    for (;;) {
-        // a worker on each thread of the pool (a thread which was not idle yet gets its worker at a later turn)
-        while ((int)tasks.size() < n_pool_threads && next_idx.load() < n_single) {
-            bool pushed = false;
-            std::future<void> task = thread_pool.push(&pushed, worker);
-            if (!pushed) {
-                break;
-            }
-            tasks.emplace_back(std::move(task));
+        for (int idx = n_single; idx < n && !failed.load(); ++idx) {
+            func(idx, true);
         }
-        // the calling thread works too
-        int idx = next_idx.fetch_add(1);
-        if (idx >= n_single) {
-            break;
-        }
-        func(idx, false);
-    }
-    for (int idx = n_single; idx < n; ++idx) {
-        func(idx, true);
-    }
-    for (std::future<void> &task: tasks) {
-        task.get();
+        tasks.get();
+    } catch (...) {
+        failed.store(true);
+        throw; // tasks waits while the callback and the queue state are still alive
     }
 }
 
@@ -681,12 +690,12 @@ uint64_t expand_leaves(int book_depth, int level, int max_error_per_move, std::v
     const std::thread::id calling_thread = std::this_thread::get_id();
     book_learning_for_each(n_all, [&](int idx, bool use_multi_thread) {
         // automatic save: by the thread which sees that it is time; the other threads go on (as the tasks did before)
-        if (tim() - last_save.load() >= AUTO_BOOK_SAVE_TIME && save_mtx.try_lock()) {
-            if (tim() - last_save.load() >= AUTO_BOOK_SAVE_TIME) {
+        if (tim() - last_save.load() >= AUTO_BOOK_SAVE_TIME) {
+            std::unique_lock<std::mutex> save_lock(save_mtx, std::try_to_lock);
+            if (save_lock.owns_lock() && tim() - last_save.load() >= AUTO_BOOK_SAVE_TIME) {
                 book.save_egbk3(file, bak_file);
                 last_save.store(tim());
             }
-            save_mtx.unlock();
         }
         if (!global_searching || !(*book_learning)) {
             return;
