@@ -232,6 +232,14 @@ or
 
 to see how to use.
 
+### Changing the Thread Count While Running
+
+At the normal interactive prompt, enter `chthread N` to change the thread count without restarting. N must be a positive integer and includes the main thread.
+
+<code>chthread 4</code>
+
+This example selects four threads. Use `chthread 1` for a single thread. Any active ponder search is stopped and joined before the change. The position, game history, and remaining time are preserved.
+
 
 
 ## Directory Structure
