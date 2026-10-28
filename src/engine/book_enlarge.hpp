@@ -54,6 +54,17 @@ struct Book_deviate_todo_elem {
     }
 };
 
+// Stable priority for completed candidate lists: smaller total error, shallower board,
+// player, then the canonical board bits. No extra array or per-position table is needed.
+inline bool book_deviate_todo_less(const Book_deviate_todo_elem &a, const Book_deviate_todo_elem &b) {
+    if (a.remaining_error != b.remaining_error) return a.remaining_error > b.remaining_error;
+    const int a_discs = a.board.n_discs(), b_discs = b.board.n_discs();
+    if (a_discs != b_discs) return a_discs < b_discs;
+    if (a.player != b.player) return a.player < b.player;
+    if (a.board.player != b.board.player) return a.board.player < b.board.player;
+    return a.board.opponent < b.board.opponent;
+}
+
 
 
 /*
@@ -74,7 +85,8 @@ struct Book_deviate_todo_elem {
       on the order of the moves: with a larger sum than necessary, fewer moves were followed from it),
     - in a round, the boards with BLACK to move are processed before the boards with WHITE to move
       (the same board can be reached with both only by lines with a different number of passes),
-    so the result does not depend on the threads.
+    Within a round a duplicate may be claimed by any worker. The callers sort completed candidate
+    lists with book_deviate_todo_less(), so their order does not depend on which worker claimed it.
 */
 
 // number of boards given to a thread at once
@@ -195,7 +207,7 @@ void book_walk_by_error(Board root_board, int root_player, int max_error_sum, bo
                 } else {
                     book.parallel_for(n_chunks, walk_chunk);
                 }
-                // the outputs are joined in the order of the chunks: the order of the result does not depend on the threads
+                // Join chunks here; duplicate ownership can vary between runs, so callers sort the candidates.
                 for (Book_walk_output<Found> &output: outputs) {
                     for (int child_player = BLACK; child_player <= WHITE; ++child_player) {
                         next_round[child_player].insert(next_round[child_player].end(), output.same[child_player].begin(), output.same[child_player].end());
@@ -305,6 +317,9 @@ void get_book_recalculate_leaf_todo(Book_deviate_todo_elem root_elem, int book_d
         todo_list.insert(todo_list.end(), found.begin(), found.end());
     };
     book_walk_by_error<Book_deviate_todo_elem>(root_elem.board, root_elem.player, root_elem.remaining_error, book_learning, board_copy, player, visit, collect);
+    if (global_searching && *book_learning) {
+        std::sort(todo_list.begin(), todo_list.end(), book_deviate_todo_less);
+    }
 }
 
 void book_search_leaf(Board board, int level, bool use_multi_thread) {
@@ -446,6 +461,7 @@ inline void book_recalculate_leaf(Board root_board, int level, int book_depth, i
     root_elem.player = *player;
     root_elem.max_error_per_move = max_error_per_move;
     root_elem.remaining_error = max_error_sum;
+    root_elem.max_leaf_error = 0; // not used for leaf recalculation, but copied into its candidates
     Book_elem book_elem = book.get(root_board);
     if (book_elem.value == SCORE_UNDEFINED) {
         std::cerr << "board not registered, searching..." << std::endl;
@@ -564,6 +580,11 @@ void get_book_deviate_todo(Book_deviate_todo_elem root_elem, int best_move_only_
         n_todo += found.size();
     };
     book_walk_by_error<Book_deviate_todo_elem>(root_elem.board, root_elem.player, root_elem.remaining_error, book_learning, board_copy, player, visit, collect);
+    if (global_searching && *book_learning) {
+        for (auto &elems: todo_by_error) {
+            std::sort(elems.begin(), elems.end(), book_deviate_todo_less);
+        }
+    }
     std::cerr << "loop " << n_loop << " book deviate todo " << n_todo << " found (" << (best_move_only_player == BLACK ? "black" : "white") << " follows the best moves) time " << ms_to_time_short(tim() - all_strt) << std::endl;
 }
 
