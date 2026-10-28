@@ -405,7 +405,7 @@
         "mark_style": "表示方法",
         "black": "黒",
         "outline": "縁取り",
-        "clear": "マークをクリア",
+        "clear": "全消去",
         "arrow_hint": "始点 → 終点（2回クリック）",
         "nomark": "削除",
         "default": "デフォルト",

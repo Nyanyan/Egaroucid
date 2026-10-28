@@ -405,7 +405,7 @@
         "mark_style": "标记样式",
         "black": "黑",
         "outline": "轮廓",
-        "clear": "清除标记",
+        "clear": "全部清除",
         "arrow_hint": "起点 → 终点（点击两次）",
         "nomark": "删除",
         "default": "默认",

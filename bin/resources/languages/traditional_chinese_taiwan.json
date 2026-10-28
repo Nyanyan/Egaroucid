@@ -403,7 +403,7 @@
         "mark_style": "標記樣式",
         "black": "黑",
         "outline": "外框",
-        "clear": "清除標記",
+        "clear": "全部清除",
         "arrow_hint": "起點 → 終點（點擊兩次）",
         "nomark": "刪除",
         "default": "預設",

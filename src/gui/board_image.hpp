@@ -25,7 +25,7 @@ class Board_image : public App::Scene {
 private:
     Button back_button;
     Button save_image_button;
-    Button clear_button;
+    FrameButton clear_button;
     Radio_button mark_radio;
     Radio_button mark_style_radio;
     Radio_button color_radio;
@@ -221,9 +221,9 @@ private:
 public:
     Board_image(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(false);
-        back_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_1_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("common", "back"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        save_image_button.init(BUTTON2_VERTICAL_SX, BUTTON2_VERTICAL_2_SY, BUTTON2_VERTICAL_WIDTH, BUTTON2_VERTICAL_HEIGHT, BUTTON2_VERTICAL_RADIUS, language.get("board_image", "save_image"), 25, getData().fonts.font, getData().colors.white, getData().colors.black);
-        clear_button.init(600, 305, 160, 30, 10, language.get("board_image", "clear"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
+        back_button.init(480, 436, 90, 44, 8, language.get("common", "back"), 17, getData().fonts.font, getData().colors.dark_green, getData().colors.white);
+        clear_button.init(578, 436, 90, 44, 8, 1, language.get("board_image", "clear"), 17, getData().fonts.font, getData().colors.green, getData().colors.white, getData().colors.white);
+        save_image_button.init(676, 436, 104, 44, 8, language.get("board_image", "save_image"), 17, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
         mark_radio.init();
         const char* tools[] = {"rect", "star", "circle", "flip", "value", "arrow", "nomark"};
@@ -313,6 +313,7 @@ public:
         if (selected_mark == BOARD_IMAGE_ARROW) {
             getData().fonts.font(language.get("board_image", "arrow_hint")).draw(13, 600, 285, getData().colors.white);
         }
+        Line(480, 420, 780, 420).draw(1, ColorF(getData().colors.white, 0.35));
         clear_button.draw();
         back_button.draw();
         save_image_button.draw();
