@@ -229,6 +229,10 @@ public:
         const char* tools[] = {"rect", "star", "circle", "flip", "value", "arrow", "nomark"};
         for (int i = 0; i < 7; ++i) {
             elem.init(480, 100 + i * 24, getData().fonts.font, 15, language.get("board_image", tools[i]), i == 0);
+            if (i == BOARD_IMAGE_TOOL_FLIP) {
+                elem.str.clear();
+                elem.region = RectF(480, 100 + i * 24 - 12, 60, 24);
+            }
             mark_radio.push(elem);
         }
         mark_style_radio.init();
@@ -284,6 +288,8 @@ public:
         getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 600, 70, getData().colors.white);
         getData().fonts.font(language.get("board_image", "color")).draw(15, 600, 150, getData().colors.white);
         mark_radio.draw();
+        const auto& flip_option = mark_radio.elems[BOARD_IMAGE_TOOL_FLIP];
+        draw_flip(Vec2{flip_option.x + radio_button_margin + 12, flip_option.y}, getData().colors.white);
         if (mark_radio.checked <= BOARD_IMAGE_TOOL_CIRCLE) {
             getData().fonts.font(language.get("board_image", "mark_style")).draw(15, 480, 265, getData().colors.white);
             mark_style_radio.draw();
