@@ -3,7 +3,7 @@
 #include "../../gui/function/board_image_edit.hpp"
 
 int main() {
-    const int supported[] = {0, 1, 2, 3, 4, 5, 11, 6, 7};
+    const int supported[] = {0, 1, 2, 3, 4, 5, 11, 6, 7, 8, 9, 10};
     for (int mark : supported) {
         const auto [tool, style] = board_image_tool_from_mark(mark);
         assert(board_image_mark_from_tool(tool, style) == mark);

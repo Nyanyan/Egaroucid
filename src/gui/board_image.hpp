@@ -165,6 +165,15 @@ private:
                 star.draw(color);
                 if (halo) star.drawFrame(BOARD_IMAGE_FRAME_WIDTH, halo_color);
             }
+        } else if (tool == BOARD_IMAGE_TOOL_CIRCLE) {
+            const Circle circle(center, BOARD_IMAGE_RECT_SIZE / 2);
+            if (outline) {
+                if (outline_halo) circle.drawFrame(2, 2, colors.black);
+                circle.drawFrame(1, 1, color);
+            } else {
+                circle.draw(color);
+                if (halo) circle.drawFrame(1, 1, halo_color);
+            }
         }
     }
 
@@ -176,9 +185,9 @@ public:
         clear_button.init(600, 305, 160, 30, 10, language.get("board_image", "clear"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
         mark_radio.init();
-        tool_ids = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_FLIP, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
-        const char* tools[] = {"rect", "star", "flip", "value", "nomark"};
-        for (int i = 0; i < 5; ++i) {
+        tool_ids = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_CIRCLE, BOARD_IMAGE_TOOL_FLIP, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
+        const char* tools[] = {"rect", "star", "circle", "flip", "value", "nomark"};
+        for (int i = 0; i < 6; ++i) {
             elem.init(480, 100 + i * 24, getData().fonts.font, 15, language.get("board_image", tools[i]), i == 0);
             mark_radio.push(elem);
         }
@@ -235,7 +244,7 @@ public:
         getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 600, 70, getData().colors.white);
         getData().fonts.font(language.get("board_image", "color")).draw(15, 600, 150, getData().colors.white);
         mark_radio.draw();
-        if (tool_ids[mark_radio.checked] <= BOARD_IMAGE_TOOL_STAR) {
+        if (tool_ids[mark_radio.checked] <= BOARD_IMAGE_TOOL_CIRCLE) {
             getData().fonts.font(language.get("board_image", "mark_style")).draw(15, 480, 265, getData().colors.white);
             mark_style_radio.draw();
         }
