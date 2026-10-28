@@ -22,19 +22,26 @@ Missing keys and values with the wrong JSON type retain their defaults. Numeric
 indices outside the supported range are clamped. The frame color is retained
 while its control is hidden in monochrome mode.
 
-The editor presents the mark shape and its black/white/outline style separately.
-The combined IDs above preserve the original six choices in old configuration
-files. Flip and outline marks use white on black discs, black on white discs,
+The editor presents a 3-by-3 symbol palette: square, star, and circle rows, each
+with black, white, and outline variants. Four more tiles show the actual flip,
+value, arrow, and eraser symbols. There is no separate mark-style text selector.
+The palette and board share the same mark renderer. The IDs above preserve
+the original six choices in old configuration files.
+Flip and outline marks use white on black discs, black on white discs,
 and white on empty cells. On a white monochrome board, a thin black halo keeps
 white marks on empty cells visible.
 
 To draw an arrow, click its starting cell, then its ending cell. Between clicks,
-the arrow preview follows the cursor. Selecting another tool, clearing, saving
+the preview endpoint snaps to the center of the hovered cell; moving within the
+same cell leaves it fixed. The preview is hidden outside the board. Clicking
+uses the same cell calculation as the preview. Selecting another tool, clearing, saving
 an image, or leaving the editor cancels an unfinished arrow. Arrows are black
 with white outlines. The erase tool removes the topmost arrow under the cursor
 (including its head), without erasing a cell mark underneath on that click.
-The clear button removes all cell marks, values, arrows, and pending endpoints
-for the displayed position.
+The bottom action row contains Back, Clear all, and Save image. Clear all removes
+all cell marks, values, arrows, and pending endpoints for the displayed position.
+Image options stay on aligned rows, with the frame row disabled in monochrome
+mode so that the layout does not shift.
 
 ## State regression tests
 
@@ -50,7 +57,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
 These tests use the production annotation header directly. They check old mark
 IDs, all tool/style mappings, arrow endpoint validation, duplicate and reversed
 arrows, cancellation, independent position snapshots, clearing, branch
-retention, and removal/recreation of a position or the entire progression.
+retention, and removal/recreation of a position or the entire progression. The
+grid tests check movement within a cell, exact cell boundaries, and board edges.
 
 ## Manual regression check
 
@@ -110,3 +118,11 @@ normal shutdown/restart, removing and recreating B, and replacing the progressio
 All eight new labels were checked in all four runtime language files and against
 their release templates. Build logs, configuration snapshots, and the inspected
 PNG were kept locally under `build/issue651/` (ignored by Git).
+
+The palette/layout follow-up was checked at Japanese 0.8 scale and English 1.0
+scale. The actual flip icon, direct selection of white square and outlined
+circle tiles, placement, image saving, clearing, and the Back button were
+verified. For arrow snapping, the cursor was moved to two different corners of
+F6, then to G6, then outside the board. The preview stayed at the F6 center,
+switched to the G6 center, and disappeared outside. Clicking away from the G6
+center produced the same endpoint as the preview.
