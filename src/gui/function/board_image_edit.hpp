@@ -30,13 +30,15 @@ constexpr int BOARD_IMAGE_BCIRCLE = 8;
 constexpr int BOARD_IMAGE_WCIRCLE = 9;
 constexpr int BOARD_IMAGE_OCIRCLE = 10;
 constexpr int BOARD_IMAGE_FLIP = 11;
-constexpr int BOARD_IMAGE_MARK_MAX = BOARD_IMAGE_FLIP;
+constexpr int BOARD_IMAGE_ARROW = 12;
+constexpr int BOARD_IMAGE_MARK_MAX = BOARD_IMAGE_ARROW;
 
 constexpr int BOARD_IMAGE_TOOL_RECT = 0;
 constexpr int BOARD_IMAGE_TOOL_STAR = 1;
 constexpr int BOARD_IMAGE_TOOL_CIRCLE = 2;
 constexpr int BOARD_IMAGE_TOOL_FLIP = 3;
 constexpr int BOARD_IMAGE_TOOL_VALUE = 4;
+constexpr int BOARD_IMAGE_TOOL_ARROW = 5;
 constexpr int BOARD_IMAGE_TOOL_ERASE = 6;
 constexpr int BOARD_IMAGE_STYLE_BLACK = 0;
 constexpr int BOARD_IMAGE_STYLE_WHITE = 1;
@@ -54,13 +56,13 @@ inline int board_image_mark_from_tool(int tool, int style) {
     switch (tool) {
     case BOARD_IMAGE_TOOL_FLIP: return BOARD_IMAGE_FLIP;
     case BOARD_IMAGE_TOOL_VALUE: return BOARD_IMAGE_VALUE;
+    case BOARD_IMAGE_TOOL_ARROW: return BOARD_IMAGE_ARROW;
     default: return BOARD_IMAGE_NOMARK;
     }
 }
 
 inline std::pair<int, int> board_image_tool_from_mark(int mark) {
-    constexpr int tools[] = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_CIRCLE, BOARD_IMAGE_TOOL_FLIP, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
-    for (int tool : tools) {
+    for (int tool = BOARD_IMAGE_TOOL_RECT; tool <= BOARD_IMAGE_TOOL_ERASE; ++tool) {
         for (int style = BOARD_IMAGE_STYLE_BLACK; style <= BOARD_IMAGE_STYLE_OUTLINE; ++style) {
             if (board_image_mark_from_tool(tool, style) == mark) {
                 return {tool, style};
@@ -70,19 +72,51 @@ inline std::pair<int, int> board_image_tool_from_mark(int mark) {
     return {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_STYLE_BLACK};
 }
 
+struct Board_image_arrow {
+    int from;
+    int to;
+
+    bool operator==(const Board_image_arrow& other) const {
+        return from == other.from && to == other.to;
+    }
+};
 
 struct Board_image_edit {
     std::array<int, 64> marks;
     std::array<std::optional<int>, 64> values;
+    std::vector<Board_image_arrow> arrows;
 
     Board_image_edit() { clear(); }
 
     void clear() {
         marks.fill(BOARD_IMAGE_NOMARK);
         values.fill(std::nullopt);
+        arrows.clear();
     }
 };
 
+struct Board_image_arrow_input {
+    int start = -1;
+
+    void cancel() { start = -1; }
+
+    bool click(int cell, Board_image_edit* edit) {
+        if (cell < 0 || 64 <= cell) {
+            return false;
+        }
+        if (start == -1) {
+            start = cell;
+            return false;
+        }
+        const Board_image_arrow arrow{start, cell};
+        cancel();
+        if (arrow.from == arrow.to || std::find(edit->arrows.begin(), edit->arrows.end(), arrow) != edit->arrows.end()) {
+            return false;
+        }
+        edit->arrows.push_back(arrow);
+        return true;
+    }
+};
 
 using Board_image_position = std::tuple<uint64_t, uint64_t, int>;
 

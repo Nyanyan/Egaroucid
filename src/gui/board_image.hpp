@@ -27,15 +27,16 @@ private:
     Button save_image_button;
     Button clear_button;
     Radio_button mark_radio;
-    std::vector<int> tool_ids;
     Radio_button mark_style_radio;
     Radio_button color_radio;
     Radio_button outer_frame_color_radio;
     Radio_button coordinate_radio;
     Board_image_edit edit;
+    Board_image_arrow_input arrow_input;
     std::array<int, HW2> last_marked;
     std::future<int> eval_futures[HW2];
     bool taking_screen_shot = false;
+    bool erasing_arrow = false;
     int selected_mark;
 
     Board_image_position position() const {
@@ -45,6 +46,7 @@ private:
 
     void save_edit() {
         getData().graph_resources.board_image_edits.save(position(), edit);
+        arrow_input.cancel();
     }
 
     static Vec2 cell_center(int cell) {
@@ -52,15 +54,47 @@ private:
                     BOARD_SY + (cell / HW) * BOARD_CELL_SIZE + BOARD_CELL_SIZE / 2};
     }
 
+    static Shape2D arrow_shape(const Vec2& from, const Vec2& to) {
+        return Shape2D::Arrow(from, to, 6, Vec2{18, 16});
+    }
 
+    static void draw_arrow(const Vec2& from, const Vec2& to) {
+        if (from.distanceFrom(to) < 1.0) {
+            return;
+        }
+        const auto arrow = arrow_shape(from, to);
+        arrow.draw(Palette::Black);
+        arrow.drawFrame(2, Palette::White);
+    }
 
+    bool erase_arrow_at_cursor() {
+        for (size_t i = edit.arrows.size(); i > 0; --i) {
+            const auto& arrow = edit.arrows[i - 1];
+            const auto polygon = arrow_shape(cell_center(arrow.from), cell_center(arrow.to)).asPolygon();
+            if (polygon.intersects(Circle(Cursor::PosF(), 2))) {
+                edit.arrows.erase(edit.arrows.begin() + (i - 1));
+                return true;
+            }
+        }
+        return false;
+    }
 
     void update_board_input() {
+        if (!MouseL.pressed()) {
+            erasing_arrow = false;
+        }
+        if (selected_mark == BOARD_IMAGE_NOMARK && MouseL.down()) {
+            erasing_arrow = erase_arrow_at_cursor();
+        }
         for (int cell = 0; cell < HW2; ++cell) {
             const Rect region(BOARD_SX + (cell % HW) * BOARD_CELL_SIZE,
                               BOARD_SY + (cell / HW) * BOARD_CELL_SIZE,
                               BOARD_CELL_SIZE, BOARD_CELL_SIZE);
-            if (region.leftPressed()) {
+            if (selected_mark == BOARD_IMAGE_ARROW) {
+                if (region.leftClicked()) {
+                    arrow_input.click(cell, &edit);
+                }
+            } else if (!erasing_arrow && region.leftPressed()) {
                 const bool legal = (getData().history_elem.board.get_legal() >> (HW2_M1 - cell)) & 1ULL;
                 if (selected_mark == BOARD_IMAGE_VALUE && !legal) {
                     continue;
@@ -185,9 +219,8 @@ public:
         clear_button.init(600, 305, 160, 30, 10, language.get("board_image", "clear"), 18, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
         mark_radio.init();
-        tool_ids = {BOARD_IMAGE_TOOL_RECT, BOARD_IMAGE_TOOL_STAR, BOARD_IMAGE_TOOL_CIRCLE, BOARD_IMAGE_TOOL_FLIP, BOARD_IMAGE_TOOL_VALUE, BOARD_IMAGE_TOOL_ERASE};
-        const char* tools[] = {"rect", "star", "circle", "flip", "value", "nomark"};
-        for (int i = 0; i < 6; ++i) {
+        const char* tools[] = {"rect", "star", "circle", "flip", "value", "arrow", "nomark"};
+        for (int i = 0; i < 7; ++i) {
             elem.init(480, 100 + i * 24, getData().fonts.font, 15, language.get("board_image", tools[i]), i == 0);
             mark_radio.push(elem);
         }
@@ -215,7 +248,7 @@ public:
 
         selected_mark = getData().settings.board_image_mark;
         const auto [tool, style] = board_image_tool_from_mark(selected_mark);
-        mark_radio.set_checked(static_cast<int>(std::find(tool_ids.begin(), tool_ids.end(), tool) - tool_ids.begin()));
+        mark_radio.set_checked(tool);
         mark_style_radio.set_checked(style);
         coordinate_radio.set_checked(getData().settings.board_image_coordinate);
         color_radio.set_checked(getData().settings.board_image_color);
@@ -244,7 +277,7 @@ public:
         getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 600, 70, getData().colors.white);
         getData().fonts.font(language.get("board_image", "color")).draw(15, 600, 150, getData().colors.white);
         mark_radio.draw();
-        if (tool_ids[mark_radio.checked] <= BOARD_IMAGE_TOOL_CIRCLE) {
+        if (mark_radio.checked <= BOARD_IMAGE_TOOL_CIRCLE) {
             getData().fonts.font(language.get("board_image", "mark_style")).draw(15, 480, 265, getData().colors.white);
             mark_style_radio.draw();
         }
@@ -254,8 +287,9 @@ public:
             outer_frame_color_radio.draw();
         }
         coordinate_radio.draw();
-        const int new_mark = board_image_mark_from_tool(tool_ids[mark_radio.checked], mark_style_radio.checked);
+        const int new_mark = board_image_mark_from_tool(mark_radio.checked, mark_style_radio.checked);
         if (new_mark != selected_mark) {
+            arrow_input.cancel();
             last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
             selected_mark = new_mark;
         }
@@ -263,11 +297,15 @@ public:
         getData().settings.board_image_coordinate = coordinate_radio.checked;
         getData().settings.board_image_color = color_radio.checked;
         getData().settings.board_image_outer_frame_color = outer_frame_color_radio.checked;
+        if (selected_mark == BOARD_IMAGE_ARROW) {
+            getData().fonts.font(language.get("board_image", "arrow_hint")).draw(13, 600, 285, getData().colors.white);
+        }
         clear_button.draw();
         back_button.draw();
         save_image_button.draw();
         if (clear_button.clicked()) {
             edit.clear();
+            arrow_input.cancel();
             last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
         }
         if (back_button.clicked() || KeyEscape.pressed()) {
@@ -277,6 +315,7 @@ public:
             return;
         }
         if (save_image_button.clicked()) {
+            arrow_input.cancel();
             taking_screen_shot = true;
             ScreenCapture::RequestCurrentFrame();
         }
@@ -298,6 +337,12 @@ public:
         getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);
         for (int cell = 0; cell < HW2; ++cell) {
             draw_mark(cell, board_arr[cell], monochrome);
+        }
+        for (const auto& arrow : edit.arrows) {
+            draw_arrow(cell_center(arrow.from), cell_center(arrow.to));
+        }
+        if (arrow_input.start != -1) {
+            draw_arrow(cell_center(arrow_input.start), Cursor::PosF());
         }
     }
 
