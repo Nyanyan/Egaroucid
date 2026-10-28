@@ -948,7 +948,8 @@ enum class Windows_shortcut_hook_backend_reason {
 };
 
 // Windows shortcut input records WM keyboard/focus messages instead of relying
-// on per-frame polling edges. VK codes remain the stable key identity. A
+// on per-frame polling edges. Scan codes pair key-up with the original VK even
+// when an IME changes the VK between messages. A
 // same-thread HWND can use SetWindowSubclass; Siv3D commonly exposes the HWND
 // from a different thread, where this uses a guarded raw WndProc observer. That
 // raw observer is still message-based, not polling-based. The WndProc only
@@ -959,6 +960,7 @@ enum class Windows_shortcut_hook_backend_reason {
 struct Windows_shortcut_message_state {
     std::unordered_set<int> pressed_vks;
     std::unordered_set<int> pending_down_vks;
+    std::unordered_map<int, int> pressed_scan_codes;
     bool focused = false;
     HWND installed_hwnd = nullptr;
     WNDPROC previous_wndproc = nullptr;
@@ -1100,6 +1102,7 @@ inline void windows_shortcut_refresh_generic_modifier_aliases(std::unordered_set
 inline void windows_shortcut_clear_message_keys_unlocked(Windows_shortcut_message_state& state) {
     state.pressed_vks.clear();
     state.pending_down_vks.clear();
+    state.pressed_scan_codes.clear();
 }
 
 inline void windows_shortcut_clear_message_keys() {
@@ -1121,6 +1124,11 @@ inline int windows_shortcut_vk_from_message_scan_code(const LPARAM l_param) {
 
 inline bool windows_shortcut_message_extended_key(const LPARAM l_param) {
     return ((static_cast<DWORD_PTR>(l_param) >> 24) & 0x01) != 0;
+}
+
+inline int windows_shortcut_message_scan_code(const LPARAM l_param) {
+    const int scan_code = static_cast<int>((static_cast<DWORD_PTR>(l_param) >> 16) & 0xFF);
+    return scan_code == 0 ? 0 : scan_code | (windows_shortcut_message_extended_key(l_param) ? 0x100 : 0);
 }
 
 inline int windows_shortcut_normalize_message_vk(const WPARAM w_param, const LPARAM l_param) {
@@ -1183,8 +1191,13 @@ inline void windows_shortcut_observe_message(HWND hwnd, UINT msg, WPARAM w_param
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN: {
         ++state.observed_keyboard_message_count;
-        const int vk = windows_shortcut_normalize_message_vk(w_param, l_param);
+        int vk = windows_shortcut_normalize_message_vk(w_param, l_param);
         if (windows_shortcut_scannable_vk(vk)) {
+            const int scan_code = windows_shortcut_message_scan_code(l_param);
+            if (scan_code != 0) {
+                // Repeats must retain the VK from the first down, too.
+                vk = state.pressed_scan_codes.emplace(scan_code, vk).first->second;
+            }
             const bool repeated = (HIWORD(l_param) & KF_REPEAT) != 0;
             windows_shortcut_add_vk_with_aliases(&state.pressed_vks, vk);
             if (!repeated) {
@@ -1200,9 +1213,20 @@ inline void windows_shortcut_observe_message(HWND hwnd, UINT msg, WPARAM w_param
     case WM_KEYUP:
     case WM_SYSKEYUP: {
         ++state.observed_keyboard_message_count;
-        const int vk = windows_shortcut_normalize_message_vk(w_param, l_param);
+        int vk = windows_shortcut_normalize_message_vk(w_param, l_param);
+        const int scan_code = windows_shortcut_message_scan_code(l_param);
+        const auto pressed_scan = state.pressed_scan_codes.find(scan_code);
+        if (scan_code != 0 && pressed_scan != state.pressed_scan_codes.end()) {
+            vk = pressed_scan->second;
+            state.pressed_scan_codes.erase(pressed_scan);
+        }
         if (windows_shortcut_scannable_vk(vk)) {
-            windows_shortcut_remove_vk_with_aliases(&state.pressed_vks, vk);
+            // Main Enter and numpad Enter can share a VK while held together.
+            const bool held_by_other_scan = std::any_of(state.pressed_scan_codes.begin(), state.pressed_scan_codes.end(),
+                [vk](const auto& entry) { return entry.second == vk; });
+            if (!held_by_other_scan) {
+                windows_shortcut_remove_vk_with_aliases(&state.pressed_vks, vk);
+            }
 #ifdef VK_PROCESSKEY
         } else if ((static_cast<int>(w_param) & 0xFF) == VK_PROCESSKEY) {
             windows_shortcut_update_unmapped_process_key_state_unlocked(state, false);
