@@ -237,13 +237,8 @@ private:
             Cursor::RequestStyle(CursorStyle::Hand);
         }
         const bool selected = mark == selected_mark;
-        const Color background = selected ? Color(58, 166, 133) :
-            (hovered ? Color(52, 135, 105) : getData().colors.dark_green);
         const s3d::RoundRect tile(region, 6);
-        tile.draw(background);
-        if (selected) {
-            tile.drawFrame(2, 0, getData().colors.cyan);
-        }
+        tile.drawFrame(selected ? 2 : 1, 0, selected ? getData().colors.white : getData().colors.dark_gray);
         const Vec2 center = region.center();
         if (mark == BOARD_IMAGE_ARROW) {
             draw_arrow(center - Vec2{16, 0}, center + Vec2{16, 0});
