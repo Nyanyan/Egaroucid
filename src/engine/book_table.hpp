@@ -18,6 +18,7 @@
 #include <thread>
 #include <vector>
 #include "board.hpp"
+#include "book_memory.hpp"
 
 #if defined(__GNUC__) || defined(__clang__)
     #define BOOK_TABLE_PREFETCH(addr) __builtin_prefetch((const void*)(addr))
@@ -119,15 +120,13 @@ class Board_table {
         static constexpr uint8_t CTRL_DELETED = 0xFE;
         static constexpr uint64_t CTRL_LSBS = 0x0101010101010101ULL;
         static constexpr uint64_t CTRL_MSBS = 0x8080808080808080ULL;
-        // load factor just after a segment is resized by itself:
-        // about 0.65 for a small segment (few rebuilds), about 0.80 for a large segment.
-        // A book is loaded at the maximum load factor, so every segment is resized soon after boards are added (book learning).
-        // With 0.65 the memory of the whole book grows by 1/3 at that time (112M boards + 2%: 3,352 MiB -> 4,468 MiB,
-        // with 0.80: 3,652 MiB). In a big book this memory matters more than the time of the rebuilds
-        // (3 times as many element copies per registered board) and of the search in a fuller table.
+        // Normally rebuild at 0.65 to avoid frequent rebuilds and long probes.
+        // Only large segments use 0.80 when memory is tight, or if allocating
+        // the normal destination fails. Initial reserve() and small segments
+        // keep their previous behavior.
         static constexpr uint32_t RESIZE_TARGET_NUMERATOR = 100;
         static constexpr uint32_t RESIZE_TARGET_DENOMINATOR = 65 * GROUP_SIZE;
-        static constexpr uint32_t RESIZE_TARGET_DENOMINATOR_LARGE = 80 * GROUP_SIZE;
+        static constexpr uint32_t RESIZE_TARGET_DENOMINATOR_COMPACT = 80 * GROUP_SIZE;
         static constexpr uint32_t LARGE_SEGMENT_N_BOARDS = 32768; // 1 / 2048 of a book of 67M boards
 
         // The lock is written at every access, and the others are only read in searching.
@@ -291,9 +290,32 @@ class Board_table {
             return true;
         }
 
-        static inline uint32_t n_groups_for(uint32_t n_used) {
-            const uint32_t denominator = n_used < LARGE_SEGMENT_N_BOARDS ? RESIZE_TARGET_DENOMINATOR : RESIZE_TARGET_DENOMINATOR_LARGE;
+        static inline uint32_t n_groups_for(uint32_t n_used, bool compact = false) {
+            const uint32_t denominator = compact ? RESIZE_TARGET_DENOMINATOR_COMPACT : RESIZE_TARGET_DENOMINATOR;
             return (uint32_t)(((uint64_t)n_used * RESIZE_TARGET_NUMERATOR + denominator - 1) / denominator);
+        }
+
+        static inline uint64_t array_bytes(uint32_t n_groups) {
+            return uint64_t(n_groups) * GROUP_SIZE * (sizeof(Board) + sizeof(Value) + 1);
+        }
+
+        static inline bool rebuild_large_segment(Segment &segment, uint32_t n_used, const book_table_memory::Memory_status &memory) {
+            const uint32_t normal_groups = n_groups_for(n_used);
+            const uint32_t compact_groups = n_groups_for(n_used, true);
+            book_table_memory::Reservation reservation(array_bytes(normal_groups));
+            if (!reservation.under_pressure(memory) && resize_segment(segment, normal_groups)) {
+                return true;
+            }
+            reservation.reduce_to(array_bytes(compact_groups));
+            return resize_segment(segment, compact_groups);
+        }
+
+        static inline bool rebuild_segment(Segment &segment, uint32_t n_used,
+                book_table_memory::Memory_status (*memory_query)() = book_table_memory::query_status) {
+            if (n_used < LARGE_SEGMENT_N_BOARDS) {
+                return resize_segment(segment, n_groups_for(n_used));
+            }
+            return rebuild_large_segment(segment, n_used, memory_query());
         }
 
         // find the slot of the key, or register the key with init_value
@@ -337,7 +359,7 @@ class Board_table {
                 return insert_slot;
             }
             if (segment.n_used + segment.n_deleted + 1 > segment.n_groups * MAX_USED_PER_GROUP) { // no room
-                if (!resize_segment(segment, n_groups_for(segment.n_used + 1))) {
+                if (!rebuild_segment(segment, segment.n_used + 1)) {
                     // Out of memory: the segment is not changed, and the lock is released by the guard of the caller.
                     // (std::exit() must not be called here. It runs the destructors of the global objects with this segment
                     //  locked: the thread pool then waits for its threads, which wait for this lock, and the process never ends.)
@@ -572,7 +594,7 @@ class Board_table {
                 if (segment.n_used == 0) {
                     resize_segment(segment, 0);
                 } else if (segment.n_groups > 1 && segment.n_used * 5 < segment.n_groups * GROUP_SIZE) { // too sparse
-                    resize_segment(segment, n_groups_for(segment.n_used)); // out of memory: the segment is kept as it is
+                    rebuild_segment(segment, segment.n_used); // out of memory: the segment is kept as it is
                 }
             }
             n_elems.fetch_sub(1, std::memory_order_relaxed);
