@@ -218,7 +218,12 @@ int nega_scout(Search *search, int alpha, int beta, const int depth, const bool 
     Flip_value move_list[MAX_N_BRANCHES];
     int idx = 0;
     int tt_moves_idx0 = -1;
-    for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)) {
+    // The loop uses a copy of legal: next_bit() clears the bits, so legal was 0 after this loop,
+    // and mpc() below was called with legal == 0. nega_alpha_ordering_nws() takes legal == 0 as "no legal move":
+    // the shallow search of Multi-ProbCut (depth >= 2) passed and searched the board with the opponent to move,
+    // instead of this board. (nega_alpha_ordering_nws() calls mpc() before its loop, with the right legal.)
+    uint64_t legal_copy = legal;
+    for (uint_fast8_t cell = first_bit(&legal_copy); legal_copy; cell = next_bit(&legal_copy)) {
         calc_flip(&move_list[idx].flip, &search->board, cell);
         if (move_list[idx].flip.flip == search->board.opponent) {
             return SCORE_MAX;
