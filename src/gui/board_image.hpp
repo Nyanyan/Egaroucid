@@ -26,8 +26,6 @@ private:
     Button back_button;
     Button save_image_button;
     FrameButton clear_button;
-    Radio_button mark_radio;
-    Radio_button mark_style_radio;
     Radio_button color_radio;
     Radio_button outer_frame_color_radio;
     Radio_button coordinate_radio;
@@ -161,12 +159,10 @@ private:
         }
     }
 
-    void draw_mark(int cell, int disc, bool monochrome) const {
-        const int mark = edit.marks[cell];
+    void draw_mark_symbol(int mark, const Vec2& center, int disc, bool monochrome, std::optional<int> value = std::nullopt) const {
         if (mark == BOARD_IMAGE_NOMARK) {
             return;
         }
-        const Vec2 center = cell_center(cell);
         const auto& colors = getData().colors;
         const Color contrast = disc == WHITE ? colors.black : colors.white;
         if (mark == BOARD_IMAGE_FLIP) {
@@ -177,8 +173,8 @@ private:
             return;
         }
         if (mark == BOARD_IMAGE_VALUE) {
-            const String value = edit.values[cell] ? Format(*edit.values[cell]) : U"...";
-            getData().fonts.font_bold(value).drawAt(22, center, monochrome ? colors.black : colors.white);
+            const String text = value ? Format(*value) : U"...";
+            getData().fonts.font_bold(text).drawAt(22, center, monochrome ? colors.black : colors.white);
             return;
         }
         const auto [tool, style] = board_image_tool_from_mark(mark);
@@ -218,6 +214,99 @@ private:
         }
     }
 
+    void select_mark(int mark) {
+        if (selected_mark != mark) {
+            arrow_input.cancel();
+            last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
+            selected_mark = mark;
+        }
+    }
+
+    void draw_palette_tile(int mark, const RectF& region) {
+        const bool hovered = region.mouseOver();
+        if (hovered) {
+            Cursor::RequestStyle(CursorStyle::Hand);
+        }
+        const bool selected = mark == selected_mark;
+        const Color background = selected ? Color(58, 166, 133) :
+            (hovered ? Color(52, 135, 105) : getData().colors.dark_green);
+        const s3d::RoundRect tile(region, 6);
+        tile.draw(background);
+        if (selected) {
+            tile.drawFrame(2, 0, getData().colors.cyan);
+        }
+        const Vec2 center = region.center();
+        if (mark == BOARD_IMAGE_ARROW) {
+            draw_arrow(center - Vec2{16, 0}, center + Vec2{16, 0});
+        } else if (mark == BOARD_IMAGE_NOMARK) {
+            // The same eraser icon is used for every language.
+            const Vec2 a = center + Vec2{-10, 0}, b = center + Vec2{0, -10};
+            const Vec2 c = center + Vec2{12, 2}, d = center + Vec2{2, 12};
+            Quad(a, b, (b + c) / 2, (a + d) / 2).draw(getData().colors.white);
+            Quad(a, b, c, d).drawFrame(2, getData().colors.white);
+        } else {
+            // Palette and board share the exact same mark renderer.
+            draw_mark_symbol(mark, center, VACANT, false, 0);
+        }
+    }
+
+    void draw_mark_palette() {
+        constexpr int shapes[3][3] = {
+            {BOARD_IMAGE_BRECT, BOARD_IMAGE_WRECT, BOARD_IMAGE_ORECT},
+            {BOARD_IMAGE_BSTAR, BOARD_IMAGE_WSTAR, BOARD_IMAGE_OSTAR},
+            {BOARD_IMAGE_BCIRCLE, BOARD_IMAGE_WCIRCLE, BOARD_IMAGE_OCIRCLE}
+        };
+        constexpr double tile_width = (300.0 - 2 * 8) / 3;
+        std::array<std::pair<int, RectF>, 13> tiles;
+        for (int row = 0; row < 3; ++row) {
+            for (int column = 0; column < 3; ++column) {
+                tiles[row * 3 + column] = {shapes[row][column], RectF(480 + column * (tile_width + 8), 90 + row * 44, tile_width, 36)};
+            }
+        }
+        constexpr int tools[] = {BOARD_IMAGE_FLIP, BOARD_IMAGE_VALUE, BOARD_IMAGE_ARROW, BOARD_IMAGE_NOMARK};
+        for (int i = 0; i < 4; ++i) {
+            tiles[9 + i] = {tools[i], RectF(480 + i * 77, 222, 69, 36)};
+        }
+        // Resolve selection first so only the new tile is highlighted this frame.
+        for (const auto& [mark, region] : tiles) {
+            if (region.leftClicked()) {
+                select_mark(mark);
+            }
+        }
+        for (const auto& [mark, region] : tiles) {
+            draw_palette_tile(mark, region);
+        }
+        const char* hints[] = {"flip", "value", "arrow_hint", "nomark"};
+        for (int i = 0; i < 4; ++i) {
+            if (tiles[9 + i].second.mouseOver() && selected_mark != BOARD_IMAGE_ARROW) {
+                getData().fonts.font(language.get("board_image", hints[i])).draw(13, 480, 266, getData().colors.white);
+            }
+        }
+        if (selected_mark == BOARD_IMAGE_ARROW) {
+            getData().fonts.font(language.get("board_image", "arrow_hint")).draw(13, 480, 266, getData().colors.white);
+        }
+    }
+
+    void draw_image_options() {
+        Line(480, 288, 780, 288).draw(1, ColorF(getData().colors.white, 0.2));
+        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 480, 300, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "color")).draw(15, 480, 338, getData().colors.white);
+        coordinate_radio.draw();
+        color_radio.draw();
+        const bool color_enabled = color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT;
+        getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 480, 376, ColorF(getData().colors.white, color_enabled ? 1.0 : 0.35));
+        if (color_enabled) {
+            outer_frame_color_radio.draw();
+        } else {
+            for (const auto& option : outer_frame_color_radio.elems) {
+                if (option.checked) {
+                    option.circle.draw(ColorF(getData().colors.cyan, 0.35));
+                }
+                option.font(option.str).draw(option.font_size, Arg::leftCenter = Vec2{option.x + radio_button_margin, option.y}, ColorF(getData().colors.white, 0.35));
+            }
+        }
+    }
+
 public:
     Board_image(const InitData& init) : IScene{ init } {
         set_scene_ime_enabled(false);
@@ -225,42 +314,23 @@ public:
         clear_button.init(578, 436, 90, 44, 8, 1, language.get("board_image", "clear"), 17, getData().fonts.font, getData().colors.green, getData().colors.white, getData().colors.white);
         save_image_button.init(676, 436, 104, 44, 8, language.get("board_image", "save_image"), 17, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
-        mark_radio.init();
-        const char* tools[] = {"rect", "star", "circle", "flip", "value", "arrow", "nomark"};
-        for (int i = 0; i < 7; ++i) {
-            elem.init(480, 100 + i * 24, getData().fonts.font, 15, language.get("board_image", tools[i]), i == 0);
-            if (i == BOARD_IMAGE_TOOL_FLIP) {
-                elem.str.clear();
-                elem.region = RectF(480, 100 + i * 24 - 12, 60, 24);
-            }
-            mark_radio.push(elem);
-        }
-        mark_style_radio.init();
-        const char* styles[] = {"black", "white", "outline"};
-        for (int i = 0; i < 3; ++i) {
-            elem.init(480, 290 + i * 20, getData().fonts.font, 15, language.get("board_image", styles[i]), i == 0);
-            mark_style_radio.push(elem);
-        }
         coordinate_radio.init();
-        elem.init(600, 100, getData().fonts.font, 15, language.get("board_image", "include_coordinate"), true);
+        elem.init(580, 310, getData().fonts.font, 14, language.get("board_image", "include_coordinate"), true);
         coordinate_radio.push(elem);
-        elem.init(600, 120, getData().fonts.font, 15, language.get("board_image", "exclude_coordinate"), false);
+        elem.init(676, 310, getData().fonts.font, 14, language.get("board_image", "exclude_coordinate"), false);
         coordinate_radio.push(elem);
         color_radio.init();
-        elem.init(600, 180, getData().fonts.font, 15, language.get("board_image", "default"), true);
+        elem.init(580, 348, getData().fonts.font, 14, language.get("board_image", "default"), true);
         color_radio.push(elem);
-        elem.init(600, 200, getData().fonts.font, 15, language.get("board_image", "monochrome"), false);
+        elem.init(676, 348, getData().fonts.font, 14, language.get("board_image", "monochrome"), false);
         color_radio.push(elem);
         outer_frame_color_radio.init();
-        elem.init(600, 260, getData().fonts.font, 15, language.get("board_image", "white"), true);
+        elem.init(580, 386, getData().fonts.font, 14, language.get("board_image", "white"), true);
         outer_frame_color_radio.push(elem);
-        elem.init(600, 280, getData().fonts.font, 15, language.get("board_image", "dark_gray"), false);
+        elem.init(676, 386, getData().fonts.font, 14, language.get("board_image", "dark_gray"), false);
         outer_frame_color_radio.push(elem);
 
         selected_mark = getData().settings.board_image_mark;
-        const auto [tool, style] = board_image_tool_from_mark(selected_mark);
-        mark_radio.set_checked(tool);
-        mark_style_radio.set_checked(style);
         coordinate_radio.set_checked(getData().settings.board_image_coordinate);
         color_radio.set_checked(getData().settings.board_image_color);
         outer_frame_color_radio.set_checked(getData().settings.board_image_outer_frame_color);
@@ -284,35 +354,13 @@ public:
         }
         Scene::SetBackground(getData().colors.green);
         getData().fonts.font(language.get("in_out", "board_image")).draw(25, 480, 20, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "mark")).draw(15, 480, 70, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 600, 70, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "color")).draw(15, 600, 150, getData().colors.white);
-        mark_radio.draw();
-        const auto& flip_option = mark_radio.elems[BOARD_IMAGE_TOOL_FLIP];
-        draw_flip(Vec2{flip_option.x + radio_button_margin + 12, flip_option.y}, getData().colors.white);
-        if (mark_radio.checked <= BOARD_IMAGE_TOOL_CIRCLE) {
-            getData().fonts.font(language.get("board_image", "mark_style")).draw(15, 480, 265, getData().colors.white);
-            mark_style_radio.draw();
-        }
-        color_radio.draw();
-        if (color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT) {
-            getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 600, 230, getData().colors.white);
-            outer_frame_color_radio.draw();
-        }
-        coordinate_radio.draw();
-        const int new_mark = board_image_mark_from_tool(mark_radio.checked, mark_style_radio.checked);
-        if (new_mark != selected_mark) {
-            arrow_input.cancel();
-            last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
-            selected_mark = new_mark;
-        }
+        getData().fonts.font(language.get("board_image", "mark")).draw(15, 480, 64, getData().colors.white);
+        draw_mark_palette();
+        draw_image_options();
         getData().settings.board_image_mark = selected_mark;
         getData().settings.board_image_coordinate = coordinate_radio.checked;
         getData().settings.board_image_color = color_radio.checked;
         getData().settings.board_image_outer_frame_color = outer_frame_color_radio.checked;
-        if (selected_mark == BOARD_IMAGE_ARROW) {
-            getData().fonts.font(language.get("board_image", "arrow_hint")).draw(13, 600, 285, getData().colors.white);
-        }
         Line(480, 420, 780, 420).draw(1, ColorF(getData().colors.white, 0.35));
         clear_button.draw();
         back_button.draw();
@@ -350,7 +398,7 @@ public:
         int board_arr[HW2];
         getData().history_elem.board.translate_to_arr(board_arr, getData().history_elem.player);
         for (int cell = 0; cell < HW2; ++cell) {
-            draw_mark(cell, board_arr[cell], monochrome);
+            draw_mark_symbol(edit.marks[cell], cell_center(cell), board_arr[cell], monochrome, edit.values[cell]);
         }
         for (const auto& arrow : edit.arrows) {
             draw_arrow(cell_center(arrow.from), cell_center(arrow.to));
