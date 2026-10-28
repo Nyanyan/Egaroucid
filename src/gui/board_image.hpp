@@ -240,7 +240,9 @@ private:
         const s3d::RoundRect tile(region, 6);
         tile.drawFrame(selected ? 2 : 1, 0, selected ? getData().colors.white : getData().colors.dark_gray);
         const Vec2 center = region.center();
-        if (mark == BOARD_IMAGE_ARROW) {
+        if (mark == BOARD_IMAGE_VALUE) {
+            getData().fonts.font(language.get("board_image", "value")).drawAt(16, center, getData().colors.white);
+        } else if (mark == BOARD_IMAGE_ARROW) {
             draw_arrow(center - Vec2{16, 0}, center + Vec2{16, 0});
         } else if (mark == BOARD_IMAGE_NOMARK) {
             // The same eraser icon is used for every language.
@@ -250,7 +252,7 @@ private:
             Quad(a, b, c, d).drawFrame(2, getData().colors.white);
         } else {
             // Palette and board share the exact same mark renderer.
-            draw_mark_symbol(mark, center, VACANT, false, 0);
+            draw_mark_symbol(mark, center, VACANT, false);
         }
     }
 
