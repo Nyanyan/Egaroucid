@@ -1,7 +1,15 @@
 from othello_py import *
+from pathlib import Path
+
+
+def opening_board_key(board):
+    # The same four symmetries as the GUI: preserve the initial black/white discs.
+    diagonal = ''.join(board[x * hw + y] for y in range(hw) for x in range(hw))
+    return min(board, board[::-1], diagonal, diagonal[::-1])
+
 
 data = []
-with open('data/openings_japanese.txt', 'r', encoding='utf-8') as f:
+with Path(__file__).with_name('openings_japanese.txt').open(encoding='utf-8') as f:
     for datum in f.read().splitlines():
         if len(datum.replace(' ', '').replace('　', '')):
             if datum.replace(' ', '').replace('　', '')[:2] == '//':
@@ -27,7 +35,7 @@ for i in range(len(data)):
         for cname, crecord, cchildren in data:
             if child == cname:
                 n_children -= set(cchildren)
-    n_children = list(n_children)
+    n_children = sorted(n_children)
     data[i][2] = n_children
     if record == 'F5F6':
         print(name, record, children, n_children)
@@ -43,7 +51,8 @@ for name, record, children in data:
     for i in range(0, len(record), 2):
         x = ord(record[i]) - ord('a')
         y = int(record[i + 1]) - 1
-        o.move(y, x)
+        if not o.move(y, x):
+            raise ValueError(f'Illegal move in {name}: {record[:i + 2]}')
         if not o.check_legal():
             o.player = 1 - o.player
             o.check_legal()
@@ -68,12 +77,19 @@ for board in joseki_many.keys():
         for name, record, children in data:
             if name == child:
                 joseki_children -= set(children)
-    joseki_many[board] = list(joseki_children)
+    joseki_many[board] = sorted(joseki_children)
 
 print(len(joseki))
 print(len(joseki_many))
 with open('output/openings.txt', 'w', encoding='utf-8') as f:
+    written = {}
     for board in joseki.keys():
+        key = opening_board_key(board)
+        if key in written:
+            if written[key] != joseki[board]:
+                raise ValueError(f'Conflicting names for symmetric boards: {written[key]} / {joseki[board]}')
+            continue
+        written[key] = joseki[board]
         f.write(board + ' ' + joseki[board] + '\n')
 with open('output/openings_fork.txt', 'w', encoding='utf-8') as f:
     for board in joseki_many.keys():
