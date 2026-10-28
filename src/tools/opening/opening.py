@@ -81,6 +81,7 @@ for board in joseki_many.keys():
 
 print(len(joseki))
 print(len(joseki_many))
+Path('output').mkdir(exist_ok=True)
 with open('output/openings.txt', 'w', encoding='utf-8') as f:
     written = {}
     for board in joseki.keys():
