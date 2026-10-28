@@ -18,6 +18,22 @@ The Python runner builds with MSVC `/O2 /arch:AVX2`; other platforms use g++ wit
 `-O3 -march=native -pthread` (Windows/MSVC is the validated configuration).
 Python 3.9+ is required. Optional `psutil` adds measured CPU, thread and RAM status.
 
+Hash levels 25..29 are supported. A level-29 table contains 536,870,912 entries
+(16 GiB with the current 32-byte entry). The supplied resources stop at level 27;
+prepare a separate resource snapshot for a larger table:
+
+```powershell
+python src/tools/book_repair/prepare_hash_resources.py --resources bin/resources --output ignored/hash29-resources --hash-level 29
+```
+
+Pass that directory as `--resources` and set `--hash-level 29` in `run_repair.py`.
+The helper copies the evaluation files and deterministically generates missing
+hash data using the engine's random fallback contract. SHA-256 identities and the
+seed are saved. Hash data changes transposition-table indexing, not search level.
+An existing checkpoint intentionally rejects different binaries/hash settings;
+changing them requires a validated migration, preserving the old checkpoint and
+checking its original engine, input, model and completed results before import.
+
 Run a pilot in a visible PowerShell console:
 
 ```powershell

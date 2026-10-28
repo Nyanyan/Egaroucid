@@ -140,6 +140,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--exe', type=Path, required=True)
     parser.add_argument('--work-dir', type=Path, required=True)
+    parser.add_argument('--resources', type=Path, default=ROOT / 'bin/resources')
+    parser.add_argument('--hash-level', type=int, default=25)
     args = parser.parse_args()
     directory = args.work_dir.absolute()
     directory.mkdir(parents=True, exist_ok=False)
@@ -148,8 +150,9 @@ def main():
     checkpoint = directory / 'leaves.checkpoint'
     boards, passes = fixture(original)
     base = [str(args.exe.absolute()), '--input', str(original), '--output', str(output)]
-    repair = base + ['--mode', 'repair', '--resources', str(ROOT / 'bin/resources'),
-                     '--checkpoint', str(checkpoint), '--threads', '4', '--report', str(directory / 'report.json')]
+    repair = base + ['--mode', 'repair', '--resources', str(args.resources.absolute()),
+                     '--hash-level', str(args.hash_level), '--checkpoint', str(checkpoint),
+                     '--threads', '4', '--report', str(directory / 'report.json')]
 
     def run(arguments, success=True):
         result = subprocess.run(arguments, capture_output=True, text=True, timeout=45)

@@ -75,7 +75,7 @@ Options options(int argc, char** argv) {
     require(!result.input.empty(), "--input is required");
     require(result.mode == "audit" || result.mode == "repair" || result.mode == "verify", "Unknown mode");
     require(result.threads >= 1 && result.threads <= 128, "Invalid thread count");
-    require(result.hash_level >= 25 && result.hash_level <= 27, "Hash level must be 25..27");
+    require(result.hash_level >= 25 && result.hash_level <= 29, "Hash level must be 25..29");
     require(result.level >= 0 && result.level <= 60, "Level must be 0 (preserve) or 1..60");
     if (result.mode != "audit") require(!result.output.empty(), "--output is required");
     if (result.mode == "repair") {
