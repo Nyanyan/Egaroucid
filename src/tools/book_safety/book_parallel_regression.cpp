@@ -15,7 +15,7 @@ Snapshot snapshot(Book& target) {
     Snapshot result;
     target.for_each_board_snapshot([&](Board b) {
         Book_elem value = target.get(b);
-        result.emplace_back(b.player, b.opponent, value.value, value.n_lines, value.seen);
+        result.emplace_back(b.player, b.opponent, value.value, uint32_t(value.n_lines), bool(value.seen));
         return true;
     });
     std::sort(result.begin(), result.end());
@@ -112,7 +112,8 @@ int main() {
                 require(actual_pass_boards == expected_pass_boards && snapshot(book) == pass_seen, "pass traversal changed its result");
             }
         }
-        static_assert(sizeof(Book_elem) == 12, "book element grew");
+        // --ref also checks revisions with the previous 12-byte layout.
+        static_assert(sizeof(Book_elem) <= 12, "book element grew");
         static_assert(std::is_trivially_copyable<Book_elem>::value, "book element lost trivial copying");
         require(race_free, "overlapping shared-child accesses detected");
         std::cout << "PASS: shared-child accesses and serial/parallel traversal results\n";
