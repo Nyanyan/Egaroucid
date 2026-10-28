@@ -400,6 +400,7 @@
         "flip": "Flip",
         "mark_style": "Mark style",
         "black": "Black",
+        "outline": "Outline",
         "clear": "Clear marks",
         "nomark": "Delete",
         "default": "Default",

@@ -141,18 +141,30 @@ private:
             return;
         }
         const auto [tool, style] = board_image_tool_from_mark(mark);
-        const Color color = style == BOARD_IMAGE_STYLE_BLACK ? colors.black : colors.white;
-        const bool halo = ((style == BOARD_IMAGE_STYLE_BLACK && disc == BLACK) ||
+        const bool outline = style == BOARD_IMAGE_STYLE_OUTLINE;
+        const Color color = outline ? contrast : (style == BOARD_IMAGE_STYLE_BLACK ? colors.black : colors.white);
+        const bool halo = !outline && ((style == BOARD_IMAGE_STYLE_BLACK && disc == BLACK) ||
             (style == BOARD_IMAGE_STYLE_WHITE && (disc == WHITE || (disc == VACANT && monochrome))));
         const Color halo_color = style == BOARD_IMAGE_STYLE_BLACK ? colors.white : colors.black;
+        const bool outline_halo = outline && disc == VACANT && monochrome;
         if (tool == BOARD_IMAGE_TOOL_RECT) {
             const RectF rect(Arg::center = center, BOARD_IMAGE_RECT_SIZE, BOARD_IMAGE_RECT_SIZE);
-            rect.draw(color);
-            if (halo) rect.drawFrame(1, 1, halo_color);
+            if (outline) {
+                if (outline_halo) rect.drawFrame(2, 2, colors.black);
+                rect.drawFrame(1, 1, color);
+            } else {
+                rect.draw(color);
+                if (halo) rect.drawFrame(1, 1, halo_color);
+            }
         } else if (tool == BOARD_IMAGE_TOOL_STAR) {
             const auto star = Shape2D::Star(BOARD_IMAGE_STAR_SIZE, center);
-            star.draw(color);
-            if (halo) star.drawFrame(BOARD_IMAGE_FRAME_WIDTH, halo_color);
+            if (outline) {
+                if (outline_halo) star.drawFrame(4, colors.black);
+                star.drawFrame(BOARD_IMAGE_FRAME_WIDTH, color);
+            } else {
+                star.draw(color);
+                if (halo) star.drawFrame(BOARD_IMAGE_FRAME_WIDTH, halo_color);
+            }
         }
     }
 
@@ -171,8 +183,8 @@ public:
             mark_radio.push(elem);
         }
         mark_style_radio.init();
-        const char* styles[] = {"black", "white"};
-        for (int i = 0; i < 2; ++i) {
+        const char* styles[] = {"black", "white", "outline"};
+        for (int i = 0; i < 3; ++i) {
             elem.init(480, 290 + i * 20, getData().fonts.font, 15, language.get("board_image", styles[i]), i == 0);
             mark_style_radio.push(elem);
         }

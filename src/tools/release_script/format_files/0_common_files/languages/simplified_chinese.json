@@ -402,6 +402,7 @@
         "flip": "翻转",
         "mark_style": "标记样式",
         "black": "黑",
+        "outline": "轮廓",
         "clear": "清除标记",
         "nomark": "删除",
         "default": "默认",

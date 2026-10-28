@@ -402,6 +402,7 @@
         "flip": "反転",
         "mark_style": "表示方法",
         "black": "黒",
+        "outline": "縁取り",
         "clear": "マークをクリア",
         "nomark": "削除",
         "default": "デフォルト",
