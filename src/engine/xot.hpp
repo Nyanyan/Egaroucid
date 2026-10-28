@@ -109,6 +109,12 @@ inline std::vector<int> get_random_xot_moves() {
     if (!xot_transcript_to_board(transcript, &board, &moves)) {
         return {};
     }
+    // Identity, diagonal reflections and 180-degree rotation preserve the initial black/white discs.
+    constexpr int symmetries[] = { 0, 2, 5, 7 };
+    const int symmetry = symmetries[myrandrange(0, 4)];
+    for (int& move : moves) {
+        move = convert_coord_to_representative_board(move, symmetry);
+    }
     return moves;
 }
 
