@@ -23,8 +23,11 @@ indices outside the supported range are clamped. The frame color is retained
 while its control is hidden in monochrome mode.
 
 The editor presents a 3-by-3 symbol palette: square, star, and circle rows, each
-with black, white, and outline variants. Four more tiles show the actual flip,
-value, arrow, and eraser symbols. There is no separate mark-style text selector.
+with black, white, and outline variants. Four more tiles show flip, arrow, and
+eraser symbols and a localized evaluation label (not an example numeric value).
+Selected tiles have a white border; unselected tiles have a thin dark gray
+border. Neither selection nor hovering fills their backgrounds.
+There is no separate mark-style text selector.
 The palette and board share the same mark renderer. The IDs above preserve
 the original six choices in old configuration files.
 Flip and outline marks use white on black discs, black on white discs,
@@ -38,7 +41,8 @@ uses the same cell calculation as the preview. Selecting another tool, clearing,
 an image, or leaving the editor cancels an unfinished arrow. Arrows are black
 with white outlines. The erase tool removes the topmost arrow under the cursor
 (including its head), without erasing a cell mark underneath on that click.
-The bottom action row contains Back, Clear all, and Save image. Clear all removes
+The bottom action row contains Back, Clear all, and Save. Only Save has a white
+fill; Back and Clear all have matching unfilled white borders. Clear all removes
 all cell marks, values, arrows, and pending endpoints for the displayed position.
 Image options stay on aligned rows, with the frame row disabled in monochrome
 mode so that the layout does not shift.
@@ -126,3 +130,10 @@ verified. For arrow snapping, the cursor was moved to two different corners of
 F6, then to G6, then outside the board. The preview stayed at the F6 center,
 switched to the G6 center, and disappeared outside. Clicking away from the G6
 center produced the same endpoint as the preview.
+
+On 2026-10-29, the neutral border styling and shortened Save label passed the
+MSVC `SIMD_Portable` build and GUI checks at Japanese 0.8 and English 1.0 scale.
+The localized evaluation label fit its tile, selected the value tool, and placed
+a numeric value on the board. Save, Clear all, and the outlined Back button
+worked. Save/value translations in all four runtime language files matched
+their release templates (Value / 評価値 / 评估值 / 評估值).
