@@ -105,6 +105,10 @@ void init_default_settings(const Directories* directories, const Resources* reso
     settings->show_ai_focus = false;
     settings->pv_length = 7;
     settings->screenshot_saving_dir = directories->document_dir + "screenshots/";
+    settings->board_image_mark = BOARD_IMAGE_BRECT;
+    settings->board_image_coordinate = BOARD_IMAGE_COORDINATE_INCLUDE;
+    settings->board_image_color = BOARD_IMAGE_COLOR_DEFAULT;
+    settings->board_image_outer_frame_color = BOARD_IMAGE_OUTER_FRAME_WHITE;
     settings->input_game_last_subfolder.clear();
     settings->opening_setting_last_subfolder.clear();
     settings->othello_quest_username.clear();
@@ -585,12 +589,20 @@ void init_settings(const Directories* directories, const Resources* resources, S
         init_settings_import_str(setting_json, U"othello_quest_username", &settings->othello_quest_username);
         init_settings_import_int(setting_json, U"othello_quest_mode", &settings->othello_quest_mode);
         init_settings_import_bool(setting_json, U"enable_recycle_bin", &settings->enable_recycle_bin);
+        init_settings_import_int(setting_json, U"board_image_mark", &settings->board_image_mark);
+        init_settings_import_int(setting_json, U"board_image_coordinate", &settings->board_image_coordinate);
+        init_settings_import_int(setting_json, U"board_image_color", &settings->board_image_color);
+        init_settings_import_int(setting_json, U"board_image_outer_frame_color", &settings->board_image_outer_frame_color);
         init_settings_import_double(setting_json, U"window_scale", &settings->window_scale);
         const bool has_window_pos_x = init_settings_import_int(setting_json, U"window_pos_x", &settings->window_pos_x) == ERR_OK;
         const bool has_window_pos_y = init_settings_import_int(setting_json, U"window_pos_y", &settings->window_pos_y) == ERR_OK;
         settings->has_window_pos = has_window_pos_x && has_window_pos_y;
     }
     settings->window_scale = std::clamp(settings->window_scale, WINDOW_SCALE_MIN, WINDOW_SCALE_MAX);
+    settings->board_image_mark = std::clamp(settings->board_image_mark, BOARD_IMAGE_BRECT, BOARD_IMAGE_NOMARK);
+    settings->board_image_coordinate = std::clamp(settings->board_image_coordinate, BOARD_IMAGE_COORDINATE_INCLUDE, BOARD_IMAGE_COORDINATE_EXCLUDE);
+    settings->board_image_color = std::clamp(settings->board_image_color, BOARD_IMAGE_COLOR_DEFAULT, BOARD_IMAGE_COLOR_MONOCHROME);
+    settings->board_image_outer_frame_color = std::clamp(settings->board_image_outer_frame_color, BOARD_IMAGE_OUTER_FRAME_WHITE, BOARD_IMAGE_OUTER_FRAME_DARK);
     settings->othello_quest_mode = std::clamp(settings->othello_quest_mode, 0, 2);
     settings->auto_save_ai_profile_mode = std::clamp(settings->auto_save_ai_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);
     settings->auto_save_display_profile_mode = std::clamp(settings->auto_save_display_profile_mode, PROFILE_AUTO_SAVE_MODE_OVERWRITE, PROFILE_AUTO_SAVE_MODE_NEW);

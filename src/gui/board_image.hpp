@@ -16,22 +16,6 @@
 #include "draw.hpp"
 #include "screen_shot.hpp"
 
-constexpr int BOARD_IMAGE_COLOR_DEFAULT = 0;
-constexpr int BOARD_IMAGE_COLOR_MONOCHROME = 1;
-
-constexpr int BOARD_IMAGE_OUTER_FRAME_WHITE = 0;
-constexpr int BOARD_IMAGE_OUTER_FRAME_DARK = 1;
-
-constexpr int BOARD_IMAGE_COORDINATE_INCLUDE = 0;
-constexpr int BOARD_IMAGE_COORDINATE_EXCLUDE = 1;
-
-constexpr int BOARD_IMAGE_BRECT = 0;
-constexpr int BOARD_IMAGE_BSTAR = 1;
-constexpr int BOARD_IMAGE_WRECT = 2;
-constexpr int BOARD_IMAGE_WSTAR = 3;
-constexpr int BOARD_IMAGE_VALUE = 4;
-constexpr int BOARD_IMAGE_NOMARK = 5;
-
 constexpr int BOARD_IMAGE_MARK_DELETED = -1;
 constexpr int BOARD_IMAGE_NOT_CLICKED = 2;
 constexpr int BOARD_IMAGE_RECT_SIZE = 20;
@@ -92,7 +76,10 @@ public:
         radio_button_elem.init(600, 280, getData().fonts.font, 15, language.get("board_image", "dark_gray"), false);
         outer_frame_color_radio.push(radio_button_elem);
 
-        
+        mark_radio.set_checked(getData().settings.board_image_mark);
+        coordinate_radio.set_checked(getData().settings.board_image_coordinate);
+        color_radio.set_checked(getData().settings.board_image_color);
+        outer_frame_color_radio.set_checked(getData().settings.board_image_outer_frame_color);
 
         for (int i = 0; i < HW2; ++i) {
             marks[i] = BOARD_IMAGE_NOMARK;
@@ -177,6 +164,10 @@ public:
             outer_frame_color_radio.draw();
         }
         coordinate_radio.draw();
+        getData().settings.board_image_mark = mark_radio.checked;
+        getData().settings.board_image_coordinate = coordinate_radio.checked;
+        getData().settings.board_image_color = color_radio.checked;
+        getData().settings.board_image_outer_frame_color = outer_frame_color_radio.checked;
         if (color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME) {
             const int clip_sx = BOARD_SX - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;
             const int clip_sy = BOARD_SY - BOARD_ROUND_FRAME_WIDTH - BOARD_COORD_SIZE - 1;

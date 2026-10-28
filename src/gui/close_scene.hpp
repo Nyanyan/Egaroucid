@@ -126,6 +126,10 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"show_ai_focus"] = menu_elements.show_ai_focus;
     setting_json[U"pv_length"] = menu_elements.pv_length;
     setting_json[U"screenshot_saving_dir"] = Unicode::Widen(user_settings.screenshot_saving_dir);
+    setting_json[U"board_image_mark"] = settings.board_image_mark;
+    setting_json[U"board_image_coordinate"] = settings.board_image_coordinate;
+    setting_json[U"board_image_color"] = settings.board_image_color;
+    setting_json[U"board_image_outer_frame_color"] = settings.board_image_outer_frame_color;
     setting_json[U"input_game_last_subfolder"] = Unicode::Widen(user_settings.input_game_last_subfolder);
     setting_json[U"opening_setting_last_subfolder"] = Unicode::Widen(user_settings.opening_setting_last_subfolder);
     setting_json[U"othello_quest_username"] = Unicode::Widen(user_settings.othello_quest_username);

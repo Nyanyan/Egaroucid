@@ -543,6 +543,19 @@ struct Resources {
     std::vector<Texture> lang_img;
 };
 
+constexpr int BOARD_IMAGE_COLOR_DEFAULT = 0;
+constexpr int BOARD_IMAGE_COLOR_MONOCHROME = 1;
+constexpr int BOARD_IMAGE_OUTER_FRAME_WHITE = 0;
+constexpr int BOARD_IMAGE_OUTER_FRAME_DARK = 1;
+constexpr int BOARD_IMAGE_COORDINATE_INCLUDE = 0;
+constexpr int BOARD_IMAGE_COORDINATE_EXCLUDE = 1;
+constexpr int BOARD_IMAGE_BRECT = 0;
+constexpr int BOARD_IMAGE_BSTAR = 1;
+constexpr int BOARD_IMAGE_WRECT = 2;
+constexpr int BOARD_IMAGE_WSTAR = 3;
+constexpr int BOARD_IMAGE_VALUE = 4;
+constexpr int BOARD_IMAGE_NOMARK = 5;
+
 struct Settings {
     int n_threads;
     bool auto_update_check;
@@ -604,6 +617,10 @@ struct Settings {
     bool show_ai_focus;
     int pv_length;
     std::string screenshot_saving_dir;
+    int board_image_mark;
+    int board_image_coordinate;
+    int board_image_color;
+    int board_image_outer_frame_color;
     std::string input_game_last_subfolder;
     std::string opening_setting_last_subfolder;
     std::string othello_quest_username;
