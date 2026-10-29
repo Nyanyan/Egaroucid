@@ -16,6 +16,9 @@
 #endif
 #include <Windows.h>
 #include <imm.h>
+
+// Defined with the Windows message observer in shortcut_key.hpp.
+inline bool windows_gui_paste_tap();
 #endif
 
 constexpr int INPUT_STR_MAX_SIZE = 100000;
@@ -304,6 +307,27 @@ inline void flush_deferred_ime_candidate_window() {
 
 } // namespace gui_textarea_ime
 
+inline bool paste_completed_textarea_shortcut(TextAreaEditState& text, size_t max_chars, bool enabled) {
+#if SIV3D_PLATFORM(WINDOWS)
+    // Siv3D handles a chord which is still held in this frame. A complete
+    // down/up between frames needs the recorded Windows message edge instead.
+    if (enabled && text.active && TextInput::GetEditingText().isEmpty() &&
+        !(KeyControl + KeyV).down() && windows_gui_paste_tap()) {
+        String paste;
+        if (Clipboard::GetText(paste) && !paste.isEmpty()) {
+            text.cursorPos = Min(text.cursorPos, text.text.size());
+            text.text.insert(text.cursorPos, paste);
+            text.text.resize(Min(text.text.size(), max_chars));
+            text.cursorPos = Min(text.cursorPos + paste.size(), text.text.size());
+            text.cursorStopwatch.restart();
+            text.rebuildGlyphs();
+            return true;
+        }
+    }
+#endif
+    return false;
+}
+
 inline bool text_area_with_ime_candidate_window(
     TextAreaEditState& text,
     const Vec2& pos,
@@ -311,7 +335,8 @@ inline bool text_area_with_ime_candidate_window(
     size_t maxChars = SimpleGUI::PreferredTextAreaMaxChars,
     bool enabled = true
 ) {
-    bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
+    bool changed = paste_completed_textarea_shortcut(text, maxChars, enabled);
+    changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled) || changed;
     if (gui_textarea_ime::combine_utf16_surrogates(text.text, text.cursorPos)) {
         text.rebuildGlyphs();
         changed = true;
@@ -350,7 +375,8 @@ inline bool path_text_area_with_ime_candidate_window(
     bool enabled = true
 ) {
     const bool was_active = text.active;
-    bool changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled);
+    bool changed = paste_completed_textarea_shortcut(text, maxChars, enabled);
+    changed = SimpleGUI::TextArea(text, pos, size, maxChars, enabled) || changed;
     if (gui_textarea_ime::combine_utf16_surrogates(text.text, text.cursorPos)) {
         text.rebuildGlyphs();
         changed = true;

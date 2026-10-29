@@ -1938,6 +1938,13 @@ inline std::vector<String> get_windows_shortcut_inputs_for_diagnostics(const Win
     }
     return keys;
 }
+
+inline bool windows_gui_paste_tap() {
+    Shortcut_key_elem paste;
+    paste.keys = {U"Ctrl", U"V"};
+    Windows_shortcut_match_details details;
+    return get_windows_shortcut_match_details(paste, get_windows_shortcut_keyboard_state(), &details) && details.down_found;
+}
 #endif
 
 inline void shortcut_diagnostic_log(
