@@ -125,7 +125,8 @@ def book(ctx):
     # The staged release book is read; user-edited document/book.egbk3 is never copied.
     result = engine(ctx, "go\nexit\n", ["-noise"], book=True)
     require(result.stdout.strip() in Board().legal(), "Book search returned illegal move")
-    require("book" in result.stderr.lower(), "Book load/search log missing")
+    require(re.search(r"imported [1-9]\d* boards to book", result.stderr), "Release book did not load any positions")
+    require("level Book" in result.stderr, "Initial search did not use the book")
 
 
 CASES = [
