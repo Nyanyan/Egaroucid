@@ -17,6 +17,41 @@ inline String observed_status;
 inline int observed_list_size = -1;
 inline int observed_ready_details = -1;
 
+#if SIV3D_PLATFORM(WINDOWS)
+struct Mouse_message {
+    ULONGLONG ticks;
+    UINT message;
+    int x, y;
+    WPARAM flags;
+};
+inline std::mutex mouse_message_mutex;
+inline std::vector<Mouse_message> mouse_messages;
+inline void observe_mouse_message(HWND, UINT message, WPARAM flags, LPARAM position) {
+    if (message != WM_LBUTTONDOWN && message != WM_LBUTTONUP &&
+        !(message == WM_MOUSEMOVE && (flags & MK_LBUTTON))) return;
+    std::lock_guard<std::mutex> lock(mouse_message_mutex);
+    if (mouse_messages.size() < 4096) mouse_messages.push_back({GetTickCount64(), message,
+        static_cast<short>(LOWORD(position)), static_cast<short>(HIWORD(position)), flags});
+}
+
+inline void write_mouse_trace(int frame) {
+    std::vector<Mouse_message> messages;
+    {
+        std::lock_guard<std::mutex> lock(mouse_message_mutex);
+        messages.swap(mouse_messages);
+    }
+    if (messages.empty() && !MouseL.down() && !MouseL.pressed() && !MouseL.up()) return;
+    std::ofstream stream("desktop-mouse.tsv", std::ios::app);
+    for (const auto& message : messages) {
+        stream << "message\t" << frame << '\t' << message.ticks << '\t' << observed_scene.narrow()
+            << '\t' << message.message << '\t' << message.x << '\t' << message.y << '\t' << message.flags << '\n';
+    }
+    const auto cursor = Cursor::Pos();
+    stream << "frame\t" << frame << '\t' << GetTickCount64() << '\t' << observed_scene.narrow()
+        << '\t' << cursor.x << '\t' << cursor.y << '\t' << MouseL.down() << '\t' << MouseL.pressed() << '\t' << MouseL.up() << '\n';
+}
+#endif
+
 template<class SceneType>
 class Observed_scene : public SceneType {
     String scene_name;
@@ -265,7 +300,11 @@ class Gui_probe {
     }
 
     void observe_desktop(const Common_resources& data) {
-        if (++desktop_frames % 6 != 0 && observed_scene != U"Close") return;
+        ++desktop_frames;
+#if SIV3D_PLATFORM(WINDOWS)
+        write_mouse_trace(desktop_frames);
+#endif
+        if (desktop_frames % 6 != 0 && observed_scene != U"Close") return;
         JSON state;
         state[U"marker"] = U"egaroucid-desktop-check-v1";
         state[U"token"] = token;
@@ -321,6 +360,12 @@ public:
                 return false;
             }
             desktop_observation_enabled = (case_name == U"desktop");
+#if SIV3D_PLATFORM(WINDOWS)
+            if (desktop_observation_enabled) {
+                std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
+                windows_shortcut_message_state().diagnostic_observer = &observe_mouse_message;
+            }
+#endif
             JSON settings = JSON::Load(U"appdata/setting.json");
             settings[AUTO_UPDATE_CHECK_SETTING_KEY] = false;
             require(settings.save(U"appdata/setting.json"), "Could not prepare isolated settings");

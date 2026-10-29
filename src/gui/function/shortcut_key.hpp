@@ -964,6 +964,8 @@ struct Windows_shortcut_down_chord {
 };
 
 struct Windows_shortcut_message_state {
+    // Read-only diagnostics for explicitly requested desktop operation checks.
+    void (*diagnostic_observer)(HWND, UINT, WPARAM, LPARAM) = nullptr;
     std::unordered_set<int> pressed_vks;
     std::unordered_set<int> pending_down_vks;
     std::vector<Windows_shortcut_down_chord> pending_down_chords;
@@ -1230,6 +1232,7 @@ inline void windows_shortcut_observe_message(HWND hwnd, UINT msg, WPARAM w_param
     (void)hwnd;
     std::lock_guard<std::mutex> lock(windows_shortcut_message_state_mutex());
     Windows_shortcut_message_state& state = windows_shortcut_message_state();
+    if (state.diagnostic_observer) state.diagnostic_observer(hwnd, msg, w_param, l_param);
 
     switch (msg) {
     case WM_KEYDOWN:
