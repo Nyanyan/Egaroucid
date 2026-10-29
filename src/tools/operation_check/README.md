@@ -1,158 +1,175 @@
-# Operation checks (Issue #652)
+# 動作自動確認スクリプト（Issue #652）
 
-Reusable checks for release candidates and feature development. The scripts use
-Python 3.9+ and its standard library. Run them from any working directory; the
-examples below assume the repository root. Build the application first. These
-scripts test the supplied executable, not whichever source revision is checked
-out, and do not build or download anything automatically.
+リリース前や機能追加後に、GUI版・コンソール版の動作を確認するためのスクリプトです。
+Python 3.9以降と標準ライブラリを使います。
 
-## Run
+先にアプリケーションをビルドし、確認したい実行ファイルを指定してください。
+スクリプトは指定された実行ファイルを検証します。ソースの自動ビルドやダウンロードは行いません。
+任意の作業フォルダから実行できますが、以下の例はリポジトリのルートで実行することを想定しています。
+
+## 実行方法
 
 ```powershell
-# Console: an existing build with its resources/ directory
+# コンソール版：ビルド済みの実行ファイルとresources/を用意して実行
 python src/tools/operation_check/console.py --exe bin/Egaroucid_for_Console.exe
 
-# GUI: build with the official Visual Studio script, then check the Portable build
+# GUI版：公式のVisual Studio用スクリプトでPortable版をビルドして実行
 python src/tools/release_script/build_gui.py -c SIMD_Portable
 python src/tools/operation_check/gui.py --exe bin/Egaroucid.exe
 
-# List cases without starting the application
+# アプリケーションを起動せずに、確認ケースの一覧を表示
 python src/tools/operation_check/console.py --list
 python src/tools/operation_check/gui.py --list
 
-# Run selected cases when changing a feature (repeat --case as needed)
+# 変更した機能に関係するケースを実行（--caseは複数指定可能）
 python src/tools/operation_check/console.py --case threads --case ponder
 python src/tools/operation_check/gui.py --case settings --case annotations
 
-# Also check that the packaged translations match the release templates
+# 配布用の翻訳ファイルとリリーステンプレートの一致も確認
 python src/tools/operation_check/gui.py --case resources --templates src/tools/release_script/format_files/0_common_files/languages
 ```
 
-Use `--resources PATH` if the distribution's resource directory is elsewhere.
-Use `--output-dir PATH` to choose where evidence is kept, `--timeout SECONDS`
-to change the per-process timeout (default 30 seconds), and `--fail-fast` to stop
-after the first failing case. The full GUI suite takes about a minute on a
-development PC and opens/closes the test application several times. Run lengthy
-checks in a visible console; the runner prints the current case, completed/total
-count, elapsed time, and a provisional ETA. Ctrl+C interrupts the run and stops
-the current child application. GUI checks need an interactive desktop and a
-working graphics driver. They do not inject mouse/keyboard input.
+必要に応じて、次のオプションを指定できます。
 
-Exit codes: **0** all selected cases passed; **1** at least one case failed;
-**2** invalid arguments or a missing executable/resource directory. Misspelled
-case names are errors. Failure checks remain active under `python -O`.
-
-Each run creates a new timestamped directory under
-`build/operation_check/{console,gui}/`. `results.json` contains the executable,
-resource path, each case's result/duration/artifact directory, and whether the
-selected run completed. Cases continue after failures unless `--fail-fast` is
-set. Input, command arguments, stdout, stderr, and exception details are kept in
-each case directory. Timeouts and missing output count as failures even if the
-application would otherwise return exit code zero. Interrupted runs retain the
-last completed results; `complete: false` means cases remain unfinished.
-
-## Console coverage
-
-| Case | Checks |
+| オプション | 用途 |
 | --- | --- |
-| `metadata` | Version, CLI help and interactive help |
-| `argument-error` | Missing required CLI argument fails |
-| `perft` | 1,396 leaves at depth 5 in both pass-counting modes |
-| `history` | Mixed-case moves, transcript, undo, redo, branching and reset |
-| `illegal-moves` | Invalid coordinates, occupied/illegal cells and partial transcript rollback |
-| `search` | Quiet search from two positions, all four initial hints |
-| `endgame` | One-empty exact move/score (+64), setboard/new, explicit pass |
-| `threads`, `ponder` | Thread changes, invalid counts, search and shutdown with/without pondering |
-| `gtp` | Numbered/framed replies, identity, known_command, legal moves, turn, play, undo, clear, genmove and illegal move rejection |
-| `solve-file` | Exact endgame read from a problem file |
-| `selfplay` | Complete game replayed by an independent array-based rules implementation |
-| `book` | Release book imports positions and supplies an initial move |
+| `--resources PATH` | 配布リソースが別の場所にある場合に、そのフォルダを指定 |
+| `--output-dir PATH` | 結果やログの保存先を指定 |
+| `--timeout SECONDS` | 子プロセスごとの制限時間を秒で指定（既定値は30秒） |
+| `--fail-fast` | 最初の失敗で実行を終了 |
 
-Tests compare legal moves and exact endgame scores rather than unstable heuristic
-scores or random tie-breaking. They use one thread and hash level 18 by default.
-The engine's two specific messages about generating a missing hash18 seed are
-allowed; raw logs retain them. Other engine errors fail normal cases. The
-invalid-input cases separately verify their expected errors.
+GUI版の全ケースの実行には、開発用PCで約1分かかります。その間、確認用のアプリケーションが複数回起動・終了します。
+時間のかかる確認は、進捗を見られるコンソールで実行してください。
+実行中のケース、全体の件数と現在の実行位置、経過時間、推定残り時間が表示されます。
+Ctrl+Cで中断すると、実行中の子アプリケーションも停止します。
 
-## GUI coverage
+GUI版の確認には、操作可能なデスクトップと正常に動作するグラフィックスドライバーが必要です。
+スクリプトによるマウス・キーボード操作は行いません。
 
-The GUI binary includes an opt-in `--operation-check CASE_DIRECTORY` mode. Only
-`gui.py` should invoke it: a request marker and a unique token identify the
-isolated run. With no flag, the application follows its usual startup and
-operation. Installed (non-Portable) GUI builds reject this mode **before loading
-personal settings**; build SIMD_Portable, Generic_Portable, or AVX512_Portable.
-The Python runner checks for the protocol marker in the executable and refuses
-older binaries before launching them, since those might ignore the flag and load
-personal settings. Use an unpacked build produced by the release build script.
+### 終了コードと保存結果
 
-The probe waits for normal loading and main-scene creation, calls the production
-save/import/profile/cache/search functions, and closes through the normal Close
-scene. Native results must have the current request token and expected case.
-Normal shutdown must also produce shortcut settings. Native checks/logs are in
-`native-result.json`, `native-XX.json`, and `native.log` inside the case directory.
-
-| Case | Checks |
+| 終了コード | 意味 |
 | --- | --- |
-| `resources` | Required release files, four language JSONs and editor labels; optional template comparison |
-| `startup` | Resources/fonts, initial board/legal moves, nonblank frame, normal shutdown |
-| `settings-defaults` | Old settings lacking board-image options |
-| `settings-invalid` | Wrong types and out-of-range board-image options |
-| `settings` | Save/reload editor/display options through production persistence; restart from those saved files |
-| `transcript` | Transcript detection, illegal transcript rejection, board text import/export; independent rules comparison |
-| `profiles` | AI/display profile save/load and multilingual names |
-| `game-files` | Game JSON/CSV save/load, history, multilingual metadata and multiline memo |
-| `annotations` | Per-position storage/pruning, progression reset, arrows/duplicates, clear, grid mapping |
-| `forced-openings` | Legal continuations from a registered opening |
-| `search` | Legal AI result using the GUI-initialized engine |
-| `scenes-english`, `scenes-japanese`, `scenes-simplified-chinese`, `scenes-traditional-chinese-taiwan` | Nine scene transitions/draws each: main, text import, board editor, game information, export, board image, opening settings, shortcut settings, game library |
+| **0** | 選択した全ケースに合格 |
+| **1** | 1件以上のケースが不合格 |
+| **2** | 引数が不正、または実行ファイル・リソースフォルダが存在しない |
 
-Scene cases require a nonuniform frame of at least 600x400 pixels and save each
-as `frame-SCENE.png`. Inspect these artifacts for clipping, overlapping text and
-styling. This is a rendering smoke check, not a pixel-perfect visual comparison.
-The scripts do **not** verify button hit targets, physical keyboard/IME behavior,
-drag-and-drop, clipboard integration, native file dialogs, network services,
-installers or the entire set of book learning/repair operations. Keep interactive
-release checks for those, including the IME/focus and image-editor procedures in
-`../diagnostics/`. Passing this suite is not a claim of exhaustive GUI coverage.
+ケース名の誤字もエラーになります。また、`python -O`で実行した場合も失敗の判定は有効です。
 
-## Isolation and extending the suite
+実行するたびに、`build/operation_check/{console,gui}/`の下へ日時付きのフォルダを作成します。
+その中の`results.json`には、実行ファイルとリソースのパス、各ケースの結果・所要時間・保存先、選択した全ケースの実行が完了したかを記録します。
+`--fail-fast`を指定していなければ、失敗後も残りのケースを実行します。
 
-Every run stages the chosen executable, sibling DLLs, LICENSE (when present),
-and release resources. It never copies the original `appdata/` or `document/`.
-GUI cases get their own settings, profiles, game directories and an empty book;
-automatic update checks are disabled for that invocation. The Windows GUI reads
-resources relative to its working directory, so cases link the disposable
-resource snapshot locally (copying if hard links are unavailable). All generated
-files stay under the output directory. Console book tests use the staged release
-book. Original settings and personal books are never written. Evidence is kept
-after completion; remove old run directories when no longer needed.
+各ケースのフォルダには、入力、コマンド引数、標準出力、標準エラー出力、例外の詳細を保存します。
+アプリケーションの終了コードが0でも、タイムアウトや必要な出力の欠落があれば不合格になります。
+中断した場合も、それまでに完了したケースの結果は残ります。`complete: false`は、未実行のケースが残っていることを表します。
 
-Add a function accepting `Context`, then register `Case(name, description,
-function)` in `console.py` or `gui.py`. Stable case names make targeted regression
-runs easy. Use `require(condition, message)` for explicit invariants, and
-`ctx.run(...)` for subprocesses with logging and timeouts. For a new native GUI
-check, add its branch to `Gui_probe::check_case()` and a Python case; rebuild the
-GUI. Prefer checking the public production path and saved results instead of
-duplicating the function's implementation in the test.
+## コンソール版の確認範囲
 
-The runner and independent oracle have fast self-tests (no GUI SDK needed):
+| ケース | 確認内容 |
+| --- | --- |
+| `metadata` | バージョン表示、起動オプションのヘルプ、対話コマンドのヘルプ |
+| `argument-error` | 必須の起動引数を省略した場合にエラーになること |
+| `perft` | パスの数え方が異なる両モードで、深さ5の末端局面数が1,396になること |
+| `history` | 大文字・小文字を混ぜた着手、棋譜出力、戻す・進む、分岐、初期化 |
+| `illegal-moves` | 不正な座標、石のあるマスや非合法なマスへの着手、途中に不正な手を含む棋譜の取り消し |
+| `search` | 2局面での静音モードの探索結果、初期局面の4手すべてのヒント |
+| `endgame` | 1マス空き局面の最善手と完全読みの評価値（+64）、setboard/new、明示的なパス |
+| `threads`, `ponder` | スレッド数の変更、不正な指定の拒否、先読みの有無による探索と終了 |
+| `gtp` | 応答番号と区切り、エンジン情報、known_command、合法手、手番、着手、戻す、初期化、genmove、不正着手の拒否 |
+| `solve-file` | 問題ファイルからの終盤局面の読込と完全読み |
+| `selfplay` | 自己対戦の全棋譜を、独立した配列ベースのルール実装で再生できること |
+| `book` | 配布ブックから局面を読み込み、初手の選択にブックを使うこと |
+
+探索結果は合法手かどうかを確認し、終盤では完全読みの評価値も比較します。
+中盤の評価値や、同じ評価の手からどれを選ぶかには依存しません。
+既定では1スレッド、ハッシュレベル18を使います。
+
+配布物にhash18の初期化用データがない場合、エンジンは代わりにデータを生成します。
+この処理に伴う特定の2種類のメッセージは許容し、元のログにはそのまま残します。
+それ以外のエンジンエラーは、通常のケースでは不合格になります。
+一方、不正入力を試すケースでは、想定したエラーが出たかを個別に確認します。
+
+## GUI版の確認範囲
+
+GUI版には、明示的に指定した場合だけ動く`--operation-check CASE_DIRECTORY`モードを用意しています。
+このモードは`gui.py`から呼び出してください。専用の識別文字列と毎回異なるトークンで、確認用の実行を識別します。
+このオプションを指定しなければ、アプリケーションは通常どおり起動・動作します。
+
+GUI版の確認には、SIMD_Portable、Generic_Portable、AVX512_Portableのいずれかを使ってください。
+インストール版は、**個人設定を読み込む前に**確認モードの起動を拒否します。
+また、古い実行ファイルは確認用オプションを無視して個人設定を読み込む可能性があります。
+そのため、Python側でも実行ファイル内の識別文字列を調べ、対応していない実行ファイルを起動前に拒否します。
+リリース用ビルドスクリプトで生成した、実行ファイル圧縮などを施していないビルドを使ってください。
+
+確認処理は、通常の読込とメイン画面の作成が終わるのを待ってから、製品と共通の保存・取込・プロファイル・キャッシュ・探索の各関数を呼び出します。
+終了時も通常のCloseシーンを通ります。
+GUI側の結果には、今回の要求と同じトークンとケース名が必要です。さらに、正常終了時のショートカット設定ファイルが作成されたことも確認します。
+GUI側の結果とログは、各ケースのフォルダ内の`native-result.json`、`native-XX.json`、`native.log`に保存します。
+
+| ケース | 確認内容 |
+| --- | --- |
+| `resources` | 必須の配布ファイル、4言語のJSONと画像編集画面のラベル、指定時はテンプレートとの一致 |
+| `startup` | リソースとフォント、初期盤面と合法手、画面が描画されること、正常終了 |
+| `settings-defaults` | 盤面画像の設定項目がない旧設定ファイルの読込 |
+| `settings-invalid` | 盤面画像の設定値の型や範囲が不正な場合の処理 |
+| `settings` | 製品と共通の保存処理による画像編集・表示設定の保存と再読込、その保存結果からの再起動 |
+| `transcript` | 棋譜形式の自動認識、不正棋譜の拒否、盤面文字列の入出力、独立したルール実装との比較 |
+| `profiles` | AI・表示プロファイルの保存と読込、多言語の名前 |
+| `game-files` | 対局JSON・CSVの保存と読込、棋譜、多言語の対局情報、複数行のメモ |
+| `annotations` | 局面ごとの注釈の保持と削除、進行の初期化、矢印と重複の拒否、全消去、マス単位の座標判定 |
+| `forced-openings` | 登録した強制定石から合法な継続手が得られること |
+| `search` | GUIで初期化したエンジンの探索結果が合法手であること |
+| `scenes-english`, `scenes-japanese`, `scenes-simplified-chinese`, `scenes-traditional-chinese-taiwan` | 各言語で9画面の遷移と描画。メイン、文字列取込、盤面編集、対局情報、出力、盤面画像、定石設定、ショートカット設定、棋譜管理が対象 |
+
+画面描画のケースでは、600×400ピクセル以上の画像が得られ、単色またはほぼ単色になっていないことを確認します。
+各画面は`frame-SCENE.png`として保存されるので、文字の欠けや重なり、デザインはその画像を見て確認してください。
+自動判定の対象は描画の基本動作であり、画像のピクセル単位の一致までは比較しません。
+
+ボタンのクリック判定、実際のキーボード・IMEの動作、ドラッグ＆ドロップ、クリップボード連携、OSのファイル選択ダイアログ、
+ネットワークサービス、インストーラー、ブック学習・修復の全操作は、自動確認の対象外です。
+これらはリリース前に手動でも確認してください。IME・フォーカスや画像編集の確認手順は`../diagnostics/`にあります。
+このスクリプト群に合格しても、GUIの全機能を確認できたことにはなりません。
+
+## 個人設定との分離とケースの追加
+
+実行時には、指定した実行ファイル、同じフォルダのDLL、存在する場合はLICENSE、配布リソースを確認用フォルダへコピーします。
+元の`appdata/`や`document/`はコピーしません。
+GUIの各ケースには専用の設定、プロファイル、対局フォルダ、空のブックを用意し、その実行中は自動更新確認を無効にします。
+
+WindowsのGUI版は作業フォルダを基準にリソースを読むため、各ケースのフォルダから確認用リソースのコピーへハードリンクを作成します。
+ハードリンクを使えない場合は、ファイルをコピーします。生成したファイルはすべて出力フォルダ内に保存します。
+コンソール版のブック確認でも、確認用にコピーした配布ブックを使います。
+元の設定や個人のブックには書き込みません。確認結果は実行後も残るので、不要になった実行フォルダは削除してください。
+
+ケースを追加するには、`Context`を受け取る関数を書き、`console.py`または`gui.py`の一覧へ`Case(name, description, function)`を登録します。
+ケース名を維持すると、機能変更後も同じ名前で対象を絞って確認できます。
+条件の判定には`require(condition, message)`を使い、子プロセスの起動にはログと制限時間を扱う`ctx.run(...)`を使ってください。
+
+GUI本体側の確認処理を追加する場合は、`Gui_probe::check_case()`に分岐を追加し、Python側にもケースを登録してからGUIを再ビルドします。
+確認コードでは、製品と共通の処理を呼び出し、その結果や保存ファイルを検証してください。
+
+### 確認スクリプト自身のテスト
+
+実行処理と、独立したルール実装には短時間で終わるテストを用意しています。GUI用SDKは不要です。
 
 ```powershell
 python -m unittest discover -s src/tools/operation_check -p "test_*.py" -v
 ```
 
-These verify failure/continuation, fail-fast/incomplete reports, invalid names and
-timeouts, retained timeout logs, basic rules-oracle positions, and rejection of
-stale/failed/incompatible GUI responses and binaries without the isolated mode.
+失敗後の継続、最初の失敗での停止と未完了の記録、不正なケース名や制限時間、タイムアウト時のログ保存、基本局面でのルール判定を確認します。
+また、古い・失敗した・互換性のないGUI応答や、確認モードに対応していない実行ファイルを拒否できることも確認します。
 
-## Verification record
+## 検証記録
 
-On 2026-10-29 on Windows 11, the console executable passed all 13 cases (also
-under `python -O`). The GUI `SIMD_Portable` build succeeded with the official
-Visual Studio build script and passed all 15 cases, including the optional full
-translation/template comparison. The GUI run took about 65 seconds and generated
-36 scene images; Japanese board-image and English main-scene images were also
-inspected visually. The 12 runner/oracle/response self-tests passed. A deliberate
-settings-restoration mismatch in the real GUI produced a failed native result
-despite a normal process exit, and the Python driver correctly rejected it.
-Local evidence is under `build/issue652/` (ignored by Git).
+2026年10月29日にWindows 11で確認しました。
+コンソール版は13ケースすべてに合格し、`python -O`での実行でも合格しました。
+GUI版は公式のVisual Studio用スクリプトによる`SIMD_Portable`ビルドに成功し、翻訳ファイルとテンプレートの比較を含む15ケースすべてに合格しました。
+
+GUI版の実行時間は約65秒で、36枚の画面画像を生成しました。
+そのうち、日本語の盤面画像編集画面と英語のメイン画面は目視でも確認しました。
+実行処理・ルール判定・GUI応答の12テストもすべて合格しました。
+
+さらに、実際のGUIへ意図的に設定復元の不一致を与えたところ、プロセスの終了コードが正常でも、GUI側の結果は不合格になりました。
+Python側もその結果を正しく拒否しました。
+検証時の結果とログは`build/issue652/`に保存しています。このフォルダはGitの管理対象外です。
