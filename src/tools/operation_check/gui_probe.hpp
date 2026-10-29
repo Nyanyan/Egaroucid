@@ -8,6 +8,29 @@
 
 namespace operation_check {
 
+// Desktop tests drive the normal OS controls. This observer only records state;
+// it never changes scenes, settings, game history, or input events.
+inline bool desktop_observation_enabled = false;
+inline String observed_scene;
+
+template<class SceneType>
+class Observed_scene : public SceneType {
+public:
+    Observed_scene(const App::Scene::InitData& init) : SceneType(init) {
+        observed_scene = init.state;
+    }
+};
+
+class Observed_app : public App {
+public:
+    template<class SceneType>
+    Observed_app& add(const String& name) {
+        if (desktop_observation_enabled) App::add<Observed_scene<SceneType>>(name);
+        else App::add<SceneType>(name);
+        return *this;
+    }
+};
+
 inline void require(bool condition, const char* message) {
     if (!condition) throw std::runtime_error(message);
 }
@@ -22,6 +45,7 @@ class Gui_probe {
     String case_name;
     String token;
     JSON result;
+    int desktop_frames = 0;
     const Array<String> scenes = {U"Main_scene", U"Import_text", U"Edit_board",
         U"Game_information_scene", U"Export_game", U"Board_image",
         U"Opening_setting", U"Shortcut_key_setting", U"Game_library"};
@@ -207,6 +231,41 @@ class Gui_probe {
         }
     }
 
+    void observe_desktop(const Common_resources& data) {
+        if (++desktop_frames % 6 != 0 && observed_scene != U"Close") return;
+        JSON state;
+        state[U"marker"] = U"egaroucid-desktop-check-v1";
+        state[U"token"] = token;
+        state[U"frame"] = desktop_frames;
+        state[U"scene"] = observed_scene;
+        state[U"loading"] = data.window_state.loading;
+        state[U"focused"] = Window::GetState().focused;
+        if (data.window_state.loading) {
+            state.save(U"desktop-state.json");
+            return; // The asynchronous loader still owns settings/resources.
+        }
+        state[U"ime_enabled_for_scene"] = gui_scene_ime::desired_enabled;
+        state[U"ime_composition"] = TextInput::GetEditingText();
+        state[U"board"] = Unicode::Widen(data.history_elem.board.to_str(data.history_elem.player));
+        state[U"discs"] = data.history_elem.board.n_discs();
+        state[U"history_size"] = data.graph_resources.nodes[0].size();
+        state[U"branch"] = data.graph_resources.branch;
+        state[U"black_name"] = data.game_information.black_player_name;
+        state[U"white_name"] = data.game_information.white_player_name;
+        state[U"memo"] = data.game_information.memo;
+        state[U"annotations"] = data.graph_resources.board_image_edits.positions.size();
+        state[U"book_changed"] = data.book_information.changed;
+        state[U"board_image_mark"] = data.settings.board_image_mark;
+        state[U"board_image_color"] = data.settings.board_image_color;
+        state[U"board_image_coordinate"] = data.settings.board_image_coordinate;
+        state[U"show_legal"] = data.menu_elements.show_legal;
+        state[U"level"] = data.menu_elements.level;
+        state[U"ai_black"] = data.menu_elements.ai_put_black;
+        state[U"ai_white"] = data.menu_elements.ai_put_white;
+        state[U"version"] = EGAROUCID_VERSION;
+        state.save(U"desktop-state.json");
+    }
+
 public:
     bool prepare() {
         const auto& args = System::GetCommandLineArgs();
@@ -225,6 +284,7 @@ public:
                 write_result(false, U"Use a GUI Portable build for isolated operation checks");
                 return false;
             }
+            desktop_observation_enabled = (case_name == U"desktop");
             JSON settings = JSON::Load(U"appdata/setting.json");
             settings[AUTO_UPDATE_CHECK_SETTING_KEY] = false;
             require(settings.save(U"appdata/setting.json"), "Could not prepare isolated settings");
@@ -237,6 +297,10 @@ public:
     void update(App& manager) {
         if (!enabled || closing) return;
         auto& data = *manager.get();
+        if (desktop_observation_enabled) {
+            observe_desktop(data);
+            return;
+        }
         if (!started && (data.window_state.loading || data.graph_resources.nodes[0].empty())) return;
         try {
             if (!started) {

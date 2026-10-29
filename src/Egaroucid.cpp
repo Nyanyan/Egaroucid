@@ -69,7 +69,7 @@ void Main() {
         String logger_String;
     #endif
     
-    App scene_manager;
+    operation_check::Observed_app scene_manager;
     scene_manager.add <Silent_load> (U"Silent_load");
     scene_manager.add <Load>(U"Load");
     scene_manager.add <Main_scene>(U"Main_scene");
