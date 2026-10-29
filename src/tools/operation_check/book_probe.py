@@ -11,6 +11,8 @@ from common import require
 def inspect_book(path, count=None):
     data = path.read_bytes()
     positions = []
+    root_lines = None
+    leaves = 0
     if data.startswith(b"DICUORAGE\x03"):
         require(len(data) >= 14, "egbk3 header is truncated")
         declared = struct.unpack_from("<I", data, 10)[0]
@@ -18,8 +20,12 @@ def inspect_book(path, count=None):
         for offset in range(14, len(data), 25):
             player, opponent, value, level, lines, leaf_value, leaf_move, leaf_level = struct.unpack_from("<QQbbIbbb", data, offset)
             require(-64 <= value <= 64, "invalid position value")
-            require(leaf_move in range(65), "invalid leaf move")
+            # 64=pass, 65=no remaining move, 125=undefined (engine/search.hpp).
+            require(leaf_move in range(66) or leaf_move == 125, "invalid leaf move")
             positions.append((player, opponent))
+            if bin(player | opponent).count("1") == 4:
+                root_lines = lines
+            leaves += -64 <= leaf_value <= 64 and 0 <= leaf_move < 64
         kind = "egbk3"
     elif data.startswith(b"XADEKOOB\x04\x04"):
         require(len(data) >= 42, "Edax header is truncated")
@@ -43,7 +49,8 @@ def inspect_book(path, count=None):
     if count is not None:
         require(declared == count, f"Expected {count} positions, found {declared}")
     return {"passed": True, "format": kind, "positions": declared, "bytes": len(data),
-            "sha256": hashlib.sha256(data).hexdigest()}
+            "sha256": hashlib.sha256(data).hexdigest(), "root_lines": root_lines,
+            "leaves": leaves, "max_discs": max((bin(p | o).count("1") for p, o in positions), default=0)}
 
 
 if __name__ == "__main__":

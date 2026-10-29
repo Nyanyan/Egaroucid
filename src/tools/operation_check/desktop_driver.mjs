@@ -124,6 +124,20 @@ export class DesktopDriver {
     if (!passed) throw new Error('Saved file postcondition failed: ' + name);
     return value;
   }
+  async expectFile(name, relativePath, expected) {
+    const file = path.resolve(this.directory, relativePath);
+    if (!file.startsWith(path.resolve(this.directory) + path.sep)) throw new Error('Evidence file must be inside the test directory');
+    const buffer = await fs.readFile(file);
+    const observed = {bytes: buffer.length, sha256: createHash('sha256').update(buffer).digest('hex'),
+      text: buffer.toString('utf8').replace(/^\uFEFF/, '')};
+    const passed = Object.entries(expected).every(([key, value]) => observed[key] === value);
+    this.evidence.assertions.push({name, passed, kind: 'file', expected: {file: relativePath, fields: expected},
+      observed, afterAction: this.evidence.actions.length});
+    if (!passed) this.evidence.status = 'failed';
+    await this.save();
+    if (!passed) throw new Error('File postcondition failed: ' + name);
+    return observed;
+  }
   async save() {
     if (!this.evidence) return;
     await fs.writeFile(path.join(this.directory, this.evidence.case + '.result.json'), JSON.stringify(this.evidence, null, 2));
