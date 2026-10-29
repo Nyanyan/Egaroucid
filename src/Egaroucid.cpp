@@ -116,6 +116,11 @@ void Main() {
 
     while (System::Update()) {
         update_scene_ime_focus_state();
+#if SIV3D_PLATFORM(WINDOWS)
+        // Consume message edges in every scene. The per-frame cached snapshot
+        // is reused by Main_scene; editing keys must not replay on returning.
+        (void)get_windows_shortcut_keyboard_state();
+#endif
 
         // scale
         double scale = CalculateScale(window_size, Scene::Size());
