@@ -4,9 +4,11 @@ import contextlib
 import io
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from common import Case, Context, CheckFailure, parser_for, require, run_suite
 
@@ -61,9 +63,25 @@ class RunnerTests(unittest.TestCase):
             class Args:
                 timeout = 0.5
             ctx = Context(Args(), Path(directory))
-            with self.assertRaises(CheckFailure):
-                ctx.run([sys.executable, "-u", "-c", "import time; print('started'); time.sleep(10)"])
+            # Exercise log retention without assuming the interpreter can start
+            # and print within the process timeout on a busy machine.
+            def output_then_timeout(command, **kwargs):
+                kwargs["stdout"].write("started\n")
+                kwargs["stderr"].write("diagnostic\n")
+                raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+            with patch("common.subprocess.run", side_effect=output_then_timeout), self.assertRaises(CheckFailure):
+                ctx.run(["test-child"])
             self.assertIn("started", (Path(directory) / "process-01.stdout.log").read_text())
+            self.assertIn("diagnostic", (Path(directory) / "process-01.stderr.log").read_text())
+
+    def test_timeout_rejects_hung_process(self):
+        with tempfile.TemporaryDirectory() as directory:
+            class Args:
+                timeout = 0.5
+            ctx = Context(Args(), Path(directory))
+            with self.assertRaises(CheckFailure) as error:
+                ctx.run([sys.executable, "-c", "import time; time.sleep(10)"])
+            self.assertIsInstance(error.exception.__cause__, subprocess.TimeoutExpired)
 
 
 if __name__ == "__main__":
