@@ -29,6 +29,9 @@ export const scenarios = {
   'book-leaves': operation(210, 'Leaf_recalculate_book', 621, 409),
   'book-lines': operation(229, 'N_lines_recalculate_book'),
   'book-store': operation(134, 'Store_book', 621, 409),
+  // Before starting, copy ./extra-book.egbk3 with the fixture window.
+  'book-merge': [click(407, 39), click(424, 95), click(534, 134), key('Control_L+v'),
+    click(512, 475, {name: 'completed', expected: {...main, book_changed: true}}), ...exportBook()],
 };
 
 export function beginScenario(driver, name) {

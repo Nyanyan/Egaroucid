@@ -6,13 +6,16 @@ from pathlib import Path
 import struct
 
 from common import require
+from book_fixture import representative
+from reference_board import Board
 
 
-def inspect_book(path, count=None):
+def _read_book(path, count=None):
     data = path.read_bytes()
     positions = []
     root_lines = None
     leaves = 0
+    edax_leaves = []
     if data.startswith(b"DICUORAGE\x03"):
         require(len(data) >= 14, "egbk3 header is truncated")
         declared = struct.unpack_from("<I", data, 10)[0]
@@ -39,6 +42,7 @@ def inspect_book(path, count=None):
             end = offset + 40 + 2 * (links + 1)
             require(end <= len(data), "Edax links are truncated")
             leaf_value, leaf_move = struct.unpack_from("<bb", data, end - 2)
+            edax_leaves.append((player, opponent, leaf_value, leaf_move))
             leaves += -64 <= leaf_value <= 64 and 0 <= leaf_move < 64
             if bin(player | opponent).count("1") == 4:
                 root_lines = struct.unpack_from("<I", data, offset + 28)[0]
@@ -53,17 +57,65 @@ def inspect_book(path, count=None):
                 for player, opponent in positions), "invalid board")
     if count is not None:
         require(declared == count, f"Expected {count} positions, found {declared}")
-    return {"passed": True, "format": kind, "positions": declared, "bytes": len(data),
+    result = {"passed": True, "format": kind, "positions": declared, "bytes": len(data),
             "sha256": hashlib.sha256(data).hexdigest(), "root_lines": root_lines,
             "leaves": leaves, "max_discs": max((bin(p | o).count("1") for p, o in positions), default=0)}
+    return result, positions, edax_leaves
+
+
+def inspect_book(path, count=None):
+    return _read_book(path, count)[0]
+
+
+def array_board(player, opponent):
+    board = Board()
+    board.cells = ["B" if (player >> (63 - i)) & 1 else "W" if (opponent >> (63 - i)) & 1 else "-" for i in range(64)]
+    return board
+
+
+def imported_positions(path):
+    metadata, positions, edax_leaves = _read_book(path)
+    if metadata["format"] == "egbk3":
+        return {representative(p, o) for p, o in positions}
+    # An Edax leaf is an extra registered child when imported by Egaroucid.
+    # Apply its move with the independent array-based rules, including a pass.
+    result = {representative(p, o) for p, o in positions if array_board(p, o).legal()}
+    for player, opponent, value, move in edax_leaves:
+        if not (-64 <= value <= 64 and 0 <= move < 64):
+            continue
+        board = array_board(player, opponent)
+        cell = 63 - move
+        board.play(chr(97 + cell % 8) + str(cell // 8 + 1))
+        if not board.legal() and not board.ended():
+            board.pass_turn()
+        player = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == board.turn)
+        opponent = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc not in (board.turn, "-"))
+        result.add(representative(player, opponent))
+    return result
+
+
+def compare_union(actual, inputs):
+    metadata, positions, _ = _read_book(actual)
+    require(metadata["format"] == "egbk3", "Compare the merged egbk3 with its input books")
+    expected = set().union(*(imported_positions(path) for path in inputs))
+    observed = {representative(p, o) for p, o in positions}
+    missing, unexpected = len(expected - observed), len(observed - expected)
+    require(not missing and not unexpected, f"Book union differs: {missing} missing, {unexpected} unexpected")
+    metadata.update(expected_positions=len(expected), missing_positions=missing, unexpected_positions=unexpected)
+    return metadata
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("book", type=Path)
     parser.add_argument("--count", type=int)
+    parser.add_argument("--expected-union", nargs="+", type=Path)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
-    result = inspect_book(args.book, args.count)
+    try:
+        result = compare_union(args.book, args.expected_union) if args.expected_union else inspect_book(args.book, args.count)
+    except Exception as error:
+        result = {"passed": False, "error": str(error), "file": str(args.book)}
     args.report.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2))
+    raise SystemExit(0 if result["passed"] else 1)

@@ -4,8 +4,9 @@ import tempfile
 import unittest
 
 from common import CheckFailure
-from book_fixture import create_book
-from book_probe import inspect_book
+from book_fixture import create_book, representative
+from book_probe import compare_union, imported_positions, inspect_book
+from reference_board import Board
 from image_probe import inspect_image
 from PIL import Image
 
@@ -33,6 +34,31 @@ class SavedFilesTests(unittest.TestCase):
             path.write_bytes(header + record + b"unexpected")
             with self.assertRaises(CheckFailure):
                 inspect_book(path)
+
+    def test_edax_leaf_is_promoted_and_a_missing_child_fails_union_check(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            board = Board()
+            player = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == "B")
+            opponent = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == "W")
+            edax = path / "input.dat"
+            edax.write_bytes(b"XADEKOOB\x04\x04" + bytes(28) + struct.pack("<I", 1) +
+                             struct.pack("<QQ", player, opponent) + bytes(24) + bytes((0, 26))) # F5 leaf
+            expected = imported_positions(edax)
+            self.assertEqual(len(expected), 2)
+            board.play("f5")
+            child_player = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == "W")
+            child_opponent = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == "B")
+            self.assertIn(representative(child_player, child_opponent), expected)
+            merged = path / "merged.egbk3"
+            def write_positions(positions):
+                merged.write_bytes(b"DICUORAGE\x03" + struct.pack("<I", len(positions)) + b"".join(
+                    struct.pack("<QQbbIbbb", p, o, 0, 1, 1, 127, 125, -1) for p, o in positions))
+            write_positions(sorted(expected))
+            self.assertEqual(compare_union(merged, [edax])["expected_positions"], 2)
+            write_positions([representative(player, opponent)])
+            with self.assertRaises(CheckFailure):
+                compare_union(merged, [edax])
 
     def test_pixel_alpha_and_clipboard_mismatch_fail(self):
         with tempfile.TemporaryDirectory() as directory:
