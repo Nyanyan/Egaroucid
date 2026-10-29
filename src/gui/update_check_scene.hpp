@@ -12,8 +12,10 @@
 #include <iostream>
 #include <future>
 #include "load_scene.hpp"
+namespace operation_check { template<class> class Observed_scene; }
 
 class Update_check : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     int update_status;
     std::future<int> check_future;

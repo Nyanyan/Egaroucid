@@ -47,3 +47,12 @@ test('loading and active IME composition block scenario input', async () => {
     assert.equal(driver.calls, 0);
   }
 });
+
+test('a busy task is never stopped by the completion-screen back button', async () => {
+  const driver = fakeDriver();
+  beginScenario(driver, 'book-leaves');
+  driver.evidence.scenario.next = 4;
+  driver.expect = async () => { throw new Error('still running'); };
+  await assert.rejects(nextScenarioStep(driver), /still running/);
+  assert.equal(driver.calls, 0);
+});

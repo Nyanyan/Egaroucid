@@ -5,6 +5,7 @@
 #pragma once
 #include <set>
 #include <stdexcept>
+#include <type_traits>
 
 namespace operation_check {
 
@@ -12,12 +13,44 @@ namespace operation_check {
 // it never changes scenes, settings, game history, or input events.
 inline bool desktop_observation_enabled = false;
 inline String observed_scene;
+inline String observed_status;
+inline int observed_list_size = -1;
+inline int observed_ready_details = -1;
 
 template<class SceneType>
 class Observed_scene : public SceneType {
+    String scene_name;
 public:
-    Observed_scene(const App::Scene::InitData& init) : SceneType(init) {
+    Observed_scene(const App::Scene::InitData& init) : SceneType(init), scene_name(init.state) {
         observed_scene = init.state;
+        observed_status.clear();
+        observed_list_size = observed_ready_details = -1;
+    }
+    void update() override {
+        SceneType::update();
+        if (observed_scene != scene_name) return;
+        if constexpr (std::is_same_v<SceneType, Import_book>) {
+            observed_status = (this->book_deleting || this->book_importing || this->book_restoring) ? U"running" :
+                this->done ? (this->failed ? U"failed" : U"done") : U"ready";
+        } else if constexpr (std::is_same_v<SceneType, Merge_book>) {
+            observed_status = this->imported ? (this->failed ? U"failed" : U"done") : this->importing ? U"running" : U"ready";
+        } else if constexpr (std::is_same_v<SceneType, Enhance_book> || std::is_same_v<SceneType, Store_book> ||
+            std::is_same_v<SceneType, Fix_book> || std::is_same_v<SceneType, Fix_book_edax> ||
+            std::is_same_v<SceneType, Reduce_book> || std::is_same_v<SceneType, Leaf_recalculate_book> ||
+            std::is_same_v<SceneType, N_lines_recalculate_book>) {
+            observed_status = this->before_start ? U"ready" : this->done ? U"done" : U"running";
+        } else if constexpr (std::is_same_v<SceneType, Update_check>) {
+            observed_status = this->update_status == UPDATE_CHECK_NONE ? U"running" :
+                this->update_status == UPDATE_CHECK_ALREADY_UPDATED ? U"already-latest" :
+                this->update_status == UPDATE_CHECK_UPDATE_FOUND ? U"update-found" : U"failed";
+        } else if constexpr (std::is_same_v<SceneType, Import_othello_quest>) {
+            observed_status = this->list_loading ? U"loading-list" : this->status_message;
+            observed_list_size = static_cast<int>(this->games.size());
+            observed_ready_details = 0;
+            for (const auto& game : this->games) {
+                if (game.detail_state == SceneType::Detail_state::Ready) ++observed_ready_details;
+            }
+        }
     }
 };
 
@@ -238,6 +271,9 @@ class Gui_probe {
         state[U"token"] = token;
         state[U"frame"] = desktop_frames;
         state[U"scene"] = observed_scene;
+        state[U"operation_status"] = observed_status;
+        state[U"list_size"] = observed_list_size;
+        state[U"ready_details"] = observed_ready_details;
         state[U"loading"] = data.window_state.loading;
         state[U"focused"] = Window::GetState().focused;
         if (data.window_state.loading) {

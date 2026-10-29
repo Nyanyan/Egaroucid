@@ -16,6 +16,7 @@
 #include "draw.hpp"
 
 constexpr int BOOK_DEPTH_INF = 80;
+namespace operation_check { template<class> class Observed_scene; }
 constexpr int BOOK_ERROR_INF = 100000;
 
 void reset_book_additional_information() {
@@ -92,6 +93,7 @@ inline void draw_book_settings(Font &font, Color &color, int depth) {
 }
 
 class Import_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     std::future<bool> import_book_future;
     std::future<void> delete_book_future;
@@ -419,6 +421,7 @@ public:
 };
 
 class Merge_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     std::future<bool> import_book_future;
     Button back_button;
@@ -680,6 +683,7 @@ public:
 
 
 class Enhance_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     Button start_button;
     Button stop_button;
@@ -1180,6 +1184,7 @@ private:
 
 
 class Store_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     Button start_button;
     Button stop_button;
@@ -1274,6 +1279,7 @@ public:
 
 
 class Fix_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     Button start_button;
     Button back_button;
@@ -1338,6 +1344,7 @@ public:
 
 
 class Fix_book_edax : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     Button start_button;
     Button back_button;
@@ -1401,6 +1408,7 @@ public:
 
 
 class Reduce_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     Button start_button;
     Button stop_button;
@@ -1495,6 +1503,7 @@ public:
 };
 
 class Leaf_recalculate_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     Button start_button;
     Button stop_button;
@@ -1593,6 +1602,7 @@ public:
 
 
 class N_lines_recalculate_book : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     Button start_button;
     Button back_button;

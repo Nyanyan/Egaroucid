@@ -163,7 +163,9 @@ public:
 
 
 
+namespace operation_check { template<class> class Observed_scene; }
 class Import_othello_quest : public App::Scene {
+    template<class> friend class operation_check::Observed_scene;
 private:
     static constexpr int GAMES_PER_PAGE = 5;
     static constexpr int OQ_TABLE_X = 24;

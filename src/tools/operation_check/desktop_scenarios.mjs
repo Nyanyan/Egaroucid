@@ -10,7 +10,8 @@ const operation = (row, scene, startX = 401, startY = 403) => [
   click(535, row, {name: 'operation-screen', expected: {scene}}),
   click(startX, startY, {name: startX === 401 ? 'completed' : 'started',
     expected: startX === 401 ? {...main, book_changed: true} : {scene}}),
-  ...(startX === 401 ? [] : [click(621, 475, {name: 'completed', expected: {...main, book_changed: true}})]),
+  ...(startX === 401 ? [] : [{...click(621, 475, {name: 'completed', expected: {...main, book_changed: true}}),
+    before: {scene, operation_status: 'done'}}]),
   ...exportBook(),
 ];
 
@@ -47,6 +48,7 @@ export async function nextScenarioStep(driver) {
   if (screenshot?.width !== 803 || ![530, 531].includes(screenshot?.height)) {
     throw new Error('Scenario requires the observed 803x530/531 Japanese GUI at scale 1.0');
   }
+  if (step.before) await driver.expect('task-finished-before-return', step.before);
   await driver.act(step.action);
   progress.next++;
   await driver.save();
