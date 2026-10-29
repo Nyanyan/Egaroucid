@@ -957,9 +957,16 @@ enum class Windows_shortcut_hook_backend_reason {
 // Shared message state is mutex-protected and copied into a per-frame snapshot.
 // If the message hook becomes unsafe, shortcut detection falls back to polling
 // instead of trying to repair or overwrite a changed WndProc chain.
+#define EGAROUCID_SHORTCUT_DOWN_CHORDS 1
+struct Windows_shortcut_down_chord {
+    std::unordered_set<int> pressed_vks;
+    int down_vk;
+};
+
 struct Windows_shortcut_message_state {
     std::unordered_set<int> pressed_vks;
     std::unordered_set<int> pending_down_vks;
+    std::vector<Windows_shortcut_down_chord> pending_down_chords;
     std::unordered_map<int, int> pressed_scan_codes;
     bool focused = false;
     HWND installed_hwnd = nullptr;
@@ -985,6 +992,7 @@ struct Windows_shortcut_keyboard_state {
     std::unordered_set<int> pressed_vks;
     std::unordered_set<int> down_vks;
     std::unordered_set<int> message_down_vks;
+    std::vector<Windows_shortcut_down_chord> down_chords;
     Windows_shortcut_hook_backend hook_backend = Windows_shortcut_hook_backend::none;
     Windows_shortcut_hook_backend_reason hook_backend_reason = Windows_shortcut_hook_backend_reason::none;
     bool input_source_message = false;
@@ -1102,7 +1110,15 @@ inline void windows_shortcut_refresh_generic_modifier_aliases(std::unordered_set
 inline void windows_shortcut_clear_message_keys_unlocked(Windows_shortcut_message_state& state) {
     state.pressed_vks.clear();
     state.pending_down_vks.clear();
+    state.pending_down_chords.clear();
     state.pressed_scan_codes.clear();
+}
+
+inline void windows_shortcut_record_down_unlocked(Windows_shortcut_message_state& state, const int vk) {
+    windows_shortcut_add_vk_with_aliases(&state.pending_down_vks, vk);
+    // A down/up pair may both arrive between GUI frames. Keep the chord at
+    // the down event, not a union of keys pressed at different times.
+    state.pending_down_chords.push_back({state.pressed_vks, vk});
 }
 
 inline void windows_shortcut_forget_vk_unlocked(Windows_shortcut_message_state& state, const int vk) {
@@ -1202,7 +1218,7 @@ inline void windows_shortcut_update_unmapped_process_key_state_unlocked(
         if (windows_vk_pressed(vk)) {
             if (key_down && state.pressed_vks.find(vk) == state.pressed_vks.end()) {
                 windows_shortcut_add_vk_with_aliases(&state.pressed_vks, vk);
-                windows_shortcut_add_vk_with_aliases(&state.pending_down_vks, vk);
+                windows_shortcut_record_down_unlocked(state, vk);
             }
         } else if (state.pressed_vks.find(vk) != state.pressed_vks.end()) {
             windows_shortcut_forget_vk_unlocked(state, vk);
@@ -1229,7 +1245,7 @@ inline void windows_shortcut_observe_message(HWND hwnd, UINT msg, WPARAM w_param
             const bool repeated = (HIWORD(l_param) & KF_REPEAT) != 0;
             windows_shortcut_add_vk_with_aliases(&state.pressed_vks, vk);
             if (!repeated) {
-                windows_shortcut_add_vk_with_aliases(&state.pending_down_vks, vk);
+                windows_shortcut_record_down_unlocked(state, vk);
             }
 #ifdef VK_PROCESSKEY
         } else if ((static_cast<int>(w_param) & 0xFF) == VK_PROCESSKEY) {
@@ -1659,7 +1675,9 @@ inline Windows_shortcut_keyboard_state collect_windows_shortcut_keyboard_state()
             state.pressed_vks = message_state.pressed_vks;
             state.down_vks = message_state.pending_down_vks;
             state.message_down_vks = message_state.pending_down_vks;
+            state.down_chords = std::move(message_state.pending_down_chords);
             message_state.pending_down_vks.clear();
+            message_state.pending_down_chords.clear();
         }
         state.hook_current_wndproc_matches = windows_shortcut_current_wndproc_matches();
         previous_pressed_vks.clear();
@@ -1872,6 +1890,22 @@ inline bool get_windows_shortcut_match_details(
     }
     details->down_found = details->pressed_found && windows_shortcut_expected_key_down_found(keyboard_state, details->expected_vks);
     details->no_down = details->pressed_found && !details->down_found;
+    if (!details->down_found) {
+        for (const auto& chord : keyboard_state.down_chords) {
+            Windows_shortcut_keyboard_state at_down;
+            at_down.focused = keyboard_state.focused;
+            at_down.pressed_vks = chord.pressed_vks;
+            windows_shortcut_add_vk_with_aliases(&at_down.down_vks, chord.down_vk);
+            Windows_shortcut_match_details tap_details;
+            // at_down has no queued chords, so this only checks that event.
+            get_windows_shortcut_match_details(elem, at_down, &tap_details);
+            if (tap_details.down_found) {
+                details->down_found = true;
+                details->no_down = false;
+                break;
+            }
+        }
+    }
     return true;
 }
 
@@ -2193,11 +2227,13 @@ public:
                     best_windows_candidate = &elem;
                     best_windows_details = windows_details;
                 }
-                if (windows_details.pressed_found) {
+                if (windows_details.pressed_found || windows_details.down_found) {
                     if (windows_details.down_found) {
                         *shortcut_name_down = elem.name;
                     }
-                    *shortcut_name_pressed = elem.name;
+                    if (windows_details.pressed_found) {
+                        *shortcut_name_pressed = elem.name;
+                    }
                     shortcut_diagnostic_log(keys, down_found, *shortcut_name_down, *shortcut_name_pressed, &windows_keyboard_state, &elem, &windows_details);
                     clear_shortcut_result_for_diagnostic_only(shortcut_name_down, shortcut_name_pressed);
                     return;
