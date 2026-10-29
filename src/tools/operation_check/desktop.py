@@ -1,6 +1,7 @@
 """Egaroucidの実GUI操作テストの準備と、リリース判定用の結果集計。"""
 
 import argparse
+import csv
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -53,6 +54,33 @@ def write_json(path, value):
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def create_drag_fixtures(directory):
+    """Prepare only isolated test data; the application performs the moves."""
+    openings = directory / "document/forced_openings"
+    (openings / "target").mkdir(parents=True, exist_ok=True)
+    with (openings / "summary.csv").open("x", encoding="utf-8", newline="") as stream:
+        csv.writer(stream).writerows([["f5", 1, "true"], ["f5d6", 2, "true"]])
+    (openings / "target/summary.csv").write_text("", encoding="utf-8")
+    games = directory / "document/games/release_test"
+    (games / "target").mkdir(parents=True, exist_ok=True)
+    rows = []
+    for index, name in enumerate(("a", "b"), start=1):
+        identifier = f"2026_01_01_00_00_0{index}"
+        write_json(games / (identifier + ".json"), {
+            "4": {"board_player": 34628173824, "board_opponent": 68853694464,
+                  "player": 0, "policy": -1, "next_policy": -1,
+                  "value": 100000000, "level": -1,
+                  "black_time_msec": 0, "white_time_msec": 0,
+                  "is_random_generated_position": False},
+            "5": None, "black_discs": -1, "white_discs": -1,
+            "black_player": name, "white_player": "fixture",
+            "date": "2026-01-01", "memo": "release test " + name})
+        rows.append([identifier, name, "fixture", "release test " + name, -1, -1, "2026-01-01"])
+    with (games / "summary.csv").open("x", encoding="utf-8", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    (games / "target/summary.csv").write_text("", encoding="utf-8")
+
+
 def prepare(args):
     directory = args.output_dir.absolute() / datetime.now().strftime("%Y%m%d-%H%M%S-%f") / "desktop"
     directory.mkdir(parents=True)
@@ -70,6 +98,7 @@ def prepare(args):
     (directory / "invalid-book.egbk3").write_bytes(b"not a valid book")
     create_book(directory / "sample-book.egbk3")
     create_book(directory / "extra-book.egbk3", seed=653)
+    create_drag_fixtures(directory)
     write_json(directory / "run.json", {
         "protocol": "egaroucid-desktop-check-v1", "token": token,
         "started_at": datetime.now(timezone.utc).isoformat(),
