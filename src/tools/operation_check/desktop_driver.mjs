@@ -92,6 +92,32 @@ export class DesktopDriver {
     }
     throw lastError;
   }
+  async close() {
+    if (!this.evidence || !this.observation) throw new Error('Observe the target before closing');
+    const target = this.observation.window;
+    this.observation = null;
+    const event = {driver: 'os-input', type: 'close', target, time: new Date().toISOString()};
+    this.evidence.actions.push(event);
+    try {
+      await this.sky.press_key({window: target, key: 'Alt_L+F4'});
+    } catch (error) {
+      // The adapter can lose the process while the requested window closes.
+      // Verify disappearance instead of treating that adapter error as success.
+      event.adapter_message = String(error);
+    }
+    event.completed = false;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const windows = await this.sky.list_windows();
+      if (!windows.some(w => w.id === target.id && w.app === target.app)) {
+        event.completed = true;
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    if (!event.completed) this.evidence.status = 'failed';
+    await this.save();
+    if (!event.completed) throw new Error('GUI window did not close');
+  }
   async expect(name, expected) {
     let state;
     let passed = false;

@@ -26,8 +26,8 @@ def representative(player, opponent):
     return min(candidates)
 
 
-def create_book(path):
-    random_source = random.Random(652)
+def create_book(path, seed=652):
+    random_source = random.Random(seed)
     positions = set()
     for game in range(12):
         board = Board()

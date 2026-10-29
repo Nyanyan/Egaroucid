@@ -69,6 +69,7 @@ def prepare(args):
     (directory / "sample-transcript.txt").write_text("f5d6c3d3\n", encoding="utf-8")
     (directory / "invalid-book.egbk3").write_bytes(b"not a valid book")
     create_book(directory / "sample-book.egbk3")
+    create_book(directory / "extra-book.egbk3", seed=653)
     write_json(directory / "run.json", {
         "protocol": "egaroucid-desktop-check-v1", "token": token,
         "started_at": datetime.now(timezone.utc).isoformat(),
@@ -86,8 +87,15 @@ def prepare(args):
 
 def launch(args):
     directory = prepare(args)
+    launch_run(directory)
+
+
+def launch_run(directory):
     run_file = directory / "run.json"
     run = json.loads(run_file.read_text(encoding="utf-8"))
+    require(run.get("protocol") == "egaroucid-desktop-check-v1", "互換性のない実操作テストです")
+    require(hashlib.sha256(Path(run["executable"]).read_bytes()).hexdigest() == run["executable_sha256"],
+            "実行ファイルが変わっています。新しい実操作テストを準備してください")
     import os
     environment = dict(os.environ)
     environment["EGAROUCID_SHORTCUT_DIAG_LOG"] = str(directory / "shortcut-input.log")
@@ -141,10 +149,14 @@ if __name__ == "__main__":
         prep.add_argument("--language", default="japanese")
     check = sub.add_parser("report")
     check.add_argument("directory", type=Path)
+    resume = sub.add_parser("resume", help="同じ検証データでGUIを再起動する（元のGUIを先に終了）")
+    resume.add_argument("directory", type=Path)
     args = parser.parse_args()
     if args.command == "prepare":
         prepare(args)
     elif args.command == "launch":
         launch(args)
+    elif args.command == "resume":
+        launch_run(args.directory.absolute())
     else:
         raise SystemExit(report(args.directory))

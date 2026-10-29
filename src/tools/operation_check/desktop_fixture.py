@@ -49,7 +49,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     window = tk.Tk()
     window.title("Egaroucid release test fixture")
-    window.geometry("480x320+950+120")
+    window.geometry("560x440+950+120")
     tk.Label(window, text="Egaroucid release test fixture", font=("Arial", 14)).pack(pady=10)
     text = tk.Text(window, width=52, height=5)
     text.insert("1.0", "f5d6c3d3")
@@ -73,5 +73,20 @@ if __name__ == "__main__":
     tk.Button(window, text="Copy text", command=copy_text).pack(pady=3)
     tk.Button(window, text="Record text", command=record_text).pack(pady=3)
     tk.Button(window, text="Read clipboard image", command=record_image).pack(pady=3)
+    presets = tk.Frame(window)
+    presets.pack(pady=8)
+    def copy_preset(value):
+        text.delete("1.0", "end")
+        text.insert("1.0", value)
+        copy_text()
+    for index, (label, value) in enumerate((
+        ("Copy valid book path", "./sample-book.egbk3"),
+        ("Copy invalid book path", "./invalid-book.egbk3"),
+        ("Copy merge book path", "./extra-book.egbk3"),
+        ("Copy Edax export path", "./document/book_copy.dat"),
+        ("Copy transcript", "f5d6c3d3"),
+    )):
+        tk.Button(presets, text=label, command=lambda value=value: copy_preset(value)).grid(
+            row=index // 2, column=index % 2, padx=4, pady=3)
     tk.Label(window, textvariable=status).pack(pady=3)
     window.mainloop()

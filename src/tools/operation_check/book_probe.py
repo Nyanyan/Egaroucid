@@ -36,8 +36,13 @@ def inspect_book(path, count=None):
             player, opponent = struct.unpack_from("<QQ", data, offset)
             links = data[offset + 38]
             require(links <= 64, "invalid link count")
-            offset += 40 + 2 * (links + 1)
-            require(offset <= len(data), "Edax links are truncated")
+            end = offset + 40 + 2 * (links + 1)
+            require(end <= len(data), "Edax links are truncated")
+            leaf_value, leaf_move = struct.unpack_from("<bb", data, end - 2)
+            leaves += -64 <= leaf_value <= 64 and 0 <= leaf_move < 64
+            if bin(player | opponent).count("1") == 4:
+                root_lines = struct.unpack_from("<I", data, offset + 28)[0]
+            offset = end
             positions.append((player, opponent))
         require(offset == len(data), "Edax record count/size mismatch")
         kind = "edax"
