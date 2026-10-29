@@ -13,6 +13,15 @@ from reference_board import Board
 LANGUAGES = ("english", "japanese", "simplified_chinese", "traditional_chinese_taiwan")
 
 
+def require_probe_support(executable):
+    # Old installed binaries ignore the flag and would load personal settings.
+    # Refuse them before starting a process. Siv3D stores U"" literals as UTF-32.
+    marker = "egaroucid-operation-check-v1"
+    binary = executable.read_bytes()
+    require(any(marker.encode(encoding) in binary for encoding in ("ascii", "utf-16-le", "utf-32-le")),
+            "GUI binary lacks isolated operation-check support; rebuild a GUI Portable configuration")
+
+
 def fixture(ctx, *, language="japanese", settings=None):
     application = ctx.application().parent
     # Windows GUI resources are relative to cwd. Link the disposable snapshot
@@ -42,10 +51,12 @@ def fixture(ctx, *, language="japanese", settings=None):
 
 
 def native(ctx, name):
+    executable = ctx.application()
+    require_probe_support(executable)
     token = str(uuid.uuid4())
     request = {"marker": "egaroucid-operation-check-v1", "case": name, "token": token}
     (ctx.directory / "request.json").write_text(json.dumps(request), encoding="utf-8")
-    result = ctx.run([ctx.application(), "--operation-check", ctx.directory], cwd=ctx.directory)
+    result = ctx.run([executable, "--operation-check", ctx.directory], cwd=ctx.directory)
     require(result.returncode == 0, f"GUI exited with code {result.returncode}")
     path = ctx.directory / "native-result.json"
     require(path.is_file(), "GUI did not write a result; use a Portable build with #652 support (see GUI log)")
