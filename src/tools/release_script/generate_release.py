@@ -24,6 +24,8 @@ VERSION_UNDERBAR = VERSION_DOT.replace('.', '_')
 FORMAT_FILES_DIR = 'format_files'
 COMMON_FILES_IN_DIR = FORMAT_FILES_DIR + '/0_common_files'
 DST_ROOT = './../../../release'
+CONSOLE_DST_ROOT = DST_ROOT + '/' + VERSION_DOT + '_console'
+GUI_DST_ROOT = DST_ROOT + '/' + VERSION_DOT + '_gui'
 
 # special tasks
 with open(COMMON_FILES_IN_DIR + '/tasks.txt', 'r') as f:
@@ -31,9 +33,6 @@ with open(COMMON_FILES_IN_DIR + '/tasks.txt', 'r') as f:
 
 for elem in common_files_tasks:
     print(elem)
-
-# main directory
-os.mkdir(DST_ROOT + '/' + VERSION_UNDERBAR)
 
 
 def copy_common_files(correct_task_type, dst_dir_root):
@@ -75,7 +74,7 @@ def generate_console_release():
     # Egaroucid for Console
     print('\n')
     print('<<<<<<<< Egaroucid for Console >>>>>>>>')
-    CONSOLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/console'
+    CONSOLE_DST_DIR = CONSOLE_DST_ROOT + '/console'
     CONSOLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/1_console_exes'
     CONSOLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/console_files'
     os.mkdir(CONSOLE_DST_DIR)
@@ -95,7 +94,7 @@ def generate_gui_installer_release():
     # Egaroucid Installer
     print('\n')
     print('<<<<<<<< Egaroucid Installer >>>>>>>>')
-    INSTALLER_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Installer'
+    INSTALLER_DST_DIR = GUI_DST_ROOT + '/GUI_Installer'
     INSTALLER_DST_FILES_DIR = INSTALLER_DST_DIR + '/files'
     INSTALLER_DST_INSTALLER_DIR = INSTALLER_DST_DIR + '/installer'
     INSTALLER_IN_EXES_DIR = FORMAT_FILES_DIR + '/2_GUI_Installer_exes'
@@ -121,7 +120,7 @@ def generate_gui_portable_release():
     # Egaroucid Portable
     print('\n')
     print('<<<<<<<< Egaroucid Portable >>>>>>>>')
-    PORTABLE_DST_DIR = DST_ROOT + '/' + VERSION_UNDERBAR + '/GUI_Portable'
+    PORTABLE_DST_DIR = GUI_DST_ROOT + '/GUI_Portable'
     PORTABLE_IN_EXES_DIR = FORMAT_FILES_DIR + '/3_GUI_Portable_exes'
     PORTABLE_IN_FILES_DIR = FORMAT_FILES_DIR + '/GUI_Portable_files'
     os.mkdir(PORTABLE_DST_DIR)
@@ -138,8 +137,10 @@ def generate_gui_portable_release():
 
 
 if args.console:
+    os.mkdir(CONSOLE_DST_ROOT)
     generate_console_release()
 
 if args.gui:
+    os.mkdir(GUI_DST_ROOT)
     generate_gui_installer_release()
     generate_gui_portable_release()
