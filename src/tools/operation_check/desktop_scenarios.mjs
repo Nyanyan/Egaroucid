@@ -32,6 +32,18 @@ export const scenarios = {
   // Before starting, copy ./extra-book.egbk3 with the fixture window.
   'book-merge': [click(407, 39), click(424, 95), click(534, 134), key('Control_L+v'),
     click(512, 475, {name: 'completed', expected: {...main, book_changed: true}}), ...exportBook()],
+  // Use a fresh small book, depth 15 and level 19 so the job is still running
+  // when the stop button is clicked. The case deliberately stops within seconds.
+  'book-learn': [
+    click(407, 39), click(424, 76), click(534, 95),
+    click(621, 409, {name: 'started', expected: {scene: 'Enhance_book', operation_status: 'running'}}),
+    click(621, 475, {name: 'stopped', expected: {scene: 'Enhance_book', operation_status: 'done'}}),
+    click(621, 475, {name: 'returned-after-stop', expected: main}),
+    click(407, 39), click(424, 76), click(534, 95),
+    click(621, 409, {name: 'resumed', expected: {scene: 'Enhance_book', operation_status: 'running'}}),
+    click(621, 475, {name: 'stopped-again', expected: {scene: 'Enhance_book', operation_status: 'done'}}),
+    click(621, 475, {name: 'returned-after-resume', expected: main}), ...exportBook(),
+  ],
 };
 
 export function beginScenario(driver, name) {

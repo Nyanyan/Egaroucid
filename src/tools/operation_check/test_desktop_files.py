@@ -5,7 +5,7 @@ import unittest
 
 from common import CheckFailure
 from book_fixture import create_book, representative
-from book_probe import compare_union, imported_positions, inspect_book
+from book_probe import compare_contains, compare_union, imported_positions, inspect_book
 from reference_board import Board
 from image_probe import inspect_image
 from PIL import Image
@@ -18,6 +18,8 @@ class SavedFilesTests(unittest.TestCase):
             self.assertEqual(create_book(path), 90)
             first = path.read_bytes()
             self.assertEqual(inspect_book(path, 90)["positions"], 90)
+            with self.assertRaises(CheckFailure):
+                compare_contains(path, [path], min_added=1)
             create_book(path)
             self.assertEqual(path.read_bytes(), first)
             path.write_bytes(first[:-1])
@@ -56,9 +58,17 @@ class SavedFilesTests(unittest.TestCase):
                     struct.pack("<QQbbIbbb", p, o, 0, 1, 1, 127, 125, -1) for p, o in positions))
             write_positions(sorted(expected))
             self.assertEqual(compare_union(merged, [edax])["expected_positions"], 2)
+            original = path / "original.egbk3"
+            original.write_bytes(b"DICUORAGE\x03" + struct.pack("<I", 1) +
+                                 struct.pack("<QQbbIbbb", player, opponent, 0, 1, 1, 127, 125, -1))
+            result = compare_contains(merged, [original], min_added=1, transcripts=["f5"])
+            self.assertEqual(result["required_positions"], 2)
+            self.assertEqual(result["added_positions"], 1)
             write_positions([representative(player, opponent)])
             with self.assertRaises(CheckFailure):
                 compare_union(merged, [edax])
+            with self.assertRaises(CheckFailure):
+                compare_contains(merged, [original], transcripts=["f5"])
 
     def test_pixel_alpha_and_clipboard_mismatch_fail(self):
         with tempfile.TemporaryDirectory() as directory:

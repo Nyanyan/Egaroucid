@@ -73,6 +73,25 @@ def array_board(player, opponent):
     return board
 
 
+def canonical_array_board(board):
+    player = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == board.turn)
+    opponent = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc not in (board.turn, "-"))
+    return representative(player, opponent)
+
+
+def transcript_positions(transcript):
+    require(len(transcript) % 2 == 0, "Odd transcript length")
+    board = Board()
+    positions = {canonical_array_board(board)}
+    for i in range(0, len(transcript), 2):
+        move = transcript[i:i + 2]
+        if move != "ps" and not board.legal():
+            board.pass_turn()
+        board.play(move)
+        positions.add(canonical_array_board(board))
+    return positions
+
+
 def imported_positions(path):
     metadata, positions, edax_leaves = _read_book(path)
     if metadata["format"] == "egbk3":
@@ -88,9 +107,7 @@ def imported_positions(path):
         board.play(chr(97 + cell % 8) + str(cell // 8 + 1))
         if not board.legal() and not board.ended():
             board.pass_turn()
-        player = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == board.turn)
-        opponent = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc not in (board.turn, "-"))
-        result.add(representative(player, opponent))
+        result.add(canonical_array_board(board))
     return result
 
 
@@ -105,15 +122,37 @@ def compare_union(actual, inputs):
     return metadata
 
 
+def compare_contains(actual, required, min_added=0, transcripts=()):
+    metadata, positions, _ = _read_book(actual)
+    require(metadata["format"] == "egbk3", "Inspect the learned egbk3")
+    expected = set().union(*(imported_positions(path) for path in required))
+    original = expected.copy()
+    expected.update(set().union(*(transcript_positions(text) for text in transcripts)))
+    observed = {representative(p, o) for p, o in positions}
+    missing, added = len(expected - observed), len(observed - original)
+    require(not missing, f"Learned book lost {missing} original positions")
+    require(added >= min_added, f"Expected at least {min_added} added positions, found {added}")
+    metadata.update(required_positions=len(expected), missing_positions=missing, added_positions=added, minimum_added=min_added)
+    return metadata
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("book", type=Path)
     parser.add_argument("--count", type=int)
     parser.add_argument("--expected-union", nargs="+", type=Path)
+    parser.add_argument("--contains", nargs="+", type=Path)
+    parser.add_argument("--min-added", type=int, default=0)
+    parser.add_argument("--transcript", action="append", default=[])
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     try:
-        result = compare_union(args.book, args.expected_union) if args.expected_union else inspect_book(args.book, args.count)
+        if args.expected_union:
+            result = compare_union(args.book, args.expected_union)
+        elif args.contains or args.transcript:
+            result = compare_contains(args.book, args.contains or [], args.min_added, args.transcript)
+        else:
+            result = inspect_book(args.book, args.count)
     except Exception as error:
         result = {"passed": False, "error": str(error), "file": str(args.book)}
     args.report.write_text(json.dumps(result, indent=2), encoding="utf-8")
