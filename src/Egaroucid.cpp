@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include "gui/gui_all.hpp"
+#include "tools/operation_check/gui_probe.hpp"
 
 /*
     @brief used for scaling
@@ -46,6 +47,8 @@ double CalculateScale(const Vec2& baseSize, const Vec2& currentSize) {
     @brief main function
 */
 void Main() {
+    operation_check::Gui_probe operation_check;
+    if (!operation_check.prepare()) return;
     Scene::SetBackground(Color(36, 153, 114));
     Size window_size = Size(WINDOW_SIZE_X, WINDOW_SIZE_Y);
     Size min_window_size = Size(WINDOW_SIZE_X_MIN, WINDOW_SIZE_Y_MIN);
@@ -122,10 +125,12 @@ void Main() {
         // scene
         scene_manager.update();
         scene_manager.get()->graph_resources.prune_board_image_edits();
+        operation_check.update(scene_manager);
 
         // log
         #if !GUI_OPEN_CONSOLE
             logger_String = logger.get_last_line();
+            operation_check.log(logger_String);
             if (scene_manager.get()->menu_elements.show_log || scene_manager.get()->window_state.loading) {
                 scene_manager.get()->fonts.font(logger_String).draw(12, Arg::bottomLeft(8, WINDOW_SIZE_Y - 5), scene_manager.get()->colors.white);
             }

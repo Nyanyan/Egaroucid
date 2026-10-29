@@ -1,0 +1,264 @@
+/*
+    Issue #652: opt-in checks inside the real GUI runtime.
+    Included after gui_all.hpp. No OS input injection or private user data.
+*/
+#pragma once
+#include <set>
+#include <stdexcept>
+
+namespace operation_check {
+
+inline void require(bool condition, const char* message) {
+    if (!condition) throw std::runtime_error(message);
+}
+
+class Gui_probe {
+    bool enabled = false;
+    bool started = false;
+    bool closing = false;
+    bool capturing = false;
+    int frames = 0;
+    size_t scene_index = 0;
+    String case_name;
+    String token;
+    JSON result;
+    const Array<String> scenes = {U"Main_scene", U"Import_text", U"Edit_board",
+        U"Game_information_scene", U"Export_game", U"Board_image",
+        U"Opening_setting", U"Shortcut_key_setting", U"Game_library"};
+
+    void write_result(bool passed, const String& error = U"") {
+        result[U"protocol"] = 1;
+        result[U"case"] = case_name;
+        result[U"token"] = token;
+        result[U"version"] = EGAROUCID_VERSION;
+        result[U"portable"] = GUI_PORTABLE_MODE;
+        result[U"passed"] = passed;
+        result[U"error"] = error;
+        require(result.save(U"native-result.json"), "Could not save native result");
+    }
+
+    void finish(App& manager, bool passed, const String& error = U"") {
+        write_result(passed, error);
+        closing = true;
+        // Use the normal shutdown path, including settings/profile/shortcut saves.
+        require(manager.changeScene(U"Close", 0), "Could not enter Close scene");
+    }
+
+    static std::vector<History_elem> sample_history() {
+        History_elem initial;
+        bool failed = false;
+        auto history = import_transcript_processing({initial}, initial, "f5d6c3d3", &failed);
+        require(!failed && history.size() == 5, "Valid transcript import failed");
+        return history;
+    }
+
+    void check_case(Common_resources& data) {
+        require(!data.resources.icon.isEmpty() && !data.resources.logo.isEmpty(), "Textures not loaded");
+        require(!data.fonts.font.isEmpty(), "Font not loaded");
+        require(data.history_elem.board.n_discs() == 4, "Initial board has wrong disc count");
+        require(pop_count_ull(data.history_elem.board.get_legal()) == 4, "Initial legal moves differ");
+        require(data.graph_resources.nodes[0].size() == 1, "Initial graph missing");
+        result[U"language"] = Unicode::Widen(data.settings.lang_name);
+
+        if (case_name == U"startup" || case_name == U"scenes") {
+            return;
+        } else if (case_name == U"settings-defaults" || case_name == U"settings-invalid") {
+            const auto& settings = data.settings;
+            require(settings.board_image_mark == (case_name == U"settings-invalid" ? BOARD_IMAGE_MARK_MAX : 0), "Mark default/clamp differs");
+            require(settings.board_image_coordinate == 0 && settings.board_image_color == 0, "Coordinate/color default differs");
+            require(settings.board_image_outer_frame_color == (case_name == U"settings-invalid" ? 1 : 0), "Frame default/clamp differs");
+        } else if (case_name == U"settings-restored") {
+            require(data.settings.board_image_mark == BOARD_IMAGE_FLIP && data.settings.board_image_coordinate == 1 &&
+                data.settings.board_image_color == 1 && data.settings.board_image_outer_frame_color == 1,
+                "Restart did not restore editor settings");
+            require(!data.menu_elements.show_legal && data.menu_elements.timer_time_limit_min == 7,
+                "Restart did not restore display settings");
+        } else if (case_name == U"settings") {
+            data.settings.board_image_mark = BOARD_IMAGE_FLIP;
+            data.settings.board_image_coordinate = 1;
+            data.settings.board_image_color = 1;
+            data.settings.board_image_outer_frame_color = 1;
+            data.menu_elements.show_legal = false;
+            data.menu_elements.timer_time_limit_min = 7;
+            save_app_data(data.menu_elements, &data.settings, data.directories,
+                data.user_settings, data.book_information, data.window_state);
+            Settings loaded;
+            init_settings(&data.directories, &data.resources, &loaded);
+            require(loaded.board_image_mark == BOARD_IMAGE_FLIP && loaded.board_image_coordinate == 1 &&
+                loaded.board_image_color == 1 && loaded.board_image_outer_frame_color == 1, "Board image settings roundtrip differs");
+            require(!loaded.show_legal && loaded.timer_time_limit_min == 7, "Display settings roundtrip differs");
+        } else if (case_name == U"transcript") {
+            auto history = sample_history();
+            Graph_resources graph;
+            graph.nodes[0] = history;
+            require(get_transcript(graph, history.back()) == "f5d6c3d3", "Transcript export differs");
+            bool failed = false;
+            auto imported = import_any_format_processing("f5d6c3d3", {History_elem{}}, History_elem{}, &failed);
+            require(!failed && imported.history.back().board == history.back().board, "Automatic format detection differs");
+            import_transcript_processing({History_elem{}}, History_elem{}, "a1", &failed);
+            require(failed, "Illegal transcript accepted");
+            const std::string board_text = history.back().board.to_str(history.back().player);
+            auto board = import_board_processing(board_text, &failed);
+            require(!failed && board.first == history.back().board && board.second == history.back().player, "Board text roundtrip differs");
+            result[U"board"] = Unicode::Widen(board_text);
+        } else if (case_name == U"profiles") {
+            AI_profile_values ai_values = to_ai_profile_values(data.menu_elements);
+            ai_values.level = 3;
+            ai_values.n_threads = 2;
+            ai_values.max_loss_by_move[10] = 4;
+            const String name = U"operation check 日本語 中文 한글";
+            require(save_ai_profile_values(U"ai-test.json", ai_values, name), "AI profile save failed");
+            AI_profile_values loaded_ai;
+            String loaded_name;
+            require(load_ai_profile_values(U"ai-test.json", &loaded_ai, &loaded_name), "AI profile load failed");
+            require(equals_ai_profile_values(ai_values, loaded_ai) && loaded_name == name, "AI profile roundtrip differs");
+            Display_profile_values display = to_display_profile_values(data.menu_elements);
+            display.show_timer = true;
+            display.timer_time_limit_min = 7;
+            display.show_legal = false;
+            require(save_display_profile_values(U"display-test.json", display, name), "Display profile save failed");
+            Display_profile_values loaded_display;
+            require(load_display_profile_values(U"display-test.json", &loaded_display, &loaded_name), "Display profile load failed");
+            require(equals_display_profile_values(display, loaded_display) && loaded_name == name, "Display profile roundtrip differs");
+        } else if (case_name == U"game-files") {
+            auto history = sample_history();
+            const String folder = U"./document/games/";
+            const String date = U"2000_01_02_03_04_05";
+            const String memo = U"memo, comma\n日本語と中文";
+            game_save_helper::save_game_to_file(folder, date, U"Black 日本語", U"White 中文", memo, history, U"2000-01-02");
+            Opening test_opening;
+            require(load_game_from_json(data, test_opening, folder + date + U".json", date, ""), "Saved game load failed");
+            require(data.graph_resources.nodes[0].size() == history.size(), "Saved game history size differs");
+            require(data.graph_resources.nodes[0].back().board == history.back().board, "Saved game board differs");
+            require(data.game_information.memo == memo && data.game_information.black_player_name == U"Black 日本語", "Game metadata differs");
+            require(FileSystem::Exists(folder + U"summary.csv"), "Game CSV summary missing");
+            result[U"board"] = Unicode::Widen(history.back().board.to_str(history.back().player));
+        } else if (case_name == U"annotations") {
+            auto history = sample_history();
+            auto key = [](const History_elem& node) { return Board_image_position{node.board.player, node.board.opponent, node.player}; };
+            Graph_resources graph;
+            graph.nodes[0] = history;
+            Board_image_edit edit;
+            edit.marks[0] = BOARD_IMAGE_FLIP;
+            edit.values[1] = 12;
+            Board_image_arrow_input arrow;
+            require(!arrow.click(0, &edit) && arrow.click(63, &edit), "Two-click arrow failed");
+            require(!arrow.click(0, &edit) && !arrow.click(63, &edit), "Duplicate arrow accepted");
+            graph.board_image_edits.save(key(history[0]), edit);
+            graph.prune_board_image_edits();
+            const auto restored = graph.board_image_edits.load(key(history[0]));
+            require(restored.marks[0] == BOARD_IMAGE_FLIP && restored.values[1] == 12 && restored.arrows.size() == 1, "Annotation restore differs");
+            require(graph.board_image_edits.load(key(history[1])).arrows.empty(), "Annotations leaked to another board");
+            graph.nodes[0].erase(graph.nodes[0].begin());
+            graph.prune_board_image_edits();
+            require(graph.board_image_edits.positions.empty(), "Removed position kept its annotations");
+            graph.board_image_edits.save(key(history[0]), edit);
+            graph.init();
+            require(graph.board_image_edits.positions.empty(), "New progression kept annotations");
+            edit.clear();
+            require(edit.arrows.empty() && !edit.values[1] && edit.marks[0] == BOARD_IMAGE_NOMARK, "Clear left annotations behind");
+            require(board_image_cell_at(1, 1, 50) == board_image_cell_at(49, 49, 50) &&
+                board_image_cell_at(50, 0, 50) == 1 && board_image_cell_at(400, 0, 50) == -1, "Grid snapping differs");
+        } else if (case_name == U"forced-openings") {
+            Forced_openings openings;
+            openings.openings.emplace_back("f5d6c3d3", 1);
+            openings.init();
+            for (const auto& node : sample_history()) {
+                if (node.board.n_discs() == 8) break;
+                const int policy = openings.get_one(node.board);
+                require(0 <= policy && policy < 64 && (node.board.get_legal() & (1ULL << policy)), "Forced opening returned illegal/undefined move");
+            }
+        } else if (case_name == U"search") {
+            const auto search = ai(data.history_elem.board, 1, false, 0, false, false);
+            require(0 <= search.policy && search.policy < 64 &&
+                (data.history_elem.board.get_legal() & (1ULL << search.policy)), "GUI AI returned illegal move");
+            result[U"move"] = Unicode::Widen(idx_to_coord(search.policy));
+        } else {
+            throw std::runtime_error("Unknown GUI operation-check case");
+        }
+    }
+
+    void capture_scene(App& manager) {
+        if (++frames < 8) return; // Render the new scene before requesting its frame.
+        if (!capturing) {
+            ScreenCapture::RequestCurrentFrame();
+            capturing = true;
+            return;
+        }
+        if (!ScreenCapture::HasNewFrame()) return;
+        const Image& frame = ScreenCapture::GetFrame();
+        require(!frame.isEmpty() && frame.width() >= 600 && frame.height() >= 400, "Missing/undersized rendered frame");
+        std::set<uint32_t> colors;
+        for (int y = 0; y < frame.height(); y += 3) {
+            for (int x = 0; x < frame.width(); x += 3) {
+                const auto pixel = frame[y][x];
+                colors.insert((pixel.r << 16) | (pixel.g << 8) | pixel.b);
+            }
+        }
+        require(colors.size() >= 8, "Rendered frame is blank or nearly uniform");
+        const String name = case_name == U"scenes" ? scenes[scene_index] : U"Main_scene";
+        require(frame.save(U"frame-" + name + U".png"), "Could not save rendered frame");
+        if (case_name == U"scenes" && ++scene_index < scenes.size()) {
+            require(manager.changeScene(scenes[scene_index], 0), "Scene transition failed");
+            frames = 0;
+            capturing = false;
+        } else {
+            finish(manager, true);
+        }
+    }
+
+public:
+    bool prepare() {
+        const auto& args = System::GetCommandLineArgs();
+        for (size_t i = 0; i < args.size(); ++i) {
+            if (args[i] != U"--operation-check") continue;
+            enabled = true;
+            if (i + 1 == args.size()) return false;
+            const String folder = FileSystem::FullPath(args[i + 1]);
+            const JSON request = JSON::Load(folder + U"/request.json");
+            if (request[U"marker"].getOr<String>(U"") != U"egaroucid-operation-check-v1") return false;
+            if (!FileSystem::ChangeCurrentDirectory(folder)) return false;
+            case_name = request[U"case"].getOr<String>(U"");
+            token = request[U"token"].getOr<String>(U"");
+            // Reject installed builds before they can access Documents/LocalAppData.
+            if (!GUI_PORTABLE_MODE) {
+                write_result(false, U"Use a GUI Portable build for isolated operation checks");
+                return false;
+            }
+            JSON settings = JSON::Load(U"appdata/setting.json");
+            settings[AUTO_UPDATE_CHECK_SETTING_KEY] = false;
+            require(settings.save(U"appdata/setting.json"), "Could not prepare isolated settings");
+            log(U"Waiting for normal GUI loading");
+            return true;
+        }
+        return true; // No flag: no test files, scene changes, or settings changes.
+    }
+
+    void update(App& manager) {
+        if (!enabled || closing) return;
+        auto& data = *manager.get();
+        if (!started && (data.window_state.loading || data.graph_resources.nodes[0].empty())) return;
+        try {
+            if (!started) {
+                started = true;
+                log(U"Running case: " + case_name);
+                data.graph_resources.need_init = false;
+                check_case(data);
+                if (case_name != U"scenes" && case_name != U"startup") {
+                    finish(manager, true);
+                    return;
+                }
+            }
+            capture_scene(manager);
+        } catch (const std::exception& error) {
+            finish(manager, false, Unicode::FromUTF8(error.what()));
+        }
+    }
+
+    void log(const String& line) const {
+        if (!enabled || line.isEmpty()) return;
+        std::ofstream stream("native.log", std::ios::app);
+        stream << line.toUTF8() << '\n';
+    }
+};
+}
