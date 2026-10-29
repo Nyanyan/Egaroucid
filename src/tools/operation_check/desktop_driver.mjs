@@ -3,6 +3,7 @@
 // the caller inspects that observation before deciding the next action.
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 
 export class DesktopDriver {
   constructor(sky, directory, run) {
@@ -23,6 +24,17 @@ export class DesktopDriver {
     const matches = windows.filter(w => w.id === returnedWindow.id && w.app === returnedWindow.app);
     if (matches.length !== 1) throw new Error('Target window is no longer unique/current');
     this.window = await this.sky.get_window(matches[0]);
+    return this.activate();
+  }
+  async activate() {
+    if (!this.window) throw new Error('Select a unique returned window first');
+    this.observation = null;
+    await this.sky.activate_window({window: this.window});
+    if (this.evidence) {
+      this.evidence.actions.push({driver: 'os-input', type: 'activate', target: this.window,
+        completed: true, time: new Date().toISOString()});
+      await this.save();
+    }
     return this.observe();
   }
   async observe(includeText = false) {
@@ -34,7 +46,7 @@ export class DesktopDriver {
   begin(name) {
     const spec = this.run.cases[name];
     if (!spec) throw new Error('Unknown desktop case: ' + name);
-    this.evidence = {token: this.run.token, case: name, status: 'running', actions: [], assertions: []};
+    this.evidence = {token: this.run.token, case: name, status: 'running', started_at: new Date().toISOString(), actions: [], assertions: []};
   }
   async act(action) {
     if (!this.evidence || !this.observation) throw new Error('Begin a case and inspect a fresh observation first');
@@ -56,6 +68,8 @@ export class DesktopDriver {
       } else throw new Error('Unsupported OS input action: ' + type);
       event.completed = true;
       await this.save();
+      // Allow the ordinary scene fade and one render before taking evidence.
+      await new Promise(resolve => setTimeout(resolve, 200));
       return await this.observe();
     } catch (error) {
       event.error = String(error);
@@ -87,11 +101,28 @@ export class DesktopDriver {
       if (passed) break;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    this.evidence.assertions.push({name, passed, expected, observed: state});
+    this.evidence.assertions.push({name, passed, expected, observed: state, afterAction: this.evidence.actions.length});
     if (!passed) this.evidence.status = 'failed';
     await this.save();
     if (!passed) throw new Error('Desktop postcondition failed: ' + name);
     return state;
+  }
+  async expectJsonFile(name, relativePath, expected) {
+    const file = path.resolve(this.directory, relativePath);
+    if (!file.startsWith(path.resolve(this.directory) + path.sep)) throw new Error('Evidence file must be inside the test directory');
+    const buffer = await fs.readFile(file);
+    const value = JSON.parse(buffer.toString('utf8').replace(/^\uFEFF/, ''));
+    const stat = await fs.stat(file);
+    const started = Date.parse(this.evidence.started_at || this.evidence.actions[0]?.time);
+    const passed = stat.mtimeMs >= started && Object.entries(expected).every(([key, wanted]) =>
+      JSON.stringify(value[key]) === JSON.stringify(wanted));
+    this.evidence.assertions.push({name, passed, kind: 'json-file', expected: {file: relativePath, fields: expected},
+      observed: {value, sha256: createHash('sha256').update(buffer).digest('hex'), modified: stat.mtimeMs},
+      afterAction: this.evidence.actions.length});
+    if (!passed) this.evidence.status = 'failed';
+    await this.save();
+    if (!passed) throw new Error('Saved file postcondition failed: ' + name);
+    return value;
   }
   async save() {
     if (!this.evidence) return;

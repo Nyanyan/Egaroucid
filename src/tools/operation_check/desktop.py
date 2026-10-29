@@ -5,10 +5,12 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import uuid
 
 from common import Context, ROOT, require
 from gui import fixture
+from book_fixture import create_book
 
 
 # Internal-function smoke tests cannot satisfy these cases. Each desktop case
@@ -23,8 +25,8 @@ CASES = {
     "drop-file": ("OSからの棋譜ファイルのドラッグ＆ドロップ", ["dropped", "imported"]),
     "drag-opening": ("定石の並べ替えとフォルダ間移動", ["reordered", "moved"]),
     "drag-game": ("棋譜の並べ替えとフォルダ間移動", ["reordered", "moved"]),
-    "file-dialog-open": ("OSのファイル選択・取消・不正ファイル", ["opened", "cancelled", "invalid-rejected"]),
-    "file-dialog-save": ("OSの保存先選択・保存・取消", ["saved", "cancelled"]),
+    "file-path-open": ("GUIのファイルパス入力・取消・不正ファイル", ["opened", "cancelled", "invalid-rejected"]),
+    "file-path-save": ("GUIの保存先パス入力・保存・取消", ["saved", "cancelled"]),
     "profiles-ui": ("GUIからAI・表示プロファイルを保存・復元", ["ai-saved", "ai-restored", "display-saved", "display-restored"]),
     "settings-restart-ui": ("GUIで変更した設定の再起動後の復元", ["changed", "restored"]),
     "network-update": ("GUIからの実サーバーへの更新確認", ["requested", "response"]),
@@ -66,6 +68,7 @@ def prepare(args):
     write_json(directory / "request.json", {"marker": "egaroucid-operation-check-v1", "case": "desktop", "token": token})
     (directory / "sample-transcript.txt").write_text("f5d6c3d3\n", encoding="utf-8")
     (directory / "invalid-book.egbk3").write_bytes(b"not a valid book")
+    create_book(directory / "sample-book.egbk3")
     write_json(directory / "run.json", {
         "protocol": "egaroucid-desktop-check-v1", "token": token,
         "started_at": datetime.now(timezone.utc).isoformat(),
@@ -78,6 +81,20 @@ def prepare(args):
     print(directory)
     print("実行ファイル:", context.application())
     print("起動引数: --operation-check", directory)
+    return directory
+
+
+def launch(args):
+    directory = prepare(args)
+    run_file = directory / "run.json"
+    run = json.loads(run_file.read_text(encoding="utf-8"))
+    import os
+    environment = dict(os.environ)
+    environment["EGAROUCID_SHORTCUT_DIAG_LOG"] = str(directory / "shortcut-input.log")
+    process = subprocess.Popen([run["executable"], "--operation-check", str(directory)], cwd=directory, env=environment)
+    run["process_id"] = process.pid
+    write_json(run_file, run)
+    print("Process ID:", process.pid)
 
 
 def validate_case(case, evidence):
@@ -116,15 +133,18 @@ def report(directory):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    prep = sub.add_parser("prepare")
-    prep.add_argument("--exe", type=Path, default=ROOT / "bin/Egaroucid.exe")
-    prep.add_argument("--resources", type=Path)
-    prep.add_argument("--output-dir", type=Path, default=ROOT / "build/operation_check/desktop")
-    prep.add_argument("--language", default="japanese")
+    for command in ("prepare", "launch"):
+        prep = sub.add_parser(command)
+        prep.add_argument("--exe", type=Path, default=ROOT / "bin/Egaroucid.exe")
+        prep.add_argument("--resources", type=Path)
+        prep.add_argument("--output-dir", type=Path, default=ROOT / "build/operation_check/desktop")
+        prep.add_argument("--language", default="japanese")
     check = sub.add_parser("report")
     check.add_argument("directory", type=Path)
     args = parser.parse_args()
     if args.command == "prepare":
         prepare(args)
+    elif args.command == "launch":
+        launch(args)
     else:
         raise SystemExit(report(args.directory))
