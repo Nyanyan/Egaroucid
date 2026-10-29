@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import time
 import traceback
@@ -59,6 +60,21 @@ class Context:
         result.stdout = prefix.with_suffix(".stdout.log").read_text(encoding="utf-8", errors="replace")
         result.stderr = prefix.with_suffix(".stderr.log").read_text(encoding="utf-8", errors="replace")
         return result
+
+    def application(self):
+        """Stage only distributable files; never copy appdata or personal books."""
+        application = self.directory.parent / "application"
+        executable = application / self.args.exe.name
+        if not executable.exists():
+            application.mkdir()
+            shutil.copytree(self.args.resources, application / "resources")
+            for dll in self.args.exe.parent.glob("*.dll"):
+                shutil.copy2(dll, application / dll.name)
+            license_file = self.args.exe.parent / "LICENSE"
+            if license_file.is_file():
+                shutil.copy2(license_file, application / "LICENSE")
+            shutil.copy2(self.args.exe, executable)
+        return executable
 
 
 def parser_for(suite, default_exe):
