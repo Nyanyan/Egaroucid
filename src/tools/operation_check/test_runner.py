@@ -37,6 +37,25 @@ class RunnerTests(unittest.TestCase):
             run_suite("test", parser_for("test", "unused"), [], ["--case", "typo"])
         self.assertEqual(error.exception.code, 2)
 
+    def test_fail_fast_marks_report_incomplete(self):
+        with tempfile.TemporaryDirectory() as directory:
+            def fail(ctx):
+                require(False, "regression")
+            cases = [Case("bad", "fails", fail), Case("later", "must not run", lambda ctx: self.fail())]
+            argv = ["--exe", sys.executable, "--resources", directory, "--output-dir", directory, "--fail-fast"]
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(run_suite("test", parser_for("test", "unused"), cases, argv), 1)
+            report = json.loads(next(Path(directory).glob("*/results.json")).read_text())
+            self.assertFalse(report["complete"])
+            self.assertFalse(report["passed"])
+
+    def test_invalid_timeout(self):
+        for timeout in ("0", "-1", "nan", "inf"):
+            with self.subTest(timeout=timeout), contextlib.redirect_stderr(io.StringIO()), \
+                    self.assertRaises(SystemExit) as error:
+                run_suite("test", parser_for("test", "unused"), [], ["--timeout", timeout])
+            self.assertEqual(error.exception.code, 2)
+
     def test_timeout_retains_output(self):
         with tempfile.TemporaryDirectory() as directory:
             class Args:

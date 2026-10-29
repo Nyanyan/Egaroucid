@@ -4,6 +4,7 @@ import argparse
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import math
 from pathlib import Path
 import shutil
 import subprocess
@@ -104,7 +105,7 @@ def run_suite(suite, parser, cases, argv=None):
         for case in selected:
             print(f"{case.name:24} {case.description}")
         return 0
-    if args.timeout <= 0:
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error("--timeout must be positive")
     args.exe = args.exe.absolute()
     args.resources = (args.resources or args.exe.parent / "resources").absolute()
