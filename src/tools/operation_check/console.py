@@ -153,8 +153,8 @@ def level_display(ctx):
         path.write_bytes(payload)
         return path
 
-    def search_level(book_file, expected, extra=()):
-        options = ["-noboard", "-noise", "-mode", "3", "-thread", "1", "-hash", "18", "-l", "1"]
+    def search_level(book_file, expected, extra=(), *, level=1):
+        options = ["-noboard", "-noise", "-mode", "3", "-thread", "1", "-hash", "18", "-l", str(level)]
         options += ["-book", book_file] if book_file else ["-nobook"]
         result = ctx.run([ctx.application(), *options, *extra],
                          input=f"play {transcript}\ngo\nexit\n", cwd=ctx.directory)
@@ -173,6 +173,10 @@ def level_display(ctx):
             "Did not exercise book selection after additional search")
     require(row[1] != "-" and int(row[5]) > 0, "Additional search depth/nodes were lost")
     require(row[2] == "e6", "Expected the only book move")
+    row, log = search_level(partial, "Book", level=21)
+    require("main mid depth 21@74%" in log, "Did not exercise selective additional search")
+    require(row[1] == "21@74%", f"Additional search precision differs: {row[1]}")
+    require("level Book depth 21@74%" in log, "Debug additional search precision differs")
 
     inferior = write_book("inferior.egbk3", ["e6"], -64)
     row, log = search_level(inferior, "1")

@@ -632,7 +632,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                     res.time = additional_res.time;
                     res.nps = additional_res.nps;
                     res.is_end_search = false;
-                    res.probability = 100;
+                    res.probability = additional_res.probability;
                 } else {
                     if (show_log) {
                         std::cerr << "there are better move out of book" << std::endl;
