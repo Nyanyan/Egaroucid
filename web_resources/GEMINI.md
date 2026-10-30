@@ -17,16 +17,17 @@
 ## 新規ファイルの翻訳
 対応するファイルが`en`フォルダに存在しない場合は、`ja`フォルダのファイルを全文翻訳し、`en`フォルダ内の対応するパスに新規ファイルとして保存します。
 
-### 注意事項
-Gemini CLIが完全に英訳した記事には、Gemini CLIが翻訳したことが分かるように、必ず次の注意書きを記してください。
+### 翻訳表記
+翻訳表記の追加条件と検査方法は、[AGENTS.md](AGENTS.md)に従ってください。
+ページ本文のすべてを機械翻訳した履歴を確認できる場合に限り、次の注意書きを付けます。既存英文の部分更新だけでは追加しません。注意書きには翻訳ツール名を含めません。
 
 ```text
-This page was machine translated by Gemini CLI from the Japanese version. Please refer to the Japanese version for the official content.
+This page was machine translated from the Japanese version. Please refer to the Japanese version for the official content.
 ```
 
 - この注意書きは太字で書いてください。
 - この注意書きは各記事のタイトル(h1タグ、`#`1つで始まる行)の直後に書いてください。
-- 「日本語版」という文字のところに日本語版へのリンク(URLのうち、"en"を"ja"に変更したもの)を貼ってください。ただし、リンクのうちindex.mdの部分は必要ありません。
+- 注意書き内の `Japanese version` に、対応する日本語ページへのリンクを付けてください。URLの言語部分を `en` から `ja` に変更し、末尾の `index.md` は除いてください。
 
 ## 共通事項
 - 画像など翻訳が不要なファイルは、`ja`フォルダから`en`フォルダへ、同じディレクトリ構成を維持してそのままコピーします。

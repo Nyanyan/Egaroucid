@@ -1,5 +1,10 @@
 import shutil
 import os
+from pathlib import Path
+from check_translation_notices import check_translation_notices
+
+
+check_translation_notices(Path(__file__).absolute().parent, include_generated=True)
 
 dirs = ['ja', 'en']
 
