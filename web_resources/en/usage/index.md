@@ -833,7 +833,7 @@ Makes the mouse cursor look like a laser pointer. This is useful when you want t
 </div>
 
 
-## Display in Graph Area
+### Display in Graph Area
 
 You can display information such as the AI's judgment of the situation as a graph.
 
