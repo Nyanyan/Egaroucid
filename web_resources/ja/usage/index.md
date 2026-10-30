@@ -1029,7 +1029,7 @@ $B=\left\{(v,m)\in A\middle|v\geq v_{\mathrm{max}}-E\right\}$
 
 XOTの開始局面をランダムに生成できます。メニューの「操作 > XOT局面を生成」から実行でき、ショートカットキー、ショートカットボタン、マウス追加ボタンにも割り当てられます。
 
-XOTはMatthias Berg氏が作成・公開している開始局面集で、Egaroucidには作者の許可を得て同梱しています。通常の初期局面ではなく、XOT局面から練習対局や解析を始めたいときに使います。
+XOTはMatthias Berg氏が作成・公開している開始局面集で、Egaroucidには作者の許可を得て同梱しています。通常の初期局面ではなく、XOT局面から練習対局や解析を始めたいときに使います。なお、XOTは初手がf5に固定されていますが、Egaroucidでは初手もランダムに選ぶようにしています(7.8.4以降)。
 
 <div class="centering_box">
     <img class="pic2" src="img/xot_board_generation.png">
