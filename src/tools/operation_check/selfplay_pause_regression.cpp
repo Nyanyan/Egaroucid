@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 constexpr int BLACK = 0, WHITE = 1, GRAPH_MODE_NORMAL = 0, GRAPH_MODE_INSPECT = 1;
@@ -96,22 +97,55 @@ void check_turn_conditions() {
 
 void check_other_input_locks() {
     global_searching = false;
-    for (int lock = 0; lock < 4; ++lock) {
+    for (int lock = 0; lock < 3; ++lock) {
         Scene scene;
-        if (lock == 0) scene.ai_status.analyzing = true;
-        if (lock == 1) scene.ai_status.random_board_generator_calculating = true;
-        if (lock == 2) scene.data.book_information.changing = 12;
-        if (lock == 3) scene.data.menu.opened = true;
+        if (lock == 0) scene.ai_status.random_board_generator_calculating = true;
+        if (lock == 1) scene.data.book_information.changing = 12;
+        if (lock == 2) scene.data.menu.opened = true;
         scene.route_graph_input();
         require(scene.graph_inputs == 0, "pause bypassed an unrelated input lock");
     }
-    std::cout << "PASS: analysis, random generation, book edit, and menu locks remain effective\n";
+    std::cout << "PASS: random generation, book edit, and menu locks remain effective\n";
 }
 
-int main() {
+void check_analysis_pause_and_resume() {
+    Scene scene;
+    scene.data.menu_elements.ai_put_black = false;
+    scene.data.menu_elements.ai_put_white = false;
+    scene.ai_status.analyzing = true;
+    global_searching = true;
+    require(scene.is_analysis_running(), "active analysis was not recognized");
+    scene.route_graph_input();
+    require(scene.graph_inputs == 0 && !scene.operation_menu_is_unlocked(),
+            "active analysis lost its navigation/menu lock");
+
+    global_searching = false;
+    scene.route_graph_input();
+    require(scene.graph_inputs == 1 && scene.operation_menu_is_unlocked(),
+            "paused analysis blocked history, graph, or menu navigation");
+    require(!scene.is_analysis_running() && scene.ai_status.analyzing,
+            "pause destroyed the pending analysis state instead of releasing its input lock");
+
+    global_searching = true;
+    scene.route_graph_input();
+    require(scene.graph_inputs == 1 && !scene.operation_menu_is_unlocked() && scene.is_analysis_running(),
+            "resumed analysis did not reacquire its navigation/menu lock");
+
+    scene.ai_status.analyzing = false;
+    scene.route_graph_input();
+    require(scene.graph_inputs == 2 && scene.operation_menu_is_unlocked(),
+            "finished or cancelled analysis left an input lock");
+    std::cout << "PASS: analysis pause releases history/graph/menu locks, retains pending state, and resumes\n";
+}
+
+int main(int argc, char **argv) {
     try {
-        check_pause_and_resume();
-        check_turn_conditions();
+        const std::string mode = argc > 1 ? argv[1] : "all";
+        if (mode != "analysis") {
+            check_pause_and_resume();
+            check_turn_conditions();
+        }
+        if (mode != "selfplay") check_analysis_pause_and_resume();
         check_other_input_locks();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;

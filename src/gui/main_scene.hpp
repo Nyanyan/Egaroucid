@@ -220,7 +220,7 @@ public:
         const bool ai_should_move = should_ai_move();
         bool ignore_move = 
             (getData().book_information.changing != BOOK_CHANGE_NO_CELL) || 
-            ai_status.analyzing || 
+            is_analysis_running() ||
             ai_status.random_board_generator_calculating;
         if (need_start_game_button) {
             need_start_game_button_calculation();
@@ -268,14 +268,14 @@ public:
         }
 
         // graph move
-        bool graph_interact_ignore = ai_status.analyzing || ai_status.random_board_generator_calculating || ai_should_move;
+        bool graph_interact_ignore = is_analysis_running() || ai_status.random_board_generator_calculating || ai_should_move;
         if (!ignore_move && !graph_interact_ignore && !getData().menu.active()) {
             interact_graph();
         }
         update_n_discs();
 
         // local strategy drawing
-        bool local_strategy_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || need_start_game_button || pausing_in_pass || changing_scene;
+        bool local_strategy_ignore = ai_should_move || is_analysis_running() || ai_status.random_board_generator_calculating || need_start_game_button || pausing_in_pass || changing_scene;
         if (ai_status.local_strategy_done_level > 0 && getData().menu_elements.show_ai_focus && !local_strategy_ignore) {
             draw_local_strategy();
         }
@@ -327,7 +327,7 @@ public:
         uint64_t legal_ignore = 0ULL;
 
         // hint calculating
-        bool hint_ignore = ai_should_move || ai_status.analyzing || ai_status.random_board_generator_calculating || (need_start_game_button && !getData().menu_elements.show_value_when_ai_calculating) || pausing_in_pass || changing_scene;
+        bool hint_ignore = ai_should_move || is_analysis_running() || ai_status.random_board_generator_calculating || (need_start_game_button && !getData().menu_elements.show_value_when_ai_calculating) || pausing_in_pass || changing_scene;
         bool show_value_ai_turn = ai_should_move && getData().menu_elements.show_value_when_ai_calculating && getData().menu_elements.use_disc_hint;
         if (!hint_ignore || show_value_ai_turn) {
             if (getData().menu_elements.use_disc_hint) {
@@ -348,7 +348,7 @@ public:
         // }
 
         // principal variation calculating
-        // bool pv_ignore = ai_should_move || ai_status.analyzing || need_start_game_button || changing_scene;
+        // bool pv_ignore = ai_should_move || is_analysis_running() || need_start_game_button || changing_scene;
         bool pv_ignore = need_start_game_button || changing_scene;
         if (!pv_ignore && getData().menu_elements.show_principal_variation) {
             if (!ai_status.pv_calculating && !ai_status.pv_calculated) {
@@ -366,7 +366,7 @@ public:
                 try_local_strategy_get();
             }
         }
-        if (ai_status.analyzing || ai_status.random_board_generator_calculating) {
+        if (is_analysis_running() || ai_status.random_board_generator_calculating) {
             principal_variation = "";
         }
 
@@ -1031,7 +1031,7 @@ private:
         if (getData().menu_elements.start_selfplay || shortcut_key == U"new_selfplay") {
             start_new_game(true, true);
         }
-        if ((getData().menu_elements.analyze || shortcut_key == U"analyze") && !ai_status.ai_thinking && !ai_status.analyzing) {
+        if ((getData().menu_elements.analyze || shortcut_key == U"analyze") && !ai_status.ai_thinking && !is_analysis_running()) {
             stop_calculating();
             resume_calculating();
             init_analyze();
@@ -1239,7 +1239,7 @@ private:
         if (getData().menu_elements.resume_calculating || shortcut_key == U"resume_calculating") {
             resume_calculating();
         }
-        if (!ai_status.analyzing) {
+        if (!is_analysis_running()) {
             if ((getData().menu_elements.put_1_move_by_ai || shortcut_key == U"put_1_move_by_ai") && !ai_status.ai_thinking) {
                 stop_calculating();
                 resume_calculating();
@@ -1754,6 +1754,12 @@ private:
                 }
             }
         }
+    }
+
+    bool is_analysis_running() const {
+        // The analysis queue stays alive while paused so calculation can resume.
+        // Only an executing analysis holds the board and history input locks.
+        return global_searching && ai_status.analyzing;
     }
 
     bool should_ai_move() {

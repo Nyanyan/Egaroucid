@@ -1,4 +1,4 @@
-"""Check the real AI-turn and graph-input conditions when calculation is paused.
+"""Check the real AI-turn, analysis, and navigation locks when calculation is paused.
 
 --ref runs the pre-fix update expression against the same regression. The small
 fixture replaces rendering and search, not the conditions taken from Main_scene.
@@ -24,6 +24,7 @@ def block(source, marker):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ref", help="Git revision instead of the working tree")
+    parser.add_argument("--case", choices=("all", "selfplay", "analysis"), default="all")
     args = parser.parse_args()
     root = Path(__file__).absolute().parents[3]
     path = "src/gui/main_scene.hpp"
@@ -44,7 +45,18 @@ def main():
     graph_end = source.index("        update_n_discs();", graph_start)
     graph = ("void route_graph_input() {\nconst bool ai_should_move = should_ai_move();\n"
              + source[ignore_start:ignore_end] + "\n" + source[graph_start:graph_end] + "\n}")
-    (output / "selfplay_pause_methods.hpp").write_text(predicate + "\n" + graph, encoding="utf-8")
+    analysis = (block(source, "bool is_analysis_running() const") if "bool is_analysis_running() const" in source
+                else "bool is_analysis_running() const { return ai_status.analyzing; }")
+    menu = block(source, "void menu_manipulate()")
+    put_move = menu.index("            if ((getData().menu_elements.put_1_move_by_ai")
+    opening = menu.rfind("if (", 0, put_move) + len("if ")
+    depth, end = 1, opening + 1
+    while depth:
+        depth += (menu[end] == "(") - (menu[end] == ")")
+        end += 1
+    menu_guard = "bool operation_menu_is_unlocked() { return " + menu[opening + 1:end - 1] + "; }"
+    (output / "selfplay_pause_methods.hpp").write_text(
+        analysis + "\n" + predicate + "\n" + graph + "\n" + menu_guard, encoding="utf-8")
     compiler = shutil.which("g++")
     if not compiler:
         raise SystemExit("g++ is required on PATH")
@@ -52,7 +64,7 @@ def main():
     subprocess.run([compiler, "-std=c++17", "-O2", "-I" + str(output),
                     str(Path(__file__).with_name("selfplay_pause_regression.cpp")),
                     "-o", str(executable)], check=True)
-    raise SystemExit(subprocess.run([str(executable)], timeout=10).returncode)
+    raise SystemExit(subprocess.run([str(executable), args.case], timeout=10).returncode)
 
 
 if __name__ == "__main__":
