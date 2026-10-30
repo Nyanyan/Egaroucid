@@ -20,13 +20,17 @@ struct Data {
         int branch = GRAPH_MODE_NORMAL;
         std::vector<History> nodes[2]{{History{}}, {History{}}};
     } graph_resources;
-    struct { bool ai_put_black = true, ai_put_white = true; } menu_elements;
+    struct {
+        bool ai_put_black = true, ai_put_white = true;
+        bool analyze = true, put_1_move_by_ai = true;
+    } menu_elements;
     struct { int changing = BOOK_CHANGE_NO_CELL; } book_information;
     struct { bool opened = false; bool active() const { return opened; } } menu;
 };
 struct Scene {
     Data data;
-    struct { bool analyzing = false, random_board_generator_calculating = false; } ai_status;
+    struct { bool ai_thinking = false, analyzing = false, random_board_generator_calculating = false; } ai_status;
+    std::u32string shortcut_key;
     bool need_start_game_button = false, pausing_in_pass = false, putting_1_move_by_ai = false;
     int graph_inputs = 0;
     Data &getData() { return data; }
@@ -138,14 +142,34 @@ void check_analysis_pause_and_resume() {
     std::cout << "PASS: analysis pause releases history/graph/menu locks, retains pending state, and resumes\n";
 }
 
+void check_paused_ai_commands() {
+    Scene scene;
+    scene.ai_status.ai_thinking = true;
+    global_searching = true;
+    require(!scene.analyze_command_enabled() && !scene.single_move_command_enabled(),
+            "active AI search allowed a conflicting command");
+    global_searching = false;
+    require(scene.analyze_command_enabled() && scene.single_move_command_enabled(),
+            "paused AI search blocked a new analysis or single-move command");
+    require(scene.ai_status.ai_thinking, "command guard discarded a pending AI task");
+    scene.ai_status.analyzing = true;
+    require(scene.analyze_command_enabled() && scene.operation_menu_is_unlocked(),
+            "paused pending analysis blocked a replacement command");
+    global_searching = true;
+    require(!scene.analyze_command_enabled() && !scene.operation_menu_is_unlocked(),
+            "active analysis lost its command lock");
+    std::cout << "PASS: paused AI futures allow replacement commands; active tasks remain locked\n";
+}
+
 int main(int argc, char **argv) {
     try {
         const std::string mode = argc > 1 ? argv[1] : "all";
-        if (mode != "analysis") {
+        if (mode == "all" || mode == "selfplay") {
             check_pause_and_resume();
             check_turn_conditions();
         }
-        if (mode != "selfplay") check_analysis_pause_and_resume();
+        if (mode == "all" || mode == "analysis") check_analysis_pause_and_resume();
+        if (mode == "all" || mode == "commands") check_paused_ai_commands();
         check_other_input_locks();
     } catch (const std::exception &error) {
         std::cerr << "FAIL: " << error.what() << std::endl;

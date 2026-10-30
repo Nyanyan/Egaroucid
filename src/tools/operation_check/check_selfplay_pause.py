@@ -21,10 +21,19 @@ def block(source, marker):
     return source[start:end]
 
 
+def condition(source, marker):
+    opening = source.index("(", source.index(marker))
+    depth, end = 1, opening + 1
+    while depth:
+        depth += (source[end] == "(") - (source[end] == ")")
+        end += 1
+    return source[opening + 1:end - 1]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ref", help="Git revision instead of the working tree")
-    parser.add_argument("--case", choices=("all", "selfplay", "analysis"), default="all")
+    parser.add_argument("--case", choices=("all", "selfplay", "analysis", "commands"), default="all")
     args = parser.parse_args()
     root = Path(__file__).absolute().parents[3]
     path = "src/gui/main_scene.hpp"
@@ -55,8 +64,15 @@ def main():
         depth += (menu[end] == "(") - (menu[end] == ")")
         end += 1
     menu_guard = "bool operation_menu_is_unlocked() { return " + menu[opening + 1:end - 1] + "; }"
+    ai_running = (block(source, "bool is_ai_search_running() const") if "bool is_ai_search_running() const" in source
+                  else "bool is_ai_search_running() const { return ai_status.ai_thinking; }")
+    commands = "\n".join(
+        "bool " + name + "() { return " + condition(source, marker) + "; }" for name, marker in (
+            ("analyze_command_enabled", "if ((getData().menu_elements.analyze"),
+            ("single_move_command_enabled", "if ((getData().menu_elements.put_1_move_by_ai")))
     (output / "selfplay_pause_methods.hpp").write_text(
-        analysis + "\n" + predicate + "\n" + graph + "\n" + menu_guard, encoding="utf-8")
+        ai_running + "\n" + analysis + "\n" + predicate + "\n" + graph + "\n" + menu_guard + "\n" + commands,
+        encoding="utf-8")
     compiler = shutil.which("g++")
     if not compiler:
         raise SystemExit("g++ is required on PATH")

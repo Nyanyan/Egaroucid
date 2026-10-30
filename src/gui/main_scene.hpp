@@ -1031,7 +1031,7 @@ private:
         if (getData().menu_elements.start_selfplay || shortcut_key == U"new_selfplay") {
             start_new_game(true, true);
         }
-        if ((getData().menu_elements.analyze || shortcut_key == U"analyze") && !ai_status.ai_thinking && !is_analysis_running()) {
+        if ((getData().menu_elements.analyze || shortcut_key == U"analyze") && !is_ai_search_running() && !is_analysis_running()) {
             stop_calculating();
             resume_calculating();
             init_analyze();
@@ -1240,7 +1240,7 @@ private:
             resume_calculating();
         }
         if (!is_analysis_running()) {
-            if ((getData().menu_elements.put_1_move_by_ai || shortcut_key == U"put_1_move_by_ai") && !ai_status.ai_thinking) {
+            if ((getData().menu_elements.put_1_move_by_ai || shortcut_key == U"put_1_move_by_ai") && !is_ai_search_running()) {
                 stop_calculating();
                 resume_calculating();
                 putting_1_move_by_ai = true;
@@ -1754,6 +1754,11 @@ private:
                 }
             }
         }
+    }
+
+    bool is_ai_search_running() const {
+        // A paused future is retained for resume or joined by the next command.
+        return global_searching && ai_status.ai_thinking;
     }
 
     bool is_analysis_running() const {
