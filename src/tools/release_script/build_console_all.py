@@ -2,14 +2,12 @@
 複数の構成で Egaroucid_for_Console をビルドし、リネーム・移動するスクリプト
 """
 
-import os
+import argparse
+import re
 import sys
 import shutil
 from pathlib import Path
 from build_console import build_project, find_msbuild, PROJECT_ROOT
-
-# バージョン情報
-VERSION = "7_8_1"
 
 # ビルド構成
 CONFIGURATIONS = ["SIMD", "SIMD_AMD", "Generic", "AVX512", "AVX512_AMD"]
@@ -17,6 +15,13 @@ CONFIGURATIONS = ["SIMD", "SIMD_AMD", "Generic", "AVX512", "AVX512_AMD"]
 # 出力先ディレクトリ
 SCRIPT_DIR = Path(__file__).parent
 OUTPUT_DIR = SCRIPT_DIR / "format_files" / "1_console_exes"
+
+
+def parse_version(value):
+    """バージョンを検証し、ファイル名用の表記に変換"""
+    if not re.fullmatch(r"[0-9]+([._])[0-9]+\1[0-9]+", value):
+        raise argparse.ArgumentTypeError("バージョンは X.Y.Z または X_Y_Z で指定してください。")
+    return value.replace(".", "_")
 
 
 def ensure_output_dir():
@@ -32,7 +37,7 @@ def get_build_output_path(configuration, platform="x64"):
     return output_dir / "Egaroucid_for_Console.exe"
 
 
-def rename_and_move(configuration, platform="x64"):
+def rename_and_move(configuration, version, platform="x64"):
     """ビルド成果物をリネームして移動"""
     source_path = get_build_output_path(configuration, platform)
     
@@ -41,7 +46,7 @@ def rename_and_move(configuration, platform="x64"):
         return False
     
     # 新しいファイル名を生成
-    new_filename = f"Egaroucid_for_Console_{VERSION}_{configuration}.exe"
+    new_filename = f"Egaroucid_for_Console_{version}_{configuration}.exe"
     dest_path = OUTPUT_DIR / new_filename
     
     # ファイルをコピー
@@ -55,7 +60,7 @@ def rename_and_move(configuration, platform="x64"):
         return False
 
 
-def build_all():
+def build_all(version):
     """すべての構成でビルド"""
     # MSBuild の存在確認
     msbuild_path = find_msbuild()
@@ -65,7 +70,7 @@ def build_all():
         return False
     
     print(f"MSBuild: {msbuild_path}")
-    print(f"バージョン: {VERSION}")
+    print(f"バージョン: {version.replace('_', '.')}")
     print(f"ビルド構成: {', '.join(CONFIGURATIONS)}")
     print("=" * 60)
     
@@ -86,7 +91,7 @@ def build_all():
         
         if success:
             # リネームして移動
-            if rename_and_move(config, platform="x64"):
+            if rename_and_move(config, version, platform="x64"):
                 success_count += 1
             else:
                 failed_configs.append(f"{config} (移動失敗)")
@@ -111,18 +116,27 @@ def build_all():
         print(f"出力先: {OUTPUT_DIR}")
         print("\n生成されたファイル:")
         for config in CONFIGURATIONS:
-            filename = f"Egaroucid_for_Console_{VERSION}_{config}.exe"
+            filename = f"Egaroucid_for_Console_{version}_{config}.exe"
             filepath = OUTPUT_DIR / filename
             if filepath.exists():
                 print(f"  - {filename} ({filepath.stat().st_size:,} bytes)")
         return True
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="複数の構成で Egaroucid_for_Console をビルド"
+    )
+    parser.add_argument(
+        "version", type=parse_version, metavar="X.Y.Z",
+        help="出力ファイル名のバージョン (X.Y.Z または X_Y_Z)"
+    )
+    args = parser.parse_args(argv)
+
     print("Egaroucid_for_Console 一括ビルドスクリプト")
     print("=" * 60)
     
-    success = build_all()
+    success = build_all(args.version)
     
     return 0 if success else 1
 
