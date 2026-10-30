@@ -1575,9 +1575,19 @@ You can choose whether to automatically check for updates when Egaroucid is star
 
 ### Data Migration
 
-This is a function for moving Egaroucid settings and saved data to another PC. "Export Data" creates a migration folder in the specified folder. The created folder name is in the format Egaroucid_Settings_date-and-time.
+Use this function to move Egaroucid settings, saved games, books, and other data to another PC. Export the data on the source PC, then import the resulting migration folder on the destination PC.
 
-With "Import Data," specify the exported Egaroucid_Settings_... folder and import it. Settings are overwritten, and data such as games and Books in the Documents folder are copied. Some data, such as Books, is reflected after restarting Egaroucid after importing.
+#### Export data on the source PC
+
+Choose "Export Data" and select a save location. A migration folder named Egaroucid_Settings_date-and-time is created there, containing settings, saved games, books, and other data. Copy this folder to the destination PC using a USB drive or another method.
+
+#### Import data on the destination PC
+
+On the destination PC, choose "Import Data" and select the Egaroucid_Settings_... folder you copied. Settings, games, books, and other data are copied from this folder into the locations used by Egaroucid on the destination PC.
+
+Files with the same names on the destination PC are overwritten with the contents of the migration folder. Games and books that are not in the migration folder remain on the destination PC. For example, if the migration folder contains only game A and the destination PC has games A and B, A is overwritten and B is kept.
+
+Importing does not change the contents of the migration folder. The imported book is ready to use without restarting Egaroucid.
 
 <div class="centering_box">
     <img class="pic2" src="img/data_migration_menu.png">
