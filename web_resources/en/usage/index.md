@@ -1270,6 +1270,10 @@ You cannot change the placement of stones on this screen, so please create the s
 
 Use "Coordinates" to include or exclude coordinates. Set "Color" to "Monochrome" for black-and-white printing. For color images, "Outer Frame" lets you choose white or dark gray.
 
+The selected mark type, coordinate visibility, color mode, and outer frame color are remembered automatically for the next time you open this screen. These settings are also retained after closing and restarting Egaroucid.
+
+Marks and arrows are retained for each position in the currently open game. After choosing "Back" or visiting another position, you can return to the same position's editor and continue editing. They are cleared when you start a new game, load another game, or close Egaroucid. Use "Save" to keep a diagram as an image.
+
 "Save" saves the image to a file and copies it to the clipboard. The default save destination is the Egaroucid/screenshots folder in the Documents folder, and the file name is the date and time + game record. If you want to change the save location, please change it from "Output > Screenshot > Change Save Location".
 
 I assigned Esc as a shortcut key for "Back".
