@@ -638,6 +638,7 @@ Search_result ai_common(Board board, int alpha, int beta, int level, bool use_bo
                         std::cerr << "there are better move out of book" << std::endl;
                     }
                     res = tree_search_legal(board, n_alpha, beta, depth, mpc_level, show_log, use_legal, use_multi_thread, time_limit, thread_id, searching);
+                    res.level = level;
                     res.time += additional_res.time;
                     res.nodes += additional_res.nodes;
                     res.clog_nodes += additional_res.clog_nodes;

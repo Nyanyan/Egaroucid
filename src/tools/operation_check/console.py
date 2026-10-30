@@ -1,7 +1,9 @@
 """Black-box release checks for a built Egaroucid console application."""
 
 import re
+import struct
 
+from book_fixture import representative
 from common import Case, parser_for, require, run_suite
 from reference_board import Board
 
@@ -129,6 +131,61 @@ def book(ctx):
     require("level Book" in result.stderr, "Initial search did not use the book")
 
 
+def level_display(ctx):
+    # f5f6 has distinct book and non-book moves; the initial position does not.
+    transcript = "f5f6"
+    board = Board().replay(transcript)
+
+    def write_book(name, moves, value):
+        def position(board):
+            player = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc == board.turn)
+            opponent = sum(1 << (63 - i) for i, disc in enumerate(board.cells) if disc not in (board.turn, "-"))
+            return representative(player, opponent)
+
+        positions = {position(board): value}
+        for move in moves:
+            child = Board().replay(transcript + move)
+            positions[position(child)] = -value
+        path = ctx.directory / name
+        payload = b"DICUORAGE\x03" + struct.pack("<I", len(positions))
+        for (player, opponent), score in sorted(positions.items()):
+            payload += struct.pack("<QQbbIbbb", player, opponent, score, 1, 1, 127, 64, -1)
+        path.write_bytes(payload)
+        return path
+
+    def search_level(book_file, expected, extra=()):
+        options = ["-noboard", "-noise", "-mode", "3", "-thread", "1", "-hash", "18", "-l", "1"]
+        options += ["-book", book_file] if book_file else ["-nobook"]
+        result = ctx.run([ctx.application(), *options, *extra],
+                         input=f"play {transcript}\ngo\nexit\n", cwd=ctx.directory)
+        require(result.returncode == 0, f"Level display search failed with exit code {result.returncode}")
+        rows = [line.split("|")[1:-1] for line in result.stdout.splitlines() if line.startswith("|")]
+        require(len(rows) == 2, "Expected header and one search result")
+        row = [cell.strip() for cell in rows[1]]
+        require(row[0] == expected, f"Expected level {expected}, got {row[0]}")
+        require(row[2] in board.legal(), "Level display search returned illegal move")
+        require(f"level {expected} depth " in result.stderr, "Debug level differs from table")
+        return row, result.stderr
+
+    partial = write_book("partial.egbk3", ["e6"], 64)
+    row, log = search_level(partial, "Book")
+    require("moves out of book" in log and "better move out of book" not in log,
+            "Did not exercise book selection after additional search")
+    require(row[1] != "-" and int(row[5]) > 0, "Additional search depth/nodes were lost")
+    require(row[2] == "e6", "Expected the only book move")
+
+    inferior = write_book("inferior.egbk3", ["e6"], -64)
+    row, log = search_level(inferior, "1")
+    require("better move out of book" in log and row[2] != "e6", "Did not select a better non-book move")
+
+    complete = write_book("complete.egbk3", sorted(board.legal()), 64)
+    row, _ = search_level(complete, "Book")
+    require(row[1] == "-" and row[5] == "0", "Pure book result unexpectedly searched")
+    search_level(None, "1")
+    search_level(None, "custom", ["-dpr", "1", "60", "1", "100"])
+    search_level(None, "-", ["-time", "1"])
+
+
 CASES = [
     Case("metadata", "Version, CLI help, command help", metadata),
     Case("argument-error", "Missing CLI argument returns an error", argument_error),
@@ -143,6 +200,7 @@ CASES = [
     Case("solve-file", "Read and solve an exact endgame file", solve_file),
     Case("selfplay", "Full game checked with independent Othello rules", selfplay),
     Case("book", "Load release book and return a legal move", book),
+    Case("level-display", "Book, additional search, normal, custom and timed level labels", level_display),
 ]
 
 

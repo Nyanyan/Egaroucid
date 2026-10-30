@@ -50,7 +50,7 @@ struct Analyze_summary {
 };
 
 inline std::string get_search_level_str(const Search_result &result, const Options *options) {
-    if (result.depth == SEARCH_BOOK) {
+    if (result.level == LEVEL_TYPE_BOOK || result.depth == SEARCH_BOOK) {
         return "Book";
     }
     if (options->time_allocated_seconds != TIME_NOT_ALLOCATED) {
