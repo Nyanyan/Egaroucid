@@ -703,6 +703,7 @@ private:
 
     void reset_ai() {
         ai_status.ai_thinking = false;
+        putting_1_move_by_ai = false;
         if (ai_status.ai_future.valid()) {
             ai_status.ai_future.get();
         }
@@ -1793,8 +1794,11 @@ private:
             uint64_t legal = getData().history_elem.board.get_legal();
             if (!ai_status.ai_thinking) {
                 if (legal) {
+                    // This reset prepares the requested move on the same board.
+                    const bool single_move_requested = putting_1_move_by_ai;
                     stop_calculating();
                     resume_calculating();
+                    putting_1_move_by_ai = single_move_requested;
                     bool specified_opening_moved = false;
                     if (getData().menu_elements.force_specified_openings) {
                         int selected_policy = getData().forced_openings.get_one(getData().history_elem.board);
