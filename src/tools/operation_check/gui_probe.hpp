@@ -337,6 +337,7 @@ class Gui_probe {
         state[U"level"] = data.menu_elements.level;
         state[U"ai_black"] = data.menu_elements.ai_put_black;
         state[U"ai_white"] = data.menu_elements.ai_put_white;
+        state[U"calculation_enabled"] = global_searching;
         state[U"version"] = EGAROUCID_VERSION;
         state.save(U"desktop-state.json");
     }

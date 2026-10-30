@@ -217,16 +217,7 @@ public:
         }
 
         // move
-        bool ai_should_move =
-            !need_start_game_button &&
-            !getData().history_elem.board.is_end() && 
-            getData().graph_resources.branch == GRAPH_MODE_NORMAL &&
-            ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
-            getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() && 
-            !pausing_in_pass;
-        ai_should_move |= 
-            !getData().history_elem.board.is_end() && 
-            putting_1_move_by_ai;
+        const bool ai_should_move = should_ai_move();
         bool ignore_move = 
             (getData().book_information.changing != BOOK_CHANGE_NO_CELL) || 
             ai_status.analyzing || 
@@ -1763,6 +1754,24 @@ private:
                 }
             }
         }
+    }
+
+    bool should_ai_move() {
+        // A paused search must release the AI-turn lock on history and graph controls.
+        if (!global_searching) {
+            return false;
+        }
+        bool ai_should_move =
+            !need_start_game_button &&
+            !getData().history_elem.board.is_end() &&
+            getData().graph_resources.branch == GRAPH_MODE_NORMAL &&
+            ((getData().history_elem.player == BLACK && getData().menu_elements.ai_put_black) || (getData().history_elem.player == WHITE && getData().menu_elements.ai_put_white)) &&
+            getData().history_elem.board.n_discs() == getData().graph_resources.nodes[GRAPH_MODE_NORMAL][getData().graph_resources.nodes[GRAPH_MODE_NORMAL].size() - 1].board.n_discs() &&
+            !pausing_in_pass;
+        ai_should_move |=
+            !getData().history_elem.board.is_end() &&
+            putting_1_move_by_ai;
+        return ai_should_move;
     }
 
     void ai_move() {
