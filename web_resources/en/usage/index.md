@@ -1026,7 +1026,7 @@ From version 7.8.2, Egaroucid now makes a final check, using the configured AI l
 
 You can randomly generate an XOT starting position. It can be run from the menu "Operate > Generate XOT Position" and can also be assigned to shortcut keys, shortcut buttons, and mouse additional buttons.
 
-XOT is a set of starting positions created and published by Matthias Berg, and Egaroucid includes it with the author's permission. Use this when you want to start practice games or analysis from an XOT position instead of the normal initial position.
+XOT is a set of starting positions created and published by Matthias Berg, and Egaroucid includes it with the author's permission. Use this when you want to start practice games or analysis from an XOT position instead of the normal initial position. XOT fixes the first move to f5, but Egaroucid randomizes the first move as well from version 7.8.4 onward.
 
 <div class="centering_box">
     <img class="pic2" src="img/xot_board_generation.png">
