@@ -80,6 +80,7 @@ private:
     bool local_strategy_policy_calculation_interrupted;
     bool umigame_calculation_interrupted;
     bool book_accuracy_calculation_interrupted;
+    bool random_board_generation_interrupted;
 public:
     std::string principal_variation;
 
@@ -144,6 +145,7 @@ public:
         local_strategy_policy_calculation_interrupted = false;
         umigame_calculation_interrupted = false;
         book_accuracy_calculation_interrupted = false;
+        random_board_generation_interrupted = false;
         reset_turn_timer_anchor();
         std::cerr << "main scene loaded" << std::endl;
         // std::cerr << tim() - strt << " ms" << std::endl;
@@ -866,6 +868,10 @@ private:
     }
 
     void resume_calculating() {
+        // Keep cancellation asserted until the old generator has exited.
+        if (random_board_generation_interrupted) {
+            reset_random_board_generator();
+        }
         global_searching = true;
         restart_interrupted_calculations();
     }
@@ -879,6 +885,8 @@ private:
         local_strategy_policy_calculation_interrupted |= ai_status.local_strategy_policy_calculating;
         umigame_calculation_interrupted |= umigame_status.umigame_calculating;
         book_accuracy_calculation_interrupted |= book_accuracy_status.book_accuracy_calculating;
+        random_board_generation_interrupted |= ai_status.random_board_generator_calculating;
+        ai_status.random_board_generator_calculating = false;
         global_searching = false;
     }
 
@@ -891,9 +899,14 @@ private:
         local_strategy_policy_calculation_interrupted = false;
         umigame_calculation_interrupted = false;
         book_accuracy_calculation_interrupted = false;
+        random_board_generation_interrupted = false;
     }
 
     void restart_interrupted_calculations() {
+        if (random_board_generation_interrupted) {
+            random_board_generation_interrupted = false;
+            start_random_board_generation();
+        }
         if (hint_calculation_interrupted && !ai_status.hint_calculating) {
             ai_status.hint_calculated = false;
             hint_calculation_interrupted = false;
@@ -1366,19 +1379,9 @@ private:
                 generate_xot_board();
             }
             if (getData().menu_elements.generate_random_board || shortcut_key == U"generate_random_board") {
-                const int light_level = 1;
-                const int mid_level = 15;
-                const int adjustment_level = getData().menu_elements.level;
                 stop_calculating();
-                getData().history_elem.reset();
-                getData().graph_resources.init();
-                getData().graph_resources.nodes[getData().graph_resources.branch].emplace_back(getData().history_elem);
-                getData().game_information.init();
-                pausing_in_pass = false;
-                reset_turn_timer_state();
                 resume_calculating();
-                ai_status.random_board_generator_calculating = true;
-                ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range_min, getData().menu_elements.generate_random_board_score_range_max, getData().menu_elements.generate_random_board_moves, light_level, mid_level, adjustment_level, &ai_status.random_board_generator_calculating);
+                start_random_board_generation();
             }
         }
         // policy = y * HW + x (see convert_all_positions())
@@ -3142,11 +3145,25 @@ private:
         need_start_game_button_calculation();
     }
 
+    void start_random_board_generation() {
+        const int light_level = 1;
+        const int mid_level = 15;
+        const int adjustment_level = getData().menu_elements.level;
+        ai_status.random_board_generator_calculating = true;
+        ai_status.random_board_generator_future = std::async(std::launch::async, random_board_generator, getData().menu_elements.generate_random_board_score_range_min, getData().menu_elements.generate_random_board_score_range_max, getData().menu_elements.generate_random_board_moves, light_level, mid_level, adjustment_level, &ai_status.random_board_generator_calculating);
+    }
+
     void check_random_board_generater() {
+        if (!global_searching) {
+            return;
+        }
         if (ai_status.random_board_generator_future.valid() && ai_status.random_board_generator_calculating) {
             if (ai_status.random_board_generator_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 std::vector<int> moves = ai_status.random_board_generator_future.get();
                 ai_status.random_board_generator_calculating = false;
+                if (moves.empty()) {
+                    return;  // Cancelled or failed: retain the current game.
+                }
                 std::cerr << "finish random board generation" << std::endl;
                 stop_calculating();
                 getData().history_elem.reset();

@@ -18,8 +18,9 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
     int adjustment_n_moves = n_moves - light_n_moves;
     bool success = false;
     std::vector<int> res;
+    const auto cancelled = [searching]() { return !global_searching || !*searching; };
     constexpr int MAX_N_TRY = 40;
-    for (int try_count = 0; try_count < MAX_N_TRY && !success && *searching; ++try_count) {
+    for (int try_count = 0; try_count < MAX_N_TRY && !success && !cancelled(); ++try_count) {
         std::string ms_per_itr_str = "-";
         if (try_count > 0) {
             uint64_t ms_per_itr = (tim() - strt) / try_count;
@@ -38,6 +39,9 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
         std::default_random_engine engine(seed_gen());
         std::normal_distribution<> dist(0.0, 6.0); // acceptable loss avg = 0.0, sd = 6.0 discs
         for (int i = 0; i < light_n_moves; ++i) {
+            if (cancelled()) {
+                return {};
+            }
             if (board.is_end()) {
                 failed = true;
                 break;
@@ -49,6 +53,9 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
             int acceptable_loss = std::abs(std::round(dist(engine)));
             Search_result search_result = ai_accept_loss(board, light_level, acceptable_loss);
             int policy = search_result.policy;
+            if (cancelled() || !is_valid_policy(policy) || !(board.get_legal() & (1ULL << policy))) {
+                return {};
+            }
             res.emplace_back(policy);
             // std::cerr << "light " << acceptable_loss << " " << idx_to_coord(policy) << " " << search_result.value << std::endl;
             calc_flip(&flip, &board, policy);
@@ -57,6 +64,9 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
         }
         if (!failed) {
             for (int i = 0; i < adjustment_n_moves; ++i) {
+                if (cancelled()) {
+                    return {};
+                }
                 if (board.is_end()) {
                     failed = true;
                     break;
@@ -75,6 +85,9 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                 }
                 int adjustment_level_now = (i == adjustment_n_moves - 1) ? adjustment_level : mid_level;
                 Search_result search_result = ai_range(board, adjustment_level_now, alpha, beta, searching);
+                if (cancelled()) {
+                    return {};
+                }
                 if (search_result.value == SCORE_UNDEFINED) { // adjust failed
                     if (i == adjustment_n_moves - 1) { // last move
                         failed = true;
@@ -84,6 +97,9 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                         int acceptable_loss = std::abs(std::round(dist(engine)));
                         Search_result search_result2 = ai_accept_loss(board, adjustment_level_now, acceptable_loss);
                         int policy2 = search_result2.policy;
+                        if (cancelled() || !is_valid_policy(policy2) || !(board.get_legal() & (1ULL << policy2))) {
+                            return {};
+                        }
                         res.emplace_back(policy2);
                         calc_flip(&flip, &board, policy2);
                         board.move_board(&flip);
@@ -91,6 +107,9 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
                     }
                 } else { // adjusted
                     int policy = search_result.policy;
+                    if (!is_valid_policy(policy) || !(board.get_legal() & (1ULL << policy))) {
+                        return {};
+                    }
                     res.emplace_back(policy);
                     // std::cerr << "adjust " << idx_to_coord(policy) << " " << search_result.value << std::endl;
                     calc_flip(&flip, &board, policy);
@@ -104,7 +123,7 @@ std::vector<int> random_board_generator(int score_range_min, int score_range_max
             std::cerr << "random board generated in " << tim() - strt << " ms" << std::endl;
         }
     }
-    if (res.size() != n_moves) {
+    if (cancelled() || !success || res.size() != n_moves) {
         res.clear();
     }
     return res;
