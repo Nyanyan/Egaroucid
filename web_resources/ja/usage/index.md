@@ -1286,11 +1286,7 @@ Ctrl+Cをショートカットとして割り当ててあります。
 
 <div class="centering_box">
     <img class="pic2" src="img/edit_board_image.png">
-</div>
-
-カラーとモノクロで保存した画像の例です。
-
-<div class="centering_box">
+    <img class="pic2" src="img/edit_board_image_monochrome.png">
     <img class="pic2" src="img/edit_board_image_shot_color.png">
     <img class="pic2" src="img/edit_board_image_shot_monochrome.png">
 </div>
