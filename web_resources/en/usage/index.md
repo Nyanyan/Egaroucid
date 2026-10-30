@@ -4,7 +4,7 @@
 
 This is the official documentation for the Othello AI Egaroucid. It briefly introduces how to use each feature. The content of this page is aligned with the latest version, but updates may not always be up to date.
 
-Last updated: 2026/07/02 Egaroucid 7.8.2 / 7.8.3
+Last updated: 2026/10/30 Egaroucid 7.8.4
 
 INSERT_TABLE_OF_CONTENTS_HERE
 
@@ -1258,15 +1258,19 @@ The resolution of the image depends on the size of the Egaroucid screen. If you 
 
 You can freely mark the Othello board and save the image. It is intended for use in Othello commentary booklets, etc.
 
-Select a mark and freely click on stones and squares.
+Select a mark from the palette on the right, then click a disc or square to draw it. Squares, stars, and circles are available in black, white, or outline styles. A disc-flip symbol is also available. To remove a mark, select the same type and click its square again.
 
-You cannot change the placement of stones on this screen, so please create the stone placement by <a href="#Input/Output_Input > Input Game Record">inputting a game record</a> or <a href="#Input/Output_Input > Edit Board">editing the board</a> before using this function.
+To draw an arrow, select the arrow in the palette, then click the starting square followed by the ending square. After selecting the start, move the mouse to preview the arrow. Both ends snap to the centers of the squares.
 
-You can also convert to a monochrome image so that it looks beautiful when printed in black and white.
+Select the eraser icon and click a square to remove its mark. To remove an arrow, click its line. "Clear all" removes all marks, evaluation values, and arrows from the current position.
 
-From version 7.8.1, you can now add evaluation values to the board image, choose whether or not to display coordinates, and select the color of the outer frame of the board.
+Select "Value" and click a legal move to display its evaluation. The calculation uses the AI level selected under "Settings > Level".
 
-"Save Image" copies the image to the clipboard and saves the image. The default save destination is the Egaroucid/screenshots folder in the Documents folder, and the file name is the date and time + game record. If you want to change the save location, please change it from "Output > Screenshot > Change Save Location".
+You cannot change the placement of stones on this screen, so please create the stone placement by <a href="#Input/Output_Input > Input text without specifying format">inputting a game record</a> or <a href="#Input/Output_Input > Edit Board">editing the board</a> before using this function.
+
+Use "Coordinates" to include or exclude coordinates. Set "Color" to "Monochrome" for black-and-white printing. For color images, "Outer Frame" lets you choose white or dark gray.
+
+"Save" saves the image to a file and copies it to the clipboard. The default save destination is the Egaroucid/screenshots folder in the Documents folder, and the file name is the date and time + game record. If you want to change the save location, please change it from "Output > Screenshot > Change Save Location".
 
 I assigned Esc as a shortcut key for "Back".
 
@@ -1274,7 +1278,11 @@ The resolution of the image depends on the size of the Egaroucid screen. If you 
 
 <div class="centering_box">
     <img class="pic2" src="img/edit_board_image.png">
-    <img class="pic2" src="img/edit_board_image_monochrome.png">
+</div>
+
+Examples of saved color and monochrome images:
+
+<div class="centering_box">
     <img class="pic2" src="img/edit_board_image_shot_color.png">
     <img class="pic2" src="img/edit_board_image_shot_monochrome.png">
 </div>
