@@ -229,7 +229,13 @@ private:
         String status_message;
     };
 
-    inline static std::array<Oq_cache, 3> oq_caches;
+    // A function-local static keeps the caches across scene instances, like the former inline static
+    // member, which GCC and Clang reject: Oq_cache's default member initializers are not usable
+    // until the end of this class.
+    static std::array<Oq_cache, 3>& oq_caches() {
+        static std::array<Oq_cache, 3> caches;
+        return caches;
+    }
 
     Button back_button;
     Button save_button;
@@ -1228,7 +1234,7 @@ private:
 
     bool restore_cached_result(const std::string& username, int mode) {
         const int cache_mode = std::clamp(mode, 0, 2);
-        Oq_cache& cache = oq_caches[cache_mode];
+        Oq_cache& cache = oq_caches()[cache_mode];
         if (!cache.has_result || cache.username != username || cache.mode != cache_mode) {
             return false;
         }
@@ -1282,7 +1288,7 @@ private:
 
     void clear_cached_result(const std::string& username, int mode) {
         const int cache_mode = std::clamp(mode, 0, 2);
-        Oq_cache& cache = oq_caches[cache_mode];
+        Oq_cache& cache = oq_caches()[cache_mode];
         if (cache.has_result && cache.username == username && cache.mode == cache_mode) {
             cache = Oq_cache{};
         }
@@ -1293,7 +1299,7 @@ private:
             return;
         }
 
-        Oq_cache& cache = oq_caches[searched_mode];
+        Oq_cache& cache = oq_caches()[searched_mode];
         cache.has_result = true;
         cache.username = searched_username;
         cache.mode = searched_mode;
