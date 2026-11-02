@@ -288,7 +288,20 @@ inline bool windows_shortcut_modifier_vk(const int vk) {
         vk == VK_MENU || vk == VK_LMENU || vk == VK_RMENU;
 }
 
+// VK_DBE_* (0xF0-0xFD, ime.h) are the IME input-mode keys of the Japanese keyboard
+// layouts. Their NLS keys (e.g. Caps Lock / Eisu, scan code 0x3A) switch the mode:
+// Windows releases the key of the previous mode and presses the key of the new mode,
+// and sends no key-up when the physical key is released. The key of the current mode
+// therefore stays down, also for GetAsyncKeyState, until the mode changes again
+// (Issue #654). These keys report a mode; they are never part of a key chord.
+inline bool windows_shortcut_ime_mode_vk(const int vk) {
+    return 0xF0 <= vk && vk <= 0xFD;
+}
+
 inline bool windows_shortcut_ime_control_vk(const int vk) {
+    if (windows_shortcut_ime_mode_vk(vk)) {
+        return true;
+    }
     if (vk == VK_KANA || vk == VK_CONVERT || vk == VK_NONCONVERT ||
         vk == VK_ACCEPT || vk == VK_MODECHANGE ||
         vk == VK_HANJA || vk == VK_JUNJA || vk == VK_FINAL) {
@@ -462,7 +475,11 @@ std::vector<String> get_all_inputs(bool *down_found) {
         // are ignored. With a Japanese IME, VK_KANJI is reported as pressed all the time (GetAsyncKeyState(VK_KANJI) & 0x8000
         // while the IME is used), so every key read in the shortcut key settings became "Kanji+..." and no shortcut could
         // be assigned. The matcher (get_windows_shortcut_match_details) already ignores these keys.
-        if (key.deviceType() == InputDeviceType::Keyboard && 0x15 <= static_cast<int>(key.code()) && static_cast<int>(key.code()) <= 0x1A) {
+        // The IME input-mode keys (VK_DBE_*) stay pressed the same way after a mode switch, e.g. by the
+        // Caps Lock / Eisu key (Issue #654).
+        if (key.deviceType() == InputDeviceType::Keyboard &&
+            ((0x15 <= static_cast<int>(key.code()) && static_cast<int>(key.code()) <= 0x1A) ||
+                windows_shortcut_ime_mode_vk(static_cast<int>(key.code())))) {
             continue;
         }
         String windows_key_name;

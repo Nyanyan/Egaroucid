@@ -9,15 +9,17 @@ All scripts write logs under `src/tools/diagnostics/logs` by default. Scripts th
 
 ## Current main / 7.8.2
 
-Run deterministic Windows shortcut state regression tests (Issue #641):
+Run deterministic Windows shortcut state regression tests (Issues #641, #654):
 
 ```powershell
 python src/tools/diagnostics/test_shortcut_key_state.py
 ```
 
-Requires MinGW `g++` on PATH. The tests compile the production observer and matcher without Siv3D, using deterministic Win32 input queries. They cover Caps Lock / IME key-code changes, repeats, missing key-up messages, focus recovery, extended keys, modifier aliases, and pending short-input events. `--source <header>` can select an older revision to verify a regression.
+Requires MinGW `g++` on PATH. The tests compile the production observer and matcher without Siv3D, using deterministic Win32 input queries. They cover Caps Lock / IME key-code changes, IME input-mode keys that Windows keeps pressed without a key-up, repeats, missing key-up messages, focus recovery, extended keys, modifier aliases, and pending short-input events. `--source <header>` can select an older revision to verify a regression.
 
 Also check the built GUI with Microsoft IME: main scene (IME disabled), focus another application, return, open a text input scene, then type, convert, and commit Japanese text. Check normal shortcuts before and after Caps Lock, including Shift+Caps Lock. The deterministic tests simulate the differing key codes and missing releases; hardware/IME reproduction remains a separate check. The short-input tests verify retention of pending down events, not recognition of a complete key chord released between frames; very short automated taps can still be missed by the existing matcher.
+
+Issue #654 needs a physical key press. On a Japanese (JIS) keyboard, press Caps Lock / Eisu alone (e.g. after Katakana/Hiragana), then check the normal shortcuts. On an English keyboard with the Japanese layout, press Shift/Ctrl/Alt+Caps Lock. These presses switch the IME input mode in the keyboard layout. Windows then sends the mode key (`VK_0xF0` Eisu, `VK_0xF1` Katakana, `VK_0xF2` Hiragana, or `VK_PROCESSKEY` with scan code `0x3A`) and no key-up, and `GetAsyncKeyState` keeps that mode key down. Automation that injects `VK_CAPITAL` typically produces an ordinary down/up pair and does not reach this path. In the shortcut log, `pressed_vks` may keep `VK_0xF0`-`VK_0xF2` after a mode switch. The matcher ignores them like the other IME keys.
 
 Collect environment only:
 
