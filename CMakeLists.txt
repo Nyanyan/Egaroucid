@@ -80,6 +80,9 @@ if(MSVC)
 elseif(APPLE)
     # Keep the historical local optimization defaults for non-MSVC builds.
     add_compile_options(-O2 -mtune=native -pthread)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang does not support -mtune-native
+    add_compile_options(-O2 -pthread)
 else()
     # Keep the historical -march=native behavior by default.
     # For a library-only build, avoid forcing it so the artifact is more portable.
