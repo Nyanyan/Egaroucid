@@ -1,7 +1,7 @@
 # Board image editor settings (Issue #651)
 
-The editor remembers the selected mark, coordinate visibility, color mode, and
-outer frame color. It updates shared settings on each selection, writes them to
+The editor remembers the selected mark, coordinate visibility, color mode,
+outer frame color, and file format. It updates shared settings on each selection, writes them to
 `setting.json` during normal application shutdown, and restores them on startup.
 Cell marks, evaluated values, and arrows are retained in memory for each position
 in the current progression, including positions in the inspection branch. They
@@ -17,6 +17,7 @@ never written to disk and are discarded when the application exits.
 | `board_image_coordinate` | 0: include, 1: exclude | 0 |
 | `board_image_color` | 0: default color, 1: monochrome | 0 |
 | `board_image_outer_frame_color` | 0: white, 1: dark gray | 0 |
+| `board_image_format` | 0: PNG, 1: SVG, 2: EPS | 0 |
 
 Missing keys and values with the wrong JSON type retain their defaults. Numeric
 indices outside the supported range are clamped. The frame color is retained
@@ -47,6 +48,41 @@ all cell marks, values, arrows, and pending endpoints for the displayed position
 Image options stay on aligned rows, with the frame row disabled in monochrome
 mode so that the layout does not shift.
 
+## Vector export (Issue #548)
+
+The "File format" row selects PNG, SVG, or EPS. PNG keeps the screen capture:
+the clipped frame is saved and copied to the clipboard, and its resolution
+follows the window scale. SVG and EPS are drawn again as vector shapes instead
+of captured pixels, so they contain no bitmap and do not depend on the window
+scale. They are saved to the same folder with the same `date_transcript` name
+and the `.svg` or `.eps` extension. They are not copied to the clipboard.
+
+The vector image covers the same area as the PNG (447 x 447 px with
+coordinates, 420 x 420 px without them, where 1 px is 1 pt in EPS). Outside the
+round outer frame it is transparent when coordinates are excluded, as in the
+PNG. Discs, dots, arcs, and frame corners are true circles and arcs. Star and
+arrow frames follow Siv3D's `Shape2D::drawFrame`, including the flat cut of
+sharp corners. Coordinates and evaluation values are filled outlines of the
+glyphs that the editor draws (`Font::renderOutlines` of the same bold font), placed
+like `DrawableText::drawAt`, so no font is needed to view or print the files.
+SVG layers are named `background`, `coordinates`, `grid`, `discs`, `frame`,
+`marks`, and `arrows`. EPS files are plain ASCII PostScript that uses only path
+and painting operators (no images or fonts).
+
+Implementation:
+
+- `src/gui/function/vector_image.hpp`: a small vector image model and its SVG
+  and EPS writers. Standard C++ only; no Siv3D or other libraries.
+- `src/gui/function/board_image_vector.hpp`: mark colors, sizes, and flip, star,
+  and arrow geometry shared by the editor and the export, and the builder for
+  the whole picture. Standard C++ only; text arrives as glyph outlines.
+- `src/gui/screen_shot.hpp`: Siv3D glyph outlines, GUI colors and geometry,
+  and file output (`save_board_image_vector`).
+
+The editor and the export call the same `board_image_mark_style()`, so each
+mark uses the same colors, halo, and backing in both. When changing the drawing
+in `Board_image` or `draw_board()`, change `build_board_image_vector()` too.
+
 ## State regression tests
 
 Run these fast tests from the repository root with MinGW `g++` on PATH:
@@ -63,6 +99,24 @@ IDs, all tool/style mappings, arrow endpoint validation, duplicate and reversed
 arrows, cancellation, independent position snapshots, clearing, branch
 retention, and removal/recreation of a position or the entire progression. The
 grid tests check movement within a cell, exact cell boundaries, and board edges.
+
+The vector export has its own test of the production headers. With an output
+folder, it also writes sample SVG and EPS files for viewers:
+
+```powershell
+New-Item -ItemType Directory -Force build/issue548 | Out-Null
+g++ -std=c++20 -Wall -Wextra -pedantic src/tools/diagnostics/test_board_image_vector.cpp -o build/issue548/test_board_image_vector.exe
+if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
+& build/issue548/test_board_image_vector.exe build/issue548
+```
+
+It checks number formatting, SVG and EPS syntax (XML escaping, groups, circles,
+arcs, Bezier quarters, ASCII-only EPS), that `board_image_mark_style()` gives
+the same result as the previous decision code for every mark, disc, and color
+mode, the Siv3D star, arrow, and frame geometry, the `drawAt` text box, and all
+coordinate/color/frame combinations of a sample board. The `board-image-vector`
+case of `src/tools/operation_check/gui.py` checks the same export inside the GUI
+with the real fonts and files.
 
 ## Manual regression check
 
@@ -112,6 +166,20 @@ For the additional requirements in [the Issue comment](https://github.com/Nyanya
 7. Select outlined circle, place a mark, close, restart, and reopen the editor.
    Check that outlined circle is selected (`board_image_mark = 10`), while the
    placed mark is gone.
+
+For the vector export (Issue #548):
+
+1. Place every mark type, an evaluation value, and two arrows. Save as PNG,
+   then select SVG and save, then EPS and save. Check the three files in the
+   screenshot folder and the "board image saved to" log line.
+2. Open the SVG in a browser and in an editor such as Inkscape, and the EPS in a
+   PostScript viewer or `gs -dEPSCrop`. Compare them with the PNG of the same
+   settings, then zoom in to check that edges and text stay sharp.
+3. Repeat with coordinates excluded (transparent outside the frame), with
+   monochrome, and with the dark gray frame. Check a Chinese UI, whose bold font
+   is synthesized.
+4. Select EPS, close, restart, and reopen the editor. Check that EPS is still
+   selected (`board_image_format = 2`).
 
 ## Verification record
 
