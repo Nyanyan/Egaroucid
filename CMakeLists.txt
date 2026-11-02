@@ -77,6 +77,9 @@ if(MSVC)
     if(CMAKE_CONFIGURATION_TYPES)
         message(STATUS "Multi-config generator detected. Use '--config Release' to avoid Debug builds.")
     endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Clang does not support -mtune-native
+    add_compile_options(-02 -pthread)
 elseif(APPLE)
     # Keep the historical local optimization defaults for non-MSVC builds.
     add_compile_options(-O2 -mtune=native -pthread)
