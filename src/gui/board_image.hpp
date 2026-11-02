@@ -222,15 +222,22 @@ private:
         }
     }
 
-    // SVG / EPS: the same picture as the PNG, drawn as vector shapes instead of captured pixels.
-    void save_vector_image() {
+    // Called in the frame after Save, when the captured frame is ready. SVG / EPS draw the same
+    // picture again as vector shapes; the clipboard also gets the captured image, as with PNG.
+    void save_image() {
+        const std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
+        if (format_radio.checked == BOARD_IMAGE_FORMAT_PNG) {
+            take_board_image_screen_shot(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir,
+                transcript, coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE);
+            return;
+        }
         Board_image_vector_options options;
         options.include_coordinate = coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE;
         options.monochrome = color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME;
         options.dark_outer_frame = outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_DARK;
-        save_board_image_vector(getData().user_settings.screenshot_saving_dir,
-            get_transcript(getData().graph_resources, getData().history_elem), format_radio.checked,
-            getData().history_elem, edit, options, getData().fonts, getData().colors);
+        // The edit is unchanged since the captured frame was drawn, so both copies show the same marks.
+        take_board_image_vector(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir,
+            transcript, format_radio.checked, getData().history_elem, edit, options, getData().fonts, getData().colors);
     }
 
     void select_mark(int mark) {
@@ -370,10 +377,7 @@ public:
 
     void update() override {
         if (taking_screen_shot) {
-            take_board_image_screen_shot(getData().window_state.window_scale,
-                getData().user_settings.screenshot_saving_dir,
-                get_transcript(getData().graph_resources, getData().history_elem),
-                coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE);
+            save_image();
             taking_screen_shot = false;
         }
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -408,12 +412,8 @@ public:
         }
         if (save_image_button.clicked()) {
             arrow_input.cancel();
-            if (format_radio.checked == BOARD_IMAGE_FORMAT_PNG) {
-                taking_screen_shot = true;
-                ScreenCapture::RequestCurrentFrame();
-            } else {
-                save_vector_image();
-            }
+            taking_screen_shot = true;
+            ScreenCapture::RequestCurrentFrame();
         }
         update_board_input();
         update_evaluations();

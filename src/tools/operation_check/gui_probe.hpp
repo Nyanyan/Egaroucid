@@ -298,8 +298,9 @@ class Gui_probe {
                         options.dark_outer_frame = !include_coordinate;
                         const std::string name = std::string("vector_") + (include_coordinate ? "coord" : "nocoord") +
                             (monochrome ? "_mono" : "_color");
-                        const String path = save_board_image_vector("./document/screenshots/", name, format, position, edit,
-                            options, data.fonts, data.colors);
+                        // The clipboard copy (take_board_image_vector) is left to the desktop checks.
+                        const Vector_image image = create_board_image_vector(position, edit, options, data.fonts, data.colors, name);
+                        const String path = save_board_image_vector("./document/screenshots/", name, format, image);
                         require(!path.isEmpty() && FileSystem::IsFile(path), "Vector board image was not saved");
                         TextReader reader{path};
                         const String content = reader.readAll();

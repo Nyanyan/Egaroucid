@@ -55,7 +55,16 @@ the clipped frame is saved and copied to the clipboard, and its resolution
 follows the window scale. SVG and EPS are drawn again as vector shapes instead
 of captured pixels, so they contain no bitmap and do not depend on the window
 scale. They are saved to the same folder with the same `date_transcript` name
-and the `.svg` or `.eps` extension. They are not copied to the clipboard.
+and the `.svg` or `.eps` extension.
+
+Every save also copies the picture to the clipboard. PNG saves copy the
+captured image as before (`PNG` and `CF_DIBV5`). SVG and EPS saves copy the
+same captured image, and on Windows they also place the vector picture first,
+as UTF-8 SVG with a terminating null in the registered `image/svg+xml` format.
+Applications that accept SVG from the clipboard can paste it as a vector image;
+other applications paste the captured image. EPS has no common clipboard
+format, so EPS saves also use SVG for the vector copy. Other platforms copy only
+the captured image, because Siv3D's clipboard holds text or bitmaps.
 
 The vector image covers the same area as the PNG (447 x 447 px with
 coordinates, 420 x 420 px without them, where 1 px is 1 pt in EPS). Outside the
@@ -77,7 +86,8 @@ Implementation:
   and arrow geometry shared by the editor and the export, and the builder for
   the whole picture. Standard C++ only; text arrives as glyph outlines.
 - `src/gui/screen_shot.hpp`: Siv3D glyph outlines, GUI colors and geometry,
-  and file output (`save_board_image_vector`).
+  file output (`save_board_image_vector`), and the save with the clipboard copy
+  (`take_board_image_vector`, which shares `capture_board_image` with PNG).
 
 The editor and the export call the same `board_image_mark_style()`, so each
 mark uses the same colors, halo, and backing in both. When changing the drawing
@@ -171,7 +181,8 @@ For the vector export (Issue #548):
 
 1. Place every mark type, an evaluation value, and two arrows. Save as PNG,
    then select SVG and save, then EPS and save. Check the three files in the
-   screenshot folder and the "board image saved to" log line.
+   screenshot folder and the "board image saved to ... and copied to clipboard"
+   log line.
 2. Open the SVG in a browser and in an editor such as Inkscape, and the EPS in a
    PostScript viewer or `gs -dEPSCrop`. Compare them with the PNG of the same
    settings, then zoom in to check that edges and text stay sharp.
@@ -180,6 +191,14 @@ For the vector export (Issue #548):
    is synthesized.
 4. Select EPS, close, restart, and reopen the editor. Check that EPS is still
    selected (`board_image_format = 2`).
+5. After an SVG save, use "Read clipboard image" of `desktop_fixture.py`.
+   Check that `fixture-image.json` has `svg` (with `xml: true`), `png`, and
+   `dibv5`, and that the `svg` hash equals the SHA-256 of the saved `.svg`
+   file. After an EPS save, check that the same three entries exist.
+6. Paste after SVG and EPS saves into an application that accepts SVG from the
+   clipboard (for example, Inkscape or a recent Word) and into one that does
+   not (for example, Paint). Check that the first pastes the vector picture and
+   the second pastes the captured image.
 
 ## Verification record
 
