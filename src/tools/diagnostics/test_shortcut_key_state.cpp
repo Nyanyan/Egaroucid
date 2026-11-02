@@ -336,6 +336,19 @@ int main() {
         next_frame();
         expect_normal_shortcuts();
     });
+    test("Caps Lock after a mode switch is not recorded as the stale mode key (#654)", [] {
+        jis_layout = true;
+        observe(WM_KEYDOWN, 0xF0, 0x3A);
+        async_pressed = {0xF0};
+        next_frame();
+        observe(WM_KEYDOWN, VK_SHIFT, 0x2A);
+        observe(WM_KEYDOWN, VK_CAPITAL, 0x3A);  // Shift+Eisu = Caps Lock, a new press
+        require(match({U"Shift", U"CapsLock"}).down_found, "Shift+Caps was recorded as the stale mode key");
+        observe(WM_KEYUP, VK_CAPITAL, 0x3A);
+        observe(WM_KEYUP, VK_SHIFT, 0x2A);
+        require(!match({U"CapsLock"}).pressed_found, "Caps Lock remained held");
+        expect_normal_shortcuts();
+    });
 
     std::cout << cases - failures << '/' << cases << " passed\n";
     return failures ? 1 : 0;
