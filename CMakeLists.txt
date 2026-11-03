@@ -6,6 +6,7 @@ option(BUILD_ENGINE_LIB "Build Egaroucid engine library" OFF)
 option(BUILD_CONSOLE "Build Egaroucid console executable" ON)
 option(BUILD_GUI "Build Egaroucid GUI executable (requires Siv3D)" OFF)
 option(BUILD_SHARED_LIBS "Build shared not static engine library" OFF)
+option(CROSS_COMPILE "Do not use host compiler optimizations" OFF)
 
 if(NOT BUILD_ENGINE_LIB AND NOT BUILD_CONSOLE AND NOT BUILD_GUI)
     message(FATAL_ERROR "At least one of BUILD_ENGINE_LIB, BUILD_CONSOLE, or BUILD_GUI must be ON.")
@@ -77,6 +78,9 @@ if(MSVC)
     if(CMAKE_CONFIGURATION_TYPES)
         message(STATUS "Multi-config generator detected. Use '--config Release' to avoid Debug builds.")
     endif()
+elseif(CROSS_COMPILE)
+    # When cross compiling, do not tune for the architecture being built on
+    add_compile_options(-O2 -pthread)
 elseif(APPLE)
     # Keep the historical local optimization defaults for non-MSVC builds.
     add_compile_options(-O2 -mtune=native -pthread)
