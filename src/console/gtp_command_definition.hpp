@@ -13,7 +13,7 @@
 #include <vector>
 #include "command_definition.hpp"
 
-#define N_GTP_COMMANDS 22
+#define N_GTP_COMMANDS 24
 
 #define GTP_CMD_ID_QUIT 0
 #define GTP_CMD_ID_GTP_VERSION 1
@@ -37,6 +37,8 @@
 #define GTP_CMD_ID_REG_GENMOVE 19
 #define GTP_CMD_ID_LIST_GAMES 20
 #define GTP_CMD_ID_FINAL_SCORE 21
+#define GTP_CMD_ID_TIME_SETTINGS 22
+#define GTP_CMD_ID_TIME_LEFT 23
 
 const Command_info gtp_command_data[N_GTP_COMMANDS] = {
     {GTP_CMD_ID_QUIT,               {"quit"},                                                   "",                 "Quit"},
@@ -60,5 +62,7 @@ const Command_info gtp_command_data[N_GTP_COMMANDS] = {
     {GTP_CMD_ID_UNDO,               {"undo"},                                                   "",                 ""},
     {GTP_CMD_ID_REG_GENMOVE,        {"reg_genmove"},                                            "",                 ""},
     {GTP_CMD_ID_LIST_GAMES,         {"list_games"},                                             "",                 ""},
-    {GTP_CMD_ID_FINAL_SCORE,        {"final_score"},                                            "",                 ""}
+    {GTP_CMD_ID_FINAL_SCORE,        {"final_score"},                                            "",                 ""},
+    {GTP_CMD_ID_TIME_SETTINGS,      {"time_settings"},                                          "",                 ""},
+    {GTP_CMD_ID_TIME_LEFT,          {"time_left"},                                              "",                 ""}
 };

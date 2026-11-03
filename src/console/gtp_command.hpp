@@ -131,8 +131,19 @@ void gtp_boardsize(int id) {
     std::cout << gtp_head(id) << GTP_ENDL;
 }
 
-void gtp_clear_board(int id, Board_info *board) {
+void gtp_reset_time(State *state) {
+    if (state->gtp_time_control == GTP_TIME_CONTROL_PER_GAME) {
+        state->remaining_time_msec_black = state->gtp_main_time_msec;
+        state->remaining_time_msec_white = state->gtp_main_time_msec;
+    } else if (state->gtp_time_control == GTP_TIME_CONTROL_PER_MOVE) {
+        state->remaining_time_msec_black = state->gtp_move_time_msec;
+        state->remaining_time_msec_white = state->gtp_move_time_msec;
+    }
+}
+
+void gtp_clear_board(int id, Board_info *board, State *state) {
     board->reset(); // the history used by undo is also cleared
+    gtp_reset_time(state);
     std::cout << gtp_head(id) << GTP_ENDL;
 }
 
@@ -195,6 +206,33 @@ void gtp_play(int id, std::string arg, Board_info *board) {
     std::cout << gtp_head(id) << GTP_ENDL;
 }
 
+/*
+    @brief search a move with level or with the time control set by time_settings / time_left
+*/
+Search_result gtp_search(Board_info *board, State *state, Options *options) {
+    if (state->gtp_time_control == GTP_TIME_CONTROL_NONE) {
+        return ai_with_settings(board->board, options, true, options->show_log);
+    }
+    uint64_t *remaining_time_msec = (board->player == BLACK) ? &state->remaining_time_msec_black : &state->remaining_time_msec_white;
+    uint64_t strt = tim();
+    bool searching = true;
+    Search_result result;
+    if (state->gtp_time_control == GTP_TIME_CONTROL_PER_GAME) {
+        result = ai_time_limit(board->board, true, 0, true, options->show_log, *remaining_time_msec, THREAD_ID_NONE, &searching);
+        uint64_t elapsed = tim() - strt;
+        *remaining_time_msec = (elapsed < *remaining_time_msec) ? *remaining_time_msec - elapsed : 0;
+    } else { // GTP_TIME_CONTROL_PER_MOVE
+        constexpr uint64_t time_margin_msec = 10;
+        uint64_t time_limit = std::max<uint64_t>(1ULL, (*remaining_time_msec > time_margin_msec * 2) ? *remaining_time_msec - time_margin_msec : *remaining_time_msec / 2);
+        result = ai_common(board->board, -SCORE_MAX, SCORE_MAX, MAX_LEVEL, true, 0, true, options->show_log, board->board.get_legal(), false, time_limit, THREAD_ID_NONE, &searching);
+        *remaining_time_msec = state->gtp_move_time_msec; // time for the next move
+    }
+    if (options->show_log) {
+        std::cerr << "gtp time control " << state->gtp_time_control << " elapsed " << tim() - strt << " ms remaining " << *remaining_time_msec << " ms" << std::endl;
+    }
+    return result;
+}
+
 void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Options *options) {
     uint_fast8_t player = GTP_PLAYER_UNDEFINED;
     try{
@@ -216,7 +254,7 @@ void gtp_genmove(int id, std::string arg, Board_info *board, State *state, Optio
         std::cout << gtp_head(id) << " PASS" << GTP_ENDL;
         return;
     }
-    int policy = ai_with_settings(board->board, options, true, options->show_log).policy;
+    int policy = gtp_search(board, state, options).policy;
     if (!is_valid_policy(policy) || (board->board.get_legal() & (1ULL << policy)) == 0ULL) { // search stopped etc.
         std::cout << gtp_error_head(id) << " " << "no move found" << GTP_ENDL;
         return;
@@ -402,6 +440,68 @@ void gtp_final_score(int id, Board_info *board) {
         std::cout << gtp_head(id) << " 0" << GTP_ENDL;
 }
 
+/*
+    @brief time_settings <main_time> <byo_yomi_time> <byo_yomi_stones>
+
+    main_time > 0                                   : main_time seconds for the whole game (byo-yomi is ignored)
+    main_time == 0, byo_yomi_time > 0, stones > 0   : byo_yomi_time / byo_yomi_stones seconds for each move
+    otherwise                                       : no time limit (search with level)
+    seconds can be decimal numbers
+*/
+void gtp_time_settings(int id, std::string arg, State *state) {
+    std::istringstream iss(arg);
+    double main_time, byo_yomi_time;
+    int byo_yomi_stones;
+    if (!(iss >> main_time >> byo_yomi_time >> byo_yomi_stones) || main_time < 0.0 || byo_yomi_time < 0.0 || byo_yomi_stones < 0) {
+        std::cout << gtp_error_head(id) << " syntax error" << GTP_ENDL;
+        return;
+    }
+    if (main_time > 0.0) {
+        state->gtp_time_control = GTP_TIME_CONTROL_PER_GAME;
+        state->gtp_main_time_msec = (uint64_t)(main_time * 1000.0);
+    } else if (byo_yomi_time > 0.0 && byo_yomi_stones > 0) {
+        state->gtp_time_control = GTP_TIME_CONTROL_PER_MOVE;
+        state->gtp_move_time_msec = std::max<uint64_t>(1ULL, (uint64_t)(byo_yomi_time * 1000.0 / byo_yomi_stones));
+    } else {
+        state->gtp_time_control = GTP_TIME_CONTROL_NONE;
+    }
+    gtp_reset_time(state);
+    std::cout << gtp_head(id) << GTP_ENDL;
+}
+
+/*
+    @brief time_left <color> <time> <stones>
+
+    with main time: <time> seconds are left for <color>
+    in byo-yomi: <time> seconds are left for <stones> moves of <color>
+*/
+void gtp_time_left(int id, std::string arg, State *state) {
+    std::istringstream iss(arg);
+    std::string color;
+    double time_left;
+    int stones = 0;
+    if (!(iss >> color >> time_left)) {
+        std::cout << gtp_error_head(id) << " syntax error" << GTP_ENDL;
+        return;
+    }
+    iss >> stones;
+    int player = check_color(color);
+    if (player != BLACK && player != WHITE) {
+        std::cout << gtp_error_head(id) << " illegal color" << GTP_ENDL;
+        return;
+    }
+    uint64_t time_msec = (uint64_t)(std::max(0.0, time_left) * 1000.0);
+    if (state->gtp_time_control == GTP_TIME_CONTROL_PER_MOVE && stones > 0) {
+        time_msec /= stones;
+    }
+    if (player == BLACK) {
+        state->remaining_time_msec_black = time_msec;
+    } else {
+        state->remaining_time_msec_white = time_msec;
+    }
+    std::cout << gtp_head(id) << GTP_ENDL;
+}
+
 void gtp_check_command(Board_info *board, State *state, Options *options) {
     std::string cmd_line = gtp_get_command_line();
     if (options->ponder) {
@@ -438,7 +538,7 @@ void gtp_check_command(Board_info *board, State *state, Options *options) {
             gtp_boardsize(id);
             break;
         case GTP_CMD_ID_CLEAR_BOARD:
-            gtp_clear_board(id, board);
+            gtp_clear_board(id, board, state);
             break;
         case GTP_CMD_ID_KOMI:
             gtp_komi(id);
@@ -481,6 +581,12 @@ void gtp_check_command(Board_info *board, State *state, Options *options) {
             break;
         case GTP_CMD_ID_FINAL_SCORE:
             gtp_final_score(id, board);
+            break;
+        case GTP_CMD_ID_TIME_SETTINGS:
+            gtp_time_settings(id, arg, state);
+            break;
+        case GTP_CMD_ID_TIME_LEFT:
+            gtp_time_left(id, arg, state);
             break;
         default:
             break;
