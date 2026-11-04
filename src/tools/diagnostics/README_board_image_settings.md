@@ -31,10 +31,11 @@ border. Neither selection nor hovering fills their backgrounds.
 There is no separate mark-style text selector.
 The palette and board share the same mark renderer. The IDs above preserve
 the original six choices in old configuration files.
-Flip marks use solid black arrows on empty cells and white discs, and solid white
-arrows on black discs, in both color modes (Issue #662). Outline marks use white
-on black discs, black on white discs, and white on empty cells. On a white
-monochrome board, a thin black halo keeps white shape marks on empty cells visible.
+Flip marks use solid white arrows on empty green cells and solid black arrows on
+empty monochrome cells (Issue #662). On discs, they stay white on black discs and
+black on white discs in both color modes. Outline marks use white on black discs,
+black on white discs, and white on empty cells. On a white monochrome board, a
+thin black halo keeps white shape marks on empty cells visible.
 
 To draw an arrow, click its starting cell, then its ending cell. Between clicks,
 the preview endpoint snaps to the center of the hovered cell; moving within the
@@ -230,9 +231,16 @@ their release templates (Value / 評価値 / 评估值 / 評估值).
 On 2026-11-04, the Issue #662 flip mark change passed the MSVC `SIMD_Portable`
 build, `test_board_image_vector.cpp`, and the GUI `board-image-vector` case
 (eight SVG/EPS exports with the real fonts). In an isolated Japanese GUI session
-at 1.0 scale, flip marks were placed on e4 (black), e5 (white), and f5 (empty).
-Both color modes showed solid white arrows on e4 and solid black arrows on e5
-and f5. The monochrome PNG was saved and visually checked; the SVG and EPS
-saved through the editor contained the same single-color marks without a
-backing layer. Build logs and exported images are under `build/issue662/`
-(ignored by Git).
+at 1.0 scale, the monochrome board showed solid white arrows on e4 (black disc)
+and solid black arrows on e5 (white disc) and f5 (empty). The monochrome PNG was
+saved and visually checked; the SVG and EPS saved through the editor contained
+the same single-color marks without a backing layer.
+
+The color-mode correction was then verified with explicit expectations for all
+six disc/color-mode combinations: empty green cells retain white arrows, while
+empty monochrome cells use black. These expectations failed against the initial
+change and passed after the correction. The corrected MSVC `SIMD_Portable`
+build and GUI `board-image-vector` case passed again; generated SVG and EPS
+paths were checked for white arrows on empty green cells and black arrows on
+empty monochrome cells. Build logs and exported images are under
+`build/issue662/` (ignored by Git).

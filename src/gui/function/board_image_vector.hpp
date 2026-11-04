@@ -59,8 +59,8 @@ inline Board_image_mark_style board_image_mark_style(int mark, int disc, bool mo
     const bool white_board_cell = disc == BOARD_IMAGE_DISC_VACANT && monochrome;
     if (mark == BOARD_IMAGE_FLIP) {
         result.tool = BOARD_IMAGE_TOOL_FLIP;
-        // Solid black arrows stay clear on empty cells, including a monochrome board.
-        result.ink = disc == BOARD_IMAGE_DISC_BLACK ? BOARD_IMAGE_INK_WHITE : BOARD_IMAGE_INK_BLACK;
+        // Only empty monochrome cells change to black; green cells keep white arrows.
+        result.ink = white_board_cell ? BOARD_IMAGE_INK_BLACK : contrast;
         return result;
     }
     if (mark == BOARD_IMAGE_VALUE) {

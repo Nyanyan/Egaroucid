@@ -180,12 +180,15 @@ void test_mark_style() {
             }
         }
     }
-    // Flip marks use a single color: white on black discs, black everywhere else (Issue #662).
-    constexpr int flip_inks[] = {BOARD_IMAGE_INK_WHITE, BOARD_IMAGE_INK_BLACK, BOARD_IMAGE_INK_BLACK};
+    // Empty cells use white on green, black on monochrome; discs keep contrasting colors (Issue #662).
+    constexpr int flip_inks[2][3] = {
+        {BOARD_IMAGE_INK_WHITE, BOARD_IMAGE_INK_BLACK, BOARD_IMAGE_INK_WHITE},
+        {BOARD_IMAGE_INK_WHITE, BOARD_IMAGE_INK_BLACK, BOARD_IMAGE_INK_BLACK}
+    };
     for (int disc = BOARD_IMAGE_DISC_BLACK; disc <= BOARD_IMAGE_DISC_VACANT; ++disc) {
         for (const bool monochrome : {false, true}) {
             const auto style = board_image_mark_style(BOARD_IMAGE_FLIP, disc, monochrome);
-            assert(style.tool == BOARD_IMAGE_TOOL_FLIP && style.ink == flip_inks[disc]);
+            assert(style.tool == BOARD_IMAGE_TOOL_FLIP && style.ink == flip_inks[monochrome][disc]);
             assert(!style.backing && !style.halo && !style.outline);
         }
     }
