@@ -35,14 +35,18 @@ std::unordered_set<int> async_pressed;
 SHORT test_async_key_state(int vk) {
     return async_pressed.count(vk) ? static_cast<SHORT>(0x8000) : 0;
 }
+// Scan code 0x3A is VK_CAPITAL on US layouts (including the Japanese 101 layout),
+// but VK_DBE_ALPHANUMERIC (0xF0, Eisu) on Japanese 106/109 (JIS) layouts (kbd.h T3A).
+bool jis_layout = false;
 UINT test_map_virtual_key(UINT scan, UINT) {
     switch (scan) {
     case 0x2A: return VK_LSHIFT;
     case 0x36: return VK_RSHIFT;
     case 0x1D: return VK_LCONTROL;
     case 0xE01D: return VK_RCONTROL;
+    case 0x38: return VK_LMENU;
     case 0x1E: return 'A';
-    case 0x3A: return VK_CAPITAL;
+    case 0x3A: return jis_layout ? 0xF0 : VK_CAPITAL;
     default: return 0;
     }
 }
@@ -87,6 +91,13 @@ void consume_pending_down() {
 #endif
 }
 
+// The next GUI frame: the previous frame consumed its edges, then the observer
+// repairs missing key-ups from GetAsyncKeyState.
+void next_frame() {
+    consume_pending_down();
+    windows_shortcut_reconcile_message_keys_unlocked(windows_shortcut_message_state());
+}
+
 void expect_normal_shortcuts() {
     observe(WM_KEYDOWN, 'A', 0x1E);
     require(match({U"A"}).down_found, "A blocked by a stale key");
@@ -107,6 +118,7 @@ int main() {
     auto test = [&](const char* name, const std::function<void()>& body) {
         ++cases;
         async_pressed.clear();
+        jis_layout = false;
         observe(WM_SETFOCUS);
         try { body(); std::cout << "PASS: " << name << '\n'; }
         catch (const std::exception& error) { ++failures; std::cerr << "FAIL: " << name << ": " << error.what() << '\n'; }
@@ -270,6 +282,71 @@ int main() {
         observe(WM_KEYDOWN, 0xF0, 0x3A);
         require(windows_shortcut_message_state().pressed_vks.count(0xF0) != 0, "IME fallback left a stale scan");
         observe(WM_KEYUP, VK_CAPITAL, 0x3A);
+        expect_normal_shortcuts();
+    });
+
+    // Issue #654: on Japanese keyboard layouts the Caps Lock / Eisu key (scan 0x3A)
+    // is an NLS key. When it switches the IME input mode, Windows releases the
+    // previous mode key, presses the new mode key (VK_DBE_*), and sends nothing
+    // when the physical key is released. The mode key stays down in the system
+    // key state, so GetAsyncKeyState cannot repair the missing key-up.
+    test("JIS Eisu mode switch without a key-up does not block shortcuts (#654)", [] {
+        jis_layout = true;
+        observe(WM_KEYUP, 0xF2, 0x3A);  // previous mode (Hiragana) released
+        observe(WM_KEYDOWN, 0xF0, 0x3A);  // VK_DBE_ALPHANUMERIC pressed
+        observe(WM_KEYDOWN, 0xF0, 0x3A, false, true);  // auto-repeat while held
+        async_pressed = {0xF0};  // no key-up; the mode key stays down
+        next_frame();
+        expect_normal_shortcuts();
+        next_frame();
+        expect_normal_shortcuts();
+    });
+    test("JIS Eisu processed by an enabled IME without a key-up (#654)", [] {
+        jis_layout = true;
+        observe(WM_KEYUP, 0xF2, 0x3A);
+        observe(WM_KEYDOWN, VK_PROCESSKEY, 0x3A);  // resolves to 0xF0 on JIS
+        async_pressed = {0xF0};
+        next_frame();
+        expect_normal_shortcuts();
+    });
+    test("US layout Alt+Caps katakana switch with the IME disabled (#654)", [] {
+        observe(WM_SYSKEYDOWN, VK_MENU, 0x38);
+        observe(WM_SYSKEYUP, 0xF0, 0x3A);
+        observe(WM_SYSKEYDOWN, 0xF1, 0x3A);  // VK_DBE_KATAKANA, no key-up follows
+        observe(WM_SYSKEYDOWN, 0xF1, 0x3A, false, true);
+        observe(WM_KEYUP, VK_MENU, 0x38);
+        async_pressed = {0xF1};
+        next_frame();
+        expect_normal_shortcuts();
+    });
+    test("US layout Alt+Caps katakana switch with the IME enabled (SDL #14483 trace)", [] {
+        observe(WM_SYSKEYDOWN, VK_MENU, 0x38);
+        observe(WM_SYSKEYUP, 0xF0, 0x3A);
+        observe(WM_SYSKEYDOWN, VK_PROCESSKEY, 0x3A);
+        observe(WM_SYSKEYDOWN, VK_PROCESSKEY, 0x3A, false, true);
+        observe(WM_KEYUP, VK_MENU, 0x38);
+        async_pressed = {0xF1};
+        next_frame();
+        expect_normal_shortcuts();
+    });
+    test("unmapped IME key does not pick up the held mode key (#654)", [] {
+        async_pressed = {0xF0};
+        observe(WM_KEYDOWN, VK_PROCESSKEY);  // no scan code: GetAsyncKeyState fallback
+        require(windows_shortcut_message_state().pressed_vks.count(0xF0) == 0, "mode key was recorded as pressed");
+        next_frame();
+        expect_normal_shortcuts();
+    });
+    test("Caps Lock after a mode switch is not recorded as the stale mode key (#654)", [] {
+        jis_layout = true;
+        observe(WM_KEYDOWN, 0xF0, 0x3A);
+        async_pressed = {0xF0};
+        next_frame();
+        observe(WM_KEYDOWN, VK_SHIFT, 0x2A);
+        observe(WM_KEYDOWN, VK_CAPITAL, 0x3A);  // Shift+Eisu = Caps Lock, a new press
+        require(match({U"Shift", U"CapsLock"}).down_found, "Shift+Caps was recorded as the stale mode key");
+        observe(WM_KEYUP, VK_CAPITAL, 0x3A);
+        observe(WM_KEYUP, VK_SHIFT, 0x2A);
+        require(!match({U"CapsLock"}).pressed_found, "Caps Lock remained held");
         expect_normal_shortcuts();
     });
 

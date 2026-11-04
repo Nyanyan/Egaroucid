@@ -288,7 +288,20 @@ inline bool windows_shortcut_modifier_vk(const int vk) {
         vk == VK_MENU || vk == VK_LMENU || vk == VK_RMENU;
 }
 
+// VK_DBE_* (0xF0-0xFD, ime.h) are the IME input-mode keys of the Japanese keyboard
+// layouts. Their NLS keys (e.g. Caps Lock / Eisu, scan code 0x3A) switch the mode:
+// Windows releases the key of the previous mode and presses the key of the new mode,
+// and sends no key-up when the physical key is released. The key of the current mode
+// therefore stays down, also for GetAsyncKeyState, until the mode changes again
+// (Issue #654). These keys report a mode; they are never part of a key chord.
+inline bool windows_shortcut_ime_mode_vk(const int vk) {
+    return 0xF0 <= vk && vk <= 0xFD;
+}
+
 inline bool windows_shortcut_ime_control_vk(const int vk) {
+    if (windows_shortcut_ime_mode_vk(vk)) {
+        return true;
+    }
     if (vk == VK_KANA || vk == VK_CONVERT || vk == VK_NONCONVERT ||
         vk == VK_ACCEPT || vk == VK_MODECHANGE ||
         vk == VK_HANJA || vk == VK_JUNJA || vk == VK_FINAL) {
@@ -462,7 +475,11 @@ std::vector<String> get_all_inputs(bool *down_found) {
         // are ignored. With a Japanese IME, VK_KANJI is reported as pressed all the time (GetAsyncKeyState(VK_KANJI) & 0x8000
         // while the IME is used), so every key read in the shortcut key settings became "Kanji+..." and no shortcut could
         // be assigned. The matcher (get_windows_shortcut_match_details) already ignores these keys.
-        if (key.deviceType() == InputDeviceType::Keyboard && 0x15 <= static_cast<int>(key.code()) && static_cast<int>(key.code()) <= 0x1A) {
+        // The IME input-mode keys (VK_DBE_*) stay pressed the same way after a mode switch, e.g. by the
+        // Caps Lock / Eisu key (Issue #654).
+        if (key.deviceType() == InputDeviceType::Keyboard &&
+            ((0x15 <= static_cast<int>(key.code()) && static_cast<int>(key.code()) <= 0x1A) ||
+                windows_shortcut_ime_mode_vk(static_cast<int>(key.code())))) {
             continue;
         }
         String windows_key_name;
@@ -1134,6 +1151,34 @@ inline void windows_shortcut_forget_vk_unlocked(Windows_shortcut_message_state& 
     windows_shortcut_remove_vk_with_aliases(&state.pressed_vks, vk);
 }
 
+// Returns the VK that identifies the current press of the physical key (scan code).
+inline int windows_shortcut_bind_scan_code_unlocked(
+    Windows_shortcut_message_state& state,
+    const int scan_code,
+    const int vk,
+    const bool repeated
+) {
+    const auto found = state.pressed_scan_codes.find(scan_code);
+    if (found == state.pressed_scan_codes.end()) {
+        state.pressed_scan_codes.emplace(scan_code, vk);
+        return vk;
+    }
+    if (repeated || found->second == vk) {
+        // Repeats must retain the VK from the first down, too.
+        return found->second;
+    }
+    // A new press of a key whose previous press got no key-up, e.g. Shift+Eisu
+    // (Caps Lock) after Eisu switched the IME mode (Issue #654). The old VK is stale.
+    const int stale_vk = found->second;
+    found->second = vk;
+    const bool held_by_other_scan = std::any_of(state.pressed_scan_codes.begin(), state.pressed_scan_codes.end(),
+        [stale_vk](const auto& entry) { return entry.second == stale_vk; });
+    if (!held_by_other_scan) {
+        windows_shortcut_remove_vk_with_aliases(&state.pressed_vks, stale_vk);
+    }
+    return vk;
+}
+
 inline void windows_shortcut_reconcile_message_keys_unlocked(Windows_shortcut_message_state& state) {
     // Repair missing key-up messages without discarding a newly observed down
     // before the frame can consume it (the physical key may already be up).
@@ -1241,11 +1286,10 @@ inline void windows_shortcut_observe_message(HWND hwnd, UINT msg, WPARAM w_param
         int vk = windows_shortcut_normalize_message_vk(w_param, l_param);
         if (windows_shortcut_scannable_vk(vk)) {
             const int scan_code = windows_shortcut_message_scan_code(l_param);
-            if (scan_code != 0) {
-                // Repeats must retain the VK from the first down, too.
-                vk = state.pressed_scan_codes.emplace(scan_code, vk).first->second;
-            }
             const bool repeated = (HIWORD(l_param) & KF_REPEAT) != 0;
+            if (scan_code != 0) {
+                vk = windows_shortcut_bind_scan_code_unlocked(state, scan_code, vk, repeated);
+            }
             windows_shortcut_add_vk_with_aliases(&state.pressed_vks, vk);
             if (!repeated) {
                 windows_shortcut_record_down_unlocked(state, vk);
