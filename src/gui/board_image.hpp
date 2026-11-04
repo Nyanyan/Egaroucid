@@ -174,9 +174,6 @@ private:
         const auto ink = [&colors](int ink_id) { return ink_id == BOARD_IMAGE_INK_BLACK ? colors.black : colors.white; };
         const Color color = ink(mark_style.ink);
         if (mark_style.tool == BOARD_IMAGE_TOOL_FLIP) {
-            if (mark_style.backing) {
-                draw_flip(center, colors.black, BOARD_IMAGE_FLIP_BACKING_THICKNESS);
-            }
             draw_flip(center, color);
             return;
         }

@@ -31,9 +31,10 @@ border. Neither selection nor hovering fills their backgrounds.
 There is no separate mark-style text selector.
 The palette and board share the same mark renderer. The IDs above preserve
 the original six choices in old configuration files.
-Flip and outline marks use white on black discs, black on white discs,
-and white on empty cells. On a white monochrome board, a thin black halo keeps
-white marks on empty cells visible.
+Flip marks use solid black arrows on empty cells and white discs, and solid white
+arrows on black discs, in both color modes (Issue #662). Outline marks use white
+on black discs, black on white discs, and white on empty cells. On a white
+monochrome board, a thin black halo keeps white shape marks on empty cells visible.
 
 To draw an arrow, click its starting cell, then its ending cell. Between clicks,
 the preview endpoint snaps to the center of the hovered cell; moving within the
@@ -122,8 +123,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Compilation failed' }
 
 It checks number formatting, SVG and EPS syntax (XML escaping, groups, circles,
 arcs, Bezier quarters, ASCII-only EPS), that `board_image_mark_style()` gives
-the same result as the previous decision code for every mark, disc, and color
-mode, the Siv3D star, arrow, and frame geometry, the `drawAt` text box, and all
+the same result as the previous decision code for shape and value marks, the
+solid flip colors for every disc and color mode, the Siv3D star, arrow, and frame
+geometry, the `drawAt` text box, and all
 coordinate/color/frame combinations of a sample board. The `board-image-vector`
 case of `src/tools/operation_check/gui.py` checks the same export inside the GUI
 with the real fonts and files.

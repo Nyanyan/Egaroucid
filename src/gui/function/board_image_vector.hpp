@@ -33,7 +33,6 @@ constexpr double BOARD_IMAGE_BACKING_WIDTH = 4.0; // black frame behind outline 
 constexpr double BOARD_IMAGE_VALUE_FONT_SIZE = 22.0;
 constexpr double BOARD_IMAGE_FLIP_RADIUS = 11.0;
 constexpr double BOARD_IMAGE_FLIP_THICKNESS = 2.0;
-constexpr double BOARD_IMAGE_FLIP_BACKING_THICKNESS = 4.0;
 constexpr double BOARD_IMAGE_ARROW_WIDTH = 6.0;
 constexpr double BOARD_IMAGE_ARROW_HEAD_WIDTH = 18.0;
 constexpr double BOARD_IMAGE_ARROW_HEAD_LENGTH = 16.0;
@@ -49,19 +48,19 @@ struct Board_image_mark_style {
     int ink = BOARD_IMAGE_INK_BLACK;   // shape, outline, flip, or value color
     bool halo = false;                 // thin frame in halo_ink around a filled shape
     int halo_ink = BOARD_IMAGE_INK_WHITE;
-    bool backing = false;              // wide black frame behind an outline or flip mark
+    bool backing = false;              // wide black frame behind an outline mark
 };
 
 inline Board_image_mark_style board_image_mark_style(int mark, int disc, bool monochrome) {
     Board_image_mark_style result;
-    // Flip and outline marks contrast with the disc; empty cells use white.
+    // Outline marks contrast with the disc; empty cells use white.
     const int contrast = disc == BOARD_IMAGE_DISC_WHITE ? BOARD_IMAGE_INK_BLACK : BOARD_IMAGE_INK_WHITE;
     // White marks on empty cells of a white (monochrome) board need a black edge.
     const bool white_board_cell = disc == BOARD_IMAGE_DISC_VACANT && monochrome;
     if (mark == BOARD_IMAGE_FLIP) {
         result.tool = BOARD_IMAGE_TOOL_FLIP;
-        result.ink = contrast;
-        result.backing = white_board_cell;
+        // Solid black arrows stay clear on empty cells, including a monochrome board.
+        result.ink = disc == BOARD_IMAGE_DISC_BLACK ? BOARD_IMAGE_INK_WHITE : BOARD_IMAGE_INK_BLACK;
         return result;
     }
     if (mark == BOARD_IMAGE_VALUE) {
@@ -419,9 +418,6 @@ inline Vector_image build_board_image_vector(const std::array<int, 64>& discs, c
         const Vector_color color = ink(style.ink);
         const Vector_color halo_color = ink(style.halo_ink);
         if (style.tool == BOARD_IMAGE_TOOL_FLIP) {
-            if (style.backing) {
-                board_image_vector_add_flip(image, center, palette.black, BOARD_IMAGE_FLIP_BACKING_THICKNESS);
-            }
             board_image_vector_add_flip(image, center, color, BOARD_IMAGE_FLIP_THICKNESS);
         } else if (style.tool == BOARD_IMAGE_TOOL_VALUE) {
             add_text(edit.values[cell] ? std::to_string(*edit.values[cell]) : std::string("..."), BOARD_IMAGE_VALUE_FONT_SIZE, center, color);

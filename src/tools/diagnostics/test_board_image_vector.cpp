@@ -45,12 +45,6 @@ Board_image_mark_style original_mark_style(int mark, int disc, bool monochrome) 
     const int black = BOARD_IMAGE_INK_BLACK, white = BOARD_IMAGE_INK_WHITE;
     const int contrast = disc == BOARD_IMAGE_DISC_WHITE ? black : white;
     Board_image_mark_style style;
-    if (mark == BOARD_IMAGE_FLIP) {
-        style.tool = BOARD_IMAGE_TOOL_FLIP;
-        style.ink = contrast;
-        style.backing = disc == BOARD_IMAGE_DISC_VACANT && monochrome; // draw_flip(center, black, 4)
-        return style;
-    }
     if (mark == BOARD_IMAGE_VALUE) {
         style.tool = BOARD_IMAGE_TOOL_VALUE;
         style.ink = monochrome ? black : white;
@@ -173,7 +167,7 @@ void test_writers() {
 
 void test_mark_style() {
     for (int mark = 0; mark <= BOARD_IMAGE_MARK_MAX; ++mark) {
-        if (mark == BOARD_IMAGE_NOMARK || mark == BOARD_IMAGE_ARROW) {
+        if (mark == BOARD_IMAGE_NOMARK || mark == BOARD_IMAGE_ARROW || mark == BOARD_IMAGE_FLIP) {
             continue;
         }
         for (int disc = BOARD_IMAGE_DISC_BLACK; disc <= BOARD_IMAGE_DISC_VACANT; ++disc) {
@@ -186,10 +180,18 @@ void test_mark_style() {
             }
         }
     }
-    // Documented colors: flip/outline marks contrast with the disc; empty cells use white.
+    // Flip marks use a single color: white on black discs, black everywhere else (Issue #662).
+    constexpr int flip_inks[] = {BOARD_IMAGE_INK_WHITE, BOARD_IMAGE_INK_BLACK, BOARD_IMAGE_INK_BLACK};
+    for (int disc = BOARD_IMAGE_DISC_BLACK; disc <= BOARD_IMAGE_DISC_VACANT; ++disc) {
+        for (const bool monochrome : {false, true}) {
+            const auto style = board_image_mark_style(BOARD_IMAGE_FLIP, disc, monochrome);
+            assert(style.tool == BOARD_IMAGE_TOOL_FLIP && style.ink == flip_inks[disc]);
+            assert(!style.backing && !style.halo && !style.outline);
+        }
+    }
+    // Outline marks contrast with the disc; empty cells use white.
     assert(board_image_mark_style(BOARD_IMAGE_ORECT, BOARD_IMAGE_DISC_WHITE, false).ink == BOARD_IMAGE_INK_BLACK);
     assert(board_image_mark_style(BOARD_IMAGE_OSTAR, BOARD_IMAGE_DISC_BLACK, false).ink == BOARD_IMAGE_INK_WHITE);
-    assert(board_image_mark_style(BOARD_IMAGE_FLIP, BOARD_IMAGE_DISC_VACANT, false).ink == BOARD_IMAGE_INK_WHITE);
     assert(board_image_mark_style(BOARD_IMAGE_WCIRCLE, BOARD_IMAGE_DISC_VACANT, true).halo);
     assert(!board_image_mark_style(BOARD_IMAGE_WCIRCLE, BOARD_IMAGE_DISC_VACANT, false).halo);
     assert(board_image_mark_style(BOARD_IMAGE_OCIRCLE, BOARD_IMAGE_DISC_VACANT, true).backing);
