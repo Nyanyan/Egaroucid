@@ -44,6 +44,8 @@ bin/document/games/*.json
 bin/document/games/summary.csv
 bin/document/games/*/*
 bin/document/screenshots/*.png
+bin/document/screenshots/*.svg
+bin/document/screenshots/*.eps
 bin/document/*.egbk3
 bin/document/*.egbk3.bak
 bin/data_44
