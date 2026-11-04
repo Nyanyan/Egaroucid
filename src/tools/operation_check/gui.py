@@ -3,8 +3,10 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import uuid
+import xml.etree.ElementTree as ET
 
 from common import Case, parser_for, require, run_suite
 from reference_board import Board
@@ -81,8 +83,9 @@ def settings(ctx):
     native(ctx, "settings")
     path = ctx.directory / "appdata/setting.json"
     saved = json.loads(path.read_text(encoding="utf-8-sig"))
-    keys = ("board_image_mark", "board_image_coordinate", "board_image_color", "board_image_outer_frame_color")
-    require([saved.get(key) for key in keys] == [11, 1, 1, 1], "Shutdown did not save editor settings")
+    keys = ("board_image_mark", "board_image_coordinate", "board_image_color", "board_image_outer_frame_color",
+            "board_image_format")
+    require([saved.get(key) for key in keys] == [11, 1, 1, 1, 1], "Shutdown did not save editor settings")
     require(saved.get("timer_time_limit_min") == 7 and saved.get("show_legal") is False, "Shutdown display settings differ")
     # Restart from the actual saved files, without rebuilding the fixture.
     native(ctx, "settings-restored")
@@ -91,7 +94,8 @@ def settings(ctx):
 
 def invalid_settings(ctx):
     fixture(ctx, settings={"board_image_mark": 999, "board_image_coordinate": -9,
-                           "board_image_color": "invalid", "board_image_outer_frame_color": 7})
+                           "board_image_color": "invalid", "board_image_outer_frame_color": 7,
+                           "board_image_format": 9})
     native(ctx, "settings-invalid")
 
 
@@ -113,6 +117,45 @@ def scenes(ctx, language):
                 "Missing or invalid scene PNG: " + frame.name)
 
 
+def board_image_vector(ctx):
+    fixture(ctx)
+    report = native(ctx, "board-image-vector")
+    require(report.get("vector_files") == 8, "GUI did not report eight saved vector images")
+    folder = ctx.directory / "document/screenshots"
+    svgs = sorted(folder.glob("*_vector_*.svg"))
+    epss = sorted(folder.glob("*_vector_*.eps"))
+    require(len(svgs) == 4 and len(epss) == 4, "Missing SVG/EPS files")
+    ns = "{http://www.w3.org/2000/svg}"
+    for path in svgs:
+        root = ET.parse(path).getroot()
+        size = "447" if "_coord_" in path.name else "420"
+        require(root.tag == ns + "svg" and root.get("width") == size and root.get("height") == size,
+                "SVG size differs: " + path.name)
+        groups = [group.get("id") for group in root.findall(ns + "g")]
+        expected = ["background", "coordinates", "grid", "discs", "frame", "marks", "arrows"]
+        if size == "420":
+            expected.remove("coordinates")
+        require(groups == expected, "SVG layers differ: " + path.name)
+        # Vector shapes only: an embedded bitmap would defeat the purpose of SVG.
+        require(all(element.tag in (ns + "svg", ns + "title", ns + "g", ns + "path", ns + "circle")
+                    for element in root.iter()), "Unexpected SVG element: " + path.name)
+        if size == "447":
+            labels = root.find(ns + "g[@id='coordinates']")
+            # Each of 1-8 and a-h is a filled glyph outline; together they have hundreds of vertices.
+            vertices = [label.get("d", "").count("L") for label in labels]
+            require(len(labels) == 16 and min(vertices) >= 3 and sum(vertices) >= 300,
+                    "Coordinate glyph outlines are missing: " + path.name)
+    for path in epss:
+        text = path.read_bytes().decode("ascii")
+        size = "447" if "_coord_" in path.name else "420"
+        require(text.startswith("%!PS-Adobe-3.0 EPSF-3.0\n") and f"%%BoundingBox: 0 0 {size} {size}\n" in text,
+                "EPS header differs: " + path.name)
+        require(text.endswith("showpage\n%%Trailer\n%%EOF\n"), "EPS trailer differs: " + path.name)
+        body = "\n".join(line for line in text.splitlines() if not line.startswith("%"))
+        require(re.search(r"\b(?:color)?image(?:mask)?\b", body) is None, "EPS must not contain a bitmap: " + path.name)
+        require(max(len(line) for line in text.splitlines()) <= 255, "EPS line too long: " + path.name)
+
+
 def resources(ctx):
     for name in ("eval.egev2", "eval_move_ordering_end.egev", "empty_book.egbk3",
                  "img/icon.png", "img/logo.png", "languages/languages.json",
@@ -122,7 +165,8 @@ def resources(ctx):
     for language in LANGUAGES:
         path = ctx.args.resources / "languages" / (language + ".json")
         content = json.loads(path.read_text(encoding="utf-8-sig"))
-        for key in ("mark", "value", "save_image", "clear", "arrow", "flip", "coordinate"):
+        for key in ("mark", "value", "save_image", "clear", "arrow", "flip", "coordinate",
+                    "file_format", "png", "svg", "eps"):
             require(isinstance(content.get("board_image", {}).get(key), str) and content["board_image"][key],
                     f"Missing {language} board_image.{key}")
         if ctx.args.templates:
@@ -140,6 +184,7 @@ CASES = [
     Case("profiles", "AI/display profiles and multilingual names", lambda ctx: simple(ctx, "profiles")),
     Case("game-files", "Save game JSON/CSV and reload history/metadata", lambda ctx: transcript(ctx, "game-files")),
     Case("annotations", "Annotation lifetime, arrows, clearing, grid snapping", lambda ctx: simple(ctx, "annotations")),
+    Case("board-image-vector", "Save edited board images as SVG/EPS with the GUI fonts", board_image_vector),
     Case("forced-openings", "Forced opening returns legal continuations", lambda ctx: simple(ctx, "forced-openings")),
     Case("search", "AI search through GUI-initialized engine", lambda ctx: simple(ctx, "search")),
 ] + [Case("scenes-" + language.replace("_", "-"), "Render nine scenes in " + language,

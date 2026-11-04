@@ -130,6 +130,7 @@ void save_settings(Menu_elements menu_elements, Settings settings, Directories d
     setting_json[U"board_image_coordinate"] = settings.board_image_coordinate;
     setting_json[U"board_image_color"] = settings.board_image_color;
     setting_json[U"board_image_outer_frame_color"] = settings.board_image_outer_frame_color;
+    setting_json[U"board_image_format"] = settings.board_image_format;
     setting_json[U"input_game_last_subfolder"] = Unicode::Widen(user_settings.input_game_last_subfolder);
     setting_json[U"opening_setting_last_subfolder"] = Unicode::Widen(user_settings.opening_setting_last_subfolder);
     setting_json[U"othello_quest_username"] = Unicode::Widen(user_settings.othello_quest_username);

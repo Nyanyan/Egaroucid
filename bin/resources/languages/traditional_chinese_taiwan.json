@@ -416,7 +416,11 @@
         "dark_gray": "深灰",
         "coordinate": "座標",
         "include_coordinate": "包含",
-        "exclude_coordinate": "不包含"
+        "exclude_coordinate": "不包含",
+        "file_format": "檔案格式",
+        "png": "PNG",
+        "svg": "SVG",
+        "eps": "EPS"
     },
     "opening_setting": {
         "opening_setting": "固定開局設定",

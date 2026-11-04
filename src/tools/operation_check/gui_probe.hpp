@@ -159,9 +159,12 @@ class Gui_probe {
             require(settings.board_image_mark == (case_name == U"settings-invalid" ? BOARD_IMAGE_MARK_MAX : 0), "Mark default/clamp differs");
             require(settings.board_image_coordinate == 0 && settings.board_image_color == 0, "Coordinate/color default differs");
             require(settings.board_image_outer_frame_color == (case_name == U"settings-invalid" ? 1 : 0), "Frame default/clamp differs");
+            require(settings.board_image_format == (case_name == U"settings-invalid" ? BOARD_IMAGE_FORMAT_EPS : BOARD_IMAGE_FORMAT_PNG),
+                "Image format default/clamp differs");
         } else if (case_name == U"settings-restored") {
             require(data.settings.board_image_mark == BOARD_IMAGE_FLIP && data.settings.board_image_coordinate == 1 &&
-                data.settings.board_image_color == 1 && data.settings.board_image_outer_frame_color == 1,
+                data.settings.board_image_color == 1 && data.settings.board_image_outer_frame_color == 1 &&
+                data.settings.board_image_format == BOARD_IMAGE_FORMAT_SVG,
                 "Restart did not restore editor settings");
             require(!data.menu_elements.show_legal && data.menu_elements.timer_time_limit_min == 7,
                 "Restart did not restore display settings");
@@ -170,6 +173,7 @@ class Gui_probe {
             data.settings.board_image_coordinate = 1;
             data.settings.board_image_color = 1;
             data.settings.board_image_outer_frame_color = 1;
+            data.settings.board_image_format = BOARD_IMAGE_FORMAT_SVG;
             data.menu_elements.show_legal = false;
             data.menu_elements.timer_time_limit_min = 7;
             save_app_data(data.menu_elements, &data.settings, data.directories,
@@ -177,7 +181,8 @@ class Gui_probe {
             Settings loaded;
             init_settings(&data.directories, &data.resources, &loaded);
             require(loaded.board_image_mark == BOARD_IMAGE_FLIP && loaded.board_image_coordinate == 1 &&
-                loaded.board_image_color == 1 && loaded.board_image_outer_frame_color == 1, "Board image settings roundtrip differs");
+                loaded.board_image_color == 1 && loaded.board_image_outer_frame_color == 1 &&
+                loaded.board_image_format == BOARD_IMAGE_FORMAT_SVG, "Board image settings roundtrip differs");
             require(!loaded.show_legal && loaded.timer_time_limit_min == 7, "Display settings roundtrip differs");
         } else if (case_name == U"transcript") {
             auto history = sample_history();
@@ -251,6 +256,69 @@ class Gui_probe {
             require(edit.arrows.empty() && !edit.values[1] && edit.marks[0] == BOARD_IMAGE_NOMARK, "Clear left annotations behind");
             require(board_image_cell_at(1, 1, 50) == board_image_cell_at(49, 49, 50) &&
                 board_image_cell_at(50, 0, 50) == 1 && board_image_cell_at(400, 0, 50) == -1, "Grid snapping differs");
+        } else if (case_name == U"board-image-vector") {
+            // SVG / EPS export with the GUI's fonts and the product save function.
+            const auto history = sample_history();
+            const History_elem& position = history.back(); // f5d6c3d3
+            Board_image_edit edit;
+            const int marks[] = {BOARD_IMAGE_BRECT, BOARD_IMAGE_WRECT, BOARD_IMAGE_ORECT, BOARD_IMAGE_BSTAR, BOARD_IMAGE_WSTAR,
+                BOARD_IMAGE_OSTAR, BOARD_IMAGE_BCIRCLE, BOARD_IMAGE_WCIRCLE, BOARD_IMAGE_OCIRCLE, BOARD_IMAGE_FLIP};
+            for (int i = 0; i < 10; ++i) {
+                edit.marks[i] = marks[i]; // empty cells a1-h1, a2, b2
+            }
+            edit.marks[18] = BOARD_IMAGE_OSTAR; // c3: black disc
+            edit.marks[19] = BOARD_IMAGE_FLIP;  // d3: white disc
+            edit.marks[26] = BOARD_IMAGE_VALUE; // c4
+            edit.values[26] = -12;
+            edit.marks[34] = BOARD_IMAGE_VALUE; // c5: value still being calculated
+            edit.arrows.push_back({45, 47});    // f6 -> h6
+            edit.arrows.push_back({56, 7});     // a8 -> h1
+            // Glyph outlines must be laid out in the same text box as DrawableText::drawAt().
+            const Font& font = data.fonts.font_bold;
+            for (const String text : {U"-12", U"8", U"h", U"..."}) {
+                const Board_image_text_outline outline = board_image_text_outline(font, text);
+                require(!outline.glyphs.empty() && outline.base_size == font.fontSize(), "Glyph outlines missing");
+                double advance = 0.0;
+                for (const auto& glyph : outline.glyphs) {
+                    require(!glyph.rings.empty() && glyph.x_advance > 0.0, "Empty glyph outline");
+                    advance += glyph.x_advance;
+                }
+                const double scale = BOARD_IMAGE_VALUE_FONT_SIZE / outline.base_size;
+                const RectF region = font(text).regionAt(BOARD_IMAGE_VALUE_FONT_SIZE, Vec2{100, 100});
+                require(std::abs(region.w - advance * scale) < 0.01 && std::abs(region.h - outline.line_height * scale) < 0.01,
+                    "Text box differs from Siv3D");
+            }
+            int saved = 0;
+            for (const int format : {BOARD_IMAGE_FORMAT_SVG, BOARD_IMAGE_FORMAT_EPS}) {
+                for (const bool include_coordinate : {true, false}) {
+                    for (const bool monochrome : {false, true}) {
+                        Board_image_vector_options options;
+                        options.include_coordinate = include_coordinate;
+                        options.monochrome = monochrome;
+                        options.dark_outer_frame = !include_coordinate;
+                        const std::string name = std::string("vector_") + (include_coordinate ? "coord" : "nocoord") +
+                            (monochrome ? "_mono" : "_color");
+                        // The clipboard copy (take_board_image_vector) is left to the desktop checks.
+                        const Vector_image image = create_board_image_vector(position, edit, options, data.fonts, data.colors, name);
+                        const String path = save_board_image_vector("./document/screenshots/", name, format, image);
+                        require(!path.isEmpty() && FileSystem::IsFile(path), "Vector board image was not saved");
+                        TextReader reader{path};
+                        const String content = reader.readAll();
+                        const String size = include_coordinate ? U"447" : U"420";
+                        if (format == BOARD_IMAGE_FORMAT_SVG) {
+                            require(content.starts_with(U"<?xml") && content.includes(U"viewBox=\"0 0 " + size + U" " + size + U"\""),
+                                "SVG header differs");
+                            require(content.includes(U"<g id=\"coordinates\">") == include_coordinate, "SVG coordinates differ");
+                        } else {
+                            require(content.starts_with(U"%!PS-Adobe-3.0 EPSF-3.0\n") &&
+                                content.includes(U"%%BoundingBox: 0 0 " + size + U" " + size + U"\n"), "EPS header differs");
+                            require(content.ends_with(U"%%EOF\n"), "EPS trailer missing");
+                        }
+                        ++saved;
+                    }
+                }
+            }
+            result[U"vector_files"] = saved;
         } else if (case_name == U"forced-openings") {
             Forced_openings openings;
             openings.openings.emplace_back("f5d6c3d3", 1);

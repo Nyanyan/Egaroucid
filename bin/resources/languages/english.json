@@ -416,7 +416,11 @@
         "dark_gray": "Dark Gray",
         "coordinate": "Coordinates",
         "include_coordinate": "Include",
-        "exclude_coordinate": "Exclude"
+        "exclude_coordinate": "Exclude",
+        "file_format": "File Format",
+        "png": "PNG",
+        "svg": "SVG",
+        "eps": "EPS"
     },
     "opening_setting": {
         "opening_setting": "Forced Opening Settings",

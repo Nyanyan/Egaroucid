@@ -550,6 +550,9 @@ constexpr int BOARD_IMAGE_OUTER_FRAME_WHITE = 0;
 constexpr int BOARD_IMAGE_OUTER_FRAME_DARK = 1;
 constexpr int BOARD_IMAGE_COORDINATE_INCLUDE = 0;
 constexpr int BOARD_IMAGE_COORDINATE_EXCLUDE = 1;
+constexpr int BOARD_IMAGE_FORMAT_PNG = 0;
+constexpr int BOARD_IMAGE_FORMAT_SVG = 1;
+constexpr int BOARD_IMAGE_FORMAT_EPS = 2;
 
 struct Settings {
     int n_threads;
@@ -616,6 +619,7 @@ struct Settings {
     int board_image_coordinate;
     int board_image_color;
     int board_image_outer_frame_color;
+    int board_image_format;
     std::string input_game_last_subfolder;
     std::string opening_setting_last_subfolder;
     std::string othello_quest_username;

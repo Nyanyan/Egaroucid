@@ -14,12 +14,14 @@
 #include "function/function_all.hpp"
 #include "draw.hpp"
 #include "screen_shot.hpp"
+#include "function/board_image_vector.hpp"
 
 constexpr int BOARD_IMAGE_MARK_DELETED = -1;
 constexpr int BOARD_IMAGE_NOT_CLICKED = -2;
-constexpr int BOARD_IMAGE_RECT_SIZE = 20;
-constexpr int BOARD_IMAGE_STAR_SIZE = 15;
-constexpr int BOARD_IMAGE_FRAME_WIDTH = 2;
+// Rows of the image options (coordinates, color, outer frame, file format): label top y and row pitch.
+constexpr int BOARD_IMAGE_OPTION_SY = 296;
+constexpr int BOARD_IMAGE_OPTION_DY = 32;
+// Mark sizes and shapes are in board_image_vector.hpp, shared with the SVG / EPS export.
 
 class Board_image : public App::Scene {
 private:
@@ -29,6 +31,7 @@ private:
     Radio_button color_radio;
     Radio_button outer_frame_color_radio;
     Radio_button coordinate_radio;
+    Radio_button format_radio;
     Board_image_edit edit;
     Board_image_arrow_input arrow_input;
     std::array<int, HW2> last_marked;
@@ -67,7 +70,7 @@ private:
     }
 
     static Shape2D arrow_shape(const Vec2& from, const Vec2& to) {
-        return Shape2D::Arrow(from, to, 6, Vec2{18, 16});
+        return Shape2D::Arrow(from, to, BOARD_IMAGE_ARROW_WIDTH, Vec2{BOARD_IMAGE_ARROW_HEAD_WIDTH, BOARD_IMAGE_ARROW_HEAD_LENGTH});
     }
 
     static void draw_arrow(const Vec2& from, const Vec2& to) {
@@ -76,7 +79,7 @@ private:
         }
         const auto arrow = arrow_shape(from, to);
         arrow.draw(Palette::Black);
-        arrow.drawFrame(2, Palette::White);
+        arrow.drawFrame(BOARD_IMAGE_ARROW_FRAME_WIDTH, Palette::White);
     }
 
     bool erase_arrow_at_cursor() {
@@ -153,18 +156,11 @@ private:
         }
     }
 
-    static void draw_flip(const Vec2& center, const Color& color, double thickness = 2) {
-        constexpr double radius = 11;
+    static void draw_flip(const Vec2& center, const Color& color, double thickness = BOARD_IMAGE_FLIP_THICKNESS) {
         for (int half = 0; half < 2; ++half) {
-            const double start = -Math::HalfPi + 0.22 + half * Math::Pi;
-            const double angle = Math::Pi - 0.52;
-            Circle(center, radius).drawArc(start, angle, thickness / 2, thickness / 2, color);
-            const double end = start + angle;
-            const Vec2 radial{std::sin(end), -std::cos(end)};
-            const Vec2 tangent{std::cos(end), std::sin(end)};
-            const Vec2 tip = center + radial * radius + tangent * 3;
-            const Vec2 base = tip - tangent * (5 + thickness);
-            Triangle(tip, base + radial * (2 + thickness), base - radial * (2 + thickness)).draw(color);
+            const Board_image_flip_half flip = board_image_flip_half({center.x, center.y}, half, thickness);
+            Circle(center, BOARD_IMAGE_FLIP_RADIUS).drawArc(flip.start_angle, flip.angle, thickness / 2, thickness / 2, color);
+            Triangle(Vec2{flip.tip.x, flip.tip.y}, Vec2{flip.left.x, flip.left.y}, Vec2{flip.right.x, flip.right.y}).draw(color);
         }
     }
 
@@ -173,39 +169,42 @@ private:
             return;
         }
         const auto& colors = getData().colors;
-        const Color contrast = disc == WHITE ? colors.black : colors.white;
-        if (mark == BOARD_IMAGE_FLIP) {
-            if (disc == VACANT && monochrome) {
-                draw_flip(center, colors.black, 4);
+        // The SVG / EPS export uses the same decisions (board_image_vector.hpp).
+        const Board_image_mark_style mark_style = board_image_mark_style(mark, disc, monochrome);
+        const auto ink = [&colors](int ink_id) { return ink_id == BOARD_IMAGE_INK_BLACK ? colors.black : colors.white; };
+        const Color color = ink(mark_style.ink);
+        if (mark_style.tool == BOARD_IMAGE_TOOL_FLIP) {
+            if (mark_style.backing) {
+                draw_flip(center, colors.black, BOARD_IMAGE_FLIP_BACKING_THICKNESS);
             }
-            draw_flip(center, contrast);
+            draw_flip(center, color);
             return;
         }
-        if (mark == BOARD_IMAGE_VALUE) {
+        if (mark_style.tool == BOARD_IMAGE_TOOL_VALUE) {
             const String text = value ? Format(*value) : U"...";
-            getData().fonts.font_bold(text).drawAt(22, center, monochrome ? colors.black : colors.white);
+            getData().fonts.font_bold(text).drawAt(BOARD_IMAGE_VALUE_FONT_SIZE, center, color);
             return;
         }
-        const auto [tool, style] = board_image_tool_from_mark(mark);
-        const bool outline = style == BOARD_IMAGE_STYLE_OUTLINE;
-        const Color color = outline ? contrast : (style == BOARD_IMAGE_STYLE_BLACK ? colors.black : colors.white);
-        const bool halo = !outline && ((style == BOARD_IMAGE_STYLE_BLACK && disc == BLACK) ||
-            (style == BOARD_IMAGE_STYLE_WHITE && (disc == WHITE || (disc == VACANT && monochrome))));
-        const Color halo_color = style == BOARD_IMAGE_STYLE_BLACK ? colors.white : colors.black;
-        const bool outline_halo = outline && disc == VACANT && monochrome;
+        const int tool = mark_style.tool;
+        const bool outline = mark_style.outline;
+        const bool halo = mark_style.halo;
+        const Color halo_color = ink(mark_style.halo_ink);
+        const bool outline_halo = mark_style.backing;
+        constexpr double frame_half = BOARD_IMAGE_FRAME_WIDTH / 2.0;
+        constexpr double backing_half = BOARD_IMAGE_BACKING_WIDTH / 2.0;
         if (tool == BOARD_IMAGE_TOOL_RECT) {
             const RectF rect(Arg::center = center, BOARD_IMAGE_RECT_SIZE, BOARD_IMAGE_RECT_SIZE);
             if (outline) {
-                if (outline_halo) rect.drawFrame(2, 2, colors.black);
-                rect.drawFrame(1, 1, color);
+                if (outline_halo) rect.drawFrame(backing_half, backing_half, colors.black);
+                rect.drawFrame(frame_half, frame_half, color);
             } else {
                 rect.draw(color);
-                if (halo) rect.drawFrame(1, 1, halo_color);
+                if (halo) rect.drawFrame(frame_half, frame_half, halo_color);
             }
         } else if (tool == BOARD_IMAGE_TOOL_STAR) {
             const auto star = Shape2D::Star(BOARD_IMAGE_STAR_SIZE, center);
             if (outline) {
-                if (outline_halo) star.drawFrame(4, colors.black);
+                if (outline_halo) star.drawFrame(BOARD_IMAGE_BACKING_WIDTH, colors.black);
                 star.drawFrame(BOARD_IMAGE_FRAME_WIDTH, color);
             } else {
                 star.draw(color);
@@ -214,13 +213,31 @@ private:
         } else if (tool == BOARD_IMAGE_TOOL_CIRCLE) {
             const Circle circle(center, BOARD_IMAGE_RECT_SIZE / 2);
             if (outline) {
-                if (outline_halo) circle.drawFrame(2, 2, colors.black);
-                circle.drawFrame(1, 1, color);
+                if (outline_halo) circle.drawFrame(backing_half, backing_half, colors.black);
+                circle.drawFrame(frame_half, frame_half, color);
             } else {
                 circle.draw(color);
-                if (halo) circle.drawFrame(1, 1, halo_color);
+                if (halo) circle.drawFrame(frame_half, frame_half, halo_color);
             }
         }
+    }
+
+    // Called in the frame after Save, when the captured frame is ready. SVG / EPS draw the same
+    // picture again as vector shapes; the clipboard also gets the captured image, as with PNG.
+    void save_image() {
+        const std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
+        if (format_radio.checked == BOARD_IMAGE_FORMAT_PNG) {
+            take_board_image_screen_shot(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir,
+                transcript, coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE);
+            return;
+        }
+        Board_image_vector_options options;
+        options.include_coordinate = coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE;
+        options.monochrome = color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME;
+        options.dark_outer_frame = outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_DARK;
+        // The edit is unchanged since the captured frame was drawn, so both copies show the same marks.
+        take_board_image_vector(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir,
+            transcript, format_radio.checked, getData().history_elem, edit, options, getData().fonts, getData().colors);
     }
 
     void select_mark(int mark) {
@@ -295,12 +312,14 @@ private:
 
     void draw_image_options() {
         Line(480, 288, 780, 288).draw(1, ColorF(getData().colors.white, 0.2));
-        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 480, 300, getData().colors.white);
-        getData().fonts.font(language.get("board_image", "color")).draw(15, 480, 338, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "coordinate")).draw(15, 480, BOARD_IMAGE_OPTION_SY, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "color")).draw(15, 480, BOARD_IMAGE_OPTION_SY + BOARD_IMAGE_OPTION_DY, getData().colors.white);
+        getData().fonts.font(language.get("board_image", "file_format")).draw(15, 480, BOARD_IMAGE_OPTION_SY + BOARD_IMAGE_OPTION_DY * 3, getData().colors.white);
         coordinate_radio.draw();
         color_radio.draw();
+        format_radio.draw();
         const bool color_enabled = color_radio.checked == BOARD_IMAGE_COLOR_DEFAULT;
-        getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 480, 376, ColorF(getData().colors.white, color_enabled ? 1.0 : 0.35));
+        getData().fonts.font(language.get("board_image", "outer_frame_color")).draw(15, 480, BOARD_IMAGE_OPTION_SY + BOARD_IMAGE_OPTION_DY * 2, ColorF(getData().colors.white, color_enabled ? 1.0 : 0.35));
         if (color_enabled) {
             outer_frame_color_radio.draw();
         } else {
@@ -320,26 +339,37 @@ public:
         clear_button.init(578, 436, 90, 44, 8, 1, language.get("board_image", "clear"), 17, getData().fonts.font, Color(0, 0, 0, 0), getData().colors.white, getData().colors.white);
         save_image_button.init(676, 436, 104, 44, 8, language.get("board_image", "save_image"), 17, getData().fonts.font, getData().colors.white, getData().colors.black);
         Radio_button_element elem;
+        // Radio buttons are centered on the label of each option row.
+        constexpr int row_y = BOARD_IMAGE_OPTION_SY + 10;
         coordinate_radio.init();
-        elem.init(580, 310, getData().fonts.font, 14, language.get("board_image", "include_coordinate"), true);
+        elem.init(580, row_y, getData().fonts.font, 14, language.get("board_image", "include_coordinate"), true);
         coordinate_radio.push(elem);
-        elem.init(676, 310, getData().fonts.font, 14, language.get("board_image", "exclude_coordinate"), false);
+        elem.init(676, row_y, getData().fonts.font, 14, language.get("board_image", "exclude_coordinate"), false);
         coordinate_radio.push(elem);
         color_radio.init();
-        elem.init(580, 348, getData().fonts.font, 14, language.get("board_image", "default"), true);
+        elem.init(580, row_y + BOARD_IMAGE_OPTION_DY, getData().fonts.font, 14, language.get("board_image", "default"), true);
         color_radio.push(elem);
-        elem.init(676, 348, getData().fonts.font, 14, language.get("board_image", "monochrome"), false);
+        elem.init(676, row_y + BOARD_IMAGE_OPTION_DY, getData().fonts.font, 14, language.get("board_image", "monochrome"), false);
         color_radio.push(elem);
         outer_frame_color_radio.init();
-        elem.init(580, 386, getData().fonts.font, 14, language.get("board_image", "white"), true);
+        elem.init(580, row_y + BOARD_IMAGE_OPTION_DY * 2, getData().fonts.font, 14, language.get("board_image", "white"), true);
         outer_frame_color_radio.push(elem);
-        elem.init(676, 386, getData().fonts.font, 14, language.get("board_image", "dark_gray"), false);
+        elem.init(676, row_y + BOARD_IMAGE_OPTION_DY * 2, getData().fonts.font, 14, language.get("board_image", "dark_gray"), false);
         outer_frame_color_radio.push(elem);
+        // Same order as BOARD_IMAGE_FORMAT_PNG / SVG / EPS.
+        format_radio.init();
+        elem.init(580, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "png"), true);
+        format_radio.push(elem);
+        elem.init(642, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "svg"), false);
+        format_radio.push(elem);
+        elem.init(704, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "eps"), false);
+        format_radio.push(elem);
 
         selected_mark = getData().settings.board_image_mark;
         coordinate_radio.set_checked(getData().settings.board_image_coordinate);
         color_radio.set_checked(getData().settings.board_image_color);
         outer_frame_color_radio.set_checked(getData().settings.board_image_outer_frame_color);
+        format_radio.set_checked(getData().settings.board_image_format);
         getData().graph_resources.prune_board_image_edits();
         edit = getData().graph_resources.board_image_edits.load(position());
         last_marked.fill(BOARD_IMAGE_NOT_CLICKED);
@@ -347,10 +377,7 @@ public:
 
     void update() override {
         if (taking_screen_shot) {
-            take_board_image_screen_shot(getData().window_state.window_scale,
-                getData().user_settings.screenshot_saving_dir,
-                get_transcript(getData().graph_resources, getData().history_elem),
-                coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE);
+            save_image();
             taking_screen_shot = false;
         }
         if (System::GetUserActions() & UserAction::CloseButtonClicked) {
@@ -367,6 +394,7 @@ public:
         getData().settings.board_image_coordinate = coordinate_radio.checked;
         getData().settings.board_image_color = color_radio.checked;
         getData().settings.board_image_outer_frame_color = outer_frame_color_radio.checked;
+        getData().settings.board_image_format = format_radio.checked;
         Line(480, 420, 780, 420).draw(1, ColorF(getData().colors.white, 0.35));
         draw_outline_action(clear_button);
         draw_outline_action(back_button);

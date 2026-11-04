@@ -24,7 +24,9 @@ def clipboard_image():
         raise RuntimeError("OpenClipboard failed")
     result = {}
     try:
-        for label, format_id in (("png", user32.RegisterClipboardFormatW("PNG")), ("dibv5", 17)):
+        # SVG/EPS saves also place the vector picture as UTF-8 SVG with a terminating null.
+        for label, format_id in (("svg", user32.RegisterClipboardFormatW("image/svg+xml")),
+                                 ("png", user32.RegisterClipboardFormatW("PNG")), ("dibv5", 17)):
             handle = user32.GetClipboardData(format_id)
             if not handle:
                 continue
@@ -33,6 +35,12 @@ def clipboard_image():
                 payload = ctypes.string_at(pointer, kernel32.GlobalSize(handle))
             finally:
                 kernel32.GlobalUnlock(handle)
+            if label == "svg":
+                # Without the null, the hash equals that of the saved .svg file.
+                payload = payload.split(b"\0", 1)[0]
+                result[label] = {"size": len(payload), "sha256": hashlib.sha256(payload).hexdigest(),
+                                 "xml": payload.startswith(b"<?xml")}
+                continue
             result[label] = {"size": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
             if label == "png" and payload.startswith(b"\x89PNG\r\n\x1a\n"):
                 result[label]["width"], result[label]["height"] = struct.unpack(">II", payload[16:24])
@@ -67,7 +75,7 @@ if __name__ == "__main__":
         try:
             image = clipboard_image()
             (args.directory / "fixture-image.json").write_text(json.dumps(image), encoding="utf-8")
-            status.set("PNG/DIB image recorded" if image else "No image on clipboard")
+            status.set("/".join(label.upper() for label in image) + " recorded" if image else "No image on clipboard")
         except Exception as error:
             status.set(str(error))
     tk.Button(window, text="Copy text", command=copy_text).pack(pady=3)
