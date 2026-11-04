@@ -125,8 +125,8 @@ It checks number formatting, SVG and EPS syntax (XML escaping, groups, circles,
 arcs, Bezier quarters, ASCII-only EPS), that `board_image_mark_style()` gives
 the same result as the previous decision code for shape and value marks, the
 solid flip colors for every disc and color mode, the Siv3D star, arrow, and frame
-geometry, the `drawAt` text box, and all
-coordinate/color/frame combinations of a sample board. The `board-image-vector`
+geometry, the `drawAt` text box, and all coordinate/color/frame combinations of
+a sample board. The `board-image-vector`
 case of `src/tools/operation_check/gui.py` checks the same export inside the GUI
 with the real fonts and files.
 
@@ -226,3 +226,13 @@ The localized evaluation label fit its tile, selected the value tool, and placed
 a numeric value on the board. Save, Clear all, and the outlined Back button
 worked. Save/value translations in all four runtime language files matched
 their release templates (Value / 評価値 / 评估值 / 評估值).
+
+On 2026-11-04, the Issue #662 flip mark change passed the MSVC `SIMD_Portable`
+build, `test_board_image_vector.cpp`, and the GUI `board-image-vector` case
+(eight SVG/EPS exports with the real fonts). In an isolated Japanese GUI session
+at 1.0 scale, flip marks were placed on e4 (black), e5 (white), and f5 (empty).
+Both color modes showed solid white arrows on e4 and solid black arrows on e5
+and f5. The monochrome PNG was saved and visually checked; the SVG and EPS
+saved through the editor contained the same single-color marks without a
+backing layer. Build logs and exported images are under `build/issue662/`
+(ignored by Git).
