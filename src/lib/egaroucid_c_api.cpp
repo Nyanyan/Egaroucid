@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdio>
 #include <filesystem>
 #include <mutex>
 #include <new>
@@ -157,6 +158,18 @@ int fill_public_moves_from_internal_mask(uint64_t internal_mask, int moves_out[H
     return count;
 }
 
+void copy_resource_file_to_storage(const char *file_path, const uint8_t data_binary[]) {
+    const std::string target_path = std::string("resources/").append(std::string(file_path));
+    if(!std::filesystem::exists(std::filesystem::status(target_path))) {
+      FILE * pFile;
+      pFile = fopen(target_path.c_str(), "wb");
+      fwrite (&data_binary , 1, sizeof(data_binary), pFile);
+      fclose (pFile);
+    }
+    return;
+}
+
+
 }  // namespace
 
 extern "C" {
@@ -167,6 +180,47 @@ const char *egaroucid_version(void) {
 
 egaroucid_status egaroucid_global_init(const char *resource_dir) {
     std::lock_guard<std::mutex> lock(g_init_mutex);
+    // Put books in writeable storage
+    // Create directories if they do not exist
+    std::filesystem::directory_entry res_dir("resources");
+    if(!res_dir.is_directory()) {
+        std::filesystem::create_directory("resources");
+    }
+    std::filesystem::directory_entry hash_dir("resources/hash");
+    if(!hash_dir.is_directory()) {
+        std::filesystem::create_directory("resources/hash");
+    }
+    const uint8_t eval_binary[] =
+    {
+      #embed "../../bin/resources/eval.egev2"
+    };
+    copy_resource_file_to_storage("eval.egev2", eval_binary);
+    const uint8_t eval_move_ordering_end_binary[] =
+    {
+      #embed "../../bin/resources/eval_move_ordering_end.egev"
+    };
+    copy_resource_file_to_storage("eval_move_ordering_end.egev",
+                                  eval_move_ordering_end_binary);
+    const uint8_t book_binary[] =
+    {
+      #embed "../../bin/resources/book.egbk3"
+    };
+    copy_resource_file_to_storage("book.egbk3", book_binary);
+    const uint8_t hash25_binary[] =
+    {
+      #embed "../../bin/resources/hash/hash25.eghs"
+    };
+    copy_resource_file_to_storage("hash/hash25.eghs", hash25_binary);
+    const uint8_t hash26_binary[] =
+    {
+      #embed "../../bin/resources/hash/hash26.eghs"
+    };
+    copy_resource_file_to_storage("hash/hash26.eghs", hash26_binary);
+    const uint8_t hash27_binary[] =
+    {
+      #embed "../../bin/resources/hash/hash27.eghs"
+    };
+    copy_resource_file_to_storage("hash/hash27.eghs", hash27_binary);
     try {
         const ResourceLayout layout = resolve_resource_layout(resource_dir);
         const std::string eval_file = (layout.resource_dir / "eval.egev2").generic_string();
