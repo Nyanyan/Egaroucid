@@ -232,13 +232,14 @@ Below is a list of Egaroucid-related links provided by third parties. The author
 
 These are works developed by third parties using Egaroucid or Egaroucid's training data, etc.
 
-- [Reversi Board](https://reversi.shiroshiba-lab.jp/): An Web app with reversi AI. [Egaroucid for Web](./web/) is used as "high performance AI" in this app.
+### International
+
+- [Reversi Board](https://reversi.shiroshiba-lab.jp/) (Japanese): An Web app with reversi AI. [Egaroucid for Web](./web/) is used as "high performance AI" in this app.
 - [iSReversi](https://github.com/bkmgit/isreversi): A Reversi app development project by Benson Muite that uses Egaroucid. The app is being developed using LambdaNative, a cross-platform application development framework.
+- [Smatch Reversi / Chess / Shogi / Go](https://smatch-jp.com/games/) (Japanese): A Web app where you can play against AI in various games. [Egaroucid for Web](./web/) is used as the "Strongest" AI opponent in Reversi.
 - [PAPP Tournament Suite](https://github.com/venylol/papp): This is software for generating match pairings for Othello tournaments. It utilizes Egaroucid for Console as its game analysis engine. The software's creator, [RuiRui](https://github.com/venylol), has also contributed significantly to Egaroucid through numerous pull requests and issues.
-- [Reversi Web](https://reversi.yuki-lab.com/en/): Othello AI that can be played on the website. The Egaroucid for Web engine is used as the top-level AI that you can play against by winning and advancing.
+- [Reversi Web](https://reversi.yuki-lab.com/en/): Othello AI that can be played on the website. The [Egaroucid for Web](./web/) engine is used as the top-level AI that you can play against by winning and advancing.
 - [Reversi Nexus](https://reversi.nexus/): Othello AI that can be played on websites, desktops, and mobiles. It seems they referred to Egaroucid's [training data](./technology/train-data/) and [technical explanation](./technology/explanation/).
-
-
 
 
 
