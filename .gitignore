@@ -102,3 +102,8 @@ src/tools/evaluation/dl_test
 # workspace
 # *.code-workspace
 # .vscode
+
+ignored
+**/ignored
+
+**/report
