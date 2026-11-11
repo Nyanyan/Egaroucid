@@ -6,7 +6,7 @@
 
 `console.py`はコンソールの入出力を検証します。`gui.py`は内部処理と画面描画の基礎確認です。
 マウス、実キー入力、IME、クリップボード、ネットワーク、Book操作などのリリース確認は、
-`desktop.py`と実GUI操作の結果で別に判定します。**GUIの基礎確認16件だけでは、リリース確認を合格にしません。**
+`desktop.py`と実GUI操作の結果で別に判定します。**GUIの基礎確認だけでは、リリース確認を合格にしません。**
 
 先にアプリケーションをビルドし、確認したい実行ファイルを指定してください。
 スクリプトは指定された実行ファイルを検証します。ソースの自動ビルドやダウンロードは行いません。
@@ -125,7 +125,8 @@ GUI側の結果とログは、各ケースのフォルダ内の`native-result.js
 | `profiles` | AI・表示プロファイルの保存と読込、多言語の名前 |
 | `game-files` | 対局JSON・CSVの保存と読込、棋譜、多言語の対局情報、複数行のメモ |
 | `annotations` | 局面ごとの注釈の保持と削除、進行の初期化、矢印と重複の拒否、全消去、マス単位の座標判定 |
-| `board-image-vector` | GUIのフォントと製品の保存処理による盤面画像のSVG・EPS出力。座標・色の組合せ8件のファイルの保存、文字の輪郭があり、配置枠の大きさがSiv3Dの文字描画と一致すること、SVGの構造とビットマップを含まないこと、EPSのヘッダと終端・ASCIIのみであること |
+| `board-image-vector` | GUIのフォントと製品の保存処理によるSVG・EPS・PDF出力。座標・色の組合せで12ファイルを保存し、文字の輪郭と配置、各形式の構造、ビットマップを含まないことを確認 |
+| `board-image-clipboard` | WindowsでPNG・SVG・EPS・PDFをファイルとしてコピー。日本語・空白を含むファイルパス、コピー指定、画像データを含まないこと、保存失敗時にクリップボードが変わらないことを確認 |
 | `forced-openings` | 登録した強制定石から合法な継続手が得られること |
 | `search` | GUIで初期化したエンジンの探索結果が合法手であること |
 | `scenes-english`, `scenes-japanese`, `scenes-simplified-chinese`, `scenes-traditional-chinese-taiwan` | 各言語で9画面の遷移と描画。メイン、文字列取込、盤面編集、対局情報、出力、盤面画像、定石設定、ショートカット設定、棋譜管理が対象 |
@@ -230,7 +231,7 @@ python src/tools/operation_check/book_probe.py LEARNED_EGBK3 --contains ORIGINAL
 # 指定棋譜の各局面が保存され、学習前より局面が増えたことを検証
 python src/tools/operation_check/book_probe.py LEARNED_EGBK3 --contains ORIGINAL_EGBK3 --transcript c4c3c2b2 --min-added 1 --report RUN_DIRECTORY/book-transcript.json
 
-# 保存したPNGの大きさ、指定ピクセル、透過、クリップボードとの一致を検証
+# 保存したPNGの大きさ、指定ピクセル、透過と、クリップボードのファイルパス・内容の一致を検証
 python src/tools/operation_check/image_probe.py SAVED_PNG --size 420 420 --alpha 0,0,0 --clipboard-json RUN_DIRECTORY/fixture-image.json --report RUN_DIRECTORY/image-saved.json
 
 # 未実行も含めて全項目を集計（未確認の項目があれば終了コード1）

@@ -323,6 +323,50 @@ class Gui_probe {
                 }
             }
             result[U"vector_files"] = saved;
+        } else if (case_name == U"board-image-clipboard") {
+#if SIV3D_PLATFORM(WINDOWS)
+            const String folder = U"./document/screenshots/日本語 フォルダ/";
+            require(FileSystem::CreateDirectories(folder), "Could not create clipboard test directory");
+            const Image png{8, 8, Color{36, 153, 114, 0}};
+            const String png_path = folder + U"盤面 画像.png";
+            require(png.save(png_path), "Could not save clipboard PNG");
+            const auto history = sample_history();
+            Board_image_edit edit;
+            Board_image_vector_options options;
+            const Vector_image image = create_board_image_vector(history.back(), edit, options, data.fonts, data.colors, "clipboard");
+            Array<String> paths{png_path};
+            for (const int format : {BOARD_IMAGE_FORMAT_SVG, BOARD_IMAGE_FORMAT_EPS, BOARD_IMAGE_FORMAT_PDF}) {
+                const String path = save_board_image_vector(folder.narrow(), "clipboard", format, image);
+                require(!path.isEmpty(), "Could not save clipboard vector file");
+                paths.push_back(path);
+            }
+            for (const String& path : paths) {
+                require(set_file_to_clipboard(path), "Could not copy saved image file");
+                Array<FilePath> copied;
+                require(Clipboard::GetFilePaths(copied) && copied.size() == 1 &&
+                    FileSystem::FullPath(copied.front()) == FileSystem::FullPath(path), "Clipboard file path differs");
+                require(!IsClipboardFormatAvailable(CF_DIBV5) && !IsClipboardFormatAvailable(CF_DIB) &&
+                    !IsClipboardFormatAvailable(CF_BITMAP) && !IsClipboardFormatAvailable(RegisterClipboardFormatW(L"PNG")) &&
+                    !IsClipboardFormatAvailable(RegisterClipboardFormatW(L"image/svg+xml")), "Clipboard still contains an image");
+                require(OpenClipboard(static_cast<HWND>(Platform::Windows::Window::GetHWND())), "Could not read clipboard copy effect");
+                const HANDLE effect = GetClipboardData(RegisterClipboardFormatW(L"Preferred DropEffect"));
+                const auto* value = effect ? static_cast<const DWORD*>(GlobalLock(effect)) : nullptr;
+                const bool copy_effect = value && *value == DROPEFFECT_COPY;
+                if (value) GlobalUnlock(effect);
+                CloseClipboard();
+                require(copy_effect, "Clipboard must copy, rather than move, the saved file");
+            }
+            Clipboard::SetText(U"clipboard unchanged");
+            require(!set_file_to_clipboard(folder + U"missing.png"), "Missing file was copied");
+            // An existing file used as a directory forces a write failure without permission changes.
+            take_board_image_vector(png_path.narrow() + "/", "cannot-save", BOARD_IMAGE_FORMAT_PDF,
+                history.back(), edit, options, data.fonts, data.colors);
+            String text;
+            require(Clipboard::GetText(text) && text == U"clipboard unchanged", "Failed save changed the clipboard");
+            result[U"clipboard_files"] = paths.size();
+#else
+            throw std::runtime_error("File clipboard checks require Windows");
+#endif
         } else if (case_name == U"forced-openings") {
             Forced_openings openings;
             openings.openings.emplace_back("f5d6c3d3", 1);

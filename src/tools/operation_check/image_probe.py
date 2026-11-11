@@ -25,10 +25,10 @@ def inspect_image(path, pixels, size=None, alphas=(), clipboard=None):
         result["pixels"].append({"x": x, "y": y, "expected_alpha": expected, "actual_alpha": actual, "passed": actual == expected})
         result["passed"] &= actual == expected
     if clipboard is not None:
-        png, dib = clipboard.get("png", {}), clipboard.get("dibv5", {})
-        matches = (png.get("sha256") == result["sha256"] and png.get("width") == image.width and
-                   png.get("height") == image.height and dib.get("width") == image.width and
-                   dib.get("height") == -image.height)
+        files = clipboard.get("files", [])
+        matches = (len(files) == 1 and Path(files[0].get("path", "")).resolve() == path.resolve() and
+                   files[0].get("sha256") == result["sha256"] and clipboard.get("copy_effect") is True and
+                   clipboard.get("has_image_data") is False)
         result["clipboard_matches"] = matches
         result["passed"] &= matches
     return result

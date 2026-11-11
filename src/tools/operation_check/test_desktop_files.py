@@ -80,6 +80,14 @@ class SavedFilesTests(unittest.TestCase):
             self.assertFalse(inspect_image(path, [[1, 1, 0, 0, 0]])["passed"])
             self.assertFalse(inspect_image(path, [], alphas=[[0, 0, 255]])["passed"])
             self.assertFalse(inspect_image(path, [], clipboard={"png": {"sha256": "stale"}})["passed"])
+            clipboard = {"files": [{"path": str(path), "sha256": result["sha256"]}],
+                         "copy_effect": True, "has_image_data": False}
+            self.assertTrue(inspect_image(path, [], clipboard=clipboard)["passed"])
+            clipboard["copy_effect"] = False
+            self.assertFalse(inspect_image(path, [], clipboard=clipboard)["passed"])
+            clipboard["copy_effect"] = True
+            clipboard["files"][0]["path"] = str(path.with_name("other.png"))
+            self.assertFalse(inspect_image(path, [], clipboard=clipboard)["passed"])
 
 
 if __name__ == "__main__":

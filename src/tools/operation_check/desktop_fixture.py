@@ -5,47 +5,41 @@ from ctypes import wintypes
 import hashlib
 import json
 from pathlib import Path
-import struct
 import tkinter as tk
 
 
 def clipboard_image():
-    user32, kernel32 = ctypes.windll.user32, ctypes.windll.kernel32
+    user32, kernel32, shell32 = ctypes.windll.user32, ctypes.windll.kernel32, ctypes.windll.shell32
     user32.RegisterClipboardFormatW.argtypes = [wintypes.LPCWSTR]
     user32.RegisterClipboardFormatW.restype = wintypes.UINT
     user32.GetClipboardData.argtypes = [wintypes.UINT]
     user32.GetClipboardData.restype = wintypes.HANDLE
+    shell32.DragQueryFileW.argtypes = [wintypes.HANDLE, wintypes.UINT, wintypes.LPWSTR, wintypes.UINT]
+    shell32.DragQueryFileW.restype = wintypes.UINT
     kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
     kernel32.GlobalLock.restype = ctypes.c_void_p
-    kernel32.GlobalSize.argtypes = [wintypes.HGLOBAL]
-    kernel32.GlobalSize.restype = ctypes.c_size_t
     kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
     if not user32.OpenClipboard(None):
         raise RuntimeError("OpenClipboard failed")
-    result = {}
+    result = {"files": []}
     try:
-        # SVG/EPS saves also place the vector picture as UTF-8 SVG with a terminating null.
-        for label, format_id in (("svg", user32.RegisterClipboardFormatW("image/svg+xml")),
-                                 ("png", user32.RegisterClipboardFormatW("PNG")), ("dibv5", 17)):
-            handle = user32.GetClipboardData(format_id)
-            if not handle:
-                continue
-            pointer = kernel32.GlobalLock(handle)
+        handle = user32.GetClipboardData(15)  # CF_HDROP
+        if handle:
+            for index in range(shell32.DragQueryFileW(handle, 0xffffffff, None, 0)):
+                length = shell32.DragQueryFileW(handle, index, None, 0)
+                name = ctypes.create_unicode_buffer(length + 1)
+                shell32.DragQueryFileW(handle, index, name, length + 1)
+                path = Path(name.value)
+                result["files"].append({"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+        effect = user32.GetClipboardData(user32.RegisterClipboardFormatW("Preferred DropEffect"))
+        pointer = kernel32.GlobalLock(effect) if effect else None
+        if pointer:
             try:
-                payload = ctypes.string_at(pointer, kernel32.GlobalSize(handle))
+                result["copy_effect"] = ctypes.cast(pointer, ctypes.POINTER(wintypes.DWORD)).contents.value == 1
             finally:
-                kernel32.GlobalUnlock(handle)
-            if label == "svg":
-                # Without the null, the hash equals that of the saved .svg file.
-                payload = payload.split(b"\0", 1)[0]
-                result[label] = {"size": len(payload), "sha256": hashlib.sha256(payload).hexdigest(),
-                                 "xml": payload.startswith(b"<?xml")}
-                continue
-            result[label] = {"size": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
-            if label == "png" and payload.startswith(b"\x89PNG\r\n\x1a\n"):
-                result[label]["width"], result[label]["height"] = struct.unpack(">II", payload[16:24])
-            if label == "dibv5" and len(payload) >= 12:
-                result[label]["width"], result[label]["height"] = struct.unpack("<ii", payload[4:12])
+                kernel32.GlobalUnlock(effect)
+        result["has_image_data"] = any(user32.IsClipboardFormatAvailable(format_id) for format_id in
+            (2, 8, 17, user32.RegisterClipboardFormatW("PNG"), user32.RegisterClipboardFormatW("image/svg+xml")))
     finally:
         user32.CloseClipboard()
     return result
@@ -75,12 +69,12 @@ if __name__ == "__main__":
         try:
             image = clipboard_image()
             (args.directory / "fixture-image.json").write_text(json.dumps(image), encoding="utf-8")
-            status.set("/".join(label.upper() for label in image) + " recorded" if image else "No image on clipboard")
+            status.set("Image file recorded" if image["files"] else "No file on clipboard")
         except Exception as error:
             status.set(str(error))
     tk.Button(window, text="Copy text", command=copy_text).pack(pady=3)
     tk.Button(window, text="Record text", command=record_text).pack(pady=3)
-    tk.Button(window, text="Read clipboard image", command=record_image).pack(pady=3)
+    tk.Button(window, text="Read clipboard file", command=record_image).pack(pady=3)
     presets = tk.Frame(window)
     presets.pack(pady=8)
     def copy_preset(value):

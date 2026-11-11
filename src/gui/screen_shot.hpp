@@ -6,153 +6,79 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#include <ShlObj.h>
 #endif
 
-// With svg, the same picture is also placed in the "image/svg+xml" format, so applications that
-// accept SVG from the clipboard can paste it as a vector image (Windows only).
-bool set_image_to_clipboard_preserve_alpha(const Image& image, const std::string& svg = std::string()) {
+// The clipboard refers to the saved file, so file managers can paste it with its original format.
+inline bool set_file_to_clipboard(const String& path) {
 #ifdef _WIN32
-    const int width = image.width();
-    const int height = image.height();
-    if (width <= 0 || height <= 0) {
+    if (!FileSystem::IsFile(path)) {
         return false;
     }
-
-    const size_t pixel_bytes = static_cast<size_t>(width) * static_cast<size_t>(height) * 4;
-    const size_t total_bytes = sizeof(BITMAPV5HEADER) + pixel_bytes;
-
-    HGLOBAL hmem = GlobalAlloc(GMEM_MOVEABLE, total_bytes);
-    if (!hmem) {
+    const std::wstring full_path = FileSystem::FullPath(path).toWstr();
+    const size_t path_bytes = (full_path.size() + 2) * sizeof(wchar_t);
+    HGLOBAL files = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(DROPFILES) + path_bytes);
+    if (!files) {
         return false;
     }
-
-    auto* mem = static_cast<unsigned char*>(GlobalLock(hmem));
-    if (!mem) {
-        GlobalFree(hmem);
+    auto* drop = static_cast<DROPFILES*>(GlobalLock(files));
+    if (!drop) {
+        GlobalFree(files);
         return false;
     }
+    drop->pFiles = sizeof(DROPFILES);
+    drop->fWide = TRUE;
+    std::memcpy(reinterpret_cast<unsigned char*>(drop) + sizeof(DROPFILES), full_path.c_str(),
+        (full_path.size() + 1) * sizeof(wchar_t));
+    GlobalUnlock(files);
 
-    BITMAPV5HEADER header{};
-    header.bV5Size = sizeof(BITMAPV5HEADER);
-    header.bV5Width = width;
-    header.bV5Height = -height;
-    header.bV5Planes = 1;
-    header.bV5BitCount = 32;
-    header.bV5Compression = BI_BITFIELDS;
-    header.bV5SizeImage = static_cast<DWORD>(pixel_bytes);
-    header.bV5RedMask = 0x00FF0000;
-    header.bV5GreenMask = 0x0000FF00;
-    header.bV5BlueMask = 0x000000FF;
-    header.bV5AlphaMask = 0xFF000000;
-    header.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
-    header.bV5Intent = LCS_GM_IMAGES;
-    std::memcpy(mem, &header, sizeof(BITMAPV5HEADER));
-
-    auto* dst = mem + sizeof(BITMAPV5HEADER);
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            const auto& src = image[y][x];
-            const size_t i = (static_cast<size_t>(y) * static_cast<size_t>(width) + static_cast<size_t>(x)) * 4;
-            const unsigned int a = src.a;
-            dst[i + 0] = static_cast<unsigned char>((static_cast<unsigned int>(src.b) * a + 127) / 255);
-            dst[i + 1] = static_cast<unsigned char>((static_cast<unsigned int>(src.g) * a + 127) / 255);
-            dst[i + 2] = static_cast<unsigned char>((static_cast<unsigned int>(src.r) * a + 127) / 255);
-            dst[i + 3] = static_cast<unsigned char>(a);
-        }
-    }
-
-    GlobalUnlock(hmem);
-
-    HGLOBAL hpng = nullptr;
-    UINT png_format = 0;
-    Blob png_blob = image.encodePNG();
-    if (!png_blob.empty()) {
-        png_format = RegisterClipboardFormatW(L"PNG");
-        if (png_format != 0) {
-            hpng = GlobalAlloc(GMEM_MOVEABLE, png_blob.size());
-            if (hpng) {
-                auto* png_mem = static_cast<unsigned char*>(GlobalLock(hpng));
-                if (png_mem) {
-                    std::memcpy(png_mem, png_blob.data(), png_blob.size());
-                    GlobalUnlock(hpng);
-                } else {
-                    GlobalFree(hpng);
-                    hpng = nullptr;
-                }
-            }
-        }
-    }
-
-    // UTF-8 with a terminating null, as written by Chromium.
-    HGLOBAL hsvg = nullptr;
-    UINT svg_format = 0;
-    if (!svg.empty()) {
-        svg_format = RegisterClipboardFormatW(L"image/svg+xml");
-        if (svg_format != 0) {
-            hsvg = GlobalAlloc(GMEM_MOVEABLE, svg.size() + 1);
-            if (hsvg) {
-                auto* svg_mem = static_cast<char*>(GlobalLock(hsvg));
-                if (svg_mem) {
-                    std::memcpy(svg_mem, svg.c_str(), svg.size() + 1);
-                    GlobalUnlock(hsvg);
-                } else {
-                    GlobalFree(hsvg);
-                    hsvg = nullptr;
-                }
-            }
-        }
-    }
-
-    if (!OpenClipboard(nullptr)) {
-        GlobalFree(hmem);
-        if (hpng) {
-            GlobalFree(hpng);
-        }
-        if (hsvg) {
-            GlobalFree(hsvg);
-        }
+    const UINT effect_format = RegisterClipboardFormatW(L"Preferred DropEffect");
+    HGLOBAL effect = GlobalAlloc(GMEM_MOVEABLE, sizeof(DWORD));
+    auto* effect_value = effect ? static_cast<DWORD*>(GlobalLock(effect)) : nullptr;
+    if (!effect_format || !effect_value) {
+        if (effect_value) GlobalUnlock(effect);
+        GlobalFree(files);
+        if (effect) GlobalFree(effect);
         return false;
     }
+    *effect_value = DROPEFFECT_COPY;
+    GlobalUnlock(effect);
 
-    EmptyClipboard();
-    bool has_data = false;
-
-    // Formats go from the most descriptive one: the vector image first.
-    if (hsvg && SetClipboardData(svg_format, hsvg)) {
-        hsvg = nullptr;
-    }
-
-    if (hpng) {
-        const HANDLE png_result = SetClipboardData(png_format, hpng);
-        if (png_result) {
-            has_data = true;
-            hpng = nullptr;
+    // A real window must own the clipboard after EmptyClipboard(). Retry brief clipboard contention.
+    const HWND owner = static_cast<HWND>(Platform::Windows::Window::GetHWND());
+    bool opened = false;
+    for (int attempt = 0; owner && attempt < 5; ++attempt) {
+        if (OpenClipboard(owner)) {
+            opened = true;
+            break;
         }
+        Sleep(10);
     }
-
-    const HANDLE dib_result = SetClipboardData(CF_DIBV5, hmem);
-    if (dib_result) {
-        has_data = true;
-        hmem = nullptr;
+    bool copied = false;
+    if (opened) {
+        if (EmptyClipboard() && SetClipboardData(CF_HDROP, files)) {
+            files = nullptr; // Windows owns this allocation now.
+            copied = true;
+            if (SetClipboardData(effect_format, effect)) effect = nullptr;
+        }
+        CloseClipboard();
     }
-
-    CloseClipboard();
-
-    if (hmem) {
-        GlobalFree(hmem);
-    }
-    if (hpng) {
-        GlobalFree(hpng);
-    }
-    if (hsvg) {
-        GlobalFree(hsvg);
-    }
-    return has_data;
+    if (files) GlobalFree(files);
+    if (effect) GlobalFree(effect);
+    return copied;
 #else
-    (void)svg; // Siv3D's clipboard holds text or a bitmap only.
-    Clipboard::SetImage(image);
-    return true;
+    (void)path; // Siv3D has no file-copy API on the other platforms.
+    return false;
 #endif
+}
+
+inline void copy_saved_image_file(const String& path) {
+    std::cerr << "board image saved to " << path.narrow();
+    if (set_file_to_clipboard(path)) {
+        std::cerr << " and copied to clipboard as a file" << std::endl;
+    } else {
+        std::cerr << "; failed to copy the file to clipboard" << std::endl;
+    }
 }
 
 void take_screen_shot(double window_scale, std::string screenshot_dir, std::string transcript) {
@@ -163,13 +89,13 @@ void take_screen_shot(double window_scale, std::string screenshot_dir, std::stri
     const int clip_size_y = BOARD_CELL_SIZE * HW + BOARD_ROUND_FRAME_WIDTH * 2 + BOARD_COORD_SIZE + 7;
     const Rect clip_rect(clip_sx * window_scale, clip_sy * window_scale, clip_size_x * window_scale, clip_size_y * window_scale);
     Image image_clip = image.clipped(clip_rect);
-    if (!set_image_to_clipboard_preserve_alpha(image_clip)) {
-        Clipboard::SetImage(image_clip);
-    }
     String img_date = Unicode::Widen(calc_date());
     String save_path = Unicode::Widen(screenshot_dir) + img_date + U"_" + Unicode::Widen(transcript) + U".png";
-    image_clip.save(save_path);
-    std::cerr << "screen shot saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;
+    if (image_clip.save(save_path)) {
+        copy_saved_image_file(save_path);
+    } else {
+        std::cerr << "failed to save board image to " << save_path.narrow() << std::endl;
+    }
 }
 
 // The saved area of the board image editor in the captured frame. Without coordinates, pixels
@@ -257,13 +183,13 @@ Image capture_board_image(double window_scale, bool include_coordinate) {
 
 void take_board_image_screen_shot(double window_scale, std::string screenshot_dir, std::string transcript, bool include_coordinate) {
     Image image_clip = capture_board_image(window_scale, include_coordinate);
-    if (!set_image_to_clipboard_preserve_alpha(image_clip)) {
-        Clipboard::SetImage(image_clip);
-    }
     String img_date = Unicode::Widen(calc_date());
     String save_path = Unicode::Widen(screenshot_dir) + img_date + U"_" + Unicode::Widen(transcript) + U".png";
-    image_clip.save(save_path);
-    std::cerr << "screen shot saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;
+    if (image_clip.save(save_path)) {
+        copy_saved_image_file(save_path);
+    } else {
+        std::cerr << "failed to save board image to " << save_path.narrow() << std::endl;
+    }
 }
 
 // The vector export receives the engine's disc values unchanged.
@@ -353,19 +279,13 @@ inline String save_board_image_vector(const std::string& screenshot_dir, const s
     return save_path;
 }
 
-// SVG / EPS counterpart of take_board_image_screen_shot(): saves the vector file and copies the
-// picture to the clipboard as the captured image (like PNG) and as SVG for vector-aware applications.
-// EPS has no common clipboard format, so EPS saves place SVG as their vector copy.
-inline void take_board_image_vector(double window_scale, const std::string& screenshot_dir, const std::string& transcript,
+// Save the selected vector format before placing its file on the clipboard.
+inline void take_board_image_vector(const std::string& screenshot_dir, const std::string& transcript,
     int format, const History_elem& history_elem, const Board_image_edit& edit, const Board_image_vector_options& options,
     const Fonts& fonts, const Colors& colors) {
     const Vector_image image = create_board_image_vector(history_elem, edit, options, fonts, colors, transcript);
-    const Image image_clip = capture_board_image(window_scale, options.include_coordinate);
-    if (!set_image_to_clipboard_preserve_alpha(image_clip, vector_image_to_svg(image))) {
-        Clipboard::SetImage(image_clip);
-    }
     const String save_path = save_board_image_vector(screenshot_dir, transcript, format, image);
     if (!save_path.isEmpty()) {
-        std::cerr << "board image saved to " << save_path.narrow() << " and copied to clipboard" << std::endl;
+        copy_saved_image_file(save_path);
     }
 }

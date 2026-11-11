@@ -201,6 +201,8 @@ CASES = [
     Case("game-files", "Save game JSON/CSV and reload history/metadata", lambda ctx: transcript(ctx, "game-files")),
     Case("annotations", "Annotation lifetime, arrows, clearing, grid snapping", lambda ctx: simple(ctx, "annotations")),
     Case("board-image-vector", "Save edited board images as SVG/EPS/PDF with the GUI fonts", board_image_vector),
+    *([Case("board-image-clipboard", "Copy PNG/SVG/EPS/PDF files, Unicode paths, failed save preserves clipboard",
+            lambda ctx: simple(ctx, "board-image-clipboard"))] if os.name == "nt" else []),
     Case("forced-openings", "Forced opening returns legal continuations", lambda ctx: simple(ctx, "forced-openings")),
     Case("search", "AI search through GUI-initialized engine", lambda ctx: simple(ctx, "search")),
 ] + [Case("scenes-" + language.replace("_", "-"), "Render nine scenes in " + language,

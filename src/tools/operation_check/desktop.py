@@ -22,7 +22,7 @@ CASES = {
     "ime": ("IMEで日本語の変換・確定・画面切替後の再入力", ["composition", "committed", "reentered"]),
     "image-editor": ("画像編集の選択・矢印・消去・保存ボタン", ["selected", "saved-image", "cleared"]),
     "clipboard-text": ("GUIのコピー操作と貼り付け取込", ["copied", "pasted"]),
-    "clipboard-image": ("画像の保存とクリップボードの画像内容", ["png-saved", "clipboard-matches"]),
+    "clipboard-image": ("画像の保存とクリップボードの画像ファイル", ["png-saved", "clipboard-matches"]),
     "drop-file": ("OSからの棋譜ファイルのドラッグ＆ドロップ", ["dropped", "imported"]),
     "drag-opening": ("定石の並べ替えとフォルダ間移動", ["reordered", "moved"]),
     "drag-game": ("棋譜の並べ替えとフォルダ間移動", ["reordered", "moved"]),

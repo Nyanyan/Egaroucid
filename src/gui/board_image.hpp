@@ -21,7 +21,7 @@ constexpr int BOARD_IMAGE_NOT_CLICKED = -2;
 // Rows of the image options (coordinates, color, outer frame, file format): label top y and row pitch.
 constexpr int BOARD_IMAGE_OPTION_SY = 296;
 constexpr int BOARD_IMAGE_OPTION_DY = 32;
-// Mark sizes and shapes are in board_image_vector.hpp, shared with the SVG / EPS export.
+// Mark sizes and shapes are in board_image_vector.hpp, shared with the vector export.
 
 class Board_image : public App::Scene {
 private:
@@ -219,8 +219,8 @@ private:
         }
     }
 
-    // Called in the frame after Save, when the captured frame is ready. SVG / EPS draw the same
-    // picture again as vector shapes; the clipboard also gets the captured image, as with PNG.
+    // Called in the frame after Save, when the captured frame is ready for PNG.
+    // Vector formats draw the same picture as paths; each format copies its saved file.
     void save_image() {
         const std::string transcript = get_transcript(getData().graph_resources, getData().history_elem);
         if (format_radio.checked == BOARD_IMAGE_FORMAT_PNG) {
@@ -232,8 +232,7 @@ private:
         options.include_coordinate = coordinate_radio.checked == BOARD_IMAGE_COORDINATE_INCLUDE;
         options.monochrome = color_radio.checked == BOARD_IMAGE_COLOR_MONOCHROME;
         options.dark_outer_frame = outer_frame_color_radio.checked == BOARD_IMAGE_OUTER_FRAME_DARK;
-        // The edit is unchanged since the captured frame was drawn, so both copies show the same marks.
-        take_board_image_vector(getData().window_state.window_scale, getData().user_settings.screenshot_saving_dir,
+        take_board_image_vector(getData().user_settings.screenshot_saving_dir,
             transcript, format_radio.checked, getData().history_elem, edit, options, getData().fonts, getData().colors);
     }
 
