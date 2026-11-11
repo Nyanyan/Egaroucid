@@ -232,8 +232,6 @@ Below is a list of Egaroucid-related links provided by third parties. The author
 
 These are works developed by third parties using Egaroucid or Egaroucid's training data, etc.
 
-### International
-
 - [Reversi Board](https://reversi.shiroshiba-lab.jp/) (Japanese): An Web app with reversi AI. [Egaroucid for Web](./web/) is used as "high performance AI" in this app.
 - [iSReversi](https://github.com/bkmgit/isreversi): A Reversi app development project by Benson Muite that uses Egaroucid. The app is being developed using LambdaNative, a cross-platform application development framework.
 - [Smatch Reversi / Chess / Shogi / Go](https://smatch-jp.com/games/) (Japanese): A Web app where you can play against AI in various games. [Egaroucid for Web](./web/) is used as the "Strongest" AI opponent in Reversi.
