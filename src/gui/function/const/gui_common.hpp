@@ -553,6 +553,7 @@ constexpr int BOARD_IMAGE_COORDINATE_EXCLUDE = 1;
 constexpr int BOARD_IMAGE_FORMAT_PNG = 0;
 constexpr int BOARD_IMAGE_FORMAT_SVG = 1;
 constexpr int BOARD_IMAGE_FORMAT_EPS = 2;
+constexpr int BOARD_IMAGE_FORMAT_PDF = 3;
 
 struct Settings {
     int n_threads;

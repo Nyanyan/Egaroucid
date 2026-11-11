@@ -353,13 +353,15 @@ public:
         outer_frame_color_radio.push(elem);
         elem.init(676, row_y + BOARD_IMAGE_OPTION_DY * 2, getData().fonts.font, 14, language.get("board_image", "dark_gray"), false);
         outer_frame_color_radio.push(elem);
-        // Same order as BOARD_IMAGE_FORMAT_PNG / SVG / EPS.
+        // Same order as BOARD_IMAGE_FORMAT_PNG / SVG / EPS / PDF.
         format_radio.init();
         elem.init(580, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "png"), true);
         format_radio.push(elem);
-        elem.init(642, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "svg"), false);
+        elem.init(630, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "svg"), false);
         format_radio.push(elem);
-        elem.init(704, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "eps"), false);
+        elem.init(680, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "eps"), false);
+        format_radio.push(elem);
+        elem.init(730, row_y + BOARD_IMAGE_OPTION_DY * 3, getData().fonts.font, 14, language.get("board_image", "pdf"), false);
         format_radio.push(elem);
 
         selected_mark = getData().settings.board_image_mark;

@@ -159,12 +159,12 @@ class Gui_probe {
             require(settings.board_image_mark == (case_name == U"settings-invalid" ? BOARD_IMAGE_MARK_MAX : 0), "Mark default/clamp differs");
             require(settings.board_image_coordinate == 0 && settings.board_image_color == 0, "Coordinate/color default differs");
             require(settings.board_image_outer_frame_color == (case_name == U"settings-invalid" ? 1 : 0), "Frame default/clamp differs");
-            require(settings.board_image_format == (case_name == U"settings-invalid" ? BOARD_IMAGE_FORMAT_EPS : BOARD_IMAGE_FORMAT_PNG),
+            require(settings.board_image_format == (case_name == U"settings-invalid" ? BOARD_IMAGE_FORMAT_PDF : BOARD_IMAGE_FORMAT_PNG),
                 "Image format default/clamp differs");
         } else if (case_name == U"settings-restored") {
             require(data.settings.board_image_mark == BOARD_IMAGE_FLIP && data.settings.board_image_coordinate == 1 &&
                 data.settings.board_image_color == 1 && data.settings.board_image_outer_frame_color == 1 &&
-                data.settings.board_image_format == BOARD_IMAGE_FORMAT_SVG,
+                data.settings.board_image_format == BOARD_IMAGE_FORMAT_PDF,
                 "Restart did not restore editor settings");
             require(!data.menu_elements.show_legal && data.menu_elements.timer_time_limit_min == 7,
                 "Restart did not restore display settings");
@@ -173,7 +173,7 @@ class Gui_probe {
             data.settings.board_image_coordinate = 1;
             data.settings.board_image_color = 1;
             data.settings.board_image_outer_frame_color = 1;
-            data.settings.board_image_format = BOARD_IMAGE_FORMAT_SVG;
+            data.settings.board_image_format = BOARD_IMAGE_FORMAT_PDF;
             data.menu_elements.show_legal = false;
             data.menu_elements.timer_time_limit_min = 7;
             save_app_data(data.menu_elements, &data.settings, data.directories,
@@ -182,7 +182,7 @@ class Gui_probe {
             init_settings(&data.directories, &data.resources, &loaded);
             require(loaded.board_image_mark == BOARD_IMAGE_FLIP && loaded.board_image_coordinate == 1 &&
                 loaded.board_image_color == 1 && loaded.board_image_outer_frame_color == 1 &&
-                loaded.board_image_format == BOARD_IMAGE_FORMAT_SVG, "Board image settings roundtrip differs");
+                loaded.board_image_format == BOARD_IMAGE_FORMAT_PDF, "Board image settings roundtrip differs");
             require(!loaded.show_legal && loaded.timer_time_limit_min == 7, "Display settings roundtrip differs");
         } else if (case_name == U"transcript") {
             auto history = sample_history();
@@ -257,7 +257,7 @@ class Gui_probe {
             require(board_image_cell_at(1, 1, 50) == board_image_cell_at(49, 49, 50) &&
                 board_image_cell_at(50, 0, 50) == 1 && board_image_cell_at(400, 0, 50) == -1, "Grid snapping differs");
         } else if (case_name == U"board-image-vector") {
-            // SVG / EPS export with the GUI's fonts and the product save function.
+            // Vector export with the GUI's fonts and the product save function.
             const auto history = sample_history();
             const History_elem& position = history.back(); // f5d6c3d3
             Board_image_edit edit;
@@ -289,7 +289,7 @@ class Gui_probe {
                     "Text box differs from Siv3D");
             }
             int saved = 0;
-            for (const int format : {BOARD_IMAGE_FORMAT_SVG, BOARD_IMAGE_FORMAT_EPS}) {
+            for (const int format : {BOARD_IMAGE_FORMAT_SVG, BOARD_IMAGE_FORMAT_EPS, BOARD_IMAGE_FORMAT_PDF}) {
                 for (const bool include_coordinate : {true, false}) {
                     for (const bool monochrome : {false, true}) {
                         Board_image_vector_options options;
@@ -309,10 +309,14 @@ class Gui_probe {
                             require(content.starts_with(U"<?xml") && content.includes(U"viewBox=\"0 0 " + size + U" " + size + U"\""),
                                 "SVG header differs");
                             require(content.includes(U"<g id=\"coordinates\">") == include_coordinate, "SVG coordinates differ");
-                        } else {
+                        } else if (format == BOARD_IMAGE_FORMAT_EPS) {
                             require(content.starts_with(U"%!PS-Adobe-3.0 EPSF-3.0\n") &&
                                 content.includes(U"%%BoundingBox: 0 0 " + size + U" " + size + U"\n"), "EPS header differs");
                             require(content.ends_with(U"%%EOF\n"), "EPS trailer missing");
+                        } else {
+                            require(content.starts_with(U"%PDF-1.4\n") &&
+                                content.includes(U"/MediaBox [0 0 " + size + U" " + size + U"]"), "PDF header differs");
+                            require(content.ends_with(U"%%EOF\n"), "PDF trailer missing");
                         }
                         ++saved;
                     }

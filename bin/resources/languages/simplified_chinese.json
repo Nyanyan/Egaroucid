@@ -422,7 +422,8 @@
         "file_format": "文件格式",
         "png": "PNG",
         "svg": "SVG",
-        "eps": "EPS"
+        "eps": "EPS",
+        "pdf": "PDF"
     },
     "opening_setting": {
         "opening_setting": "强制开局设置",

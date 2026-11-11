@@ -330,13 +330,19 @@ inline Vector_image create_board_image_vector(const History_elem& history_elem, 
     return image;
 }
 
-// Writes an SVG or EPS file next to the PNG images. Returns the path, or an empty string on failure.
+// Writes a vector file next to the PNG images. Returns the path, or an empty string on failure.
 inline String save_board_image_vector(const std::string& screenshot_dir, const std::string& transcript, int format,
     const Vector_image& image) {
-    const bool eps = format == BOARD_IMAGE_FORMAT_EPS;
-    const std::string data = eps ? vector_image_to_eps(image) : vector_image_to_svg(image);
+    std::string data;
+    String extension;
+    switch (format) {
+    case BOARD_IMAGE_FORMAT_SVG: data = vector_image_to_svg(image); extension = U".svg"; break;
+    case BOARD_IMAGE_FORMAT_EPS: data = vector_image_to_eps(image); extension = U".eps"; break;
+    case BOARD_IMAGE_FORMAT_PDF: data = vector_image_to_pdf(image); extension = U".pdf"; break;
+    default: return U"";
+    }
     const String img_date = Unicode::Widen(calc_date());
-    const String save_path = Unicode::Widen(screenshot_dir) + img_date + U"_" + Unicode::Widen(transcript) + (eps ? U".eps" : U".svg");
+    const String save_path = Unicode::Widen(screenshot_dir) + img_date + U"_" + Unicode::Widen(transcript) + extension;
     const int64 size = static_cast<int64>(data.size());
     BinaryWriter writer{save_path};
     if (not writer || writer.write(data.data(), size) != size) {

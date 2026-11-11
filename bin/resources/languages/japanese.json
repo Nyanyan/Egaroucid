@@ -422,7 +422,8 @@
         "file_format": "保存形式",
         "png": "PNG",
         "svg": "SVG",
-        "eps": "EPS"
+        "eps": "EPS",
+        "pdf": "PDF"
     },
     "opening_setting": {
         "opening_setting": "強制する進行の設定",

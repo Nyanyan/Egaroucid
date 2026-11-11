@@ -420,7 +420,8 @@
         "file_format": "檔案格式",
         "png": "PNG",
         "svg": "SVG",
-        "eps": "EPS"
+        "eps": "EPS",
+        "pdf": "PDF"
     },
     "opening_setting": {
         "opening_setting": "固定開局設定",

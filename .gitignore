@@ -46,6 +46,7 @@ bin/document/games/*/*
 bin/document/screenshots/*.png
 bin/document/screenshots/*.svg
 bin/document/screenshots/*.eps
+bin/document/screenshots/*.pdf
 bin/document/*.egbk3
 bin/document/*.egbk3.bak
 bin/data_44

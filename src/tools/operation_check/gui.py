@@ -85,7 +85,7 @@ def settings(ctx):
     saved = json.loads(path.read_text(encoding="utf-8-sig"))
     keys = ("board_image_mark", "board_image_coordinate", "board_image_color", "board_image_outer_frame_color",
             "board_image_format")
-    require([saved.get(key) for key in keys] == [11, 1, 1, 1, 1], "Shutdown did not save editor settings")
+    require([saved.get(key) for key in keys] == [11, 1, 1, 1, 3], "Shutdown did not save editor settings")
     require(saved.get("timer_time_limit_min") == 7 and saved.get("show_legal") is False, "Shutdown display settings differ")
     # Restart from the actual saved files, without rebuilding the fixture.
     native(ctx, "settings-restored")
@@ -120,11 +120,12 @@ def scenes(ctx, language):
 def board_image_vector(ctx):
     fixture(ctx)
     report = native(ctx, "board-image-vector")
-    require(report.get("vector_files") == 8, "GUI did not report eight saved vector images")
+    require(report.get("vector_files") == 12, "GUI did not report twelve saved vector images")
     folder = ctx.directory / "document/screenshots"
     svgs = sorted(folder.glob("*_vector_*.svg"))
     epss = sorted(folder.glob("*_vector_*.eps"))
-    require(len(svgs) == 4 and len(epss) == 4, "Missing SVG/EPS files")
+    pdfs = sorted(folder.glob("*_vector_*.pdf"))
+    require(len(svgs) == 4 and len(epss) == 4 and len(pdfs) == 4, "Missing SVG/EPS/PDF files")
     ns = "{http://www.w3.org/2000/svg}"
     for path in svgs:
         root = ET.parse(path).getroot()
@@ -154,6 +155,21 @@ def board_image_vector(ctx):
         body = "\n".join(line for line in text.splitlines() if not line.startswith("%"))
         require(re.search(r"\b(?:color)?image(?:mask)?\b", body) is None, "EPS must not contain a bitmap: " + path.name)
         require(max(len(line) for line in text.splitlines()) <= 255, "EPS line too long: " + path.name)
+    for path in pdfs:
+        content = path.read_bytes()
+        size = b"447" if "_coord_" in path.name else b"420"
+        require(content.startswith(b"%PDF-1.4\n") and content.endswith(b"\n%%EOF\n"), "Invalid PDF header/trailer")
+        require(b"/MediaBox [0 0 " + size + b" " + size + b"]" in content, "PDF page size differs")
+        require(b"/Subtype /Image" not in content and b"/Font" not in content, "PDF must contain paths only")
+        xref = int(content.rsplit(b"startxref\n", 1)[1].splitlines()[0])
+        require(content[xref:].startswith(b"xref\n0 5\n"), "PDF cross-reference offset differs")
+        entries = content[xref:].splitlines()[3:7]
+        for number, entry in enumerate(entries, 1):
+            offset = int(entry[:10])
+            require(content[offset:].startswith(f"{number} 0 obj\n".encode()), "PDF object offset differs")
+        length = int(re.search(rb"/Length (\d+)", content)[1])
+        start = content.index(b"stream\n") + 7
+        require(content[start + length:].startswith(b"endstream"), "PDF stream length differs")
 
 
 def resources(ctx):
@@ -166,7 +182,7 @@ def resources(ctx):
         path = ctx.args.resources / "languages" / (language + ".json")
         content = json.loads(path.read_text(encoding="utf-8-sig"))
         for key in ("mark", "value", "save_image", "clear", "arrow", "flip", "coordinate",
-                    "file_format", "png", "svg", "eps"):
+                    "file_format", "png", "svg", "eps", "pdf"):
             require(isinstance(content.get("board_image", {}).get(key), str) and content["board_image"][key],
                     f"Missing {language} board_image.{key}")
         if ctx.args.templates:
@@ -184,7 +200,7 @@ CASES = [
     Case("profiles", "AI/display profiles and multilingual names", lambda ctx: simple(ctx, "profiles")),
     Case("game-files", "Save game JSON/CSV and reload history/metadata", lambda ctx: transcript(ctx, "game-files")),
     Case("annotations", "Annotation lifetime, arrows, clearing, grid snapping", lambda ctx: simple(ctx, "annotations")),
-    Case("board-image-vector", "Save edited board images as SVG/EPS with the GUI fonts", board_image_vector),
+    Case("board-image-vector", "Save edited board images as SVG/EPS/PDF with the GUI fonts", board_image_vector),
     Case("forced-openings", "Forced opening returns legal continuations", lambda ctx: simple(ctx, "forced-openings")),
     Case("search", "AI search through GUI-initialized engine", lambda ctx: simple(ctx, "search")),
 ] + [Case("scenes-" + language.replace("_", "-"), "Render nine scenes in " + language,

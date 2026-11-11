@@ -2,7 +2,7 @@
     Egaroucid Project
 
     @file vector_image.hpp
-        Small vector image model with SVG and EPS writers
+        Small vector image model with SVG, EPS, and PDF writers
         Standard C++ only (no Siv3D or other libraries), so it can be tested alone.
     @date 2026
     @author Takuto Yamana
@@ -453,8 +453,8 @@ inline std::string vector_image_dsc_text(const std::string& text) {
     return result;
 }
 
-// The EPS user space is flipped to y-down, so arcs are written as Bezier curves in the same
-// coordinates as the SVG. Each piece covers at most 90 degrees (radius error < 0.03%).
+// EPS and PDF share these path operators. Their user space is flipped to y-down, so arcs use
+// Bezier curves in the SVG coordinates. Each piece covers at most 90 degrees (radius error < 0.03%).
 inline std::string vector_image_eps_path(const Vector_path& path, double origin_x, double origin_y) {
     const auto point = [origin_x, origin_y](const Vector_point& p) {
         return vector_image_number(p.x - origin_x) + " " + vector_image_number(p.y - origin_y);
@@ -567,4 +567,54 @@ inline std::string vector_image_to_eps(const Vector_image& image) {
     eps += "%%Trailer\n";
     eps += "%%EOF\n";
     return eps;
+}
+
+// One page, sized to the board, with paths only. Text has already been converted to outlines.
+inline std::string vector_image_to_pdf(const Vector_image& image) {
+    const std::string width = vector_image_number(image.width());
+    const std::string height = vector_image_number(image.height());
+    std::string content = "q\n1 0 0 -1 0 " + height + " cm\n";
+    for (const auto& shape : image.shapes()) {
+        if (shape.fill) {
+            content += vector_image_eps_color(shape.fill->color) + " rg\n";
+        }
+        if (shape.stroke) {
+            const Vector_stroke& s = *shape.stroke;
+            const int cap = s.cap == Vector_line_cap::butt ? 0 : s.cap == Vector_line_cap::round ? 1 : 2;
+            const int join = s.join == Vector_line_join::miter ? 0 : s.join == Vector_line_join::round ? 1 : 2;
+            content += vector_image_eps_color(s.color) + " RG\n" + vector_image_number(s.width) + " w\n" +
+                std::to_string(cap) + " J\n" + std::to_string(join) + " j\n" + vector_image_number(s.miter_limit) + " M\n";
+        }
+        content += vector_image_eps_path(shape.path, image.origin_x(), image.origin_y());
+        if (shape.fill) {
+            content += shape.stroke ? "B" : "f";
+            content += shape.fill->rule == Vector_fill_rule::evenodd ? "*\n" : "\n";
+        } else {
+            content += "S\n";
+        }
+    }
+    content += "Q\n";
+
+    const std::vector<std::string> objects = {
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + width + " " + height +
+            "] /Resources << >> /Contents 4 0 R >>",
+        "<< /Length " + std::to_string(content.size()) + " >>\nstream\n" + content + "endstream"
+    };
+    std::string pdf = "%PDF-1.4\n%\xe2\xe3\xcf\xd3\n";
+    std::vector<size_t> offsets;
+    for (size_t i = 0; i < objects.size(); ++i) {
+        offsets.push_back(pdf.size());
+        pdf += std::to_string(i + 1) + " 0 obj\n" + objects[i] + "\nendobj\n";
+    }
+    const size_t xref = pdf.size();
+    pdf += "xref\n0 " + std::to_string(objects.size() + 1) + "\n0000000000 65535 f \n";
+    for (const size_t offset : offsets) {
+        const std::string number = std::to_string(offset);
+        pdf += std::string(10 - number.size(), '0') + number + " 00000 n \n";
+    }
+    pdf += "trailer\n<< /Size " + std::to_string(objects.size() + 1) + " /Root 1 0 R >>\nstartxref\n" +
+        std::to_string(xref) + "\n%%EOF\n";
+    return pdf;
 }

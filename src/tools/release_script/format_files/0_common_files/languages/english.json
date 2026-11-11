@@ -420,7 +420,8 @@
         "file_format": "File Format",
         "png": "PNG",
         "svg": "SVG",
-        "eps": "EPS"
+        "eps": "EPS",
+        "pdf": "PDF"
     },
     "opening_setting": {
         "opening_setting": "Forced Opening Settings",

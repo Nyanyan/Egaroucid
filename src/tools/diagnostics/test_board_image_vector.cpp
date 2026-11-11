@@ -1,6 +1,6 @@
 // Tests for the SVG / EPS export of the board image editor (no Siv3D needed).
 // Usage: test_board_image_vector [OUTPUT_DIRECTORY]
-// With an output directory, sample SVG and EPS files are also written for viewers.
+// With an output directory, sample SVG, EPS, and PDF files are also written for viewers.
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -103,6 +103,23 @@ void test_numbers() {
     assert(vector_image_number(NAN) == "0");
 }
 
+void check_pdf_structure(const std::string& pdf) {
+    assert(pdf.rfind("%PDF-1.4\n", 0) == 0 && ends_with(pdf, "\n%%EOF\n"));
+    const size_t xref = std::stoull(pdf.substr(pdf.rfind("startxref\n") + 10));
+    assert(pdf.substr(xref, 9) == "xref\n0 5\n");
+    const size_t entries = xref + 9;
+    assert(pdf.substr(entries, 20) == "0000000000 65535 f \n");
+    for (size_t object = 1; object <= 4; ++object) {
+        const size_t offset = std::stoull(pdf.substr(entries + 20 * object, 10));
+        const std::string header = std::to_string(object) + " 0 obj\n";
+        assert(pdf.substr(offset, header.size()) == header);
+    }
+    const size_t length = std::stoull(pdf.substr(pdf.find("/Length ") + 8));
+    const size_t start = pdf.find("stream\n") + 7;
+    assert(pdf.substr(start + length, 9) == "endstream");
+    assert(pdf.find("/Subtype /Image") == std::string::npos);
+}
+
 void test_writers() {
     Vector_image image(20, 10, 5, 7);
     image.set_title("a<b & \"c\"");
@@ -155,6 +172,21 @@ void test_writers() {
     for (const char c : eps) {
         assert(c == '\n' || (0x20 <= static_cast<unsigned char>(c) && static_cast<unsigned char>(c) <= 0x7e));
     }
+
+    const std::string pdf = vector_image_to_pdf(image);
+    check_pdf_structure(pdf);
+    assert(pdf.find("/MediaBox [0 0 20 10]") != std::string::npos);
+    assert(pdf.find("1 0 0 -1 0 10 cm\n") != std::string::npos);
+    assert(pdf.find("0.1412 0.6 0.4471 rg\n0 0 m\n10 0 l\n10 3 l\n0 3 l\nh\nf\n") != std::string::npos);
+    assert(pdf.find("0.2 0.2 0.2 RG\n1.5 w\n2 J\n1 j\n4 M\n") != std::string::npos);
+    assert(pdf.find("7 5 m\n7 6.105 6.105 7 5 7 c\n") != std::string::npos);
+    assert(count(pdf, " c\n") == 8 && count(pdf, "\nS\n") == 2 && count(pdf, "\nf*\n") == 1);
+    // Compound fill-and-stroke paths keep the fill rule; an empty page is still a valid PDF.
+    image.add(ring, Vector_fill{{1, 2, 3}, Vector_fill_rule::evenodd}, Vector_stroke{{4, 5, 6}});
+    assert(vector_image_to_pdf(image).find("\nB*\n") != std::string::npos);
+    image.add(rect, Vector_fill{{1, 2, 3}}, Vector_stroke{{4, 5, 6}});
+    assert(vector_image_to_pdf(image).find("\nB\n") != std::string::npos);
+    check_pdf_structure(vector_image_to_pdf(Vector_image(20, 10)));
 
     // Arcs over 90 degrees are split for SVG; negative sweeps are counterclockwise.
     Vector_path arc;
@@ -362,7 +394,10 @@ void test_board(const std::string& output_directory) {
                 assert(count(svg.substr(arrows), "fill=\"#000000\"") == 2 && count(svg.substr(arrows), "fill=\"#ffffff\"") == 2);
 
                 const std::string eps = vector_image_to_eps(image);
+                const std::string pdf = vector_image_to_pdf(image);
+                check_pdf_structure(pdf);
                 const std::string size = include_coordinate ? "447" : "420";
+                assert(pdf.find("/MediaBox [0 0 " + size + " " + size + "]") != std::string::npos);
                 assert(eps.find("%%BoundingBox: 0 0 " + size + " " + size + "\n") != std::string::npos);
                 assert(count(eps, "\nn\n") == image.shapes().size());
                 for (const char c : eps) {
@@ -374,6 +409,7 @@ void test_board(const std::string& output_directory) {
                         (monochrome ? "mono" : (dark_frame ? "dark" : "white"));
                     write_file(name + ".svg", svg);
                     write_file(name + ".eps", eps);
+                    write_file(name + ".pdf", pdf);
                 }
             }
         }
@@ -389,5 +425,5 @@ int main(int argc, char** argv) {
     test_geometry();
     test_text_layout();
     test_board(argc > 1 ? argv[1] : "");
-    std::cout << "PASS: numbers, SVG/EPS writers, mark colors, Siv3D shapes and frames, text layout, and board export\n";
+    std::cout << "PASS: numbers, SVG/EPS/PDF writers, mark colors, Siv3D shapes and frames, text layout, and board export\n";
 }
