@@ -236,6 +236,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 EgaroucidやEgaroucidの学習データ等を使用した、第三者によって開発された作品です。
 
 - [リバーシ盤](https://reversi.shiroshiba-lab.jp/): リバーシAIを搭載したWebアプリです。「高性能AI」として[Egaroucid for Web](./web/)が使用されています。
+- [iSReversi](https://github.com/bkmgit/isreversi): Benson Muiteさんによる、Egaroucidを活用したリバーシアプリの開発プロジェクトです。クロスプラットフォーム開発フレームワーク「LambdaNative」を使用して開発が進められています。
 - [PAPP Tournament Suite](https://github.com/venylol/papp): オセロの大会における対戦組み合わせ作成ソフトウェアです。Egaroucid for Consoleが対局の解析エンジンとして活用されています。このソフトの作者である[RuiRui](https://github.com/venylol)さんはEgaroucidにも多数Pull RequestやIssueで貢献してくださっています。
 - [リバーシWeb](https://reversi.yuki-lab.com/): Webサイトで遊べるオセロAIです。勝ち進むと対戦できる最上級AIとして、Egaroucid for Webの思考エンジンが使われています。
 - [Reversi Nexus](https://reversi.nexus/): Webサイトやデスクトップ、モバイルで遊べるオセロAIです。Egaroucidの[学習データ](./technology/train-data/)や[技術資料](./technology/explanation/)を参考にしていただいたようです。
