@@ -224,10 +224,11 @@ constexpr int pattern_starts[N_PATTERNS] = {
     @brief constants used for evaluation function with SIMD
 */
 __m256i eval_lower_mask;
+__m256i eval_index_complement[N_EVAL_VECTORS];
+__m256i eval_index_complement_with_move[HW2][N_EVAL_VECTORS];
 __m256i feature_to_coord_simd_mul[N_EVAL_VECTORS][MAX_PATTERN_CELLS - 1];
 __m256i feature_to_coord_simd_cell[N_EVAL_VECTORS][MAX_PATTERN_CELLS][2];
-__m256i coord_to_feature_simd[HW2][N_EVAL_VECTORS];
-__m256i eval_move_unflipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS];
+__m256i eval_move_flipped_16bit[N_16BIT][N_SIMD_EVAL_FEATURE_GROUP][N_EVAL_VECTORS];
 __m256i eval_simd_offsets_simple[N_EVAL_VECTORS_SIMPLE]; // 16bit * 16 * N
 __m256i eval_simd_offsets_comp[N_EVAL_VECTORS_COMP * 2]; // 32bit * 8 * N
 
@@ -320,6 +321,38 @@ inline bool load_eval_move_ordering_end_file(const char* file, bool show_log) {
     return true;
 }
 
+// Exchange ternary digits 1 and 2 within each pattern table. The
+// serialized weights still use 0 = player, 1 = opponent, 2 = empty.
+inline void permute_eval_tables() {
+    uint16_t swapped[P310];
+    swapped[0] = 0;
+    constexpr int digit[3] = {0, 2, 1};
+    for (int i = 1; i < P310; ++i) {
+        swapped[i] = 3 * swapped[i / 3] + digit[i % 3];
+    }
+    int offset = 1;
+    for (int pattern = 0; pattern < N_PATTERNS; ++pattern) {
+        const int size = pow3[feature_to_coord[4 * pattern].n_cells];
+        for (auto &phase : pattern_arr) {
+            for (int i = 0; i < size; ++i) {
+                if (i < swapped[i]) {
+                    std::swap(phase[offset + i], phase[offset + swapped[i]]);
+                }
+            }
+        }
+        if (offset > SHIFT_EVAL_MO_END &&
+            offset + size <= SHIFT_EVAL_MO_END + N_PATTERN_PARAMS_MO_END) {
+            int16_t *table = pattern_move_ordering_end_arr + (offset - SHIFT_EVAL_MO_END);
+            for (int i = 0; i < size; ++i) {
+                if (i < swapped[i]) {
+                    std::swap(table[i], table[swapped[i]]);
+                }
+            }
+        }
+        offset += size;
+    }
+}
+
 inline void pre_calculate_eval_constant() {
     { // calc_eval_features initialization
         int16_t f2c[16];
@@ -369,45 +402,49 @@ inline void pre_calculate_eval_constant() {
         );
     }
     { // eval_move initialization
-        uint16_t c2f[CEIL_N_PATTERN_FEATURES];
-        for (int cell = 0; cell < HW2; ++cell) { // 0 for h8, 63 for a1
-            for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i) {
-                c2f[i] = 0;
+        for (int i = 0; i < N_EVAL_VECTORS; ++i) {
+            uint16_t complement[16];
+            for (int j = 0; j < 16; ++j) {
+                complement[j] = pow3[feature_to_coord[i * 16 + j].n_cells] - 1;
             }
-            for (int i = 0; i < coord_to_feature[cell].n_features; ++i) {
-                c2f[coord_to_feature[cell].features[i].feature] = coord_to_feature[cell].features[i].x;
-            }
-            for (int i = 0; i < N_EVAL_VECTORS; ++i) {
-                int idx = i * 16;
-                coord_to_feature_simd[cell][i] = _mm256_set_epi16(
-                    c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3], 
-                    c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7], 
-                    c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11], 
-                    c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
-                );
+            eval_index_complement[i] = _mm256_set_epi16(
+                complement[0], complement[1], complement[2], complement[3],
+                complement[4], complement[5], complement[6], complement[7],
+                complement[8], complement[9], complement[10], complement[11],
+                complement[12], complement[13], complement[14], complement[15]
+            );
+            if (i < N_EVAL_VECTORS_SIMPLE) {
+                // These indices already include their table offsets.
+                eval_index_complement[i] = _mm256_add_epi16(eval_index_complement[i], eval_simd_offsets_simple[i]);
+                eval_index_complement[i] = _mm256_add_epi16(eval_index_complement[i], eval_simd_offsets_simple[i]);
             }
         }
-        // eval_move_unflipped_16bit[bits]: sum of the features of the cells whose bit is set (1: unflipped discs, 0: others)
+        uint16_t c2f[CEIL_N_PATTERN_FEATURES];
+        // eval_move_flipped_16bit[bits]: twice the sum of the features of the cells whose bit is set (1: flipped discs, 0: others)
         for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) { // a1-h2, a3-h4, ..., a7-h8
             for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
-                eval_move_unflipped_16bit[0][group][simd_feature_idx] = _mm256_setzero_si256();
+                eval_move_flipped_16bit[0][group][simd_feature_idx] = _mm256_setzero_si256();
             }
             for (int cell = 0; cell < N_SIMD_EVAL_FEATURE_CELLS; ++cell) { // 1 cell
                 for (int i = 0; i < CEIL_N_PATTERN_FEATURES; ++i) {
                     c2f[i] = 0;
                 }
-                int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell;
+                int global_cell = group * N_SIMD_EVAL_FEATURE_CELLS + cell; // 0 for h8, 63 for a1
                 for (int i = 0; i < coord_to_feature[global_cell].n_features; ++i) {
                     c2f[coord_to_feature[global_cell].features[i].feature] += coord_to_feature[global_cell].features[i].x;
                 }
                 for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
                     int idx = simd_feature_idx * 16;
-                    eval_move_unflipped_16bit[1 << cell][group][simd_feature_idx] = _mm256_set_epi16(
+                    const __m256i weight = _mm256_set_epi16(
                         c2f[idx], c2f[idx + 1], c2f[idx + 2], c2f[idx + 3],
                         c2f[idx + 4], c2f[idx + 5], c2f[idx + 6], c2f[idx + 7],
                         c2f[idx + 8], c2f[idx + 9], c2f[idx + 10], c2f[idx + 11],
                         c2f[idx + 12], c2f[idx + 13], c2f[idx + 14], c2f[idx + 15]
                     );
+                    eval_index_complement_with_move[global_cell][simd_feature_idx] =
+                        _mm256_add_epi16(eval_index_complement[simd_feature_idx], weight);
+                    eval_move_flipped_16bit[1 << cell][group][simd_feature_idx] =
+                        _mm256_add_epi16(weight, weight);
                 }
             }
         }
@@ -418,9 +455,9 @@ inline void pre_calculate_eval_constant() {
             }
             for (int group = 0; group < N_SIMD_EVAL_FEATURE_GROUP; ++group) {
                 for (int simd_feature_idx = 0; simd_feature_idx < N_EVAL_VECTORS; ++simd_feature_idx) {
-                    eval_move_unflipped_16bit[bits][group][simd_feature_idx] = _mm256_add_epi16(
-                        eval_move_unflipped_16bit[bits ^ lowest_bit][group][simd_feature_idx],
-                        eval_move_unflipped_16bit[lowest_bit][group][simd_feature_idx]
+                    eval_move_flipped_16bit[bits][group][simd_feature_idx] = _mm256_add_epi16(
+                        eval_move_flipped_16bit[bits ^ lowest_bit][group][simd_feature_idx],
+                        eval_move_flipped_16bit[lowest_bit][group][simd_feature_idx]
                     );
                 }
             }
@@ -458,6 +495,7 @@ inline bool evaluate_init(const char* file, const char* mo_end_nws_file, bool sh
         std::cerr << "[ERROR] [FATAL] evaluation file for move ordering end not loaded" << std::endl;
         return false;
     }
+    permute_eval_tables();
     pre_calculate_eval_constant();
     if (show_log) {
         std::cerr << "evaluation function initialized" << std::endl;
@@ -597,7 +635,9 @@ inline void calc_feature_vector(__m256i &f, const int *b_arr_int, const int i, c
 */
 inline void calc_eval_features(Board *board, Eval_search *eval) {
     int b_arr_int[HW2 + 1];
-    board->translate_to_arr_player_rev(b_arr_int);
+    for (int cell = 0; cell < HW2; ++cell) {
+        b_arr_int[cell] = 1 - ((board->player >> cell) & 1) + ((board->opponent >> cell) & 1);
+    }
     b_arr_int[COORD_NO] = 0;
     calc_feature_vector(eval->features[0].f256[0], b_arr_int, 0, MAX_N_CELLS_GROUP[0] - 1);
     calc_feature_vector(eval->features[0].f256[1], b_arr_int, 1, MAX_N_CELLS_GROUP[1] - 1);
@@ -611,40 +651,34 @@ inline void calc_eval_features(Board *board, Eval_search *eval) {
 /*
     @brief move evaluation features
 
-        put cell        2 -> 1 (empty -> opponent)  sub
-        player discs    0 -> 1 (player -> opponent) add
-        opponent discs  1 -> 0 (player -> opponent) sub
-        flipped discs   1 -> 1 (opponent -> opponent)
-        empty cells     2 -> 2 (empty -> empty)
-    
+        side switch     digit -> 2 - digit
+        put cell        1 -> 2 (empty -> opponent)   add 1 after the side switch
+        player discs    0 -> 2 (player -> opponent)
+        opponent discs  2 -> 0 (opponent -> player)
+        flipped discs   2 -> 2 (opponent -> opponent) add 2 after the side switch
+        empty cells     1 -> 1 (empty -> empty)
+
     @param eval                 evaluation features
     @param flip                 flip information
 */
-inline void eval_move(Eval_search *eval, const Flip *flip, const Board *board) {
-    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
-    __m256i f0, f1, f2, f3;
-    uint16_t unflipped_p;
-    uint16_t unflipped_o;
-    // put cell 2 -> 1
-    f0 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[0], coord_to_feature_simd[flip->pos][0]);
-    f1 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[1], coord_to_feature_simd[flip->pos][1]);
-    f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
-    f3 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[3], coord_to_feature_simd[flip->pos][3]);
-    for (int i = 0; i < HW2 / 16; ++i) { // 64 bit / 16 bit = 4
-        // player discs 0 -> 1
-        unflipped_p = ~flipped_group[i] & player_group[i];
-        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[unflipped_p][i][0]);
-        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[unflipped_p][i][1]);
-        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[unflipped_p][i][2]);
-        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[unflipped_p][i][3]);
-        // opponent discs 1 -> 0
-        unflipped_o = ~flipped_group[i] & opponent_group[i];
-        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[unflipped_o][i][0]);
-        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[unflipped_o][i][1]);
-        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[unflipped_o][i][2]);
-        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[unflipped_o][i][3]);
+inline void eval_move(Eval_search *eval, const Flip *flip, const Board *) {
+    // side switch and put cell 1 -> 2
+    __m256i f0 = _mm256_sub_epi16(eval_index_complement_with_move[flip->pos][0], eval->features[eval->feature_idx].f256[0]);
+    __m256i f1 = _mm256_sub_epi16(eval_index_complement_with_move[flip->pos][1], eval->features[eval->feature_idx].f256[1]);
+    __m256i f2 = _mm256_sub_epi16(eval_index_complement_with_move[flip->pos][2], eval->features[eval->feature_idx].f256[2]);
+    __m256i f3 = _mm256_sub_epi16(eval_index_complement_with_move[flip->pos][3], eval->features[eval->feature_idx].f256[3]);
+    uint64_t flipped = flip->flip;
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC unroll 4
+#endif
+    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) { // 64 bit / 16 bit = 4
+        // flipped discs 0 -> 2 after the side switch
+        const uint16_t mask = static_cast<uint16_t>(flipped);
+        flipped >>= 16;
+        f0 = _mm256_add_epi16(f0, eval_move_flipped_16bit[mask][i][0]);
+        f1 = _mm256_add_epi16(f1, eval_move_flipped_16bit[mask][i][1]);
+        f2 = _mm256_add_epi16(f2, eval_move_flipped_16bit[mask][i][2]);
+        f3 = _mm256_add_epi16(f3, eval_move_flipped_16bit[mask][i][3]);
     }
     ++eval->feature_idx;
     eval->features[eval->feature_idx].f256[0] = f0;
@@ -665,50 +699,33 @@ inline void eval_undo(Eval_search *eval) {
 /*
     @brief pass evaluation features
 
-        player discs    0 -> 1 (player -> opponent) add
-        opponent discs  1 -> 0 (player -> opponent) sub
+        player discs    0 -> 2 (player -> opponent)
+        opponent discs  2 -> 0 (opponent -> player)
 
     @param eval                 evaluation features
 */
-inline void eval_pass(Eval_search *eval, const Board *board) {
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
-    __m256i f0, f1, f2, f3;
-    f0 = eval->features[eval->feature_idx].f256[0];
-    f1 = eval->features[eval->feature_idx].f256[1];
-    f2 = eval->features[eval->feature_idx].f256[2];
-    f3 = eval->features[eval->feature_idx].f256[3];
-    for (int i = 0; i < HW2 / 16; ++i) { // 64 bit / 16 bit = 4
-        f0 = _mm256_add_epi16(f0, eval_move_unflipped_16bit[player_group[i]][i][0]);
-        f1 = _mm256_add_epi16(f1, eval_move_unflipped_16bit[player_group[i]][i][1]);
-        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
-        f3 = _mm256_add_epi16(f3, eval_move_unflipped_16bit[player_group[i]][i][3]);
-        f0 = _mm256_sub_epi16(f0, eval_move_unflipped_16bit[opponent_group[i]][i][0]);
-        f1 = _mm256_sub_epi16(f1, eval_move_unflipped_16bit[opponent_group[i]][i][1]);
-        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
-        f3 = _mm256_sub_epi16(f3, eval_move_unflipped_16bit[opponent_group[i]][i][3]);
+inline void eval_pass(Eval_search *eval, const Board *) {
+    for (int i = 0; i < N_EVAL_VECTORS; ++i) {
+        eval->features[eval->feature_idx].f256[i] =
+            _mm256_sub_epi16(eval_index_complement[i], eval->features[eval->feature_idx].f256[i]);
     }
-    eval->features[eval->feature_idx].f256[0] = f0;
-    eval->features[eval->feature_idx].f256[1] = f1;
-    eval->features[eval->feature_idx].f256[2] = f2;
-    eval->features[eval->feature_idx].f256[3] = f3;
 }
 
 
 
 
 // only corner+block cross edge+2X triangle
-inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *board) {
-    const uint16_t *flipped_group = (uint16_t*)&(flip->flip);
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
-    // put cell 2 -> 1
-    __m256i f2 = _mm256_sub_epi16(eval->features[eval->feature_idx].f256[2], coord_to_feature_simd[flip->pos][2]);
+inline void eval_move_endsearch(Eval_search *eval, const Flip *flip, const Board *) {
+    // side switch and put cell 1 -> 2
+    __m256i f2 = _mm256_sub_epi16(eval_index_complement_with_move[flip->pos][2], eval->features[eval->feature_idx].f256[2]);
+    uint64_t flipped = flip->flip;
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC unroll 4
+#endif
     for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
-        // player discs 0 -> 1
-        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[~flipped_group[i] & player_group[i]][i][2]);
-        // opponent discs 1 -> 0
-        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[~flipped_group[i] & opponent_group[i]][i][2]);
+        // flipped discs 0 -> 2 after the side switch
+        f2 = _mm256_add_epi16(f2, eval_move_flipped_16bit[static_cast<uint16_t>(flipped)][i][2]);
+        flipped >>= 16;
     }
     ++eval->feature_idx;
     eval->features[eval->feature_idx].f256[2] = f2;
@@ -718,13 +735,7 @@ inline void eval_undo_endsearch(Eval_search *eval) {
     --eval->feature_idx;
 }
 
-inline void eval_pass_endsearch(Eval_search *eval, const Board *board) {
-    const uint16_t *player_group = (uint16_t*)&(board->player);
-    const uint16_t *opponent_group = (uint16_t*)&(board->opponent);
-    __m256i f2 = eval->features[eval->feature_idx].f256[2];
-    for (int i = 0; i < N_SIMD_EVAL_FEATURE_GROUP; ++i) {
-        f2 = _mm256_add_epi16(f2, eval_move_unflipped_16bit[player_group[i]][i][2]);
-        f2 = _mm256_sub_epi16(f2, eval_move_unflipped_16bit[opponent_group[i]][i][2]);
-    }
-    eval->features[eval->feature_idx].f256[2] = f2;
+inline void eval_pass_endsearch(Eval_search *eval, const Board *) {
+    eval->features[eval->feature_idx].f256[2] =
+        _mm256_sub_epi16(eval_index_complement[2], eval->features[eval->feature_idx].f256[2]);
 }
