@@ -235,6 +235,8 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
 
 EgaroucidやEgaroucidの学習データ等を使用した、第三者によって開発された作品です。
 
+- [edax-fm-reversi](https://github.com/Yoka0014/edax-fm-reversi): Edaxの評価関数にFactorization Machineを取り入れたもので、非常に強いです。評価関数の学習にEgaroucidの[学習データ](./technology/train-data/)が使用されています。関連論文も発表されています：
+  - 岡下, 雄市朗，首藤, 裕一：リバーシにおけるFactorization Machineを用いた新たな評価関数の提案，研究報告ゲーム情報学（GI），Vol.2026-GI-57，pp.1-8（2026）．[https://ipsj.ixsq.nii.ac.jp/records/2007474](https://ipsj.ixsq.nii.ac.jp/records/2007474)
 - [リバーシ盤](https://reversi.shiroshiba-lab.jp/): リバーシAIを搭載したWebアプリです。「高性能AI」として[Egaroucid for Web](./web/)が使用されています。
 - [iSReversi](https://github.com/bkmgit/isreversi): Benson Muiteさんによる、Egaroucidを活用したリバーシアプリの開発プロジェクトです。クロスプラットフォーム開発フレームワーク「LambdaNative」を使用して開発が進められています。
 - [スマッチ リバーシ・チェス・将棋・囲碁](https://smatch-jp.com/games/): 様々なゲームでAIと対戦できるWebアプリです。リバーシの「さいきょう」として[Egaroucid for Web](./web/)が使用されています。

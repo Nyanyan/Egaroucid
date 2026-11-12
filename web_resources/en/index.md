@@ -232,6 +232,8 @@ Below is a list of Egaroucid-related links provided by third parties. The author
 
 These are works developed by third parties using Egaroucid or Egaroucid's training data, etc.
 
+- [edax-fm-reversi](https://github.com/Yoka0014/edax-fm-reversi): This Othello AI incorporates Factorization Machines into Edax's evaluation function and is very robust. The evaluation function is trained using Egaroucid's [training data](./technology/train-data/). Related papers have also been published in Japanese:
+  - 岡下, 雄市朗，首藤, 裕一：リバーシにおけるFactorization Machineを用いた新たな評価関数の提案，研究報告ゲーム情報学（GI），Vol.2026-GI-57，pp.1-8（2026）．[https://ipsj.ixsq.nii.ac.jp/records/2007474](https://ipsj.ixsq.nii.ac.jp/records/2007474)
 - [Reversi Board](https://reversi.shiroshiba-lab.jp/) (Japanese): An Web app with reversi AI. [Egaroucid for Web](./web/) is used as "high performance AI" in this app.
 - [iSReversi](https://github.com/bkmgit/isreversi): A Reversi app development project by Benson Muite that uses Egaroucid. The app is being developed using LambdaNative, a cross-platform application development framework.
 - [Smatch Reversi / Chess / Shogi / Go](https://smatch-jp.com/games/) (Japanese): A Web app where you can play against AI in various games. [Egaroucid for Web](./web/) is used as the "Strongest" AI opponent in Reversi.
