@@ -46,6 +46,7 @@ Completely free software. Egaroucid and Egaroucid for Console use the same (stro
 
 ## Competitive Results
 
+- 3rd Place in Othello AI Tournament @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2026/06/27)
 - Runner-up in Othello AI Tournament @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2025/11/01)
 - Othello AI Tournament Champion @[Generic Game Server](https://skatgame.net/mburo/ggs/) (2024/12/08)
 - [CodinGame Othello](https://www.codingame.com/multiplayer/bot-programming/othello-1) World Champion (2021/11/22, 2023/09/08, 2025/02/01)
