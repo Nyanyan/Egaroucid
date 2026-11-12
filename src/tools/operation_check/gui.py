@@ -159,6 +159,7 @@ def board_image_vector(ctx):
         content = path.read_bytes()
         size = b"447" if "_coord_" in path.name else b"420"
         require(content.startswith(b"%PDF-1.4\n") and content.endswith(b"\n%%EOF\n"), "Invalid PDF header/trailer")
+        require(b"\0" in content[:8192], "PDF must be detected as binary by Git")
         require(b"/MediaBox [0 0 " + size + b" " + size + b"]" in content, "PDF page size differs")
         require(b"/Subtype /Image" not in content and b"/Font" not in content, "PDF must contain paths only")
         xref = int(content.rsplit(b"startxref\n", 1)[1].splitlines()[0])

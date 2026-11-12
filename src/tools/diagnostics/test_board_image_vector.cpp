@@ -105,6 +105,7 @@ void test_numbers() {
 
 void check_pdf_structure(const std::string& pdf) {
     assert(pdf.rfind("%PDF-1.4\n", 0) == 0 && ends_with(pdf, "\n%%EOF\n"));
+    assert(pdf.substr(0, 8192).find('\0') != std::string::npos);
     const size_t xref = std::stoull(pdf.substr(pdf.rfind("startxref\n") + 10));
     assert(pdf.substr(xref, 9) == "xref\n0 5\n");
     const size_t entries = xref + 9;
@@ -425,5 +426,8 @@ int main(int argc, char** argv) {
     test_geometry();
     test_text_layout();
     test_board(argc > 1 ? argv[1] : "");
+    if (argc > 1) {
+        write_file(std::string(argv[1]) + "/empty.pdf", vector_image_to_pdf(Vector_image(20, 10)));
+    }
     std::cout << "PASS: numbers, SVG/EPS/PDF writers, mark colors, Siv3D shapes and frames, text layout, and board export\n";
 }

@@ -302,21 +302,22 @@ class Gui_probe {
                         const Vector_image image = create_board_image_vector(position, edit, options, data.fonts, data.colors, name);
                         const String path = save_board_image_vector("./document/screenshots/", name, format, image);
                         require(!path.isEmpty() && FileSystem::IsFile(path), "Vector board image was not saved");
-                        TextReader reader{path};
-                        const String content = reader.readAll();
-                        const String size = include_coordinate ? U"447" : U"420";
+                        const Blob bytes{path};
+                        require(!bytes.empty(), "Saved vector file is empty");
+                        const std::string content{reinterpret_cast<const char*>(bytes.data()), bytes.size()};
+                        const std::string size = include_coordinate ? "447" : "420";
                         if (format == BOARD_IMAGE_FORMAT_SVG) {
-                            require(content.starts_with(U"<?xml") && content.includes(U"viewBox=\"0 0 " + size + U" " + size + U"\""),
+                            require(content.starts_with("<?xml") && content.find("viewBox=\"0 0 " + size + " " + size + "\"") != std::string::npos,
                                 "SVG header differs");
-                            require(content.includes(U"<g id=\"coordinates\">") == include_coordinate, "SVG coordinates differ");
+                            require((content.find("<g id=\"coordinates\">") != std::string::npos) == include_coordinate, "SVG coordinates differ");
                         } else if (format == BOARD_IMAGE_FORMAT_EPS) {
-                            require(content.starts_with(U"%!PS-Adobe-3.0 EPSF-3.0\n") &&
-                                content.includes(U"%%BoundingBox: 0 0 " + size + U" " + size + U"\n"), "EPS header differs");
-                            require(content.ends_with(U"%%EOF\n"), "EPS trailer missing");
+                            require(content.starts_with("%!PS-Adobe-3.0 EPSF-3.0\n") &&
+                                content.find("%%BoundingBox: 0 0 " + size + " " + size + "\n") != std::string::npos, "EPS header differs");
+                            require(content.ends_with("%%EOF\n"), "EPS trailer missing");
                         } else {
-                            require(content.starts_with(U"%PDF-1.4\n") &&
-                                content.includes(U"/MediaBox [0 0 " + size + U" " + size + U"]"), "PDF header differs");
-                            require(content.ends_with(U"%%EOF\n"), "PDF trailer missing");
+                            require(content.starts_with("%PDF-1.4\n") &&
+                                content.find("/MediaBox [0 0 " + size + " " + size + "]") != std::string::npos, "PDF header differs");
+                            require(content.ends_with("%%EOF\n"), "PDF trailer missing");
                         }
                         ++saved;
                     }

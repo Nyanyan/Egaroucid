@@ -602,7 +602,10 @@ inline std::string vector_image_to_pdf(const Vector_image& image) {
             "] /Resources << >> /Contents 4 0 R >>",
         "<< /Length " + std::to_string(content.size()) + " >>\nstream\n" + content + "endstream"
     };
-    std::string pdf = "%PDF-1.4\n%\xe2\xe3\xcf\xd3\n";
+    // A NUL in the header comment makes Git detect binary data and skip automatic CRLF conversion.
+    std::string pdf = "%PDF-1.4\n%\xe2\xe3\xcf\xd3";
+    pdf.push_back('\0');
+    pdf += '\n';
     std::vector<size_t> offsets;
     for (size_t i = 0; i < objects.size(); ++i) {
         offsets.push_back(pdf.size());
