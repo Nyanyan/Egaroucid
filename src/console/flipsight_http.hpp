@@ -7,6 +7,7 @@
 #pragma once
 #include <atomic>
 #include <cctype>
+#include <ctime>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -147,7 +148,9 @@ class HttpTransport {
             length = sizeof(retry);
             if (WinHttpQueryHeaders(raw, WINHTTP_QUERY_CUSTOM, L"Retry-After", retry, &length, WINHTTP_NO_HEADER_INDEX)) {
                 std::wstring value(retry);
-                response.retry_after = retry_seconds(std::string(value.begin(), value.end()));
+                std::string ascii;
+                for (wchar_t c : value) ascii += static_cast<char>(c);
+                response.retry_after = retry_seconds(ascii);
                 SYSTEMTIME date{};
                 if (WinHttpTimeToSystemTime(retry, &date)) {
                     FILETIME target{}, current{};
@@ -159,7 +162,7 @@ class HttpTransport {
                     response.retry_after = a.QuadPart > b.QuadPart ? std::min<Millis>(86400000, (a.QuadPart - b.QuadPart) / 10000) : 0;
                 }
             }
-            if (response.status == 200) {
+            if (body || response.status == 200) {
                 char buffer[8192];
                 DWORD received = 0;
                 while (!stop) {
@@ -191,8 +194,9 @@ class HttpTransport {
         struct Context {
             HttpResponse* response;
             const std::function<void(const char*, size_t)>* chunk;
+            CURL* handle;
             bool failed = false;
-        } context{&response, &chunk};
+        } context{&response, &chunk, handle};
         curl_slist* headers = nullptr;
         headers = curl_slist_append(headers, ("Authorization: Bearer " + token).c_str());
         headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -213,6 +217,9 @@ class HttpTransport {
         curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, +[](char* data, size_t size, size_t count, void* ptr) -> size_t {
             auto& ctx = *static_cast<Context*>(ptr);
             try {
+                long status = 0;
+                curl_easy_getinfo(ctx.handle, CURLINFO_RESPONSE_CODE, &status);
+                if (*ctx.chunk && status != 200) return size * count;
                 if (*ctx.chunk) (*ctx.chunk)(data, size * count);
                 else {
                     ctx.response->body.append(data, size * count);

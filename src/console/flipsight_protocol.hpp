@@ -7,6 +7,7 @@
 #pragma once
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <chrono>
 #include <cstdint>
 #include <stdexcept>
@@ -68,10 +69,30 @@ struct Leg {
 };
 
 inline bool supported(const Json& match) {
-    const auto state = match.value("state", Json::object());
+    auto state = match.value("state", Json::object());
+    if (!state.is_object()) state = Json::object();
     return state.value("game_mode", match.value("game_mode", std::string("std"))) == "std" &&
         state.value("board_size", 8) == 8 &&
         (!state.contains("blocked_squares") || state["blocked_squares"].empty());
+}
+
+inline uint64_t legal_moves(uint64_t black, uint64_t white, int turn) {
+    uint64_t own = turn == 1 ? black : white, enemy = turn == 1 ? white : black, legal = 0;
+    for (int square = 0; square < 64; ++square) {
+        if ((black | white) & (1ULL << (63 - square))) continue;
+        for (int dr = -1; dr <= 1; ++dr) for (int dc = -1; dc <= 1; ++dc) {
+            if (!dr && !dc) continue;
+            int row = square / 8 + dr, col = square % 8 + dc;
+            bool captured = false;
+            while (row >= 0 && row < 8 && col >= 0 && col < 8 &&
+                    (enemy & (1ULL << (63 - row * 8 - col)))) {
+                captured = true; row += dr; col += dc;
+            }
+            if (captured && row >= 0 && row < 8 && col >= 0 && col < 8 &&
+                    (own & (1ULL << (63 - row * 8 - col)))) legal |= 1ULL << (63 - square);
+        }
+    }
+    return legal;
 }
 
 inline bool unpublished(const Json& leg) {
@@ -142,9 +163,10 @@ inline std::vector<Leg> parse_match(const Json& match, const Json& bot_id,
                 leg.legal |= 1ULL << (63 - square);
             }
         } else {
-            // The engine supplies the legal mask for older API responses.
-            leg.legal = UINT64_MAX;
+            leg.legal = legal_moves(leg.black, leg.white, leg.turn);
         }
+        if (leg.published && leg.running && leg.legal != legal_moves(leg.black, leg.white, leg.turn))
+            throw std::runtime_error("FlipSight legal moves disagree with standard Othello");
         const auto& clocks = source.at("clocks_ms");
         if (!clocks.is_array() || clocks.size() != 2) throw std::runtime_error("Invalid FlipSight clocks");
         Millis remaining = integer(clocks[leg.color - 1]);

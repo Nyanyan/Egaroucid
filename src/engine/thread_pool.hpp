@@ -52,8 +52,9 @@ class Thread_pool {
         std::unique_ptr<std::thread[]> threads;
         std::condition_variable condition;
 
-        int max_thread_size[THREAD_ID_SIZE];
-        std::atomic<int> n_using_thread[THREAD_ID_SIZE];
+        // Network clients rebalance quotas while searches are running.
+        std::atomic<int> max_thread_size[THREAD_ID_SIZE]{};
+        std::atomic<int> n_using_thread[THREAD_ID_SIZE]{};
         //std::unordered_map<thread_id_t, int> max_thread_size;
         //std::unordered_map<thread_id_t, std::atomic<int>> n_using_thread;
         //std::atomic<int> n_using_tasks;
