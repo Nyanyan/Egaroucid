@@ -8,6 +8,14 @@ python plot_disc_loss_agreement.py --data output/disc_loss_dataset/plot_data.jso
 
 PNG・SVG・PDFと計測条件のJSONを出力します。既定ではZebraあり・なしの両方を作ります。片方だけ作る場合は `--zebra with` または `--zebra without` を指定します。図・データ・ラベル位置はリポジトリのignore対象である `output` 配下に保存します。
 
+`--arrange-labels` を付けると、文字同士に加え、点・折れ線・縦線・凡例・ほかのラベルの引き出し線と重ならないように再配置し、位置を保存します。保存するJSONには種類ごとの衝突検査結果も記録します。
+
+横軸を5→0にするには `--x-max 5` を指定します。この版では、石損が5を超えるモデルの点とラベルを描きません。人間の縦線が範囲外の場合、凡例に「範囲外」と付記します。元のデータと平均値は変更しません。全範囲版と5→0版のラベル位置は別々に保存します。
+
+```text
+python plot_disc_loss_agreement.py --data output/disc_loss_dataset/plot_data.json --output-dir output/disc_loss_dataset/figures --x-max 5 --arrange-labels
+```
+
 データJSONには、各モデルの `model` / `mean_disc_loss` / `wthor_accuracy`、縦線の `references`、モデル順 `covariance_model_order`、平均値の共分散 `covariance_x` / `covariance_y` を入れます。共分散とモデル行の対応が一致しない入力は拒否します。
 
 `prepare_disc_loss_plot_data.py` は、保存済みのQuest石損配列と帯ID、WTHOR予測NPZ、人間のWTHOR石損配列からこのJSONを作ります。各引数は `--help` で確認できます。WTHOR予測を複数指定した場合は同じ局面・棋譜・対称手マスクであることを照合し、重複モデルは先に指定したファイルを優先します。Questは各帯の件数を揃え、帯を等しく重み付けします。WTHORの人間の石損配列には、一致率評価と同じ標本のL21石損を指定してください。探索や学習は行いません。

@@ -10,6 +10,7 @@ import numpy as np
 
 import plot_disc_loss_agreement as plot
 from prepare_disc_loss_plot_data import merge_wthor_predictions
+from disc_loss_label_layout import arrange_labels, inspect_layout
 
 
 class DiscLossAgreementTests(unittest.TestCase):
@@ -54,6 +55,42 @@ class DiscLossAgreementTests(unittest.TestCase):
             self.assertEqual(any("zebra_" in key for key in annotations), with_zebra)
             self.assertIn("main/random", annotations)
             plt.close(fig)
+
+    def test_five_to_zero_view_reports_only_models_in_range(self):
+        names = list(dict.fromkeys(name for spec in plot.CURVES.values() for name in spec["names"]))
+        data = dict(rows=[dict(model=n, mean_disc_loss=10 if n == "random" else 1, wthor_accuracy=.6)
+                          for n in names], references=[])
+        for with_zebra, count in ((True, 30), (False, 26)):
+            fig, axes, annotations = plot.make_figure(data, {}, with_zebra, x_max=5)
+            self.assertEqual(axes["main"].get_xlim(), (5, 0))
+            self.assertEqual(len(annotations), count)
+            self.assertFalse(any("random" in uid for uid in annotations))
+            plt.close(fig)
+
+    def test_layout_detects_and_clears_text_line_marker_and_legend_obstacles(self):
+        fig, axis = plt.subplots(figsize=(7, 5))
+        axis.set_xlim(0, 1)
+        axis.set_ylim(0, 1)
+        axis.plot([.1, .9], [.5, .5], label="curve")
+        axis.plot([.5, .52], [.5, .5], "o", linestyle="none")
+        axis.legend(loc="upper right")
+        labels = {name: axis.annotate(name, (.5, .5), xytext=(0, 0), textcoords="offset points",
+                                     arrowprops=dict(arrowstyle="-")) for name in ("first", "second")}
+        before = inspect_layout(fig, labels)
+        self.assertTrue(before["text"] and before["line"] and before["point"])
+        after = arrange_labels(fig, labels)
+        self.assertFalse(any(after.values()), after)
+        plt.close(fig)
+
+    def test_layout_rejects_a_leader_that_curves_outside_the_axes(self):
+        fig, axis = plt.subplots(figsize=(7, 5))
+        axis.set_xlim(0, 1)
+        axis.set_ylim(0, 1)
+        label = axis.annotate("label", (.9, .8), xytext=(.9, .2), textcoords="data", ha="center",
+                              arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=2"))
+        report = inspect_layout(fig, {"label": label})
+        self.assertIn("label", report["leader_outside"])
+        plt.close(fig)
 
 
 if __name__ == "__main__":

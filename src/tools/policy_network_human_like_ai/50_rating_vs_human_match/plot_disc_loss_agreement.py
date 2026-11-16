@@ -14,7 +14,7 @@ import numpy as np
 
 from label_editor import (LABEL_PREFIX, LabelEditor, annotation_position,
                           apply_label_positions, apply_text_overrides,
-                          load_label_positions, load_text_overrides)
+                          load_label_positions, load_text_overrides, save_label_positions)
 from simultaneous_bands import draw_tube
 
 
@@ -87,10 +87,12 @@ def model_group(name):
     return "normal_loss" if float(name[6:]) > 1 else "level21_normal"
 
 
-def selected_names(data, with_zebra):
+def selected_names(data, with_zebra, x_max=None):
     names = [row["model"] for row in data["rows"]]
     require(len(names) == len(set(names)), "Duplicate model IDs")
-    return [name for name in names if with_zebra or not name.startswith("zebra_")]
+    losses = {row["model"]: row["mean_disc_loss"] for row in data["rows"]}
+    return [name for name in names if (with_zebra or not name.startswith("zebra_"))
+            and (x_max is None or 0 <= losses[name] <= x_max)]
 
 
 def mean_draws(mean, covariance, rng, count):
@@ -145,7 +147,7 @@ def draw_bounds(axis, spec, bounds):
                       color=spec["color"], alpha=.15)
 
 
-def make_figure(data, tubes, with_zebra):
+def make_figure(data, tubes, with_zebra, x_max=None):
     import matplotlib.pyplot as plt
     from matplotlib.legend_handler import HandlerTuple
     from matplotlib.lines import Line2D
@@ -155,16 +157,20 @@ def make_figure(data, tubes, with_zebra):
     configure_plotting()
     plt.rcParams.update({"font.size": 18, "axes.labelsize": 24, "xtick.labelsize": 21,
                          "ytick.labelsize": 21, "pdf.fonttype": 42})
-    names = selected_names(data, with_zebra)
+    require(x_max is None or np.isfinite(x_max) and x_max > 0, "X maximum must be positive")
+    names = selected_names(data, with_zebra, x_max)
     rows = {row["model"]: row for row in data["rows"]}
-    fig = plt.figure(figsize=(19, 8.8))
-    main = fig.add_axes([.065, .235, .575, .715])
-    detail = fig.add_axes([.705, .235, .275, .715])
-    main.set_xlim(10.85, -.17)
+    fig = plt.figure(figsize=(23, 10.5))
+    main = fig.add_axes([.05, .29, .405, .65])
+    middle = fig.add_axes([.515, .29, .205, .65])
+    detail = fig.add_axes([.78, .29, .205, .65])
+    main.set_xlim((10.85, -.17) if x_max is None else (x_max, 0))
     main.set_ylim(16, 74)
+    middle.set_xlim(2.85, .85)
+    middle.set_ylim(48, 73.5)
     detail.set_xlim(.96, -.075)
     detail.set_ylim(59.5, 70.2)
-    axes = {"main": main, "detail": detail}
+    axes = {"main": main, "middle": middle, "detail": detail}
     annotations = {}
     active = {key: spec for key, spec in CURVES.items()
               if key in tubes and any(n in names for n in spec["names"])}
@@ -186,14 +192,18 @@ def make_figure(data, tubes, with_zebra):
     main.yaxis.set_major_locator(MultipleLocator(10))
     main.yaxis.set_minor_locator(MultipleLocator(5))
     main.grid(which="minor", axis="y", color="#E5EAF0", lw=.7)
-    main.xaxis.set_major_locator(MultipleLocator(2))
+    main.xaxis.set_major_locator(MultipleLocator(2 if x_max is None else 1))
     detail.xaxis.set_major_locator(MultipleLocator(.2))
     detail.yaxis.set_major_locator(MultipleLocator(2))
+    middle.xaxis.set_major_locator(MultipleLocator(.5))
+    middle.yaxis.set_major_locator(MultipleLocator(5))
+    middle.set_title("中石損域の拡大", fontsize=20, pad=10)
     detail.set_title("低石損域の拡大", fontsize=20, pad=10)
     main.add_patch(Rectangle((0, 60), .85, 9, fill=False, edgecolor="#89939A", linestyle=":", lw=1))
     for name in names:
         row, spec = rows[name], CURVES[model_group(name)]
-        region = "detail" if row["mean_disc_loss"] <= .85 else "main"
+        region = ("detail" if row["mean_disc_loss"] <= .85 else
+                  "middle" if row["mean_disc_loss"] <= 2.85 else "main")
         axis = axes[region]
         uid = region + "/" + name
         annotation = axis.annotate(point_label(name, row["wthor_accuracy"]),
@@ -209,26 +219,28 @@ def make_figure(data, tubes, with_zebra):
                         Line2D([], [], color=spec["color"], linestyle=spec["linestyle"], lw=2,
                                marker=spec["marker"] if spec["linestyle"] == "None" else None)))
         labels.append(spec["label"])
-    legend = main.legend(handles, labels, handler_map={tuple: HandlerTuple(ndivide=1, pad=0)},
-                         loc="lower right", frameon=True, facecolor="white", framealpha=1,
-                         edgecolor="none", fontsize=17, borderaxespad=.8)
-    legend.set_zorder(8)
+    fig.legend(handles, labels, handler_map={tuple: HandlerTuple(ndivide=1, pad=0)},
+               loc="upper center", bbox_to_anchor=(.52, .17), ncol=4,
+               frameon=False, fontsize=17, columnspacing=2)
     reference_handles = []
     for ref in data["references"]:
-        main.axvline(ref["value"], color=ref["color"], ls=ref["linestyle"], lw=1.5, alpha=.8, zorder=1)
+        in_range = x_max is None or 0 <= ref["value"] <= x_max
+        if in_range:
+            main.axvline(ref["value"], color=ref["color"], ls=ref["linestyle"], lw=1.5, alpha=.8, zorder=1)
+        suffix = "" if in_range else "（範囲外）"
         reference_handles.append(Line2D([], [], color=ref["color"], ls=ref["linestyle"], lw=1.5,
-            label=f'{ref["label"]}：{ref["value"]:.4f}'))
+            label=f'{ref["label"]}：{ref["value"]:.4f}{suffix}'))
     fig.legend(reference_handles, [line.get_label() for line in reference_handles], loc="lower center",
                bbox_to_anchor=(.52, .025), ncol=2, frameon=False, fontsize=15, columnspacing=2.5)
     return fig, axes, annotations
 
 
-def render(data_path, output_dir, variants=(True, False), edit=None):
+def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None, arrange=False):
     import matplotlib
     if edit is None:
         matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    from matplotlib.text import Text
+    from disc_loss_label_layout import arrange_labels, inspect_layout, route_leaders
     data_path, output_dir = Path(data_path), Path(output_dir)
     data = json.loads(data_path.read_text(encoding="utf-8-sig"))
     tubes = confidence_tubes(data)
@@ -239,24 +251,41 @@ def render(data_path, output_dir, variants=(True, False), edit=None):
     manifests = {}
     for with_zebra in variants:
         variant = "with-zebra" if with_zebra else "without-zebra"
-        key = "result-wthor-all-disc-loss-" + variant
-        fig, axes, annotations = make_figure(data, tubes, with_zebra)
+        suffix = "" if x_max is None else f"-x{x_max:g}"
+        key = "result-wthor-all-disc-loss-" + variant + suffix
+        fig, axes, annotations = make_figure(data, tubes, with_zebra, x_max)
         apply_label_positions(fig, positions.get(key, {}))
         text_targets = apply_text_overrides(fig, texts.get(key, {}))
+        if arrange:
+            for _ in range(4):
+                report = inspect_layout(fig, annotations)
+                if not any(report.values()):
+                    break
+                affected = set(report["line"] + report["point"] + report["legend"]
+                               + report["outside"] + report["leader_outside"])
+                affected.update(uid for pair in report["text"] for uid in pair)
+                affected.update(pair[0] for pair in report["leader"])
+                arrange_labels(fig, annotations, set(annotations)-affected)
+            save_label_positions(positions_path, key,
+                                 {uid: annotation_position(a) for uid, a in annotations.items()})
 
         def save():
+            route_leaders(fig, annotations)
             for extension in ("png", "svg", "pdf"):
                 fig.savefig(output_dir / f"{key}.{extension}", dpi=220, facecolor="white")
-            fig.canvas.draw()
-            renderer = fig.canvas.get_renderer()
-            boxes = {uid: Text.get_window_extent(a, renderer) for uid, a in annotations.items()}
-            overlap = [(a, b) for i, a in enumerate(boxes) for b in list(boxes)[i+1:]
-                       if boxes[a].overlaps(boxes[b])]
-            visible = selected_names(data, with_zebra)
+            layout = inspect_layout(fig, annotations)
+            visible = selected_names(data, with_zebra, x_max)
+            excluded = sorted(set(selected_names(data, with_zebra)) - set(visible))
             manifest = dict(variant=variant, model_count=len(visible), model_ids=visible,
                 reversed_x_axes=all(ax.xaxis_inverted() for ax in axes.values()),
+                x_limits={name: list(axis.get_xlim()) for name, axis in axes.items()},
+                out_of_range_models=excluded,
+                out_of_range_references=[r["key"] for r in data["references"]
+                                         if x_max is not None and not 0 <= r["value"] <= x_max],
                 reference_lines=data["references"], labels={uid: asdict(annotation_position(a)) for uid, a in annotations.items()},
-                label_overlaps=overlap, input_sha256=sha256(data_path),
+                label_overlaps=layout["text"], layout_collisions=layout,
+                status="passed" if not any(layout.values()) else "needs_layout_review",
+                input_sha256=sha256(data_path),
                 confidence=dict(method="joint_xy_multivariate_normal_mean_max_standardized_v1",
                     confidence=.95, replicates=20000, seed=20261116,
                     scope="Per displayed family; evaluated vertices and their linear interpolation only.",
@@ -283,13 +312,15 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output/disc_loss_agreement")
     parser.add_argument("--zebra", choices=("both", "with", "without"), default="both")
     parser.add_argument("--edit", choices=("with-zebra", "without-zebra"))
+    parser.add_argument("--x-max", type=float, help="Set the main X axis from this value to exactly zero")
+    parser.add_argument("--arrange-labels", action="store_true", help="Reposition and save labels clear of plotted objects")
     args = parser.parse_args()
     variants = (True, False) if args.zebra == "both" else (args.zebra == "with",)
     if args.edit:
         variants = (args.edit == "with-zebra",)
-    manifests = render(args.data, args.output_dir, variants, args.edit)
+    manifests = render(args.data, args.output_dir, variants, args.edit, args.x_max, args.arrange_labels)
     for key, manifest in manifests.items():
-        print(f"{key}: {manifest['model_count']} models; reversed X={manifest['reversed_x_axes']}; label overlaps={len(manifest['label_overlaps'])}")
+        print(f"{key}: {manifest['model_count']} models; X={manifest['x_limits']['main']}; layout={manifest['status']}")
 
 
 if __name__ == "__main__":
