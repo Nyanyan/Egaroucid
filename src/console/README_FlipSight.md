@@ -23,11 +23,13 @@ GGSとFlipSightは同じ実行ファイルに組み込めます。起動時に�
 
 ## 起動
 
-生成した実行ファイルの隣に、通常のコンソール版と同じ `resources/` を配置してください。このリポジトリでは `bin/resources/` にあるコンソール用のリソースを使います。評価ファイルは `eval.egev2` と `eval_move_ordering_end.egev`、定石ブックは `book.egbk3` です。以下はWindowsのCMake Releaseビルドを、リポジトリ直下から起動する例です。`<token>` をFlipSightで発行したボット用トークンに置き換えます。
+CMakeでビルドしたコンソール版は、Release構成でも `bin/` 直下に出力します。このリポジトリの `bin/resources/` にある評価ファイルと定石ブックを、そのまま読み込みます。評価ファイルは `eval.egev2` と `eval_move_ordering_end.egev`、定石ブックは `book.egbk3` です。以下はWindowsのCMakeビルドを、リポジトリ直下から起動する例です。`<token>` をFlipSightで発行したボット用トークンに置き換えます。
 
 ```powershell
-.\bin\Release\Egaroucid_for_Console.out.exe -flipsight "<token>" -fsthread 4 -hash 24
+.\bin\Egaroucid_for_Console.out.exe -flipsight "<token>" -fsthread 4 -hash 25
 ```
+
+実行ファイルを別の場所へ配置する場合は、その隣に `resources/` を配置してください。
 
 `-fsthread M` は、サイトへ報告する盤面あたりのスレッド数です。省略時のMは4です。FlipSightモードのスレッド数は `-fsthread` で指定します。
 

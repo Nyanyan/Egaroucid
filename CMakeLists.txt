@@ -119,6 +119,16 @@ endif()
 
 if(BUILD_CONSOLE)
     add_executable(Egaroucid_for_Console.out ./src/Egaroucid_for_Console.cpp)
+    # Keep the executable beside resources/, including with multi-config generators.
+    set_target_properties(Egaroucid_for_Console.out PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}"
+    )
+    foreach(config IN LISTS CMAKE_CONFIGURATION_TYPES)
+        string(TOUPPER "${config}" config_upper)
+        set_target_properties(Egaroucid_for_Console.out PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${EXECUTABLE_OUTPUT_PATH}"
+        )
+    endforeach()
     if(INCLUDE_FLIPSIGHT)
         target_compile_definitions(Egaroucid_for_Console.out PRIVATE INCLUDE_FLIPSIGHT)
         if(WIN32)
