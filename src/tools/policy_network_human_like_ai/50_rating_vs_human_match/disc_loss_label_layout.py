@@ -10,10 +10,10 @@ from matplotlib.transforms import Bbox
 from label_editor import update_leader_line
 
 
-def obstacles(axis, renderer, padding):
+def obstacles(axis, renderer, padding, exclude_gids=()):
     paths, points = [], []
     for line in axis.lines:
-        if not line.get_visible():
+        if not line.get_visible() or line.get_gid() in exclude_gids:
             continue
         path = line.get_transform().transform_path(line.get_path())
         if line.get_linestyle() not in ("None", "none", "", " ") and len(path.vertices) > 1:
@@ -44,13 +44,16 @@ def inspect_layout(figure, annotations):
     for axis in figure.axes:
         labels = {uid: a for uid, a in annotations.items() if a.axes is axis}
         paths, points, legends = obstacles(axis, renderer, padding)
+        reference_paths = obstacles(axis, renderer, padding, ("human-reference-line",))[0]
         boxes = {uid: Text.get_window_extent(a, renderer).padded(padding) for uid, a in labels.items()}
         leaders = {uid: leader_path(a, renderer) for uid, a in labels.items()}
         for i, (uid, box) in enumerate(boxes.items()):
             for other in list(boxes)[i+1:]:
                 if box.overlaps(boxes[other]):
                     report["text"].append([uid, other])
-            if any(path.intersects_bbox(box, filled=False) for path in paths):
+            # Opaque reference captions mask reference lines behind them.
+            caption_paths = reference_paths if uid.startswith("reference/") else paths
+            if any(path.intersects_bbox(box, filled=False) for path in caption_paths):
                 report["line"].append(uid)
             if any(box.overlaps(point) for point in points):
                 report["point"].append(uid)

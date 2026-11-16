@@ -156,16 +156,19 @@ def add_reference_labels(fig, axis, references, x_max):
         if x_max is not None and not 0 <= ref["value"] <= x_max:
             outside.append(ref)
             continue
-        axis.axvline(ref["value"], color=ref["color"], ls=ref["linestyle"], lw=1.5, alpha=.8, zorder=1)
+        line = axis.axvline(ref["value"], color=ref["color"], ls=ref["linestyle"], lw=1.5, alpha=.8, zorder=1)
+        line.set_gid("human-reference-line")
         name = ref["label"].replace("オセロクエスト ", "オセロクエスト\n")
-        right = ref["key"] == "wthor"
+        right = ref["key"] == "wthor" or ref["key"] == "quest_2000-2200" and x_max is None
+        height = {"quest_2000-2200": 72 if x_max is None else 30,
+                  "quest_1600-1800": 72}.get(ref["key"], 12)
         label = axis.annotate(f'{name}\n{ref["value"]:.4f}',
             (ref["value"], axis.get_ylim()[0]),
-            xytext=(8 if right else -8, 30 if ref["key"] == "quest_2000-2200" else 12),
+            xytext=(8 if right else -8, height),
             textcoords="offset points", ha="left" if right else "right", va="bottom",
             multialignment="center", fontsize=15, color=ref["color"], annotation_clip=False,
             bbox=dict(boxstyle="round,pad=.2", facecolor="white", edgecolor=ref["color"],
-                      linewidth=.5, alpha=.95), zorder=6)
+                      linewidth=.5, alpha=1), zorder=6)
         uid = "reference/" + ref["key"]
         label.set_gid(LABEL_PREFIX + uid)
         labels[uid] = label

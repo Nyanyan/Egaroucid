@@ -106,9 +106,16 @@ def prepare(quest_results, predictions, random_predictions, wthor_human_losses, 
     references = [dict(key="wthor", label="WTHOR全体", value=float(human.mean()),
                        positions=len(human), color="#34495E", linestyle="--")]
     for band, color, style in (("2000-2200", "#277DA8", ":"),
+                               ("1800-2000", "#7952A3", ":"),
+                               ("1600-1800", "#2A7C6F", "-."),
                                ("1400-1600", "#AD6A20", "-."),
                                ("800-1000", "#C05066", "--")):
         row = human_by_band[band]
+        selected = bands == report["identity"]["bands"].index(band)
+        values = losses[selected, 0]
+        require(len(values) == row["positions"]
+                and np.isclose(values.mean(), row["mean_disc_loss"], atol=1e-12, rtol=0),
+                "Human reference differs from saved row losses: " + band)
         references.append(dict(key="quest_" + band, label="オセロクエスト " + band,
                                value=row["mean_disc_loss"], positions=row["positions"],
                                color=color, linestyle=style))
