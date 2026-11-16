@@ -92,6 +92,21 @@ public:
     }
 };
 
+#ifdef _WIN32
+inline DWORD read_winhttp(HINTERNET request, char* buffer, DWORD capacity, bool streaming) {
+    DWORD count = capacity;
+    if (streaming) {
+        // A full-size read can wait for later NDJSON events to fill the buffer.
+        if (!WinHttpQueryDataAvailable(request, &count)) throw std::runtime_error("FlipSight HTTPS availability query failed");
+        if (!count) return 0;
+        count = std::min(count, capacity);
+    }
+    DWORD received = 0;
+    if (!WinHttpReadData(request, buffer, count, &received)) throw std::runtime_error("FlipSight HTTPS read failed");
+    return received;
+}
+#endif
+
 class HttpTransport {
     Endpoint api;
     std::string token;
@@ -164,10 +179,8 @@ class HttpTransport {
             }
             if (body || response.status == 200) {
                 char buffer[8192];
-                DWORD received = 0;
                 while (!stop) {
-                    if (!WinHttpReadData(raw, buffer, sizeof(buffer), &received))
-                        throw std::runtime_error("FlipSight HTTPS read failed");
+                    DWORD received = read_winhttp(raw, buffer, sizeof(buffer), static_cast<bool>(chunk));
                     if (!received) break;
                     if (chunk) chunk(buffer, received);
                     else {
