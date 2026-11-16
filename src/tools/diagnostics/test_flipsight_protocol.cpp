@@ -43,6 +43,12 @@ int main() {
     match["state"]["legs"][0]["revision"] = 1;
     require(!parse_match(match, 1, 12000, 50000)[0].published, "hidden revision");
     match = fixture();
+    match["state"]["legs"][0]["history"].push_back({{"auto", true}, {"participant", nullptr}, {"color", 2}, {"move", -1}});
+    require(parse_match(match, 1, 12000, 50000).size() == 2, "server auto-pass with null participant must remain playable");
+    match["state"]["legs"][0] = {{"status", "finished"}, {"turn", nullptr}, {"clocks_ms", nullptr}};
+    auto remaining = parse_match(match, 2, 12000, 50000);
+    require(remaining.size() == 1 && remaining[0].index == 1 && remaining[0].ours(), "finished null-valued leg must not stop the live leg");
+    match = fixture();
     match["id"] = -7; match["round_no"] = 3; match["room_created_at"] = "room";
     legs = parse_match(match, 1, 12000, 50000);
     require(legs[0].deadline == 108000 && legs[0].move_request(44)["round_no"] == 3, "human clocks and identity");

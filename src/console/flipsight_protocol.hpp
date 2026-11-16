@@ -101,7 +101,7 @@ inline bool unpublished(const Json& leg) {
     Millis visible = 0;
     for (const auto& move : leg["history"]) {
         if (!move.is_object()) throw std::runtime_error("Invalid FlipSight history entry");
-        if (!move.value("auto", false)) ++visible;
+        if (!move.contains("auto") || move["auto"] != true) ++visible;
     }
     return integer(leg.at("revision")) > visible;
 }
@@ -124,12 +124,16 @@ inline std::vector<Leg> parse_match(const Json& match, const Json& bot_id,
     for (const auto& leg : legs) {
         history_known = history_known && leg.contains("history");
         for (const auto& move : leg.value("history", Json::array())) {
-            if (move.value("participant", -1) == participant && !move.value("auto", false) &&
-                    move.value("move", -1) >= 0) played = true;
+            if (move.contains("auto") && move["auto"] == true) continue;
+            if (move.contains("participant") && move["participant"].is_number_integer() &&
+                    integer(move["participant"]) == participant && move.contains("move") &&
+                    move["move"].is_number_integer() && integer(move["move"]) >= 0) played = true;
         }
     }
     for (size_t i = 0; i < legs.size(); ++i) {
         const auto& source = legs[i];
+        // Finished legs may have null turns/clocks. They must not stop the other leg.
+        if (!active(source)) continue;
         Leg leg;
         leg.match_id = integer(match.at("id"));
         if (!leg.match_id) throw std::runtime_error("Invalid FlipSight match id");
