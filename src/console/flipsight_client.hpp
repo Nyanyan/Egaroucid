@@ -94,6 +94,7 @@ struct MoveResult { int policy = 64, value = 0, depth = 0; };
 using Search = std::function<MoveResult(const Leg&, bool, int, bool*, Millis)>;
 using Quota = std::function<void(int, int)>;
 using Grow = std::function<void(int)>;
+using Age = std::function<void()>;
 
 class Controller {
 public:
@@ -115,6 +116,7 @@ private:
         bool divided = false;
         std::vector<Leg> legs;
         int board_count = 0;
+        bool seen_running = false, completed = false;
     };
     std::map<Millis, Match> matches;
     std::map<std::pair<Millis, int>, std::unique_ptr<Job>> jobs;
@@ -124,6 +126,7 @@ private:
     Call call_fn;
     Quota quota_fn;
     Grow grow_fn;
+    Age age_fn;
     int threads_per_board, level, allocated_threads;
     bool ponder;
     Millis transport_ms = 200;
@@ -156,9 +159,9 @@ public:
     ClockSync clock;
 
     Controller(int reported_threads, int fixed_level, bool use_ponder, Search search, Call call, Quota quota,
-            Grow grow = [](int) {})
+            Grow grow = [](int) {}, Age age = [] {})
         : search_fn(std::move(search)), call_fn(std::move(call)), quota_fn(std::move(quota)),
-          grow_fn(std::move(grow)), threads_per_board(reported_threads), level(fixed_level),
+          grow_fn(std::move(grow)), age_fn(std::move(age)), threads_per_board(reported_threads), level(fixed_level),
           allocated_threads(2 * reported_threads), ponder(use_ponder) {
         grow_fn(allocated_threads);
     }
@@ -169,8 +172,18 @@ public:
         return found == jobs.end() ? nullptr : found->second.get();
     }
     bool running() const {
-        for (const auto& item : matches) if (active(item.second.snapshot)) return true;
+        for (const auto& item : matches) if (active(item.second.snapshot) && !item.second.completed) return true;
         return false;
+    }
+    static bool match_completed(const Json& snapshot) {
+        auto ended = [](const Json& item) {
+            auto status = item.value("status", std::string());
+            return status == "finished" || status == "aborted";
+        };
+        if (ended(snapshot)) return true;
+        const auto state = snapshot.value("state", Json());
+        if (!state.is_object() || !state.contains("legs") || !state["legs"].is_array() || state["legs"].empty()) return false;
+        return std::all_of(state["legs"].begin(), state["legs"].end(), ended);
     }
     void update(const Json& payload, Millis started, Millis received, bool full = true) {
         if (payload.contains("bot")) bot_id = payload.at("bot").at("id");
@@ -184,6 +197,8 @@ public:
             bool same_game = found != matches.end() &&
                 found->second.snapshot.value("round_no", Json()) == snapshot.value("round_no", Json()) &&
                 found->second.snapshot.value("room_created_at", Json()) == snapshot.value("room_created_at", Json());
+            bool ended = match_completed(snapshot);
+            if (same_game && found->second.completed && !ended) continue;
             if (same_game && active(snapshot)) {
                 bool stale = false;
                 for (const auto& leg : legs) for (const auto& previous : found->second.legs)
@@ -196,7 +211,12 @@ public:
             if (snapshot.contains("state") && snapshot["state"].is_object() && snapshot["state"].contains("legs"))
                 board_count = static_cast<int>(snapshot["state"]["legs"].size());
             if (same_game) board_count = std::max(board_count, found->second.board_count);
-            matches[match_id] = {snapshot, server, divided, legs, board_count};
+            bool previous_running = found != matches.end() && found->second.seen_running;
+            bool previous_completed = found != matches.end() && found->second.completed;
+            bool age_previous = previous_running && !previous_completed && (!same_game || ended);
+            bool seen_running = (same_game && previous_running) || (!ended && active(snapshot) && !legs.empty());
+            matches[match_id] = {snapshot, server, divided, legs, board_count, seen_running, ended};
+            if (age_previous) age_fn();
             for (const auto& leg : legs) {
                 auto existing = jobs.find({match_id, leg.index});
                 if (existing == jobs.end() || !existing->second->leg.same_turn(leg)) continue;
@@ -254,7 +274,7 @@ public:
         int active_boards = 0;
         for (auto& item : matches) {
             auto& match = item.second;
-            if (!active(match.snapshot)) continue;
+            if (!active(match.snapshot) || match.completed) continue;
             // Keep the pair's allocation until the entire match finishes, including hidden legs.
             active_boards += match.board_count;
             std::vector<Leg> live;
@@ -314,6 +334,9 @@ public:
             bool shared = !matches.at(allocation.first).divided && !(thinking[0] && thinking[1]);
             int boards = matches.at(allocation.first).board_count;
             auto plan = thread_plan(threads_per_board * std::max(1, boards), shared, thinking, pondering);
+            if (!shared && boards == 2) {
+                for (auto& count : plan) if (count) count = threads_per_board;
+            }
             for (int i = 0; i < 2; ++i) quota_fn(allocation.second[i], std::max(0, plan[i] - 1));
         }
         for (auto& entry : jobs) {

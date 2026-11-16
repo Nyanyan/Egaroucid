@@ -63,6 +63,44 @@ struct NetworkUpdate {
     bool event = false;
 };
 
+class TableAger {
+    std::mutex mutex;
+    std::condition_variable wake;
+    size_t pending = 0;
+    bool stopping = false;
+    bool previous_auto_reset;
+    std::thread worker;
+public:
+    explicit TableAger(bool show_log) : previous_auto_reset(transposition_table_auto_reset_importance) {
+        // FlipSight ages once per completed match instead of at the occupancy threshold.
+        transposition_table_auto_reset_importance = false;
+        try {
+            worker = std::thread([this, show_log] {
+                while (true) {
+                    {
+                        std::unique_lock<std::mutex> lock(mutex);
+                        wake.wait(lock, [&] { return stopping || pending; });
+                        if (!pending) return;
+                        --pending;
+                    }
+                    transposition_table.reset_importance_concurrent();
+                    if (show_log) std::cerr << "[FlipSight] transposition table aged after match completion\n";
+                }
+            });
+        } catch (...) { transposition_table_auto_reset_importance = previous_auto_reset; throw; }
+    }
+    void enqueue() {
+        { std::lock_guard<std::mutex> lock(mutex); ++pending; }
+        wake.notify_all();
+    }
+    ~TableAger() {
+        { std::lock_guard<std::mutex> lock(mutex); stopping = true; }
+        wake.notify_all();
+        worker.join();
+        transposition_table_auto_reset_importance = previous_auto_reset;
+    }
+};
+
 inline int run(Options* options) {
     Endpoint endpoint(options->flipsight_api);
     // Validate the credential before starting workers or marking the bot online.
@@ -99,6 +137,7 @@ inline int run(Options* options) {
         }
         return reply;
     };
+    TableAger ager(options->show_log);
     Controller controller(options->flipsight_threads, options->flipsight_fixed_level ? options->level : -1,
         !options->flipsight_no_ponder,
         [&](const Leg& leg, bool ponder, int id, bool* searching, Millis budget) {
@@ -108,7 +147,7 @@ inline int run(Options* options) {
         }, [&](int total_threads) {
             thread_pool.grow(total_threads - 1);
             if (options->show_log) std::cerr << "[FlipSight] allocated search threads = " << total_threads << '\n';
-        });
+        }, [&] { ager.enqueue(); });
     Json environment = {{"engine", std::string(EGAROUCID_NAME) + " " + EGAROUCID_VERSION},
         {"engine_threads", options->flipsight_threads},
 #ifdef _WIN32

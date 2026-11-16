@@ -118,6 +118,16 @@ int main() {
     }
     {
         auto data = fixture();
+        play(data["matches"][0]["state"]["legs"][0], 19, 0);
+        play(data["matches"][0]["state"]["legs"][1], 26, 1);
+        Controller controller(2, -1, false, instant, success, quota);
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        require(controller.job_count() == 1 && quotas[0] == 0 && quotas[1] == 1,
+            "a diverged board must keep M threads even when the other board is not pondering");
+        controller.stop();
+    }
+    {
+        auto data = fixture();
         std::atomic<int> calls{0};
         auto illegal = [&](const Json&, std::atomic_bool&) {
             ++calls; return Reply{409, {}, now_ms(), now_ms(), "illegal_move"};
@@ -222,6 +232,61 @@ int main() {
         controller.stop();
         require(pair_ok && normal_ok && original_kept && no_shrink,
             "live match admission must grow by 2M/M and retain existing searches and per-match quotas");
+    }
+    {
+        auto data = fixture();
+        int ages = 0;
+        Controller controller(2, -1, false, instant, success, quota, [](int) {}, [&] { ++ages; });
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        data["matches"][0]["state"]["legs"][0]["status"] = "finished";
+        data["server_now_ms"] = 100001;
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        require(ages == 0 && controller.running(), "one finished leg must not age a paired match");
+        data["matches"][0]["state"]["legs"][1]["status"] = "finished";
+        data["server_now_ms"] = 100002;
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        require(ages == 1 && !controller.running() && !controller.job_count(), "both finished legs must age exactly once");
+        data["matches"][0]["status"] = "finished"; data["server_now_ms"] = 100003;
+        controller.update(data, now_ms(), now_ms());
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        require(ages == 1, "duplicate finish snapshots aged the same match twice");
+        auto late = fixture(); late["server_now_ms"] = 100003;
+        controller.update(late, now_ms(), now_ms()); controller.tick();
+        require(ages == 1 && !controller.running(), "late running snapshot resurrected a completed match");
+        auto history = fixture(); history["matches"][0]["id"] = 999;
+        history["matches"][0]["status"] = "finished"; history["server_now_ms"] = 100004;
+        controller.update(history, now_ms(), now_ms());
+        require(ages == 1, "historical finished matches must not age the table on startup");
+        auto normal = fixture(); normal["matches"][0]["id"] = -10;
+        normal["matches"][0]["round_no"] = 1;
+        normal["matches"][0]["state"]["legs"].erase(1); normal["server_now_ms"] = 100005;
+        controller.update(normal, now_ms(), now_ms()); controller.tick();
+        normal["matches"][0]["status"] = "finished"; normal["server_now_ms"] = 100006;
+        controller.update(normal, now_ms(), now_ms()); controller.tick();
+        require(ages == 2, "a normal game must age once on completion");
+        normal["matches"][0]["status"] = "running"; normal["matches"][0]["round_no"] = 2;
+        normal["server_now_ms"] = 100007;
+        controller.update(normal, now_ms(), now_ms()); controller.tick();
+        normal["matches"][0]["round_no"] = 3; normal["server_now_ms"] = 100008;
+        controller.update(normal, now_ms(), now_ms()); controller.tick();
+        require(ages == 3, "room round rollover must complete the preceding round once");
+        normal["matches"][0]["status"] = "aborted"; normal["server_now_ms"] = 100009;
+        controller.update(normal, now_ms(), now_ms()); controller.tick();
+        require(ages == 4, "aborted active game must age once");
+        controller.stop();
+    }
+    {
+        auto data = fixture();
+        int ages = 0;
+        Json other = data["matches"][0]; other["id"] = 124;
+        data["matches"].push_back(other);
+        Controller controller(2, -1, false, instant, success, quota, [](int) {}, [&] { ++ages; });
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        auto running_job = controller.job(124, 0);
+        data["matches"][0]["status"] = "finished"; data["server_now_ms"] = 100001;
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        require(ages == 1 && running_job == controller.job(124, 0), "aging a completed match must preserve another active match");
+        controller.stop();
     }
     {
         RequestGate gate(true);

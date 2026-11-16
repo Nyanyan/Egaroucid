@@ -61,11 +61,46 @@ int main(int argc, char** argv) {
     searching[0] = true;
     auto random = flipsight::engine_search(leg, false, 0, &searching[0], 100, options);
     if (!(leg.legal & (1ULL << random.policy))) throw std::runtime_error("level zero failed");
-    searching[0] = true;
-    auto ponder = std::async(std::launch::async, [&] { return flipsight::engine_search(leg, true, 0, &searching[0], 1000, options); });
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    searching[0] = false;
-    if (ponder.wait_for(std::chrono::seconds(3)) != std::future_status::ready) throw std::runtime_error("ponder did not stop");
-    ponder.get();
+    Hash_node sample;
+    sample.init();
+    auto node = &sample;
+    node->lock.lock();
+    node->board = board;
+    node->data.reg_new_data(5, MPC_100_LEVEL, -SCORE_MAX, SCORE_MAX, 7, first.policy);
+    std::promise<void> aging_started;
+    auto aging = std::async(std::launch::async, [&] {
+        aging_started.set_value(); age_transposition_nodes(node, 1);
+    });
+    aging_started.get_future().wait();
+    bool respected_lock = aging.wait_for(std::chrono::milliseconds(30)) != std::future_status::ready;
+    node->lock.unlock();
+    aging.get();
+    int lower = -SCORE_MAX, upper = SCORE_MAX;
+    uint_fast8_t moves[N_TRANSPOSITION_MOVES];
+    node->data.get_bounds(&lower, &upper); node->data.get_moves(moves);
+    if (!respected_lock || node->data.get_importance() != 0 || node->data.get_depth() != 5 ||
+            lower != 7 || upper != 7 || moves[0] != first.policy || !(node->board == board))
+        throw std::runtime_error("Concurrent aging must respect node locks and preserve cached search data");
+    transposition_table.init();
+    Search cached(&board, MPC_100_LEVEL, false, false);
+    transposition_table.reg(&cached, 0, 5, -SCORE_MAX, SCORE_MAX, 7, first.policy);
+    transposition_table.reset_importance_concurrent();
+    lower = -SCORE_MAX; upper = SCORE_MAX;
+    transposition_table.get(&cached, 0, 5, &lower, &upper, moves);
+    if (lower != 7 || upper != 7 || moves[0] != first.policy)
+        throw std::runtime_error("Aging must retain transposition-table bounds and moves");
+    bool previous_reset = transposition_table_auto_reset_importance;
+    {
+        flipsight::TableAger ager(false);
+        if (transposition_table_auto_reset_importance) throw std::runtime_error("FlipSight must age at match completion");
+        searching[0] = true;
+        auto ponder = std::async(std::launch::async, [&] { return flipsight::engine_search(leg, true, 0, &searching[0], 1000, options); });
+        ager.enqueue();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        searching[0] = false;
+        if (ponder.wait_for(std::chrono::seconds(3)) != std::future_status::ready) throw std::runtime_error("ponder did not stop");
+        ponder.get();
+    }
+    if (transposition_table_auto_reset_importance != previous_reset) throw std::runtime_error("Aging policy not restored after client shutdown");
     std::cout << "PASS: native fixed-level, simultaneous roots, time cap, game-clock search, level zero, ponder cancellation\n";
 }
