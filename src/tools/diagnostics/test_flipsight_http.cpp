@@ -19,8 +19,14 @@ flipsight::Millis measure(bool streaming) {
     std::promise<void> release;
     auto released = release.get_future();
     auto server = std::async(std::launch::async, [&] {
+        fd_set readable; FD_ZERO(&readable); FD_SET(listener, &readable);
+        timeval timeout{4, 0};
+        if (select(0, &readable, nullptr, nullptr, &timeout) != 1)
+            throw std::runtime_error("Loopback connection blocked or timed out");
         SOCKET peer = accept(listener, nullptr, nullptr);
         if (peer == INVALID_SOCKET) throw std::runtime_error("Loopback accept failed");
+        DWORD receive_timeout = 4000;
+        setsockopt(peer, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&receive_timeout), sizeof(receive_timeout));
         char request[4096]; recv(peer, request, sizeof(request), 0);
         std::string head = "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n";
         std::string event = "{\"type\":\"hello\"}\n";

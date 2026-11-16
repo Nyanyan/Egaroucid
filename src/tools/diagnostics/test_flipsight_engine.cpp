@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
             !std::filesystem::exists(binary_path + "resources/eval_move_ordering_end.egev"))
         throw std::runtime_error("Native engine test requires the console evaluation files in bin/resources");
     std::vector<std::string> arguments = {"test", "-flipsight", "offline-test-token", "-level", "3",
-        "-fsthread", "2", "-thread", "9", "-hash", "18", "-nobook"};
+        "-fsthread", "2", "-thread", "9", "-hash", "20", "-nobook"};
     std::vector<char*> raw;
     for (auto& text : arguments) raw.push_back(text.data());
     auto options = get_options(get_commandline_options(static_cast<int>(raw.size()), raw.data()), binary_path);
@@ -48,6 +48,12 @@ int main(int argc, char** argv) {
     auto first = a.get(), second = b.get();
     if (first.depth != 3 || second.depth != 3 || !(leg.legal & (1ULL << first.policy)) ||
             !(leg.legal & (1ULL << second.policy))) throw std::runtime_error("fixed-level concurrent engine search failed");
+    transposition_table.init();
+    options.level = 10;
+    auto level10_start = flipsight::now_ms();
+    auto level10 = flipsight::engine_search(leg, false, 0, &searching[0], 3000, options);
+    if (level10.depth != 10 || !(leg.legal & (1ULL << level10.policy))) throw std::runtime_error("level 10 search did not finish normally");
+    std::cout << "Level 10 initial-position search: " << flipsight::now_ms() - level10_start << " ms\n";
     options.level = 60;
     auto started = flipsight::now_ms();
     auto timed = flipsight::engine_search(leg, false, 0, &searching[0], 10, options);
