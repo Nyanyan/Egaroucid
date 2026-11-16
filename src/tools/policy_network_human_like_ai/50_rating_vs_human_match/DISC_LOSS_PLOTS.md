@@ -1,6 +1,6 @@
 # 平均石損と着手一致率の図
 
-保存済みの平均石損とWTHORの着手予測から、論文用の表示形式で図を作ります。横軸は平均石損が小さいほど右に進みます。Zebraあり・なしを同じ座標範囲で出力します。
+保存済みの平均石損とWTHORの着手予測から、全体図と右側の拡大図を作ります。横軸は平均石損が小さいほど右に進みます。各表示範囲について、Zebraあり・なしの軸範囲を揃えます。
 
 ```text
 python plot_disc_loss_agreement.py --data output/disc_loss_dataset/plot_data.json --output-dir output/disc_loss_dataset/figures
@@ -10,10 +10,10 @@ PNG・SVG・PDFと計測条件のJSONを出力します。既定ではZebraあ�
 
 `--arrange-labels` を付けると、文字同士に加え、点・折れ線・縦線・凡例・ほかのラベルの引き出し線と重ならないように再配置し、位置を保存します。保存するJSONには種類ごとの衝突検査結果も記録します。
 
-横軸を5→0にするには `--x-max 5` を指定します。この版では、石損が5を超えるモデルの点とラベルを描きません。人間の縦線が範囲外の場合、凡例に「範囲外」と付記します。元のデータと平均値は変更しません。全範囲版と5→0版のラベル位置は別々に保存します。
+横軸を4→0にするには `--x-max 4` を指定します。この版では、石損が4を超えるモデルの点とラベルを描きません。人間の縦線が範囲外の場合、凡例に「範囲外」と付記します。元のデータと平均値は変更しません。全範囲版と4→0版のラベル位置は別々に保存します。
 
 ```text
-python plot_disc_loss_agreement.py --data output/disc_loss_dataset/plot_data.json --output-dir output/disc_loss_dataset/figures --x-max 5 --arrange-labels
+python plot_disc_loss_agreement.py --data output/disc_loss_dataset/plot_data.json --output-dir output/disc_loss_dataset/figures --x-max 4 --arrange-labels
 ```
 
 データJSONには、各モデルの `model` / `mean_disc_loss` / `wthor_accuracy`、縦線の `references`、モデル順 `covariance_model_order`、平均値の共分散 `covariance_x` / `covariance_y` を入れます。共分散とモデル行の対応が一致しない入力は拒否します。

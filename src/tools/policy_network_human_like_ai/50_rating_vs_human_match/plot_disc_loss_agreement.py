@@ -151,7 +151,7 @@ def make_figure(data, tubes, with_zebra, x_max=None):
     import matplotlib.pyplot as plt
     from matplotlib.legend_handler import HandlerTuple
     from matplotlib.lines import Line2D
-    from matplotlib.patches import Patch, Rectangle
+    from matplotlib.patches import Patch
     from matplotlib.ticker import MultipleLocator
     from plot_rating_vs_human_match import configure_plotting
     configure_plotting()
@@ -160,17 +160,14 @@ def make_figure(data, tubes, with_zebra, x_max=None):
     require(x_max is None or np.isfinite(x_max) and x_max > 0, "X maximum must be positive")
     names = selected_names(data, with_zebra, x_max)
     rows = {row["model"]: row for row in data["rows"]}
-    fig = plt.figure(figsize=(23, 10.5))
-    main = fig.add_axes([.05, .29, .405, .65])
-    middle = fig.add_axes([.515, .29, .205, .65])
-    detail = fig.add_axes([.78, .29, .205, .65])
+    fig = plt.figure(figsize=(20, 9.8))
+    main = fig.add_axes([.055, .29, .62, .66])
+    detail = fig.add_axes([.74, .29, .245, .66])
     main.set_xlim((10.85, -.17) if x_max is None else (x_max, 0))
     main.set_ylim(16, 74)
-    middle.set_xlim(2.85, .85)
-    middle.set_ylim(48, 73.5)
     detail.set_xlim(.96, -.075)
     detail.set_ylim(59.5, 70.2)
-    axes = {"main": main, "middle": middle, "detail": detail}
+    axes = {"main": main, "detail": detail}
     annotations = {}
     active = {key: spec for key, spec in CURVES.items()
               if key in tubes and any(n in names for n in spec["names"])}
@@ -195,15 +192,9 @@ def make_figure(data, tubes, with_zebra, x_max=None):
     main.xaxis.set_major_locator(MultipleLocator(2 if x_max is None else 1))
     detail.xaxis.set_major_locator(MultipleLocator(.2))
     detail.yaxis.set_major_locator(MultipleLocator(2))
-    middle.xaxis.set_major_locator(MultipleLocator(.5))
-    middle.yaxis.set_major_locator(MultipleLocator(5))
-    middle.set_title("中石損域の拡大", fontsize=20, pad=10)
-    detail.set_title("低石損域の拡大", fontsize=20, pad=10)
-    main.add_patch(Rectangle((0, 60), .85, 9, fill=False, edgecolor="#89939A", linestyle=":", lw=1))
     for name in names:
         row, spec = rows[name], CURVES[model_group(name)]
-        region = ("detail" if row["mean_disc_loss"] <= .85 else
-                  "middle" if row["mean_disc_loss"] <= 2.85 else "main")
+        region = "detail" if row["mean_disc_loss"] <= .85 else "main"
         axis = axes[region]
         uid = region + "/" + name
         annotation = axis.annotate(point_label(name, row["wthor_accuracy"]),
@@ -220,7 +211,7 @@ def make_figure(data, tubes, with_zebra, x_max=None):
                                marker=spec["marker"] if spec["linestyle"] == "None" else None)))
         labels.append(spec["label"])
     fig.legend(handles, labels, handler_map={tuple: HandlerTuple(ndivide=1, pad=0)},
-               loc="upper center", bbox_to_anchor=(.52, .17), ncol=4,
+               loc="upper center", bbox_to_anchor=(.52, .18), ncol=4,
                frameon=False, fontsize=17, columnspacing=2)
     reference_handles = []
     for ref in data["references"]:
@@ -231,7 +222,7 @@ def make_figure(data, tubes, with_zebra, x_max=None):
         reference_handles.append(Line2D([], [], color=ref["color"], ls=ref["linestyle"], lw=1.5,
             label=f'{ref["label"]}：{ref["value"]:.4f}{suffix}'))
     fig.legend(reference_handles, [line.get_label() for line in reference_handles], loc="lower center",
-               bbox_to_anchor=(.52, .025), ncol=2, frameon=False, fontsize=15, columnspacing=2.5)
+               bbox_to_anchor=(.52, .01), ncol=2, frameon=False, fontsize=15, columnspacing=2.5)
     return fig, axes, annotations
 
 
@@ -254,7 +245,13 @@ def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None,
         suffix = "" if x_max is None else f"-x{x_max:g}"
         key = "result-wthor-all-disc-loss-" + variant + suffix
         fig, axes, annotations = make_figure(data, tubes, with_zebra, x_max)
-        apply_label_positions(fig, positions.get(key, {}))
+        seed_positions = {}
+        if x_max is not None:
+            full_key = "result-wthor-all-disc-loss-" + variant
+            seed_positions.update({uid: value for uid, value in positions.get(full_key, {}).items()
+                                   if uid.startswith("detail/")})
+        seed_positions.update(positions.get(key, {}))
+        apply_label_positions(fig, seed_positions)
         text_targets = apply_text_overrides(fig, texts.get(key, {}))
         if arrange:
             for _ in range(4):

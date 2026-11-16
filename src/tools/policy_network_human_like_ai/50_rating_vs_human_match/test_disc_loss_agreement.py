@@ -51,20 +51,26 @@ class DiscLossAgreementTests(unittest.TestCase):
         for with_zebra, expected in ((True, 31), (False, 27)):
             fig, axes, annotations = plot.make_figure(data, tubes, with_zebra)
             self.assertEqual(len(annotations), expected)
+            self.assertEqual(set(axes), {"main", "detail"})
+            self.assertEqual(len(fig.axes), 2)
+            self.assertLessEqual(fig.get_figwidth()/fig.get_figheight(), 2.4)
+            self.assertEqual(axes["detail"].get_title(), "")
             self.assertTrue(all(axis.xaxis_inverted() for axis in axes.values()))
             self.assertEqual(any("zebra_" in key for key in annotations), with_zebra)
             self.assertIn("main/random", annotations)
             plt.close(fig)
 
-    def test_five_to_zero_view_reports_only_models_in_range(self):
+    def test_four_to_zero_view_reports_only_models_in_range(self):
         names = list(dict.fromkeys(name for spec in plot.CURVES.values() for name in spec["names"]))
-        data = dict(rows=[dict(model=n, mean_disc_loss=10 if n == "random" else 1, wthor_accuracy=.6)
+        data = dict(rows=[dict(model=n, mean_disc_loss=10 if n == "random" else 4.5 if n == "alpha_4.0" else 1, wthor_accuracy=.6)
                           for n in names], references=[])
-        for with_zebra, count in ((True, 30), (False, 26)):
-            fig, axes, annotations = plot.make_figure(data, {}, with_zebra, x_max=5)
-            self.assertEqual(axes["main"].get_xlim(), (5, 0))
+        for with_zebra, count in ((True, 29), (False, 25)):
+            fig, axes, annotations = plot.make_figure(data, {}, with_zebra, x_max=4)
+            self.assertEqual(axes["main"].get_xlim(), (4, 0))
+            self.assertEqual(len(fig.axes), 2)
             self.assertEqual(len(annotations), count)
             self.assertFalse(any("random" in uid for uid in annotations))
+            self.assertFalse(any("alpha_4.0" in uid for uid in annotations))
             plt.close(fig)
 
     def test_layout_detects_and_clears_text_line_marker_and_legend_obstacles(self):
