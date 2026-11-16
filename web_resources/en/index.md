@@ -181,6 +181,7 @@ I would like to thank these people for great contributions (in no particular ord
   - Benson Muite
   - Folkert van Heusden
   - HiraokaTakuya
+  - Nolan Chu
   - Ben Stokmans
   - seigot
   - Wanryu

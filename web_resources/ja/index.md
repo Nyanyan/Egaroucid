@@ -183,6 +183,7 @@ GPL-3.0ライセンスの下で自由に使っていただいて構いません�
   - Benson Muite
   - Folkert van Heusden
   - HiraokaTakuya
+  - Nolan Chu
   - Ben Stokmans
   - seigot
   - わんりゅー
