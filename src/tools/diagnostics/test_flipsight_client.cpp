@@ -289,6 +289,48 @@ int main() {
         controller.stop();
     }
     {
+        auto data = fixture(); data["bot"]["id"] = 2;
+        std::vector<std::string> events;
+        Controller controller(2, 10, false, instant, success, quota, [](int) {}, [] {},
+            [&](const std::string& event, Json, bool) { events.push_back(event); });
+        controller.update(data, now_ms(), now_ms());
+        settle(controller, [&] { auto j = controller.job(123, 1); return j && j->sent; }, 1100);
+        auto& finished = data["matches"][0]["state"]["legs"][0];
+        finished = {{"status", "finished"}, {"turn", nullptr}, {"clocks_ms", nullptr}};
+        auto& live = data["matches"][0]["state"]["legs"][1];
+        play(live, 19, 1); play(live, 18, 0);
+        live["history"].push_back({{"auto", true}, {"participant", nullptr}, {"color", 2}, {"move", -1}});
+        data["server_now_ms"] = 100001;
+        controller.update(data, now_ms(), now_ms());
+        settle(controller, [&] { auto j = controller.job(123, 1); return j && j->leg.revision == 2 && j->sent; }, 1100);
+        require(std::count(events.begin(), events.end(), "search_finished") == 2 &&
+                std::count(events.begin(), events.end(), "move_acknowledged") == 2,
+            "a finished leg or an auto-pass must not stall the next move; both moves must be logged");
+        controller.stop();
+    }
+    {
+        auto path = std::filesystem::temp_directory_path() / ("egaroucid_flipsight_log_" + std::to_string(now_ms()) + ".jsonl");
+        std::ostringstream output, errors;
+        {
+            SessionLog log(path, "fsbm_PRIVATE_TEST_TOKEN", output, errors);
+            std::thread a([&] { log.write("search_finished", {{"move", 19}, {"value", 2}, {"depth", 10}}); });
+            std::thread b([&] { log.write("api_failed", {{"http_status", 409}, {"detail", "fsbm_PRIVATE_TEST_TOKEN fsbm_OTHER_SECRET"}}, true); });
+            a.join(); b.join();
+        }
+        std::ifstream input(path);
+        std::string line, saved;
+        int records = 0;
+        while (std::getline(input, line)) {
+            auto record = Json::parse(line);
+            require(record.contains("event") && record.contains("time") && record.contains("severity"), "log record missing metadata");
+            saved += line; ++records;
+        }
+        input.close(); std::filesystem::remove(path);
+        require(records == 2 && output.str().find("search_finished") != std::string::npos && errors.str().find("api_failed") != std::string::npos,
+            "logger must flush events to the file and route normal/error events to stdout/stderr");
+        require((saved + output.str() + errors.str()).find("fsbm_") == std::string::npos, "logger exposed a bot credential");
+    }
+    {
         RequestGate gate(true);
         std::atomic_bool stop(false);
         auto start = now_ms();

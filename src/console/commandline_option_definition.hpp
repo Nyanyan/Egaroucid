@@ -20,7 +20,7 @@
     #define N_COMMANDLINE_OPTIONS_GGS 0
 #endif
 #ifdef INCLUDE_FLIPSIGHT
-    #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 5
+    #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 7
 #else
     #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 0
 #endif
@@ -79,6 +79,8 @@
     #define ID_FLIPSIGHT_NO_STREAM (ID_FLIPSIGHT + 2)
     #define ID_FLIPSIGHT_NO_PONDER (ID_FLIPSIGHT + 3)
     #define ID_FLIPSIGHT_THREAD (ID_FLIPSIGHT + 4)
+    #define ID_FLIPSIGHT_LOGFILE (ID_FLIPSIGHT + 5)
+    #define ID_FLIPSIGHT_LOGDIR (ID_FLIPSIGHT + 6)
 #endif
 
 struct Commandline_option_info{
@@ -142,5 +144,7 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_FLIPSIGHT_NO_STREAM,{"-flipsightnostream"},                            0, "",                  "Use FlipSight polling without the event stream"},
     {ID_FLIPSIGHT_NO_PONDER,{"-flipsightnoponder"},                            0, "",                  "Disable FlipSight pondering"},
     {ID_FLIPSIGHT_THREAD,   {"-fsthread"},                                     1, "<M>",               "Report M threads to FlipSight; start with 2M and grow per board (default: 4)"},
+    {ID_FLIPSIGHT_LOGFILE,  {"-fslogfile", "-flipsightlogfile"},                1, "<file>",            "Save FlipSight session events to this file and the console"},
+    {ID_FLIPSIGHT_LOGDIR,   {"-fslogdir", "-flipsightlogdir"},                  1, "<directory>",       "Set FlipSight log directory (default: flipsight/log beside executable)"},
 #endif
 };

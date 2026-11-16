@@ -59,6 +59,7 @@ struct Options {
 #ifdef INCLUDE_FLIPSIGHT
     bool flipsight, flipsight_fixed_level, flipsight_no_stream, flipsight_no_ponder;
     std::string flipsight_token, flipsight_api;
+    std::string flipsight_log_file, flipsight_log_dir;
     int flipsight_threads;
 #endif
 #ifdef INCLUDE_GGS
@@ -354,6 +355,11 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     res.flipsight_fixed_level = find_commandline_option(commandline_options, ID_LEVEL);
     res.flipsight_no_stream = find_commandline_option(commandline_options, ID_FLIPSIGHT_NO_STREAM);
     res.flipsight_no_ponder = find_commandline_option(commandline_options, ID_FLIPSIGHT_NO_PONDER);
+    res.flipsight_log_dir = binary_path + "flipsight/log";
+    if (find_commandline_option(commandline_options, ID_FLIPSIGHT_LOGDIR))
+        res.flipsight_log_dir = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_LOGDIR)[0];
+    if (find_commandline_option(commandline_options, ID_FLIPSIGHT_LOGFILE))
+        res.flipsight_log_file = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_LOGFILE)[0];
     res.flipsight_threads = 4;
     if (find_commandline_option(commandline_options, ID_FLIPSIGHT_THREAD)) {
         const auto text = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_THREAD)[0];

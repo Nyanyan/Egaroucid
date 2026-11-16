@@ -54,7 +54,7 @@ inline MoveResult engine_search(const Leg& leg, bool pondering, int id, bool* se
     if (!is_valid_policy(result.policy) || !(leg.legal & (1ULL << result.policy))) {
         for (int i = 0; i < 64; ++i) if (leg.legal & (1ULL << i)) { result.policy = i; break; }
     }
-    return {result.policy, result.value, result.depth};
+    return {result.policy, result.value, result.depth, result.nodes, static_cast<Millis>(result.time), result.probability};
 }
 
 struct NetworkUpdate {
@@ -71,11 +71,11 @@ class TableAger {
     bool previous_auto_reset;
     std::thread worker;
 public:
-    explicit TableAger(bool show_log) : previous_auto_reset(transposition_table_auto_reset_importance) {
+    explicit TableAger(bool show_log, Event log = {}) : previous_auto_reset(transposition_table_auto_reset_importance) {
         // FlipSight ages once per completed match instead of at the occupancy threshold.
         transposition_table_auto_reset_importance = false;
         try {
-            worker = std::thread([this, show_log] {
+            worker = std::thread([this, show_log, log] {
                 while (true) {
                     {
                         std::unique_lock<std::mutex> lock(mutex);
@@ -83,8 +83,10 @@ public:
                         if (!pending) return;
                         --pending;
                     }
+                    auto started = now_ms();
                     transposition_table.reset_importance_concurrent();
-                    if (show_log) std::cerr << "[FlipSight] transposition table aged after match completion\n";
+                    if (log) log("table_aged", {{"elapsed_ms", now_ms() - started}}, false);
+                    else if (show_log) std::cerr << "[FlipSight] transposition table aged after match completion\n";
                 }
             });
         } catch (...) { transposition_table_auto_reset_importance = previous_auto_reset; throw; }
@@ -101,7 +103,7 @@ public:
     }
 };
 
-inline int run(Options* options) {
+inline int run(Options* options, const Event& log) {
     Endpoint endpoint(options->flipsight_api);
     // Validate the credential before starting workers or marking the bot online.
     HttpTransport validate(options->flipsight_api, options->flipsight_token);
@@ -130,14 +132,23 @@ inline int run(Options* options) {
             if (!transports.empty()) { transport = std::move(transports.back()); transports.pop_back(); }
         }
         if (!transport) transport = std::make_unique<HttpTransport>(options->flipsight_api, options->flipsight_token);
+        Json fields = {{"action", body.at("action")}};
+        for (const auto* key : {"match_id", "leg", "revision", "move"}) if (body.contains(key)) fields[key] = body[key];
+        log("api_request", fields, false);
+        auto started = now_ms();
         auto reply = request(*transport, gate, body, cancel);
+        fields["http_status"] = reply.status; fields["elapsed_ms"] = now_ms() - started;
+        fields["gate_wait_ms"] = reply.started ? std::max<Millis>(0, reply.started - started) : 0;
+        fields["http_ms"] = reply.received - reply.started;
+        fields["code"] = reply.error; fields["cancelled"] = cancel.load(); fields["retry_after_ms"] = reply.retry_after;
+        log(reply.ok() ? "api_response" : "api_failed", fields, !reply.ok() && !cancel);
         {
             std::lock_guard<std::mutex> lock(transport_mutex);
             transports.push_back(std::move(transport));
         }
         return reply;
     };
-    TableAger ager(options->show_log);
+    TableAger ager(options->show_log, log);
     Controller controller(options->flipsight_threads, options->flipsight_fixed_level ? options->level : -1,
         !options->flipsight_no_ponder,
         [&](const Leg& leg, bool ponder, int id, bool* searching, Millis budget) {
@@ -146,8 +157,8 @@ inline int run(Options* options) {
             if (thread_pool.get_max_thread_size(id) != helpers) thread_pool.set_max_thread_size(id, helpers);
         }, [&](int total_threads) {
             thread_pool.grow(total_threads - 1);
-            if (options->show_log) std::cerr << "[FlipSight] allocated search threads = " << total_threads << '\n';
-        }, [&] { ager.enqueue(); });
+            log("threads_allocated", {{"threads", total_threads}}, false);
+        }, [&] { ager.enqueue(); }, log);
     Json environment = {{"engine", std::string(EGAROUCID_NAME) + " " + EGAROUCID_VERSION},
         {"engine_threads", options->flipsight_threads},
 #ifdef _WIN32
@@ -184,12 +195,12 @@ inline int run(Options* options) {
                     backoff = 1;
                     next = now_ms() + (stream_healthy ? (playing ? 10000 : 60000) : (playing ? 1000 : 5000));
                 } else {
-                    std::cerr << "[FlipSight] API connection/rejection (HTTP " << reply.status << "); retrying\n";
+                    log("poll_retry", {{"http_status", reply.status}, {"retry_ms", backoff * 1000}}, true);
                     next = now_ms() + backoff * 1000;
                     backoff = std::min(30, backoff * 2);
                 }
             }
-        } catch (...) { stop = true; wake.notify_all(); }
+        } catch (...) { log("poll_failed", Json::object(), true); stop = true; wake.notify_all(); }
     });
     std::thread stream;
     if (!options->flipsight_no_stream) stream = std::thread([&] {
@@ -199,7 +210,10 @@ inline int run(Options* options) {
             try {
                 HttpTransport transport(options->flipsight_api, options->flipsight_token);
                 auto response = transport.stream(stop, [&](const Json& event) {
-                    if (event.value("type", std::string()) == "hello") { stream_healthy = true; backoff = 1; }
+                    if (event.value("type", std::string()) == "hello") {
+                        stream_healthy = true; backoff = 1;
+                        log("stream_connected", Json::object(), false);
+                    }
                     publish({event, 0, now_ms(), true});
                 });
                 if (response.status == 401 || response.status == 403) { denied = true; stop = true; }
@@ -207,14 +221,20 @@ inline int run(Options* options) {
                     gate.defer(response.retry_after);
                     retry_delay = std::max(retry_delay, response.retry_after);
                 }
-            } catch (...) {}
+            } catch (...) { if (!stop) log("stream_failed", Json::object(), true); }
             stream_healthy = false;
             poll_now = true;
+            if (!stop) log("stream_retry", {{"retry_ms", retry_delay}}, true);
             for (Millis i = 0; i < retry_delay && !stop; i += 50) std::this_thread::sleep_for(std::chrono::milliseconds(50));
             backoff = std::min(30, backoff * 2);
         }
     });
-    std::cerr << "[FlipSight] Ready; Ctrl+C stops the client.\n";
+    Json configuration = {{"reported_threads", options->flipsight_threads}, {"search_threads", options->n_threads},
+        {"level", options->flipsight_fixed_level ? options->level : -1}, {"ponder", !options->flipsight_no_ponder}};
+#if USE_CHANGEABLE_HASH_LEVEL
+    configuration["hash_level"] = options->hash_level;
+#endif
+    log("ready", configuration, false);
     int result = 0;
     try {
         while (!stop && !interrupted) {
@@ -236,8 +256,11 @@ inline int run(Options* options) {
                             wake.notify_all();
                         }
                     }
+                } catch (const Json::exception& error) {
+                    log("invalid_server_state", {{"source", update.event ? "stream" : "poll"}, {"json_error_id", error.id}}, true);
+                    poll_now = true;
                 } catch (...) {
-                    std::cerr << "[FlipSight] Invalid/unsupported server state; refreshing.\n";
+                    log("invalid_server_state", {{"source", update.event ? "stream" : "poll"}}, true);
                     poll_now = true;
                 }
             }
@@ -246,7 +269,7 @@ inline int run(Options* options) {
             if (controller.need_poll) { poll_now = true; controller.need_poll = false; wake.notify_all(); }
             if (controller.denied) { denied = true; break; }
         }
-    } catch (...) { std::cerr << "[FlipSight] Client failure; stopping.\n"; result = 1; }
+    } catch (...) { log("client_failed", Json::object(), true); result = 1; }
     if (stop && !interrupted && !denied) result = 1;
     stop = true;
     wake.notify_all();
@@ -255,12 +278,22 @@ inline int run(Options* options) {
     if (stream.joinable()) stream.join();
     std::signal(SIGINT, old_int);
     std::signal(SIGTERM, old_term);
-    if (denied) { std::cerr << "[FlipSight] Authentication denied; check the bot token.\n"; result = 1; }
+    if (denied) { log("authentication_denied", Json::object(), true); result = 1; }
+    log("stopped", {{"exit_code", result}}, false);
     return result;
 }
 } // namespace flipsight
 
 inline int flipsight_client(Options* options) {
-    try { return flipsight::run(options); }
-    catch (...) { std::cerr << "[ERROR] Invalid FlipSight connection settings or HTTPS initialization failed\n"; return 1; }
+    try {
+        auto stamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        auto path = options->flipsight_log_file.empty() ?
+            std::filesystem::path(options->flipsight_log_dir) / ("flipsight_" + std::to_string(stamp) + ".jsonl") :
+            std::filesystem::path(options->flipsight_log_file);
+        flipsight::SessionLog session(path, options->flipsight_token);
+        flipsight::Event log = [&](const std::string& event, flipsight::Json fields, bool error) { session.write(event, std::move(fields), error); };
+        log("session_started", {{"log_file", std::filesystem::absolute(path).string()}}, false);
+        try { return flipsight::run(options, log); }
+        catch (...) { log("startup_failed", {{"reason", "Invalid connection settings or HTTPS initialization failed"}}, true); return 1; }
+    } catch (...) { std::cerr << "[FlipSight] Cannot initialize session logging; check the log directory.\n"; return 1; }
 }

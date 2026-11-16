@@ -13,6 +13,7 @@
 #include <optional>
 #include <set>
 #include "flipsight_http.hpp"
+#include "flipsight_log.hpp"
 
 namespace flipsight {
 struct Reply {
@@ -20,6 +21,7 @@ struct Reply {
     Json data;
     Millis started = 0, received = 0;
     std::string error;
+    Millis retry_after = 0;
     bool ok() const { return status == 200 && data.is_object() && data.value("ok", false); }
 };
 using Call = std::function<Reply(const Json&, std::atomic_bool&)>;
@@ -63,13 +65,18 @@ inline Reply request(HttpTransport& transport, RequestGate& gate, const Json& bo
         reply.status = response.status;
         reply.started = response.started;
         reply.received = response.received;
+        reply.retry_after = response.retry_after;
         if (response.status == 429 || response.status == 503) gate.defer(response.retry_after);
         if (!response.body.empty() && response.status != 401 && response.status != 403) {
             auto data = Json::parse(response.body);
             if (data.is_object()) {
                 reply.data = data;
                 // Only a known identifier may leave the response parser.
-                if (data.value("error", std::string()) == "illegal_move") reply.error = "illegal_move";
+                static const std::set<std::string> codes = {"illegal_move", "stale_revision", "not_your_turn",
+                    "leg_finished", "match not running", "match timed out", "stale room revision",
+                    "invalid move coordinate", "move outside board", "bot busy", "challenge expired or answered"};
+                if (data.contains("error") && data["error"].is_string() && codes.count(data["error"].get<std::string>()))
+                    reply.error = data["error"].get<std::string>();
             }
         }
     } catch (...) { if (reply.status == 200) reply.status = 0; }
@@ -90,7 +97,7 @@ struct ClockSync {
     }
 };
 
-struct MoveResult { int policy = 64, value = 0, depth = 0; };
+struct MoveResult { int policy = 64, value = 0, depth = 0; uint64_t nodes = 0; Millis elapsed = 0; int probability = 0; };
 using Search = std::function<MoveResult(const Leg&, bool, int, bool*, Millis)>;
 using Quota = std::function<void(int, int)>;
 using Grow = std::function<void(int)>;
@@ -127,14 +134,27 @@ private:
     Quota quota_fn;
     Grow grow_fn;
     Age age_fn;
+    Event log_fn;
     int threads_per_board, level, allocated_threads;
     bool ponder;
     Millis transport_ms = 200;
+
+    void log(const std::string& event, Json fields = Json::object(), bool error = false) const {
+        if (log_fn) log_fn(event, std::move(fields), error);
+    }
+    static Json job_fields(const Job& job) {
+        return {{"match_id", job.leg.match_id}, {"leg", job.leg.index}, {"revision", job.leg.revision},
+            {"remaining_ms", std::max<Millis>(0, job.leg.deadline - now_ms())}, {"ponder", job.pondering},
+            {"thread_id", job.id}, {"black", job.leg.black}, {"white", job.leg.white},
+            {"legal", job.leg.legal}, {"color", job.leg.color}, {"turn", job.leg.turn}};
+    }
 
     static bool ready(const std::future<MoveResult>& future) {
         return future.valid() && future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
     }
     void retire(std::unique_ptr<Job> job) {
+        if (!job->pondering && job->leg.deadline <= now_ms()) log("clock_expired", job_fields(*job), true);
+        log(job->pondering ? "ponder_stopping" : "job_retired", job_fields(*job));
         job->searching = false;
         job->cancel = true;
         retired.push_back(std::move(job));
@@ -159,9 +179,9 @@ public:
     ClockSync clock;
 
     Controller(int reported_threads, int fixed_level, bool use_ponder, Search search, Call call, Quota quota,
-            Grow grow = [](int) {}, Age age = [] {})
+            Grow grow = [](int) {}, Age age = [] {}, Event logger = {})
         : search_fn(std::move(search)), call_fn(std::move(call)), quota_fn(std::move(quota)),
-          grow_fn(std::move(grow)), age_fn(std::move(age)), threads_per_board(reported_threads), level(fixed_level),
+          grow_fn(std::move(grow)), age_fn(std::move(age)), log_fn(std::move(logger)), threads_per_board(reported_threads), level(fixed_level),
           allocated_threads(2 * reported_threads), ponder(use_ponder) {
         grow_fn(allocated_threads);
     }
@@ -192,7 +212,9 @@ public:
         for (const auto& snapshot : payload.at("matches")) {
             auto match_id = integer(snapshot.at("id"));
             auto found = matches.find(match_id);
-            if (found != matches.end() && found->second.server_now > server) continue;
+            if (found != matches.end() && found->second.server_now > server) {
+                log("stale_snapshot", {{"match_id", match_id}, {"server_now_ms", server}}); continue;
+            }
             auto legs = parse_match(snapshot, bot_id, server, started);
             bool same_game = found != matches.end() &&
                 found->second.snapshot.value("round_no", Json()) == snapshot.value("round_no", Json()) &&
@@ -215,14 +237,32 @@ public:
             bool previous_completed = found != matches.end() && found->second.completed;
             bool age_previous = previous_running && !previous_completed && (!same_game || ended);
             bool seen_running = (same_game && previous_running) || (!ended && active(snapshot) && !legs.empty());
+            for (const auto& leg : legs) {
+                bool changed = true;
+                if (same_game) for (const auto& old : found->second.legs)
+                    if (old.index == leg.index && old.same_turn(leg) && old.published == leg.published) changed = false;
+                if (changed) log("leg_state", {{"match_id", match_id}, {"leg", leg.index}, {"revision", leg.revision},
+                    {"turn", leg.turn}, {"color", leg.color}, {"published", leg.published},
+                    {"remaining_ms", std::max<Millis>(0, leg.deadline - received)}, {"black", leg.black},
+                    {"white", leg.white}, {"legal", leg.legal}});
+            }
+            if (seen_running && (!same_game || !previous_running))
+                log("match_started", {{"match_id", match_id}, {"boards", board_count}, {"round_no", snapshot.value("round_no", Json())}});
+            if (age_previous) {
+                auto state = snapshot.value("state", Json::object());
+                log("match_finished", {{"match_id", match_id}, {"status", snapshot.value("status", std::string())},
+                    {"finish_reason", state.is_object() ? state.value("finish_reason", Json()) : Json()}});
+            }
             matches[match_id] = {snapshot, server, divided, legs, board_count, seen_running, ended};
             if (age_previous) age_fn();
             for (const auto& leg : legs) {
+                if (!leg.published) log("leg_unpublished", {{"match_id", match_id}, {"leg", leg.index}, {"revision", leg.revision}});
                 auto existing = jobs.find({match_id, leg.index});
                 if (existing == jobs.end() || !existing->second->leg.same_turn(leg)) continue;
                 auto& job = *existing->second;
                 job.leg.deadline = leg.deadline;
                 if (job.refresh && full && started >= job.failed_at) {
+                    log("move_retry_refreshed", job_fields(job));
                     job.refresh = false;
                     job.ready_at = std::max(job.ready_at, received + std::min<Millis>(5000, 250 * (1 << std::min(job.attempts, 4))));
                 }
@@ -265,6 +305,7 @@ public:
             bool search_done = !job.search.valid() || ready(job.search);
             bool send_done = !job.send.valid() || job.send.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready;
             if (search_done && send_done) {
+                log("job_stopped", job_fields(job));
                 if (job.search.valid()) try { job.search.get(); } catch (...) {}
                 if (job.send.valid()) try { job.send.get(); } catch (...) {}
                 i = retired.erase(i);
@@ -295,6 +336,7 @@ public:
         if (required_threads > allocated_threads) {
             grow_fn(required_threads);
             allocated_threads = required_threads;
+            log("threads_grown", {{"threads", allocated_threads}, {"active_boards", active_boards}});
         }
         for (auto i = jobs.begin(); i != jobs.end();) {
             auto found = desired.find(i->first);
@@ -343,6 +385,8 @@ public:
             auto& job = *entry.second;
             if (!job.search.valid() && !job.result && !job.sent) {
                 auto budget = search_budget(job.leg.deadline - now);
+                auto fields = job_fields(job); fields["budget_ms"] = budget; fields["level"] = level;
+                log(job.pondering ? "ponder_started" : "search_started", fields);
                 job.search = std::async(std::launch::async, [this, &job, budget, leg = job.leg] {
                     return search_fn(leg, job.pondering, job.id, &job.searching, budget);
                 });
@@ -357,16 +401,30 @@ public:
                         if (result.policy == 64 && job.leg.legal != 0)
                             throw std::runtime_error("Illegal FlipSight pass");
                         job.result = result;
+                        auto fields = job_fields(job);
+                        fields["move"] = result.policy == 64 ? -1 : 63 - result.policy;
+                        fields["value"] = result.value; fields["depth"] = result.depth;
+                        fields["nodes"] = result.nodes; fields["probability"] = result.probability;
+                        fields["elapsed_ms"] = now_ms() - job.started;
+                        fields["engine_elapsed_ms"] = result.elapsed;
+                        log("search_finished", fields);
                         job.ready_at = send_at(level, job.started, job.leg.deadline,
                             64 - std::popcount(job.leg.black | job.leg.white), transport_ms);
+                        if (job.ready_at > now) {
+                            auto waiting = job_fields(job); waiting["wait_ms"] = job.ready_at - now;
+                            log("move_pacing", waiting);
+                        }
                     } else job.sent = true;
-                } catch (...) { job.sent = true; need_poll = true; }
+                } catch (...) { log("search_failed", job_fields(job), true); job.sent = true; need_poll = true; }
             }
             if (job.send.valid() && job.send.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
                 Reply reply;
                 try { reply = job.send.get(); } catch (...) {}
                 if (reply.status == 401 || reply.status == 403) denied = true;
                 if (reply.ok()) {
+                    auto fields = job_fields(job); fields["http_status"] = reply.status;
+                    fields["http_ms"] = reply.received - reply.started;
+                    log("move_acknowledged", fields);
                     job.sent = true;
                     if (reply.received >= reply.started) transport_ms = std::clamp<Millis>(reply.received - reply.started, 50, 5000);
                     if (reply.data.contains("match") && reply.data.contains("server_now_ms")) {
@@ -374,6 +432,9 @@ public:
                         completed.push_back({reply.data, reply.started, reply.received});
                     } else need_poll = true;
                 } else {
+                    auto fields = job_fields(job); fields["http_status"] = reply.status;
+                    fields["code"] = reply.error; fields["attempt"] = job.attempts;
+                    log("move_failed", fields, true);
                     job.refresh = true;
                     job.failed_at = now_ms();
                     job.rejected = reply.error == "illegal_move" || (reply.status >= 400 && reply.status < 500 &&
@@ -389,6 +450,8 @@ public:
                     now < job.leg.deadline && !(job.leg.match_id < 0 && job.result->policy == 64)) {
                 ++job.attempts;
                 auto body = job.leg.move_request(job.result->policy);
+                auto fields = job_fields(job); fields["move"] = body["move"]; fields["attempt"] = job.attempts;
+                log("move_sending", fields);
                 job.send = std::async(std::launch::async, [this, &job, body] { return call_fn(body, job.cancel); });
             }
         }
