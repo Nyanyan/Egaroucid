@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include "./../engine/engine_all.hpp"
 #include "commandline_option.hpp"
 #include "console_common.hpp"
@@ -58,6 +59,7 @@ struct Options {
 #ifdef INCLUDE_FLIPSIGHT
     bool flipsight, flipsight_fixed_level, flipsight_no_stream, flipsight_no_ponder;
     std::string flipsight_token, flipsight_api;
+    int flipsight_threads;
 #endif
 #ifdef INCLUDE_GGS
     bool ggs;
@@ -352,11 +354,27 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     res.flipsight_fixed_level = find_commandline_option(commandline_options, ID_LEVEL);
     res.flipsight_no_stream = find_commandline_option(commandline_options, ID_FLIPSIGHT_NO_STREAM);
     res.flipsight_no_ponder = find_commandline_option(commandline_options, ID_FLIPSIGHT_NO_PONDER);
+    res.flipsight_threads = 4;
+    if (find_commandline_option(commandline_options, ID_FLIPSIGHT_THREAD)) {
+        const auto text = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_THREAD)[0];
+        try {
+            size_t used = 0;
+            auto count = std::stoi(text, &used);
+            // The service admits at most eight paired matches (sixteen boards).
+            if (used != text.size() || count < 1 || count > std::numeric_limits<int>::max() / 16)
+                throw std::invalid_argument("threads");
+            res.flipsight_threads = count;
+        } catch (...) {
+            std::cerr << "[ERROR] -fsthread requires a positive integer within the supported thread-count range" << std::endl;
+            std::exit(1);
+        }
+    }
     res.flipsight_api = "https://othelloclub.com/flipsight/bot_match_api.php";
     if (find_commandline_option(commandline_options, ID_FLIPSIGHT_API))
         res.flipsight_api = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_API)[0];
     if (res.flipsight) {
         res.flipsight_token = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT)[0];
+        res.n_threads = res.flipsight_threads * 2;
         if (res.flipsight_fixed_level) {
             const auto text = get_commandline_option_arg(commandline_options, ID_LEVEL)[0];
             try {

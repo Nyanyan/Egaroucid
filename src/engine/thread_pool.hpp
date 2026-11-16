@@ -40,8 +40,8 @@ void reset_unavailable_task(bool *start_flag) {
 class Thread_pool {
     private:
         mutable std::mutex mtx;
-        bool running;
-        int n_thread;
+        bool running = false;
+        std::atomic<int> n_thread{0};
         // n_idle is changed by the worker threads (with the mutex) and read without the mutex
         // (push(), push_task(), get_n_idle()), so it must be atomic.
         // With a plain int, a compiler may read it only once in the loops which wait for an idle thread,
@@ -49,7 +49,7 @@ class Thread_pool {
         // push() returns before any other function is called when n_idle is 0.
         std::atomic<int> n_idle;
         std::queue<std::pair<thread_id_t, std::function<void()>>> tasks{};
-        std::unique_ptr<std::thread[]> threads;
+        std::vector<std::thread> threads;
         std::condition_variable condition;
 
         // Network clients rebalance quotas while searches are running.
@@ -67,11 +67,6 @@ class Thread_pool {
                 if (new_n_thread < 0) {
                     new_n_thread = 0;
                 }
-                n_thread = new_n_thread;
-                threads.reset(new std::thread[n_thread]);
-                for (int i = 0; i < n_thread; ++i) {
-                    threads[i] = std::thread(&Thread_pool::worker, this);
-                }
                 running = true;
                 n_idle = 0;
                 for (int i = 0; i < THREAD_ID_SIZE; ++i) {
@@ -81,6 +76,20 @@ class Thread_pool {
                 max_thread_size[THREAD_ID_NONE] = THREAD_SIZE_INF;
                 n_using_thread[THREAD_ID_NONE] = 0;
             }
+            try { grow(new_n_thread); }
+            catch (...) { exit_thread(); throw; }
+        }
+
+        // Add workers without joining existing tasks or resetting their quotas.
+        void grow(int new_n_thread) {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (!running) throw std::runtime_error("Cannot grow a stopped thread pool.");
+            if (new_n_thread <= n_thread) return;
+            threads.reserve(new_n_thread);
+            while (n_thread < new_n_thread) {
+                threads.emplace_back(&Thread_pool::worker, this);
+                ++n_thread;
+            }
         }
 
         void exit_thread() {
@@ -89,11 +98,8 @@ class Thread_pool {
                 running = false;
             }
             condition.notify_all();
-            for (int i = 0; i < n_thread; ++i) {
-                if (threads[i].joinable()) {
-                    threads[i].join();
-                }
-            }
+            for (auto& thread : threads) if (thread.joinable()) thread.join();
+            threads.clear();
             n_thread = 0;
             n_idle = 0;
         }

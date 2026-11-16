@@ -93,6 +93,7 @@ struct ClockSync {
 struct MoveResult { int policy = 64, value = 0, depth = 0; };
 using Search = std::function<MoveResult(const Leg&, bool, int, bool*, Millis)>;
 using Quota = std::function<void(int, int)>;
+using Grow = std::function<void(int)>;
 
 class Controller {
 public:
@@ -113,6 +114,7 @@ private:
         Millis server_now = -1;
         bool divided = false;
         std::vector<Leg> legs;
+        int board_count = 0;
     };
     std::map<Millis, Match> matches;
     std::map<std::pair<Millis, int>, std::unique_ptr<Job>> jobs;
@@ -121,7 +123,8 @@ private:
     Search search_fn;
     Call call_fn;
     Quota quota_fn;
-    int threads, level;
+    Grow grow_fn;
+    int threads_per_board, level, allocated_threads;
     bool ponder;
     Millis transport_ms = 200;
 
@@ -152,9 +155,13 @@ public:
     bool need_poll = false, denied = false;
     ClockSync clock;
 
-    Controller(int total_threads, int fixed_level, bool use_ponder, Search search, Call call, Quota quota)
+    Controller(int reported_threads, int fixed_level, bool use_ponder, Search search, Call call, Quota quota,
+            Grow grow = [](int) {})
         : search_fn(std::move(search)), call_fn(std::move(call)), quota_fn(std::move(quota)),
-          threads(total_threads), level(fixed_level), ponder(use_ponder) {}
+          grow_fn(std::move(grow)), threads_per_board(reported_threads), level(fixed_level),
+          allocated_threads(2 * reported_threads), ponder(use_ponder) {
+        grow_fn(allocated_threads);
+    }
     ~Controller() { stop(); }
     size_t job_count() const { return jobs.size(); }
     const Job* job(Millis match_id, int leg) const {
@@ -185,7 +192,11 @@ public:
             }
             bool divided = same_game && found->second.divided;
             divided = divided || !same_line(legs);
-            matches[match_id] = {snapshot, server, divided, legs};
+            int board_count = static_cast<int>(legs.size());
+            if (snapshot.contains("state") && snapshot["state"].is_object() && snapshot["state"].contains("legs"))
+                board_count = static_cast<int>(snapshot["state"]["legs"].size());
+            if (same_game) board_count = std::max(board_count, found->second.board_count);
+            matches[match_id] = {snapshot, server, divided, legs, board_count};
             for (const auto& leg : legs) {
                 auto existing = jobs.find({match_id, leg.index});
                 if (existing == jobs.end() || !existing->second->leg.same_turn(leg)) continue;
@@ -240,14 +251,15 @@ public:
             } else ++i;
         }
         std::map<std::pair<Millis, int>, std::pair<Leg, bool>> desired;
-        int active_pairs = 0;
+        int active_boards = 0;
         for (auto& item : matches) {
             auto& match = item.second;
             if (!active(match.snapshot)) continue;
+            // Keep the pair's allocation until the entire match finishes, including hidden legs.
+            active_boards += match.board_count;
             std::vector<Leg> live;
             for (const auto& leg : match.legs) if (leg.running && leg.published && now < leg.deadline) live.push_back(leg);
             if (live.empty()) continue;
-            ++active_pairs;
             bool ours = std::any_of(live.begin(), live.end(), [](const Leg& leg) { return leg.ours(); });
             bool selected_ponder = false;
             // When the line is shared, pondering the most advanced position is sufficient.
@@ -258,6 +270,11 @@ public:
                 desired[{item.first, leg.index}] = {leg, pondering};
                 if (pondering) selected_ponder = true;
             }
+        }
+        int required_threads = std::max(2 * threads_per_board, active_boards * threads_per_board);
+        if (required_threads > allocated_threads) {
+            grow_fn(required_threads);
+            allocated_threads = required_threads;
         }
         for (auto i = jobs.begin(); i != jobs.end();) {
             auto found = desired.find(i->first);
@@ -295,7 +312,8 @@ public:
                 }
             }
             bool shared = !matches.at(allocation.first).divided && !(thinking[0] && thinking[1]);
-            auto plan = thread_plan(std::max(1, threads / std::max(1, active_pairs)), shared, thinking, pondering);
+            int boards = matches.at(allocation.first).board_count;
+            auto plan = thread_plan(threads_per_board * std::max(1, boards), shared, thinking, pondering);
             for (int i = 0; i < 2; ++i) quota_fn(allocation.second[i], std::max(0, plan[i] - 1));
         }
         for (auto& entry : jobs) {

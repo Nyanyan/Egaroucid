@@ -20,7 +20,7 @@
     #define N_COMMANDLINE_OPTIONS_GGS 0
 #endif
 #ifdef INCLUDE_FLIPSIGHT
-    #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 4
+    #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 5
 #else
     #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 0
 #endif
@@ -78,6 +78,7 @@
     #define ID_FLIPSIGHT_API (ID_FLIPSIGHT + 1)
     #define ID_FLIPSIGHT_NO_STREAM (ID_FLIPSIGHT + 2)
     #define ID_FLIPSIGHT_NO_PONDER (ID_FLIPSIGHT + 3)
+    #define ID_FLIPSIGHT_THREAD (ID_FLIPSIGHT + 4)
 #endif
 
 struct Commandline_option_info{
@@ -140,5 +141,6 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_FLIPSIGHT_API,      {"-flipsightapi"},                                 1, "<https_url>",       "Set FlipSight API endpoint"},
     {ID_FLIPSIGHT_NO_STREAM,{"-flipsightnostream"},                            0, "",                  "Use FlipSight polling without the event stream"},
     {ID_FLIPSIGHT_NO_PONDER,{"-flipsightnoponder"},                            0, "",                  "Disable FlipSight pondering"},
+    {ID_FLIPSIGHT_THREAD,   {"-fsthread"},                                     1, "<M>",               "Report M threads to FlipSight; start with 2M and grow per board (default: 4)"},
 #endif
 };

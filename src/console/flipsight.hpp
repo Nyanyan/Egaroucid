@@ -99,15 +99,18 @@ inline int run(Options* options) {
         }
         return reply;
     };
-    Controller controller(options->n_threads, options->flipsight_fixed_level ? options->level : -1,
+    Controller controller(options->flipsight_threads, options->flipsight_fixed_level ? options->level : -1,
         !options->flipsight_no_ponder,
         [&](const Leg& leg, bool ponder, int id, bool* searching, Millis budget) {
             return engine_search(leg, ponder, id, searching, budget, *options);
         }, call, [](int id, int helpers) {
             if (thread_pool.get_max_thread_size(id) != helpers) thread_pool.set_max_thread_size(id, helpers);
+        }, [&](int total_threads) {
+            thread_pool.grow(total_threads - 1);
+            if (options->show_log) std::cerr << "[FlipSight] allocated search threads = " << total_threads << '\n';
         });
     Json environment = {{"engine", std::string(EGAROUCID_NAME) + " " + EGAROUCID_VERSION},
-        {"engine_threads", options->n_threads},
+        {"engine_threads", options->flipsight_threads},
 #ifdef _WIN32
         {"os", "Windows"}
 #elif __APPLE__
