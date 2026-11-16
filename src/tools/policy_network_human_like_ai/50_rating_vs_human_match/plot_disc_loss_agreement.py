@@ -164,7 +164,7 @@ def make_figure(data, tubes, with_zebra, x_max=None, exclude_extra_loss=False):
     fig = plt.figure(figsize=(20, 9.8))
     main = fig.add_axes([.055, .29, .62, .66])
     detail = fig.add_axes([.74, .29, .245, .66])
-    main.set_xlim((10.85, -.17) if x_max is None else (x_max, 0))
+    main.set_xlim((10.85, -.17) if x_max is None else (x_max, -.2))
     main.set_ylim(16, 74)
     detail.set_xlim(.96, -.075)
     detail.set_ylim(59.5, 70.2)
@@ -318,7 +318,7 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=SCRIPT_DIR / "output/disc_loss_agreement")
     parser.add_argument("--zebra", choices=("both", "with", "without"), default="both")
     parser.add_argument("--edit", choices=("with-zebra", "without-zebra"))
-    parser.add_argument("--x-max", type=float, help="Set the main X axis from this value to exactly zero")
+    parser.add_argument("--x-max", type=float, help="Set the main X maximum, with padding below zero")
     parser.add_argument("--exclude-extra-loss", action="store_true",
                         help="Omit models additionally trained on moves losing at least 4 or 6 discs")
     parser.add_argument("--arrange-labels", action="store_true", help="Reposition and save labels clear of plotted objects")

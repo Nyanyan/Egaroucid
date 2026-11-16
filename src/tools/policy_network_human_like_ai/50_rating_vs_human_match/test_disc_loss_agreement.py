@@ -66,7 +66,7 @@ class DiscLossAgreementTests(unittest.TestCase):
                           for n in names], references=[])
         for with_zebra, count in ((True, 29), (False, 25)):
             fig, axes, annotations = plot.make_figure(data, {}, with_zebra, x_max=4)
-            self.assertEqual(axes["main"].get_xlim(), (4, 0))
+            self.assertEqual(axes["main"].get_xlim(), (4, -.2))
             self.assertEqual(len(fig.axes), 2)
             self.assertEqual(len(annotations), count)
             self.assertFalse(any("random" in uid for uid in annotations))
