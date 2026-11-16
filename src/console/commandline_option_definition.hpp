@@ -15,10 +15,16 @@
 #define N_COMMANDLINE_OPTIONS_BASE 34
 
 #ifdef INCLUDE_GGS
-    #define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + 6)
+    #define N_COMMANDLINE_OPTIONS_GGS 6
 #else
-    #define N_COMMANDLINE_OPTIONS N_COMMANDLINE_OPTIONS_BASE
+    #define N_COMMANDLINE_OPTIONS_GGS 0
 #endif
+#ifdef INCLUDE_FLIPSIGHT
+    #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 7
+#else
+    #define N_COMMANDLINE_OPTIONS_FLIPSIGHT 0
+#endif
+#define N_COMMANDLINE_OPTIONS (N_COMMANDLINE_OPTIONS_BASE + N_COMMANDLINE_OPTIONS_GGS + N_COMMANDLINE_OPTIONS_FLIPSIGHT)
 
 #define ID_NONE -1
 #define ID_VERSION 0
@@ -65,6 +71,16 @@
     #define ID_GGS_GAMELOGDIR (N_COMMANDLINE_OPTIONS_BASE + 3)
     #define ID_GGS_ACCEPT_REQUEST (N_COMMANDLINE_OPTIONS_BASE + 4)
     #define ID_GGS_ROUTE_JOIN_TOURNAMENT (N_COMMANDLINE_OPTIONS_BASE + 5)
+#endif
+
+#ifdef INCLUDE_FLIPSIGHT
+    #define ID_FLIPSIGHT (N_COMMANDLINE_OPTIONS_BASE + N_COMMANDLINE_OPTIONS_GGS)
+    #define ID_FLIPSIGHT_API (ID_FLIPSIGHT + 1)
+    #define ID_FLIPSIGHT_NO_STREAM (ID_FLIPSIGHT + 2)
+    #define ID_FLIPSIGHT_NO_PONDER (ID_FLIPSIGHT + 3)
+    #define ID_FLIPSIGHT_THREAD (ID_FLIPSIGHT + 4)
+    #define ID_FLIPSIGHT_LOGFILE (ID_FLIPSIGHT + 5)
+    #define ID_FLIPSIGHT_LOGDIR (ID_FLIPSIGHT + 6)
 #endif
 
 struct Commandline_option_info{
@@ -121,5 +137,14 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
     {ID_GGS_GAMELOGDIR,     {"-ggsgamelogdir"},                                 1, "<dir>",             "directory for GGS game log"},
     {ID_GGS_ACCEPT_REQUEST, {"-ggsacceptrequest"},                              0, "",                  "Accept GGS request"},
     {ID_GGS_ROUTE_JOIN_TOURNAMENT, {"-ggsroutetournament"},                     0, "",                  "Send `tell /td join .N` if received it from someone"},
+#endif
+#ifdef INCLUDE_FLIPSIGHT
+    {ID_FLIPSIGHT,          {"-flipsight"},                                    1, "<token>",           "Connect to FlipSight with a bot token; -level fixes strength"},
+    {ID_FLIPSIGHT_API,      {"-flipsightapi"},                                 1, "<https_url>",       "Set FlipSight API endpoint"},
+    {ID_FLIPSIGHT_NO_STREAM,{"-flipsightnostream"},                            0, "",                  "Use FlipSight polling without the event stream"},
+    {ID_FLIPSIGHT_NO_PONDER,{"-flipsightnoponder"},                            0, "",                  "Disable FlipSight pondering"},
+    {ID_FLIPSIGHT_THREAD,   {"-fsthread"},                                     1, "<M>",               "Report M threads to FlipSight; start with 2M and grow per board (default: 4)"},
+    {ID_FLIPSIGHT_LOGFILE,  {"-fslogfile", "-flipsightlogfile"},                1, "<file>",            "Save FlipSight session events to this file and the console"},
+    {ID_FLIPSIGHT_LOGDIR,   {"-fslogdir", "-flipsightlogdir"},                  1, "<directory>",       "Set FlipSight log directory (default: flipsight/log beside executable)"},
 #endif
 };

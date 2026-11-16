@@ -66,6 +66,7 @@ bin/ffotest_result
 bin/ggs/id
 bin/ggs/log
 bin/ggs/etc
+bin/flipsight/log/
 bin/egaroucid_vs_edax_time_log
 
 # bin directory (for Linux)

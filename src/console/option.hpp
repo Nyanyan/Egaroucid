@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include "./../engine/engine_all.hpp"
 #include "commandline_option.hpp"
 #include "console_common.hpp"
@@ -55,6 +56,12 @@ struct Options {
     int play_loss_max;
     bool use_depth_prob_ranges;
     std::vector<Depth_prob_range_setting> depth_prob_ranges;
+#ifdef INCLUDE_FLIPSIGHT
+    bool flipsight, flipsight_fixed_level, flipsight_no_stream, flipsight_no_ponder;
+    std::string flipsight_token, flipsight_api;
+    std::string flipsight_log_file, flipsight_log_dir;
+    int flipsight_threads;
+#endif
 #ifdef INCLUDE_GGS
     bool ggs;
     std::string ggs_username;
@@ -342,6 +349,59 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
     }
     res.ggs_accept_request = find_commandline_option(commandline_options, ID_GGS_ACCEPT_REQUEST);
     res.ggs_route_join_tournament = find_commandline_option(commandline_options, ID_GGS_ROUTE_JOIN_TOURNAMENT);
+#endif
+#ifdef INCLUDE_FLIPSIGHT
+    res.flipsight = find_commandline_option(commandline_options, ID_FLIPSIGHT);
+    res.flipsight_fixed_level = find_commandline_option(commandline_options, ID_LEVEL);
+    res.flipsight_no_stream = find_commandline_option(commandline_options, ID_FLIPSIGHT_NO_STREAM);
+    res.flipsight_no_ponder = find_commandline_option(commandline_options, ID_FLIPSIGHT_NO_PONDER);
+    res.flipsight_log_dir = binary_path + "flipsight/log";
+    if (find_commandline_option(commandline_options, ID_FLIPSIGHT_LOGDIR))
+        res.flipsight_log_dir = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_LOGDIR)[0];
+    if (find_commandline_option(commandline_options, ID_FLIPSIGHT_LOGFILE))
+        res.flipsight_log_file = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_LOGFILE)[0];
+    res.flipsight_threads = 4;
+    if (find_commandline_option(commandline_options, ID_FLIPSIGHT_THREAD)) {
+        const auto text = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_THREAD)[0];
+        try {
+            size_t used = 0;
+            auto count = std::stoi(text, &used);
+            // The service admits at most eight paired matches (sixteen boards).
+            if (used != text.size() || count < 1 || count > std::numeric_limits<int>::max() / 16)
+                throw std::invalid_argument("threads");
+            res.flipsight_threads = count;
+        } catch (...) {
+            std::cerr << "[ERROR] -fsthread requires a positive integer within the supported thread-count range" << std::endl;
+            std::exit(1);
+        }
+    }
+    res.flipsight_api = "https://othelloclub.com/flipsight/bot_match_api.php";
+    if (find_commandline_option(commandline_options, ID_FLIPSIGHT_API))
+        res.flipsight_api = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT_API)[0];
+    if (res.flipsight) {
+        res.flipsight_token = get_commandline_option_arg(commandline_options, ID_FLIPSIGHT)[0];
+        res.n_threads = res.flipsight_threads * 2;
+        if (res.flipsight_fixed_level) {
+            const auto text = get_commandline_option_arg(commandline_options, ID_LEVEL)[0];
+            try {
+                size_t used = 0;
+                auto level = std::stoi(text, &used);
+                if (used != text.size() || level < 0 || level >= N_LEVEL) throw std::invalid_argument("level");
+                res.level = level;
+            } catch (...) {
+                std::cerr << "[ERROR] FlipSight level must be an integer from 0 to 60" << std::endl;
+                std::exit(1);
+            }
+        }
+        bool incompatible = res.gtp;
+#ifdef INCLUDE_GGS
+        incompatible = incompatible || res.ggs;
+#endif
+        if (incompatible) {
+            std::cerr << "[ERROR] FlipSight must be used as the only network/protocol mode" << std::endl;
+            std::exit(1);
+        }
+    }
 #endif
     return res;
 }

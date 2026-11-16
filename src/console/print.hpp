@@ -21,6 +21,9 @@
 #if INCLUDE_GGS
     #include "ggs.hpp"
 #endif
+#ifdef INCLUDE_FLIPSIGHT
+    #include "flipsight.hpp"
+#endif
 
 #define COUT_TAB "  "
 #define VERSION_TAB_SIZE 10
@@ -527,6 +530,11 @@ void execute_special_commandline_tasks(std::vector<Commandline_option> commandli
     else if (find_commandline_option(commandline_options, ID_GGS)) {
         ggs_client(options);
         std::exit(0);
+    }
+#endif
+#ifdef INCLUDE_FLIPSIGHT
+    else if (find_commandline_option(commandline_options, ID_FLIPSIGHT)) {
+        std::exit(flipsight_client(options));
     }
 #endif
 }

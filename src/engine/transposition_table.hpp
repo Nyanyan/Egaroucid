@@ -304,6 +304,14 @@ void set_importance_zero_transposition_table(Hash_node table[], size_t s, size_t
         table[i].data.set_importance_zero();
     }
 }
+
+inline void age_transposition_nodes(Hash_node table[], size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        table[i].lock.lock();
+        table[i].data.set_importance_zero();
+        table[i].lock.unlock();
+    }
+}
 /*
 #if TUNE_MOVE_ORDERING_MID || TUNE_MOVE_ORDERING_END
 class Transposition_table{
@@ -486,6 +494,21 @@ class Transposition_table {
         inline void reset_importance() {
             std::lock_guard lock(mtx);
             reset_importance_proc();
+        }
+
+        // Age entries while other matches keep searching. Preserve boards, scores, and moves.
+        inline void reset_importance_concurrent() {
+            std::lock_guard lock(mtx);
+            n_registered.store(0);
+#if TT_USE_STACK
+            age_transposition_nodes(table_stack, std::min(table_size, static_cast<size_t>(TRANSPOSITION_TABLE_STACK_SIZE)));
+#if USE_CHANGEABLE_HASH_LEVEL
+            if (table_size > TRANSPOSITION_TABLE_STACK_SIZE)
+                age_transposition_nodes(table_heap, table_size - TRANSPOSITION_TABLE_STACK_SIZE);
+#endif
+#else
+            age_transposition_nodes(table_heap, table_size);
+#endif
         }
 
         /*
