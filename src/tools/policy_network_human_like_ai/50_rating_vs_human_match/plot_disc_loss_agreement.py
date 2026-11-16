@@ -87,11 +87,12 @@ def model_group(name):
     return "normal_loss" if float(name[6:]) > 1 else "level21_normal"
 
 
-def selected_names(data, with_zebra, x_max=None):
+def selected_names(data, with_zebra, x_max=None, exclude_extra_loss=False):
     names = [row["model"] for row in data["rows"]]
     require(len(names) == len(set(names)), "Duplicate model IDs")
     losses = {row["model"]: row["mean_disc_loss"] for row in data["rows"]}
     return [name for name in names if (with_zebra or not name.startswith("zebra_"))
+            and (not exclude_extra_loss or name not in CURVES["extra_loss"]["names"])
             and (x_max is None or 0 <= losses[name] <= x_max)]
 
 
@@ -147,7 +148,7 @@ def draw_bounds(axis, spec, bounds):
                       color=spec["color"], alpha=.15)
 
 
-def make_figure(data, tubes, with_zebra, x_max=None):
+def make_figure(data, tubes, with_zebra, x_max=None, exclude_extra_loss=False):
     import matplotlib.pyplot as plt
     from matplotlib.legend_handler import HandlerTuple
     from matplotlib.lines import Line2D
@@ -158,7 +159,7 @@ def make_figure(data, tubes, with_zebra, x_max=None):
     plt.rcParams.update({"font.size": 18, "axes.labelsize": 24, "xtick.labelsize": 21,
                          "ytick.labelsize": 21, "pdf.fonttype": 42})
     require(x_max is None or np.isfinite(x_max) and x_max > 0, "X maximum must be positive")
-    names = selected_names(data, with_zebra, x_max)
+    names = selected_names(data, with_zebra, x_max, exclude_extra_loss)
     rows = {row["model"]: row for row in data["rows"]}
     fig = plt.figure(figsize=(20, 9.8))
     main = fig.add_axes([.055, .29, .62, .66])
@@ -226,7 +227,8 @@ def make_figure(data, tubes, with_zebra, x_max=None):
     return fig, axes, annotations
 
 
-def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None, arrange=False):
+def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None, arrange=False,
+           exclude_extra_loss=False):
     import matplotlib
     if edit is None:
         matplotlib.use("Agg")
@@ -243,11 +245,16 @@ def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None,
     for with_zebra in variants:
         variant = "with-zebra" if with_zebra else "without-zebra"
         suffix = "" if x_max is None else f"-x{x_max:g}"
-        key = "result-wthor-all-disc-loss-" + variant + suffix
-        fig, axes, annotations = make_figure(data, tubes, with_zebra, x_max)
+        base_key = "result-wthor-all-disc-loss-" + variant + suffix
+        key = base_key + ("-no-extra-loss" if exclude_extra_loss else "")
+        fig, axes, annotations = make_figure(data, tubes, with_zebra, x_max, exclude_extra_loss)
         seed_positions = {}
+        if exclude_extra_loss:
+            seed_positions.update(positions.get(base_key, {}))
         if x_max is not None:
             full_key = "result-wthor-all-disc-loss-" + variant
+            if exclude_extra_loss and full_key + "-no-extra-loss" in positions:
+                full_key += "-no-extra-loss"
             seed_positions.update({uid: value for uid, value in positions.get(full_key, {}).items()
                                    if uid.startswith("detail/")})
         seed_positions.update(positions.get(key, {}))
@@ -271,12 +278,14 @@ def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None,
             for extension in ("png", "svg", "pdf"):
                 fig.savefig(output_dir / f"{key}.{extension}", dpi=220, facecolor="white")
             layout = inspect_layout(fig, annotations)
-            visible = selected_names(data, with_zebra, x_max)
-            excluded = sorted(set(selected_names(data, with_zebra)) - set(visible))
+            visible = selected_names(data, with_zebra, x_max, exclude_extra_loss)
+            eligible = selected_names(data, with_zebra, exclude_extra_loss=exclude_extra_loss)
+            excluded = sorted(set(eligible) - set(visible))
             manifest = dict(variant=variant, model_count=len(visible), model_ids=visible,
                 reversed_x_axes=all(ax.xaxis_inverted() for ax in axes.values()),
                 x_limits={name: list(axis.get_xlim()) for name, axis in axes.items()},
                 out_of_range_models=excluded,
+                excluded_models=sorted(set(selected_names(data, with_zebra)) - set(eligible)),
                 out_of_range_references=[r["key"] for r in data["references"]
                                          if x_max is not None and not 0 <= r["value"] <= x_max],
                 reference_lines=data["references"], labels={uid: asdict(annotation_position(a)) for uid, a in annotations.items()},
@@ -310,12 +319,15 @@ def main():
     parser.add_argument("--zebra", choices=("both", "with", "without"), default="both")
     parser.add_argument("--edit", choices=("with-zebra", "without-zebra"))
     parser.add_argument("--x-max", type=float, help="Set the main X axis from this value to exactly zero")
+    parser.add_argument("--exclude-extra-loss", action="store_true",
+                        help="Omit models additionally trained on moves losing at least 4 or 6 discs")
     parser.add_argument("--arrange-labels", action="store_true", help="Reposition and save labels clear of plotted objects")
     args = parser.parse_args()
     variants = (True, False) if args.zebra == "both" else (args.zebra == "with",)
     if args.edit:
         variants = (args.edit == "with-zebra",)
-    manifests = render(args.data, args.output_dir, variants, args.edit, args.x_max, args.arrange_labels)
+    manifests = render(args.data, args.output_dir, variants, args.edit, args.x_max, args.arrange_labels,
+                       args.exclude_extra_loss)
     for key, manifest in manifests.items():
         print(f"{key}: {manifest['model_count']} models; X={manifest['x_limits']['main']}; layout={manifest['status']}")
 
