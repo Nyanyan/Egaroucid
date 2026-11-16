@@ -7,6 +7,9 @@
 int main(int argc, char** argv) {
     if (argc != 2) { std::cerr << "Usage: test_flipsight_engine <directory-containing-resources>\n"; return 1; }
     std::string binary_path = std::filesystem::absolute(argv[1]).string() + "/";
+    if (!std::filesystem::exists(binary_path + "resources/eval.egev2") ||
+            !std::filesystem::exists(binary_path + "resources/eval_move_ordering_end.egev"))
+        throw std::runtime_error("Native engine test requires the console evaluation files in bin/resources");
     std::vector<std::string> arguments = {"test", "-flipsight", "offline-test-token", "-level", "3",
         "-thread", "4", "-hash", "18", "-nobook"};
     std::vector<char*> raw;

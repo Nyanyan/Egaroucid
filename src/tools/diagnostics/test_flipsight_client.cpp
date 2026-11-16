@@ -168,5 +168,40 @@ int main() {
         require(clock.project(10500, 800) == 600, "stream clock did not retain network delay");
         require(!clock.project(200000, 1000), "future stream clock accepted");
     }
+    {
+        auto data = fixture();
+        Controller controller(2, -1, false, instant, success, quota);
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        data["matches"][0]["state"]["legs"][0]["revision"] = 1;
+        data["server_now_ms"] = 100001;
+        controller.update(data, now_ms(), now_ms()); controller.tick();
+        require(!controller.job(123, 0), "unpublished board must not authorize a search or move");
+        controller.stop();
+    }
+    {
+        auto data = fixture();
+        data["matches"][0]["id"] = -10;
+        data["matches"][0]["round_no"] = 1;
+        data["matches"][0]["room_created_at"] = "first-room";
+        Controller controller(2, -1, false, instant, success, quota);
+        controller.update(data, now_ms(), now_ms());
+        settle(controller, [&] { auto j = controller.job(-10, 0); return j && j->sent; });
+        data["matches"][0]["round_no"] = 2;
+        data["matches"][0]["room_created_at"] = "second-room";
+        data["server_now_ms"] = 100002;
+        controller.update(data, now_ms(), now_ms());
+        settle(controller, [&] { auto j = controller.job(-10, 0); return j && j->leg.round == 2 && j->sent; });
+        controller.stop();
+    }
+    {
+        RequestGate gate(true);
+        std::atomic_bool stop(false);
+        auto start = now_ms();
+        require(gate.wait(stop) && gate.wait(stop) && gate.wait(stop), "request gate refused active requests");
+        require(now_ms() - start >= 600, "low-level request spacing was not enforced");
+        gate.defer(60000);
+        stop = true;
+        require(!gate.wait(stop), "cancellation ignored while waiting for HTTP cooldown");
+    }
     std::cout << "PASS: shared/divergent games, simultaneous searches, ponder, move recovery, pacing, stale/missing states, admission, clocks\n";
 }

@@ -153,6 +153,7 @@ inline int run(Options* options) {
     if (!options->flipsight_no_stream) stream = std::thread([&] {
         int backoff = 1;
         while (!stop) {
+            Millis retry_delay = backoff * 1000;
             try {
                 HttpTransport transport(options->flipsight_api, options->flipsight_token);
                 auto response = transport.stream(stop, [&](const Json& event) {
@@ -160,11 +161,14 @@ inline int run(Options* options) {
                     publish({event, 0, now_ms(), true});
                 });
                 if (response.status == 401 || response.status == 403) { denied = true; stop = true; }
-                if (response.status == 429 || response.status == 503) gate.defer(response.retry_after);
+                if (response.status == 429 || response.status == 503) {
+                    gate.defer(response.retry_after);
+                    retry_delay = std::max(retry_delay, response.retry_after);
+                }
             } catch (...) {}
             stream_healthy = false;
             poll_now = true;
-            for (int i = 0; i < backoff * 20 && !stop; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            for (Millis i = 0; i < retry_delay && !stop; i += 50) std::this_thread::sleep_for(std::chrono::milliseconds(50));
             backoff = std::min(30, backoff * 2);
         }
     });
@@ -201,6 +205,7 @@ inline int run(Options* options) {
             if (controller.denied) { denied = true; break; }
         }
     } catch (...) { std::cerr << "[FlipSight] Client failure; stopping.\n"; result = 1; }
+    if (stop && !interrupted && !denied) result = 1;
     stop = true;
     wake.notify_all();
     controller.stop();
