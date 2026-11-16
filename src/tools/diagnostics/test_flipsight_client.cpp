@@ -180,6 +180,33 @@ int main() {
     }
     {
         auto data = fixture();
+        Controller controller(2, 10, false, instant, success, quota);
+        controller.update(data, 100, 100);
+        Json event = {{"type", "match"}, {"view", "agent"}, {"match", data["matches"][0]}, {"server_now_ms", 100100}};
+        controller.event(event, 3000);
+        require(controller.stream_lagging && controller.need_poll, "delayed notifications must request fast polling even on an open stream");
+        controller.need_poll = false; event["server_now_ms"] = 103000;
+        controller.event(event, 3110);
+        require(!controller.stream_lagging && !controller.need_poll, "fresh notifications must restore normal stream polling");
+    }
+    {
+        auto data = fixture();
+        Json acknowledged;
+        auto reply_with_clock = [match = data["matches"][0]](const Json& body, std::atomic_bool&) mutable {
+            play(match["state"]["legs"][0], body.at("move").get<int>(), 0);
+            match["state"]["legs"][0]["clocks_ms"][0] = 43210;
+            return Reply{200, {{"ok", true}, {"match", match}, {"server_now_ms", 100001}}, now_ms(), now_ms(), {}};
+        };
+        Controller controller(2, -1, false, instant, reply_with_clock, quota, [](int) {}, [] {},
+            [&](const std::string& event, Json fields, bool) { if (event == "move_acknowledged") acknowledged = std::move(fields); });
+        controller.update(data, now_ms(), now_ms());
+        settle(controller, [&] { return !acknowledged.is_null(); });
+        require(acknowledged.at("remaining_ms") == 43210 && acknowledged.at("remaining_source") == "server" &&
+                acknowledged.contains("move"), "played-move output must use the server's remaining clock and actual move");
+        controller.stop();
+    }
+    {
+        auto data = fixture();
         Controller controller(1, -1, false, instant, success, quota);
         controller.update(data, now_ms(), now_ms()); controller.tick();
         data["matches"][0]["state"]["legs"][0]["revision"] = 1;
@@ -313,9 +340,15 @@ int main() {
         std::ostringstream output, errors;
         {
             SessionLog log(path, "fsbm_PRIVATE_TEST_TOKEN", output, errors);
-            std::thread a([&] { log.write("search_finished", {{"move", 19}, {"value", 2}, {"depth", 10}}); });
-            std::thread b([&] { log.write("api_failed", {{"http_status", 409}, {"detail", "fsbm_PRIVATE_TEST_TOKEN fsbm_OTHER_SECRET"}}, true); });
+            std::thread a([&] {
+                log.write("search_finished", {{"match_id", 123}, {"leg", 0}, {"revision", 2}, {"value", 2}, {"depth", 10}, {"probability", 100}});
+                log.write("search_finished", {{"match_id", 123}, {"leg", 1}, {"revision", 3}, {"value", -1}, {"depth", 10}, {"probability", 100}});
+                log.write("leg_state", {{"match_id", 123}, {"black", 1122}});
+            });
+            std::thread b([&] { log.write("move_failed", {{"http_status", 409}, {"detail", "fsbm_PRIVATE_TEST_TOKEN fsbm_OTHER_SECRET"}}, true); });
             a.join(); b.join();
+            log.write("leg_finished", {{"match_id", 123}, {"leg", 0}, {"revision", 50}, {"value", 4}});
+            log.write("match_finished", {{"match_id", 123}, {"final_value", 7}});
         }
         std::ifstream input(path);
         std::string line, saved;
@@ -326,8 +359,13 @@ int main() {
             saved += line; ++records;
         }
         input.close(); std::filesystem::remove(path);
-        require(records == 2 && output.str().find("search_finished") != std::string::npos && errors.str().find("api_failed") != std::string::npos,
+        require(records == 6 && output.str().find("Evaluation match 123:") != std::string::npos && errors.str().find("move_failed") != std::string::npos,
             "logger must flush events to the file and route normal/error events to stdout/stderr");
+        require(output.str().find("match_eval=+1(latest)") != std::string::npos &&
+                output.str().find("match_eval=+7(final)") != std::string::npos && output.str().find("depth=final") != std::string::npos,
+            "console must show per-board evaluations and the bot's match total, including final results");
+        require(output.str().find("leg_state") == std::string::npos && output.str().find("1122") == std::string::npos &&
+                saved.find("leg_state") != std::string::npos, "detailed events must be saved without flooding the console");
         require((saved + output.str() + errors.str()).find("fsbm_") == std::string::npos, "logger exposed a bot credential");
     }
     {

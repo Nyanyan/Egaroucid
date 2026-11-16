@@ -8,7 +8,9 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <mutex>
+#include <optional>
 #include <regex>
 #include <sstream>
 #include <thread>
@@ -28,6 +30,69 @@ class SessionLog {
     std::thread worker;
     std::ostream& output;
     std::ostream& errors;
+    struct Evaluation { int value = 0, depth = 0, probability = 0; Millis revision = 0; bool final = false; };
+    struct MatchSummary { int boards = 2; std::map<int, Evaluation> values; };
+    std::map<Millis, MatchSummary> matches;
+
+    static std::string signed_value(int value) { return (value >= 0 ? "+" : "") + std::to_string(value); }
+    std::string evaluation(Millis id, std::optional<int> final_total = {}) {
+        auto& match = matches[id];
+        std::string text = "Evaluation match " + std::to_string(id) + ":";
+        int total = 0;
+        bool complete = true;
+        for (int i = 0; i < match.boards; ++i) {
+            text += " leg" + std::to_string(i) + "=";
+            auto found = match.values.find(i);
+            if (found == match.values.end()) { text += '?'; complete = false; continue; }
+            const auto& value = found->second;
+            total += value.value;
+            text += signed_value(value.value) + "@r" + std::to_string(value.revision) + "[depth=" +
+                (value.final ? "final" : value.depth < 0 ? "book" : std::to_string(value.depth) + "@" + std::to_string(value.probability) + "%") +
+                "](" + (value.final ? "final" : "search") + ")";
+        }
+        return text + "; match_eval=" + (final_total ? signed_value(*final_total) : complete ? signed_value(total) : "?") +
+            (final_total ? "(final)" : "(latest)") + " [bot disc difference].";
+    }
+    std::string console_message(const Record& record) {
+        const auto& f = record.fields;
+        const auto& event = record.event;
+        auto id = f.value("match_id", Millis(0));
+        auto identity = [&] { return "match " + std::to_string(id) + " leg " + std::to_string(f.value("leg", 0)) +
+            " rev " + std::to_string(f.value("revision", Millis(0))); };
+        if (event == "session_started") return "Logs: " + f.value("log_file", std::string());
+        if (event == "ready") return "Engine ready. actual_threads=" + std::to_string(f.value("search_threads", 0)) +
+            ", reported_threads_per_board=" + std::to_string(f.value("reported_threads", 0)) +
+            ", level=" + std::to_string(f.value("level", -1)) + ", hash=" + std::to_string(f.value("hash_level", 0)) +
+            ", ponder=" + (f.value("ponder", false) ? "on" : "off") + ". Connecting to FlipSight.";
+        if (event == "connected") return "Connected: bot " + f.at("bot_id").dump() + ".";
+        if (event == "match_started") {
+            matches[id] = {}; matches[id].boards = f.value("boards", 2);
+            return "Match started: match " + std::to_string(id) + ".";
+        }
+        if (event == "search_finished" || event == "leg_finished") {
+            auto& value = matches[id].values[f.value("leg", 0)];
+            if (value.final && event != "leg_finished") return {};
+            value = {f.value("value", 0), f.value("depth", 0), f.value("probability", 0),
+                f.value("revision", Millis(0)), event == "leg_finished"};
+            return evaluation(id);
+        }
+        if (event == "match_finished") return "Match finished: match " + std::to_string(id) + ". " +
+            evaluation(id, f.contains("final_value") ? std::optional<int>(f.at("final_value").get<int>()) : std::nullopt);
+        if (event == "move_acknowledged") return "Played " + identity() + " move " + std::to_string(f.value("move", -1)) +
+            "; " + std::to_string(f.value("remaining_ms", Millis(0))) + " ms left.";
+        if (event == "threads_grown") return "Allocated search threads: " + std::to_string(f.value("threads", 0)) + ".";
+        if (event == "stream_retry") return "Event stream interrupted; reconnecting in " + std::to_string(f.value("retry_ms", Millis(0))) + " ms, polling continues.";
+        if (event == "stream_connected") return "Event stream connected.";
+        if (event == "poll_retry") return "Poll interrupted (HTTP " + std::to_string(f.value("http_status", 0)) +
+            "); retrying in " + std::to_string(f.value("retry_ms", Millis(0))) + " ms while current games continue.";
+        if (event == "stopped") return "Stopped (exit " + std::to_string(f.value("exit_code", 0)) + ").";
+        if (event == "api_failed" || event == "stream_failed") return {};
+        if (record.error) return "ERROR: " + event + (id ? " for " + identity() : "") +
+            (f.contains("http_status") ? " (HTTP " + std::to_string(f.at("http_status").get<int>()) + ")" : "") +
+            (f.contains("code") && !f.at("code").get<std::string>().empty() ? ": " + f.at("code").get<std::string>() : "") +
+            ". See session log.";
+        return {};
+    }
 
     std::string redact(std::string text) const {
         if (!token.empty()) {
@@ -66,9 +131,15 @@ class SessionLog {
                 Json data = record.fields;
                 data["time"] = time; data["event"] = record.event;
                 data["severity"] = record.error ? "error" : "info";
-                auto& stream = record.error ? errors : output;
-                stream << time + " [FlipSight] " + record.event + ' ' + redact(record.fields.dump()) + '\n';
-                stream.flush();
+                std::string message;
+                try { message = console_message(record); }
+                catch (...) { errors << "[FlipSight] Console summary formatting failed; detailed event saved." << std::endl; }
+                if (!message.empty()) {
+                    data["message"] = message;
+                    auto& stream = record.error ? errors : output;
+                    stream << time + " " + redact(message) + '\n';
+                    stream.flush();
+                }
                 file << redact(data.dump()) << std::endl;
                 if (!file) errors << "[FlipSight] Log write failed; check disk space and permissions." << std::endl;
             } catch (...) { errors << "[FlipSight] Log formatting or output failed." << std::endl; }

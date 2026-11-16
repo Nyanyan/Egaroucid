@@ -110,7 +110,7 @@ inline int run(Options* options, const Event& log) {
     interrupted = 0;
     auto old_int = std::signal(SIGINT, interrupt);
     auto old_term = std::signal(SIGTERM, interrupt);
-    std::atomic_bool stop(false), denied(false), stream_healthy(false), playing(false), poll_now(true);
+    std::atomic_bool stop(false), denied(false), stream_healthy(false), stream_lagging(false), playing(false), poll_now(true);
     RequestGate gate(options->flipsight_fixed_level && options->level <= 10);
     std::mutex mutex;
     std::condition_variable wake;
@@ -193,7 +193,7 @@ inline int run(Options* options, const Event& log) {
                     if ((*action)["action"] == "agent_poll") publish({reply.data, reply.started, reply.received, false});
                     else poll_now = true;
                     backoff = 1;
-                    next = now_ms() + (stream_healthy ? (playing ? 10000 : 60000) : (playing ? 1000 : 5000));
+                    next = now_ms() + (stream_healthy && !stream_lagging ? (playing ? 10000 : 60000) : (playing ? 1000 : 5000));
                 } else {
                     log("poll_retry", {{"http_status", reply.status}, {"retry_ms", backoff * 1000}}, true);
                     next = now_ms() + backoff * 1000;
@@ -265,6 +265,7 @@ inline int run(Options* options, const Event& log) {
                 }
             }
             controller.tick();
+            stream_lagging = controller.stream_lagging;
             playing = controller.running();
             if (controller.need_poll) { poll_now = true; controller.need_poll = false; wake.notify_all(); }
             if (controller.denied) { denied = true; break; }

@@ -176,6 +176,7 @@ private:
 public:
     Json bot_id;
     bool need_poll = false, denied = false;
+    bool stream_lagging = false;
     ClockSync clock;
 
     Controller(int reported_threads, int fixed_level, bool use_ponder, Search search, Call call, Quota quota,
@@ -206,14 +207,19 @@ public:
         return std::all_of(state["legs"].begin(), state["legs"].end(), ended);
     }
     void update(const Json& payload, Millis started, Millis received, bool full = true) {
-        if (payload.contains("bot")) bot_id = payload.at("bot").at("id");
+        if (payload.contains("bot")) {
+            auto id = payload.at("bot").at("id");
+            if (bot_id != id) log("connected", {{"bot_id", id}});
+            bot_id = id;
+        }
         auto server = integer(payload.at("server_now_ms"));
         if (full) clock.observe(server, started, received);
         for (const auto& snapshot : payload.at("matches")) {
             auto match_id = integer(snapshot.at("id"));
             auto found = matches.find(match_id);
             if (found != matches.end() && found->second.server_now > server) {
-                log("stale_snapshot", {{"match_id", match_id}, {"server_now_ms", server}}); continue;
+                log("stale_snapshot", {{"match_id", match_id}, {"server_now_ms", server},
+                    {"current_server_now_ms", found->second.server_now}}); continue;
             }
             auto legs = parse_match(snapshot, bot_id, server, started);
             bool same_game = found != matches.end() &&
@@ -248,10 +254,33 @@ public:
             }
             if (seen_running && (!same_game || !previous_running))
                 log("match_started", {{"match_id", match_id}, {"boards", board_count}, {"round_no", snapshot.value("round_no", Json())}});
+            auto state = snapshot.value("state", Json::object());
+            if (seen_running && state.is_object() && state.contains("legs") && state["legs"].is_array()) {
+                const auto& sources = state["legs"];
+                for (size_t i = 0; i < sources.size(); ++i) {
+                    const auto& source = sources[i];
+                    if (!source.is_object()) continue;
+                    auto scores = source.value("result_discs", Json());
+                    if (source.value("status", std::string()) != "finished" || !scores.is_array() || scores.size() != 2 ||
+                            !scores[0].is_number_integer() || !scores[1].is_number_integer()) continue;
+                    auto old_state = same_game ? found->second.snapshot.value("state", Json()) : Json();
+                    if (old_state.is_object() && old_state.contains("legs") && old_state["legs"].is_array() &&
+                            i < old_state["legs"].size() && old_state["legs"][i].value("status", std::string()) == "finished" &&
+                            old_state["legs"][i].value("result_discs", Json()) == scores) continue;
+                    int own = same_id(snapshot.value("bot_a", Json()), bot_id) == (i == 0) ? 0 : 1;
+                    log("leg_finished", {{"match_id", match_id}, {"leg", i}, {"revision", source.value("revision", Json(0))},
+                        {"value", integer(scores[own]) - integer(scores[1 - own])}, {"result_discs", scores}});
+                }
+            }
             if (age_previous) {
-                auto state = snapshot.value("state", Json::object());
-                log("match_finished", {{"match_id", match_id}, {"status", snapshot.value("status", std::string())},
-                    {"finish_reason", state.is_object() ? state.value("finish_reason", Json()) : Json()}});
+                Json fields = {{"match_id", match_id}, {"status", snapshot.value("status", std::string())},
+                    {"finish_reason", state.is_object() ? state.value("finish_reason", Json()) : Json()}};
+                auto totals = state.is_object() ? state.value("totals", Json()) : Json();
+                if (ended && totals.is_array() && totals.size() == 2 && totals[0].is_number_integer() && totals[1].is_number_integer()) {
+                    int own = same_id(snapshot.value("bot_a", Json()), bot_id) ? 0 : 1;
+                    fields["final_value"] = integer(totals[own]) - integer(totals[1 - own]);
+                }
+                log("match_finished", fields);
             }
             matches[match_id] = {snapshot, server, divided, legs, board_count, seen_running, ended};
             if (age_previous) age_fn();
@@ -278,7 +307,11 @@ public:
             need_poll = true; return;
         }
         auto projected = clock.project(integer(event.at("server_now_ms")), received);
-        if (!projected) { need_poll = true; return; }
+        if (!projected) { log("stream_clock_refresh", {{"match_id", event.at("match").value("id", Json())}}); need_poll = true; return; }
+        log("stream_match", {{"match_id", event.at("match").value("id", Json())}, {"server_now_ms", event.at("server_now_ms")},
+            {"lag_ms", received - *projected}});
+        stream_lagging = received - *projected > 1000;
+        if (stream_lagging) need_poll = true;
         update({{"matches", Json::array({event.at("match")})}, {"server_now_ms", event.at("server_now_ms")}},
             *projected, received, false);
     }
@@ -424,6 +457,17 @@ public:
                 if (reply.ok()) {
                     auto fields = job_fields(job); fields["http_status"] = reply.status;
                     fields["http_ms"] = reply.received - reply.started;
+                    fields["move"] = job.result->policy == 64 ? -1 : 63 - job.result->policy;
+                    fields["remaining_source"] = "deadline";
+                    try {
+                        const auto& source = reply.data.at("match").at("state").at("legs").at(job.leg.index);
+                        auto remaining = integer(source.at("clocks_ms").at(job.leg.color - 1));
+                        if (source.value("turn", Json()) == job.leg.color && source.contains("turn_started_ms"))
+                            remaining -= std::max<Millis>(0, integer(reply.data.at("server_now_ms")) - integer(source.at("turn_started_ms"))) +
+                                std::max<Millis>(0, now_ms() - reply.started);
+                        fields["remaining_ms"] = std::max<Millis>(0, remaining);
+                        fields["remaining_source"] = "server";
+                    } catch (...) {}
                     log("move_acknowledged", fields);
                     job.sent = true;
                     if (reply.received >= reply.started) transport_ms = std::clamp<Millis>(reply.received - reply.started, 50, 5000);
