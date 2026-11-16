@@ -148,6 +148,43 @@ def draw_bounds(axis, spec, bounds):
                       color=spec["color"], alpha=.15)
 
 
+def add_reference_labels(fig, axis, references, x_max):
+    """Name each reference beside the bottom of its line."""
+    from matplotlib.text import Text
+    labels, outside = {}, []
+    for ref in references:
+        if x_max is not None and not 0 <= ref["value"] <= x_max:
+            outside.append(ref)
+            continue
+        axis.axvline(ref["value"], color=ref["color"], ls=ref["linestyle"], lw=1.5, alpha=.8, zorder=1)
+        name = ref["label"].replace("オセロクエスト ", "オセロクエスト\n")
+        right = ref["key"] == "wthor"
+        label = axis.annotate(f'{name}\n{ref["value"]:.4f}',
+            (ref["value"], axis.get_ylim()[0]),
+            xytext=(8 if right else -8, 30 if ref["key"] == "quest_2000-2200" else 12),
+            textcoords="offset points", ha="left" if right else "right", va="bottom",
+            multialignment="center", fontsize=15, color=ref["color"], annotation_clip=False,
+            bbox=dict(boxstyle="round,pad=.2", facecolor="white", edgecolor=ref["color"],
+                      linewidth=.5, alpha=.95), zorder=6)
+        uid = "reference/" + ref["key"]
+        label.set_gid(LABEL_PREFIX + uid)
+        labels[uid] = label
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    for label in labels.values():
+        box = Text.get_window_extent(label, renderer)
+        if box.x0 < axis.bbox.x0:
+            label.set_ha("left")
+            label.xyann = (8, label.xyann[1])
+        elif box.x1 > axis.bbox.x1:
+            label.set_ha("right")
+            label.xyann = (-8, label.xyann[1])
+    for i, ref in enumerate(outside):
+        fig.text(.055, .025 + .028*i, f'{ref["label"]}：{ref["value"]:.4f}（範囲外）',
+                 color=ref["color"], fontsize=13, va="bottom")
+    return labels
+
+
 def make_figure(data, tubes, with_zebra, x_max=None, exclude_extra_loss=False):
     import matplotlib.pyplot as plt
     from matplotlib.legend_handler import HandlerTuple
@@ -214,16 +251,7 @@ def make_figure(data, tubes, with_zebra, x_max=None, exclude_extra_loss=False):
     fig.legend(handles, labels, handler_map={tuple: HandlerTuple(ndivide=1, pad=0)},
                loc="upper center", bbox_to_anchor=(.52, .18), ncol=4,
                frameon=False, fontsize=17, columnspacing=2)
-    reference_handles = []
-    for ref in data["references"]:
-        in_range = x_max is None or 0 <= ref["value"] <= x_max
-        if in_range:
-            main.axvline(ref["value"], color=ref["color"], ls=ref["linestyle"], lw=1.5, alpha=.8, zorder=1)
-        suffix = "" if in_range else "（範囲外）"
-        reference_handles.append(Line2D([], [], color=ref["color"], ls=ref["linestyle"], lw=1.5,
-            label=f'{ref["label"]}：{ref["value"]:.4f}{suffix}'))
-    fig.legend(reference_handles, [line.get_label() for line in reference_handles], loc="lower center",
-               bbox_to_anchor=(.52, .01), ncol=2, frameon=False, fontsize=15, columnspacing=2.5)
+    annotations.update(add_reference_labels(fig, main, data["references"], x_max))
     return fig, axes, annotations
 
 
@@ -258,6 +286,9 @@ def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None,
             seed_positions.update({uid: value for uid, value in positions.get(full_key, {}).items()
                                    if uid.startswith("detail/")})
         seed_positions.update(positions.get(key, {}))
+        for uid, label in annotations.items():
+            if uid.startswith("reference/"):
+                seed_positions.setdefault(uid, annotation_position(label))
         apply_label_positions(fig, seed_positions)
         text_targets = apply_text_overrides(fig, texts.get(key, {}))
         if arrange:
@@ -289,6 +320,7 @@ def render(data_path, output_dir, variants=(True, False), edit=None, x_max=None,
                 out_of_range_references=[r["key"] for r in data["references"]
                                          if x_max is not None and not 0 <= r["value"] <= x_max],
                 reference_lines=data["references"], labels={uid: asdict(annotation_position(a)) for uid, a in annotations.items()},
+                reference_label_placement="beside_line_bottom",
                 label_overlaps=layout["text"], layout_collisions=layout,
                 status="passed" if not any(layout.values()) else "needs_layout_review",
                 input_sha256=sha256(data_path),
