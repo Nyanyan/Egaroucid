@@ -148,6 +148,13 @@ def draw_bounds(axis, spec, bounds):
                       color=spec["color"], alpha=.15)
 
 
+def reference_label(ref):
+    if ref["key"].startswith("quest_"):
+        low, high = ref["key"][6:].split("-")
+        return f"OQ[{low},{high})"
+    return ref["label"]
+
+
 def add_reference_labels(fig, axis, references, x_max):
     """Name each reference beside the bottom of its line."""
     from matplotlib.text import Text
@@ -158,7 +165,7 @@ def add_reference_labels(fig, axis, references, x_max):
             continue
         line = axis.axvline(ref["value"], color=ref["color"], ls=ref["linestyle"], lw=1.5, alpha=.8, zorder=1)
         line.set_gid("human-reference-line")
-        name = ref["label"].replace("オセロクエスト ", "オセロクエスト\n")
+        name = reference_label(ref)
         right = ref["key"] == "wthor" or ref["key"] == "quest_2000-2200" and x_max is None
         height = {"quest_2000-2200": 72 if x_max is None else 30,
                   "quest_1600-1800": 72}.get(ref["key"], 12)
@@ -167,8 +174,8 @@ def add_reference_labels(fig, axis, references, x_max):
             xytext=(8 if right else -8, height),
             textcoords="offset points", ha="left" if right else "right", va="bottom",
             multialignment="center", fontsize=15, color=ref["color"], annotation_clip=False,
-            bbox=dict(boxstyle="round,pad=.2", facecolor="white", edgecolor=ref["color"],
-                      linewidth=.5, alpha=1), zorder=6)
+            bbox=dict(boxstyle="square,pad=.12", facecolor="white", edgecolor="none",
+                      linewidth=0, alpha=1), zorder=6)
         uid = "reference/" + ref["key"]
         label.set_gid(LABEL_PREFIX + uid)
         labels[uid] = label
@@ -183,7 +190,7 @@ def add_reference_labels(fig, axis, references, x_max):
             label.set_ha("right")
             label.xyann = (-8, label.xyann[1])
     for i, ref in enumerate(outside):
-        fig.text(.055, .025 + .028*i, f'{ref["label"]}：{ref["value"]:.4f}（範囲外）',
+        fig.text(.055, .025 + .05*i, f'{reference_label(ref)}\n{ref["value"]:.4f}（範囲外）',
                  color=ref["color"], fontsize=13, va="bottom")
     return labels
 
