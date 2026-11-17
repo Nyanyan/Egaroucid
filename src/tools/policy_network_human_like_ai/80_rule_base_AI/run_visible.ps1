@@ -1,7 +1,8 @@
 param(
     [string]$Python = 'python',
     [ValidateSet('train','loss','all')][string]$Stage = 'all',
-    [int]$Workers = 24
+    [ValidateRange(1,8)][int]$Workers = 8,
+    [switch]$ResumeCompatibleCode
 )
 $ErrorActionPreference = 'Continue'
 $Host.UI.RawUI.WindowTitle = 'Quest [800,1000) rule policy experiment'
@@ -24,7 +25,9 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Training failed: $LASTEXITCODE" }
     }
     if ($Stage -in @('loss','all')) {
-        & $Python -u (Join-Path $PSScriptRoot 'evaluate_loss.py') --workers $Workers 2>&1 | Tee-Object -FilePath $taskLog -Append
+        $taskLossArgs = @('-u', (Join-Path $PSScriptRoot 'evaluate_loss.py'), '--workers', $Workers)
+        if ($ResumeCompatibleCode) { $taskLossArgs += '--resume-compatible-code' }
+        & $Python @taskLossArgs 2>&1 | Tee-Object -FilePath $taskLog -Append
         if ($LASTEXITCODE -ne 0) { throw "L21 evaluation failed: $LASTEXITCODE" }
     }
     Write-Host 'COMPLETE' -ForegroundColor Green

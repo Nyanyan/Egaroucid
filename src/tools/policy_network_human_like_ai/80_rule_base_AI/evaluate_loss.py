@@ -74,8 +74,14 @@ def run(args):
                   denominator='all original test positions, duplicates and forced moves included; passes absent',
                   implementation_sha256=file_sha256(Path(__file__)))
     if (out/'identity.json').exists():
-        if read(out/'identity.json')!=identity:
-            raise ValueError('Loss resume identity differs')
+        previous=read(out/'identity.json')
+        if previous!=identity:
+            old_semantics={k:v for k,v in previous.items() if k!='implementation_sha256'}
+            new_semantics={k:v for k,v in identity.items() if k!='implementation_sha256'}
+            if not args.resume_compatible_code or old_semantics!=new_semantics:
+                raise ValueError('Loss resume identity differs')
+            print('Resuming after an explicitly checked code change; score inputs and engine semantics are identical.',flush=True)
+            identity=previous
         values=np.load(out/'scores.npy',mmap_mode='r+',allow_pickle=False)
     else:
         np.save(out/'pairs.npy',keys)
@@ -93,12 +99,18 @@ def run(args):
     if not np.all(values[complete,2]==np.maximum(values[complete,0],values[complete,1])-values[complete,0]):
         raise ValueError('Saved score formula differs')
     available=psutil.virtual_memory().available/2**30
-    required=args.workers*.7+4
+    required=args.workers*1.4+4
     if available<required:
         raise RuntimeError(f'Insufficient free RAM: {available:.1f} GiB, require {required:.1f}')
     save(out/'preflight.json',dict(workers=args.workers,threads_per_engine=1,available_ram_gib=available,
                                   required_ram_gib=required,logical_cpus=psutil.cpu_count(),pid=os.getpid(),
                                   model_and_saved_moves_verified=True,identity_verified=True))
+    history_path=out/'execution_runs.json'
+    history=read(history_path) if history_path.exists() else []
+    history.append(dict(pid=os.getpid(),workers=args.workers,threads_per_engine=1,
+                        implementation_sha256=file_sha256(Path(__file__)),started_unix=time.time(),
+                        resume_completed_pairs=int(complete.sum()),explicit_compatible_code=args.resume_compatible_code))
+    save(history_path,history)
     todo,results,stop=queue.Queue(),queue.Queue(),threading.Event()
     # Shuffle to avoid concentrating the slowest game phase at the end.
     indices=np.flatnonzero(~complete)
@@ -206,12 +218,14 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input',type=Path,default=HERE/'output/quest_800-1000')
     parser.add_argument('--output',type=Path)
-    parser.add_argument('--workers',type=int,default=24)
+    parser.add_argument('--workers',type=int,default=8)
     parser.add_argument('--hash-level',type=int,default=25)
     parser.add_argument('--max-positions',type=int,default=0)
+    parser.add_argument('--resume-compatible-code',action='store_true',
+                        help='Allow a reviewed code-only change; all model, board, engine and protocol identities must match')
     args=parser.parse_args()
-    if args.workers<1 or not 0<=args.hash_level<=29 or args.max_positions<0:
-        parser.error('Invalid workers, hash level, or sample count')
+    if not 1<=args.workers<=8 or not 0<=args.hash_level<=29 or args.max_positions<0:
+        parser.error('Workers must be 1..8; check hash level and sample count')
     if args.max_positions and args.output is None:
         parser.error('Smoke evaluation requires a separate --output')
     run(args)
