@@ -114,6 +114,69 @@
   },
   "agreement_definition": "legal Top1; board-preserving D4 symmetries accepted; ties ascending bit index",
   "disc_loss_l21": {
-    "status": "pending"
-  }
+    "status": "complete",
+    "identity": {
+      "model_sha256": "f0509eea68c142cde3779e5f9f249b5e5f1fd432c964cc6eeb8c54d054173cc5",
+      "prediction_sha256": "f662e252b6cb497dd762748f8b0bc7093959de0982a3f6bc299a23a3b6908c95",
+      "source_records_sha256": "cd533d19ff256da94482fe1d7a1fdac597b94c36fc0ba39faa422f0b2b095390",
+      "positions": 30423,
+      "unique_board_move_pairs": 27775,
+      "pairs_sha256": "287c1cc502e7af4ead16e0f3ebd97b24d3e7b3e786bb49bd97789bc1f9099252",
+      "engine": {
+        "cache_version": 1,
+        "level": 21,
+        "threads": 1,
+        "hash_level": 25,
+        "book": false,
+        "clear_cache_per_game": false,
+        "files": {
+          "Egaroucid_for_Console_7_8_1_SIMD.exe": "0db2cdbeae48eec02f305d0891eeb031345d615754b3d3ba23b5a3ad22e33ea8",
+          "eval.egev2": "0a8acbcbc23067933627f1bcc83c3f7ae6b7ff3e603d174a3364271fcaeeef2f",
+          "eval_move_ordering_end.egev": "bd908885e8bb85e72a9be2b0399f8ca52ed40a138bcaaecca3d13710945b9a93",
+          "hash25.eghs": "66f2a6828037b27aff883ed45ce3b499aa653727789d1d2ef65f1bd3f42fda3c"
+        },
+        "clear_cache_per_position": false
+      },
+      "protocol": "setboard relative player as Black; play selected move; analyze; warm persistent TT; book off",
+      "loss_formula": "max(played_score,best_other_move_score)-played_score; forced move => exact zero",
+      "selection": "argmax rule policy, ascending bit index ties",
+      "partial": false,
+      "denominator": "all original test positions, duplicates and forced moves included; passes absent",
+      "implementation_sha256": "7333448acd94988810aa348c79b7b31a68d58892dd04db60baa6f91c70605da5"
+    },
+    "metrics": {
+      "positions": 30423,
+      "total_disc_loss": 207072,
+      "mean_disc_loss": 6.806429346218322,
+      "zero_loss_positions": 10972,
+      "stage": {
+        "early_4_to_23": {
+          "positions": 10427,
+          "mean_disc_loss": 7.186055433010454
+        },
+        "middle_24_to_43": {
+          "positions": 10325,
+          "mean_disc_loss": 8.30227602905569
+        },
+        "late_44_to_63": {
+          "positions": 9671,
+          "mean_disc_loss": 4.8001240823079305
+        }
+      }
+    },
+    "scores_sha256": "3d53eb0c6858c6621b5876c5dfb5b48027fa59636f084d8c9e28f10616830295",
+    "per_position_loss_sha256": "8ed1bf363b69b6812bbf9966db078241b2199df75d41432e9b9a9a5778761f1c",
+    "verification": "all frozen moves legal; engine board/ply/color/played move checked; complete original denominator; independent scalar sum matches"
+  },
+  "disc_loss_execution_runs": [
+    {
+      "pid": 47612,
+      "workers": 8,
+      "threads_per_engine": 1,
+      "implementation_sha256": "311ee1fb6be0cc7ae227b947ed5f1c46578b7e4ada0a324ecb8911b140d6143b",
+      "started_unix": 1794897397.7317376,
+      "resume_completed_pairs": 6449,
+      "explicit_compatible_code": true
+    }
+  ]
 }
