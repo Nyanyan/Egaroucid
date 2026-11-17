@@ -1,0 +1,119 @@
+{
+  "selected_validation": {
+    "l2": 1e-05,
+    "iteration": 105,
+    "elapsed_sec": 26.686999999918044,
+    "positions": 31087,
+    "top1_hits": 14748,
+    "top1_accuracy": 0.47441052529996464,
+    "exact_top1_hits": 14317,
+    "exact_top1_accuracy": 0.4605462090262811,
+    "human_move_nll": 1.412573762632749
+  },
+  "test": {
+    "trained_rules": {
+      "positions": 30423,
+      "top1_hits": 14159,
+      "top1_accuracy": 0.46540446372810046,
+      "exact_top1_hits": 13711,
+      "exact_top1_accuracy": 0.45067876277816127,
+      "human_move_nll": 1.4259563285510948
+    },
+    "manual_rules": {
+      "positions": 30423,
+      "top1_hits": 12304,
+      "top1_accuracy": 0.4044308582322585,
+      "exact_top1_hits": 11855,
+      "exact_top1_accuracy": 0.38967228741412746,
+      "human_move_nll": 1.5841166332920245
+    },
+    "most_flips": {
+      "positions": 30423,
+      "top1_hits": 9964,
+      "top1_accuracy": 0.32751536666337966,
+      "exact_top1_hits": 9521,
+      "exact_top1_accuracy": 0.3129540150543996
+    },
+    "uniform_random_expected": {
+      "positions": 30423,
+      "top1_accuracy": 0.23285045895722203,
+      "exact_top1_accuracy": 0.21868290663021797
+    },
+    "finetune_conv8_bn": {
+      "positions": 30423,
+      "top1_hits": 15372,
+      "top1_accuracy": 0.5052756138447885,
+      "exact_top1_hits": 14930,
+      "exact_top1_accuracy": 0.4907471321040003
+    },
+    "scratch_conv8_bn": {
+      "positions": 30423,
+      "top1_hits": 15318,
+      "top1_accuracy": 0.5035006409624297,
+      "exact_top1_hits": 14929,
+      "exact_top1_accuracy": 0.49071426223580844
+    }
+  },
+  "paired_game_bootstrap": {
+    "manual_rules": {
+      "difference": 0.060973605495841965,
+      "game_bootstrap_95_ci": [
+        0.05400383618499603,
+        0.06791161939992814
+      ],
+      "replicates": 2000,
+      "seed": 613
+    },
+    "most_flips": {
+      "difference": 0.1378890970647208,
+      "game_bootstrap_95_ci": [
+        0.13112239527669478,
+        0.1445034314707774
+      ],
+      "replicates": 2000,
+      "seed": 613
+    },
+    "finetune_conv8_bn": {
+      "difference": -0.039871150116688014,
+      "game_bootstrap_95_ci": [
+        -0.04614848761916182,
+        -0.03362489377804109
+      ],
+      "replicates": 2000,
+      "seed": 613
+    },
+    "scratch_conv8_bn": {
+      "difference": -0.03809617723432929,
+      "game_bootstrap_95_ci": [
+        -0.043904721851436526,
+        -0.03189933967159492
+      ],
+      "replicates": 2000,
+      "seed": 613
+    }
+  },
+  "model_sha256": "f0509eea68c142cde3779e5f9f249b5e5f1fd432c964cc6eeb8c54d054173cc5",
+  "predictions_sha256": "f662e252b6cb497dd762748f8b0bc7093959de0982a3f6bc299a23a3b6908c95",
+  "records_sha256": "cd533d19ff256da94482fe1d7a1fdac597b94c36fc0ba39faa422f0b2b095390",
+  "training": {
+    "dataset": "Othello Quest [800,1000)",
+    "counts": {
+      "train": 560909,
+      "val": 31087,
+      "test": 30423
+    },
+    "seed": 613,
+    "selection": "highest validation symmetry-aware top1; break ties by lower human-move NLL",
+    "manifest_sha256": "ddecfe20e0179eaaba1435d7752c9e581ce25da5781e602cedde352c519fea3f",
+    "source_hashes": {
+      "rule_policy.py": "128dce92abae778ae70d1d672d31cd5e03eb7b79cb52924cee115f9f9f87719e",
+      "train.py": "03b69a6dbc78abe8f7dbfb5db57086a140556368382cf32e619168e89dc355f6",
+      "common.py": "45841f86961f16fc3b4d22ad20f53712cdb11e3ac9571caacafef709ab41d6ec"
+    },
+    "original_model_sha256": "f0509eea68c142cde3779e5f9f249b5e5f1fd432c964cc6eeb8c54d054173cc5"
+  },
+  "agreement_definition": "legal Top1; board-preserving D4 symmetries accepted; ties ascending bit index",
+  "disc_loss_l21": {
+    "status": "pending"
+  }
+}
