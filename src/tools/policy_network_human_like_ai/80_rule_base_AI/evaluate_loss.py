@@ -191,7 +191,8 @@ def run(args):
                         values.flush()
                         status=progress()
                         if done-initial>=args.workers and len(status['engine_processes'])>0:
-                            if not (out/'runtime_verified.json').exists():
+                            prior=out/'runtime_verified.json'
+                            if not prior.exists() or read(prior).get('pid')!=os.getpid():
                                 save(out/'runtime_verified.json',status)
                         last=time.monotonic()
                 for f in futures:

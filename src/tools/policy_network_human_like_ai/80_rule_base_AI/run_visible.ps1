@@ -29,6 +29,8 @@ try {
         if ($ResumeCompatibleCode) { $taskLossArgs += '--resume-compatible-code' }
         & $Python @taskLossArgs 2>&1 | Tee-Object -FilePath $taskLog -Append
         if ($LASTEXITCODE -ne 0) { throw "L21 evaluation failed: $LASTEXITCODE" }
+        & $Python -u (Join-Path $PSScriptRoot 'export_results.py') 2>&1 | Tee-Object -FilePath $taskLog -Append
+        if ($LASTEXITCODE -ne 0) { throw "Result export failed: $LASTEXITCODE" }
     }
     Write-Host 'COMPLETE' -ForegroundColor Green
 } catch {
