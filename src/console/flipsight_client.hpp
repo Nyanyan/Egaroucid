@@ -74,7 +74,9 @@ inline Reply request(HttpTransport& transport, RequestGate& gate, const Json& bo
                 // Only a known identifier may leave the response parser.
                 static const std::set<std::string> codes = {"illegal_move", "stale_revision", "not_your_turn",
                     "leg_finished", "match not running", "match timed out", "stale room revision",
-                    "invalid move coordinate", "move outside board", "bot busy", "challenge expired or answered"};
+                    "invalid move coordinate", "move outside board", "bot busy", "challenge expired or answered",
+                    "engine thread limit exceeded", "both bots must be connected", "unsupported game mode",
+                    "bot already has an active match", "bot challenge repeat limit", "site bot variant matches are full"};
                 if (data.contains("error") && data["error"].is_string() && codes.count(data["error"].get<std::string>()))
                     reply.error = data["error"].get<std::string>();
             }
@@ -90,7 +92,7 @@ struct ClockSync {
         sampled = received;
     }
     std::optional<Millis> project(Millis server, Millis received) const {
-        if (!sampled || received - sampled > 120000) return {};
+        if (!sampled) return {};
         Millis projected = server - upper_offset;
         if (projected > received + 1000 || received - projected > 120000) return {};
         return std::min(projected, received);
@@ -126,6 +128,8 @@ private:
         bool seen_running = false, completed = false;
     };
     std::map<Millis, Match> matches;
+    Json bot_info = Json::object();
+    bool synchronized = true;
     std::map<std::pair<Millis, int>, std::unique_ptr<Job>> jobs;
     std::vector<std::unique_ptr<Job>> retired;
     std::map<Millis, std::array<int, 2>> ids;
@@ -175,8 +179,7 @@ private:
     }
 public:
     Json bot_id;
-    bool need_poll = false, denied = false;
-    bool stream_lagging = false;
+    bool need_resync = false, denied = false;
     ClockSync clock;
 
     Controller(int reported_threads, int fixed_level, bool use_ponder, Search search, Call call, Quota quota,
@@ -199,7 +202,7 @@ public:
     static bool match_completed(const Json& snapshot) {
         auto ended = [](const Json& item) {
             auto status = item.value("status", std::string());
-            return status == "finished" || status == "aborted";
+            return status == "finished" || status == "aborted" || status == "timeout" || status == "stopped";
         };
         if (ended(snapshot)) return true;
         const auto state = snapshot.value("state", Json());
@@ -208,6 +211,7 @@ public:
     }
     void update(const Json& payload, Millis started, Millis received, bool full = true) {
         if (payload.contains("bot")) {
+            bot_info = payload.at("bot");
             auto id = payload.at("bot").at("id");
             if (bot_id != id) log("connected", {{"bot_id", id}});
             bot_id = id;
@@ -220,6 +224,18 @@ public:
             if (found != matches.end() && found->second.server_now > server) {
                 log("stale_snapshot", {{"match_id", match_id}, {"server_now_ms", server},
                     {"current_server_now_ms", found->second.server_now}}); continue;
+            }
+            if (found != matches.end()) {
+                const auto& previous = found->second.snapshot;
+                if (match_id < 0) {
+                    auto room = snapshot.value("room_created_at", Json()), old_room = previous.value("room_created_at", Json());
+                    if (room < old_room || (room == old_room && snapshot.value("round_no", 0) < previous.value("round_no", 0))) continue;
+                }
+                bool same_round = snapshot.value("room_created_at", Json()) == previous.value("room_created_at", Json()) &&
+                    snapshot.value("round_no", Json()) == previous.value("round_no", Json());
+                auto state = snapshot.value("state", Json()), old_state = previous.value("state", Json());
+                if (same_round && state.is_object() && old_state.is_object() && state.contains("revision") &&
+                        old_state.contains("revision") && integer(state["revision"]) < integer(old_state["revision"])) continue;
             }
             auto legs = parse_match(snapshot, bot_id, server, started);
             bool same_game = found != matches.end() &&
@@ -260,13 +276,13 @@ public:
                 for (size_t i = 0; i < sources.size(); ++i) {
                     const auto& source = sources[i];
                     if (!source.is_object()) continue;
-                    auto scores = source.value("result_discs", Json());
-                    if (source.value("status", std::string()) != "finished" || !scores.is_array() || scores.size() != 2 ||
+                    auto scores = source.value("result_discs", source.value("discs", Json()));
+                    if (active(source) || !scores.is_array() || scores.size() != 2 ||
                             !scores[0].is_number_integer() || !scores[1].is_number_integer()) continue;
                     auto old_state = same_game ? found->second.snapshot.value("state", Json()) : Json();
                     if (old_state.is_object() && old_state.contains("legs") && old_state["legs"].is_array() &&
-                            i < old_state["legs"].size() && old_state["legs"][i].value("status", std::string()) == "finished" &&
-                            old_state["legs"][i].value("result_discs", Json()) == scores) continue;
+                            i < old_state["legs"].size() && !active(old_state["legs"][i]) &&
+                            old_state["legs"][i].value("result_discs", old_state["legs"][i].value("discs", Json())) == scores) continue;
                     int own = same_id(snapshot.value("bot_a", Json()), bot_id) == (i == 0) ? 0 : 1;
                     log("leg_finished", {{"match_id", match_id}, {"leg", i}, {"revision", source.value("revision", Json(0))},
                         {"value", integer(scores[own]) - integer(scores[1 - own])}, {"result_discs", scores}});
@@ -290,7 +306,7 @@ public:
                 if (existing == jobs.end() || !existing->second->leg.same_turn(leg)) continue;
                 auto& job = *existing->second;
                 job.leg.deadline = leg.deadline;
-                if (job.refresh && full && started >= job.failed_at) {
+                if (job.refresh && received >= job.failed_at && (full || started >= job.failed_at)) {
                     log("move_retry_refreshed", job_fields(job));
                     job.refresh = false;
                     job.ready_at = std::max(job.ready_at, received + std::min<Millis>(5000, 250 * (1 << std::min(job.attempts, 4))));
@@ -299,19 +315,44 @@ public:
         }
         // Missing matches are retained until explicitly finished or their clocks expire.
     }
-    void event(const Json& event, Millis received) {
+    void disconnected() { synchronized = false; }
+    std::optional<Json> pending_challenge(const std::set<Millis>& accepted = {}) const {
+        if (!synchronized) return {};
+        Json snapshots = Json::array();
+        for (const auto& item : matches) if (!(accepted.count(item.first) &&
+                item.second.snapshot.value("status", std::string()) == "pending")) snapshots.push_back(item.second.snapshot);
+        return challenge({{"bot", bot_info}, {"matches", snapshots}});
+    }
+    void event(const Json& event, Millis received, Millis started = 0) {
         auto type = event.value("type", std::string());
-        if (type == "hello") { need_poll = true; return; }
-        if (type != "match") return;
-        if (event.value("view", std::string()) != "agent" || !event.contains("match") || bot_id.is_null()) {
-            need_poll = true; return;
+        if (type == "hello") {
+            if (event.value("api", 0) != 2) throw std::runtime_error("FlipSight API v2 is required");
+            if (bot_id != event.at("bot_id")) log("connected", {{"bot_id", event.at("bot_id")}});
+            bot_id = event.at("bot_id");
+            clock.observe(integer(event.at("server_now_ms")), started ? started : received, received);
+            synchronized = false;
+            return;
         }
+        if (type != "match" && type != "state") return;
+        if (event.value("view", std::string()) != "agent") return;
+        if (bot_id.is_null()) { need_resync = true; return; }
         auto projected = clock.project(integer(event.at("server_now_ms")), received);
-        if (!projected) { log("stream_clock_refresh", {{"match_id", event.at("match").value("id", Json())}}); need_poll = true; return; }
+        if (!projected) { log("stream_clock_refresh"); need_resync = true; return; }
+        if (type == "state") {
+            update(event, *projected, received);
+            std::set<Millis> present;
+            for (const auto& match : event.at("matches")) present.insert(integer(match.at("id")));
+            for (auto& entry : matches) if (!present.count(entry.first) && !entry.second.completed) {
+                if (entry.second.seen_running) age_fn();
+                entry.second.completed = true;
+                log("match_removed", {{"match_id", entry.first}});
+            }
+            synchronized = true;
+            return;
+        }
+        if (!synchronized) return;
         log("stream_match", {{"match_id", event.at("match").value("id", Json())}, {"server_now_ms", event.at("server_now_ms")},
             {"lag_ms", received - *projected}});
-        stream_lagging = received - *projected > 1000;
-        if (stream_lagging) need_poll = true;
         update({{"matches", Json::array({event.at("match")})}, {"server_now_ms", event.at("server_now_ms")}},
             *projected, received, false);
     }
@@ -344,6 +385,8 @@ public:
                 i = retired.erase(i);
             } else ++i;
         }
+        // Keep computed moves across reconnects; fresh state decides whether they can be reused.
+        if (!synchronized) return;
         std::map<std::pair<Millis, int>, std::pair<Leg, bool>> desired;
         int active_boards = 0;
         for (auto& item : matches) {
@@ -448,7 +491,7 @@ public:
                             log("move_pacing", waiting);
                         }
                     } else job.sent = true;
-                } catch (...) { log("search_failed", job_fields(job), true); job.sent = true; need_poll = true; }
+                } catch (...) { log("search_failed", job_fields(job), true); job.sent = true; need_resync = true; }
             }
             if (job.send.valid() && job.send.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
                 Reply reply;
@@ -471,10 +514,7 @@ public:
                     log("move_acknowledged", fields);
                     job.sent = true;
                     if (reply.received >= reply.started) transport_ms = std::clamp<Millis>(reply.received - reply.started, 50, 5000);
-                    if (reply.data.contains("match") && reply.data.contains("server_now_ms")) {
-                        // Apply on the next tick: updating jobs inside this iteration would invalidate references.
-                        completed.push_back({reply.data, reply.started, reply.received});
-                    } else need_poll = true;
+
                 } else {
                     auto fields = job_fields(job); fields["http_status"] = reply.status;
                     fields["code"] = reply.error; fields["attempt"] = job.attempts;
@@ -484,7 +524,7 @@ public:
                     job.rejected = reply.error == "illegal_move" || (reply.status >= 400 && reply.status < 500 &&
                         reply.status != 408 && reply.status != 409 && reply.status != 429);
                     if (job.rejected || job.attempts >= 5) job.sent = true;
-                    need_poll = true;
+                    need_resync = true;
                 }
             }
             // Pacing delays only this move. Other searches, moves, and polls keep running.
@@ -499,11 +539,6 @@ public:
                 job.send = std::async(std::launch::async, [this, &job, body] { return call_fn(body, job.cancel); });
             }
         }
-        for (const auto& completion : completed) {
-            update({{"matches", Json::array({completion.data.at("match")})},
-                    {"server_now_ms", completion.data.at("server_now_ms")}}, completion.started, completion.received);
-        }
-        completed.clear();
     }
     void stop() {
         for (auto& item : jobs) retire(std::move(item.second));
@@ -514,8 +549,5 @@ public:
         }
         retired.clear();
     }
-private:
-    struct Completion { Json data; Millis started, received; };
-    std::vector<Completion> completed;
 };
 } // namespace flipsight

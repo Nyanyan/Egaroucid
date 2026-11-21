@@ -141,9 +141,9 @@ const Commandline_option_info commandline_option_data[N_COMMANDLINE_OPTIONS] = {
 #ifdef INCLUDE_FLIPSIGHT
     {ID_FLIPSIGHT,          {"-flipsight"},                                    1, "<token>",           "Connect to FlipSight with a bot token; -level fixes strength"},
     {ID_FLIPSIGHT_API,      {"-flipsightapi"},                                 1, "<https_url>",       "Set FlipSight API endpoint"},
-    {ID_FLIPSIGHT_NO_STREAM,{"-flipsightnostream"},                            0, "",                  "Use FlipSight polling without the event stream"},
+    {ID_FLIPSIGHT_NO_STREAM,{"-flipsightnostream"},                            0, "",                  "Removed: FlipSight API v2 requires the event stream"},
     {ID_FLIPSIGHT_NO_PONDER,{"-flipsightnoponder"},                            0, "",                  "Disable FlipSight pondering"},
-    {ID_FLIPSIGHT_THREAD,   {"-fsthread"},                                     1, "<M>",               "Report M threads to FlipSight; start with 2M and grow per board (default: 4)"},
+    {ID_FLIPSIGHT_THREAD,   {"-fsthread"},                                     1, "<M>",               "Report M threads (1 to 4); start with 2M and grow per board (default: 4)"},
     {ID_FLIPSIGHT_LOGFILE,  {"-fslogfile", "-flipsightlogfile"},                1, "<file>",            "Save FlipSight session events to this file and the console"},
     {ID_FLIPSIGHT_LOGDIR,   {"-fslogdir", "-flipsightlogdir"},                  1, "<directory>",       "Set FlipSight log directory (default: flipsight/log beside executable)"},
 #endif

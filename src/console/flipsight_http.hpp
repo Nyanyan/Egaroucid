@@ -107,6 +107,24 @@ inline DWORD read_winhttp(HINTERNET request, char* buffer, DWORD capacity, bool 
 }
 #endif
 
+class StreamWatchdog {
+    std::atomic_bool finished{false};
+    std::atomic<Millis> last_event{now_ms()};
+    std::thread worker;
+public:
+    std::atomic_bool cancelled{false};
+    StreamWatchdog(const std::atomic_bool& stop, const std::atomic_bool* reconnect, Millis idle_ms = 15000) {
+        worker = std::thread([this, &stop, reconnect, idle_ms] {
+            while (!finished) {
+                if (stop || (reconnect && reconnect->load()) || now_ms() - last_event >= idle_ms) { cancelled = true; break; }
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            }
+        });
+    }
+    void received() { last_event = now_ms(); }
+    ~StreamWatchdog() { finished = true; worker.join(); }
+};
+
 class HttpTransport {
     Endpoint api;
     std::string token;
@@ -145,7 +163,7 @@ class HttpTransport {
             DWORD policy = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
             if (!WinHttpSetOption(raw, WINHTTP_OPTION_REDIRECT_POLICY, &policy, sizeof(policy)))
                 throw std::runtime_error("Cannot disable FlipSight HTTP redirects");
-            WinHttpSetTimeouts(raw, 5000, 5000, 8000, body ? 8000 : 30000);
+            WinHttpSetTimeouts(raw, 5000, 5000, 8000, body ? 8000 : 15000);
             std::wstring headers = L"Authorization: Bearer " + wide(token) +
                 (body ? L"\r\nContent-Type: application/json\r\nAccept: application/json\r\n" :
                     L"\r\nAccept: application/x-ndjson\r\n");
@@ -221,7 +239,7 @@ class HttpTransport {
         curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT_MS, 5000L);
         curl_easy_setopt(handle, CURLOPT_TIMEOUT_MS, body ? 8000L : 0L);
         curl_easy_setopt(handle, CURLOPT_LOW_SPEED_LIMIT, 1L);
-        curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, 30L);
+        curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, 15L);
         curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
         curl_easy_setopt(handle, CURLOPT_XFERINFODATA, &stop);
         curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, +[](void* p, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
@@ -303,9 +321,11 @@ public:
         auto body = request.dump();
         return perform(api.path, &body, stop, {});
     }
-    HttpResponse stream(std::atomic_bool& stop, const std::function<void(const Json&)>& consume) {
-        EventLines lines(consume);
-        return perform("/flipsight_api/bot-stream", nullptr, stop,
+    HttpResponse stream(std::atomic_bool& stop, const std::function<void(const Json&)>& consume,
+            const std::atomic_bool* reconnect = nullptr) {
+        StreamWatchdog watchdog(stop, reconnect);
+        EventLines lines([&](const Json& event) { watchdog.received(); consume(event); });
+        return perform("/flipsight_api/bot-stream", nullptr, watchdog.cancelled,
             [&](const char* data, size_t size) { lines.append(data, size); });
     }
 };

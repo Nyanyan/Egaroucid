@@ -7,7 +7,7 @@
 #pragma once
 #include <csignal>
 #include <iostream>
-#include "flipsight_client.hpp"
+#include "flipsight_session.hpp"
 #include "option.hpp"
 #include "info.hpp"
 
@@ -57,12 +57,6 @@ inline MoveResult engine_search(const Leg& leg, bool pondering, int id, bool* se
     return {result.policy, result.value, result.depth, result.nodes, static_cast<Millis>(result.time), result.probability};
 }
 
-struct NetworkUpdate {
-    Json data;
-    Millis started = 0, received = 0;
-    bool event = false;
-};
-
 class TableAger {
     std::mutex mutex;
     std::condition_variable wake;
@@ -104,27 +98,19 @@ public:
 };
 
 inline int run(Options* options, const Event& log) {
+    if (options->flipsight_no_stream) {
+        log("unsupported_option", {{"reason", "-flipsightnostream is unavailable: API v2 requires bot-stream"}}, true);
+        return 1;
+    }
     Endpoint endpoint(options->flipsight_api);
     // Validate the credential before starting workers or marking the bot online.
     HttpTransport validate(options->flipsight_api, options->flipsight_token);
     interrupted = 0;
     auto old_int = std::signal(SIGINT, interrupt);
     auto old_term = std::signal(SIGTERM, interrupt);
-    std::atomic_bool stop(false), denied(false), stream_healthy(false), stream_lagging(false), playing(false), poll_now(true);
     RequestGate gate(options->flipsight_fixed_level && options->level <= 10);
-    std::mutex mutex;
-    std::condition_variable wake;
-    std::deque<NetworkUpdate> updates;
-    std::optional<Json> accept;
     std::mutex transport_mutex;
     std::vector<std::unique_ptr<HttpTransport>> transports;
-    auto publish = [&](NetworkUpdate update) {
-        std::lock_guard<std::mutex> lock(mutex);
-        // Stream snapshots are advisory: fall back to a full poll if overloaded.
-        if (updates.size() < 128) updates.push_back(std::move(update));
-        else poll_now = true;
-        wake.notify_all();
-    };
     auto call = [&](const Json& body, std::atomic_bool& cancel) {
         std::unique_ptr<HttpTransport> transport;
         {
@@ -169,118 +155,27 @@ inline int run(Options* options, const Event& log) {
         {"os", "Linux"}
 #endif
     };
-    std::thread poller([&] {
-        Millis next = 0, last_poll = 0;
-        int backoff = 1;
-        try {
-            while (!stop) {
-                std::optional<Json> action;
-                {
-                    std::unique_lock<std::mutex> lock(mutex);
-                    wake.wait_for(lock, std::chrono::milliseconds(50), [&] { return stop.load() || accept.has_value(); });
-                    if (stop) break;
-                    if (accept) { action = *accept; accept.reset(); }
-                }
-                if (!action && ((now_ms() < next && !poll_now) || now_ms() < last_poll + 1000)) continue;
-                if (!action) {
-                    action = Json{{"action", "agent_poll"}, {"history", "brief"}, {"environment", environment}};
-                    poll_now = false;
-                    last_poll = now_ms();
-                }
-                auto reply = call(*action, stop);
-                if (reply.status == 401 || reply.status == 403) { denied = true; stop = true; wake.notify_all(); break; }
-                if (reply.ok()) {
-                    if ((*action)["action"] == "agent_poll") publish({reply.data, reply.started, reply.received, false});
-                    else poll_now = true;
-                    backoff = 1;
-                    next = now_ms() + (stream_healthy && !stream_lagging ? (playing ? 10000 : 60000) : (playing ? 1000 : 5000));
-                } else {
-                    log("poll_retry", {{"http_status", reply.status}, {"retry_ms", backoff * 1000}}, true);
-                    next = now_ms() + backoff * 1000;
-                    backoff = std::min(30, backoff * 2);
-                }
-            }
-        } catch (...) { log("poll_failed", Json::object(), true); stop = true; wake.notify_all(); }
-    });
-    std::thread stream;
-    if (!options->flipsight_no_stream) stream = std::thread([&] {
-        int backoff = 1;
-        while (!stop) {
-            Millis retry_delay = backoff * 1000;
-            try {
-                HttpTransport transport(options->flipsight_api, options->flipsight_token);
-                auto response = transport.stream(stop, [&](const Json& event) {
-                    if (event.value("type", std::string()) == "hello") {
-                        stream_healthy = true; backoff = 1;
-                        log("stream_connected", Json::object(), false);
-                    }
-                    publish({event, 0, now_ms(), true});
-                });
-                if (response.status == 401 || response.status == 403) { denied = true; stop = true; }
-                if (response.status == 429 || response.status == 503) {
-                    gate.defer(response.retry_after);
-                    retry_delay = std::max(retry_delay, response.retry_after);
-                }
-            } catch (...) { if (!stop) log("stream_failed", Json::object(), true); }
-            stream_healthy = false;
-            poll_now = true;
-            if (!stop) log("stream_retry", {{"retry_ms", retry_delay}}, true);
-            for (Millis i = 0; i < retry_delay && !stop; i += 50) std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            backoff = std::min(30, backoff * 2);
-        }
-    });
+    environment["practice"] = false;
+    environment["ponder"] = !options->flipsight_no_ponder;
+#if USE_CHANGEABLE_HASH_LEVEL
+    auto hash_level = options->hash_level;
+#else
+    auto hash_level = DEFAULT_HASH_LEVEL;
+#endif
+    environment["hash_mb"] = ((hash_sizes[hash_level] + TRANSPOSITION_TABLE_N_LOOP - 1) * sizeof(Hash_node) + 1048575) / 1048576;
+    auto stream = [&](std::atomic_bool& stop, const std::function<void(const Json&)>& consume, const std::atomic_bool& reconnect) {
+        HttpTransport transport(options->flipsight_api, options->flipsight_token);
+        return transport.stream(stop, consume, &reconnect);
+    };
     Json configuration = {{"reported_threads", options->flipsight_threads}, {"search_threads", options->n_threads},
         {"level", options->flipsight_fixed_level ? options->level : -1}, {"ponder", !options->flipsight_no_ponder}};
 #if USE_CHANGEABLE_HASH_LEVEL
     configuration["hash_level"] = options->hash_level;
 #endif
     log("ready", configuration, false);
-    int result = 0;
-    try {
-        while (!stop && !interrupted) {
-            std::deque<NetworkUpdate> incoming;
-            {
-                std::unique_lock<std::mutex> lock(mutex);
-                wake.wait_for(lock, std::chrono::milliseconds(10));
-                incoming.swap(updates);
-            }
-            for (const auto& update : incoming) {
-                try {
-                    if (update.event) controller.event(update.data, update.received);
-                    else {
-                        controller.update(update.data, update.started, update.received);
-                        auto challenge = controller.challenge(update.data);
-                        if (challenge) {
-                            std::lock_guard<std::mutex> lock(mutex);
-                            accept = *challenge;
-                            wake.notify_all();
-                        }
-                    }
-                } catch (const Json::exception& error) {
-                    log("invalid_server_state", {{"source", update.event ? "stream" : "poll"}, {"json_error_id", error.id}}, true);
-                    poll_now = true;
-                } catch (...) {
-                    log("invalid_server_state", {{"source", update.event ? "stream" : "poll"}}, true);
-                    poll_now = true;
-                }
-            }
-            controller.tick();
-            stream_lagging = controller.stream_lagging;
-            playing = controller.running();
-            if (controller.need_poll) { poll_now = true; controller.need_poll = false; wake.notify_all(); }
-            if (controller.denied) { denied = true; break; }
-        }
-    } catch (...) { log("client_failed", Json::object(), true); result = 1; }
-    if (stop && !interrupted && !denied) result = 1;
-    stop = true;
-    wake.notify_all();
-    controller.stop();
-    poller.join();
-    if (stream.joinable()) stream.join();
+    int result = run_session(controller, call, stream, environment, log, [] { return interrupted != 0; });
     std::signal(SIGINT, old_int);
     std::signal(SIGTERM, old_term);
-    if (denied) { log("authentication_denied", Json::object(), true); result = 1; }
-    log("stopped", {{"exit_code", result}}, false);
     return result;
 }
 } // namespace flipsight

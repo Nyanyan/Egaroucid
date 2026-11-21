@@ -95,17 +95,6 @@ inline uint64_t legal_moves(uint64_t black, uint64_t white, int turn) {
     return legal;
 }
 
-inline bool unpublished(const Json& leg) {
-    if (!active(leg) || !leg.contains("history")) return false;
-    if (!leg["history"].is_array()) throw std::runtime_error("Invalid FlipSight history");
-    Millis visible = 0;
-    for (const auto& move : leg["history"]) {
-        if (!move.is_object()) throw std::runtime_error("Invalid FlipSight history entry");
-        if (!move.contains("auto") || move["auto"] != true) ++visible;
-    }
-    return integer(leg.at("revision")) > visible;
-}
-
 // observed_at is the HTTP request start, a conservative lower bound on server_now_ms.
 inline std::vector<Leg> parse_match(const Json& match, const Json& bot_id,
         Millis server_now, Millis observed_at) {
@@ -143,7 +132,8 @@ inline std::vector<Leg> parse_match(const Json& match, const Json& bot_id,
         leg.round = match.value("round_no", Json());
         leg.room = match.value("room_created_at", Json());
         leg.running = active(source);
-        leg.published = !unpublished(source);
+        // v2 snapshots carry authoritative boards; revisions need not equal history length.
+        leg.published = true;
         leg.turn = static_cast<int>(integer(source.at("turn")));
         leg.color = participant == static_cast<int>(i) ? 1 : 2;
         if (leg.turn != 1 && leg.turn != 2) {

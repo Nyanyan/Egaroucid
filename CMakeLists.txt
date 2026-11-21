@@ -172,7 +172,7 @@ endif()
 
 if(BUILD_FLIPSIGHT_TESTS)
     enable_testing()
-    set(flipsight_tests protocol client engine playthrough)
+    set(flipsight_tests protocol client engine playthrough session)
     if(WIN32)
         list(APPEND flipsight_tests http)
     endif()

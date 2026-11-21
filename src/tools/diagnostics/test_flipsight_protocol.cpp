@@ -41,7 +41,7 @@ int main() {
     require(send_at(11, 1000, 61000, 60, 200) == 1000, "higher-level pacing");
     require(send_at(-1, 1000, 61000, 60, 200) == 1000, "time allocation pacing");
     match["state"]["legs"][0]["revision"] = 1;
-    require(!parse_match(match, 1, 12000, 50000)[0].published, "hidden revision");
+    require(parse_match(match, 1, 12000, 50000)[0].published, "v2 boards are authoritative even when revision exceeds history length");
     match = fixture();
     match["state"]["legs"][0]["history"].push_back({{"auto", true}, {"participant", nullptr}, {"color", 2}, {"move", -1}});
     require(parse_match(match, 1, 12000, 50000).size() == 2, "server auto-pass with null participant must remain playable");

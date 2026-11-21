@@ -109,7 +109,7 @@ int main() {
         controller.update(data, now_ms(), now_ms());
         settle(controller, [&] { auto j = controller.job(123, 0); return j && j->refresh; });
         for (int i = 0; i < 5; ++i) controller.tick();
-        require(calls == 1, "uncertain move replayed without a fresh poll");
+        require(calls == 1, "uncertain move replayed without a fresh state");
         data["server_now_ms"] = 100001;
         controller.update(data, now_ms(), now_ms());
         settle(controller, [&] { auto j = controller.job(123, 0); return j && j->sent; }, 1000);
@@ -184,10 +184,10 @@ int main() {
         controller.update(data, 100, 100);
         Json event = {{"type", "match"}, {"view", "agent"}, {"match", data["matches"][0]}, {"server_now_ms", 100100}};
         controller.event(event, 3000);
-        require(controller.stream_lagging && controller.need_poll, "delayed notifications must request fast polling even on an open stream");
-        controller.need_poll = false; event["server_now_ms"] = 103000;
-        controller.event(event, 3110);
-        require(!controller.stream_lagging && !controller.need_poll, "fresh notifications must restore normal stream polling");
+        require(!controller.need_resync, "stream events must not cause periodic polling or reconnects");
+        event["server_now_ms"] = 300000;
+        controller.event(event, 200100);
+        require(!controller.need_resync, "a healthy stream must not require HTTP clock samples every two minutes");
     }
     {
         auto data = fixture();
@@ -212,7 +212,8 @@ int main() {
         data["matches"][0]["state"]["legs"][0]["revision"] = 1;
         data["server_now_ms"] = 100001;
         controller.update(data, now_ms(), now_ms()); controller.tick();
-        require(!controller.job(123, 0), "unpublished board must not authorize a search or move");
+        settle(controller, [&] { auto job = controller.job(123, 0); return job && job->leg.revision == 1; });
+        require(controller.job(123, 0)->leg.published, "v2 snapshot must remain playable with a short history");
         controller.stop();
     }
     {

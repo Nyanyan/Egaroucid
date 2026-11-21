@@ -366,12 +366,12 @@ Options get_options(std::vector<Commandline_option> commandline_options, std::st
         try {
             size_t used = 0;
             auto count = std::stoi(text, &used);
-            // The service admits at most eight paired matches (sixteen boards).
-            if (used != text.size() || count < 1 || count > std::numeric_limits<int>::max() / 16)
+            // API v2 limits each board to four reported engine threads.
+            if (used != text.size() || count < 1 || count > 4)
                 throw std::invalid_argument("threads");
             res.flipsight_threads = count;
         } catch (...) {
-            std::cerr << "[ERROR] -fsthread requires a positive integer within the supported thread-count range" << std::endl;
+            std::cerr << "[ERROR] -fsthread must be from 1 to 4 (FlipSight API thread limit)" << std::endl;
             std::exit(1);
         }
     }

@@ -81,16 +81,16 @@ class SessionLog {
         if (event == "move_acknowledged") return "Played " + identity() + " move " + std::to_string(f.value("move", -1)) +
             "; " + std::to_string(f.value("remaining_ms", Millis(0))) + " ms left.";
         if (event == "threads_grown") return "Allocated search threads: " + std::to_string(f.value("threads", 0)) + ".";
-        if (event == "stream_retry") return "Event stream interrupted; reconnecting in " + std::to_string(f.value("retry_ms", Millis(0))) + " ms, polling continues.";
+        if (event == "stream_retry") return "Event stream interrupted; reconnecting in " + std::to_string(f.value("retry_ms", Millis(0))) + " ms to refresh state.";
         if (event == "stream_connected") return "Event stream connected.";
-        if (event == "poll_retry") return "Poll interrupted (HTTP " + std::to_string(f.value("http_status", 0)) +
-            "); retrying in " + std::to_string(f.value("retry_ms", Millis(0))) + " ms while current games continue.";
+        if (event == "command_retry") return "API request interrupted (HTTP " + std::to_string(f.value("http_status", 0)) +
+            "); retrying in " + std::to_string(f.value("retry_ms", Millis(0))) + " ms.";
         if (event == "stopped") return "Stopped (exit " + std::to_string(f.value("exit_code", 0)) + ").";
         if (event == "api_failed" || event == "stream_failed") return {};
         if (record.error) return "ERROR: " + event + (id ? " for " + identity() : "") +
             (f.contains("http_status") ? " (HTTP " + std::to_string(f.at("http_status").get<int>()) + ")" : "") +
             (f.contains("code") && !f.at("code").get<std::string>().empty() ? ": " + f.at("code").get<std::string>() : "") +
-            ". See session log.";
+            (f.contains("reason") ? ": " + f.at("reason").get<std::string>() : "") + ". See session log.";
         return {};
     }
 

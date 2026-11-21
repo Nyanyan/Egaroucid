@@ -61,7 +61,7 @@ class TestServer {
                 {"turn_started_ms", game.started}, {"result_discs", {std::popcount(black), std::popcount(white)}}});
         }
         return {{"id", 123}, {"bot_a", 1}, {"bot_b", 2}, {"status", all_finished ? "finished" : "running"},
-            {"state", {{"status", all_finished ? "finished" : "active"}, {"version", 1}, {"legs", legs}, {"game_mode", "std"}}}};
+            {"state", {{"status", all_finished ? "finished" : "active"}, {"version", 1}, {"revision", moves + passes}, {"legs", legs}, {"game_mode", "std"}}}};
     }
 public:
     TestServer() {
@@ -126,9 +126,19 @@ int main(int argc, char** argv) try {
             session.write(event, std::move(fields), error);
         });
     auto began = fs::now_ms();
-    controller.update(server.payload(), began, began);
+    controller.event({{"type", "hello"}, {"api", 2}, {"bot_id", 1}, {"server_now_ms", began}}, began, began);
+    auto initial = server.payload(); initial["type"] = "state"; initial["view"] = "agent";
+    controller.event(initial, fs::now_ms());
+    int revision = initial["matches"][0]["state"]["revision"].get<int>();
     while (!logged_finish && fs::now_ms() - began < 45000) {
-        if (server.advance_opponents()) controller.update(server.payload(), fs::now_ms(), fs::now_ms());
+        server.advance_opponents();
+        auto state = server.payload();
+        auto next_revision = state["matches"][0]["state"]["revision"].get<int>();
+        if (next_revision != revision) {
+            revision = next_revision;
+            controller.event({{"type", "match"}, {"view", "agent"}, {"match", state["matches"][0]},
+                {"server_now_ms", state["server_now_ms"]}}, fs::now_ms());
+        }
         controller.tick();
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
