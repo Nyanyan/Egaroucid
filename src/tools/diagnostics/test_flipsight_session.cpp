@@ -57,6 +57,11 @@ int main() try {
         [&] { return finished || now_ms() - began > 8000; });
     require(result == 0 && finished && environments == 1 && accepts == 1 && moves == 2 && connections == 2 && searches == 1,
         "v2 must report environment once, accept stream challenges, reconnect and replay only after fresh state");
+    Controller admission(2, -1, false, {}, call, [](int, int) {});
+    auto pending = match_fixture(), other = pending; other["id"] = 124;
+    admission.update({{"bot", {{"id", 1}, {"max_games", 1}}}, {"matches", {pending, other}},
+        {"server_now_ms", 100000}}, now_ms(), now_ms());
+    require(!admission.pending_challenge({123}), "in-flight admissions exceeded the website match limit");
 
     auto match = match_fixture(); match["status"] = "running";
     Controller ordering(2, -1, false, {}, call, [](int, int) {});

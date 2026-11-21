@@ -319,9 +319,16 @@ public:
     std::optional<Json> pending_challenge(const std::set<Millis>& accepted = {}) const {
         if (!synchronized) return {};
         Json snapshots = Json::array();
-        for (const auto& item : matches) if (!(accepted.count(item.first) &&
-                item.second.snapshot.value("status", std::string()) == "pending")) snapshots.push_back(item.second.snapshot);
-        return challenge({{"bot", bot_info}, {"matches", snapshots}});
+        int reserved = 0;
+        for (const auto& item : matches) {
+            if (accepted.count(item.first) && item.second.snapshot.value("status", std::string()) == "pending") ++reserved;
+            else snapshots.push_back(item.second.snapshot);
+        }
+        auto bot = bot_info;
+        int capacity = std::clamp(bot.value("max_games", 2), 1, 8) - reserved;
+        if (capacity <= 0) return {};
+        bot["max_games"] = capacity;
+        return challenge({{"bot", bot}, {"matches", snapshots}});
     }
     void event(const Json& event, Millis received, Millis started = 0) {
         auto type = event.value("type", std::string());
@@ -504,7 +511,7 @@ public:
                     fields["remaining_source"] = "deadline";
                     try {
                         const auto& source = reply.data.at("match").at("state").at("legs").at(job.leg.index);
-                        auto remaining = integer(source.at("clocks_ms").at(job.leg.color - 1));
+                        auto remaining = clock_ms(source.at("clocks_ms").at(job.leg.color - 1));
                         if (source.value("turn", Json()) == job.leg.color && source.contains("turn_started_ms"))
                             remaining -= std::max<Millis>(0, integer(reply.data.at("server_now_ms")) - integer(source.at("turn_started_ms"))) +
                                 std::max<Millis>(0, now_ms() - reply.started);

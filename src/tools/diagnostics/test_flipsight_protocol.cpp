@@ -25,6 +25,8 @@ int main() {
     auto legs = parse_match(match, 1, 12000, 50000);
     require(legs.size() == 2 && legs[0].ours() && !legs[1].ours(), "paired colors");
     require(legs[0].deadline == 78000, "first move deadline");
+    auto fractional = match; fractional["id"] = -8; fractional["state"]["legs"][0]["clocks_ms"][0] = 60000.75;
+    require(parse_match(fractional, 1, 12000, 50000)[0].deadline == 108000, "fractional millisecond clocks must round down conservatively");
     require(legs[0].legal == ((1ULL << 44) | (1ULL << 37) | (1ULL << 26) | (1ULL << 19)), "coordinate mask");
     require(legs[0].move_request(44)["move"] == 19 && legs[0].move_request(64)["move"] == -1, "coordinate conversion");
     require(same_line(legs), "initial shared line");

@@ -37,7 +37,11 @@ inline int run_session(Controller& controller, const Call& call, const Stream& s
                     if (reply.status == 401 || reply.status == 403) { denied = true; stop = true; wake.notify_all(); break; }
                     if (reply.ok()) break;
                     bool transient = reply.status == 0 || reply.status == 408 || reply.status == 429 || reply.status >= 500;
-                    if (!transient) { log("command_failed", {{"action", command.at("action")}, {"http_status", reply.status}}, true); break; }
+                    if (!transient) {
+                        log("command_failed", {{"action", command.at("action")}, {"http_status", reply.status}}, true);
+                        if (command.at("action") == "agent_accept") publish({{"type", "command_rejected"}, {"match_id", command.at("match_id")}});
+                        break;
+                    }
                     Millis delay = std::max<Millis>(reply.retry_after, std::min<Millis>(30000, 250LL << std::min(attempt++, 7)));
                     log("command_retry", {{"action", command.at("action")}, {"http_status", reply.status}, {"retry_ms", delay}}, true);
                     std::unique_lock<std::mutex> lock(mutex);
@@ -81,6 +85,10 @@ inline int run_session(Controller& controller, const Call& call, const Stream& s
             }
             for (const auto& update : updates) {
                 const auto type = update.event.value("type", std::string());
+                if (type == "command_rejected") {
+                    accepted.erase(integer(update.event.at("match_id"))); controller.need_resync = true;
+                    continue;
+                }
                 if (type == "disconnected" || type == "resync_required") {
                     controller.disconnected(); awaiting_hello = true;
                     continue;

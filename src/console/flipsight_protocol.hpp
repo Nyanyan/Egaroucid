@@ -9,7 +9,9 @@
 #include <array>
 #include <bit>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -32,6 +34,15 @@ inline bool active(const Json& item) {
 inline Millis integer(const Json& value) {
     if (!value.is_number_integer()) throw std::runtime_error("Invalid FlipSight integer");
     return value.get<Millis>();
+}
+
+inline Millis clock_ms(const Json& value) {
+    if (value.is_number_integer()) return integer(value);
+    if (!value.is_number_float()) throw std::runtime_error("Invalid FlipSight clock");
+    double number = value.get<double>();
+    if (!std::isfinite(number) || number >= static_cast<double>(std::numeric_limits<Millis>::max()) ||
+            number < static_cast<double>(std::numeric_limits<Millis>::min())) throw std::runtime_error("Invalid FlipSight clock");
+    return static_cast<Millis>(std::floor(number));
 }
 
 inline bool same_id(const Json& a, const Json& b) {
@@ -163,7 +174,7 @@ inline std::vector<Leg> parse_match(const Json& match, const Json& bot_id,
             throw std::runtime_error("FlipSight legal moves disagree with standard Othello");
         const auto& clocks = source.at("clocks_ms");
         if (!clocks.is_array() || clocks.size() != 2) throw std::runtime_error("Invalid FlipSight clocks");
-        Millis remaining = integer(clocks[leg.color - 1]);
+        Millis remaining = clock_ms(clocks[leg.color - 1]);
         if (leg.turn == leg.color && source.contains("turn_started_ms") && !source["turn_started_ms"].is_null())
             remaining -= std::max<Millis>(0, server_now - integer(source["turn_started_ms"]));
         leg.deadline = observed_at + std::max<Millis>(0, remaining);
