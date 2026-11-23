@@ -13,8 +13,6 @@
 #include "./../engine/engine_all.hpp"
 #include "board_info.hpp"
 
-constexpr int ADVICE_VALUE_LEVEL = 21;
-
 constexpr uint64_t flip_inside_exclude_mask = 0xFFC381818181C3FFULL; //0xC3C300000000C3C3ULL;
 
 struct Advice_Move {
@@ -157,7 +155,7 @@ bool is_next_to_opponent_edge_disc(Board board, Advice_Move move) {
     return count == 1;
 }
 
-void print_advice(Board_info *board_info) {
+void print_advice(Board_info *board_info, int level) {
     nlohmann::json res;
 
     Board board = board_info->board.copy();
@@ -174,7 +172,7 @@ void print_advice(Board_info *board_info) {
         int best_value = -100;
         uint64_t legal_cpy = legal;
         while (legal_cpy) {
-            Search_result search_result = ai_legal(board, ADVICE_VALUE_LEVEL, true, 0, true, false, legal_cpy);
+            Search_result search_result = ai_legal(board, level, true, 0, true, false, legal_cpy);
             if (!is_valid_policy(search_result.policy) || (legal_cpy & (1ULL << search_result.policy)) == 0ULL) { // no move found (search stopped etc.)
                 break;
             }

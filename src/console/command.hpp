@@ -374,6 +374,20 @@ void set_level(Options *options, std::string level_str) {
     }
 }
 
+void advise(Board_info *board, const Options *options, const std::string &arg) {
+    int level = options->level;
+    std::istringstream input(arg);
+    input >> std::ws;
+    if (!input.eof()) {
+        std::string extra;
+        if (!(input >> level) || level < 0 || level > MAX_LEVEL || (input >> extra)) {
+            std::cerr << "[ERROR] advice level must be an integer from 0 to " << MAX_LEVEL << std::endl;
+            return;
+        }
+    }
+    print_advice(board, level);
+}
+
 void set_mode(Options *options, std::string mode_str) {
     try {
         int mode = std::stoi(mode_str);
@@ -601,7 +615,7 @@ void check_command(Board_info *board, State *state, Options *options) {
             settime(state, options, arg);
             break;
         case CMD_ID_ADVISE:
-            print_advice(board);
+            advise(board, options, arg);
             break;
         case CMD_ID_RANDBOARD:
             randboard(board, options, state, arg);

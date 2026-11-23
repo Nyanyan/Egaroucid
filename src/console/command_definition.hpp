@@ -68,7 +68,7 @@ const Command_info command_data[N_COMMANDS] = {
     {CMD_ID_GENPROBLEM, {"genproblem"},                                     "<n_empties> <n_problems>", "Generate <n_problems> problems with <n_empties> empty squares and calculate the score and bestmove with specified level"},
     {CMD_ID_TRANSCRIPT, {"transcript"},                                     "",                         "Show transcript of the game"},
     {CMD_ID_SETTIME,    {"settime"},                                        "<color> <time>",           "Set <color> (X / B / O / W) player's remaining time to <time> (seconds)"},
-    {CMD_ID_ADVISE,     {"advise", "advice"},                               "",                         "Output information for advising"},
+    {CMD_ID_ADVISE,     {"advise", "advice"},                               "<level>",                  "Output advice at <level>. If omitted, use the current engine level."},
     {CMD_ID_RANDBOARD,  {"randboard", "genrandboard"},                      "<black_score_min> <black_score_max> <n_moves>", "Generate random board by score range and set current position"},
     {CMD_ID_THREAD,     {"chthread"},                                       "<n_threads>",              "Set number of threads (positive integer, including the main thread)"},
 };
